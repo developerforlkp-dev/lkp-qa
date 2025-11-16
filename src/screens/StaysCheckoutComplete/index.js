@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import cn from "classnames";
 import styles from "./StaysCheckoutComplete.module.sass";
 import Control from "../../components/Control";
@@ -19,65 +19,97 @@ const breadcrumbs = [
   },
 ];
 
-const gallery = [
-  {
-    src: "/images/content/slider-pic-1.jpg",
-    srcSet: "/images/content/slider-pic-1@2x.jpg",
-  },
-  {
-    src: "/images/content/slider-pic-1.jpg",
-    srcSet: "/images/content/slider-pic-1@2x.jpg",
-  },
-  {
-    src: "/images/content/slider-pic-1.jpg",
-    srcSet: "/images/content/slider-pic-1@2x.jpg",
-  },
-];
-
-const parameters = [
-  {
-    title: "1 bedroom",
-  },
-  {
-    title: "1 private bath",
-  },
-];
-
-const options = [
-  {
-    title: "Booking code:",
-    content: "UI8_150989",
-    icon: "hand-cart",
-  },
-  {
-    title: "Date:",
-    content: "30 Apr, 2021",
-    icon: "calendar",
-  },
-  {
-    title: "Total:",
-    content: "$833",
-    icon: "receipt",
-  },
-  {
-    title: "Payment method:",
-    content: "Credit card",
-    icon: "wallet",
-  },
-];
-
-const items = [
-  {
-    title: "Dates",
-    content: "May 15 - 22, 2021",
-  },
-  {
-    title: "Guests",
-    content: "2 guest",
-  },
-];
-
 const StaysCheckoutComplete = () => {
+  const [booking, setBooking] = useState(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(null);
+
+  useEffect(() => {
+    try {
+      const b = localStorage.getItem("checkoutBooking");
+      if (b) setBooking(JSON.parse(b));
+    } catch {}
+    try {
+      const p = localStorage.getItem("razorpayPaymentSuccess");
+      if (p) setPaymentSuccess(JSON.parse(p));
+    } catch {}
+  }, []);
+
+  const title = booking?.listingTitle || "Your booking is confirmed";
+
+  const gallery = useMemo(() => {
+    const img = booking?.listingImage || "/images/content/slider-pic-1.jpg";
+    return [
+      { src: img, srcSet: img },
+      { src: img, srcSet: img },
+      { src: img, srcSet: img },
+    ];
+  }, [booking]);
+
+  const parameters = useMemo(() => {
+    const guestsCount =
+      (booking?.guests?.adults || 0) + (booking?.guests?.children || 0);
+    return [
+      { title: `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}` },
+    ];
+  }, [booking]);
+
+  const options = useMemo(() => {
+    const totalRow =
+      booking?.receipt?.find?.((r) => r.title?.toLowerCase() === "total")
+        ?.content || "";
+
+    return [
+      {
+        title: "Booking code:",
+        content:
+          paymentSuccess?.razorpay_payment_id ||
+          paymentSuccess?.payment_id ||
+          "—",
+        icon: "hand-cart",
+      },
+      {
+        title: "Date:",
+        content:
+          booking?.bookingSummary?.date ||
+          booking?.selectedDate ||
+          "—",
+        icon: "calendar",
+      },
+      {
+        title: "Total:",
+        content: totalRow || "—",
+        icon: "receipt",
+      },
+      {
+        title: "Payment method:",
+        content: "Razorpay",
+        icon: "wallet",
+      },
+    ];
+  }, [booking, paymentSuccess]);
+
+  const items = useMemo(() => {
+    const guestsCount =
+      (booking?.guests?.adults || 0) + (booking?.guests?.children || 0);
+    return [
+      {
+        title: "Date",
+        content:
+          booking?.bookingSummary?.date ||
+          booking?.selectedDate ||
+          "—",
+      },
+      {
+        title: "Time",
+        content: booking?.bookingSummary?.time || "—",
+      },
+      {
+        title: "Guests",
+        content: guestsCount ? `${guestsCount} guests` : "—",
+      },
+    ];
+  }, [booking]);
+
   return (
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
@@ -93,7 +125,7 @@ const StaysCheckoutComplete = () => {
           <div className={styles.col}>
             <CheckoutComplete
               className={styles.complete}
-              title="Spectacular views of Queenstown"
+              title={title}
               parameters={parameters}
               options={options}
               items={items}

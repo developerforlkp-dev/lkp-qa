@@ -16,31 +16,10 @@ const breadcrumbs = [
   },
 ];
 
-const items = [
-  {
-    title: "May 15, 2021",
-    category: "Check-in",
-    icon: "calendar",
-  },
-  {
-    title: "May 22, 2021",
-    category: "Check-out",
-    icon: "calendar",
-  },
-  {
-    title: "2 guests",
-    category: "Guest",
-    icon: "user",
-  },
-];
-
-const basePrice = 833;
-const discount = 125;
-const serviceFee = 103;
-
 const Checkout = () => {
   const location = useLocation();
   const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -49,53 +28,103 @@ const Checkout = () => {
     }
   }, [location.state]);
 
+  // Fallback: hydrate bookingData from localStorage if not present in state
+  useEffect(() => {
+    if (!bookingData) {
+      try {
+        const saved = localStorage.getItem("pendingBooking");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setBookingData(parsed);
+          if (Array.isArray(parsed.selectedAddOns)) {
+            setSelectedAddOns(parsed.selectedAddOns);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [bookingData]);
+
+  // Persist snapshot for completion screen
+  useEffect(() => {
+    if (bookingData) {
+      try {
+        localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
+      } catch {}
+    }
+  }, [bookingData]);
+
+
   const handleRemoveAddOn = (indexToRemove) => {
     setSelectedAddOns((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  // Build booking items (date, time, guests) for summary
+  const items = useMemo(() => {
+    const dateTitle =
+      bookingData?.bookingSummary?.date ||
+      bookingData?.selectedDate ||
+      "Select date";
+    const timeTitle =
+      bookingData?.bookingSummary?.time ||
+      "Select time";
+    const guestsCount =
+      (bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0);
+    const guestsTitle = guestsCount > 0 ? `${guestsCount} guests` : "Add guests";
+
+    return [
+      {
+        title: dateTitle,
+        category: "Date",
+        icon: "calendar",
+      },
+      {
+        title: timeTitle,
+        category: "Time slot",
+        icon: "clock",
+      },
+      {
+        title: guestsTitle,
+        category: "Guest",
+        icon: "user",
+      },
+    ];
+  }, [bookingData]);
+
+  // Build price table from receipt if provided
   const { addOnsTotal, finalTotal, table } = useMemo(() => {
+    if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
+      const rows = bookingData.receipt.map((r) => ({
+        title: r.title,
+        value: r.content,
+      }));
+      return {
+        addOnsTotal: bookingData.addOnsTotal || 0,
+        finalTotal: bookingData.finalTotal || 0,
+        table: rows,
+      };
+    }
+
+    // Fallback: compute a minimal table from selectedAddOns only
     const addOnsPrice = selectedAddOns.reduce(
       (sum, addOn) => sum + (addOn?.priceValue || addOn?.price || 0),
       0
     );
-    const final = basePrice - discount + serviceFee + addOnsPrice;
-
-    const tableData = [
-      {
-        title: "$119 x 7 nights",
-        value: "$833",
-      },
-      {
-        title: "10% campaign discount",
-        value: "-$125",
-      },
-    ];
-
-    // Add addon summary to the table
-    if (selectedAddOns.length > 0) {
-      tableData.push({
-        title: "Add-ons",
-        value: `+$${addOnsPrice}`,
-      });
-    }
-
-    tableData.push(
-      {
-        title: "Service fee",
-        value: "$103",
-      },
-      {
-        title: "Total (USD)",
-        value: `$${final}`,
-      }
-    );
-
     return {
       addOnsTotal: addOnsPrice,
-      finalTotal: final,
-      table: tableData,
+      finalTotal: addOnsPrice,
+      table: [
+        {
+          title: "Add-ons",
+          value: `${addOnsPrice}`,
+        },
+      ],
     };
-  }, [selectedAddOns]);
+  }, [bookingData, selectedAddOns]);
+
+  const listingTitle = bookingData?.listingTitle || "Your trip";
+  const listingImage = bookingData?.listingImage || "/images/content/photo-1.1.jpg";
 
   return (
     <div className={cn("section-mb80", styles.section)}>
@@ -115,8 +144,8 @@ const Checkout = () => {
           <PriceDetails
             className={styles.price}
             more
-            image="/images/content/photo-1.1.jpg"
-            title="Spectacular views of Queenstown"
+            image={listingImage}
+            title={listingTitle}
             items={items}
             table={table}
             addOns={selectedAddOns}

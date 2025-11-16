@@ -26,7 +26,7 @@
     top: 24px
     align-self: flex-start
     max-height: calc(100vh - 48px)
-    overflow-y: auto
+    overflow: visible
     +t
         position: relative
         top: 0
@@ -62,10 +62,16 @@
 
 .table
     margin-bottom: 32px
+    overflow: visible
+    width: 100%
+    box-sizing: border-box
 
 .line
     display: flex
     padding: 8px 12px
+    overflow: visible
+    width: 100%
+    box-sizing: border-box
     &:last-child
         background: $n7
         border-radius: 8px
@@ -78,14 +84,18 @@
                     color: $n8
 
 .cell
+    overflow: visible
     &:first-child
         margin-right: auto
         color: $n4
+        min-width: 0
+        flex: 1
     &:nth-child(2)
         flex-shrink: 0
         margin-left: 20px
         text-align: right
         font-weight: 500
+        white-space: nowrap
 
 .foot
     text-align: center

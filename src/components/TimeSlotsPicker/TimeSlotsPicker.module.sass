@@ -1,0 +1,126 @@
+@import ../../styles/helpers
+
+.picker
+    position: absolute
+    top: calc(100% + 8px)
+    left: 0
+    width: 100%
+    max-width: 100%
+    padding: 24px
+    border-radius: 16px
+    background: $n8
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12)
+    z-index: 100
+    min-width: 280px
+    box-sizing: border-box
+    overflow: hidden
+    +dark
+        background: $n1
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3)
+    +m
+        left: -16px
+        right: -16px
+        width: calc(100vw - 32px)
+        max-width: calc(100vw - 32px)
+
+.header
+    margin-bottom: 20px
+
+.title
+    +body-bold-2
+    font-size: 16px
+    color: $n2
+    letter-spacing: -0.2px
+    +dark
+        color: $n8
+
+.timesGrid
+    display: grid
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr))
+    gap: 12px
+    width: 100%
+    +t
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr))
+        gap: 10px
+    +m
+        grid-template-columns: 1fr
+        gap: 10px
+        width: 100%
+
+.timeBtn
+    padding: 14px 12px
+    border: 1.5px solid $n6
+    border-radius: 12px
+    background: $n8
+    cursor: pointer
+    transition: all .2s ease
+    text-align: center
+    display: flex
+    align-items: center
+    justify-content: center
+    min-height: 56px
+    width: 100%
+    box-sizing: border-box
+    +body-2
+    font-size: 14px
+    font-weight: 500
+    color: $n2
+    word-break: break-word
+    overflow: hidden
+    +dark
+        background: $n1
+        border-color: $n3
+        color: $n8
+    +m
+        padding: 12px 10px
+        font-size: 13px
+    &:hover:not(.active)
+        border-color: $p1
+        background: $n7
+        box-shadow: 0 2px 12px rgba($p1, .12)
+        transform: translateY(-2px)
+        +dark
+            background: $n2
+            border-color: $p1
+    &.active
+        border-color: $p1
+        background: $p1
+        color: $n8
+        box-shadow: 0 0 0 3px rgba($p1, .15)
+        font-weight: 600
+
+.timeRange
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 6px
+    flex-wrap: nowrap
+    line-height: 1.4
+    width: 100%
+    overflow: hidden
+    +m
+        gap: 4px
+        font-size: 13px
+
+.timeStart,
+.timeEnd
+    font-weight: 600
+    letter-spacing: 0.2px
+    white-space: nowrap
+    flex-shrink: 0
+    +m
+        font-size: 12px
+
+.timeSeparator
+    color: $n4
+    font-weight: 400
+    font-size: 13px
+    flex-shrink: 0
+    white-space: nowrap
+    +dark
+        color: $n5
+    .timeBtn.active &
+        color: rgba($n8, 0.8)
+    +m
+        font-size: 12px
+

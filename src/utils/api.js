@@ -83,3 +83,98 @@ export const getListing = async (id) => {
     throw error;
   }
 };
+
+// ✅ Phone Authentication API functions
+// Send OTP to phone number
+export const sendPhoneOTP = async (phone, countryCode = "+91") => {
+  try {
+    const response = await ListingsAPI.post("/customers/auth/phone/send-otp", {
+      phone,
+      countryCode,
+    });
+    console.log("✅ OTP sent successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error sending OTP:", error);
+    throw error;
+  }
+};
+
+// Verify OTP and login
+export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName = "", lastName = "") => {
+  try {
+    const response = await ListingsAPI.post("/customers/auth/phone/verify-otp", {
+      phone,
+      otp,
+      countryCode,
+      firstName,
+      lastName,
+    });
+    console.log("✅ OTP verified successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error verifying OTP:", error);
+    throw error;
+  }
+};
+
+// ✅ Get billing configuration for a listing
+export const getBillingConfiguration = async (listingId) => {
+  try {
+    const response = await ListingsAPI.get(`/public/listings/${listingId}/billing-configuration`);
+    console.log("✅ Billing configuration fetched:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching billing configuration:", error);
+    throw error;
+  }
+};
+
+// ✅ Get availability for a listing slot
+export const getAvailability = async (listingId, startDate, endDate, slotId) => {
+  try {
+    // Ensure slotId is a number or string
+    const slotIdParam = slotId ? String(slotId) : null;
+    
+    if (!listingId || !startDate || !endDate || !slotIdParam) {
+      throw new Error(`Missing required parameters: listingId=${listingId}, startDate=${startDate}, endDate=${endDate}, slotId=${slotIdParam}`);
+    }
+    
+    const response = await ListingsAPI.get(`/public/listings/${listingId}/availability`, {
+      params: {
+        startDate: startDate, // Format: YYYY-MM-DD
+        endDate: endDate,     // Format: YYYY-MM-DD
+        slotId: slotIdParam,  // Number as string
+      },
+    });
+    
+    console.log("✅ Availability API Response:", {
+      url: `/public/listings/${listingId}/availability`,
+      params: { startDate, endDate, slotId: slotIdParam },
+      data: response.data
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching availability:", {
+      listingId,
+      startDate,
+      endDate,
+      slotId,
+      error: error.response?.data || error.message
+    });
+    throw error;
+  }
+};
+
+// ✅ Create an order
+export const createOrder = async (orderData) => {
+  try {
+    const response = await ListingsAPI.post("/orders", orderData);
+    console.log("✅ Order created successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error creating order:", error.response?.data || error.message);
+    throw error;
+  }
+};

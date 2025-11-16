@@ -1,0 +1,202 @@
+@import ../../styles/helpers
+
+.picker
+    position: absolute
+    top: calc(100% + 8px)
+    left: 0
+    right: 0
+    padding: 0
+    border-radius: 16px
+    background: $n8
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12)
+    z-index: 100
+    min-width: 320px
+    overflow: hidden
+    +dark
+        background: $n1
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3)
+
+.header
+    display: flex
+    align-items: center
+    justify-content: space-between
+    padding: 16px 20px
+    border-bottom: 1px solid $n6
+    +dark
+        border-color: $n3
+
+.headerContent
+    display: flex
+    flex-direction: column
+    gap: 4px
+
+.headerLabel
+    +caption-2
+    color: $n4
+    font-weight: 600
+    text-transform: uppercase
+    letter-spacing: 0.5px
+    font-size: 11px
+    +dark
+        color: $n5
+
+.headerValue
+    +body-bold-2
+    font-size: 14px
+    color: $n1
+    +dark
+        color: $n8
+
+.collapseButton
+    background: none
+    border: none
+    cursor: pointer
+    padding: 4px
+    display: flex
+    align-items: center
+    justify-content: center
+    color: $n4
+    transition: all .2s ease
+    +dark
+        color: $n5
+    &:hover
+        color: $n1
+        +dark
+            color: $n8
+    svg
+        fill: currentColor
+        transform: rotate(180deg)
+
+.content
+    padding: 16px 20px
+
+.categoryRow
+    display: flex
+    align-items: center
+    justify-content: space-between
+    padding: 16px 0
+    border-bottom: 1px solid $n6
+    +dark
+        border-color: $n3
+    &:last-of-type
+        border-bottom: none
+
+.categoryInfo
+    display: flex
+    flex-direction: column
+    gap: 4px
+    flex: 1
+
+.categoryLabel
+    +body-bold-2
+    font-size: 14px
+    color: $n1
+    +dark
+        color: $n8
+
+.categorySubtitle
+    +body-2
+    font-size: 13px
+    color: $n4
+    +dark
+        color: $n5
+
+.serviceAnimalLink
+    +body-2
+    font-size: 13px
+    color: $p1
+    text-decoration: underline
+    margin-top: 4px
+    cursor: pointer
+    transition: color .2s ease
+    &:hover
+        color: darken($p1, 10%)
+
+.counter
+    display: flex
+    align-items: center
+    gap: 16px
+    flex-shrink: 0
+
+.counterButton
+    width: 32px
+    height: 32px
+    border-radius: 50%
+    border: 1px solid $n6
+    background: $n8
+    display: flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    transition: all .2s ease
+    padding: 0
+    +dark
+        background: $n1
+        border-color: $n3
+    &:hover:not(.disabled)
+        border-color: $n1
+        background: $n7
+        +dark
+            border-color: $n8
+            background: $n2
+    &.disabled
+        cursor: not-allowed
+        opacity: 0.4
+        border-color: $n6
+        background: $n7
+        +dark
+            border-color: $n3
+            background: $n2
+        svg
+            fill: $n4
+            +dark
+                fill: $n5
+    svg
+        fill: $n1
+        transition: fill .2s ease
+        +dark
+            fill: $n8
+
+.counterValue
+    +body-bold-2
+    font-size: 16px
+    min-width: 24px
+    text-align: center
+    color: $n1
+    +dark
+        color: $n8
+
+.footer
+    padding: 16px 20px
+    border-top: 1px solid $n6
+    +dark
+        border-color: $n3
+
+.rules
+    margin-bottom: 12px
+
+.ruleText
+    +body-2
+    font-size: 12px
+    color: $n4
+    line-height: 1.5
+    +dark
+        color: $n5
+
+.closeButton
+    background: none
+    border: none
+    +body-2
+    font-size: 14px
+    color: $n1
+    text-decoration: underline
+    cursor: pointer
+    padding: 0
+    margin-left: auto
+    display: block
+    transition: color .2s ease
+    +dark
+        color: $n8
+    &:hover
+        color: $p1
+

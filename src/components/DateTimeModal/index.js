@@ -1,32 +1,30 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import cn from "classnames";
 import Modal from "../Modal";
-import Dropdown from "../Dropdown";
 import styles from "./DateTimeModal.module.sass";
 
 const getMonthLabel = (d) =>
   d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-const buildMonthOptions = (count = 24) => {
-  const now = new Date();
-  const months = [];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    months.push(getMonthLabel(d));
+const buildCalendarGrid = (year, month) => {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  const calendar = [];
+  
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendar.push(null);
   }
-  return months;
-};
-
-const buildMonthDays = (monthLabel) => {
-  const [name, year] = monthLabel.split(" ");
-  const monthIdx = new Date(`${name} 1, ${year}`).getMonth();
-  const y = parseInt(year, 10);
-  const daysInMonth = new Date(y, monthIdx + 1, 0).getDate();
-  const out = [];
+  
+  // Add all days of the month
   for (let d = 1; d <= daysInMonth; d++) {
-    out.push(new Date(y, monthIdx, d));
+    calendar.push(new Date(year, month, d));
   }
-  return out;
+  
+  return calendar;
 };
 
 const defaultTimes = [
@@ -54,188 +52,145 @@ const DateTimeModal = ({
   times = defaultTimes,
   dateOnly = false, // If true, only show date picker and auto-close on selection
 }) => {
-  const monthOptions = useMemo(() => buildMonthOptions(24), []);
-  const [month, setMonth] = useState(getMonthLabel(new Date()));
-  const dates = useMemo(() => buildMonthDays(month), [month]);
-  const scrollRef = useRef(null);
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
-  const [hovered, setHovered] = useState(false);
-
-  const [date, setDate] = useState(() => {
-    if (selectedDate) {
-      try {
-        const parsedDate = new Date(selectedDate);
-        if (!isNaN(parsedDate.getTime())) {
-          return parsedDate;
-        }
-      } catch {
-        // Invalid date, fall through
-      }
-    }
-    return new Date();
-  });
+  const now = new Date();
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth());
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const [internalSelectedDate, setInternalSelectedDate] = useState(null);
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [time, setTime] = useState(selectedTime || times[0]);
 
-  // Update date when selectedDate prop changes or modal opens, or when dates array is ready
+  const calendarGrid = useMemo(() => buildCalendarGrid(currentYear, currentMonth), [currentYear, currentMonth]);
+  const monthLabel = getMonthLabel(new Date(currentYear, currentMonth));
+
+  // Initialize dates when modal opens
   useEffect(() => {
     if (visible) {
+      // Try to parse selectedDate prop
       if (selectedDate) {
         try {
           const parsedDate = new Date(selectedDate);
           if (!isNaN(parsedDate.getTime())) {
-            setDate(parsedDate);
+            setInternalSelectedDate(parsedDate);
+            setCurrentMonth(parsedDate.getMonth());
+            setCurrentYear(parsedDate.getFullYear());
+            setShowTimeSlots(true);
             return;
           }
         } catch {
           // Invalid date, fall through
         }
       }
-      // If no valid selectedDate, use first available date or today
-      if (dates.length > 0) {
-        const today = new Date();
-        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const firstAvailable = dates.find(d => {
-          const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-          return dDate.getTime() >= todayDate.getTime();
-        });
-        if (firstAvailable) {
-          setDate(firstAvailable);
-        } else if (dates.length > 0) {
-          setDate(dates[dates.length - 1]);
-        }
-      }
+      setInternalSelectedDate(null);
+      setShowTimeSlots(false);
     }
-  }, [visible, selectedDate, dates]);
+  }, [visible, selectedDate]);
 
-  const fmtDay = (d) => d.toLocaleDateString("en-US", { weekday: "short" });
-  const fmtDate = (d) => d.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  const isDateSelected = (date) => {
+    if (!date || !internalSelectedDate) return false;
+    return date.toDateString() === internalSelectedDate.toDateString();
+  };
 
-  const handleDateSelect = (selectedDate) => {
-    setDate(selectedDate);
-    if (dateOnly) {
-      // Auto-close and confirm when date is selected in date-only mode
-      // Preserve the existing time selection
-      const formatted = selectedDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-      onConfirm?.(formatted, selectedTime || time || times[0]);
-      onClose?.();
+  const isDatePast = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateToCheck = new Date(date);
+    dateToCheck.setHours(0, 0, 0, 0);
+    return dateToCheck.getTime() < today.getTime();
+  };
+
+  const handleDateClick = (date) => {
+    if (!date || isDatePast(date)) return;
+    setInternalSelectedDate(date);
+    setShowTimeSlots(true);
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
     }
   };
 
   const handleConfirm = () => {
-    const formatted = date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+    if (!internalSelectedDate) return;
+    const formatted = internalSelectedDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
     onConfirm?.(formatted, time);
     onClose?.();
   };
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const update = () => {
-      setShowLeft(el.scrollLeft > 0);
-      setShowRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
-    };
-    update();
-    el.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
-  // Ensure the current date is the first visible card and disallow scrolling before it
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const today = new Date();
-    const isCurrentMonth = getMonthLabel(today) === month;
-    const card = el.querySelector(`.${styles.dateCard}`);
-    const step = card ? card.clientWidth + 12 : 160 + 12;
-    let minLeft = 0;
-    if (isCurrentMonth) {
-      const indexToday = dates.findIndex((d) => d.getDate() === today.getDate());
-      if (indexToday >= 0) {
-        minLeft = indexToday * step;
-      }
-    }
-    el.scrollTo({ left: minLeft, behavior: "smooth" });
-
-    const clampScroll = () => {
-      if (!isCurrentMonth) return;
-      if (el.scrollLeft < minLeft) el.scrollLeft = minLeft;
-    };
-    el.addEventListener("scroll", clampScroll);
-    return () => el.removeEventListener("scroll", clampScroll);
-  }, [month, dates]);
-
-  const scrollByCards = (dir) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const card = el.querySelector(`.${styles.dateCard}`);
-    const step = card ? card.clientWidth + 12 : 160;
-    el.scrollBy({ left: dir * step * 3, behavior: "smooth" });
-  };
+  const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
     <Modal visible={visible} onClose={onClose} outerClassName={styles.modalOuter}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <div className={styles.title}>{dateOnly ? "Select date" : "Select date & time"}</div>
-          <div className={styles.subtitle}>{dateOnly ? "Choose your date" : "Choose your check-in schedule"}</div>
+          {internalSelectedDate && (
+            <div className={styles.dateRangeInfo}>
+              <div className={styles.selectedDateLabel}>Selected date</div>
+              <div className={styles.dateRange}>
+                {internalSelectedDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+              </div>
+            </div>
+          )}
+          {!internalSelectedDate && (
+            <>
+              <div className={styles.title}>{dateOnly ? "Select date" : "Select date & time"}</div>
+              <div className={styles.subtitle}>{dateOnly ? "Choose your date" : "Choose your check-in schedule"}</div>
+            </>
+          )}
         </div>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>Select date</div>
-          <div className={styles.monthRow}>
-            <Dropdown value={month} setValue={setMonth} options={monthOptions} />
+          <div className={styles.calendarHeader}>
+            <button className={styles.monthNav} onClick={handlePrevMonth} aria-label="Previous month">
+              ‹
+            </button>
+            <div className={styles.monthLabel}>{monthLabel}</div>
+            <button className={styles.monthNav} onClick={handleNextMonth} aria-label="Next month">
+              ›
+            </button>
           </div>
-          <div
-            className={styles.dateScroll}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-          >
-            <div className={styles.dateRow} ref={scrollRef}>
-              {dates.map((d, i) => {
-                const today = new Date();
-                const isPast = d.setHours(0,0,0,0) < new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-                return (
+          <div className={styles.calendarGrid}>
+            {daysOfWeek.map((day, idx) => (
+              <div key={idx} className={styles.dayHeader}>{day}</div>
+            ))}
+            {calendarGrid.map((date, idx) => {
+              if (!date) {
+                return <div key={`empty-${idx}`} className={styles.calendarDay} />;
+              }
+              
+              const isPast = isDatePast(date);
+              const isSelected = isDateSelected(date);
+              
+              return (
                 <button
-                  key={i}
-                  className={cn(styles.dateCard, {
-                    [styles.active]: d.toDateString() === date.toDateString(),
-                    [styles.disabled]: isPast,
+                  key={idx}
+                  className={cn(styles.calendarDay, {
+                    [styles.past]: isPast,
+                    [styles.selected]: isSelected,
                   })}
-                  onClick={() => !isPast && handleDateSelect(d)}
+                  onClick={() => handleDateClick(date)}
                   disabled={isPast}
                 >
-                <div className={styles.day}>{fmtDay(d)}</div>
-                <div className={styles.date}>{fmtDate(d)}</div>
-                <div className={styles.slots}>8 slots</div>
+                  {date.getDate()}
                 </button>
-              )})}
-            </div>
-            {showLeft && (
-              <button
-                className={cn(styles.arrowButton, styles.arrowLeft, { [styles.arrowVisible]: hovered })}
-                onClick={() => scrollByCards(-1)}
-                aria-label="Scroll left"
-              >
-                ‹
-              </button>
-            )}
-            {showRight && (
-              <button
-                className={cn(styles.arrowButton, styles.arrowRight, { [styles.arrowVisible]: hovered })}
-                onClick={() => scrollByCards(1)}
-                aria-label="Scroll right"
-              >
-                ›
-              </button>
-            )}
+              );
+            })}
           </div>
         </div>
-        {!dateOnly && (
-          <>
+        {showTimeSlots && !dateOnly && (
+          <div className={styles.timeSlotsContainer}>
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Available times</div>
               <div className={styles.timesGrid}>
@@ -250,17 +205,20 @@ const DateTimeModal = ({
                 ))}
               </div>
             </div>
-            <div className={styles.footer}>
-              <button className={cn("button-stroke", styles.btn)} onClick={onClose}>Cancel</button>
-              <button className={cn("button", styles.btn)} onClick={handleConfirm}>Confirm</button>
-            </div>
-          </>
-        )}
-        {dateOnly && (
-          <div className={styles.footer}>
-            <button className={cn("button-stroke", styles.btn)} onClick={onClose}>Cancel</button>
           </div>
         )}
+        <div className={styles.footer}>
+          <button className={cn("button-stroke", styles.btn)} onClick={onClose}>Cancel</button>
+          {!dateOnly && (
+            <button 
+              className={cn("button", styles.btn)} 
+              onClick={handleConfirm}
+              disabled={!internalSelectedDate}
+            >
+              Confirm
+            </button>
+          )}
+        </div>
       </div>
     </Modal>
   );

@@ -2,17 +2,10 @@ import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./ConfirmAndPay.module.sass";
 import CreditCard from "./CreditCard";
-import PayPal from "./PayPal";
 import Icon from "../Icon";
-import Dropdown from "../Dropdown";
-
-const nav = ["Credit Card", "Paypal"];
-
-const logins = ["tam@ui8.net", "vova@ui8.net", "john@ui8.net"];
 
 const ConfirmAndPay = ({ className, guests, title, buttonUrl }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [login, setLogin] = useState(logins[0]);
+  // keep minimal local state if needed later
 
   return (
     <div className={cn(className, styles.confirm)}>
@@ -42,41 +35,9 @@ const ConfirmAndPay = ({ className, guests, title, buttonUrl }) => {
               )}
             </div>
           </div>
-          <div className={styles.box}>
-            <div className={styles.top}>
-              <div className={styles.category}>Pay with</div>
-              <div className={styles.nav}>
-                {nav.map((x, index) => (
-                  <button
-                    className={cn(styles.link, {
-                      [styles.active]: index === activeIndex,
-                    })}
-                    key={index}
-                    onClick={() => setActiveIndex(index)}
-                  >
-                    {x}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className={styles.field}>
-              <div className={styles.label}>saved contact info</div>
-              <Dropdown
-                className={styles.dropdown}
-                value={login}
-                setValue={setLogin}
-                options={logins}
-              />
-            </div>
-          </div>
         </div>
         <div className={styles.item}>
-          {activeIndex === 0 && (
-            <CreditCard className={styles.credit} buttonUrl={buttonUrl} />
-          )}
-          {activeIndex === 1 && (
-            <PayPal className={styles.paypal} buttonUrl={buttonUrl} />
-          )}
+          <CreditCard className={styles.credit} buttonUrl={buttonUrl} hidePaymentFields />
         </div>
       </div>
     </div>

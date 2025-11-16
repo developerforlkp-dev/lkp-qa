@@ -1,0 +1,388 @@
+@import ../../styles/helpers
+
+.modal
+  position: fixed
+  top: 0
+  left: 0
+  width: 100%
+  height: 100%
+  display: flex
+  align-items: center
+  justify-content: center
+  background: rgba(0, 0, 0, 0.5)
+  backdrop-filter: blur(4px)
+  z-index: 9999
+  padding: 24px
+  overflow: auto
+  +m
+    padding: 16px
+
+.content
+  position: relative
+  width: 100%
+  max-width: 480px
+  background: $n8
+  border-radius: 24px
+  padding: 40px 32px
+  box-shadow: 0px 24px 48px rgba(0, 0, 0, 0.2)
+  +m
+    padding: 32px 24px
+    border-radius: 16px
+  +dark
+    background: $n1
+
+.close
+  position: absolute
+  top: 16px
+  right: 16px
+  width: 32px
+  height: 32px
+  border-radius: 50%
+  background: $n8
+  border: none
+  display: flex
+  align-items: center
+  justify-content: center
+  cursor: pointer
+  transition: all 0.2s ease
+  z-index: 10
+  +dark
+    background: $n2
+  &:hover
+    background: $n7
+    transform: rotate(90deg)
+    +dark
+      background: $n3
+  svg
+    fill: $n2
+    +dark
+      fill: $n8
+
+.header
+  text-align: center
+  margin-bottom: 32px
+  +m
+    margin-bottom: 24px
+
+.illustration
+  margin-bottom: 16px
+  display: flex
+  justify-content: center
+  img
+    width: 120px
+    height: auto
+    +m
+      width: 100px
+
+.title
+  +dm-sans
+  font-size: 32px
+  line-height: 1.2
+  font-weight: 700
+  margin-bottom: 8px
+  color: $n2
+  letter-spacing: -0.01em
+  +m
+    font-size: 28px
+  +dark
+    color: $n8
+
+.subtitle
+  +body-2
+  color: $n4
+  font-size: 14px
+  +m
+    font-size: 13px
+
+.loginOptions
+  display: flex
+  flex-direction: column
+  gap: 24px
+  margin-bottom: 24px
+  +m
+    gap: 20px
+    margin-bottom: 20px
+
+.optionBox
+  background: $n7
+  border-radius: 16px
+  padding: 20px
+  +m
+    padding: 16px
+  +dark
+    background: $n3
+
+.optionTitle
+  +body-bold-2
+  font-size: 16px
+  margin-bottom: 16px
+  color: $n2
+  +m
+    font-size: 14px
+    margin-bottom: 12px
+  +dark
+    color: $n8
+
+.phoneForm
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.phoneInput
+  display: flex
+  align-items: center
+  background: $n8
+  border: 1px solid $n6
+  border-radius: 12px
+  padding: 0
+  overflow: hidden
+  +dark
+    background: $n2
+    border-color: $n4
+
+.countryCode
+  display: flex
+  align-items: center
+  gap: 8px
+  padding: 12px 16px
+  border-right: 1px solid $n6
+  +dark
+    border-color: $n4
+
+.flag
+  width: 20px
+  height: 15px
+  object-fit: cover
+  border-radius: 2px
+
+.code
+  +body-bold-2
+  font-size: 14px
+  color: $n2
+  +dark
+    color: $n8
+
+.phoneSeparator
+  color: $n4
+  font-size: 14px
+  margin: 0 8px
+
+.input
+  flex: 1
+  border: none
+  outline: none
+  padding: 12px 16px
+  background: transparent
+  +body-2
+  font-size: 14px
+  color: $n2
+  +dark
+    color: $n8
+  &::placeholder
+    color: $n4
+
+.continueBtn
+  width: 100%
+  padding: 12px 24px
+  background: $p1
+  color: $n8
+  border: none
+  border-radius: 12px
+  +body-bold-2
+  font-size: 14px
+  cursor: pointer
+  transition: all 0.2s ease
+  &:hover:not(:disabled)
+    background: darken($p1, 5%)
+    transform: translateY(-1px)
+    box-shadow: 0 4px 12px rgba($p1, 0.3)
+  &:disabled
+    opacity: 0.6
+    cursor: not-allowed
+
+.separator
+  display: flex
+  align-items: center
+  gap: 12px
+  margin: 8px 0
+
+.separatorLine
+  flex: 1
+  height: 1px
+  background: $n6
+  +dark
+    background: $n4
+
+.separatorText
+  +body-2
+  font-size: 12px
+  color: $n4
+  font-weight: 500
+  text-transform: uppercase
+  letter-spacing: 0.5px
+
+.googleBtn
+  width: 100%
+  padding: 12px 16px
+  background: $n8
+  border: 1px solid $n6
+  border-radius: 12px
+  cursor: pointer
+  transition: all 0.2s ease
+  +dark
+    background: $n2
+    border-color: $n4
+  &:hover
+    border-color: $p1
+    box-shadow: 0 2px 8px rgba($p1, 0.1)
+
+.googleAccount
+  display: flex
+  align-items: center
+  justify-content: space-between
+  width: 100%
+
+.googleInfo
+  display: flex
+  flex-direction: column
+  align-items: flex-start
+  flex: 1
+
+.googleName
+  +body-bold-2
+  font-size: 14px
+  color: $n2
+  margin-bottom: 2px
+  +dark
+    color: $n8
+
+.googleEmail
+  +body-2
+  font-size: 12px
+  color: $n4
+
+.arrow
+  margin: 0 8px
+  fill: $n4
+
+.googleLogo
+  width: 20px
+  height: 20px
+
+.googleSignInContainer
+  display: none
+  margin-top: 12px
+  & > div
+    width: 100% !important
+    display: flex
+    justify-content: center
+
+.footer
+  text-align: center
+  padding-top: 24px
+  border-top: 1px solid $n6
+  +dark
+    border-color: $n4
+
+.terms
+  +body-2
+  font-size: 12px
+  color: $n4
+  line-height: 1.5
+
+.link
+  color: $p1
+  text-decoration: none
+  font-weight: 500
+  &:hover
+    text-decoration: underline
+
+.otpInfo
+  +body-2
+  font-size: 13px
+  color: $n4
+  margin-bottom: 16px
+  text-align: center
+  +m
+    font-size: 12px
+    margin-bottom: 12px
+
+.otpInput
+  display: flex
+  align-items: center
+  background: $n8
+  border: 1px solid $n6
+  border-radius: 12px
+  padding: 0
+  overflow: hidden
+  +dark
+    background: $n2
+    border-color: $n4
+  .input
+    text-align: center
+    font-size: 18px
+    font-weight: 600
+    letter-spacing: 4px
+    +m
+      font-size: 16px
+      letter-spacing: 3px
+
+.nameInputs
+  display: flex
+  gap: 12px
+  +m
+    flex-direction: column
+    gap: 8px
+  .input
+    flex: 1
+    background: $n8
+    border: 1px solid $n6
+    border-radius: 12px
+    padding: 12px 16px
+    +dark
+      background: $n2
+      border-color: $n4
+
+.otpActions
+  display: flex
+  gap: 12px
+  +m
+    flex-direction: column
+    gap: 8px
+
+.backBtn
+  padding: 12px 24px
+  background: transparent
+  color: $n2
+  border: 1px solid $n6
+  border-radius: 12px
+  +body-bold-2
+  font-size: 14px
+  cursor: pointer
+  transition: all 0.2s ease
+  flex: 1
+  +dark
+    color: $n8
+    border-color: $n4
+  &:hover:not(:disabled)
+    background: $n7
+    border-color: $n5
+    +dark
+      background: $n3
+      border-color: $n5
+  &:disabled
+    opacity: 0.6
+    cursor: not-allowed
+
+.error
+  +body-2
+  font-size: 13px
+  color: #e74c3c
+  padding: 8px 12px
+  background: rgba(231, 76, 60, 0.1)
+  border-radius: 8px
+  margin-top: 4px
+  +m
+    font-size: 12px
+    padding: 6px 10px
+

@@ -3,6 +3,7 @@ import cn from "classnames";
 import styles from "./Details.module.sass";
 import Icon from "../../../../components/Icon";
 import Switch from "../../../../components/Switch";
+import Counter from "../../../../components/Counter";
 
 const facts = [
   {
@@ -102,18 +103,36 @@ export const addOns = [
   },
 ];
 
-const Details = ({ className, listing, selectedAddOns, onToggleAddOn }) => {
+const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggleAddOn, onAddOnQuantityChange }) => {
   const displayAddOns = Array.isArray(listing?.addons) && listing.addons.length
-    ? listing.addons.map((a) => ({
-        id: a?.addon?.addonId ?? a?.addonId ?? a?.assignmentId,
-        title: a?.addon?.title || "Addon",
-        description: a?.addon?.briefDescription || "",
-        price: a?.addon?.price
-          ? `${a.addon.price} ${a.addon.currency || ""}`.trim()
-          : "",
-        isPopular: false,
-      }))
-    : addOns;
+    ? listing.addons.map((a) => {
+        const addonId = a?.addon?.addonId ?? a?.addonId ?? a?.assignmentId;
+        const price = parseFloat(a?.addon?.price || 0);
+        const currency = a?.addon?.currency || "";
+        const pricingType = a?.addon?.pricingType || "Individual";
+        const quantity = pricingType === "Group" ? (addOnQuantities?.[addonId] || 1) : 1;
+        const totalPrice = price * quantity;
+        
+        const isSelected = selectedAddOns?.includes(addonId);
+        
+        return {
+          id: addonId,
+          title: a?.addon?.title || "Addon",
+          description: a?.addon?.briefDescription || "",
+          price: pricingType === "Group" && isSelected
+            ? `${currency} ${price.toFixed(2)}${quantity > 1 ? ` × ${quantity} = ${currency} ${totalPrice.toFixed(2)}` : ` = ${currency} ${totalPrice.toFixed(2)}`}`
+            : `${currency} ${price.toFixed(2)}`,
+          priceValue: price,
+          currency: currency,
+          pricingType: pricingType,
+          isPopular: false,
+          originalAddon: a, // Keep reference to original addon data
+        };
+      })
+    : addOns.map((a) => ({
+        ...a,
+        pricingType: "Individual", // Default for static addons
+      }));
 
   // Only show the 'What's Included' setting (settingId = 7)
   const whatsIncludedSetting = Array.isArray(listing?.guestRequirements)
@@ -215,33 +234,52 @@ const Details = ({ className, listing, selectedAddOns, onToggleAddOn }) => {
       <div className={styles.enhanceSection}>
         <h4 className={styles.enhanceTitle}>Enhance Your Experience</h4>
         <div className={styles.addOnsList}>
-          {displayAddOns.map((addOn) => (
-            <div
-              key={addOn.id}
-              className={cn(styles.addOnCard, {
-                [styles.addOnCardSelected]: selectedAddOns.includes(addOn.id),
-              })}
-            >
-              <div className={styles.addOnContent}>
-                <div className={styles.addOnHeader}>
-                  <div className={styles.addOnTitleRow}>
-                    <h5 className={styles.addOnTitle}>{addOn.title}</h5>
-                    {addOn.isPopular && (
-                      <span className={styles.popularBadge}>Popular</span>
-                    )}
+          {displayAddOns.map((addOn) => {
+            const isSelected = selectedAddOns.includes(addOn.id);
+            const isGroupPricing = addOn.pricingType === "Group";
+            const quantity = isGroupPricing ? (addOnQuantities?.[addOn.id] || 1) : 1;
+            
+            return (
+              <div
+                key={addOn.id}
+                className={cn(styles.addOnCard, {
+                  [styles.addOnCardSelected]: isSelected,
+                })}
+              >
+                <div className={styles.addOnContent}>
+                  <div className={styles.addOnHeader}>
+                    <div className={styles.addOnTitleRow}>
+                      <h5 className={styles.addOnTitle}>{addOn.title}</h5>
+                      {addOn.isPopular && (
+                        <span className={styles.popularBadge}>Popular</span>
+                      )}
+                    </div>
+                    <div className={styles.addOnPrice}>{addOn.price}</div>
                   </div>
-                  <div className={styles.addOnPrice}>{addOn.price}</div>
+                  <p className={styles.addOnDescription}>{addOn.description}</p>
                 </div>
-                <p className={styles.addOnDescription}>{addOn.description}</p>
+                <div className={styles.addOnControls}>
+                  {isGroupPricing && isSelected ? (
+                    <Counter
+                      className={styles.addOnCounter}
+                      value={quantity}
+                      setValue={(newValue) => onAddOnQuantityChange(addOn.id, newValue)}
+                      iconMinus="minus"
+                      iconPlus="plus"
+                      min={1}
+                    />
+                  ) : (
+                    <div className={styles.addOnSwitch}>
+                      <Switch
+                        value={isSelected}
+                        onChange={() => onToggleAddOn(addOn.id, addOn.pricingType)}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={styles.addOnSwitch}>
-                <Switch
-                  value={selectedAddOns.includes(addOn.id)}
-                  onChange={() => onToggleAddOn(addOn.id)}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <div className={styles.info}>{whatsIncludedSetting?.setting?.title || "What's Included"}</div>

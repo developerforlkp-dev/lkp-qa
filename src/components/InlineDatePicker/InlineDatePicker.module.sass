@@ -1,0 +1,151 @@
+@import ../../styles/helpers
+
+.picker
+    position: absolute
+    top: calc(100% + 8px)
+    left: 0
+    right: 0
+    padding: 16px
+    border-radius: 16px
+    background: $n8
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12)
+    z-index: 100
+    min-width: 320px
+    +dark
+        background: $n1
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3)
+
+.calendarHeader
+    display: flex
+    align-items: center
+    justify-content: space-between
+    margin-bottom: 12px
+
+.monthNav
+    background: none
+    border: none
+    cursor: pointer
+    font-size: 20px
+    color: $n3
+    padding: 4px 8px
+    display: flex
+    align-items: center
+    justify-content: center
+    transition: color .2s ease
+    border-radius: 8px
+    +dark
+        color: $n5
+    &:hover
+        background: $n7
+        color: $n1
+        +dark
+            background: $n2
+            color: $n8
+
+.monthLabel
+    +body-bold-2
+    font-size: 14px
+
+.calendarGrid
+    display: grid
+    grid-template-columns: repeat(7, 1fr)
+    gap: 4px
+    width: 100%
+
+.dayHeader
+    display: flex
+    align-items: center
+    justify-content: center
+    padding: 6px 2px
+    +caption-2
+    color: $n4
+    font-weight: 500
+    font-size: 12px
+    +dark
+        color: $n5
+
+.calendarDay
+    aspect-ratio: 1
+    display: flex
+    align-items: center
+    justify-content: center
+    border: none
+    background: transparent
+    cursor: pointer
+    padding: 0
+    margin: 0
+    +body-2
+    color: $n1
+    transition: all .15s ease
+    position: relative
+    font-size: 13px
+    border-radius: 0
+    +dark
+        color: $n8
+    &:hover:not(.past):not(.disabled):not(.selected):not(.start):not(.end):not(.middle)
+        background: $n7
+        border-radius: 50%
+        +dark
+            background: $n2
+    &.past
+        color: $n4
+        cursor: not-allowed
+        opacity: 0.4
+        +dark
+            color: $n5
+    &.disabled
+        color: $n4
+        cursor: not-allowed
+        opacity: 0.3
+        +dark
+            color: $n5
+    &.start
+        background: $p1
+        color: $n8
+        border-radius: 50% 0 0 50%
+        font-weight: 600
+        +dark
+            background: $p1
+            color: $n8
+    &.end
+        background: $p1
+        color: $n8
+        border-radius: 0 50% 50% 0
+        font-weight: 600
+        +dark
+            background: $p1
+            color: $n8
+    &.middle
+        background: rgba($p1, 0.15)
+        border-radius: 0
+        +dark
+            background: rgba($p1, 0.2)
+    &.start.end
+        border-radius: 50%
+    &.hovered
+        background: rgba($p1, 0.1)
+        +dark
+            background: rgba($p1, 0.15)
+    &.selected
+        background: $p1
+        color: $n8
+        border-radius: 50%
+        font-weight: 600
+        +dark
+            background: $p1
+            color: $n8
+    &.available
+        background: rgba($p1, 0.08)
+        border: 1px solid rgba($p1, 0.2)
+        border-radius: 50%
+        font-weight: 500
+        +dark
+            background: rgba($p1, 0.12)
+            border-color: rgba($p1, 0.3)
+        &:hover
+            background: rgba($p1, 0.15)
+            border-color: rgba($p1, 0.3)
+            +dark
+                background: rgba($p1, 0.2)
+                border-color: rgba($p1, 0.4)
+

@@ -102,7 +102,7 @@ const Catalog = () => {
       />
       <div className={styles.body}>
         <div className={cn("container", styles.container)}>
-          <h4 className={cn("h4", styles.title)}>Over 300 stays</h4>
+          <h4 className={cn("h4", styles.title)}>Experience</h4>
           <div className={styles.list}>
             {loading ? (
               <Loader className={styles.loader} />

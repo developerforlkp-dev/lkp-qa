@@ -125,11 +125,11 @@ useEffect(() => {
       }
 
       // ✅ Final fallback if no images
-      setGalleryItems(galleryImages.length ? galleryImages : gallery);
+setGalleryItems(galleryImages.length ? galleryImages : []);
     } catch (e) {
       console.error("Failed to load listing", e);
       setListing(null);
-      setGalleryItems(gallery);
+      setGalleryItems([]);
     } finally {
       if (mounted) setLoading(false);
     } 
@@ -144,13 +144,14 @@ useEffect(() => {
 
   return (
     <>
-      <Product
-        classSection="section-mb64"
-        title={listing?.title || "Spectacular views of Queenstown"}
-        options={options}
-        gallery={galleryItems}
-        type="stays"
-      />
+<Product
+  classSection="section-mb64"
+  title={listing?.title || "Spectacular views of Queenstown"}
+  options={options}
+  gallery={galleryItems && galleryItems.length > 0 ? galleryItems : []}
+  type="stays"
+/>
+
       <Description classSection="section" listing={listing} />
       <Itinerary classSection="section" listing={listing} />
       <TabSection classSection="section" listing={listing} />

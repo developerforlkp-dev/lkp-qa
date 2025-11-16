@@ -4,28 +4,55 @@
     flex-shrink: 0
     display: flex
     align-items: center
-    width: 104px
+    gap: 8px
+    width: auto
 
 .button
-    position: relative
-    top: -1px
     flex-shrink: 0
-    width: 24px
-    svg
-        fill: $n5
-        transition: fill .2s
-    &:hover
-        svg
-            fill: $p1
+    width: 32px
+    height: 32px
+    border-radius: 50%
+    border: 1px solid $n6
+    background: $n8
+    display: flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    transition: all .2s ease
+    padding: 0
+    +dark
+        background: $n1
+        border-color: $n3
+    &:hover:not(.disabled)
+        border-color: $n1
+        background: $n7
+        +dark
+            border-color: $n8
+            background: $n2
     &.disabled
-        pointer-events: none
+        cursor: not-allowed
+        opacity: 0.4
+        border-color: $n6
+        background: $n7
+        +dark
+            border-color: $n3
+            background: $n2
         svg
-            fill: $n6
+            fill: $n4
             +dark
-                fill: $n3
+                fill: $n5
+    svg
+        fill: $n1
+        transition: fill .2s ease
+        +dark
+            fill: $n8
 
 .number
-    flex-grow: 1
-    padding: 0 12px
+    min-width: 24px
+    padding: 0 8px
     text-align: center
-    +body-bold-2 
+    +body-bold-2
+    font-size: 16px
+    color: $n1
+    +dark
+        color: $n8 

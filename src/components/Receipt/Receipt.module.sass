@@ -1,20 +1,28 @@
 @import ../../styles/helpers
 
 .receipt
-    width: 448px
+    width: 480px
+    min-width: 480px
     padding: 32px
     border: 1px solid $n6
     background: $n8
     box-shadow: 0px 64px 64px -48px rgba(15, 15, 15, 0.08)
     border-radius: 24px
+    overflow: visible
+    box-sizing: border-box
     +d
-        width: 400px
+        width: 460px
+        min-width: 460px
     +t
-        width: auto
+        width: 100%
+        min-width: 100%
+        max-width: 100%
     +m
         padding: 20px 16px
         border-radius: 16px
         box-shadow: 0px 32px 32px -24px rgba(15, 15, 15, 0.08)
+        width: 100%
+        min-width: 100%
     +dark
         border: 1px solid $n3
         background: $n2
@@ -102,6 +110,12 @@
     padding: 8px
     border-radius: 20px
     background: $n7
+    display: flex
+    flex-direction: column
+    gap: 0
+    overflow: visible
+    width: 100%
+    box-sizing: border-box
     +m
         padding: 0
     +dark
@@ -124,6 +138,28 @@
                     +dark
                         background: $n4
 
+.itemsRow
+    display: flex
+    width: 100%
+    overflow: visible
+    box-sizing: border-box
+    .item
+        flex: 1
+        min-width: 0
+        overflow: visible
+        &:not(:last-child)
+            position: relative
+            &:after
+                content: ""
+                position: absolute
+                top: 12px
+                right: 0
+                bottom: 12px
+                width: 1px
+                background: $n6
+                +dark
+                    background: $n4
+
 .itemWrapper
     position: relative
 
@@ -132,6 +168,9 @@
     align-items: center
     padding: 12px
     transition: background-color .2s ease
+    min-width: 0
+    overflow: visible
+    box-sizing: border-box
     +m
         padding: 10px
         min-height: 44px
@@ -157,8 +196,14 @@
     width: 32px
     height: 32px
     margin-right: 12px
+    flex-shrink: 0
     svg
         fill: $n5
+    
+.box
+    flex: 1
+    min-width: 0
+    overflow: hidden
     
 .category
     +caption-2
@@ -166,3 +211,7 @@
 
 .subtitle
     +body-bold-2
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+    max-width: 100%
