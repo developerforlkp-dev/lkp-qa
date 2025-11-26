@@ -1,8 +1,24 @@
 import axios from "axios";
 
-// ✅ Create axios instance with relative path (proxy will handle the domain)
+// Get API base URL from environment variable or use default
+// Priority:
+// 1. REACT_APP_API_URL environment variable (for production with custom domain)
+// 2. Relative path "/api" (works with proxy in dev and vercel.json rewrites in production)
+const getApiBaseURL = () => {
+  // Check if environment variable is set
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Use relative path - works with:
+  // - Development: proxy in package.json
+  // - Production: vercel.json rewrites
+  return "/api";
+};
+
+// ✅ Create axios instance with base URL
 export const ListingsAPI = axios.create({
-  baseURL: "/api", // proxy will forward to http://69.62.77.33/api
+  baseURL: getApiBaseURL(),
   headers: { "Content-Type": "application/json" },
 });
 
