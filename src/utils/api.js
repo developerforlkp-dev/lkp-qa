@@ -646,24 +646,6 @@ export const getHomepageSections = async () => {
   }
 };
 
-export const getHomepageHero = async () => {
-  try {
-    const response = await ListingsAPI.get("/homepage/hero");
-    const payload = response.data;
-    console.log("✅ Homepage hero fetched (raw):", payload);
-
-    if (Array.isArray(payload)) return payload;
-    if (payload && typeof payload === "object") {
-      if (Array.isArray(payload.data)) return payload.data;
-      if (Array.isArray(payload.items)) return payload.items;
-      if (Array.isArray(payload.hero)) return payload.hero;
-    }
-    return [];
-  } catch (error) {
-    console.error("❌ Error fetching homepage hero:", error.response?.data || error.message);
-    throw error;
-  }
-};
 
 
 // ✅ Get listings for a specific homepage section
