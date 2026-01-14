@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import moment from "moment";
+import "moment-timezone";
 import cn from "classnames";
 import axios from "axios";
 import styles from "./Description.module.sass";
@@ -926,6 +927,14 @@ const Description = ({ classSection, listing, hostData }) => {
 
     } catch (error) {
       console.error("❌ Error creating order:", error);
+
+      // Handle 401 Unauthorized specifically (invalid/expired token)
+      if (error.response?.status === 401) {
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("userInfo");
+        setShowLoginModal(true);
+        return;
+      }
 
       // Extract detailed error message from API response
       let errorMessage = "Failed to create order. Please try again.";
