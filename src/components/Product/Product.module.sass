@@ -17,13 +17,14 @@
 
 .box
     flex-grow: 1
-    padding-right: 40px
+    min-width: 0
+    padding-right: 20px
     +m
         margin-bottom: 32px
         padding-right: 0
 
 .title
-    max-width: 640px
+    max-width: none
     margin-bottom: 16px
     +m
         font-size: 28px
@@ -76,7 +77,9 @@
 
 .reviews
     margin-left: 8px
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     +m
         margin-left: 6px
         font-size: 13px
@@ -97,13 +100,17 @@
     display: flex
     align-items: center
     margin: 10px 0 0 20px
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     +m
         margin: 0
         font-size: 13px
     svg
         margin-right: 8px
-        fill: $n4
+        fill: $n2
+        +dark
+            fill: $n8
         +m
             width: 16px
             height: 16px

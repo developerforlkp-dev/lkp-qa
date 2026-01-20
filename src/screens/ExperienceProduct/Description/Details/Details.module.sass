@@ -21,7 +21,9 @@
     span
         margin-right: 4px
         white-space: nowrap
-        color: $n4
+        color: $n2
+        +dark
+            color: $n8
 
 .avatar
     flex-shrink: 0
@@ -36,7 +38,7 @@
 
 .name
     +body-bold-2
-    
+
 .parameters
     display: flex
     flex-wrap: wrap
@@ -46,15 +48,21 @@
     display: flex
     align-items: center
     margin: 10px 0 0 16px
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     svg
         margin-right: 8px
-        fill: $n4
-    
+        fill: $n2
+        +dark
+            fill: $n8
+
 .content
     margin-bottom: 48px
     +body-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     +m
         margin-bottom: 32px
         font-size: 15px
@@ -114,7 +122,9 @@
     +m
         margin-right: 10px
     svg
-        fill: $n4
+        fill: $n2
+        +dark
+            fill: $n8
         +m
             width: 18px
             height: 18px
@@ -125,7 +135,9 @@
 
 .factHeading
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .factValue
     +body-bold-2
@@ -224,10 +236,10 @@
     align-items: center
     justify-content: center
     background: $n7
-    color: $n4
+    color: $n2
     +dark
         background: $n3
-        color: $n5
+        color: $n8
     svg
         fill: currentColor
         opacity: 0.5
@@ -334,7 +346,7 @@
 
 .addOnCounter
     flex-shrink: 0
-        
+
 .info
     margin-bottom: 32px
     +body-bold-1
@@ -373,18 +385,22 @@
 .option
     display: flex
     align-items: center
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     +m
         font-size: 14px
     svg
         margin-right: 16px
-        fill: $n4
+        fill: $n2
+        +dark
+            fill: $n8
         flex-shrink: 0
         +m
             width: 20px
             height: 20px
             margin-right: 12px
-        
+
 .button
     +dark
         box-shadow: inset 0 0 0 2px $n3
@@ -446,23 +462,23 @@
     align-items: center
     justify-content: center
     padding: 40px
-    color: $n4
+    color: $n2
     text-align: center
     width: 100%
     height: 100%
     +dark
-        color: $n5
+        color: $n8
     svg
         margin-bottom: 16px
-        fill: $n4
+        fill: $n2
         +dark
-            fill: $n5
+            fill: $n8
     p
         margin: 0
         +body-2
-        color: $n4
+        color: $n2
         +dark
-            color: $n5
+            color: $n8
 
 .addonModalDescription
     flex: 1
@@ -477,11 +493,11 @@
 
 .addonModalDescText
     +body-2
-    color: $n4
+    color: $n2
     line-height: 1.6
     margin: 0
     +dark
-        color: $n5
+        color: $n8
     +m
         font-size: 14px
         line-height: 1.5

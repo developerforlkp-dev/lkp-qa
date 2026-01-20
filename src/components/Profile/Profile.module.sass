@@ -32,7 +32,9 @@
 .parameter
     display: flex
     align-items: center
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     svg
         margin-right: 6px
         fill: $n4
@@ -42,7 +44,9 @@
 .info
     margin-bottom: 32px
     text-align: center
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .site
     display: inline-flex
@@ -107,7 +111,9 @@
     margin-top: 32px
     padding-top: 32px
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     &:before
         content: ""
         position: absolute
@@ -128,7 +134,9 @@
     margin-top: 32px
     +poppins
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     transition: color .2s
     svg
         margin-right: 8px

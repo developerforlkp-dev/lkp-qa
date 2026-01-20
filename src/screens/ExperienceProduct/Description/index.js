@@ -1255,8 +1255,6 @@ const Description = ({ classSection, listing, hostData }) => {
       console.warn("Failed to persist payment payload:", e);
     }
 
-    // Clear pending booking data
-    localStorage.removeItem("pendingBooking");
 
     // Redirect to checkout
     proceedToCheckout();
@@ -1695,7 +1693,7 @@ const Description = ({ classSection, listing, hostData }) => {
                   return (
                     <div ref={guestItemRef} style={{ position: 'relative' }}>
                       <div
-                        className={receiptStyles.item}
+                        className={cn(receiptStyles.item, receiptStyles.guestCentered)}
                         onClick={() => handleOpenDateTime(2)}
                         role="button"
                       >

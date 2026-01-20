@@ -8,9 +8,9 @@
             svg
                 fill: $n2
             +dark
-                color: $n6
+                color: $n8
                 svg
-                    fill: $n6
+                    fill: $n8
         .body
             visibility: visible
             opacity: 1
@@ -20,20 +20,24 @@
     display: flex
     align-items: center
     +button-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     transition: color .2s
     svg
         margin-right: 12px
-        fill: $n4
+        fill: $n2
+        +dark
+            fill: $n8
         transition: all .2s
     &:hover
         color: $n2
         svg
             fill: $n2
         +dark
-            color: $n6
+            color: $n8
             svg
-                fill: $n6
+                fill: $n8
     
 .body
     position: absolute
@@ -72,15 +76,17 @@
         .title
             color: $n2
             +dark
-                color: $n6
+                color: $n8
     
 .title
     +button-2
-    color: $n4
+    color: $n2
     transition: color .2s
     +dark
-        color: $n6
+        color: $n8
 
 .country
     +caption-2
-    color: $n5
+    color: $n2
+    +dark
+        color: $n8

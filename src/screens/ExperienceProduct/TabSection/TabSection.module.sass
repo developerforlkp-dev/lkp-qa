@@ -34,6 +34,7 @@
     background: none
     border-bottom: 2px solid transparent
     +body-bold-1
+    font-size: 18px
     color: $n4
     cursor: pointer
     transition: all .2s
@@ -62,11 +63,22 @@
         flex: 0 0 auto
         min-width: auto
         padding: 10px 16px
-        font-size: 14px
+        font-size: 18px
         white-space: nowrap
+
+.tabCompact
+    padding: 10px 12px
+    font-size: 18px
+    white-space: nowrap
+    flex: 0 0 auto
+    +m
+        padding: 10px 12px
 
 .content
     padding: 32px 0
+    color: $n2
+    +dark
+        color: $n8
     +m
         padding: 20px 0
 
@@ -94,7 +106,7 @@
 
 .text
     +body-2
-    color: $n4
+    color: inherit
     line-height: 1.6
     margin: 0
     +m
@@ -130,13 +142,11 @@
 
 .address
     +body-bold-2
-    color: $n2
-    +dark
-        color: $n8
+    color: inherit
 
 .instructions
     +body-2
-    color: $n4
+    color: inherit
     line-height: 1.6
     margin: 0
     +m
@@ -155,10 +165,8 @@
 
 .pickupHeading
     +body-bold-2
-    color: $n2
+    color: inherit
     margin-bottom: 16px
-    +dark
-        color: $n8
 
 .pickupTags
     display: flex
@@ -172,11 +180,10 @@
     border: 1px solid $n6
     border-radius: 20px
     +body-2
-    color: $n4
+    color: inherit
     +dark
         background: $n3
         border-color: $n4
-        color: $n6
 
 .mapContainer
     width: 100%

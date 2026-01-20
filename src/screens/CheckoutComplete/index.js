@@ -73,7 +73,7 @@ const items = [
   },
   {
     title: "Guests",
-    content: "2 guest",
+    content: "6 guest",
     icon: "user",
     color: "#0097B2",
   },

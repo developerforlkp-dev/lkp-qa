@@ -4,9 +4,9 @@ import styles from "./ConfirmAndPay.module.sass";
 import CreditCard from "./CreditCard";
 import Icon from "../Icon";
 
-const ConfirmAndPay = ({ className, guests, title, buttonUrl, amountToPay, currency = "INR" }) => {
+const ConfirmAndPay = ({ className, guests, title, buttonUrl, amountToPay, currency = "INR", dateValue, guestValue, onEditDate, onEditGuests, datePicker, guestPicker }) => {
   // keep minimal local state if needed later
-  
+
   // Format amount - Razorpay amounts are in paise (smallest currency unit), so divide by 100 for INR
   const formatAmount = (amount) => {
     if (!amount) return null;
@@ -32,19 +32,21 @@ const ConfirmAndPay = ({ className, guests, title, buttonUrl, amountToPay, curre
               <div className={styles.option}>
                 <div className={styles.info}>Dates</div>
                 <input className={styles.input} type="text" />
-                <div className={styles.value}>May 15 - 22, 2021</div>
-                <button className={styles.edit}>
+                <div className={styles.value}>{dateValue || "Select date"}</div>
+                <button className={styles.edit} onClick={onEditDate}>
                   <Icon name="edit" size="24" />
                 </button>
+                {datePicker}
               </div>
               {guests && (
                 <div className={styles.option}>
                   <div className={styles.info}>Guests</div>
                   <input className={styles.input} type="text" />
-                  <div className={styles.value}>2 guest</div>
-                  <button className={styles.edit}>
+                  <div className={styles.value}>{guestValue || "Add guests"}</div>
+                  <button className={styles.edit} onClick={onEditGuests}>
                     <Icon name="edit" size="24" />
                   </button>
+                  {guestPicker}
                 </div>
               )}
             </div>

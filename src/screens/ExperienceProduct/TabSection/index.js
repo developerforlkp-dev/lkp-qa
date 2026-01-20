@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import cn from "classnames";
 import styles from "./TabSection.module.sass";
 import Icon from "../../../components/Icon";
+ 
 
 const tabs = [
   {
@@ -18,6 +19,11 @@ const tabs = [
     id: "rules-policies",
     label: "Rules & Policies",
     icon: "lock",
+  },
+  {
+    id: "cancellation-policy",
+    label: "Cancellation Policy",
+    icon: "close",
   },
 ];
 
@@ -50,6 +56,10 @@ const tabContent = {
       "Safety first: All participants must follow the guide's instructions at all times.",
       "No smoking or alcohol consumption during the activity.",
     ],
+  },
+  "cancellation-policy": {
+    title: "Cancellation Policy",
+    content: [],
   },
 };
 
@@ -114,10 +124,29 @@ const TabSection = ({ classSection, listing }) => {
     };
   }, [listing]);
 
+  const dynamicCancellationPolicy = useMemo(() => {
+    const base = tabContent["cancellation-policy"];
+
+    // Use listing payload (fetched via GET /public/listings/{id}) as the backend source.
+    // ViewDetails already expects listingData.cancellationPolicyText.
+    const textFromListing =
+      typeof listing?.cancellationPolicyText === "string"
+        ? listing.cancellationPolicyText.trim()
+        : "";
+
+    const text = textFromListing || (listing ? "N/A" : "Loading...");
+
+    return {
+      title: base.title,
+      content: [text],
+    };
+  }, [listing]);
+
   const contentMap = {
     "meeting-point": dynamicMeetingPoint,
     "what-to-bring": dynamicWhatToBring,
     "rules-policies": dynamicRulesPolicies,
+    "cancellation-policy": dynamicCancellationPolicy,
   };
 
   const currentContent = contentMap[activeTab];
@@ -131,6 +160,7 @@ const TabSection = ({ classSection, listing }) => {
               key={tab.id}
               className={cn(styles.tab, {
                 [styles.active]: activeTab === tab.id,
+                [styles.tabCompact]: tab.id === "cancellation-policy",
               })}
               onClick={() => setActiveTab(tab.id)}
             >

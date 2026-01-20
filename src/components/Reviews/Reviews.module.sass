@@ -22,18 +22,22 @@
     border-radius: 14px
     background: none
     +button-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     transition: all .2s
     svg
         margin-right: 8px
-        fill: $n4
+        fill: $n2
+        +dark
+            fill: $n8
         transition: fill .2s
     &:hover
-        color: $n3
+        color: $n2
         svg
-            fill: $n3
+            fill: $n2
         +dark
-            color: $n6
+            color: $n8
     &.active
         background: $n3
         color: $n8
@@ -87,7 +91,9 @@
 
 .time
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .actions
     display: flex

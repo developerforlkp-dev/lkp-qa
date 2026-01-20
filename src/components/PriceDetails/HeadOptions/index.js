@@ -3,7 +3,7 @@ import cn from "classnames";
 import styles from "./HeadOptions.module.sass";
 import Icon from "../../Icon";
 
-const HeadOptions = ({ className, image, title }) => {
+const HeadOptions = ({ className, image, title, hostName, hostAvatar }) => {
   return (
     <div className={cn(className, styles.head)}>
       <div className={styles.preview}>
@@ -13,9 +13,9 @@ const HeadOptions = ({ className, image, title }) => {
       <div className={styles.author}>
         <div className={styles.text}>Hosted by</div>
         <div className={styles.avatar}>
-          <img src="/images/content/avatar.jpg" alt="Avatar" />
+          <img src={hostAvatar || "/images/content/avatar.jpg"} alt="Avatar" />
         </div>
-        <div className={styles.man}>Zoe Towne</div>
+        <div className={styles.man}>{hostName || "Host"}</div>
       </div>
     </div>
   );

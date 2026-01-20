@@ -9,6 +9,7 @@ import User from "./User";
 import Icon from "../Icon";
 import Modal from "../Modal";
 import Login from "../Login";
+import useDarkMode from "use-dark-mode";
 
 const languages = [
   {
@@ -72,6 +73,7 @@ const items = [
 const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
+  const darkMode = useDarkMode(false);
   
   // Check if user is authenticated (has JWT token)
   const isAuthenticated = () => {
@@ -119,6 +121,15 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
               List your property
             </NavLink>
           </div>
+          <button
+            type="button"
+            className={styles.themeToggle}
+            onClick={darkMode.toggle}
+            aria-label={darkMode.value ? "Switch to light mode" : "Switch to dark mode"}
+            title={darkMode.value ? "Light mode" : "Dark mode"}
+          >
+            <Icon name={darkMode.value ? "sun" : "moon"} size="24" />
+          </button>
           <Notification className={styles.notification} />
           {shouldShowLogin ? (
             <button className={styles.login} onClick={() => setVisible(true)}>

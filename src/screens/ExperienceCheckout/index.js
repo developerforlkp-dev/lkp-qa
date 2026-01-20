@@ -5,6 +5,9 @@ import styles from "./ExperienceCheckout.module.sass";
 import Control from "../../components/Control";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
+import InlineDatePicker from "../../components/InlineDatePicker";
+import GuestPicker from "../../components/GuestPicker";
+import moment from "moment";
 import { getOrderDetails } from "../../utils/api";
 
 const breadcrumbs = [
@@ -24,6 +27,120 @@ const Checkout = () => {
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(true);
+
+  // Edit functionality state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showGuestPicker, setShowGuestPicker] = useState(false);
+
+  // Date selection handler
+  const handleDateSelect = (startDateText, endDateText) => {
+    if (!bookingData) return;
+
+    // Update booking data with new date
+    const newBookingData = { ...bookingData };
+
+    // Update date summary
+    if (newBookingData.bookingSummary) {
+      newBookingData.bookingSummary.date = startDateText;
+      if (endDateText && endDateText !== startDateText) {
+        // handle range if needed
+      }
+    }
+    newBookingData.selectedDate = startDateText;
+
+    // Validate time slot for new date (reset if invalid? or keep if valid?)
+
+    setBookingData(newBookingData);
+    setShowDatePicker(false);
+  };
+
+  // Guest selection handler
+  const handleGuestChange = (newGuests) => {
+    if (!bookingData) return;
+
+    const newBookingData = { ...bookingData };
+
+    // Update guests object
+    newBookingData.guests = newGuests;
+
+    // Update summary text
+    const totalGuests = (newGuests.adults || 0) + (newGuests.children || 0);
+    if (newBookingData.bookingSummary) {
+      newBookingData.bookingSummary.guestCount = totalGuests;
+    }
+
+    // Recalculate prices
+    // Try to find price per person from priceDetails or extract from receipt
+    let pricePerPerson = newBookingData.priceDetails?.pricePerPerson || 0;
+
+    // Fallback: extract from receipt if not found
+    if (!pricePerPerson && newBookingData.receipt) {
+      const baseRow = newBookingData.receipt.find(r => r.title.toLowerCase().includes('guest') || r.title.toLowerCase().includes('adult') || r.title.toLowerCase().includes('night'));
+      if (baseRow) {
+        // Extract price from string like "INR 800.00 x 1 guest" or "800 x 1"
+        // We look for the first number (allowing decimals)
+        const matches = baseRow.title.match(/(\d+(\.\d+)?)/);
+        if (matches && matches[0]) {
+          pricePerPerson = parseFloat(matches[0]);
+        }
+      }
+    }
+
+    // Try to update total price if we have enough info
+    if (pricePerPerson > 0) {
+      // Calculate new base total
+      const newBaseTotal = pricePerPerson * totalGuests;
+
+      // Add add-ons
+      const addOnsTotal = selectedAddOns.reduce(
+        (sum, addOn) => sum + (addOn?.priceValue || addOn?.price || 0),
+        0
+      );
+
+      const newFinalTotal = newBaseTotal + addOnsTotal;
+
+      if (newBookingData.priceDetails) {
+        newBookingData.priceDetails.totalPrice = newFinalTotal;
+      }
+      newBookingData.finalTotal = newFinalTotal;
+
+      // Update payment data (amount to pay)
+      // Store in paise (x100) because components expect Razorpay format and divide by 100 if > 1000
+      setPaymentData(prev => ({
+        ...prev,
+        amount: newFinalTotal * 100
+      }));
+
+      // Update receipt table
+      if (newBookingData.receipt) {
+        const newReceipt = [...newBookingData.receipt];
+        // Ideally identify row by title
+        const baseRowIndex = newReceipt.findIndex(r => r.title.toLowerCase().includes('adult') || r.title.toLowerCase().includes('guest') || r.title.toLowerCase().includes('night'));
+
+        if (baseRowIndex >= 0) {
+          const currency = newBookingData.currency || "INR";
+          newReceipt[baseRowIndex] = {
+            ...newReceipt[baseRowIndex],
+            title: `${currency} ${pricePerPerson.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? 'guest' : 'guests'}`,
+            content: `${currency} ${newBaseTotal.toFixed(2)}`
+          };
+        }
+
+        // Update total row
+        const totalRowIndex = newReceipt.findIndex(r => r.title.includes('Total') || r.title === 'Total');
+        if (totalRowIndex >= 0) {
+          const currency = newBookingData.currency || "INR";
+          newReceipt[totalRowIndex] = {
+            ...newReceipt[totalRowIndex],
+            content: `${currency} ${newFinalTotal.toFixed(2)}`
+          };
+        }
+        newBookingData.receipt = newReceipt;
+      }
+    }
+
+    setBookingData(newBookingData);
+  };
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -57,11 +174,11 @@ const Checkout = () => {
       if (pendingPayment) {
         const payment = JSON.parse(pendingPayment);
         setPaymentData(payment);
-        
+
         // Calculate and save the actual paid amount (after discount)
         // This will be used in the checkout complete page
         let actualPaidAmount = payment.amount; // Default to amount
-        
+
         // If there's a discount, calculate paid amount = amount - discount
         if (payment.discount !== undefined && payment.discount > 0) {
           actualPaidAmount = payment.amount - payment.discount;
@@ -70,7 +187,7 @@ const Checkout = () => {
         } else if (payment.finalAmount !== undefined && payment.finalAmount > 0) {
           actualPaidAmount = payment.finalAmount;
         }
-        
+
         // Save the actual paid amount to localStorage for checkout complete page
         try {
           localStorage.setItem("actualPaidAmount", JSON.stringify({
@@ -91,7 +208,7 @@ const Checkout = () => {
     if (bookingData) {
       try {
         localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
-      } catch {}
+      } catch { }
     }
   }, [bookingData]);
 
@@ -99,7 +216,7 @@ const Checkout = () => {
   useEffect(() => {
     const checkPaymentStatus = async () => {
       setCheckingPayment(true);
-      
+
       try {
         // Check if payment was already successful
         const paymentSuccess = localStorage.getItem("razorpayPaymentSuccess");
@@ -120,11 +237,11 @@ const Checkout = () => {
         // Fetch order details to check payment status
         const orderDetails = await getOrderDetails(pendingOrderId);
         const order = orderDetails?.order || orderDetails;
-        
+
         if (order) {
           const paymentStatus = order.paymentStatus || "PENDING";
           const normalizedStatus = String(paymentStatus).toUpperCase().trim();
-          
+
           // If payment failed, redirect to complete page with failure status
           if (normalizedStatus === "FAILED" || normalizedStatus === "FAILURE") {
             localStorage.setItem("paymentFailed", "true");
@@ -133,7 +250,7 @@ const Checkout = () => {
             return;
           }
         }
-        
+
         setCheckingPayment(false);
       } catch (error) {
         console.error("Error checking payment status:", error);
@@ -166,13 +283,13 @@ const Checkout = () => {
       bookingData?.bookingSummary?.date ||
       bookingData?.selectedDate ||
       "Select date";
-    
+
     // Format time slot with start and end time if available
     let timeTitle = "Select time";
     if (bookingData?.bookingSummary?.time) {
       const startTime = bookingData.bookingSummary.time;
       const endTime = bookingData?.bookingSummary?.endTime;
-      
+
       // If we have both start and end time, format as range
       if (startTime && endTime) {
         timeTitle = `${formatTime(startTime)} – ${formatTime(endTime)}`;
@@ -185,14 +302,14 @@ const Checkout = () => {
         }
       }
     }
-    
+
     // Get guest count - check multiple possible formats
-    const guestsCount = 
+    const guestsCount =
       bookingData?.bookingSummary?.guestCount ||
       bookingData?.guests?.guests ||
       (bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0);
-    const guestsTitle = guestsCount > 0 
-      ? `${guestsCount} ${guestsCount === 1 ? 'guest' : 'guests'}` 
+    const guestsTitle = guestsCount > 0
+      ? `${guestsCount} ${guestsCount === 1 ? 'guest' : 'guests'}`
       : "Add guests";
 
     return [
@@ -274,13 +391,17 @@ const Checkout = () => {
     return "/images/content/photo-1.1.jpg";
   };
   const listingImage = getListingImage();
+  const hostName = bookingData?.listing?.host?.firstName
+    ? `${bookingData.listing.host.firstName} ${bookingData.listing.host.lastName || ''}`.trim()
+    : (bookingData?.listing?.host?.name || "Host");
+  const hostAvatar = bookingData?.listing?.host?.picture || bookingData?.listing?.host?.avatar;
 
   return (
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
         <Control
           className={styles.control}
-          urlHome="/experience-product"
+          urlHome="/"
           breadcrumbs={breadcrumbs}
         />
         <div className={styles.wrapper}>
@@ -291,6 +412,27 @@ const Checkout = () => {
             guests
             amountToPay={paymentData?.amount}
             currency={paymentData?.currency || "INR"}
+            dateValue={items[0]?.title}
+            guestValue={items[2]?.title}
+            onEditDate={() => setShowDatePicker(true)}
+            onEditGuests={() => setShowGuestPicker(true)}
+            datePicker={(
+              <InlineDatePicker
+                visible={showDatePicker}
+                onClose={() => setShowDatePicker(false)}
+                onDateSelect={handleDateSelect}
+                selectedDate={bookingData?.selectedDate ? new Date(bookingData.selectedDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
+              />
+            )}
+            guestPicker={(
+              <GuestPicker
+                visible={showGuestPicker}
+                onClose={() => setShowGuestPicker(false)}
+                onGuestChange={handleGuestChange}
+                initialGuests={bookingData?.guests || { adults: 1, children: 0, infants: 0 }}
+                maxGuests={bookingData?.listing?.maxGuests || 10}
+              />
+            )}
           />
           <PriceDetails
             className={styles.price}
@@ -301,6 +443,8 @@ const Checkout = () => {
             table={table}
             amountToPay={paymentData?.amount}
             currency={paymentData?.currency || "INR"}
+            hostName={hostName}
+            hostAvatar={hostAvatar}
           />
         </div>
       </div>

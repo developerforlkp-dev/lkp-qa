@@ -71,7 +71,9 @@
     width: calc(33.333% - 32px)
     margin: 32px 16px 0
     +button-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     transition: color .2s
     +t
         flex: 0 0 calc(50% - 32px)
@@ -79,7 +81,7 @@
     &:hover
         color: $n2
         +dark
-            color: $n6
+            color: $n8
     &:nth-child(3)
         +t
             order: 5
@@ -96,5 +98,6 @@
 
 .copyright
     +caption-2
+    color: $n2
     +dark
-        color: $n4
+        color: $n8

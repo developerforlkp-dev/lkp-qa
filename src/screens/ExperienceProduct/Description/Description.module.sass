@@ -93,7 +93,9 @@
     overflow: hidden
     &:first-child
         margin-right: auto
-        color: $n4
+        color: $n2
+        +dark
+            color: $n8
         min-width: 0
         flex: 1
         overflow: hidden
@@ -117,11 +119,15 @@
     align-items: center
     +poppins
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
     transition: color .2s
     svg
         margin-right: 8px
-        fill: $n4
+        fill: $n2
+        +dark
+            fill: $n8
         transition: fill .2s
     &:hover
         color: $p1
@@ -150,7 +156,9 @@
     margin-right: 12px
     flex-shrink: 0
     svg
-        fill: $n5
+        fill: $n2
+        +dark
+            fill: $n8
 
 .box
     flex: 1
@@ -158,7 +166,9 @@
 
 .category
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .subtitle
     +body-bold-2

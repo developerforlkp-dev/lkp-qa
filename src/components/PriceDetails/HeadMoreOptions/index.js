@@ -5,7 +5,7 @@ import Icon from "../../Icon";
 
 const parameters = ["1 bedroom", "1 private bath"];
 
-const HeadMoreOptions = ({ className, image, title }) => {
+const HeadMoreOptions = ({ className, image, title, hostName, hostAvatar }) => {
   return (
     <div className={cn(className, styles.head)}>
       <div className={styles.preview}>
@@ -16,9 +16,9 @@ const HeadMoreOptions = ({ className, image, title }) => {
         <div className={styles.author}>
           <div className={styles.text}>Hosted by</div>
           <div className={styles.avatar}>
-            <img src="/images/content/avatar.jpg" alt="Avatar" />
+            <img src={hostAvatar || "/images/content/avatar.jpg"} alt="Avatar" />
           </div>
-          <div className={styles.man}>Zoe Towne</div>
+          <div className={styles.man}>{hostName || "Host"}</div>
         </div>
         <div className={styles.parameters}>
           {parameters.map((x, index) => (

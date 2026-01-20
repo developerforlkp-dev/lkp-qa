@@ -18,6 +18,8 @@ const PriceDetails = ({
   onRemoveAddOn,
   amountToPay,
   currency = "INR",
+  hostName,
+  hostAvatar,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -36,9 +38,9 @@ const PriceDetails = ({
   return (
     <div className={cn(className, styles.price)}>
       {more ? (
-        <HeadMoreOptions className={styles.head} image={image} title={title} />
+        <HeadMoreOptions className={styles.head} image={image} title={title} hostName={hostName} hostAvatar={hostAvatar} />
       ) : (
-        <HeadOptions className={styles.head} image={image} title={title} />
+        <HeadOptions className={styles.head} image={image} title={title} hostName={hostName} hostAvatar={hostAvatar} />
       )}
       <div
         className={cn(styles.description, {

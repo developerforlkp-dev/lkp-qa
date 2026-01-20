@@ -3,8 +3,6 @@ import cn from "classnames";
 import styles from "./Footer.module.sass";
 import { Link } from "react-router-dom";
 import Image from "../Image";
-import Icon from "../Icon";
-import Theme from "../Theme";
 import Form from "../Form";
 
 const items = [
@@ -50,11 +48,6 @@ const Footer = () => {
                 alt="FleetHome"
               />
             </Link>
-            <div className={styles.box}>
-              <Icon name="bulb" size="20" />
-              <span>Dark theme</span>
-              <Theme className={styles.theme} />
-            </div>
           </div>
           <div className={styles.col}>
             <div className={styles.menu}>

@@ -179,7 +179,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
     : [];
   return (
     <div className={cn(className, styles.details)}>
-      <h4 className={cn("h4", styles.title)}>Private room in house</h4>
+      <h4 className={cn("h4", styles.title)}>About The Experience</h4>
       <div className={styles.content}>
         {listing?.description ? (
           <>
@@ -211,11 +211,20 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           (() => {
             if (!listing) return facts;
             const minP = typeof listing.minParticipants === "number" ? listing.minParticipants : undefined;
+            const durationUnitRaw = listing.durationUnit;
+            const durationUnitNormalized =
+              typeof durationUnitRaw === "string" && durationUnitRaw.trim()
+                ? (() => {
+                    const u = durationUnitRaw.trim().toLowerCase();
+                    if (u === "hour" || u === "hours" || u === "hr" || u === "hrs") return "hrs";
+                    return durationUnitRaw;
+                  })()
+                : "hrs";
 
             const computed = [
               {
                 heading: "Duration",
-                value: [listing.duration, listing.durationUnit].filter(Boolean).join(" "),
+                value: listing.duration ? `${listing.duration} ${durationUnitNormalized}` : "",
                 icon: "stopwatch",
               },
               {
@@ -239,7 +248,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
                   typeof listing.privateOptionAvailable === "boolean"
                     ? listing.privateOptionAvailable
                       ? "Available"
-                      : "Not available"
+                      : "N/A"
                     : "",
                 icon: "lock",
               },

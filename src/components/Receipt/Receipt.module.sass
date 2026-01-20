@@ -52,7 +52,9 @@
 .old
     margin-right: 12px
     text-decoration: line-through 
-    color: $n5
+    color: $n2
+    +dark
+        color: $n8
 
 .note
     position: relative
@@ -60,7 +62,9 @@
     align-self: flex-end
     margin-left: 9px
     +body-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .avatar
     position: relative
@@ -88,14 +92,14 @@
     +dark
         background: $n4
     svg
-        fill: $n4
+        fill: $n2
         width: 32px
         height: 32px
         +m
             width: 24px
             height: 24px
         +dark
-            fill: $n5
+            fill: $n8
 
 .check
     position: absolute
@@ -123,7 +127,9 @@
 
 .reviews
     margin-left: 8px
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .description
     margin-bottom: 32px
@@ -179,6 +185,33 @@
                 background: $n6
                 +dark
                     background: $n4
+    .itemWrapper
+        flex: 1
+        min-width: 0
+        overflow: visible
+        &:not(:last-child)
+            position: relative
+            &:after
+                content: ""
+                position: absolute
+                top: 12px
+                right: 0
+                bottom: 12px
+                width: 1px
+                background: $n6
+                +dark
+                    background: $n4
+
+.itemsRowFull
+    @extend .itemsRow
+    flex-wrap: wrap
+    .item,
+    .itemWrapper
+        flex: 0 0 100%
+        width: 100%
+    .itemWrapper
+        &:after
+            display: none
 
 .itemWrapper
     position: relative
@@ -209,6 +242,12 @@
                 +dark
                     background: $n4
 
+.guestCentered
+    justify-content: center
+    .box
+        flex: 0 1 auto
+        text-align: center
+
 .icon
     display: flex
     justify-content: center
@@ -218,7 +257,9 @@
     margin-right: 12px
     flex-shrink: 0
     svg
-        fill: $n5
+        fill: $n2
+        +dark
+            fill: $n8
     
 .box
     flex: 1
@@ -227,7 +268,9 @@
     
 .category
     +caption-2
-    color: $n4
+    color: $n2
+    +dark
+        color: $n8
 
 .subtitle
     +body-bold-2

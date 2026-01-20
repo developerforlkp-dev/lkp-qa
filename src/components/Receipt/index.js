@@ -137,7 +137,7 @@ const Receipt = ({
         
         {/* Second row: Guest (and any remaining items) */}
         {items.length >= 3 && (
-          <div className={styles.itemsRow}>
+          <div className={styles.itemsRowFull}>
             {items.slice(2).map((x, index) => {
               const actualIndex = index + 2;
               // Use custom render function if provided

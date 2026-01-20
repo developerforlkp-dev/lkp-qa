@@ -713,6 +713,40 @@ export const getHomepageSectionListings = async (sectionId, limit = 12, offset =
   }
 };
 
+export const getRegeneratedPolicyText = async (listingId) => {
+  try {
+    if (!listingId) {
+      throw new Error("listingId is required");
+    }
+
+    const response = await ListingsAPI.get(`/listings/${listingId}/regenerate-policy-text`);
+    const payload = response.data;
+
+    if (typeof payload === "string") return payload;
+
+    if (payload && typeof payload === "object") {
+      if (typeof payload.text === "string") return payload.text;
+      if (typeof payload.policyText === "string") return payload.policyText;
+      if (typeof payload.cancellationPolicyText === "string") return payload.cancellationPolicyText;
+      if (typeof payload.data === "string") return payload.data;
+      if (payload.data && typeof payload.data === "object") {
+        if (typeof payload.data.text === "string") return payload.data.text;
+        if (typeof payload.data.policyText === "string") return payload.data.policyText;
+        if (typeof payload.data.cancellationPolicyText === "string") return payload.data.cancellationPolicyText;
+      }
+    }
+
+    return "";
+  } catch (error) {
+    console.warn("⚠️ Error fetching regenerated policy text:", {
+      message: error.message,
+      status: error.response?.status,
+      response: error.response?.data,
+    });
+    return "";
+  }
+};
+
 // ✅ Get host profile data
 export const getHost = async (hostId) => {
   try {
