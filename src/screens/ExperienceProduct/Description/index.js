@@ -3,7 +3,6 @@ import { useHistory } from "react-router-dom";
 import moment from "moment";
 import "moment-timezone";
 import cn from "classnames";
-import axios from "axios";
 import styles from "./Description.module.sass";
 import receiptStyles from "../../../components/Receipt/Receipt.module.sass";
 import Icon from "../../../components/Icon";
@@ -13,33 +12,7 @@ import InlineDatePicker from "../../../components/InlineDatePicker";
 import TimeSlotsPicker from "../../../components/TimeSlotsPicker";
 import GuestPicker from "../../../components/GuestPicker";
 import LoginModal from "../../../components/LoginModal";
-import { getBillingConfiguration, getAvailability, createOrder, getListingSlots, loginWithGoogle } from "../../../utils/api";
-
-const basePrice = 833;
-const discount = 125;
-
-// Helper function to format image URLs (from Azure blob storage or full URLs)
-const formatImageUrl = (url) => {
-  if (!url) return null;
-
-  // Already a full URL
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
-  // Azure blob storage path (e.g., "leads/3/listings/6/cover-photo/image.jpg")
-  if (url.startsWith("leads/")) {
-    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
-  }
-
-  // Relative path - prepend base URL if needed
-  if (url.startsWith("/")) {
-    return url;
-  }
-
-  // Otherwise assume it's a blob storage path
-  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
-};
+import { getBillingConfiguration, createOrder, getListingSlots, loginWithGoogle } from "../../../utils/api";
 
 const Description = ({ classSection, listing, hostData }) => {
   const history = useHistory();
@@ -51,6 +24,7 @@ const Description = ({ classSection, listing, hostData }) => {
   const [transformedTimeSlots, setTransformedTimeSlots] = useState([]); // Transformed timeSlots for components
   const [billingConfig, setBillingConfig] = useState(null);
   const [availabilityData, setAvailabilityData] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [loadingAvailability, setLoadingAvailability] = useState(false);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
@@ -280,6 +254,7 @@ const Description = ({ classSection, listing, hostData }) => {
       return formatTimeRange(startTime, endTime);
     }
     return slotName || selectedTimeSlot || "Select time";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTimeSlotData, selectedTimeSlot, selectedDateAvailability]);
 
   const items = [
@@ -474,6 +449,7 @@ const Description = ({ classSection, listing, hostData }) => {
       finalTotal: addOnsPrice,
       receipt: receiptData,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAddOns, addOnQuantities, guests, listing, billingConfig, selectedDateAvailability]);
 
   // Save booking data to localStorage
@@ -751,13 +727,16 @@ const Description = ({ classSection, listing, hostData }) => {
       const pricingDiscountAmount = 0; // Can be enhanced with discount codes
 
       // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
+      // eslint-disable-next-line no-unused-vars
       const pricingTotal = pricingSubtotal + pricingTaxAmount - pricingDiscountAmount;
 
       // Calculate host earnings (what the host receives: subtotal - platform commission)
       const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
+      // eslint-disable-next-line no-unused-vars
       const hostEarnings = isNaN(calculatedHostEarnings) ? 4950 : calculatedHostEarnings;
 
       // Calculate price per unit (price per person or price per night)
+      // eslint-disable-next-line no-unused-vars
       const pricePerUnit = pricePerPerson || pricePerNight || 0;
 
       // Order ID for new order (0 indicates new order, will be set by backend)
@@ -915,6 +894,12 @@ const Description = ({ classSection, listing, hostData }) => {
 
           console.log("💳 Payment data to save:", paymentWithDiscount);
           localStorage.setItem("pendingPayment", JSON.stringify(paymentWithDiscount));
+          
+          // Cache Razorpay key for use by other booking types (e.g., events)
+          if (paymentWithDiscount.razorpayKeyId) {
+            localStorage.setItem("lastRazorpayKeyId", paymentWithDiscount.razorpayKeyId);
+            console.log("🔑 Cached Razorpay key for future use");
+          }
         } else {
           console.warn("No payment payload found on orderResponse:", orderResponse);
         }
@@ -1198,10 +1183,12 @@ const Description = ({ classSection, listing, hostData }) => {
 
     const pricingDiscountAmount = 0;
     // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
+    // eslint-disable-next-line no-unused-vars
     const pricingTotal = pricingSubtotal + pricingTaxAmount - pricingDiscountAmount;
 
     // Calculate host earnings (what the host receives: subtotal - platform commission)
     const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
+    // eslint-disable-next-line no-unused-vars
     const hostEarnings = isNaN(calculatedHostEarnings) ? 4950 : calculatedHostEarnings;
 
     // Guest answers placeholder (extend when questions UI exists)
@@ -1248,6 +1235,12 @@ const Description = ({ classSection, listing, hostData }) => {
         null;
       if (payment) {
         localStorage.setItem("pendingPayment", JSON.stringify(payment));
+        
+        // Cache Razorpay key for use by other booking types (e.g., events)
+        if (payment.razorpayKeyId) {
+          localStorage.setItem("lastRazorpayKeyId", payment.razorpayKeyId);
+          console.log("🔑 Cached Razorpay key for future use");
+        }
       } else {
         console.warn("No payment payload found on orderResponse:", orderResponse);
       }
@@ -1305,6 +1298,7 @@ const Description = ({ classSection, listing, hostData }) => {
 
     // Update ref for next render
     prevLoginModalRef.current = showLoginModal;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showLoginModal]);
 
   const handleOpenDateTime = (index) => {

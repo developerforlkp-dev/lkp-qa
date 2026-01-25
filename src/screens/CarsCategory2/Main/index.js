@@ -1,6 +1,5 @@
 import React from "react";
 import cn from "classnames";
-import { Link } from "react-router-dom";
 import styles from "./Main.module.sass";
 import Panel from "../../../components/Panel";
 import Location from "../../../components/Location";

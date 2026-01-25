@@ -88,6 +88,7 @@ const InlineDatePicker = ({
     return isDateInRange(date) && !isDateStart(date) && !isDateEnd(date);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const isDateSelected = (date) => {
     return isDateStart(date) || isDateEnd(date);
   };

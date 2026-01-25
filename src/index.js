@@ -17,7 +17,7 @@ if (typeof window !== 'undefined') {
     
     // Check if error is already marked as handled
     if (error?.isHandled) {
-      return; // Already handled, don't log again
+      return; // Already handled, don't log again    
     }
     
     // Handle different error types

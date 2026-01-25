@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import cn from "classnames";
 import styles from "./List.module.sass";
 import Rating from "../../Rating";
 import Dropdown from "../../Dropdown";

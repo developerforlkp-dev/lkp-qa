@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import cn from "classnames";
 import styles from "./TabSection.module.sass";
 import Icon from "../../../components/Icon";
@@ -189,6 +189,7 @@ const TabSection = ({ classSection, listing }) => {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   className={styles.map}
+                  title="Meeting point map"
                 ></iframe>
               </div>
             </div>

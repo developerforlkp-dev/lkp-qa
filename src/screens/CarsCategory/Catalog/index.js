@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./Catalog.module.sass";
 import Sorting from "../../../components/Sorting";
-import Browse from "../../../components/Browse";
 import Card from "../../../components/Card";
 import Loader from "../../../components/Loader";
 

@@ -1,5 +1,4 @@
 import React from "react";
-import cn from "classnames";
 import styles from "./MobileFilterModal.module.sass";
 import Modal from "../../Modal";
 import FilterSidebar from "../FilterSidebar";

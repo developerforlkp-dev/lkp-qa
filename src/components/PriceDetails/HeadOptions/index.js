@@ -1,7 +1,6 @@
 import React from "react";
 import cn from "classnames";
 import styles from "./HeadOptions.module.sass";
-import Icon from "../../Icon";
 
 const HeadOptions = ({ className, image, title, hostName, hostAvatar }) => {
   return (

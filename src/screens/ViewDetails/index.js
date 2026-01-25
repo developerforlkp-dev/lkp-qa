@@ -4,30 +4,37 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getCustomerOrders, getAvailability, getOrderDetails, submitOrderReview } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview } from "../../utils/api";
 import Rating from "../../components/Rating";
 
 // Helper function to format image URLs
 const formatImageUrl = (url) => {
   if (!url) return "/images/content/card-pic-13.jpg";
+  const raw = String(url).trim();
+  if (!raw) return "/images/content/card-pic-13.jpg";
   
   // If already a full URL, return as is
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    return raw;
   }
   
-  // If it's an Azure blob storage path, prepend the base URL
-  if (url.includes("/") && !url.startsWith("/")) {
-    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
+  // Relative path - return as is
+  if (raw.startsWith("/")) {
+    return raw;
   }
-  
-  // If it's a relative path, return as is
-  if (url.startsWith("/")) {
-    return url;
-  }
-  
-  // Default fallback
-  return "/images/content/card-pic-13.jpg";
+
+  // Azure blob storage path (e.g., "leads/Events/10/CoverPhoto/..." or an already-encoded "leads%2FEvents%2F...")
+  // Keep any query string intact and ensure the path is safely encoded.
+  const [pathPart, queryPart] = raw.split("?");
+  const normalizedPath = String(pathPart).replaceAll("%2F", "/");
+  const encodedPath = encodeURI(normalizedPath);
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+};
+
+const asNonEmptyString = (value) => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 };
 
 // Determine payment status mapping - handle case-insensitive matching
@@ -61,7 +68,79 @@ const isPaymentFailed = (paymentStatus) => {
 };
 
 // Transform API booking data to component format
-const transformBookingData = (apiBooking, listingData = null) => {
+// eventData is used for EVENTS orders to get event details (images, title, location, etc.)
+const transformBookingData = (apiBooking, listingData = null, eventData = null) => {
+  // Determine if this is an event order
+  const isEventOrder = apiBooking?.businessInterestCode === "EVENTS" || 
+                       apiBooking?.eventId != null;
+
+  const asText = (value) => {
+    if (value === null || value === undefined) return null;
+    const str = String(value).trim();
+    return str.length > 0 ? str : null;
+  };
+
+  const pickText = (...values) => {
+    for (const v of values) {
+      const t = asText(v);
+      if (t) return t;
+    }
+    return null;
+  };
+
+  const customerObj =
+    (apiBooking && typeof apiBooking === "object" &&
+      (apiBooking.customer ||
+        apiBooking.customerDetails ||
+        apiBooking.guest ||
+        apiBooking.guestDetails ||
+        apiBooking.user ||
+        apiBooking.userDetails ||
+        apiBooking.contact)) ||
+    null;
+
+  const customerName = pickText(
+    apiBooking?.customerName,
+    apiBooking?.customerFullName,
+    apiBooking?.guestName,
+    apiBooking?.userName,
+    apiBooking?.fullName,
+    apiBooking?.name,
+    [apiBooking?.firstName, apiBooking?.lastName].filter(Boolean).join(" "),
+    [apiBooking?.customerFirstName, apiBooking?.customerLastName].filter(Boolean).join(" "),
+    customerObj?.name,
+    customerObj?.fullName,
+    [customerObj?.firstName, customerObj?.lastName].filter(Boolean).join(" "),
+    customerObj?.customerName,
+    customerObj?.guestName
+  );
+
+  const customerPhone = pickText(
+    apiBooking?.customerPhone,
+    apiBooking?.phoneNumber,
+    apiBooking?.phone,
+    apiBooking?.mobile,
+    apiBooking?.mobileNumber,
+    apiBooking?.contactNumber,
+    apiBooking?.customerMobile,
+    customerObj?.phone,
+    customerObj?.phoneNumber,
+    customerObj?.mobile,
+    customerObj?.mobileNumber,
+    customerObj?.contactNumber
+  );
+
+  const customerEmail = pickText(
+    apiBooking?.customerEmail,
+    apiBooking?.email,
+    apiBooking?.emailId,
+    apiBooking?.emailAddress,
+    apiBooking?.mailId,
+    customerObj?.email,
+    customerObj?.emailId,
+    customerObj?.emailAddress,
+    customerObj?.mailId
+  );
   // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -137,11 +216,16 @@ const transformBookingData = (apiBooking, listingData = null) => {
   // Also store the original orderStatus for reference
   const originalOrderStatus = apiBooking.orderStatus;
 
-  // Get listing information
-  const title = listingData?.title || "Booking";
-  const category = listingData?.category || listingData?.categoryName || "Experience";
+  // Get listing/event information - for EVENTS, prefer eventData and eventTitle
+  const title = isEventOrder
+    ? (eventData?.title || 
+       eventData?.eventTitle ||
+       apiBooking?.eventTitle || 
+       apiBooking?.eventDetails?.eventTitle || 
+       "Event Booking")
+    : (listingData?.title || apiBooking?.listingTitle || "Booking");
   
-  // Extract location from listing data
+  // Extract location from listing data or event data
   let location = { 
     address: "TBD", 
     city: "TBD", 
@@ -151,8 +235,56 @@ const transformBookingData = (apiBooking, listingData = null) => {
     longitude: null
   };
   
-  // Try to get location from listing data
-  if (listingData) {
+  // For event orders, try to get location from event data first
+  if (isEventOrder && eventData) {
+    // Check for coordinates first (most accurate)
+    if (eventData.venueLatitude && eventData.venueLongitude) {
+      location.latitude = parseFloat(eventData.venueLatitude);
+      location.longitude = parseFloat(eventData.venueLongitude);
+    } else if (eventData.latitude && eventData.longitude) {
+      location.latitude = parseFloat(eventData.latitude);
+      location.longitude = parseFloat(eventData.longitude);
+    }
+    
+    // Check various possible location fields from event data
+    if (eventData.venueFullAddress) {
+      location.address = eventData.venueFullAddress;
+    } else if (eventData.venueName) {
+      location.address = eventData.venueName;
+    } else if (eventData.address) {
+      location.address = eventData.address;
+    }
+    
+    if (eventData.venueDistrict) {
+      location.city = eventData.venueDistrict;
+    } else if (eventData.city) {
+      location.city = eventData.city;
+    }
+    
+    if (eventData.venueState) {
+      location.country = eventData.venueState;
+    } else if (eventData.state) {
+      location.country = eventData.state;
+    } else if (eventData.country) {
+      location.country = eventData.country;
+    }
+    
+    // Build directions URL - prefer coordinates if available
+    if (location.latitude && location.longitude) {
+      location.directionsUrl = `https://maps.google.com/?q=${location.latitude},${location.longitude}`;
+    } else {
+      const locationQuery = [location.address, location.city, location.country]
+        .filter(part => part && part !== "TBD")
+        .join(", ");
+      
+      if (locationQuery && locationQuery !== "TBD, TBD, TBD") {
+        location.directionsUrl = `https://maps.google.com/?q=${encodeURIComponent(locationQuery)}`;
+      }
+    }
+  }
+  
+  // Try to get location from listing data (for non-event orders or as fallback)
+  if (!isEventOrder && listingData) {
     // Check for coordinates first (most accurate)
     if (listingData.meetingLatitude && listingData.meetingLongitude) {
       location.latitude = parseFloat(listingData.meetingLatitude);
@@ -232,11 +364,35 @@ const transformBookingData = (apiBooking, listingData = null) => {
     }
   }
   
-  // Get cover photo - prefer listing data, then booking data
-  let coverPhotoUrl = listingData?.coverPhotoUrl || 
-                      apiBooking?.listingCoverPhoto ||
-                      apiBooking?.coverPhotoUrl ||
-                      "/images/content/card-pic-13.jpg";
+  // Get cover photo - for EVENTS prefer event data, then listing data, then booking data
+  let coverPhotoUrl;
+  
+  if (isEventOrder && eventData) {
+    // Align with EventProduct: prefer canonical cover fields from /events/{id}
+    // (some embedded event-details payloads contain non-canonical image fields).
+    coverPhotoUrl =
+      asNonEmptyString(eventData?.coverImage) ||
+      asNonEmptyString(eventData?.coverImageUrl) ||
+      asNonEmptyString(eventData?.coverPhotoUrl) ||
+      asNonEmptyString(eventData?.imageUrl) ||
+      asNonEmptyString(eventData?.bannerUrl) ||
+      asNonEmptyString(eventData?.thumbnailUrl) ||
+      // Fallback: other event APIs may use these keys
+      asNonEmptyString(eventData?.eventCoverImageUrl) ||
+      asNonEmptyString(eventData?.eventCoverPhotoUrl) ||
+      asNonEmptyString(eventData?.eventCoverUrl) ||
+      asNonEmptyString(eventData?.bannerImageUrl) ||
+      asNonEmptyString(eventData?.coverPhoto) ||
+      asNonEmptyString(eventData?.coverImage) ||
+      asNonEmptyString(apiBooking?.eventDetails?.eventCoverImageUrl) ||
+      asNonEmptyString(apiBooking?.coverPhotoUrl) ||
+      "/images/content/card-pic-13.jpg";
+  } else {
+    coverPhotoUrl = listingData?.coverPhotoUrl || 
+                    apiBooking?.listingCoverPhoto ||
+                    apiBooking?.coverPhotoUrl ||
+                    "/images/content/card-pic-13.jpg";
+  }
   
   // Format the image URL to ensure it's a valid full URL
   coverPhotoUrl = formatImageUrl(coverPhotoUrl);
@@ -292,9 +448,9 @@ const transformBookingData = (apiBooking, listingData = null) => {
       alt: title,
     },
     guest: {
-      name: apiBooking.customerName || "Guest",
-      phone: apiBooking.customerPhone || "",
-      email: apiBooking.customerEmail || "",
+      name: customerName || "Guest",
+      phone: customerPhone || "",
+      email: customerEmail || "",
     },
     pricing: pricing,
     paymentMethod: apiBooking.paymentMethod || apiBooking.payment_method || null,
@@ -310,6 +466,8 @@ const transformBookingData = (apiBooking, listingData = null) => {
     // Keep original data for reference
     originalData: apiBooking,
     listingData: listingData,
+    eventData: eventData,
+    isEventOrder: isEventOrder,
     // Store original orderStatus for proper status handling
     originalOrderStatus: originalOrderStatus,
     // Store statusTone for consistency with Bookings page
@@ -348,11 +506,11 @@ const ViewDetails = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const bookingId = params.get("id") || "bk-up-001";
+  const bookingType = params.get("type"); // "event" for event orders
 
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [slotData, setSlotData] = useState(null);
   
   // Review form state
   const [reviewRating, setReviewRating] = useState(0);
@@ -360,70 +518,6 @@ const ViewDetails = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [reviewError, setReviewError] = useState(null);
-
-  // Example booking data - in production, this would come from an API
-  const exampleBookingData = {
-    orderId: 11,
-    customerId: 2,
-    listingId: 3,
-    bookingSlotId: 1,
-    bookingDate: "2025-11-19",
-    bookingTime: "05:44:00",
-    numberOfGuests: 5,
-    basePrice: "2500.00",
-    addonsTotal: "3000.00",
-    subtotal: "5500.00",
-    discountAmount: "2750.00",
-    taxAmount: "0.00",
-    platformFee: "0.00",
-    totalPrice: "2750.00",
-    hostEarnings: "5500.00",
-    currency: "INR",
-    razorpayOrderId: "order_RgJSVwEusi8MHT",
-    razorpayPaymentId: null,
-    razorpaySignature: null,
-    paymentStatus: "PENDING",
-    orderStatus: "PENDING",
-    customerName: "Guest User",
-    customerEmail: "guest@example.com",
-    customerPhone: "+919744003284",
-    specialRequests: null,
-    paymentMethod: null,
-    cancellationReason: null,
-    cancelledAt: null,
-    cancelledByCustomer: null,
-    cancelledByEmployee: null,
-    createdAt: "2025-11-16T06:29:11.565Z",
-    updatedAt: "2025-11-16T06:29:11.565Z",
-    confirmedAt: null,
-    completedAt: null,
-    addons: [
-      {
-        addonRecordId: 12,
-        orderId: 11,
-        addonId: 2,
-        addonName: "Safari",
-        addonPrice: 1000,
-        quantity: 3,
-        createdAt: "2025-11-16T06:29:11.565Z",
-      },
-    ],
-    guestAnswers: [],
-    discounts: [
-      {
-        orderDiscountId: 6,
-        orderId: 11,
-        discountId: null,
-        listingDiscountId: null,
-        discountName: "Early Bird Discount (0+ days)",
-        appliedPercentage: 50,
-        discountAmount: 2750,
-        sponsor: "PLATFORM",
-        createdAt: "2025-11-16T06:29:11.565Z",
-      },
-    ],
-    taxes: [],
-  };
 
   useEffect(() => {
     const loadBooking = async () => {
@@ -464,9 +558,17 @@ const ViewDetails = () => {
         let slotDetails = null;
 
         // Fetch order details directly from API
+        // Use event-specific API if type=event
         try {
-          orderResponse = await getOrderDetails(orderId);
-          console.log("✅ Order details fetched from API:", orderResponse);
+          if (bookingType === "event") {
+            console.log("📦 Fetching EVENT order details for orderId:", orderId);
+            orderResponse = await getEventOrderDetails(orderId);
+            console.log("✅ Event order details fetched from API:", orderResponse);
+          } else {
+            console.log("📦 Fetching regular order details for orderId:", orderId);
+            orderResponse = await getOrderDetails(orderId);
+            console.log("✅ Order details fetched from API:", orderResponse);
+          }
           
           // The response structure can be:
           // Option 1: { order: {...}, addons: [], guestAnswers: [], history: [] }
@@ -548,7 +650,6 @@ const ViewDetails = () => {
             endTime: apiBookingData.timeSlotEndTime,
             maxSeats: apiBookingData.timeSlotMaxSeats,
           };
-          setSlotData(slotDetails);
           console.log("✅ Using time slot from order data:", slotDetails);
         }
 
@@ -560,9 +661,98 @@ const ViewDetails = () => {
           }
         }
 
-        // Fetch listing data if listingId is available
+        // Determine if this is an event order
+        const isEventOrder = bookingType === "event" || 
+                             apiBookingData?.businessInterestCode === "EVENTS" || 
+                             apiBookingData?.eventId != null;
+
+        // For event orders, prefer using event info embedded in the event-details API response
+        // so the page can render without additional calls.
+        let eventData = null;
+        if (isEventOrder) {
+          const embeddedEvent =
+            orderResponse?.event ||
+            orderResponse?.eventDetails ||
+            orderResponse?.data?.event ||
+            orderResponse?.data?.eventDetails ||
+            apiBookingData?.event ||
+            apiBookingData?.eventDetails ||
+            null;
+
+          if (embeddedEvent && typeof embeddedEvent === "object") {
+            eventData = embeddedEvent;
+            console.log("✅ Using embedded event details from event-details API response:", eventData);
+          }
+        }
+
+        // If embedded event is missing key fields (title/image), enrich using public event API
+        // (GET /api/events/{id} via getEventDetails)
+        if (isEventOrder) {
+          const hasTitle = !!(eventData?.title || eventData?.eventTitle || apiBookingData?.eventTitle);
+          const hasImage = !!(
+            eventData?.coverImage ||
+            eventData?.coverImageUrl ||
+            eventData?.bannerUrl ||
+            eventData?.bannerImageUrl ||
+            eventData?.eventCoverImageUrl ||
+            eventData?.eventCoverPhotoUrl
+          );
+          const eventIdForDetails = apiBookingData?.eventId || eventData?.eventId || eventData?.id;
+
+          // Always enrich from /events/{id} when possible to ensure the cover image/title match
+          // what the event API considers the canonical values.
+          if (eventIdForDetails) {
+            try {
+              if (!hasTitle || !hasImage) {
+                console.log(`📦 Enriching event details for eventId: ${eventIdForDetails}`);
+              } else {
+                console.log(`📦 Refreshing event details for eventId: ${eventIdForDetails} (override image/title if different)`);
+              }
+              const enriched = await getEventDetails(eventIdForDetails);
+              const embedded = eventData || {};
+              eventData = {
+                ...embedded,
+                ...enriched,
+                // Ensure enriched image fields win even if embedded already had a different image
+                eventCoverImageUrl: enriched?.eventCoverImageUrl ?? embedded?.eventCoverImageUrl,
+                eventCoverPhotoUrl: enriched?.eventCoverPhotoUrl ?? embedded?.eventCoverPhotoUrl,
+                coverImageUrl: enriched?.coverImageUrl ?? embedded?.coverImageUrl,
+                coverPhotoUrl: enriched?.coverPhotoUrl ?? embedded?.coverPhotoUrl,
+                bannerImageUrl: enriched?.bannerImageUrl ?? embedded?.bannerImageUrl,
+                title: enriched?.title ?? embedded?.title,
+                eventTitle: enriched?.eventTitle ?? embedded?.eventTitle,
+              };
+              console.log("✅ Event details enriched from /events/{id}:", eventData);
+            } catch (eventError) {
+              console.warn(`⚠️ Failed to enrich event details for eventId ${eventIdForDetails}:`, eventError.message);
+            }
+          }
+        }
+
+        // Fallback: Fetch event details by eventId if not embedded
+        if (isEventOrder && !eventData && apiBookingData.eventId) {
+          try {
+            console.log(`📦 Fetching event details for eventId: ${apiBookingData.eventId}`);
+            eventData = await getEventDetails(apiBookingData.eventId);
+            console.log(`✅ Fetched event details for eventId ${apiBookingData.eventId}:`, eventData);
+          } catch (eventError) {
+            console.warn(`⚠️ Failed to fetch event details for eventId ${apiBookingData.eventId}:`, eventError.message);
+            // Create a fallback eventData object from order fields
+            eventData = {
+              title: apiBookingData.eventTitle || "Event Booking",
+              eventTitle: apiBookingData.eventTitle || "Event Booking",
+              eventCoverImageUrl: apiBookingData.eventDetails?.eventCoverImageUrl || null,
+              venueFullAddress: apiBookingData.eventDetails?.venueFullAddress || null,
+              venueName: apiBookingData.eventDetails?.venueName || null,
+              venueDistrict: apiBookingData.eventDetails?.venueDistrict || null,
+              venueState: apiBookingData.eventDetails?.venueState || null,
+            };
+          }
+        }
+
+        // Fetch listing data if listingId is available (for non-event orders)
         let listingData = null;
-        if (apiBookingData.listingId) {
+        if (!isEventOrder && apiBookingData.listingId) {
           try {
             listingData = await getListing(apiBookingData.listingId);
             console.log(`✅ Fetched listing ${apiBookingData.listingId} for order details`);
@@ -590,7 +780,7 @@ const ViewDetails = () => {
               coverPhotoUrl: apiBookingData.listingCoverPhoto || apiBookingData.coverPhotoUrl || "/images/content/card-pic-13.jpg",
             };
           }
-        } else {
+        } else if (!isEventOrder) {
           // Create listingData from order fields if no listingId
           listingData = {
             title: apiBookingData.listingTitle || apiBookingData.title || "Booking",
@@ -609,12 +799,17 @@ const ViewDetails = () => {
           };
         }
         
-        console.log("✅ Using listingData:", listingData ? "from API" : "from order fields");
+        console.log("✅ Using data:", isEventOrder ? "eventData" : (listingData ? "listingData from API" : "listingData from order fields"));
 
         // Transform the booking data
         let transformed;
         try {
-          transformed = transformBookingData(apiBookingData, listingData);
+          const mergedApiBookingData =
+            orderResponse && typeof orderResponse === "object" && orderResponse.order
+              ? { ...orderResponse, ...orderResponse.order }
+              : apiBookingData;
+
+          transformed = transformBookingData(mergedApiBookingData, listingData, eventData);
         console.log("✅ Transformed booking data:", transformed);
         console.log("✅ Original API booking data paymentMethod:", apiBookingData.paymentMethod);
         console.log("✅ Transformed paymentMethod:", transformed.paymentMethod);
@@ -666,7 +861,7 @@ const ViewDetails = () => {
     };
 
     loadBooking();
-  }, [bookingId]);
+  }, [bookingId, bookingType]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const getInitialTab = () => {
     if (!booking) return "cancellation";
@@ -893,8 +1088,15 @@ const ViewDetails = () => {
         <div className={styles.banner}>
           <img
             src={booking.bannerImage.src}
-            srcSet={`${booking.bannerImage.srcSet} 2x`}
             alt={booking.bannerImage.alt}
+            onLoad={() => {
+              console.log("✅ Banner image loaded:", booking.bannerImage.src);
+            }}
+            onError={(e) => {
+              console.warn("⚠️ Banner image failed to load:", booking.bannerImage.src);
+              e.currentTarget.src = "/images/content/card-pic-13.jpg";
+              e.currentTarget.removeAttribute("srcset");
+            }}
           />
         </div>
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import cn from "classnames";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import styles from "./CreditCard.module.sass";
 import TextInput from "../../TextInput";
 import TextArea from "../../TextArea";
@@ -43,13 +43,23 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false }) => {
     }
 
     // Debug log to help verify state
-    try {
-      console.log("ConfirmAndPay: pendingPayment", payment);
-    } catch {}
+    console.log("🔍 ConfirmAndPay: pendingPayment", payment);
+    console.log("🔍 paymentMethod:", payment?.paymentMethod);
+    console.log("🔍 razorpayKeyId:", payment?.razorpayKeyId);
+    console.log("🔍 razorpayOrderId:", payment?.razorpayOrderId);
+    console.log("🔍 amount:", payment?.amount);
 
     if (!payment || payment.paymentMethod !== "razorpay") {
+      console.log("⚠️ No razorpay payment method, navigating directly to:", buttonUrl);
       // No payment session; just navigate to completion
       history.push(buttonUrl);
+      return;
+    }
+    
+    // Check if razorpayKeyId exists
+    if (!payment.razorpayKeyId) {
+      console.error("❌ Missing razorpayKeyId in payment data");
+      alert("Payment configuration error. Please try booking again.");
       return;
     }
 

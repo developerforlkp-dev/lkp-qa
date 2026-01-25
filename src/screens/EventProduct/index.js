@@ -10,8 +10,10 @@ import CommentsProduct from "../../components/CommentsProduct";
 import Browse from "../../components/Browse";
 import GuestPicker from "../../components/GuestPicker";
 import { browse2 } from "../../mocks/browse";
-import { useLocation } from "react-router-dom";
-import { getEventDetails } from "../../utils/api";
+import { useLocation, useHistory } from "react-router-dom";
+import { createEventOrder, getEventDetails } from "../../utils/api";
+import Modal from "../../components/Modal";
+import Login from "../../components/Login";
 
 const asNonEmptyString = (value) => {
   if (typeof value !== "string") return null;
@@ -68,12 +70,17 @@ const normalizeTicketTypes = (rawTypes, fallbackCurrency) => {
     .map((t, idx) => {
       const name =
         asNonEmptyString(t?.name) ||
+        asNonEmptyString(t?.ticketTypeName) ||
+        asNonEmptyString(t?.typeName) ||
+        asNonEmptyString(t?.title) ||
         asNonEmptyString(t?.ticketName) ||
         asNonEmptyString(t?.ticket_name) ||
         `Ticket ${idx + 1}`;
 
       const price =
         asNumber(t?.price) ??
+        asNumber(t?.ticketTypePrice) ??
+        asNumber(t?.typePrice) ??
         asNumber(t?.ticketPrice) ??
         asNumber(t?.ticket_price) ??
         asNumber(t?.individualPrice) ??
@@ -97,6 +104,65 @@ const normalizeTicketTypes = (rawTypes, fallbackCurrency) => {
         currency,
         applicableSlots,
       };
+    })
+    .filter(Boolean);
+};
+
+// Normalize slots array to extract slot IDs and names
+const normalizeSlots = (rawSlots) => {
+  if (!Array.isArray(rawSlots)) return [];
+  return rawSlots
+    .map((s, idx) => {
+      if (typeof s === "string") {
+        return { id: null, name: s };
+      }
+      if (s && typeof s === "object") {
+        const slotId =
+          asNumber(s?.id) ??
+          asNumber(s?.slotId) ??
+          asNumber(s?.slot_id) ??
+          asNumber(s?.eventSlotId) ??
+          asNumber(s?.event_slot_id);
+        const slotName =
+          asNonEmptyString(s?.name) ||
+          asNonEmptyString(s?.slotName) ||
+          asNonEmptyString(s?.title) ||
+          `Slot ${idx + 1}`;
+        return {
+          id: slotId,
+          name: slotName,
+          date: asNonEmptyString(s?.date) || asNonEmptyString(s?.slotDate),
+          time: asNonEmptyString(s?.time) || asNonEmptyString(s?.slotTime),
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+};
+
+const normalizeArtists = (rawArtists, fallbackImages) => {
+  if (!Array.isArray(rawArtists)) return [];
+  return rawArtists
+    .map((a, idx) => {
+      const title =
+        asNonEmptyString(a?.name) ||
+        asNonEmptyString(a?.title) ||
+        asNonEmptyString(a?.artistName) ||
+        asNonEmptyString(a?.artist_name) ||
+        null;
+      if (!title) return null;
+
+      const description = asNonEmptyString(a?.description) || asNonEmptyString(a?.about) || "";
+      const image =
+        asNonEmptyString(a?.image) ||
+        asNonEmptyString(a?.imageUrl) ||
+        asNonEmptyString(a?.photoUrl) ||
+        asNonEmptyString(a?.avatarUrl) ||
+        (Array.isArray(fallbackImages) && fallbackImages.length > 0
+          ? fallbackImages[idx % fallbackImages.length]
+          : "");
+
+      return { title, description, image };
     })
     .filter(Boolean);
 };
@@ -129,7 +195,7 @@ const dummyEventData = {
   longitude: -73.968285,
   totalCapacity: 10000,
   ticketPrice: 75,
-  currency: "USD",
+  currency: "INR",
   ticketTypes: [
     { id: "general", name: "General Admission", price: 75 },
     { id: "vip", name: "VIP", price: 150 },
@@ -170,11 +236,23 @@ const dummyEventData = {
 
 const EventProduct = () => {
   const location = useLocation();
+  const history = useHistory();
   const searchParams = new URLSearchParams(location.search);
-  const eventIdFromQuery = searchParams.get("id");
+  const eventIdFromQuery =
+    searchParams.get("id") ||
+    searchParams.get("eventId") ||
+    searchParams.get("event_id") ||
+    searchParams.get("listingId") ||
+    searchParams.get("listing_id");
+  const eventIdFromState =
+    location?.state?.id ??
+    location?.state?.eventId ??
+    location?.state?.event_id ??
+    location?.state?.listingId ??
+    location?.state?.listing_id;
+  const eventId = eventIdFromQuery ?? eventIdFromState;
 
   const [event, setEvent] = useState(null);
-  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -184,6 +262,15 @@ const EventProduct = () => {
   const [selectedTicketType, setSelectedTicketType] = useState("general");
   const [showTicketTypePicker, setShowTicketTypePicker] = useState(false);
   const ticketTypeItemRef = useRef(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const hasValidJwtToken = () => {
+    if (typeof window === "undefined") return false;
+    const raw = localStorage.getItem("jwtToken");
+    const token = typeof raw === "string" ? raw.trim() : "";
+    return !!token && token !== "undefined" && token !== "null" && token !== "NaN";
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -193,15 +280,15 @@ const EventProduct = () => {
       setError(null);
 
       try {
-        if (!eventIdFromQuery) {
+        if (!eventId) {
           if (!mounted) return;
           setEvent(dummyEventData);
           return;
         }
 
-        const payload = await getEventDetails(eventIdFromQuery);
+        const payload = await getEventDetails(eventId);
 
-        const derivedId = payload?.eventId ?? payload?.event_id ?? payload?.id ?? payload?._id ?? eventIdFromQuery;
+        const derivedId = payload?.eventId ?? payload?.event_id ?? payload?.id ?? payload?._id ?? eventId;
 
         const derivedCover =
           asNonEmptyString(payload?.coverImage) ||
@@ -220,7 +307,8 @@ const EventProduct = () => {
                   return (
                     asNonEmptyString(g?.url) ||
                     asNonEmptyString(g?.src) ||
-                    asNonEmptyString(g?.imageUrl)
+                    asNonEmptyString(g?.imageUrl) ||
+                    asNonEmptyString(g?.mediaUrl)
                   );
                 }
                 return null;
@@ -237,15 +325,43 @@ const EventProduct = () => {
           asNonEmptyString(payload?.bookingCutoffTime) ||
           asNonEmptyString(payload?.bookingCutoff);
 
-        const rawTicketTypes = payload?.ticketTypes || payload?.tickets || payload?.ticket_types;
-        const normalizedTicketTypes = normalizeTicketTypes(rawTicketTypes, payload?.currency || dummyEventData.currency);
+        const inferredTicketCurrency =
+          asNonEmptyString(payload?.currency) ||
+          asNonEmptyString(payload?.currencyCode) ||
+          asNonEmptyString(payload?.currency_code) ||
+          dummyEventData.currency;
 
-        const inferredTicketCurrency = asNonEmptyString(payload?.currency) || dummyEventData.currency;
+        const rawTicketTypes =
+          payload?.ticketTypes ||
+          payload?.tickets ||
+          payload?.ticket_types ||
+          payload?.ticketType ||
+          payload?.ticket_type ||
+          payload?.ticketTypeList ||
+          payload?.ticketTypeDetails ||
+          payload?.ticketTypeDTOs ||
+          payload?.ticketTypeDtos ||
+          payload?.ticketTypeResponses;
+
+        const normalizedTicketTypes = normalizeTicketTypes(rawTicketTypes, inferredTicketCurrency);
+
         const inferredTicketPrice =
           asNumber(payload?.ticketPrice) ??
           asNumber(payload?.ticket_price) ??
           asNumber(payload?.price) ??
-          asNumber(payload?.amount);
+          asNumber(payload?.amount) ??
+          asNumber(payload?.entryFee) ??
+          asNumber(payload?.entry_fee) ??
+          asNumber(payload?.basePrice) ??
+          asNumber(payload?.base_price) ??
+          asNumber(payload?.startingPrice) ??
+          asNumber(payload?.starting_price) ??
+          asNumber(payload?.minPrice) ??
+          asNumber(payload?.min_price) ??
+          asNumber(payload?.minimumPrice) ??
+          asNumber(payload?.minimum_price) ??
+          asNumber(payload?.perHeadPrice) ??
+          asNumber(payload?.per_head_price);
         const inferredTicketName =
           asNonEmptyString(payload?.ticketTypeName) ||
           asNonEmptyString(payload?.ticketName) ||
@@ -259,24 +375,22 @@ const EventProduct = () => {
         const rawSlots =
           payload?.applicableSlots ||
           payload?.slots ||
+          payload?.eventSlots ||
+          payload?.event_slots ||
           normalizedTicketTypes.flatMap((t) => t.applicableSlots || []);
-        const slotNames = Array.isArray(rawSlots)
-          ? rawSlots
-              .map((s) => {
-                if (typeof s === "string") return asNonEmptyString(s);
-                if (s && typeof s === "object") {
-                  return asNonEmptyString(s?.name) || asNonEmptyString(s?.title);
-                }
-                return null;
-              })
-              .filter(Boolean)
-          : [];
+        
+        // Normalize slots to get full slot objects with IDs
+        const normalizedSlots = normalizeSlots(rawSlots);
+        const slotNames = normalizedSlots.map((s) => s.name).filter(Boolean);
 
-        const derivedArtists = slotNames.map((name, index) => ({
-          title: name,
-          description: "",
-          image: dummyEventData.gallery[index % dummyEventData.gallery.length],
-        }));
+        const backendArtists = normalizeArtists(payload?.artists, derivedGallery.length > 0 ? derivedGallery : dummyEventData.gallery);
+        const derivedArtists = backendArtists.length > 0
+          ? backendArtists
+          : slotNames.map((name, index) => ({
+              title: name,
+              description: "",
+              image: (derivedGallery.length > 0 ? derivedGallery : dummyEventData.gallery)[index % (derivedGallery.length > 0 ? derivedGallery.length : dummyEventData.gallery.length)],
+            }));
 
         const derivedVenueSearchLocation =
           asNonEmptyString(payload?.venueSearchLocation) ||
@@ -328,14 +442,21 @@ const EventProduct = () => {
           termsAndPolicies: payload?.termsAndPolicies || payload?.terms || dummyEventData.termsAndPolicies,
           artists: derivedArtists,
           whatYoullDo: Array.isArray(payload?.whatYoullDo) ? payload.whatYoullDo : [],
+          // Store normalized slots with IDs for booking
+          slots: normalizedSlots,
         };
 
         if (!mounted) return;
         setEvent(normalizedEvent);
       } catch (e) {
         if (!mounted) return;
-        setError(e?.message || "Failed to load event details");
-        setEvent(dummyEventData);
+        const status = e?.response?.status;
+        if (status === 401 || status === 403) {
+          setError("Please login to view this event.");
+        } else {
+          setError(e?.message || "Failed to load event details");
+        }
+        setEvent(null);
       } finally {
         if (!mounted) return;
         setLoading(false);
@@ -346,7 +467,7 @@ const EventProduct = () => {
     return () => {
       mounted = false;
     };
-  }, [eventIdFromQuery]);
+  }, [eventId]);
 
   useEffect(() => {
     if (!event) return;
@@ -368,14 +489,6 @@ const EventProduct = () => {
     return moment(dateTimeStr).format("MMMM D, YYYY [at] h:mm A");
   };
 
-  // Calculate days until event
-  const daysUntilEvent = () => {
-    const eventDate = moment(event.startDate);
-    const today = moment();
-    const diff = eventDate.diff(today, "days");
-    return diff > 0 ? diff : 0;
-  };
-
   // Check if booking is still open
   const isBookingOpen = () => {
     if (!event.bookingCutoffTime) return true;
@@ -386,6 +499,348 @@ const EventProduct = () => {
 
   // Get all images for gallery
   const allImages = [event?.coverImage, ...(event?.gallery || [])].filter(Boolean);
+  const selectedHeroImage = allImages[galleryIndex] || allImages[0];
+  const displayCurrency = event?.currency === "USD" ? "INR" : event?.currency;
+
+  const minimumAge =
+    asNumber(event?.minimumAge) ??
+    asNumber(event?.minimum_age) ??
+    asNumber(event?.minAge) ??
+    asNumber(event?.min_age);
+
+  const getCustomerDetailsForBooking = () => {
+    const userInfoRaw = localStorage.getItem("userInfo");
+    const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : {};
+
+    const firstName = userInfo?.firstName || localStorage.getItem("firstName") || "";
+    const lastName = userInfo?.lastName || localStorage.getItem("lastName") || "";
+    const email = userInfo?.email || localStorage.getItem("email") || "";
+
+    const phone =
+      userInfo?.customerPhone ||
+      userInfo?.phoneNumber ||
+      userInfo?.phone ||
+      localStorage.getItem("phone") ||
+      localStorage.getItem("phoneNumber") ||
+      "";
+
+    return {
+      firstName,
+      lastName,
+      email,
+      phone,
+    };
+  };
+
+  const getEventSlotIdForBooking = () => {
+    // First try to get from direct event properties
+    const directSlotId =
+      asNumber(event?.eventSlotId) ??
+      asNumber(event?.event_slot_id) ??
+      asNumber(event?.slotId) ??
+      asNumber(event?.slot_id) ??
+      asNumber(event?.defaultSlotId) ??
+      asNumber(event?.default_slot_id);
+    
+    if (directSlotId && directSlotId > 0) {
+      console.log("📍 Using direct eventSlotId:", directSlotId);
+      return directSlotId;
+    }
+    
+    // Try to get from the slots array (first available slot)
+    if (Array.isArray(event?.slots) && event.slots.length > 0) {
+      const firstSlot = event.slots[0];
+      const slotIdFromArray = 
+        asNumber(firstSlot?.id) ?? 
+        asNumber(firstSlot?.slotId) ?? 
+        asNumber(firstSlot?.eventSlotId);
+      if (slotIdFromArray && slotIdFromArray > 0) {
+        console.log("📍 Using slotId from slots array:", slotIdFromArray);
+        return slotIdFromArray;
+      }
+    }
+    
+    // Try to get from ticket types' applicable slots
+    if (Array.isArray(event?.ticketTypes)) {
+      for (const ticketType of event.ticketTypes) {
+        if (Array.isArray(ticketType?.applicableSlots) && ticketType.applicableSlots.length > 0) {
+          const slot = ticketType.applicableSlots[0];
+          // Check all possible slot ID field names
+          const slotId = 
+            asNumber(slot?.eventSlotId) ?? 
+            asNumber(slot?.event_slot_id) ??
+            asNumber(slot?.slotId) ?? 
+            asNumber(slot?.slot_id) ??
+            asNumber(slot?.id);
+          if (slotId && slotId > 0) {
+            console.log("📍 Using slotId from ticketType applicableSlots:", slotId, "slot:", slot);
+            return slotId;
+          }
+        }
+      }
+    }
+    
+    // Log warning if no slot ID found
+    console.warn("⚠️ Could not find eventSlotId in event data:", {
+      eventSlotId: event?.eventSlotId,
+      slotId: event?.slotId,
+      slots: event?.slots,
+      ticketTypes: event?.ticketTypes?.map(t => ({ 
+        id: t.id, 
+        applicableSlots: t.applicableSlots 
+      }))
+    });
+    
+    return 0;
+  };
+
+  const getTicketTypeIdForBooking = (ticketType) => {
+    const raw = ticketType?.ticketTypeId ?? ticketType?.ticket_type_id ?? ticketType?.typeId ?? ticketType?.id;
+    const parsed = asNumber(raw);
+    return parsed ?? 0;
+  };
+
+  const handleBookNow = async () => {
+    if (!event) return;
+    if (bookingLoading) return;
+
+    if (!hasValidJwtToken()) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    const customerDetails = getCustomerDetailsForBooking();
+    const eventIdNum = asNumber(event?.eventId ?? event?.event_id ?? event?.id ?? eventId) ?? 0;
+    const eventSlotIdNum = getEventSlotIdForBooking();
+
+    const selectedType =
+      event.ticketTypes?.find((t) => t.id === selectedTicketType) ||
+      event.ticketTypes?.[0] ||
+      null;
+
+    const quantity = Math.max(1, (guests?.adults || 0) + (guests?.children || 0));
+    const pricePerTicket = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
+    
+    // Calculate total number of guests (required by backend)
+    const numberOfGuests = quantity;
+    
+    // Get booking date - use event start date or today's date
+    const bookingDate = event?.startDate || moment().format("YYYY-MM-DD");
+    
+    // Get ticket type name (required by backend)
+    const ticketTypeName = selectedType?.name || selectedType?.ticketTypeName || "General Admission";
+
+    // Validate slot ID before creating payload
+    if (!eventSlotIdNum || eventSlotIdNum <= 0) {
+      console.error("❌ Cannot book: eventSlotId is missing or invalid. Check event details API response.");
+      alert("Unable to book: Event slot information is missing. Please try again later.");
+      return;
+    }
+
+    const payload = {
+      eventId: eventIdNum,
+      eventSlotId: eventSlotIdNum, // From event details API
+      bookingDate: bookingDate, // Required: YYYY-MM-DD format
+      numberOfGuests: numberOfGuests, // Required: must be a number > 0
+      customerDetails,
+      tickets: [
+        {
+          ticketTypeId: getTicketTypeIdForBooking(selectedType),
+          ticketTypeName: ticketTypeName, // Required by backend
+          quantity,
+          pricePerTicket: Number(pricePerTicket.toFixed(2)),
+        },
+      ],
+      appliedDiscountCode: null,
+      notes: null,
+    };
+
+    console.log("🧾 Event booking payload:", JSON.stringify(payload, null, 2));
+
+    try {
+      setBookingLoading(true);
+      const res = await createEventOrder(payload);
+      console.log("✅ Event booking response (full):", JSON.stringify(res, null, 2));
+
+      // Extract order and payment info from response (same pattern as experience)
+      const order = res?.order || res;
+      console.log("📋 Order object:", order);
+      
+      // Extract payment object (same as experience checkout)
+      const payment =
+        res?.payment ||
+        res?.data?.payment ||
+        res?.order?.payment ||
+        order?.payment ||
+        null;
+      console.log("💳 Payment object:", payment);
+      
+      const orderId = order?.orderId || order?.id || res?.orderId || res?.id;
+      const razorpayOrderId = 
+        payment?.razorpayOrderId ||
+        order?.razorpayOrderId || 
+        res?.razorpayOrderId || 
+        order?.razorpay_order_id || 
+        res?.razorpay_order_id;
+      
+      console.log("🔑 Extracted orderId:", orderId);
+      console.log("🔑 Extracted razorpayOrderId:", razorpayOrderId);
+      
+      // Calculate total amount (in paise for Razorpay)
+      const totalAmount = quantity * pricePerTicket;
+      // Use amount from payment response if available, otherwise calculate
+      const amountInPaise = payment?.amount || Math.round(totalAmount * 100);
+      
+      // Get currency from event or default to INR
+      const currency = event?.currency || "INR";
+
+      // Prepare booking data for checkout page
+      const bookingDataForCheckout = {
+        // Event details
+        eventId: eventIdNum,
+        eventSlotId: eventSlotIdNum,
+        listingTitle: event?.title || "Event Booking",
+        listingImage: event?.coverImage || event?.gallery?.[0],
+        
+        // Booking summary
+        bookingSummary: {
+          date: moment(bookingDate).format("MMM DD, YYYY"),
+          time: event?.startTime || "",
+          guestCount: numberOfGuests,
+        },
+        
+        // Guest details
+        guests: guests,
+        
+        // Price details
+        priceDetails: {
+          pricePerPerson: pricePerTicket,
+          totalPrice: totalAmount,
+        },
+        
+        // Receipt for display
+        receipt: [
+          {
+            title: `${currency} ${pricePerTicket.toFixed(2)} x ${numberOfGuests} ${numberOfGuests === 1 ? 'ticket' : 'tickets'}`,
+            content: `${currency} ${totalAmount.toFixed(2)}`,
+          },
+          {
+            title: "Total",
+            content: `${currency} ${totalAmount.toFixed(2)}`,
+          },
+        ],
+        
+        // Currency
+        currency: currency,
+        finalTotal: totalAmount,
+        
+        // Ticket info
+        ticketType: ticketTypeName,
+        ticketTypeId: getTicketTypeIdForBooking(selectedType),
+      };
+
+      // Get Razorpay key from response (same pattern as experience checkout)
+      // Check payment object first, then order, then response root
+      // Also check localStorage for cached key from previous experience booking
+      const getCachedRazorpayKey = () => {
+        try {
+          // Try to get from a previous successful payment
+          const cachedPayment = localStorage.getItem("lastRazorpayKeyId");
+          if (cachedPayment) return cachedPayment;
+          
+          // Try to get from pending payment (if experience was booked before)
+          const pendingPayment = localStorage.getItem("pendingPayment");
+          if (pendingPayment) {
+            const parsed = JSON.parse(pendingPayment);
+            if (parsed?.razorpayKeyId) return parsed.razorpayKeyId;
+          }
+        } catch (e) {
+          console.warn("Could not get cached Razorpay key:", e);
+        }
+        return null;
+      };
+
+      const razorpayKeyId = 
+        payment?.razorpayKeyId ||
+        payment?.razorpay_key_id ||
+        payment?.keyId ||
+        order?.razorpayKeyId || 
+        res?.razorpayKeyId || 
+        order?.razorpay_key_id || 
+        res?.razorpay_key_id ||
+        order?.razorpayKey ||
+        res?.razorpayKey ||
+        order?.keyId ||
+        res?.keyId ||
+        process.env.REACT_APP_RAZORPAY_KEY_ID || // Fallback to env variable
+        getCachedRazorpayKey(); // Fallback to cached key from experience
+      
+      console.log("🔑 Extracted razorpayKeyId:", razorpayKeyId);
+      
+      // Save the key for future use if we got it
+      if (razorpayKeyId) {
+        try {
+          localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
+        } catch (e) {}
+      }
+      
+      // Warn if missing critical payment data
+      if (!razorpayOrderId) {
+        console.warn("⚠️ razorpayOrderId is missing from API response!");
+      }
+      if (!razorpayKeyId) {
+        console.error("❌ razorpayKeyId is missing from API response!");
+        console.error("💡 Book an experience first to cache the Razorpay key, OR add REACT_APP_RAZORPAY_KEY_ID to .env file");
+        alert("Payment configuration error: Razorpay key is missing. Please book an experience first or contact support.");
+        return;
+      }
+
+      // Prepare payment data for Razorpay (same structure as experience checkout)
+      const paymentData = {
+        orderId: orderId,
+        razorpayOrderId: razorpayOrderId,
+        razorpayKeyId: razorpayKeyId,
+        amount: amountInPaise,
+        currency: payment?.currency || currency,
+        paymentMethod: "razorpay", // Required to trigger Razorpay checkout
+        eventId: eventIdNum,
+        eventSlotId: eventSlotIdNum,
+        // Include discount info if available
+        discount: payment?.discount || res?.discount || 0,
+        finalAmount: payment?.finalAmount || amountInPaise,
+      };
+
+      // Save to localStorage for checkout page
+      localStorage.setItem("pendingBooking", JSON.stringify(bookingDataForCheckout));
+      localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
+      localStorage.setItem("pendingOrderId", String(orderId));
+      
+      // Clear any previous payment status
+      localStorage.removeItem("razorpayPaymentSuccess");
+      localStorage.removeItem("paymentFailed");
+
+      console.log("📦 Booking data saved:", bookingDataForCheckout);
+      console.log("💳 Payment data saved:", paymentData);
+
+      // Redirect to checkout page
+      history.push("/experience-checkout", {
+        bookingData: bookingDataForCheckout,
+        paymentData: paymentData,
+      });
+
+    } catch (e) {
+      console.error("❌ Event booking failed:", e?.response?.data || e?.message || e);
+      const status = e?.response?.status;
+      if (status === 401 || status === 403) {
+        setShowLoginModal(true);
+        return;
+      }
+      const errorMessage = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.";
+      alert(errorMessage);
+    } finally {
+      setBookingLoading(false);
+    }
+  };
 
   const socials = [
     { title: "twitter", url: "https://twitter.com/ui8" },
@@ -402,11 +857,20 @@ const EventProduct = () => {
   }
 
   if (!event) {
-    return null;
+    return error ? (
+      <div className={styles.eventProduct}>
+        <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
+          <p>⚠️ {error}</p>
+        </div>
+      </div>
+    ) : null;
   }
 
   return (
     <div className={styles.eventProduct}>
+      <Modal visible={showLoginModal} onClose={() => setShowLoginModal(false)}>
+        <Login onClose={() => setShowLoginModal(false)} />
+      </Modal>
       {error && (
         <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
           <p>⚠️ {error}</p>
@@ -434,7 +898,7 @@ const EventProduct = () => {
                 onClick={() => setGalleryIndex(0)}
               >
                 <img 
-                  src={allImages[0] || "/images/content/main-pic-1.jpg"} 
+                  src={selectedHeroImage || "/images/content/main-pic-1.jpg"} 
                   alt={event.title} 
                 />
               </div>
@@ -568,7 +1032,7 @@ const EventProduct = () => {
                 </div>
                 <div className={styles.eventDetailItem}>
                   <Icon name="user" size="18" />
-                  <span>18+</span>
+                  <span>{Number.isFinite(minimumAge) && minimumAge > 0 ? `${minimumAge}+` : "18+"}</span>
                 </div>
                 <div className={styles.eventDetailItem}>
                   <Icon name="globe" size="18" />
@@ -632,7 +1096,7 @@ const EventProduct = () => {
                         {(() => {
                           const selectedType = event.ticketTypes.find(t => t.id === selectedTicketType) || event.ticketTypes[0];
                           const price = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
-                          return `${selectedType?.name || "Ticket"} - ${event.currency} ${price.toFixed(2)}`;
+                          return `${selectedType?.name || "Ticket"} - ${displayCurrency} ${price.toFixed(2)}`;
                         })()}
                       </span>
                       </div>
@@ -687,13 +1151,14 @@ const EventProduct = () => {
                       const totalGuests = guests.adults + guests.children;
                       const unitPrice = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
                       const totalPrice = totalGuests * unitPrice;
-                      return `${event.currency} ${totalPrice.toFixed(2)}`;
+                      return `${displayCurrency} ${totalPrice.toFixed(2)}`;
                     })()}
                   </span>
                 </div>
                 <button 
                   className={cn("button", styles.bookButton)}
                   disabled={!isBookingOpen()}
+                  onClick={handleBookNow}
                 >
                   <span>Book Now</span>
                   <Icon name="bag" size="16" />

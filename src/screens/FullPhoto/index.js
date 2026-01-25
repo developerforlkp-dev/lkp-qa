@@ -95,7 +95,7 @@ const FullPhoto = () => {
                 onClick={() => handleOpen(index)}
               >
                 <div className={styles.imageWrapper}>
-                  <img src={x} alt={`Gallery image ${index + 1}`} />
+                  <img src={x} alt={`Gallery ${index + 1}`} />
                 </div>
               </div>
             ))}
