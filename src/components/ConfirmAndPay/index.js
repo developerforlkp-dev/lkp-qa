@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import cn from "classnames";
 import styles from "./ConfirmAndPay.module.sass";
 import CreditCard from "./CreditCard";

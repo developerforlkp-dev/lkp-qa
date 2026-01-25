@@ -7,7 +7,6 @@ import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
-import moment from "moment";
 import { getOrderDetails } from "../../utils/api";
 
 const breadcrumbs = [
@@ -263,6 +262,7 @@ const Checkout = () => {
   }, [history]);
 
 
+  // eslint-disable-next-line no-unused-vars
   const handleRemoveAddOn = (indexToRemove) => {
     setSelectedAddOns((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
@@ -332,6 +332,7 @@ const Checkout = () => {
   }, [bookingData]);
 
   // Build price table from receipt if provided
+  // eslint-disable-next-line no-unused-vars
   const { addOnsTotal, finalTotal, table } = useMemo(() => {
     if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
       const rows = bookingData.receipt.map((r) => ({

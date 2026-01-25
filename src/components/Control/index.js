@@ -1,7 +1,7 @@
 import React from "react";
 import cn from "classnames";
 import styles from "./Control.module.sass";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import Icon from "../Icon";
 import Breadcrumbs from "../Breadcrumbs";
 

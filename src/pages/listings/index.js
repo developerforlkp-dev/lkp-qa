@@ -66,6 +66,7 @@ const Listings = () => {
     businessInterest: "EXPERIENCE",
   });
   
+  // eslint-disable-next-line no-unused-vars
   const totalCount = listings.length;
 
   // Handle filter changes

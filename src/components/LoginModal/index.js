@@ -9,7 +9,7 @@ import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
 const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]); // 6-digit OTP
-  const [activeInput, setActiveInput] = useState(0);
+  const [, setActiveInput] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [step, setStep] = useState("phone"); // "phone", "otp"

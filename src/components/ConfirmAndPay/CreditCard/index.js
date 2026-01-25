@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import cn from "classnames";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import styles from "./CreditCard.module.sass";
 import TextInput from "../../TextInput";
 import TextArea from "../../TextArea";

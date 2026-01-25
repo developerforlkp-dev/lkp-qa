@@ -4,7 +4,7 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getCustomerOrders, getAvailability, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview } from "../../utils/api";
 import Rating from "../../components/Rating";
 
 // Helper function to format image URLs

@@ -7,7 +7,6 @@ import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
-import moment from "moment";
 
 const breadcrumbs = [
   {
