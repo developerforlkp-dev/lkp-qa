@@ -760,6 +760,9 @@ const EventProduct = () => {
         return null;
       };
 
+      // Hardcoded fallback key for production (test mode)
+      const RAZORPAY_FALLBACK_KEY = "rzp_test_RaBjdu0Ed3p1gN";
+      
       const razorpayKeyId = 
         payment?.razorpayKeyId ||
         payment?.razorpay_key_id ||
@@ -773,7 +776,8 @@ const EventProduct = () => {
         order?.keyId ||
         res?.keyId ||
         process.env.REACT_APP_RAZORPAY_KEY_ID || // Fallback to env variable
-        getCachedRazorpayKey(); // Fallback to cached key from experience
+        getCachedRazorpayKey() || // Fallback to cached key from experience
+        RAZORPAY_FALLBACK_KEY; // Final fallback - hardcoded key
       
       console.log("🔑 Extracted razorpayKeyId:", razorpayKeyId);
       
