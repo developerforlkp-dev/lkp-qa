@@ -5,7 +5,8 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings } from "../../../utils/api";
+import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
 const formatImageUrl = (url) => {
@@ -305,6 +306,7 @@ const actionsByStatus = {
   ],
   Completed: [
     { label: "View Details", variant: "primary" },
+    { label: "Leave review", variant: "secondary" },
   ],
   Cancelled: [
     { label: "View Details", variant: "primary" },
@@ -332,6 +334,14 @@ const Main = ({
   const [loading, setLoading] = useState(false);
   const [loadingCompleted, setLoadingCompleted] = useState(false);
   const [initialTabSet, setInitialTabSet] = useState(false); // Track if initial tab has been set
+  // Review modal state (completed orders only)
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [bookingToReview, setBookingToReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [orderIdsEligibleForReview, setOrderIdsEligibleForReview] = useState(new Set());
 
   // Transform booking data when propBookingData is provided
   useEffect(() => {
@@ -492,18 +502,22 @@ const Main = ({
     if (nextTab === "completed" && transformedCompletedBookings.length === 0 && !loadingCompleted) {
       setLoadingCompleted(true);
       try {
-        const completedOrdersData = await getCompletedOrders(1, 20);
+        const [completedOrdersData, eligibleData] = await Promise.all([
+          getCompletedOrders(1, 20),
+          getEligibleBookings().catch(() => []),
+        ]);
         console.log("✅ Fetched completed orders:", completedOrdersData);
         
         if (Array.isArray(completedOrdersData) && completedOrdersData.length > 0) {
-          // Transform the completed orders directly without updating parent state
-          // This prevents triggering the useEffect which might reset the tab
           const transformed = await transformMultipleBookings(completedOrdersData);
           setTransformedCompletedBookings(transformed);
-          
-          // Don't update parent state here to avoid triggering useEffect
-          // The parent state is only for initial load, not for dynamic fetching
         }
+        // Eligible bookings = completed orders without reviews; show "Leave review" for these orderIds
+        const eligibleList = Array.isArray(eligibleData) ? eligibleData : [];
+        const eligibleIds = new Set(
+          eligibleList.map((o) => (o.orderId != null ? Number(o.orderId) : null)).filter(Boolean)
+        );
+        setOrderIdsEligibleForReview(eligibleIds);
       } catch (error) {
         console.error("❌ Error fetching completed orders:", error);
       } finally {
@@ -629,6 +643,59 @@ const Main = ({
     setCancelReason("");
     setCancelError(null);
     setCancelPreview(null);
+  };
+
+  const handleLeaveReviewClick = (booking) => {
+    setBookingToReview(booking);
+    setReviewRating(0);
+    setReviewComment("");
+    setReviewError(null);
+    setReviewModalVisible(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setReviewModalVisible(false);
+    setBookingToReview(null);
+    setReviewRating(0);
+    setReviewComment("");
+    setReviewError(null);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!bookingToReview || reviewRating < 1 || reviewRating > 5) {
+      setReviewError("Please select a rating (1–5 stars).");
+      return;
+    }
+    setReviewError(null);
+    setIsSubmittingReview(true);
+    try {
+      await submitOrderReview(bookingToReview.orderId, {
+        rating: reviewRating,
+        comment: reviewComment.trim() || undefined,
+      });
+      setOrderIdsEligibleForReview((prev) => {
+        const next = new Set(prev);
+        next.delete(bookingToReview.orderId);
+        return next;
+      });
+      handleCloseReviewModal();
+    } catch (err) {
+      const status = err.response?.status;
+      const message = err.response?.data?.message || err.message;
+      if (status === 409) {
+        setReviewError("You've already reviewed this order.");
+        setOrderIdsEligibleForReview((prev) => {
+          const next = new Set(prev);
+          next.delete(bookingToReview.orderId);
+          return next;
+        });
+      } else {
+        setReviewError(message || "Failed to submit review. Please try again.");
+      }
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   // Show loading state while fetching/transforming data
@@ -759,6 +826,19 @@ const Main = ({
                               </button>
                             );
                           }
+                          if (action.label === "Leave review") {
+                            if (!orderIdsEligibleForReview.has(booking.orderId)) return null;
+                            return (
+                              <button
+                                type="button"
+                                key={`${booking.id}-${action.label}`}
+                                className={getButtonClassName(action.variant)}
+                                onClick={() => handleLeaveReviewClick(booking)}
+                              >
+                                {action.label}
+                              </button>
+                            );
+                          }
                           return (
                             <button
                               type="button"
@@ -856,6 +936,76 @@ const Main = ({
               disabled={isCancelling || !cancelReason.trim()}
             >
               {isCancelling ? "Cancelling..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        visible={reviewModalVisible}
+        onClose={handleCloseReviewModal}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>
+              Add a review
+            </h2>
+            <p className={styles.cancelModalDescription}>
+              {bookingToReview ? `How was your experience with "${bookingToReview.title}"?` : "Share your experience."}
+            </p>
+          </div>
+          <form onSubmit={handleSubmitReview} className={styles.cancelModalBody}>
+            <div className={styles.cancelModalFormGroup}>
+              <label className={styles.cancelModalLabel}>
+                Rating <span className={styles.required}>*</span>
+              </label>
+              <Rating
+                className={styles.reviewRating}
+                rating={reviewRating}
+                onChange={setReviewRating}
+                readonly={false}
+              />
+            </div>
+            <div className={styles.cancelModalFormGroup}>
+              <label htmlFor="reviewComment" className={styles.cancelModalLabel}>
+                Comment (optional)
+              </label>
+              <textarea
+                id="reviewComment"
+                className={cn(styles.cancelModalInput, styles.cancelModalTextarea)}
+                value={reviewComment}
+                onChange={(e) => {
+                  setReviewComment(e.target.value);
+                  setReviewError(null);
+                }}
+                placeholder="Share your thoughts..."
+                rows={3}
+                disabled={isSubmittingReview}
+              />
+            </div>
+            {reviewError && (
+              <div className={styles.cancelModalError}>
+                {reviewError}
+              </div>
+            )}
+          </form>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={handleCloseReviewModal}
+              disabled={isSubmittingReview}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={handleSubmitReview}
+              disabled={isSubmittingReview || reviewRating < 1 || reviewRating > 5}
+            >
+              {isSubmittingReview ? "Submitting..." : "Post it!"}
             </button>
           </div>
         </div>
