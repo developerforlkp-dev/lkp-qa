@@ -9,7 +9,7 @@ const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
-  
+
   // Use relative path - works with:
   // - Development: setupProxy.js proxies /api to http://localhost:5000/api
   // - Production: vercel.json rewrites /api to http://69.62.77.33/api
@@ -27,7 +27,7 @@ ListingsAPI.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("jwtToken");
     const fullURL = `${config.baseURL}${config.url}`;
-    
+
     console.log("🌐 Axios Request Interceptor:");
     console.log("  - Method:", config.method?.toUpperCase());
     console.log("  - Base URL:", config.baseURL);
@@ -35,7 +35,7 @@ ListingsAPI.interceptors.request.use((config) => {
     console.log("  - Full URL:", fullURL);
     console.log("  - Data:", config.data);
     console.log("  - Headers:", config.headers);
-    
+
     if (token) {
       // Ensure headers object exists
       config.headers = config.headers || {};
@@ -57,10 +57,10 @@ ListingsAPI.interceptors.response.use(
       // Server responded with error status
       const status = error.response.status;
       const message = error.response.data?.message || error.message;
-      
+
       // Check if this is a non-critical endpoint that can fail silently
       const isNonCriticalEndpoint = error.config?.url?.includes('/orders/complete-expired');
-      
+
       // Suppress error logging for non-critical endpoints (500 errors)
       // These endpoints are handled gracefully by the calling code
       if (status === 500 && isNonCriticalEndpoint) {
@@ -69,7 +69,7 @@ ListingsAPI.interceptors.response.use(
         // The calling function (getCompleteExpiredOrders) will handle it gracefully
         return Promise.reject(error);
       }
-      
+
       // Only log, don't throw for 400 errors (they might be expected)
       if (status === 400) {
         console.warn(`⚠️ API 400 Error: ${message || 'Bad Request'}`, {
@@ -94,10 +94,10 @@ ListingsAPI.interceptors.response.use(
       // Something else happened
       console.error("❌ Error:", error.message);
     }
-    
+
     // Mark error as handled to prevent browser alerts
     error.isHandled = true;
-    
+
     // Return the error so calling code can handle it
     return Promise.reject(error);
   }
@@ -163,6 +163,18 @@ export const getOrderCancelPreview = async (orderId) => {
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching cancel preview:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+// ✅ Create a stay order
+export const createStayOrder = async (orderData) => {
+  try {
+    const response = await ListingsAPI.post("/orders/stay", orderData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error creating stay order:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -274,19 +286,19 @@ export const loginWithGoogle = async (idToken) => {
     const url = "/customers/auth/google";
     const requestData = { idToken: idToken };
     const baseURL = getApiBaseURL();
-    const fullURL = baseURL === "/api" 
-      ? `${window.location.origin}${baseURL}${url}` 
+    const fullURL = baseURL === "/api"
+      ? `${window.location.origin}${baseURL}${url}`
       : `${baseURL}${url}`;
-    
+
     console.log("📤 Making Google login request:");
     console.log("  - Base URL:", baseURL);
     console.log("  - Endpoint:", url);
     console.log("  - Full URL:", fullURL);
     console.log("  - Request data:", { idToken: idToken ? `${idToken.substring(0, 20)}...` : "null" });
     console.log("  - Check Network tab for: POST", fullURL);
-    
+
     const response = await ListingsAPI.post(url, requestData);
-    
+
     console.log("✅ Google login successful:");
     console.log("  - Status:", response.status);
     console.log("  - Response data:", response.data);
@@ -310,17 +322,17 @@ export const getBillingConfiguration = async (listingId) => {
     if (!listingId) {
       throw new Error("listingId is required");
     }
-    
+
     // Ensure listingId is a string (URL parameter)
     // Try to convert to number first, then string to ensure it's valid
     const listingIdNum = Number(listingId);
     const listingIdStr = (!isNaN(listingIdNum) && listingIdNum > 0) ? String(listingIdNum) : String(listingId);
-    
+
     // Final validation
     if (!listingIdStr || listingIdStr === "undefined" || listingIdStr === "null" || listingIdStr === "NaN") {
       throw new Error(`Invalid listingId: ${listingId} (converted to: ${listingIdStr})`);
     }
-    
+
     const response = await ListingsAPI.get(`/public/listings/${listingIdStr}/billing-configuration`);
     console.log("✅ Billing configuration fetched:", response.data);
     return response.data;
@@ -332,9 +344,9 @@ export const getBillingConfiguration = async (listingId) => {
       errorMessage: error.message,
       responseData: error.response?.data
     };
-    
+
     console.error("❌ Error fetching billing configuration:", errorDetails);
-    
+
     // If it's a 400 error, log more details
     if (error.response?.status === 400) {
       console.error("❌ 400 Bad Request Details:", {
@@ -343,7 +355,7 @@ export const getBillingConfiguration = async (listingId) => {
         message: error.response?.data?.message || error.message
       });
     }
-    
+
     throw error;
   }
 };
@@ -353,11 +365,11 @@ export const getAvailability = async (listingId, startDate, endDate, slotId) => 
   try {
     // Ensure slotId is a number or string
     const slotIdParam = slotId ? String(slotId) : null;
-    
+
     if (!listingId || !startDate || !endDate || !slotIdParam) {
       throw new Error(`Missing required parameters: listingId=${listingId}, startDate=${startDate}, endDate=${endDate}, slotId=${slotIdParam}`);
     }
-    
+
     const response = await ListingsAPI.get(`/public/listings/${listingId}/availability`, {
       params: {
         startDate: startDate, // Format: YYYY-MM-DD
@@ -365,13 +377,13 @@ export const getAvailability = async (listingId, startDate, endDate, slotId) => 
         slotId: slotIdParam,  // Number as string
       },
     });
-    
+
     console.log("✅ Availability API Response:", {
       url: `/public/listings/${listingId}/availability`,
       params: { startDate, endDate, slotId: slotIdParam },
       data: response.data
     });
-    
+
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching availability:", {
@@ -400,7 +412,7 @@ export const createOrder = async (orderData) => {
       data: error.response?.data,
       requestData: orderData
     });
-    
+
     // Log detailed error information for 400 errors
     if (error.response?.status === 400) {
       console.error("❌ 400 Bad Request Details:", {
@@ -410,7 +422,7 @@ export const createOrder = async (orderData) => {
         errorMessage: error.response?.data?.message || error.response?.data?.error || "Bad Request"
       });
     }
-    
+
     throw error;
   }
 };
@@ -429,7 +441,7 @@ export const createEventOrder = async (orderData) => {
       data: error.response?.data,
       requestData: orderData
     });
-    
+
     // Log detailed error information for 400 errors
     if (error.response?.status === 400) {
       console.error("❌ 400 Bad Request Details:", {
@@ -439,7 +451,7 @@ export const createEventOrder = async (orderData) => {
         errorMessage: error.response?.data?.message || error.response?.data?.error || "Bad Request"
       });
     }
-    
+
     throw error;
   }
 };
@@ -454,36 +466,36 @@ export const getListingSlots = async (listingId, startDate, endDate) => {
     if (!startDate || !endDate) {
       throw new Error("startDate and endDate are required");
     }
-    
+
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
       throw new Error(`Invalid date format. Expected YYYY-MM-DD, got startDate=${startDate}, endDate=${endDate}`);
     }
-    
+
     // Ensure listingId is a string (URL parameter)
     // Try to convert to number first, then string to ensure it's valid
     const listingIdNum = Number(listingId);
     const listingIdStr = (!isNaN(listingIdNum) && listingIdNum > 0) ? String(listingIdNum) : String(listingId);
-    
+
     // Final validation
     if (!listingIdStr || listingIdStr === "undefined" || listingIdStr === "null" || listingIdStr === "NaN") {
       throw new Error(`Invalid listingId: ${listingId} (converted to: ${listingIdStr})`);
     }
-    
+
     const response = await ListingsAPI.get(`/public/listings/${listingIdStr}/slots`, {
       params: {
         startDate: startDate, // Format: YYYY-MM-DD
         endDate: endDate,     // Format: YYYY-MM-DD
       },
     });
-    
+
     console.log("✅ Slots API Response:", {
       url: `/public/listings/${listingIdStr}/slots`,
       params: { startDate, endDate },
       data: response.data
     });
-    
+
     return response.data;
   } catch (error) {
     const errorDetails = {
@@ -496,9 +508,9 @@ export const getListingSlots = async (listingId, startDate, endDate) => {
       responseData: error.response?.data,
       responseHeaders: error.response?.headers
     };
-    
+
     console.error("❌ Error fetching slots:", errorDetails);
-    
+
     // If it's a 400 error, log more details
     if (error.response?.status === 400) {
       console.error("❌ 400 Bad Request Details:", {
@@ -508,7 +520,7 @@ export const getListingSlots = async (listingId, startDate, endDate) => {
         message: error.response?.data?.message || error.message
       });
     }
-    
+
     throw error;
   }
 };
@@ -520,15 +532,15 @@ export const getOrderDetails = async (orderId) => {
     if (!orderId) {
       throw new Error("orderId is required");
     }
-    
+
     // Ensure orderId is a string (URL parameter)
     const orderIdNum = Number(orderId);
     const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
-    
+
     const response = await ListingsAPI.get(`/orders/${orderIdStr}`);
     const payload = response.data;
     console.log("✅ Order details fetched (raw):", payload);
-    
+
     // Return the full response object which contains: order, addons, guestAnswers, history
     // The response structure is:
     // {
@@ -541,7 +553,7 @@ export const getOrderDetails = async (orderId) => {
       // Return the full payload which contains order and related data
       return payload;
     }
-    
+
     return payload;
   } catch (error) {
     console.error("❌ Error fetching order details:", error.response?.data || error.message);
@@ -555,11 +567,11 @@ export const getEventOrderDetails = async (orderId) => {
     if (!orderId) {
       throw new Error("orderId is required");
     }
-    
+
     // Ensure orderId is a string (URL parameter)
     const orderIdNum = Number(orderId);
     const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
-    
+
     // Prefer Swagger endpoint: GET /api/orders/{orderId}/event-details
     // Keep fallback to legacy endpoint for compatibility.
     let response;
@@ -589,11 +601,11 @@ export const getEventDetails = async (eventId) => {
     if (!eventId) {
       throw new Error("eventId is required");
     }
-    
+
     // Ensure eventId is a string (URL parameter)
     const eventIdNum = Number(eventId);
     const eventIdStr = (!isNaN(eventIdNum) && eventIdNum > 0) ? String(eventIdNum) : String(eventId);
-    
+
     // Prefer Swagger "public event details" route: GET /api/events/{id}
     // Keep fallback to legacy public suffix route for compatibility.
     const primaryUrl = `/events/${eventIdStr}`;
@@ -643,18 +655,18 @@ export const getCompleteExpiredOrders = async () => {
   } catch (error) {
     // This is a non-critical endpoint - handle all errors gracefully
     // The interceptor has already suppressed error logging for 500 errors
-    
+
     // For 500 errors, silently return default
     if (error.response?.status === 500) {
       return { completedCount: 0 };
     }
-    
+
     // For other errors, log a brief warning (not error)
     console.warn("⚠️ Error fetching completed/expired orders count (non-blocking):", {
       status: error.response?.status,
       message: error.response?.data?.error || error.response?.data?.message || error.message,
     });
-    
+
     // Return default object on any error to ensure page can load
     return { completedCount: 0 };
   }
@@ -693,7 +705,7 @@ export const getCompletedOrders = async (page = 1, limit = 20) => {
       status: error.response?.status,
       url: error.config?.url,
     });
-    
+
     // Return empty array on error
     return [];
   }
@@ -709,19 +721,19 @@ export const submitOrderReview = async (orderId, reviewData) => {
     if (!reviewData || !reviewData.rating) {
       throw new Error("rating is required in reviewData");
     }
-    
+
     // Ensure orderId is a number
     const orderIdNum = Number(orderId);
     if (isNaN(orderIdNum) || orderIdNum <= 0) {
       throw new Error("Invalid orderId");
     }
-    
+
     // Validate rating is between 1 and 5
     const rating = Number(reviewData.rating);
     if (isNaN(rating) || rating < 1 || rating > 5) {
       throw new Error("Rating must be between 1 and 5");
     }
-    
+
     // Use the new /reviews endpoint with the specified request body format
     // Include listingId and customerId if provided (backend may require them)
     const requestBody = {
@@ -729,7 +741,7 @@ export const submitOrderReview = async (orderId, reviewData) => {
       rating: rating,
       comment: reviewData.comment || "",
     };
-    
+
     // Add optional fields if provided
     if (reviewData.listingId) {
       const listingIdNum = Number(reviewData.listingId);
@@ -743,11 +755,11 @@ export const submitOrderReview = async (orderId, reviewData) => {
         requestBody.customerId = customerIdNum;
       }
     }
-    
+
     console.log("📤 Submitting review with request body:", requestBody);
-    
+
     const response = await ListingsAPI.post(`/reviews`, requestBody);
-    
+
     console.log("✅ Review submitted successfully:", response.data);
     return response.data;
   } catch (error) {
@@ -844,7 +856,7 @@ export const getHomepageSections = async (businessInterestId) => {
     if (!businessInterestId) {
       throw new Error("businessInterestId is required");
     }
-    
+
     const response = await ListingsAPI.get("/public/homepage-sections", {
       params: { businessInterestId, _ts: Date.now() },
       headers: {
@@ -873,7 +885,7 @@ export const getHomepageSectionListings = async (sectionId, limit = 12, offset =
     if (!sectionId) {
       throw new Error("sectionId is required");
     }
-    
+
     const response = await ListingsAPI.get(`/public/homepage-sections/${sectionId}/listings`, {
       params: { limit, offset, _ts: Date.now() },
       headers: {
@@ -954,19 +966,44 @@ export const getStayDetails = async (stayId) => {
   }
 };
 
+export const getStayRoomAvailability = async (stayId, checkInDate, checkOutDate) => {
+  try {
+    if (!stayId) {
+      throw new Error("stayId is required");
+    }
+    if (!checkInDate) {
+      throw new Error("checkInDate is required");
+    }
+    if (!checkOutDate) {
+      throw new Error("checkOutDate is required");
+    }
+
+    const stayIdNum = Number(stayId);
+    const stayIdStr = (!isNaN(stayIdNum) && stayIdNum > 0) ? String(stayIdNum) : String(stayId);
+
+    const response = await ListingsAPI.get(`/stays/${stayIdStr}/room-availability`, {
+      params: { checkInDate, checkOutDate },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching stay room availability:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // ✅ Get host profile data
 export const getHost = async (hostId) => {
   try {
     if (!hostId) {
       throw new Error("hostId is required");
     }
-    
+
     const hostIdNum = Number(hostId);
     const hostIdStr = (!isNaN(hostIdNum) && hostIdNum > 0) ? String(hostIdNum) : String(hostId);
-    
+
     const response = await ListingsAPI.get(`/public/hosts/${hostIdStr}`);
     const payload = response.data;
-    
+
     return payload; // Returns { host, businessInterests, statistics, listings, recentReviews }
   } catch (error) {
     console.error(`❌ Error fetching host ${hostId}:`, error.response?.data || error.message);
@@ -984,16 +1021,16 @@ export const cancelOrder = async (orderId, cancelData) => {
     if (!cancelData || !cancelData.reason) {
       throw new Error("reason is required in cancelData");
     }
-    
+
     // Ensure orderId is a string (URL parameter)
     const orderIdNum = Number(orderId);
     const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
-    
+
     const response = await ListingsAPI.post(`/orders/${orderIdStr}/cancel`, {
       reason: cancelData.reason,
       adminOverride: cancelData.adminOverride || false,
     });
-    
+
     console.log("✅ Order cancelled successfully:", response.data);
     return response.data;
   } catch (error) {

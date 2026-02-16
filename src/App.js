@@ -35,6 +35,7 @@ import ListYourProperty from "./screens/ListYourProperty";
 import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import EventProduct from "./screens/EventProduct";
+import StayProduct from "./screens/StayProduct";
 
 function App() {
   // Get Google Client ID from environment variable
@@ -331,6 +332,15 @@ function App() {
           render={() => (
             <Page separatorHeader>
               <EventProduct />
+            </Page>
+          )}
+        />
+        <Route
+          exact
+          path="/stays"
+          render={() => (
+            <Page separatorHeader>
+              <StayProduct />
             </Page>
           )}
         />

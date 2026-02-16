@@ -1,0 +1,307 @@
+import React, { useEffect, useState, useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import cn from "classnames";
+import styles from "../ExperienceProduct/ExperienceProduct.module.sass";
+import Product from "../../components/Product";
+import Description from "../ExperienceProduct/Description";
+import Itinerary from "../../components/Itinerary";
+import TabSection from "../ExperienceProduct/TabSection";
+import CommentsProduct from "../../components/CommentsProduct";
+import Browse from "../../components/Browse";
+import Loader from "../../components/Loader";
+import { browse2 } from "../../mocks/browse";
+import { getStayDetails, getHost } from "../../utils/api";
+
+// Helper function to format image URLs (from Azure blob storage or full URLs)
+const formatImageUrl = (url) => {
+  if (!url) return null;
+
+  // Already a full URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Azure blob storage path (e.g., "leads/3/listings/6/cover-photo/image.jpg")
+  if (url.startsWith("leads/")) {
+    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
+  }
+
+  // Relative path - prepend base URL if needed
+  if (url.startsWith("/")) {
+    return url;
+  }
+
+  // Otherwise assume it's a blob storage path
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
+};
+
+// Helper function to build options from listing data
+const buildOptionsFromListing = (listing, hostData) => {
+  const options = [];
+
+  // 1. Superhost - check if host is superhost
+  if (hostData?.isSuperhost || listing?.host?.isSuperhost) {
+    options.push({
+      title: "Superhost",
+      icon: "home",
+    });
+  }
+
+  // 2. Location
+  const locationParts = [];
+  if (listing?.city) locationParts.push(listing.city);
+  if (listing?.state) locationParts.push(listing.state);
+  if (listing?.country) locationParts.push(listing.country);
+
+  if (locationParts.length === 0) {
+    if (listing?.location) locationParts.push(listing.location);
+    if (listing?.meetingAddress) locationParts.push(listing.meetingAddress);
+  }
+
+  if (locationParts.length > 0) {
+    options.push({
+      title: locationParts.join(", "),
+      icon: "flag",
+    });
+  }
+
+  // 3. Category/Tags
+  if (Array.isArray(listing?.tags) && listing.tags.length > 0) {
+    options.push({
+      title: listing.tags[0],
+      icon: "route",
+    });
+  }
+
+  return options;
+};
+
+// Helper function to build parametersUser from listing and host data
+const buildParametersUser = (listing, hostData) => {
+  const params = [];
+
+  if (hostData?.isSuperhost || listing?.host?.isSuperhost) {
+    params.push({
+      title: "Superhost",
+      icon: "home",
+    });
+  }
+
+  const reviewCount = listing?.totalReviews || listing?.reviewCount || listing?.reviews || 0;
+  if (reviewCount > 0) {
+    params.push({
+      title: `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`,
+      icon: "star-outline",
+    });
+  }
+
+  if (params.length === 0) {
+    return [
+      {
+        title: "Superhost",
+        icon: "home",
+      },
+    ];
+  }
+
+  return params;
+};
+
+const socials = [
+  {
+    title: "twitter",
+    url: "https://twitter.com/ui8",
+  },
+  {
+    title: "instagram",
+    url: "https://www.instagram.com/ui8net/",
+  },
+  {
+    title: "facebook",
+    url: "https://www.facebook.com/ui8.net/",
+  },
+];
+
+const StayProduct = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const idParam = params.get("id");
+  const id = idParam ? idParam : null;
+
+  const [listing, setListing] = useState(null);
+  const [hostData, setHostData] = useState(null);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const mapStayToListing = (stay, stayId) => {
+    if (!stay || typeof stay !== "object") return stay;
+    return {
+      ...stay,
+      stayId: stay.stayId ?? stay.stay_id ?? stayId,
+      title: stay.propertyName || stay.title,
+      description: stay.description || stay.shortDescription || stay.briefDescription,
+      briefDescription: stay.shortDescription || stay.briefDescription,
+      coverPhotoUrl: stay.coverImageUrl || stay.coverPhotoUrl,
+      averageRating: stay.rating ?? stay.averageRating,
+      totalReviews: stay.reviewCount ?? stay.totalReviews,
+      currency: stay.currency || "INR",
+    };
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    setListing(null);
+    setHostData(null);
+    setGalleryItems([]);
+    setLoading(true);
+
+    const load = async () => {
+      try {
+        if (!id) {
+          setListing(null);
+          setGalleryItems([]);
+          setLoading(false);
+          return;
+        }
+
+        const data = await getStayDetails(id);
+        if (!mounted) return;
+
+        const normalizedData = mapStayToListing(data, id);
+
+        if (normalizedData) {
+          setListing(normalizedData);
+
+          const galleryImages = [];
+
+          if (normalizedData.coverPhotoUrl) {
+            const formattedUrl = formatImageUrl(normalizedData.coverPhotoUrl);
+            if (formattedUrl) galleryImages.push(formattedUrl);
+          }
+
+          if (Array.isArray(normalizedData.listingMedia)) {
+            for (const media of normalizedData.listingMedia) {
+              const imageUrl = formatImageUrl(media.url || media.fileUrl);
+              if (imageUrl) galleryImages.push(imageUrl);
+            }
+          }
+
+          setGalleryItems(galleryImages.length ? galleryImages : []);
+
+          const leadUserId = normalizedData.leadUserId || normalizedData.host?.leadUserId;
+          if (leadUserId) {
+            getHost(leadUserId)
+              .then((hostResponse) => {
+                if (!mounted) return;
+                setHostData(hostResponse || null);
+              })
+              .catch((hostErr) => {
+                console.warn("⚠️ Failed to fetch host data:", hostErr);
+              });
+          }
+
+          setLoading(false);
+        } else {
+          setListing(null);
+          setGalleryItems([]);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load stay", e);
+        setListing(null);
+        setGalleryItems([]);
+        setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [id, location.search]);
+
+  const listingOptions = useMemo(() => {
+    return buildOptionsFromListing(listing, hostData);
+  }, [listing, hostData]);
+
+  const parametersUser = useMemo(() => {
+    return buildParametersUser(listing, hostData);
+  }, [listing, hostData]);
+
+  const rating = listing?.averageRating || listing?.rating || null;
+  const reviews = listing?.totalReviews || listing?.reviewCount || listing?.reviews || null;
+
+  const getHostAvatar = () => {
+    const avatarUrl =
+      hostData?.profilePhotoUrl ||
+      hostData?.avatar ||
+      hostData?.profileImage ||
+      hostData?.image ||
+      listing?.host?.profilePhotoUrl ||
+      listing?.host?.avatar ||
+      listing?.host?.profileImage ||
+      listing?.host?.image ||
+      null;
+
+    if (avatarUrl) {
+      return formatImageUrl(avatarUrl);
+    }
+
+    return null;
+  };
+
+  const hostAvatar = getHostAvatar();
+
+  if (loading && !listing) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <Loader />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Product
+        classSection="section-mb64"
+        title={listing?.title || "Stay"}
+        options={listingOptions}
+        gallery={galleryItems && galleryItems.length > 0 ? galleryItems : []}
+        type="experience"
+        rating={rating}
+        reviews={reviews}
+        hostAvatar={hostAvatar}
+      />
+
+      {listing && (
+        <>
+          <Description classSection="section" listing={listing} hostData={hostData} />
+          <Itinerary classSection="section" listing={listing} />
+          <TabSection classSection="section" listing={listing} />
+          <CommentsProduct
+            className={cn("section", styles.comment)}
+            parametersUser={parametersUser}
+            info={
+              listing?.description ||
+              "Described by Queenstown House & Garden magazine as having 'one of the best views we've ever seen' you will love relaxing in this newly built"
+            }
+            socials={socials}
+            buttonText="Contact"
+            hostData={hostData}
+          />
+        </>
+      )}
+
+      <Browse
+        classSection="section"
+        headSmall
+        classTitle="h4"
+        title="Explore mountains in New Zealand"
+        items={browse2}
+      />
+    </>
+  );
+};
+
+export default StayProduct;

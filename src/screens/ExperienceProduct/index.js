@@ -10,7 +10,7 @@ import CommentsProduct from "../../components/CommentsProduct";
 import Browse from "../../components/Browse";
 import Loader from "../../components/Loader";
 import { browse2 } from "../../mocks/browse";
-import { getListing, getHost, getStayDetails } from "../../utils/api";
+import { getListing, getHost } from "../../utils/api";
 
 // Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
@@ -184,23 +184,7 @@ const ExperienceProduct = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const idParam = params.get("id");
-  const stayIdParam = params.get("stayId");
-  const isStay = Boolean(stayIdParam);
   const id = idParam ? idParam : "2"; // default to 2 as requested
-
-  const mapStayToListing = (stay) => {
-    if (!stay || typeof stay !== "object") return stay;
-    return {
-      ...stay,
-      title: stay.propertyName || stay.title,
-      description: stay.description || stay.shortDescription || stay.briefDescription,
-      briefDescription: stay.shortDescription || stay.briefDescription,
-      coverPhotoUrl: stay.coverImageUrl || stay.coverPhotoUrl,
-      averageRating: stay.rating ?? stay.averageRating,
-      totalReviews: stay.reviewCount ?? stay.totalReviews,
-      currency: stay.currency || "INR",
-    };
-  };
 
   const [listing, setListing] = useState(null);
   const [hostData, setHostData] = useState(null);
@@ -219,35 +203,33 @@ useEffect(() => {
   const load = async () => {
     try {
       // ✅ Fetch listing data first (critical path)
-      const data = isStay ? await getStayDetails(stayIdParam) : await getListing(id);
+      const data = await getListing(id);
       if (!mounted) return;
 
-      const normalizedData = isStay ? mapStayToListing(data) : data;
-
-      if (normalizedData) {
+      if (data) {
         // ✅ Set listing immediately for progressive rendering
-        setListing(normalizedData);
+        setListing(data);
 
         // ✅ Build gallery dynamically from API (optimized with for loops)
         const galleryImages = [];
 
         // 1️⃣ Add cover photo (if exists)
-        if (normalizedData.coverPhotoUrl) {
-          const formattedUrl = formatImageUrl(normalizedData.coverPhotoUrl);
+        if (data.coverPhotoUrl) {
+          const formattedUrl = formatImageUrl(data.coverPhotoUrl);
           if (formattedUrl) galleryImages.push(formattedUrl);
         }
 
         // 2️⃣ Add listingMedia images
-        if (Array.isArray(normalizedData.listingMedia)) {
-          for (const media of normalizedData.listingMedia) {
+        if (Array.isArray(data.listingMedia)) {
+          for (const media of data.listingMedia) {
             const imageUrl = formatImageUrl(media.url || media.fileUrl);
             if (imageUrl) galleryImages.push(imageUrl);
           }
         }
 
         // 3️⃣ Add keyActivities images
-        if (Array.isArray(normalizedData.keyActivities)) {
-          for (const activity of normalizedData.keyActivities) {
+        if (Array.isArray(data.keyActivities)) {
+          for (const activity of data.keyActivities) {
             if (Array.isArray(activity.images)) {
               for (const img of activity.images) {
                 const imageUrl = formatImageUrl(img.url || img.imageUrl);
@@ -260,7 +242,7 @@ useEffect(() => {
         setGalleryItems(galleryImages.length ? galleryImages : []);
 
         // ✅ Fetch host data in parallel (non-blocking)
-        const leadUserId = normalizedData.leadUserId || normalizedData.host?.leadUserId;
+        const leadUserId = data.leadUserId || data.host?.leadUserId;
         if (leadUserId) {
           // Don't await - let it load in background
           getHost(leadUserId)
@@ -293,7 +275,7 @@ useEffect(() => {
   return () => {
     mounted = false;
   };
-}, [id, stayIdParam, isStay, location.search]); // ✅ Also depend on location.search to ensure effect runs on route changes
+}, [id, location.search]); // ✅ Also depend on location.search to ensure effect runs on route changes
 
   // Build options dynamically from listing and host data
   const listingOptions = useMemo(() => {

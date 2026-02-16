@@ -6,7 +6,7 @@ module.exports = function (app) {
   app.use(
     '/api/event-orders',
     createProxyMiddleware({
-      target: 'http://62.72.12.51:8080/',
+      target: 'http://69.62.77.33:8080',
       changeOrigin: true,
       secure: false,
       pathRewrite: (path) => `/api/event-orders${path}`,
@@ -30,7 +30,7 @@ module.exports = function (app) {
   app.use(
     '/api/orders',
     createProxyMiddleware({
-      target: 'http://62.72.12.51:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       // Only proxy requests that end with /event-details
@@ -56,7 +56,7 @@ module.exports = function (app) {
   app.use(
     '/api/orders/event',
     createProxyMiddleware({
-      target: 'http://62.72.12.51:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       pathRewrite: (path) => `/api/orders/event`,
@@ -80,7 +80,7 @@ module.exports = function (app) {
   app.use(
     '/api/events',
     createProxyMiddleware({
-      target: 'http://62.72.12.51:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       // When mounting a proxy on '/api/events', http-proxy-middleware forwards only
@@ -106,7 +106,7 @@ module.exports = function (app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://62.72.12.51:6000/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       pathRewrite: (path, req) => `/api${path}`,

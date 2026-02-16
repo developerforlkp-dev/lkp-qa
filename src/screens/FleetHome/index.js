@@ -3,7 +3,7 @@ import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
-import { getHomepageSections, getHomepageSectionListings, getEventListings } from "../../utils/api";
+import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -86,6 +86,35 @@ const FleetHome = () => {
   // Fetch homepage sections and their listings (by business interest: 1=Experience, 2=Events, 3=Stays)
   // On refresh, Experience is selected by default → always call with businessInterestId=1
   useEffect(() => {
+    if (activeFilter === "stays") {
+      const loadStays = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const stayListings = await getStayListings(20, 0);
+          setSectionsData([
+            {
+              section: {
+                sectionId: "stays",
+                sectionTitle: "Stays",
+              },
+              listings: Array.isArray(stayListings) ? stayListings : [],
+            },
+          ]);
+        } catch (err) {
+          console.error("❌ Error loading stays listings:", err);
+          setSectionsData([]);
+          setError(err.message || "Failed to load stays");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadStays();
+      return;
+    }
+
     const businessInterestId = getBusinessInterestId(activeFilter) ?? (activeFilter === "experience" ? 1 : null);
     if (businessInterestId == null) {
       // Stays, Food, Places: don't refetch, keep current sectionsData

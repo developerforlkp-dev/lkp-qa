@@ -1,0 +1,1245 @@
+@import ../../styles/helpers
+
+.outer
+  background: #F9FAFB
+  min-height: 100vh
+  +dark
+    background: $n1
+
+// Container
+.container
+  max-width: 1280px
+  margin: 0 auto
+  padding: 32px 16px
+  +t
+    padding: 32px 24px
+  +d
+    padding: 32px 32px
+
+.loadingContainer
+  display: flex
+  justify-content: center
+  align-items: center
+  min-height: 60vh
+
+.errorContainer
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  min-height: 60vh
+  text-align: center
+  h2
+    margin-top: 16px
+    margin-bottom: 8px
+    color: $n2
+    +dark
+      color: $n8
+  p
+    color: $n4
+
+// Header Section
+.header
+  margin-bottom: 24px
+
+.tags
+  display: flex
+  gap: 8px
+  margin-bottom: 12px
+  flex-wrap: wrap
+
+.tag
+  display: inline-flex
+  align-items: center
+  padding: 4px 12px
+  border-radius: 16px
+  background: $n7
+  color: $n2
+  font-size: 12px
+  font-weight: 600
+  text-transform: uppercase
+  letter-spacing: 0.5px
+  +dark
+    background: $n3
+    color: $n8
+  &:first-child
+    background: $p1
+    color: $n8
+
+.title
+  font-size: 32px
+  font-weight: 700
+  color: $n2
+  margin-bottom: 12px
+  line-height: 1.2
+  +m
+    font-size: 24px
+  +dark
+    color: $n8
+
+.locationRow
+  display: flex
+  justify-content: space-between
+  align-items: center
+  flex-wrap: wrap
+  gap: 12px
+
+.location
+  display: flex
+  align-items: center
+  gap: 6px
+  color: $n4
+  font-size: 14px
+  svg
+    fill: $n4
+
+.actions
+  display: flex
+  gap: 12px
+
+.actionBtn
+  display: flex
+  align-items: center
+  gap: 6px
+  padding: 8px 16px
+  border: 1px solid $n6
+  border-radius: 8px
+  background: transparent
+  color: $n2
+  font-size: 14px
+  font-weight: 500
+  cursor: pointer
+  transition: all 0.2s
+  +dark
+    border-color: $n4
+    color: $n8
+  &:hover
+    background: $n7
+    +dark
+      background: $n3
+  svg
+    fill: currentColor
+
+// Gallery Section
+.gallery
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 8px
+  margin-bottom: 32px
+  border-radius: 16px
+  overflow: hidden
+  height: 400px
+  +m
+    grid-template-columns: 1fr
+    height: auto
+
+.galleryEmpty
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  height: 300px
+  background: $n7
+  border-radius: 16px
+  color: $n4
+  gap: 12px
+  +dark
+    background: $n3
+  svg
+    fill: $n4
+
+.mainImage
+  grid-row: span 2
+  position: relative
+  overflow: hidden
+  border-radius: 16px 0 0 16px
+  +m
+    grid-row: span 1
+    height: 250px
+    border-radius: 16px
+  img
+    width: 100%
+    height: 100%
+    object-fit: cover
+
+.thumbnails
+  display: grid
+  grid-template-columns: 1fr 1fr
+  grid-template-rows: 1fr 1fr
+  gap: 8px
+  +m
+    display: none
+
+.thumb
+  position: relative
+  overflow: hidden
+  border-radius: 8px
+  img
+    width: 100%
+    height: 100%
+    object-fit: cover
+
+.thumbEmpty
+  display: flex
+  align-items: center
+  justify-content: center
+  background: $n7
+  +dark
+    background: $n3
+  svg
+    fill: $n4
+
+// Content Layout
+.contentWrapper
+  display: grid
+  grid-template-columns: 1fr 380px
+  gap: 40px
+  +t
+    grid-template-columns: 1fr
+    gap: 24px
+
+.mainContent
+  min-width: 0
+
+.sidebarWrapper
+  +t
+    order: -1
+
+// Tabs
+.tabs
+  display: flex
+  border-bottom: 1px solid $n6
+  margin-bottom: 40px
+  +dark
+    border-color: $n4
+  +m
+    overflow-x: auto
+    padding-bottom: 4px
+
+.tab
+  flex: 1
+  padding: 16px 8px
+  background: none
+  border: 1px solid transparent
+  color: $n4
+  font-size: 16px
+  font-weight: 500
+  cursor: pointer
+  white-space: nowrap
+  transition: all 0.2s
+  +dark
+    color: $n5
+  &:hover
+    color: $n2
+    +dark
+      color: $n8
+
+.tabActive
+  color: $p1
+  background: $n8
+  border: 1px solid $p1
+  border-bottom: 3px solid $p1
+  margin-bottom: -1px
+  +dark
+    background: $n1
+    color: $p1
+
+// Overview Section
+.overviewTab
+  animation: fadeIn 0.3s ease
+
+.aboutSection
+  margin-bottom: 32px
+  h2
+    font-size: 22px
+    font-weight: 600
+    color: $n2
+    margin-bottom: 16px
+    +dark
+      color: $n8
+  p
+    color: $n4
+    line-height: 1.6
+    +dark
+      color: $n5
+
+.detailsTable
+  display: grid
+  grid-template-columns: repeat(4, 1fr)
+  gap: 16px
+  margin-bottom: 40px
+  padding: 20px
+  background: $n7
+  border-radius: 12px
+  +dark
+    background: $n3
+  +m
+    grid-template-columns: repeat(2, 1fr)
+
+.detailItem
+  display: flex
+  flex-direction: column
+  gap: 4px
+
+.detailLabel
+  font-size: 12px
+  text-transform: uppercase
+  letter-spacing: 0.5px
+  color: $n4
+  +dark
+    color: $n5
+
+.detailValue
+  font-size: 14px
+  font-weight: 600
+  color: $n2
+  +dark
+    color: $n8
+
+// Rooms Section
+.roomsSection
+  padding-top: 32px
+  border-top: 1px solid $n6
+  margin-top: 40px
+  margin-bottom: 40px
+  +dark
+    border-color: $n4
+
+.roomsHeader
+  display: flex
+  justify-content: space-between
+  align-items: center
+  margin-bottom: 8px
+  h2
+    font-size: 24px
+    font-weight: 700
+    color: $n2
+    +dark
+      color: $n8
+
+.roomsCount
+  font-size: 13px
+  font-weight: 500
+  color: $n4
+  background: $n7
+  padding: 6px 14px
+  border-radius: 20px
+  +dark
+    background: $n3
+    color: $n5
+
+.roomsSubtext
+  color: $n4
+  font-size: 14px
+  margin-bottom: 20px
+  +dark
+    color: $n5
+
+.noRooms
+  color: $n4
+  font-style: italic
+  padding: 20px
+  background: $n7
+  border-radius: 12px
+  text-align: center
+  +dark
+    background: $n3
+    color: $n5
+
+.roomsList
+  display: flex
+  flex-direction: column
+  gap: 24px
+
+.roomCard
+  display: flex
+  flex-direction: row
+  align-items: stretch
+  background: white
+  border: 1px solid #e5e7eb
+  border-radius: 24px
+  padding: 16px
+  gap: 24px
+  transition: all 0.3s ease
+  +dark
+    background: $n2
+    border-color: $n4
+  +d
+    gap: 32px
+  +s
+    padding: 24px
+  +m
+    flex-direction: column
+    align-items: flex-start
+  &:hover
+    border-color: #bfdbfe
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1)
+    filter: drop-shadow(0 0 20px rgba(239, 246, 255, 0.5))
+    .roomName
+      color: $p1
+
+.roomImage
+  flex-shrink: 0
+  position: relative
+  border-radius: 16px
+  overflow: hidden
+  width: 280px
+  height: auto
+  min-height: 180px
+  +m
+    width: 100%
+    height: 220px
+  img
+    width: 100%
+    height: 100%
+    object-fit: cover
+
+.roomImagePlaceholder
+  width: 100%
+  height: 100%
+  display: flex
+  align-items: center
+  justify-content: center
+  background: $n7
+  +dark
+    background: $n3
+  svg
+    fill: $n4
+
+.roomCategoryTag
+  position: absolute
+  top: 12px
+  left: 12px
+  background: white
+  color: #111827
+  padding: 4px 12px
+  font-size: 13px
+  font-weight: 600
+  border-radius: 20px
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1)
+  +dark
+    background: $n3
+    color: $n8
+
+.roomInfo
+  flex: 1
+  display: flex
+  flex-direction: column
+  min-width: 0 // Prevent flex overflow
+
+.roomName
+  font-size: 20px
+  font-weight: 700
+  color: $n2
+  margin-bottom: 8px
+  transition: color 0.2s
+  +dark
+    color: $n8
+
+.roomMetaRow
+  display: flex
+  align-items: center
+  gap: 12px
+  margin-bottom: 20px
+  color: $n4
+  +dark
+    color: $n5
+
+.metaItem
+  display: flex
+  align-items: center
+  gap: 6px
+  font-size: 14px
+  svg
+    fill: $n4
+    +dark
+      fill: $n5
+
+.metaDivider
+  color: $n6
+  font-size: 12px
+
+.roomDescription
+  color: #4B5563
+  font-size: 15px
+  line-height: 1.6
+  margin-bottom: 24px
+  display: -webkit-box
+  -webkit-line-clamp: 2
+  -webkit-box-orient: vertical
+  overflow: hidden
+  +dark
+    color: $n5
+
+.roomTagsRow
+  display: flex
+  align-items: center
+  flex-wrap: wrap
+  gap: 8px
+  margin-bottom: auto
+  padding-bottom: 24px
+
+.roomTagBadge
+  background: #F9FAFB
+  color: #4B5563
+  padding: 6px 12px
+  font-size: 14px
+  border-radius: 8px
+  border: 1px solid #F3F4F6
+  +dark
+    background: $n2
+    border-color: $n3
+    color: $n5
+
+.moreTags
+  font-size: 14px
+  color: #6B7280
+  margin-left: 4px
+  cursor: pointer
+  &:hover
+    color: $p1
+
+.mealPlansRow
+  margin-top: 20px
+  margin-bottom: 24px
+  display: flex
+  flex-direction: column
+  gap: 8px
+  border-top: 1px solid #F3F4F6
+  padding-top: 16px
+  +dark
+    border-color: $n3
+
+.mealPlanItem
+  display: flex
+  justify-content: space-between
+  align-items: center
+  padding: 8px 12px
+  background: #F9FAFB
+  border-radius: 8px
+  +dark
+    background: $n2
+
+.mealPlanName
+  font-size: 13px
+  font-weight: 500
+  color: #4B5563
+  +dark
+    color: $n5
+
+.mealPlanPrice
+  font-size: 14px
+  font-weight: 700
+  color: #111827
+  +dark
+    color: $n8
+
+.roomPriceRow
+  margin-top: auto
+  display: flex
+  justify-content: space-between
+  align-items: center
+
+.priceColumn
+  display: flex
+  flex-direction: column
+  gap: 4px
+
+.startingFrom
+  font-size: 12px
+  font-weight: 500
+  color: #6B7280
+  text-transform: uppercase
+  letter-spacing: 0.025em
+  margin-bottom: 4px
+  +dark
+    color: $n5
+
+.roomPrice
+  display: flex
+  flex-direction: column
+  align-items: flex-start
+  gap: 2px
+
+.currentPriceRow
+  display: flex
+  align-items: baseline
+  gap: 6px
+
+.priceValue
+  font-size: 28px
+  font-weight: 800
+  color: #111821
+  +dark
+    color: $n8
+
+.perNight
+  font-size: 14px
+  color: $n4
+  +dark
+    color: $n5
+
+.selectRoomBtn
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 8px
+  height: 48px
+  padding: 0 24px
+  background: #353945
+  color: $n8
+  border: none
+  border-radius: 12px
+  font-size: 14px
+  font-weight: 600
+  cursor: pointer
+  transition: all 0.2s
+  +dark
+    background: $n8
+    color: #353945
+  &:hover
+    background: $n2
+    transform: translateY(-1px)
+    +dark
+      background: $n7
+  svg
+    fill: currentColor
+
+// Sidebar
+.sidebar
+  position: sticky
+  top: 24px
+
+.priceCard
+  padding: 24px
+  background: white
+  border: 1px solid #E5E7EB
+  border-radius: 16px
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02)
+  margin-bottom: 24px
+  +dark
+    background: $n2
+    border-color: $n4
+    box-shadow: none
+
+.priceRow
+  position: relative
+  display: flex
+  align-items: center
+  justify-content: space-between
+  margin-bottom: 24px
+  padding-bottom: 24px
+  border-bottom: 1px solid #F3F4F6
+
+.priceGroup
+  display: flex
+  flex-direction: column
+  align-items: flex-start
+  gap: 2px
+
+.price
+  font-size: 26px
+  font-weight: 800
+  color: #111827
+  line-height: 1
+  +dark
+    color: $n8
+
+.perNight
+  font-size: 15px
+  color: #6B7280
+  font-weight: 500
+
+.oldPrice
+  color: #FF4B4B
+  font-size: 14px
+  font-weight: 600
+  margin-bottom: 2px
+  display: flex
+  align-items: center
+  gap: 4px
+
+.strikedPart
+  text-decoration: line-through
+
+.plusPart
+  font-weight: 600
+
+.discountBadge
+  background: #DCFCE7
+  color: #166534
+  padding: 2px 8px
+  border-radius: 4px
+  font-size: 12px
+  font-weight: 600
+  margin-left: 8px
+  +dark
+    background: rgba(22, 101, 52, 0.2)
+    color: #4ADE80
+
+.ratingBadge
+  display: flex
+  align-items: center
+  gap: 4px
+  font-size: 16px
+  font-weight: 700
+  color: #111827
+  +dark
+    color: $n8
+  svg
+    fill: #F59E0B
+    width: 16px
+    height: 16px
+
+.datesSection
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 12px
+  margin-bottom: 12px
+
+.dateCard
+  position: relative
+  padding: 14px 16px
+  background: white
+  border: 1px solid #E5E7EB
+  border-radius: 12px
+  cursor: pointer
+  transition: all 0.2s
+  +dark
+    background: $n3
+    border-color: $n4
+  &:hover
+    border-color: #3b82f6
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05)
+
+.dateCardTop
+  font-size: 11px
+  font-weight: 700
+  color: #4B5563
+  text-transform: uppercase
+  letter-spacing: 0.05em
+  margin-bottom: 2px
+
+.dateCardBottom
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 8px
+
+.dateValue
+  font-size: 14px
+  font-weight: 600
+  color: #111827
+  +dark
+    color: $n8
+
+.dateIcon
+  display: flex
+  align-items: center
+  justify-content: center
+  svg
+    width: 14px
+    height: 14px
+    fill: #9CA3AF
+
+.dateInputOverlay
+  position: absolute
+  inset: 0
+  width: 100%
+  height: 100%
+  opacity: 0
+  cursor: pointer
+
+.dateField
+  label
+    display: block
+    font-size: 12px
+    font-weight: 600
+    text-transform: uppercase
+    letter-spacing: 0.5px
+    color: $n4
+    margin-bottom: 6px
+    +dark
+      color: $n5
+  input
+    width: 100%
+    padding: 10px 12px
+    border: 1px solid $n6
+    border-radius: 8px
+    font-size: 14px
+    color: $n2
+    background: $n8
+    +dark
+      border-color: $n4
+      color: $n8
+      background: $n2
+    &:focus
+      outline: none
+      border-color: $p1
+
+.guestField
+  margin-bottom: 16px
+
+.guestSelector
+  padding: 14px 16px
+  background: white
+  border: 1px solid #E5E7EB
+  border-radius: 12px
+  cursor: pointer
+  transition: all 0.2s
+  +dark
+    background: $n3
+    border-color: $n4
+  &:hover
+    border-color: #3b82f6
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05)
+
+.guestLabel
+  font-size: 11px
+  font-weight: 700
+  color: #4B5563
+  text-transform: uppercase
+  letter-spacing: 0.05em
+  margin-bottom: 2px
+
+.guestValueRow
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 8px
+
+.guestValue
+  font-size: 14px
+  font-weight: 600
+  color: #111827
+  +dark
+    color: $n8
+
+.guestIcon
+  display: flex
+  align-items: center
+  justify-content: center
+  svg
+    width: 14px
+    height: 14px
+    fill: #9CA3AF
+
+.guestPicker
+  margin-top: 8px
+  padding: 16px
+  border: 1px solid $n6
+  border-radius: 8px
+  background: $n8
+  +dark
+    border-color: $n4
+    background: $n2
+
+.guestType
+  display: flex
+  justify-content: space-between
+  align-items: center
+  margin-bottom: 12px
+  &:last-child
+    margin-bottom: 0
+
+.guestTypeInfo
+  display: flex
+  flex-direction: column
+  gap: 2px
+
+.guestTypeName
+  font-size: 14px
+  font-weight: 600
+  color: $n2
+  +dark
+    color: $n8
+
+.guestTypeDetails
+  display: flex
+  flex-direction: column
+  gap: 1px
+
+.includedLabel
+  font-size: 11px
+  font-weight: 500
+  color: #6B7280
+  +dark
+    color: $n5
+
+.extraLabel
+  font-size: 11px
+  font-weight: 600
+  color: #ef4444
+  +dark
+    color: #f87171
+
+.counter
+  display: flex
+  align-items: center
+  gap: 12px
+  button
+    width: 32px
+    height: 32px
+    border: 1px solid $n6
+    border-radius: 50%
+    background: transparent
+    font-size: 18px
+    color: $n2
+    cursor: pointer
+    display: flex
+    align-items: center
+    justify-content: center
+    +dark
+      border-color: $n4
+      color: $n8
+    &:hover:not(:disabled)
+      border-color: $p1
+      color: $p1
+    &:disabled
+      opacity: 0.3
+      cursor: default
+  span
+    min-width: 24px
+    text-align: center
+    font-weight: 600
+
+.checkBtn
+  width: 100%
+  padding: 16px 24px
+  background: #1B5CFF
+  color: #FFFFFF
+  border: none
+  border-radius: 14px
+  font-size: 18px
+  font-weight: 700
+  cursor: pointer
+  transition: all 0.2s
+  margin-top: 8px
+  +dark
+    background: #3b82f6
+  &:hover:not(:disabled)
+    background: #0044FF
+    transform: translateY(-1px)
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1)
+  &:disabled
+    opacity: 0.6
+    cursor: not-allowed
+
+.noCharge
+  text-align: center
+  font-size: 12px
+  font-weight: 500
+  color: #6B7280
+  margin-top: 16px
+  +dark
+    color: $n5
+
+.contactCard
+  padding: 24px
+  background: white
+  border: 1px solid #E5E7EB
+  border-radius: 20px
+  +dark
+    background: $n2
+    border-color: $n4
+  h4
+    font-size: 18px
+    font-weight: 700
+    color: #111827
+    margin-bottom: 24px
+    +dark
+      color: $n8
+
+.hostInfo
+  display: flex
+  align-items: center
+  gap: 16px
+  margin-bottom: 24px
+
+.hostAvatar
+  width: 56px
+  height: 56px
+  border-radius: 50%
+  overflow: hidden
+  background: #EFF6FF
+  display: flex
+  align-items: center
+  justify-content: center
+  +dark
+    background: $n3
+  img
+    width: 100%
+    height: 100%
+    object-fit: cover
+
+.avatarInitial
+  font-size: 20px
+  font-weight: 800
+  color: #1B5CFF
+
+.hostDetails
+  display: flex
+  flex-direction: column
+  gap: 2px
+
+.hostLabel
+  font-size: 13px
+  color: #6B7280
+  +dark
+    color: $n5
+
+.hostName
+  font-size: 16px
+  font-weight: 700
+  color: #111827
+  +dark
+    color: $n8
+
+.contactDivider
+  height: 1px
+  background: #F3F4F6
+  margin-bottom: 24px
+  +dark
+    background: $n4
+
+.contactActions
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.contactBox
+  display: flex
+  align-items: center
+  gap: 16px
+  padding: 14px 16px
+  background: white
+  border: 1px solid #E5E7EB
+  border-radius: 12px
+  text-decoration: none
+  color: #4B5563
+  font-size: 14px
+  font-weight: 500
+  transition: all 0.2s
+  +dark
+    background: $n3
+    border-color: $n4
+    color: $n5
+  &:hover
+    border-color: #3b82f6
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05)
+  svg
+    fill: #4B5563
+    +dark
+      fill: $n5
+
+// Map Section
+.mapSection
+  margin-top: 40px
+  h3
+    font-size: 22px
+    font-weight: 600
+    color: $n2
+    margin-bottom: 20px
+    +dark
+      color: $n8
+
+.mapContainer
+  border-radius: 16px
+  overflow: hidden
+  height: 300px
+  background: $n7
+  +dark
+    background: $n3
+
+.mapPlaceholder
+  width: 100%
+  height: 100%
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  color: $n4
+  gap: 12px
+  +dark
+    color: $n5
+  svg
+    fill: $n4
+    +dark
+      fill: $n5
+  p
+    font-size: 14px
+    max-width: 300px
+    text-align: center
+
+// Amenities Tab
+.amenitiesTab
+  animation: fadeIn 0.3s ease
+
+.amenitiesRow
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 40px
+  +m
+    grid-template-columns: 1fr
+    gap: 24px
+
+.amenityHeader
+  display: flex
+  align-items: center
+  gap: 10px
+  margin-bottom: 24px
+  svg
+    fill: $p1
+  h3
+    font-size: 18px
+    font-weight: 700
+    color: $n2
+    +dark
+      color: $n8
+
+.amenityList
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 16px
+  +m
+    grid-template-columns: 1fr
+
+.amenityItemCell
+  display: flex
+  align-items: center
+  gap: 12px
+  span
+    font-size: 14px
+    font-weight: 500
+    color: $n2
+    +dark
+      color: $n8
+
+.checkCircleGreen, .checkCircleBlue
+  width: 24px
+  height: 24px
+  border-radius: 50%
+  display: flex
+  align-items: center
+  justify-content: center
+  flex-shrink: 0
+  svg
+    fill: white
+
+.checkCircleGreen
+  background: #E8F5E9
+  svg
+    fill: #4CAF50
+
+.checkCircleBlue
+  background: #E3F2FD
+  svg
+    fill: #2196F3
+
+.emptyText
+  color: $n4
+  font-style: italic
+  font-size: 14px
+
+// Policies Tab
+.policiesTab
+  animation: fadeIn 0.3s ease
+  background: #F3F4F6
+  border-radius: 24px
+  padding: 32px
+  +dark
+    background: $n2
+
+.policiesGrid
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 24px
+  margin-bottom: 24px
+  +m
+    grid-template-columns: 1fr
+
+.policySection
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.policySectionFull
+  composes: policySection
+  margin-bottom: 24px
+  &:last-child
+    margin-bottom: 0
+
+.policyHeader
+  display: flex
+  align-items: center
+  gap: 8px
+  margin-bottom: 8px
+  h4
+    font-size: 14px
+    font-weight: 700
+    color: #111827
+    +dark
+      color: $n8
+  svg
+    width: 18px
+    height: 18px
+    fill: #111827
+    +dark
+      fill: $n8
+
+.policyCardInner
+  background: white
+  border-radius: 12px
+  border: 1px solid #E5E7EB
+  padding: 16px 20px
+  height: 100%
+  +dark
+    background: $n3
+    border-color: $n4
+
+.policyCardWide
+  composes: policyCardInner
+  height: auto
+
+.policyTableRow
+  display: flex
+  justify-content: space-between
+  align-items: center
+  padding: 8px 0
+  border-bottom: 1px solid #F3F4F6
+  +dark
+    border-color: $n4
+  &:last-child
+    border-bottom: none
+    padding-bottom: 0
+  &:first-child
+    padding-top: 0
+
+.policyLabel
+  font-size: 12px
+  color: #6B7280
+  +dark
+    color: $n5
+
+.policyValueBold
+  font-size: 12px
+  font-weight: 700
+  color: #111827
+  +dark
+    color: $n8
+
+.policyText
+  font-size: 12px
+  line-height: 1.6
+  color: #4B5563
+  +dark
+    color: $n5
+
+// Animations
+@keyframes fadeIn
+  from
+    opacity: 0
+    transform: translateY(10px)
+  to
+    opacity: 1
+    transform: translateY(0)

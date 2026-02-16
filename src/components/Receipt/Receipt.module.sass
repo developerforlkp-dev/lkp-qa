@@ -278,6 +278,25 @@
     text-overflow: ellipsis
     white-space: nowrap
     max-width: 100%
+    select
+        width: 100%
+        background: transparent
+        border: 0
+        outline: none
+        color: $n2
+        -webkit-appearance: none
+        -moz-appearance: none
+        appearance: none
+        +dark
+            color: $n8
+    option
+        background: #23262F
+        color: #FFFFFF
+        &:hover,
+        &:active,
+        &:checked
+            background: #23262F
+            color: #FFFFFF
 
 .body
     display: flex

@@ -90,7 +90,7 @@ const getEntityUrl = (listing, id) => {
   const isEvent = listing.eventId !== undefined || listing.event_id !== undefined;
   const isStay = listing.stayId !== undefined || listing.stay_id !== undefined;
   if (isEvent) return `/event?id=${id}`;
-  if (isStay) return `/experience-product?stayId=${id}`;
+  if (isStay) return `/stays?id=${id}`;
   return `/experience-product?id=${id}`;
 };
 
