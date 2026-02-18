@@ -35,17 +35,17 @@ const GuestPicker = ({
       const total = target.adults + target.children;
 
       // If parent state exceeds maxAllowed, clamp it
-      if (maxAllowed !== undefined && maxAllowed > 0 && total > maxAllowed) {
+      if (maxAllowed !== undefined && total > maxAllowed) {
         // Simple clamping: reduce children first, then adults
         if (target.children > 0) {
           const overage = total - maxAllowed;
           target.children = Math.max(0, target.children - overage);
           const newTotal = target.adults + target.children;
           if (newTotal > maxAllowed) {
-            target.adults = maxAllowed;
+            target.adults = Math.max(0, maxAllowed);
           }
         } else {
-          target.adults = maxAllowed;
+          target.adults = Math.max(0, maxAllowed);
         }
 
         // Notify parent if we had to clamp
@@ -183,11 +183,11 @@ const GuestPicker = ({
                   }}
                   iconMinus="minus"
                   iconPlus="plus"
-                  min={category.type === "adults" ? 1 : 0}
+                  min={category.type === "adults" ? (maxAllowed === 0 ? 0 : 1) : 0}
                   max={
                     category.type === "infants"
                       ? guests.adults
-                      : maxAllowed !== undefined && maxAllowed > 0
+                      : maxAllowed !== undefined
                         ? Math.max(0, maxAllowed - (totalGuests - category.value))
                         : undefined
                   }
@@ -199,9 +199,11 @@ const GuestPicker = ({
 
         <div className={styles.footer}>
           <div className={styles.rules}>
-            {maxAllowed !== undefined && maxAllowed > 0 && (
+            {maxAllowed !== undefined && (
               <div className={styles.ruleText}>
-                This place has a maximum of {maxAllowed} guests, not including infants.
+                {maxAllowed === 0
+                  ? "This slot is fully booked."
+                  : `This place has a maximum of ${maxAllowed} guests, not including infants.`}
                 {!allowPets && " Pets aren't allowed."}
               </div>
             )}
