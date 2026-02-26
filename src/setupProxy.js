@@ -6,8 +6,8 @@ module.exports = function (app) {
   app.use(
     '/api/event-orders',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080',
-      changeOrigin: true,
+      target: 'http://69.62.77.33:8080',   //url of the backend server
+      changeOrigin: true,   //url of the backend server
       secure: false,
       pathRewrite: (path) => `/api/event-orders${path}`,
       logLevel: 'debug',
