@@ -403,47 +403,47 @@ const Description = ({ classSection, listing, hostData }) => {
 
   const items = isStay
     ? [
-        {
-          title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
-          category: "Check-in",
-          icon: "calendar",
-        },
-        {
-          title: selectedEndDate ? selectedEndDate.format("MMM DD, YYYY") : formattedDefaultDate,
-          category: "Check-out",
-          icon: "calendar",
-        },
-        {
-          title: guestCountText,
-          category: "Guest",
-          icon: "user",
-        },
-        {
-          title:
-            staySelectedRoomType
-              ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
-              : "Select room",
-          category: "Room type",
-          icon: "home",
-        },
-      ]
+      {
+        title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
+        category: "Check-in",
+        icon: "calendar",
+      },
+      {
+        title: selectedEndDate ? selectedEndDate.format("MMM DD, YYYY") : formattedDefaultDate,
+        category: "Check-out",
+        icon: "calendar",
+      },
+      {
+        title: guestCountText,
+        category: "Guest",
+        icon: "user",
+      },
+      {
+        title:
+          staySelectedRoomType
+            ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
+            : "Select room",
+        category: "Room type",
+        icon: "home",
+      },
+    ]
     : [
-        {
-          title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
-          category: "Select date",
-          icon: "calendar",
-        },
-        {
-          title: selectedTimeSlotDisplay || "Select time",
-          category: "Time slot",
-          icon: "clock",
-        },
-        {
-          title: guestCountText,
-          category: "Guest",
-          icon: "user",
-        },
-      ];
+      {
+        title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
+        category: "Select date",
+        icon: "calendar",
+      },
+      {
+        title: selectedTimeSlotDisplay || "Select time",
+        category: "Time slot",
+        icon: "clock",
+      },
+      {
+        title: guestCountText,
+        category: "Guest",
+        icon: "user",
+      },
+    ];
 
   // Check if user is logged in
   const isLoggedIn = () => {
@@ -752,9 +752,17 @@ const Description = ({ classSection, listing, hostData }) => {
     const hasDate = selectedDate !== null;
     const hasTimeSlot = selectedTimeSlot !== null;
     const hasCheckout = selectedEndDate !== null;
-    const hasGuests = guests && getGuestCount(guests) > 0;
-    return isStay ? (hasDate && hasCheckout && hasGuests) : (hasDate && hasTimeSlot && hasGuests);
-  }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay]);
+    const guestCount = getGuestCount(guests);
+    const hasGuests = guestCount > 0;
+
+    // Check if requested guests exceed available capacity
+    // Use selectedDateAvailability (which now always has a value if a date/slot is picked)
+    const hasCapacity = selectedDateAvailability
+      ? (selectedDateAvailability.available_seats !== undefined ? guestCount <= selectedDateAvailability.available_seats : true)
+      : true;
+
+    return isStay ? (hasDate && hasCheckout && hasGuests) : (hasDate && hasTimeSlot && hasGuests && hasCapacity);
+  }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay, selectedDateAvailability]);
 
   const handleReserveClick = async (e) => {
     e.preventDefault();
@@ -2106,7 +2114,7 @@ const Description = ({ classSection, listing, hostData }) => {
                     disabled={!isReserveEnabled}
                     title={!isReserveEnabled ? "Please select date, time slot, and guests" : ""}
                   >
-                    <span>Reserve</span>
+                    <span>{isFullyBooked ? "Fully Booked" : "Reserve"}</span>
                     <Icon name="bag" size="16" />
                   </button>
                 )}

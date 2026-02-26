@@ -3,7 +3,7 @@ import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
-import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings } from "../../utils/api";
+import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -48,7 +48,7 @@ const FleetHome = () => {
 
   // Determine if calendar should be shown (for Experience and Events)
   const showCalendar = activeFilter === "experience" || activeFilter === "events" || activeFilter === "stays";
-  
+
   // Format selected date for display
   const formattedDate = selectedDate
     ? moment(selectedDate).format("MMM DD, YYYY")
@@ -82,7 +82,7 @@ const FleetHome = () => {
     setShowDatePicker(false);
     setShowGuestPicker(false);
   }, [activeFilter]);
-  
+
   // Fetch homepage sections and their listings (by business interest: 1=Experience, 2=Events, 3=Stays)
   // On refresh, Experience is selected by default → always call with businessInterestId=1
   useEffect(() => {
@@ -112,6 +112,70 @@ const FleetHome = () => {
       };
 
       loadStays();
+      return;
+    }
+
+    if (activeFilter === "food") {
+      const loadFood = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const foodListings = await getFoodMenus(20, 0);
+          console.log("🏙️ Food listings in index.js:", foodListings);
+          const newSections = [
+            {
+              section: {
+                sectionId: "food",
+                sectionTitle: "Food Menus",
+              },
+              listings: Array.isArray(foodListings) ? foodListings : [],
+            },
+          ];
+          console.log("🏙️ Setting sectionsData for food:", newSections);
+          setSectionsData(newSections);
+        } catch (err) {
+          console.error("❌ Error loading food menus:", err);
+          setSectionsData([]);
+          setError(err.message || "Failed to load food menus");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadFood();
+      return;
+    }
+
+    if (activeFilter === "places") {
+      const loadPlaces = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const placesListings = await getPlaces(20, 0);
+          console.log("📍 Places listings in index.js:", placesListings);
+          const newSections = [
+            {
+              section: {
+                sectionId: "places",
+                sectionTitle: "Places Nearby",
+              },
+              listings: Array.isArray(placesListings) ? placesListings : [],
+            },
+          ];
+          console.log("📍 Setting sectionsData for places:", newSections);
+          setSectionsData(newSections);
+        } catch (err) {
+          console.error("❌ Error loading places nearby:", err);
+          setSectionsData([]);
+          setError(err.message || "Failed to load places");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadPlaces();
       return;
     }
 
@@ -146,7 +210,7 @@ const FleetHome = () => {
             // Handle different response structures
             let listings = sectionData?.listings || sectionData?.data?.listings || [];
             const sectionInfo = sectionData?.section || section;
-        
+
             // Fallback: if this is an Events/Stays section and the section listings endpoint returns empty,
             // fetch from the dedicated public endpoint.
             const sectionTitle = sectionInfo?.sectionTitle || section?.sectionTitle || "";
@@ -299,7 +363,7 @@ const FleetHome = () => {
                     <Icon name={filter.icon} size="18" />
                     <span>{filter.label}</span>
                   </div>
-                  {!["experience", "events", "stays"].includes(filter.id) && (
+                  {!["experience", "events", "stays", "food", "places"].includes(filter.id) && (
                     <div className={styles.comingSoonBadge}>Coming Soon</div>
                   )}
                 </button>
