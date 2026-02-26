@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import "react-dates/lib/css/_datepicker.css";
 import "./styles/app.sass";
-import Page from "./components/Page";
+import Page from "./components/Page";  //njj
 import ExperienceCategory from "./screens/ExperienceCategory";
 import ExperienceProduct from "./screens/ExperienceProduct";
 import ExperienceCheckout from "./screens/ExperienceCheckout";
