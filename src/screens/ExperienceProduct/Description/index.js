@@ -352,12 +352,33 @@ const Description = ({ classSection, listing, hostData }) => {
 
   // Get availability data for selected date and slot
   const selectedDateAvailability = useMemo(() => {
-    if (!selectedDate || !filteredAvailabilityData.length) return null;
+    if (!selectedDate) return null;
     const dateStr = selectedDate.format("YYYY-MM-DD");
 
-    // Find availability for the selected date
-    return filteredAvailabilityData.find(av => av.date === dateStr);
-  }, [selectedDate, filteredAvailabilityData]);
+    // 1. Try to find explicit availability from the array (updated by bookings)
+    const explicitAv = filteredAvailabilityData.find(av => av.date === dateStr);
+    if (explicitAv) return explicitAv;
+
+    // 2. Fallback: If no booking record exists for this date, construct a default based on slot/listing max
+    if (selectedTimeSlotData || selectedTimeSlot) {
+      const slotMax = selectedTimeSlotData?.maxSeats || listing?.maxGuests || 0;
+      return {
+        date: dateStr,
+        booked_seats: 0,
+        available_seats: slotMax,
+        max_seats: slotMax,
+        is_available: true,
+        slot_id: selectedTimeSlotData?.slotId || selectedTimeSlotData?.slot_id,
+        slot_name: selectedTimeSlotData?.slotName || selectedTimeSlot,
+        start_time: selectedTimeSlotData?.startTime,
+        end_time: selectedTimeSlotData?.endTime,
+        price_per_person: selectedTimeSlotData?.pricePerPerson,
+        b2b_rate: selectedTimeSlotData?.b2bRate,
+      };
+    }
+
+    return null;
+  }, [selectedDate, filteredAvailabilityData, selectedTimeSlotData, selectedTimeSlot, listing?.maxGuests]);
 
   // Get the selected timeSlot object for display
   const selectedTimeSlotDisplay = useMemo(() => {
@@ -1048,7 +1069,7 @@ const Description = ({ classSection, listing, hostData }) => {
 
           console.log("💳 Payment data to save:", paymentWithDiscount);
           localStorage.setItem("pendingPayment", JSON.stringify(paymentWithDiscount));
-          
+
           // Cache Razorpay key for use by other booking types (e.g., events)
           if (paymentWithDiscount.razorpayKeyId) {
             localStorage.setItem("lastRazorpayKeyId", paymentWithDiscount.razorpayKeyId);
@@ -1389,7 +1410,7 @@ const Description = ({ classSection, listing, hostData }) => {
         null;
       if (payment) {
         localStorage.setItem("pendingPayment", JSON.stringify(payment));
-        
+
         // Cache Razorpay key for use by other booking types (e.g., events)
         if (payment.razorpayKeyId) {
           localStorage.setItem("lastRazorpayKeyId", payment.razorpayKeyId);
@@ -1511,11 +1532,12 @@ const Description = ({ classSection, listing, hostData }) => {
   // Note: available_seats is the actual available seats for the selected date and slot (can be less than max_seats)
   const maxSeats = useMemo(() => {
     // Priority 1: Use available_seats from selected date availability (most accurate)
-    if (selectedDateAvailability?.available_seats !== undefined && selectedDateAvailability?.available_seats > 0) {
+    // We include 0 because if it's 0, it means the slot is full
+    if (selectedDateAvailability?.available_seats !== undefined) {
       return selectedDateAvailability.available_seats;
     }
-    // Priority 2: Use max_seats from selected date availability
-    if (selectedDateAvailability?.max_seats !== undefined && selectedDateAvailability?.max_seats > 0) {
+    // Priority 2: Use max_seats from selected date availability as fallback
+    if (selectedDateAvailability?.max_seats !== undefined) {
       return selectedDateAvailability.max_seats;
     }
     // Priority 3: Use maxSeats from selected timeSlot capacity
@@ -1525,6 +1547,13 @@ const Description = ({ classSection, listing, hostData }) => {
     // Priority 4: Fallback to listing maxGuests (or undefined for no limit)
     return listing?.maxGuests || undefined;
   }, [selectedDateAvailability, selectedTimeSlotData, listing?.maxGuests]);
+
+  const isFullyBooked = useMemo(() => {
+    if (isStay) return false;
+    // Only check if date and slot are selected
+    if (!selectedDate || !selectedTimeSlot || !selectedDateAvailability) return false;
+    return selectedDateAvailability.available_seats === 0;
+  }, [isStay, selectedDate, selectedTimeSlot, selectedDateAvailability]);
 
   // Fetch slots data when listing is available
   useEffect(() => {
@@ -2082,6 +2111,16 @@ const Description = ({ classSection, listing, hostData }) => {
                   </button>
                 )}
               </div>
+              {isFullyBooked && (
+                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
+                  This slot is fully booked. Please select another date or time.
+                </div>
+              )}
+              {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
+                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
+                  Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
+                </div>
+              )}
               <div className={styles.table}>
                 {receipt.map((x, index) => (
                   <div className={styles.line} key={index}>

@@ -32,7 +32,7 @@ const FleetHome = () => {
   const [sectionsData, setSectionsData] = useState([]); // Array of { section, listings }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Search state
   const [selectedDate, setSelectedDate] = useState(null);
   const [guests, setGuests] = useState({
@@ -45,15 +45,15 @@ const FleetHome = () => {
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
-  
+
   // Determine if calendar should be shown (for Experience and Events)
   const showCalendar = activeFilter === "experience" || activeFilter === "events" || activeFilter === "stays";
   
   // Format selected date for display
-  const formattedDate = selectedDate 
-    ? moment(selectedDate).format("MMM DD, YYYY") 
+  const formattedDate = selectedDate
+    ? moment(selectedDate).format("MMM DD, YYYY")
     : "Select date";
-  
+
   // Format guest count for display
   const guestCountText = (() => {
     const total = guests.adults + guests.children;
@@ -61,7 +61,7 @@ const FleetHome = () => {
     if (total === 1) return "1 guest";
     return `${total} guests`;
   })();
-  
+
   // Handle date selection
   const handleDateSelect = (startDateStr, endDateStr) => {
     if (startDateStr) {
@@ -71,12 +71,12 @@ const FleetHome = () => {
       }
     }
   };
-  
+
   // Handle guest change
   const handleGuestChange = (newGuests) => {
     setGuests(newGuests);
   };
-  
+
   // Close pickers when filter changes
   useEffect(() => {
     setShowDatePicker(false);
@@ -117,7 +117,7 @@ const FleetHome = () => {
 
     const businessInterestId = getBusinessInterestId(activeFilter) ?? (activeFilter === "experience" ? 1 : null);
     if (businessInterestId == null) {
-      // Stays, Food, Places: don't refetch, keep current sectionsData
+      // Any other filter that doesn't have a dedicated fetch block or businessInterestId
       return;
     }
 
@@ -129,20 +129,20 @@ const FleetHome = () => {
         // Step 1: Fetch sections for the selected business interest (1=Experience, 2=Events)
         const fetchedSections = await getHomepageSections(businessInterestId);
         console.log("✅ Fetched homepage sections (businessInterestId=" + businessInterestId + "):", fetchedSections);
-        
+
         // Sort sections by sortOrder
         const sortedSections = [...fetchedSections].sort((a, b) => {
           const orderA = a.sortOrder !== undefined ? a.sortOrder : 999;
           const orderB = b.sortOrder !== undefined ? b.sortOrder : 999;
           return orderA - orderB;
         });
-        
+
         // Step 2: Fetch listings for each section in parallel
         const sectionPromises = sortedSections.map(async (section) => {
           try {
             const sectionData = await getHomepageSectionListings(section.sectionId, 12, 0);
             console.log(`✅ Section ${section.sectionId} data:`, sectionData);
-            
+
             // Handle different response structures
             let listings = sectionData?.listings || sectionData?.data?.listings || [];
             const sectionInfo = sectionData?.section || section;
@@ -161,9 +161,9 @@ const FleetHome = () => {
                 console.warn("⚠️ Failed to fetch event listings fallback:", eventErr);
               }
             }
-            
+
             console.log(`✅ Section ${section.sectionId} has ${listings.length} listings`);
-            
+
             return {
               section: sectionInfo,
               listings: listings,
@@ -176,7 +176,7 @@ const FleetHome = () => {
             };
           }
         });
-        
+
         const sectionsWithListings = await Promise.allSettled(sectionPromises);
         const resolvedSections = sectionsWithListings.map((result) => {
           if (result.status === "fulfilled") {
@@ -185,20 +185,20 @@ const FleetHome = () => {
           console.warn("⚠️ Section promise rejected:", result.reason);
           return { section: {}, listings: [] };
         });
-        
+
         console.log("✅ Loaded all sections with listings:", resolvedSections);
         console.log(`✅ Total sections: ${resolvedSections.length}, Sections with listings: ${resolvedSections.filter(s => s.listings && s.listings.length > 0).length}`);
-        
+
         setSectionsData(resolvedSections);
-        
+
       } catch (err) {
         console.error("❌ Error loading homepage data:", err);
         // Check if it's a connection/network error
-        const isConnectionError = err.message?.includes("proxy") || 
-                                  err.message?.includes("ECONNREFUSED") ||
-                                  err.message?.includes("504") ||
-                                  err.code === "ECONNREFUSED";
-        
+        const isConnectionError = err.message?.includes("proxy") ||
+          err.message?.includes("ECONNREFUSED") ||
+          err.message?.includes("504") ||
+          err.code === "ECONNREFUSED";
+
         if (isConnectionError) {
           setError("Backend server is not running. Please start the backend server on port 5000.");
         } else {
@@ -218,7 +218,7 @@ const FleetHome = () => {
       <div className={styles.heroSection}>
         <HeroSection />
       </div>
-      
+
       <div className={cn("container", styles.container)}>
         <div className={styles.glassContainer}>
           <div className={styles.searchBar}>
@@ -232,13 +232,13 @@ const FleetHome = () => {
             {showCalendar && (
               <>
                 <div className={styles.searchDivider}></div>
-                <div 
+                <div
                   className={styles.searchField}
                   ref={dateItemRef}
                   style={{ position: "relative" }}
                 >
                   <Icon name="calendar" size="16" />
-                  <div 
+                  <div
                     className={styles.searchFieldContent}
                     onClick={() => setShowDatePicker(!showDatePicker)}
                     style={{ cursor: "pointer" }}
@@ -259,13 +259,13 @@ const FleetHome = () => {
               </>
             )}
             <div className={styles.searchDivider}></div>
-            <div 
+            <div
               className={styles.searchField}
               ref={guestItemRef}
               style={{ position: "relative" }}
             >
               <Icon name="user" size="16" />
-              <div 
+              <div
                 className={styles.searchFieldContent}
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
                 style={{ cursor: "pointer" }}
@@ -314,13 +314,13 @@ const FleetHome = () => {
             <p>Loading homepage sections...</p>
           </div>
         )}
-        
+
         {error && (
           <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
             <p>⚠️ {error}</p>
           </div>
         )}
-        
+
         {!loading && !error && sectionsData.length === 0 && (
           <div style={{ padding: "3rem", textAlign: "center" }}>
             <p>No sections available</p>
@@ -329,7 +329,7 @@ const FleetHome = () => {
             </p>
           </div>
         )}
-        
+
         {!loading && !error && sectionsData.length > 0 && sectionsData.every(s => !s.listings || s.listings.length === 0) && (
           <div style={{ padding: "3rem", textAlign: "center" }}>
             <p>Sections loaded but no listings found</p>
@@ -338,19 +338,19 @@ const FleetHome = () => {
             </p>
           </div>
         )}
-        
+
         {!loading &&
           sectionsData.map((sectionData, index) => {
             if (!sectionData || !sectionData.section) {
               console.warn(`⚠️ Skipping invalid section data at index ${index}:`, sectionData);
               return null;
             }
-            
+
             if (!sectionData.listings || sectionData.listings.length === 0) {
               console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
               return null; // Skip sections with no listings
             }
-            
+
             return (
               <HomepageSectionCard
                 key={sectionData.section.sectionId || index}

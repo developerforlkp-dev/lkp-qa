@@ -330,26 +330,26 @@ export const HomepageSectionCard = ({ section, listings, className }) => {
     // New descriptive names
     case "CARD_RECT_VERTICAL_DETAIL":
       return <CardGrid section={section} listings={listings} className={className} />;
-    
+
     case "CARD_SQUARE_HORIZONTAL_NODETAIL":
       return <CardCarousel section={section} listings={listings} className={className} />;
-    
+
     case "CARD_OVAL_VERTICAL_NODETAIL":
       return <CardDestination section={section} listings={listings} className={className} />;
-    
+
     case "CARD_RECT_HORIZONTAL_NODETAIL":
       return <CardDestinationHorizontal section={section} listings={listings} className={className} />;
-    
+
     // Backward compatibility: Old names
     case "CARD_GRID":
       return <CardGrid section={section} listings={listings} className={className} />;
-    
+
     case "CARD_CAROUSEL":
       return <CardCarousel section={section} listings={listings} className={className} />;
-    
+
     case "CARD_LIST":
       return <CardDestination section={section} listings={listings} className={className} />;
-    
+
     default:
       // Default to rectangular vertical detail layout
       return <CardGrid section={section} listings={listings} className={className} />;

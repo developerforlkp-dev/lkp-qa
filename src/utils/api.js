@@ -1071,3 +1071,111 @@ export const cancelEventOrder = async (orderId, cancelData) => {
     throw error;
   }
 };
+
+export const getFoodMenus = async (limit = 20, offset = 0) => {
+  try {
+    const response = await ListingsAPI.get("/public/food-menus", {
+      params: { limit, offset },
+    });
+    const payload = response.data;
+    console.log(`✅ Food menus fetched (raw):`, payload);
+
+    let listings = [];
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      listings = payload.foodMenus || payload.food_menus || payload.data || [];
+      if (payload.data && !Array.isArray(listings)) {
+        listings = payload.data.foodMenus || payload.data.food_menus || payload.data.listings || [];
+      }
+      if (payload.items && !Array.isArray(listings)) {
+        listings = payload.items;
+      }
+    }
+
+    // Ensure we return an array
+    const finalListings = Array.isArray(listings) ? listings : [];
+    console.log(`✅ Food menus normalized:`, finalListings);
+    return finalListings;
+  } catch (error) {
+    console.error(`❌ Error fetching food menus:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getPlaces = async (limit = 20, offset = 0) => {
+  try {
+    const response = await ListingsAPI.get("/public/places", {
+      params: { limit, offset },
+    });
+    const payload = response.data;
+    console.log(`✅ Places nearby fetched (raw):`, payload);
+
+    let listings = [];
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      listings = payload.places || payload.data || [];
+      if (payload.data && !Array.isArray(listings)) {
+        listings = payload.data.places || payload.data.listings || [];
+      }
+      if (payload.items && !Array.isArray(listings)) {
+        listings = payload.items;
+      }
+    }
+
+    const finalListings = Array.isArray(listings) ? listings : [];
+    console.log(`✅ Places nearby normalized:`, finalListings);
+    return finalListings;
+
+    return [];
+  } catch (error) {
+    console.error(`❌ Error fetching places:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getFoodDetails = async (foodMenuId) => {
+  try {
+    if (!foodMenuId) {
+      throw new Error("foodMenuId is required");
+    }
+
+    const response = await ListingsAPI.get(`/public/food-menus/${foodMenuId}`);
+    const payload = response.data;
+    console.log("✅ Food menu details fetched (raw):", payload);
+
+    if (payload && typeof payload === "object") {
+      if (payload.foodMenu) return payload.foodMenu;
+      if (payload.data && typeof payload.data === "object") return payload.data;
+    }
+
+    return payload;
+  } catch (error) {
+    console.error("❌ Error fetching food menu details:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getPlaceDetails = async (placeId) => {
+  try {
+    if (!placeId) {
+      throw new Error("placeId is required");
+    }
+
+    const response = await ListingsAPI.get(`/public/places/${placeId}`);
+    const payload = response.data;
+    console.log("✅ Place details fetched (raw):", payload);
+
+    if (payload && typeof payload === "object") {
+      if (payload.place) return payload.place;
+      if (payload.data && typeof payload.data === "object") return payload.data;
+    }
+
+    return payload;
+  } catch (error) {
+    console.error("❌ Error fetching place details:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
