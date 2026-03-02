@@ -3,7 +3,6 @@ import cn from "classnames";
 import styles from "./Header.module.sass";
 import { Link, NavLink } from "react-router-dom";
 import Image from "../Image";
-import Language from "./Language";
 import Notification from "./Notification";
 import User from "./User";
 import Icon from "../Icon";
@@ -11,28 +10,7 @@ import Modal from "../Modal";
 import Login from "../Login";
 import useDarkMode from "use-dark-mode";
 
-const languages = [
-  {
-    title: "English",
-    country: "United States",
-    url: "/",
-  },
-  {
-    title: "Vietnamese",
-    country: "Vietnamese",
-    url: "/",
-  },
-  {
-    title: "Français",
-    country: "Belgique",
-    url: "/",
-  },
-  {
-    title: "Français",
-    country: "Canada",
-    url: "/",
-  },
-];
+
 
 const items = [
   {
@@ -74,14 +52,14 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
   const darkMode = useDarkMode(false);
-  
+
   // Check if user is authenticated (has JWT token)
   const isAuthenticated = () => {
     if (typeof window === "undefined") return false;
     const token = localStorage.getItem("jwtToken");
     return !!token;
   };
-  
+
   // Determine if we should show login button (if notAuthorized prop is true OR user is not authenticated)
   const shouldShowLogin = notAuthorized || !isAuthenticated();
 
@@ -112,7 +90,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
             >
               Support
             </NavLink>
-            <Language className={styles.language} items={languages} />
+
             <NavLink
               className={cn("button-stroke button-small", styles.button)}
               activeClassName={styles.active}

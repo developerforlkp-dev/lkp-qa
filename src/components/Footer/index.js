@@ -5,29 +5,6 @@ import { Link } from "react-router-dom";
 import Image from "../Image";
 import Form from "../Form";
 
-const items = [
-  {
-    title: "Experience",
-    url: "/",
-  },
-  {
-    title: "Flights",
-    url: "/flights",
-  },
-  {
-    title: "Support",
-    url: "/support",
-  },
-  {
-    title: "Cars",
-    url: "/cars",
-  },
-  {
-    title: "Things to do",
-    url: "/things-to-do",
-  },
-];
-
 const Footer = () => {
   const [email, setEmail] = useState("");
 
@@ -50,13 +27,10 @@ const Footer = () => {
             </Link>
           </div>
           <div className={styles.col}>
-            <div className={styles.menu}>
-              {items.map((x, index) => (
-                <Link className={styles.link} to={x.url} key={index}>
-                  {x.title}
-                </Link>
-              ))}
-            </div>
+            <div className={styles.info}>Support</div>
+            <Link className={styles.link} to="/support">
+              Contact us
+            </Link>
           </div>
           <div className={styles.col}>
             <div className={styles.info}>

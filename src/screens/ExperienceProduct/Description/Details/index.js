@@ -74,63 +74,63 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
 
   const displayAddOns = Array.isArray(listing?.addons) && listing.addons.length
     ? listing.addons.map((a) => {
-        const addonId = a?.addon?.addonId ?? a?.addonId ?? a?.assignmentId;
-        const price = parseFloat(a?.addon?.price || 0);
-        const currency = a?.addon?.currency || "";
-        const pricingType = a?.addon?.pricingType || "Individual";
-        const quantity = pricingType === "Group" ? (addOnQuantities?.[addonId] || 1) : 1;
-        const totalPrice = price * quantity;
-        
-        const isSelected = selectedAddOns?.includes(addonId);
-        
-        // Get description or use lorem ipsum placeholder
-        const loremIpsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
-        const description = a?.addon?.briefDescription || 
-                           a?.addon?.description || 
-                           a?.addon?.fullDescription || 
-                           loremIpsum;
-        
-        return {
-          id: addonId,
-          title: a?.addon?.title || "Addon",
-          description: description,
-          price: pricingType === "Group" && isSelected
-            ? `${currency} ${price.toFixed(2)}${quantity > 1 ? ` × ${quantity} = ${currency} ${totalPrice.toFixed(2)}` : ` = ${currency} ${totalPrice.toFixed(2)}`}`
-            : `${currency} ${price.toFixed(2)}`,
-          priceValue: price,
-          currency: currency,
-          pricingType: pricingType,
-          isPopular: false,
-          originalAddon: a, // Keep reference to original addon data
-        };
-      })
+      const addonId = a?.addon?.addonId ?? a?.addonId ?? a?.assignmentId;
+      const price = parseFloat(a?.addon?.price || 0);
+      const currency = a?.addon?.currency || "";
+      const pricingType = a?.addon?.pricingType || "Individual";
+      const quantity = pricingType === "Group" ? (addOnQuantities?.[addonId] || 1) : 1;
+      const totalPrice = price * quantity;
+
+      const isSelected = selectedAddOns?.includes(addonId);
+
+      // Get description or use lorem ipsum placeholder
+      const loremIpsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
+      const description = a?.addon?.briefDescription ||
+        a?.addon?.description ||
+        a?.addon?.fullDescription ||
+        loremIpsum;
+
+      return {
+        id: addonId,
+        title: a?.addon?.title || "Addon",
+        description: description,
+        price: pricingType === "Group" && isSelected
+          ? `${currency} ${price.toFixed(2)}${quantity > 1 ? ` × ${quantity} = ${currency} ${totalPrice.toFixed(2)}` : ` = ${currency} ${totalPrice.toFixed(2)}`}`
+          : `${currency} ${price.toFixed(2)}`,
+        priceValue: price,
+        currency: currency,
+        pricingType: pricingType,
+        isPopular: false,
+        originalAddon: a, // Keep reference to original addon data
+      };
+    })
     : [];
 
   // Helper function to format image URLs (from Azure blob storage or full URLs)
   const formatImageUrl = (url) => {
     if (!url) return null;
-    
+
     // Already a full URL with SAS token - use directly
-    if ((url.startsWith("http://") || url.startsWith("https://")) && 
-        (url.includes("sig=") || url.includes("sv="))) {
+    if ((url.startsWith("http://") || url.startsWith("https://")) &&
+      (url.includes("sig=") || url.includes("sv="))) {
       return url;
     }
-    
+
     // Already a full URL without SAS token
     if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
     }
-    
+
     // Azure blob storage path (e.g., "leads/3/listings/6/cover-photo/image.jpg")
     if (url.startsWith("leads/")) {
       return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
     }
-    
+
     // Relative path - prepend base URL if needed
     if (url.startsWith("/")) {
       return url;
     }
-    
+
     // Otherwise assume it's a blob storage path
     return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
   };
@@ -138,30 +138,30 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
   // Helper function to get addon image URL
   const getAddonImageUrl = (addon) => {
     if (!addon?.originalAddon) return null;
-    
+
     const addonDetails = addon.originalAddon?.addon;
     if (!addonDetails) return null;
-    
+
     // Try imageUrls array first (from API)
     if (Array.isArray(addonDetails.imageUrls) && addonDetails.imageUrls.length > 0) {
       return formatImageUrl(addonDetails.imageUrls[0]);
     }
-    
+
     // Fallback to other image fields
-    const imageUrl = addonDetails.imageUrl || 
-                   addonDetails.image || 
-                   addonDetails.photoUrl ||
-                   (addonDetails.images && addonDetails.images[0]?.url) ||
-                   (addonDetails.images && addonDetails.images[0]?.imageUrl);
-    
+    const imageUrl = addonDetails.imageUrl ||
+      addonDetails.image ||
+      addonDetails.photoUrl ||
+      (addonDetails.images && addonDetails.images[0]?.url) ||
+      (addonDetails.images && addonDetails.images[0]?.imageUrl);
+
     return formatImageUrl(imageUrl);
   };
 
   const handleAddonCardClick = (addon, e) => {
     // Don't open modal if clicking on switch or counter
-    if (e.target.closest(`.${styles.addOnControls}`) || 
-        e.target.closest(`.${styles.addOnSwitch}`) ||
-        e.target.closest(`.${styles.addOnCounter}`)) {
+    if (e.target.closest(`.${styles.addOnControls}`) ||
+      e.target.closest(`.${styles.addOnSwitch}`) ||
+      e.target.closest(`.${styles.addOnCounter}`)) {
       return;
     }
     setSelectedAddonModal(addon);
@@ -174,12 +174,23 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
 
   const requirementItems = whatsIncludedSetting && Array.isArray(whatsIncludedSetting.questions)
     ? whatsIncludedSetting.questions
-        .filter((q) => q?.question?.isActive)
-        .map((q) => ({ title: q.question.title, icon: "flag" }))
+      .filter((q) => q?.question?.isActive)
+      .map((q) => ({ title: q.question.title, icon: "flag" }))
     : [];
+
+  // Determine section title based on listing type
+  const isStayLocal = Boolean(listing?.propertyName || listing?.propertyType === "STAY" || listing?.stayId || listing?.stay_id);
+  const isFoodLocal = Boolean(listing?.menuName || listing?.cuisineType || listing?.foodId || listing?.menuId);
+  const isPlaceLocal = Boolean(listing?.placeName || listing?.placeType || listing?.placeId);
+
+  let aboutTitle = "About The Experience";
+  if (isStayLocal) aboutTitle = "About The Stay";
+  else if (isFoodLocal) aboutTitle = "About The Food";
+  else if (isPlaceLocal) aboutTitle = "About The Place";
+
   return (
     <div className={cn(className, styles.details)}>
-      <h4 className={cn("h4", styles.title)}>About The Experience</h4>
+      <h4 className={cn("h4", styles.title)}>{aboutTitle}</h4>
       <div className={styles.content}>
         {listing?.description ? (
           <>
@@ -215,10 +226,10 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
             const durationUnitNormalized =
               typeof durationUnitRaw === "string" && durationUnitRaw.trim()
                 ? (() => {
-                    const u = durationUnitRaw.trim().toLowerCase();
-                    if (u === "hour" || u === "hours" || u === "hr" || u === "hrs") return "hrs";
-                    return durationUnitRaw;
-                  })()
+                  const u = durationUnitRaw.trim().toLowerCase();
+                  if (u === "hour" || u === "hours" || u === "hr" || u === "hrs") return "hrs";
+                  return durationUnitRaw;
+                })()
                 : "hrs";
 
             const computed = [
@@ -278,75 +289,75 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           <h4 className={styles.enhanceTitle}>Enhance Your Experience</h4>
           <div className={styles.addOnsList}>
             {displayAddOns.map((addOn) => {
-            const isSelected = selectedAddOns.includes(addOn.id);
-            const isGroupPricing = addOn.pricingType === "Group";
-            const quantity = isGroupPricing ? (addOnQuantities?.[addOn.id] || 1) : 1;
-            
-            const addonImageUrl = getAddonImageUrl(addOn);
-            
-            return (
-              <div
-                key={addOn.id}
-                className={cn(styles.addOnCard, styles.addOnCardRow, {
-                  [styles.addOnCardSelected]: isSelected,
-                })}
-                onClick={(e) => handleAddonCardClick(addOn, e)}
-              >
-                <div className={styles.addOnPreview}>
-                  {addonImageUrl ? (
-                    <img 
-                      src={addonImageUrl} 
-                      alt={addOn.title}
-                      className={styles.addOnImg}
-                      onError={(e) => {
-                        // Fallback to placeholder if image fails to load
-                        if (!e.target.src.includes("/images/content/card-pic-13.jpg")) {
-                          e.target.src = "/images/content/card-pic-13.jpg";
-                          e.target.onerror = null;
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className={styles.addOnPreviewPlaceholder}>
-                      <Icon name="image" size="48" />
-                    </div>
-                  )}
-                </div>
-                <div className={styles.addOnBody}>
-                  <div className={styles.addOnHeader}>
-                    <div className={styles.addOnTitleRow}>
-                      <h5 className={styles.addOnTitle}>{addOn.title}</h5>
-                      {addOn.isPopular && (
-                        <span className={styles.popularBadge}>Popular</span>
-                      )}
-                    </div>
-                    <div className={styles.addOnPrice}>{addOn.price}</div>
+              const isSelected = selectedAddOns.includes(addOn.id);
+              const isGroupPricing = addOn.pricingType === "Group";
+              const quantity = isGroupPricing ? (addOnQuantities?.[addOn.id] || 1) : 1;
+
+              const addonImageUrl = getAddonImageUrl(addOn);
+
+              return (
+                <div
+                  key={addOn.id}
+                  className={cn(styles.addOnCard, styles.addOnCardRow, {
+                    [styles.addOnCardSelected]: isSelected,
+                  })}
+                  onClick={(e) => handleAddonCardClick(addOn, e)}
+                >
+                  <div className={styles.addOnPreview}>
+                    {addonImageUrl ? (
+                      <img
+                        src={addonImageUrl}
+                        alt={addOn.title}
+                        className={styles.addOnImg}
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          if (!e.target.src.includes("/images/content/card-pic-13.jpg")) {
+                            e.target.src = "/images/content/card-pic-13.jpg";
+                            e.target.onerror = null;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className={styles.addOnPreviewPlaceholder}>
+                        <Icon name="image" size="48" />
+                      </div>
+                    )}
                   </div>
-                  <div className={styles.addOnFoot}>
-                    <div className={styles.addOnControls}>
-                      {isGroupPricing && isSelected ? (
-                        <Counter
-                          className={styles.addOnCounter}
-                          value={quantity}
-                          setValue={(newValue) => onAddOnQuantityChange(addOn.id, newValue)}
-                          iconMinus="minus"
-                          iconPlus="plus"
-                          min={0}
-                        />
-                      ) : (
-                        <div className={styles.addOnSwitch}>
-                          <Switch
-                            value={isSelected}
-                            onChange={() => onToggleAddOn(addOn.id, addOn.pricingType)}
+                  <div className={styles.addOnBody}>
+                    <div className={styles.addOnHeader}>
+                      <div className={styles.addOnTitleRow}>
+                        <h5 className={styles.addOnTitle}>{addOn.title}</h5>
+                        {addOn.isPopular && (
+                          <span className={styles.popularBadge}>Popular</span>
+                        )}
+                      </div>
+                      <div className={styles.addOnPrice}>{addOn.price}</div>
+                    </div>
+                    <div className={styles.addOnFoot}>
+                      <div className={styles.addOnControls}>
+                        {isGroupPricing && isSelected ? (
+                          <Counter
+                            className={styles.addOnCounter}
+                            value={quantity}
+                            setValue={(newValue) => onAddOnQuantityChange(addOn.id, newValue)}
+                            iconMinus="minus"
+                            iconPlus="plus"
+                            min={0}
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <div className={styles.addOnSwitch}>
+                            <Switch
+                              value={isSelected}
+                              onChange={() => onToggleAddOn(addOn.id, addOn.pricingType)}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         </div>
       )}
@@ -363,8 +374,8 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
       </div>
 
       {/* Addon Detail Modal */}
-      <Modal 
-        visible={selectedAddonModal !== null} 
+      <Modal
+        visible={selectedAddonModal !== null}
         onClose={() => setSelectedAddonModal(null)}
         outerClassName={styles.addonModalOuter}
       >
@@ -374,8 +385,8 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
               {(() => {
                 const imageUrl = getAddonImageUrl(selectedAddonModal);
                 return imageUrl ? (
-                  <img 
-                    src={imageUrl} 
+                  <img
+                    src={imageUrl}
                     alt={selectedAddonModal.title}
                     className={styles.addonModalImg}
                   />

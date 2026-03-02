@@ -48,22 +48,53 @@ const InlineDatePicker = ({
 
   // Initialize dates when picker opens or selectedDate changes
   useEffect(() => {
-    if (visible && selectedDate) {
-      try {
-        const parsedDate = new Date(selectedDate);
-        if (!isNaN(parsedDate.getTime())) {
-          setStartDate(parsedDate);
-          setCurrentMonth(parsedDate.getMonth());
-          setCurrentYear(parsedDate.getFullYear());
-          return;
+    if (visible) {
+      if (selectedDate) {
+        try {
+          const parsedDate = new Date(selectedDate);
+          if (!isNaN(parsedDate.getTime())) {
+            setStartDate(parsedDate);
+            setCurrentMonth(parsedDate.getMonth());
+            setCurrentYear(parsedDate.getFullYear());
+            return;
+          }
+        } catch {
+          // Invalid date, fall through
         }
-      } catch {
-        // Invalid date, fall through
+        setStartDate(null);
+        setEndDate(null);
+      } else if (availabilityData && availabilityData.length > 0) {
+        // If no date is selected, auto-advance to the first month that has available slots
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const availableDates = availabilityData
+          .filter((av) => av.is_available && (av.available_seats === undefined || av.available_seats > 0))
+          .map((av) => {
+            const d = new Date(av.date);
+            d.setHours(0, 0, 0, 0);
+            return d;
+          })
+          .filter((d) => d.getTime() >= today.getTime())
+          .sort((a, b) => a.getTime() - b.getTime());
+
+        if (availableDates.length > 0) {
+          const firstAvail = availableDates[0];
+          const firstMonth = firstAvail.getMonth();
+          const firstYear = firstAvail.getFullYear();
+
+          // Only advance if the first available date is strictly in a later month
+          if (
+            firstYear > now.getFullYear() ||
+            (firstYear === now.getFullYear() && firstMonth > now.getMonth())
+          ) {
+            setCurrentMonth(firstMonth);
+            setCurrentYear(firstYear);
+          }
+        }
       }
-      setStartDate(null);
-      setEndDate(null);
     }
-  }, [visible, selectedDate]);
+  }, [visible, selectedDate, availabilityData]);
 
   const isDateInRange = (date) => {
     if (!date || !startDate) return false;
@@ -111,6 +142,13 @@ const InlineDatePicker = ({
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`; // YYYY-MM-DD format in local timezone
 
+    const now = new Date();
+    const isToday =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
     // If availability data is provided, only enable dates that are in the API response
     if (availabilityData && availabilityData.length > 0) {
       const allSlotsForDate = availabilityData.filter(av => {
@@ -129,11 +167,22 @@ const InlineDatePicker = ({
 
       if (allSlotsForDate.length === 0) return true; // No data for this date, disable it
 
-      // Enable if AT LEAST ONE slot for this date is available
-      const hasAvailableSlot = allSlotsForDate.some(av =>
-        av.is_available === true &&
-        (av.available_seats === undefined || av.available_seats > 0)
-      );
+      // Enable if AT LEAST ONE slot for this date is available AND (if today) its time hasn't passed
+      const hasAvailableSlot = allSlotsForDate.some(av => {
+        const isAvail = av.is_available === true &&
+          (av.available_seats === undefined || av.available_seats > 0);
+
+        if (!isAvail) return false;
+
+        if (isToday && av.start_time) {
+          const [h, m] = av.start_time.split(':').map(Number);
+          const slotMinutes = h * 60 + m;
+          if (slotMinutes <= currentMinutes) {
+            return false;
+          }
+        }
+        return true;
+      });
 
       return !hasAvailableSlot;
     }
@@ -157,10 +206,19 @@ const InlineDatePicker = ({
       const isDayAvailable = slot[dayFlag] === true;
       const isActive = slot.isActive !== false;
 
-      return inDateRange && isDayAvailable && isActive;
+      let isTimeValid = true;
+      if (isToday && slot.startTime) {
+        const [h, m] = slot.startTime.split(':').map(Number);
+        const slotMinutes = h * 60 + m;
+        if (slotMinutes <= currentMinutes) {
+          isTimeValid = false;
+        }
+      }
+
+      return inDateRange && isDayAvailable && isActive && isTimeValid;
     });
 
-    // If date is in a slot range but the day flag is false, disable it
+    // If date is in a slot range but the day flag is false or time is invalid, disable it
     const isInSlotRange = timeSlots.some((slot) => {
       const startDate = new Date(slot.startDate);
       const endDate = new Date(slot.endDate);
@@ -171,7 +229,7 @@ const InlineDatePicker = ({
       return checkDate >= startDate && checkDate <= endDate;
     });
 
-    // Disable if in range but day flag is false
+    // Disable if in range but day flag is false (or time invalid)
     if (isInSlotRange && !isInAnySlotRange) {
       return true;
     }
