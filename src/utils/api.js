@@ -926,15 +926,21 @@ export const getStayListings = async (limit = 20, offset = 0) => {
     const payload = response.data;
     console.log(`✅ Stay listings fetched (raw):`, payload);
 
-    if (Array.isArray(payload)) return payload;
-    if (payload && typeof payload === "object") {
-      if (Array.isArray(payload.stays)) return payload.stays;
-      if (payload.data && Array.isArray(payload.data.stays)) return payload.data.stays;
-      if (Array.isArray(payload.data)) return payload.data;
-      if (Array.isArray(payload.items)) return payload.items;
+    // Extract section metadata from backend if present
+    const section = payload?.section || null;
+
+    let listings = [];
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      if (Array.isArray(payload.stays)) listings = payload.stays;
+      else if (payload.data && Array.isArray(payload.data.stays)) listings = payload.data.stays;
+      else if (Array.isArray(payload.data)) listings = payload.data;
+      else if (Array.isArray(payload.items)) listings = payload.items;
+      else if (Array.isArray(payload.listings)) listings = payload.listings;
     }
 
-    return [];
+    return { section, listings };
   } catch (error) {
     console.error(`❌ Error fetching stay listings:`, error.response?.data || error.message);
     throw error;
@@ -1080,23 +1086,25 @@ export const getFoodMenus = async (limit = 20, offset = 0) => {
     const payload = response.data;
     console.log(`✅ Food menus fetched (raw):`, payload);
 
+    // Extract section metadata from backend if present
+    const section = payload?.section || null;
+
     let listings = [];
     if (Array.isArray(payload)) {
       listings = payload;
     } else if (payload && typeof payload === "object") {
-      listings = payload.foodMenus || payload.food_menus || payload.data || [];
-      if (payload.data && !Array.isArray(listings)) {
-        listings = payload.data.foodMenus || payload.data.food_menus || payload.data.listings || [];
+      listings = payload.foodMenus || payload.food_menus || payload.listings || payload.data || [];
+      if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
+        listings = payload.data.foodMenus || payload.data.food_menus || payload.data.listings || payload.data || [];
       }
-      if (payload.items && !Array.isArray(listings)) {
+      if (!Array.isArray(listings) && Array.isArray(payload.items)) {
         listings = payload.items;
       }
     }
 
-    // Ensure we return an array
     const finalListings = Array.isArray(listings) ? listings : [];
     console.log(`✅ Food menus normalized:`, finalListings);
-    return finalListings;
+    return { section, listings: finalListings };
   } catch (error) {
     console.error(`❌ Error fetching food menus:`, error.response?.data || error.message);
     throw error;
@@ -1111,24 +1119,25 @@ export const getPlaces = async (limit = 20, offset = 0) => {
     const payload = response.data;
     console.log(`✅ Places nearby fetched (raw):`, payload);
 
+    // Extract section metadata from backend if present
+    const section = payload?.section || null;
+
     let listings = [];
     if (Array.isArray(payload)) {
       listings = payload;
     } else if (payload && typeof payload === "object") {
-      listings = payload.places || payload.data || [];
-      if (payload.data && !Array.isArray(listings)) {
-        listings = payload.data.places || payload.data.listings || [];
+      listings = payload.places || payload.listings || payload.data || [];
+      if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
+        listings = payload.data.places || payload.data.listings || payload.data || [];
       }
-      if (payload.items && !Array.isArray(listings)) {
+      if (!Array.isArray(listings) && Array.isArray(payload.items)) {
         listings = payload.items;
       }
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
     console.log(`✅ Places nearby normalized:`, finalListings);
-    return finalListings;
-
-    return [];
+    return { section, listings: finalListings };
   } catch (error) {
     console.error(`❌ Error fetching places:`, error.response?.data || error.message);
     throw error;

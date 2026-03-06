@@ -19,11 +19,12 @@ const filterOptions = [
 
 
 /// Business Interest IDs
-// Experience → 1, Events → 2, Stays → 4
+// Experience → 1, Events → 2, Stays → 3, Places → 4, Food → 5
 const getBusinessInterestId = (filterId) => {
   if (filterId === "experience") return 1;
   if (filterId === "events") return 2;
-  if (filterId === "stays") return 4;
+  if (filterId === "stays") return 3;
+  if (filterId === "food") return 5;
   return null;
 };
 
@@ -88,69 +89,9 @@ const FleetHome = () => {
     setShowGuestPicker(false);
   }, [activeFilter]);
 
-  // Fetch homepage sections and their listings (by business interest: 1=Experience, 2=Events, 3=Stays)
-  // On refresh, Experience is selected by default → always call with businessInterestId=1
+  // Fetch homepage sections and their listings
+  // Business interest IDs: 1=Experience, 2=Events, 3=Stays, 4=Places, 5=Food
   useEffect(() => {
-    if (activeFilter === "stays") {
-      const loadStays = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-          const stayListings = await getStayListings(20, 0);
-          setSectionsData([
-            {
-              section: {
-                sectionId: "stays",
-                sectionTitle: "Stays",
-              },
-              listings: Array.isArray(stayListings) ? stayListings : [],
-            },
-          ]);
-        } catch (err) {
-          console.error("❌ Error loading stays listings:", err);
-          setSectionsData([]);
-          setError(err.message || "Failed to load stays");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadStays();
-      return;
-    }
-
-    if (activeFilter === "food") {
-      const loadFood = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-          const foodListings = await getFoodMenus(20, 0);
-          console.log("🏙️ Food listings in index.js:", foodListings);
-          const newSections = [
-            {
-              section: {
-                sectionId: "food",
-                sectionTitle: "Food Menus",
-              },
-              listings: Array.isArray(foodListings) ? foodListings : [],
-            },
-          ];
-          console.log("🏙️ Setting sectionsData for food:", newSections);
-          setSectionsData(newSections);
-        } catch (err) {
-          console.error("❌ Error loading food menus:", err);
-          setSectionsData([]);
-          setError(err.message || "Failed to load food menus");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadFood();
-      return;
-    }
 
     if (activeFilter === "places") {
       const loadPlaces = async () => {
@@ -158,15 +99,18 @@ const FleetHome = () => {
         setError(null);
 
         try {
-          const placesListings = await getPlaces(20, 0);
-          console.log("📍 Places listings in index.js:", placesListings);
+          const result = await getPlaces(20, 0);
+          // result is now { section, listings }; use backend section info if available
+          const backendSection = result?.section;
+          const listings = Array.isArray(result?.listings) ? result.listings : [];
+          console.log("📍 Places result from API:", result);
           const newSections = [
             {
               section: {
-                sectionId: "places",
-                sectionTitle: "Places Nearby",
+                sectionId: backendSection?.sectionId || backendSection?.id || "places",
+                sectionTitle: backendSection?.sectionTitle || backendSection?.title || backendSection?.name || "Places Nearby",
               },
-              listings: Array.isArray(placesListings) ? placesListings : [],
+              listings,
             },
           ];
           console.log("📍 Setting sectionsData for places:", newSections);
@@ -195,7 +139,7 @@ const FleetHome = () => {
       setError(null);
 
       try {
-        // Step 1: Fetch sections for the selected business interest (1=Experience, 2=Events)
+        // Step 1: Fetch sections for the selected business interest
         const fetchedSections = await getHomepageSections(businessInterestId);
         console.log("✅ Fetched homepage sections (businessInterestId=" + businessInterestId + "):", fetchedSections);
 
@@ -219,10 +163,11 @@ const FleetHome = () => {
             let listings = sectionData?.listings || sectionData?.data?.listings || [];
             const sectionInfo = sectionData?.section || section;
 
-            // Fallback: if this is an Events/Stays section and the section listings endpoint returns empty,
-            // fetch from the dedicated public endpoint.
+            // Fallback: if the section listings endpoint returns empty, try the dedicated public endpoints.
             const sectionTitle = sectionInfo?.sectionTitle || section?.sectionTitle || "";
             const isEventsSection = typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("events");
+            const isStaysSection = typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("stay");
+            const isFoodSection = typeof sectionTitle === "string" && (sectionTitle.toLowerCase().includes("food") || sectionTitle.toLowerCase().includes("menu"));
             if (isEventsSection && (!listings || listings.length === 0)) {
               try {
                 const eventListings = await getEventListings(12, 0);
@@ -231,6 +176,28 @@ const FleetHome = () => {
                 }
               } catch (eventErr) {
                 console.warn("⚠️ Failed to fetch event listings fallback:", eventErr);
+              }
+            }
+            if (isStaysSection && (!listings || listings.length === 0)) {
+              try {
+                const stayResult = await getStayListings(12, 0);
+                const stayListings = Array.isArray(stayResult?.listings) ? stayResult.listings : [];
+                if (stayListings.length > 0) {
+                  listings = stayListings;
+                }
+              } catch (stayErr) {
+                console.warn("⚠️ Failed to fetch stay listings fallback:", stayErr);
+              }
+            }
+            if (isFoodSection && (!listings || listings.length === 0)) {
+              try {
+                const foodResult = await getFoodMenus(12, 0);
+                const foodListings = Array.isArray(foodResult?.listings) ? foodResult.listings : [];
+                if (foodListings.length > 0) {
+                  listings = foodListings;
+                }
+              } catch (foodErr) {
+                console.warn("⚠️ Failed to fetch food listings fallback:", foodErr);
               }
             }
 
