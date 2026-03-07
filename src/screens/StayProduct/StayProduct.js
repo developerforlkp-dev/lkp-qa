@@ -1304,8 +1304,11 @@ const StayProduct = () => {
       const rzpOrderId = paymentResponse?.razorpayOrderId || response?.razorpayOrderId || response?.order?.razorpayOrderId;
       const rzpKeyId = paymentResponse?.razorpayKeyId || response?.razorpayKeyId || response?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
 
-      // Calculate amount in paise for Razorpay
-      const amountInPaise = paymentResponse?.amount ? paymentResponse.amount : Math.round((bookingPayload.amount || 0) * 100);
+      // Always use our frontend-calculated amount (b2cPrice × nights × rooms).
+      // The backend Razorpay order may include extra surcharges; we display our total
+      // so it stays consistent with the receipt breakdown shown to the user.
+      const amountInPaise = Math.round((bookingPayload.amount || 0) * 100);
+
       const currency = paymentResponse?.currency || response?.currency || response?.order?.currency || "INR";
 
       localStorage.setItem("pendingPayment", JSON.stringify({

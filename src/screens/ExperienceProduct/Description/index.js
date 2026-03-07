@@ -227,7 +227,12 @@ const Description = ({ classSection, listing, hostData }) => {
       const rzpOrderId = paymentResponse?.razorpayOrderId || res?.razorpayOrderId || res?.order?.razorpayOrderId;
       const rzpKeyId = paymentResponse?.razorpayKeyId || res?.razorpayKeyId || res?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
 
-      const amountInPaise = paymentResponse?.amount ? paymentResponse.amount : Math.round(calculatedAmount * 100);
+      // Always use our frontend-calculated amount (b2cPrice × nights × roomsNeeded).
+      // The backend may add taxes/surcharges that inflate the Razorpay order amount —
+      // we display our calculated total to keep it consistent with the receipt breakdown.
+      const amountInPaise = Math.round(calculatedAmount * 100);
+      // Keep backend Razorpay order id & key for the actual payment flow
+
       const currency = paymentResponse?.currency || res?.currency || res?.order?.currency || "INR";
 
       localStorage.setItem("pendingPayment", JSON.stringify({
@@ -839,10 +844,16 @@ const Description = ({ classSection, listing, hostData }) => {
     // Priority: selected room's mealPlanPricing b2cPrice > lowestRoomPrice (b2c) > property b2cPrice
     let pricePerNight;
     if (isStay && isPropertyBased) {
+      // fullPropertyB2cPrice may be directly on listing OR under listing.stay
       pricePerNight = parseFloat(
+        listing?.fullPropertyB2cPrice ||
         listing?.stay?.fullPropertyB2cPrice ||
+        listing?.fullPropertyB2cPrice ||
         listing?.stay?.b2cPrice ||
+        listing?.b2cPrice ||
         listing?.stay?.startingPrice ||
+        listing?.stay?.pricePerNight ||
+        listing?.stay?.price ||
         lowestRoomPrice || 0
       );
     } else if (isStay && staySelectedRoomType) {
@@ -2228,14 +2239,22 @@ const Description = ({ classSection, listing, hostData }) => {
   const displayPrice = React.useMemo(() => {
     let price = 0;
     if (isPropertyBased) {
-      price = parseFloat(listing?.stay?.fullPropertyB2cPrice || listing?.stay?.b2cPrice || listing?.stay?.startingPrice || listing?.stay?.pricePerNight || listing?.stay?.price || 0);
+      // Property-based stay: fullPropertyB2cPrice may be directly on listing OR under listing.stay
+      price = parseFloat(
+        listing?.fullPropertyB2cPrice ||
+        listing?.stay?.fullPropertyB2cPrice ||
+        listing?.stay?.b2cPrice ||
+        listing?.stay?.startingPrice ||
+        listing?.stay?.pricePerNight ||
+        listing?.stay?.price || 0
+      );
     } else if (isStay) {
-      price = parseFloat(listing?.stay?.fullPropertyB2cPrice || listing?.stay?.b2cPrice || listing?.b2cPrice || 0);
+      // Room-based stay: show the lowest room B2C price ("starting from")
+      price = lowestRoomPrice || parseFloat(listing?.stay?.startingPrice || listing?.stay?.pricePerNight || listing?.stay?.b2cPrice || 0);
     } else {
       price = parseFloat(listing?.b2cPrice || listing?.price || 0);
       // Fallback: Check slots data for pricing if experience level price is missing
       if (!price && slotsData && slotsData.length > 0) {
-        // Prioritize first slot's price_per_person, fallback to b2b_rate
         const firstSlotPrice = slotsData[0]?.pricing?.price_per_person || slotsData[0]?.pricing?.b2b_rate;
         if (firstSlotPrice) {
           price = parseFloat(firstSlotPrice);
@@ -2244,7 +2263,7 @@ const Description = ({ classSection, listing, hostData }) => {
     }
     const currency = listing?.stay?.currency || listing?.currency || "INR";
     return price > 0 ? `${currency} ${price.toFixed(2)}` : "";
-  }, [listing, isStay, isPropertyBased, slotsData]);
+  }, [listing, isStay, isPropertyBased, slotsData, lowestRoomPrice]);
 
   const displayTime = isStay ? "night" : "person";
 
@@ -2266,7 +2285,7 @@ const Description = ({ classSection, listing, hostData }) => {
                 className={styles.receipt}
                 items={items}
                 hostData={hostData}
-                priceActual={displayPrice || "$119"}
+                priceActual={displayPrice}
                 time={displayTime}
                 avatar={listing?.hostAvatar || listing?.avatar}
                 onItemClick={handleOpenDateTime}
@@ -2497,13 +2516,20 @@ const Description = ({ classSection, listing, hostData }) => {
                 )}
 
                 <div className={styles.table}>
-                  {receipt.map((x, index) => (
+                  {/* For room-based stays: hide receipt until a room type is chosen.
+                      For property-based stays: hide until dates are selected.
+                      For experiences/other: always show when receipt has items. */}
+                  {((!isStay) ||
+                    (isStay && isPropertyBased && selectedDate && selectedEndDate) ||
+                    (isStay && !isPropertyBased && staySelectedRoomType)
+                  ) && receipt.map((x, index) => (
                     <div className={styles.line} key={index}>
                       <div className={styles.cell}>{x.title}</div>
                       <div className={styles.cell}>{x.content}</div>
                     </div>
                   ))}
                 </div>
+
                 <div className={styles.foot}>
                   <button className={styles.report}>
                     <Icon name="flag" size="12" />
