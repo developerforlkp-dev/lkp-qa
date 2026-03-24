@@ -851,6 +851,30 @@ const Main = ({
                           <span className={styles.category}>
                             {booking.category}
                           </span>
+                          {booking.bookingData?.paymentStatus && (
+                            <>
+                              <span className={styles.dot} aria-hidden="true">
+                                •
+                              </span>
+                              <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                padding: "4px 8px",
+                                borderRadius: "12px",
+                                fontSize: "11px",
+                                fontWeight: "700",
+                                lineHeight: "1",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                                backgroundColor: booking.bookingData.paymentStatus === "SUCCESS" ? "#E8F5E9" :
+                                                 booking.bookingData.paymentStatus === "PENDING" ? "#FFF3E0" : "#FFEBEE",
+                                color: booking.bookingData.paymentStatus === "SUCCESS" ? "#2E7D32" :
+                                       booking.bookingData.paymentStatus === "PENDING" ? "#E65100" : "#C62828",
+                              }}>
+                                {booking.bookingData.paymentStatus}
+                              </span>
+                            </>
+                          )}
                         </div>
                         <h2 className={styles.cardTitle}>{booking.title}</h2>
                         <div className={styles.locationRow}>
