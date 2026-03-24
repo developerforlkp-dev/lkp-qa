@@ -330,6 +330,7 @@ useEffect(() => {
         title={listing?.title || "Spectacular views of Queenstown"}
         options={listingOptions}
         gallery={galleryItems && galleryItems.length > 0 ? galleryItems : []}
+        listingId={listing?.listingId || listing?.id}
         type="experience"
         rating={rating}
         reviews={reviews}

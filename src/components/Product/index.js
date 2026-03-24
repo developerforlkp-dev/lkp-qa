@@ -10,6 +10,7 @@ const Product = ({
   title,
   options,
   gallery,
+  listingId,
   type,
   rating,
   reviews,
@@ -72,6 +73,7 @@ const Product = ({
           <Gallery 
             className={styles.gallery} 
             items={gallery} 
+            listingId={listingId}
             type={type}
             title={title}
             options={options}

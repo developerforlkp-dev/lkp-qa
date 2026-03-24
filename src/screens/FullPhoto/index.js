@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./FullPhoto.module.sass";
 import Product from "../../components/Product";
 import Icon from "../../components/Icon";
 import { useHistory, useLocation } from "react-router-dom";
 import PhotoView from "../../components/PhotoView";
+import { getListingMedia } from "../../utils/api";
 
 const breadcrumbs = [
   {
@@ -52,11 +53,47 @@ const FullPhoto = () => {
   const location = useLocation();
   const [initialSlide, setInitialSlide] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [gallery, setGallery] = useState(location.state?.gallery || defaultGallery);
 
-  // Get gallery and title from route state, or use defaults
-  const gallery = location.state?.gallery || defaultGallery;
+  const listingId = location.state?.listingId;
   const title = location.state?.title || "Spectacular views of Queenstown";
   const options = location.state?.options || defaultOptions;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const normalizeMediaUrl = (media) => {
+      const rawUrl = media?.url || media?.fileUrl || media?.blobName || media;
+      if (!rawUrl) return null;
+      if (String(rawUrl).startsWith("http://") || String(rawUrl).startsWith("https://")) return rawUrl;
+      if (String(rawUrl).startsWith("/")) return rawUrl;
+      return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${rawUrl}`;
+    };
+
+    const loadMedia = async () => {
+      if (!listingId) return;
+
+      try {
+        const media = await getListingMedia(listingId);
+        if (!mounted) return;
+
+        const apiGallery = media
+          .map(normalizeMediaUrl)
+          .filter(Boolean);
+
+        if (apiGallery.length > 0) {
+          setGallery(apiGallery);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch full photo gallery:", error);
+      }
+    };
+
+    loadMedia();
+    return () => {
+      mounted = false;
+    };
+  }, [listingId]);
 
   const handleOpen = (index) => {
     setInitialSlide(index);
@@ -116,6 +153,8 @@ const FullPhoto = () => {
         initialSlide={initialSlide}
         visible={visible}
         items={gallery}
+        listingId={listingId}
+        options={options}
         onClose={() => setVisible(false)}
       />
     </>

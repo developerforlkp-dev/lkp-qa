@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import cn from "classnames";
 import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./GuestPicker.module.sass";
@@ -24,6 +24,12 @@ const GuestPicker = ({
   className,
 }) => {
   const [guests, setGuests] = useState(initialGuests);
+  const skipGuestChangeRef = useRef(true);
+  const onGuestChangeRef = useRef(onGuestChange);
+
+  React.useEffect(() => {
+    onGuestChangeRef.current = onGuestChange;
+  }, [onGuestChange]);
 
   // Use maxSeats if provided, otherwise fall back to maxGuests, or undefined (no limit)
   const maxAllowed = maxSeats !== undefined ? maxSeats : (maxGuests !== undefined ? maxGuests : undefined);
@@ -55,14 +61,26 @@ const GuestPicker = ({
       changed = true;
     }
 
-    setGuests(target);
+    const sameGuests =
+      guests.adults === (target.adults || 0) &&
+      guests.children === (target.children || 0) &&
+      guests.infants === (target.infants || 0) &&
+      (guests.pets || 0) === (target.pets || 0);
 
-    // Notify parent AFTER setting local state, not inside the updater
-    if (changed) {
-      onGuestChange?.(target);
+    if (!sameGuests) {
+      skipGuestChangeRef.current = !changed;
+      setGuests(target);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialGuests, maxAllowed]);
+
+  React.useEffect(() => {
+    if (skipGuestChangeRef.current) {
+      skipGuestChangeRef.current = false;
+      return;
+    }
+    onGuestChangeRef.current?.(guests);
+  }, [guests]);
 
 
   const totalGuests = useMemo(() => {
@@ -180,7 +198,6 @@ const GuestPicker = ({
                         newGuests.pets = newValue;
                       }
 
-                      onGuestChange?.(newGuests);
                       return newGuests;
                     });
                   }}

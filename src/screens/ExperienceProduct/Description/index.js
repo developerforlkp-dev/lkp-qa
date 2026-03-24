@@ -42,6 +42,14 @@ const Description = ({ classSection, listing, hostData }) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  const normalizeBookingTime = (timeString) => {
+    if (!timeString) return "00:00";
+    const parts = String(timeString).split(":");
+    const hours = parts[0] ?? "00";
+    const minutes = parts[1] ?? "00";
+    return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+  };
+
   const handleCheckStayAvailability = async () => {
     try {
       if (!isStay || isPropertyBased) return;
@@ -278,17 +286,20 @@ const Description = ({ classSection, listing, hostData }) => {
     infants: 0,
     pets: 0,
   });
+  const [hasSelectedGuests, setHasSelectedGuests] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const [showRoomTypePicker, setShowRoomTypePicker] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isReserveSubmitting, setIsReserveSubmitting] = useState(false);
   const dateItemRef = useRef(null);
   const timeItemRef = useRef(null);
   const guestItemRef = useRef(null);
   const checkoutItemRef = useRef(null);
   const roomTypeItemRef = useRef(null);
   const initialValuesSetRef = useRef(false);
+  const reserveSubmitLockRef = useRef(false);
 
   useEffect(() => {
     if (!showRoomTypePicker) return;
@@ -400,11 +411,12 @@ const Description = ({ classSection, listing, hostData }) => {
 
 
   const guestCountText = useMemo(() => {
+    if (!isStay && !hasSelectedGuests) return "Add guests";
     const total = getGuestCount(guests);
     if (total === 0) return "Add guests";
     if (total === 1) return "1 guest";
     return `${total} guests`;
-  }, [guests]);
+  }, [guests, hasSelectedGuests, isStay]);
 
   // Validation helper functions
   const isPastDate = (date) => {
@@ -575,6 +587,7 @@ const Description = ({ classSection, listing, hostData }) => {
   // Get availability data for selected date and slot
   const selectedDateAvailability = useMemo(() => {
     if (!selectedDate) return null;
+    if (!isStay && !selectedTimeSlot) return null;
     const dateStr = selectedDate.format("YYYY-MM-DD");
 
     // 1. Try to find explicit availability from the array (updated by bookings)
@@ -600,7 +613,7 @@ const Description = ({ classSection, listing, hostData }) => {
     }
 
     return null;
-  }, [selectedDate, filteredAvailabilityData, selectedTimeSlotData, selectedTimeSlot, listing?.maxGuests]);
+  }, [selectedDate, filteredAvailabilityData, selectedTimeSlotData, selectedTimeSlot, listing?.maxGuests, isStay]);
 
   // Get the selected timeSlot object for display
   const selectedTimeSlotDisplay = useMemo(() => {
@@ -786,7 +799,7 @@ const Description = ({ classSection, listing, hostData }) => {
     return finalPrice;
   }, [listing, isStay]);
 
-  const { addOnsTotal, finalTotal, receipt, priceInfo } = useMemo(() => {
+  const { addOnsTotal, finalTotal, receipt, priceInfo, pricingBreakdown } = useMemo(() => {
     // Calculate addons price based on pricing type
     const addOnsPrice = selectedAddOns.reduce((sum, id) => {
       // Find addon from listing data
@@ -897,11 +910,20 @@ const Description = ({ classSection, listing, hostData }) => {
     }
 
     const subtotal = basePriceAmount + addOnsPrice;
+    const discountPercentage = parseFloat(
+      listing?.pricing?.discount?.total ||
+      listing?.pricing?.discount?.percentage ||
+      0
+    ) || 0;
+    const discountAmount = (subtotal * discountPercentage) / 100;
+    const taxableAmount = Math.max(subtotal - discountAmount, 0);
 
     const receiptData = [
       {
         title: priceDescription,
         content: `${currency} ${basePriceAmount.toFixed(2)}`,
+        kind: "base",
+        showInCheckout: true,
       },
     ];
 
@@ -923,15 +945,28 @@ const Description = ({ classSection, listing, hostData }) => {
             receiptData.push({
               title: `${addonTitle} × ${quantity}`,
               content: `${currency} ${addonTotal.toFixed(2)}`,
+              kind: "addon",
+              showInCheckout: false,
             });
           } else {
             receiptData.push({
               title: addonTitle,
               content: `${currency} ${addonTotal.toFixed(2)}`,
+              kind: "addon",
+              showInCheckout: false,
             });
           }
         }
         // No fallback - only use API addons
+      });
+    }
+
+    if (discountAmount > 0) {
+      receiptData.push({
+        title: `Discount (${discountPercentage.toFixed(0)}%)`,
+        content: `- ${currency} ${discountAmount.toFixed(2)}`,
+        kind: "discount",
+        showInCheckout: false,
       });
     }
 
@@ -940,20 +975,24 @@ const Description = ({ classSection, listing, hostData }) => {
     if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
       const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
       enabledTaxes.forEach(tax => {
-        const taxAmount = (subtotal * parseFloat(tax.currentRate || 0)) / 100;
+        const taxAmount = (taxableAmount * parseFloat(tax.currentRate || 0)) / 100;
         totalTaxAmount += taxAmount;
         receiptData.push({
           title: tax.name,
           content: `${currency} ${taxAmount.toFixed(2)}`,
+          kind: "tax",
+          showInCheckout: true,
         });
       });
     }
 
-    const total = subtotal + totalTaxAmount;
+    const total = taxableAmount + totalTaxAmount;
 
     receiptData.push({
       title: "Total",
       content: `${currency} ${total.toFixed(2)}`,
+      kind: "total",
+      showInCheckout: true,
     });
 
     const displayPriceValue = pricePerPerson || pricePerNight;
@@ -968,11 +1007,20 @@ const Description = ({ classSection, listing, hostData }) => {
         priceActual: priceActualText,
         time: priceTimeUnit,
         total: total,
+      },
+      pricingBreakdown: {
+        currency,
+        basePrice: basePriceAmount,
+        addonsTotal: addOnsPrice,
+        subtotal,
+        discountPercentage,
+        discountAmount,
+        taxAmount: totalTaxAmount,
+        total,
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAddOns, addOnQuantities, guests, listing, billingConfig, selectedDateAvailability, lowestRoomPrice, selectedTimeSlotData, isStay, isPropertyBased, staySelectedRoomType, selectedDate, selectedEndDate]);
-
 
   // Save booking data to localStorage
   const saveBookingData = () => {
@@ -1083,6 +1131,7 @@ const Description = ({ classSection, listing, hostData }) => {
       addOnQuantities: addOnQuantities,
       receipt: receipt,
       finalTotal: finalTotal,
+      pricing: pricingBreakdown,
       // extra fields to help checkout display
       bookingSummary: {
         date: selectedDate ? selectedDate.format("YYYY-MM-DD") : null,
@@ -1156,7 +1205,7 @@ const Description = ({ classSection, listing, hostData }) => {
     const hasTimeSlot = selectedTimeSlot !== null;
     const hasCheckout = selectedEndDate !== null;
     const guestCount = getGuestCount(guests);
-    const hasGuests = guestCount > 0;
+    const hasGuests = isStay ? guestCount > 0 : hasSelectedGuests && guestCount > 0;
 
     // Check if requested guests exceed available capacity
     // Use selectedDateAvailability (which now always has a value if a date/slot is picked)
@@ -1165,11 +1214,15 @@ const Description = ({ classSection, listing, hostData }) => {
       : true;
 
     return isStay ? (hasDate && hasCheckout && hasGuests) : (hasDate && hasTimeSlot && hasGuests && hasCapacity);
-  }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay, selectedDateAvailability]);
+  }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay, selectedDateAvailability, hasSelectedGuests]);
 
   const handleReserveClick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (reserveSubmitLockRef.current) {
+      return;
+    }
 
     if (isStay) {
       return;
@@ -1212,6 +1265,9 @@ const Description = ({ classSection, listing, hostData }) => {
 
     // User is logged in, create order
     try {
+      reserveSubmitLockRef.current = true;
+      setIsReserveSubmitting(true);
+
       // Get customer info from localStorage or user profile
       const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
       const customerName = userInfo.name ||
@@ -1223,20 +1279,15 @@ const Description = ({ classSection, listing, hostData }) => {
         (userInfo.phone ? (userInfo.countryCode || "+91") + userInfo.phone : "") ||
         userInfo.phoneNumber ||
         userInfo.phone || "";
-      // Try to derive customerId from stored user info (various possible keys)
-      const customerId =
-        userInfo.customerId ||
-        userInfo.customer_id ||
-        userInfo.id ||
-        userInfo.userId ||
-        userInfo.customerID ||
-        null;
-
       // Get special requests (if any input field exists in future)
       const specialRequests = "";
 
       // Get listing ID
-      const listingId = listing?.listingId || listing?.id || 0;
+      const listingId = Number(listing?.listingId || listing?.id || 0);
+      if (!listingId || listingId < 1) {
+        alert("Invalid listing. Please reload the experience and try again.");
+        return;
+      }
 
       // Format booking date (YYYY-MM-DD)
       const bookingDate = selectedDate ? selectedDate.format("YYYY-MM-DD") : new Date().toISOString().split('T')[0];
@@ -1248,12 +1299,15 @@ const Description = ({ classSection, listing, hostData }) => {
       } else if (selectedTimeSlotData?.startTime) {
         bookingTime = selectedTimeSlotData.startTime;
       }
+      bookingTime = normalizeBookingTime(bookingTime);
 
       // Get booking slot ID
-      const bookingSlotId = selectedTimeSlotData?.slotId ||
+      const bookingSlotId = Number(
+        selectedTimeSlotData?.slotId ||
         selectedTimeSlotData?.slot_id ||
         selectedTimeSlotData?.id ||
-        0;
+        0
+      );
 
       // Get number of guests
       const numberOfGuests = getGuestCount(guests);
@@ -1303,22 +1357,26 @@ const Description = ({ classSection, listing, hostData }) => {
         }
       }
 
+      const pricingDiscountAmount = (pricingSubtotal * (parseFloat(
+        listing?.pricing?.discount?.total ||
+        listing?.pricing?.discount?.percentage ||
+        0
+      ) || 0)) / 100;
+      const pricingTaxableAmount = Math.max(pricingSubtotal - pricingDiscountAmount, 0);
+
       // Calculate tax amount
       let pricingTaxAmount = 0;
       if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
         const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
         enabledTaxes.forEach(tax => {
-          const taxAmount = (pricingSubtotal * parseFloat(tax.currentRate || 0)) / 100;
+          const taxAmount = (pricingTaxableAmount * parseFloat(tax.currentRate || 0)) / 100;
           pricingTaxAmount += taxAmount;
         });
       }
 
-      // Calculate discount (from billing config or default 0)
-      const pricingDiscountAmount = 0; // Can be enhanced with discount codes
-
       // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
       // eslint-disable-next-line no-unused-vars
-      const pricingTotal = pricingSubtotal + pricingTaxAmount - pricingDiscountAmount;
+      const pricingTotal = pricingTaxableAmount + pricingTaxAmount;
 
       // Calculate host earnings (what the host receives: subtotal - platform commission)
       const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
@@ -1344,6 +1402,8 @@ const Description = ({ classSection, listing, hostData }) => {
 
           return {
             addonId: listingAddon.addon?.addonId ?? listingAddon.addonId ?? listingAddon.assignmentId,
+            addonName: listingAddon.addon?.title || "Add-on",
+            addonPrice: parseFloat(listingAddon.addon?.price || 0),
             quantity: quantity,
           };
         }
@@ -1357,7 +1417,7 @@ const Description = ({ classSection, listing, hostData }) => {
         return;
       }
 
-      if (!selectedTimeSlot || !bookingSlotId || bookingSlotId === 0) {
+      if (!selectedTimeSlot || !bookingSlotId || bookingSlotId < 1) {
         alert("Please select a time slot.");
         return;
       }
@@ -1376,10 +1436,9 @@ const Description = ({ classSection, listing, hostData }) => {
       const orderData = {
         listingId: listingId || 0,
         bookingDate: bookingDate,
-        bookingTime: bookingTime, // "HH:mm"
+        bookingTime: bookingTime, // "HH:mm:ss"
         bookingSlotId: bookingSlotId || 0,
         guestCount: numberOfGuests || 1,
-        ...(customerId ? { customerId } : {}),
         customer: {
           name: customerName || "Guest User",
           email: customerEmail || "guest@example.com",
@@ -1534,6 +1593,9 @@ const Description = ({ classSection, listing, hostData }) => {
       }
 
       alert(errorMessage);
+    } finally {
+      reserveSubmitLockRef.current = false;
+      setIsReserveSubmitting(false);
     }
   };
 
@@ -1659,6 +1721,10 @@ const Description = ({ classSection, listing, hostData }) => {
 
   // Create order from pending booking data (used after login)
   const createOrderFromPendingBooking = async () => {
+    if (reserveSubmitLockRef.current) {
+      return;
+    }
+
     const savedBooking = localStorage.getItem("pendingBooking");
     if (!savedBooking) {
       console.warn("No pending booking data found");
@@ -1677,19 +1743,14 @@ const Description = ({ classSection, listing, hostData }) => {
       (userInfo.phone ? (userInfo.countryCode || "+91") + userInfo.phone : "") ||
       userInfo.phoneNumber ||
       userInfo.phone || "";
-    const customerId =
-      userInfo.customerId ||
-      userInfo.customer_id ||
-      userInfo.id ||
-      userInfo.userId ||
-      userInfo.customerID ||
-      null;
-
     // Get special requests (if any input field exists in future)
     const specialRequests = "";
 
     // Get listing ID
-    const listingId = bookingData.listingId || listing?.listingId || listing?.id || 0;
+    const listingId = Number(bookingData.listingId || listing?.listingId || listing?.id || 0);
+    if (!listingId || listingId < 1) {
+      throw new Error("Invalid listing. Please reload the experience and try again.");
+    }
 
     // Format booking date
     const bookingDate = bookingData.selectedDate ||
@@ -1701,14 +1762,27 @@ const Description = ({ classSection, listing, hostData }) => {
       bookingTime = selectedDateAvailability.start_time;
     } else if (selectedTimeSlotData?.startTime) {
       bookingTime = selectedTimeSlotData.startTime;
+    } else if (bookingData?.bookingSummary?.time) {
+      bookingTime = bookingData.bookingSummary.time;
     }
+    bookingTime = normalizeBookingTime(bookingTime);
 
     // Get booking slot ID
-    const bookingSlotId = selectedTimeSlotData?.slotId ||
+    const bookingSlotId = Number(
+      selectedTimeSlotData?.slotId ||
       selectedTimeSlotData?.slot_id ||
       selectedTimeSlotData?.id ||
-      bookingData.selectedTimeSlot ||
-      0;
+      bookingData?.bookingSummary?.slotId ||
+      0
+    );
+
+    if (!bookingSlotId || bookingSlotId < 1) {
+      throw new Error("Invalid booking slot. Please reselect the date and time slot.");
+    }
+
+    if (!bookingTime || bookingTime === "00:00") {
+      throw new Error("Invalid booking time. Please reselect the date and time slot.");
+    }
 
     // Get number of guests
     const numberOfGuests = bookingData.guests ?
@@ -1746,6 +1820,8 @@ const Description = ({ classSection, listing, hostData }) => {
         pricingAddonsTotal += addonPrice * quantity;
         addonsArray.push({
           addonId: addonData.id || addonData.addonId,
+          addonName: addonData.title || addonData.addonName || "Add-on",
+          addonPrice: addonPrice,
           quantity: quantity,
         });
       });
@@ -1762,20 +1838,26 @@ const Description = ({ classSection, listing, hostData }) => {
       }
     }
 
+    const pricingDiscountAmount = (pricingSubtotal * (parseFloat(
+      listing?.pricing?.discount?.total ||
+      listing?.pricing?.discount?.percentage ||
+      0
+    ) || 0)) / 100;
+    const pricingTaxableAmount = Math.max(pricingSubtotal - pricingDiscountAmount, 0);
+
     // Calculate tax amount
     let pricingTaxAmount = 0;
     if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
       const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
       enabledTaxes.forEach(tax => {
-        const taxAmount = (pricingSubtotal * parseFloat(tax.currentRate || 0)) / 100;
+        const taxAmount = (pricingTaxableAmount * parseFloat(tax.currentRate || 0)) / 100;
         pricingTaxAmount += taxAmount;
       });
     }
 
-    const pricingDiscountAmount = 0;
     // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
     // eslint-disable-next-line no-unused-vars
-    const pricingTotal = pricingSubtotal + pricingTaxAmount - pricingDiscountAmount;
+    const pricingTotal = pricingTaxableAmount + pricingTaxAmount;
 
     // Calculate host earnings (what the host receives: subtotal - platform commission)
     const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
@@ -1789,10 +1871,9 @@ const Description = ({ classSection, listing, hostData }) => {
     const orderData = {
       listingId: listingId || 0,
       bookingDate: bookingDate,
-      bookingTime: bookingTime, // "HH:mm"
+      bookingTime: bookingTime, // "HH:mm:ss"
       bookingSlotId: bookingSlotId || 0,
       guestCount: numberOfGuests || 1,
-      ...(customerId ? { customerId } : {}),
       customer: {
         name: customerName || "Guest User",
         email: customerEmail || "guest@example.com",
@@ -1805,6 +1886,9 @@ const Description = ({ classSection, listing, hostData }) => {
     };
 
     console.log("📦 Creating order after login:", orderData);
+
+    reserveSubmitLockRef.current = true;
+    setIsReserveSubmitting(true);
 
     // Create the order
     const orderResponse = await createOrder(orderData);
@@ -1843,6 +1927,8 @@ const Description = ({ classSection, listing, hostData }) => {
 
     // Redirect to checkout
     proceedToCheckout();
+    reserveSubmitLockRef.current = false;
+    setIsReserveSubmitting(false);
   };
 
   // Handle phone login callback (called after successful OTP verification)
@@ -1853,6 +1939,8 @@ const Description = ({ classSection, listing, hostData }) => {
     try {
       await createOrderFromPendingBooking();
     } catch (error) {
+      reserveSubmitLockRef.current = false;
+      setIsReserveSubmitting(false);
       console.error("Error creating order after login:", error);
       alert(error.response?.data?.message || error.message || "Failed to create order. Please try again.");
     }
@@ -1878,6 +1966,8 @@ const Description = ({ classSection, listing, hostData }) => {
           try {
             await createOrderFromPendingBooking();
           } catch (error) {
+            reserveSubmitLockRef.current = false;
+            setIsReserveSubmitting(false);
             console.error("Error creating order after login:", error);
             // Don't show alert for 400 errors - they're handled gracefully
             if (error.response?.status !== 400) {
@@ -1908,6 +1998,9 @@ const Description = ({ classSection, listing, hostData }) => {
       setShowGuestPicker(false);
     }
     else if (index === 2) {
+      if (!isStay && (!selectedDate || !selectedTimeSlot)) {
+        return;
+      }
       setShowGuestPicker(true);
       setShowDatePicker(false);
       setShowTimeSlots(false);
@@ -1953,11 +2046,19 @@ const Description = ({ classSection, listing, hostData }) => {
         setSelectedEndDate(null);
       }
     }
+    if (!isStay) {
+      setHasSelectedGuests(false);
+      setShowGuestPicker(false);
+    }
     setShowDatePicker(false);
   };
 
   const handleTimeSelect = (timeText) => {
     setSelectedTimeSlot(timeText);
+    if (!isStay) {
+      setHasSelectedGuests(false);
+      setShowGuestPicker(false);
+    }
     setShowTimeSlots(false);
   };
 
@@ -2401,12 +2502,19 @@ const Description = ({ classSection, listing, hostData }) => {
                     );
                   }
                   if (index === 2) {
+                    const canSelectGuests = isStay || (selectedDate && selectedTimeSlot);
                     return (
                       <div ref={guestItemRef} style={{ position: 'relative' }}>
                         <div
                           className={cn(receiptStyles.item, receiptStyles.guestCentered)}
-                          onClick={() => handleOpenDateTime(2)}
-                          role="button"
+                          onClick={canSelectGuests ? () => handleOpenDateTime(2) : undefined}
+                          role={canSelectGuests ? "button" : undefined}
+                          style={{
+                            cursor: canSelectGuests ? 'pointer' : 'not-allowed',
+                            opacity: canSelectGuests ? 1 : 0.5,
+                            pointerEvents: canSelectGuests ? 'auto' : 'none',
+                          }}
+                          title={canSelectGuests ? undefined : "Please select date and time first"}
                         >
                           <div className={receiptStyles.icon}>
                             <Icon name={item.icon} size="24" />
@@ -2417,10 +2525,13 @@ const Description = ({ classSection, listing, hostData }) => {
                           </div>
                         </div>
                         <GuestPicker
-                          visible={showGuestPicker}
+                          visible={showGuestPicker && canSelectGuests}
                           onClose={() => setShowGuestPicker(false)}
                           onGuestChange={(guestData) => {
                             setGuests(guestData);
+                            if (!isStay) {
+                              setHasSelectedGuests(true);
+                            }
                           }}
                           initialGuests={guests}
                           maxGuests={listing?.maxGuests || undefined}
@@ -2497,10 +2608,10 @@ const Description = ({ classSection, listing, hostData }) => {
                       type="button"
                       className={cn("button", styles.button)}
                       onClick={handleReserveClick}
-                      disabled={!isReserveEnabled}
+                      disabled={!isReserveEnabled || isReserveSubmitting}
                       title={!isReserveEnabled ? "Please select date, time slot, and guests" : ""}
                     >
-                      <span>{isFullyBooked ? "Fully Booked" : "Reserve"}</span>
+                      <span>{isReserveSubmitting ? "Processing..." : (isFullyBooked ? "Fully Booked" : "Reserve")}</span>
                       <Icon name="bag" size="16" />
                     </button>
                   )}
@@ -2519,8 +2630,8 @@ const Description = ({ classSection, listing, hostData }) => {
                 <div className={styles.table}>
                   {/* For room-based stays: hide receipt until a room type is chosen.
                       For property-based stays: hide until dates are selected.
-                      For experiences/other: always show when receipt has items. */}
-                  {((!isStay) ||
+                      For experiences/other: only show after guests are explicitly selected. */}
+                  {((!isStay && hasSelectedGuests) ||
                     (isStay && isPropertyBased && selectedDate && selectedEndDate) ||
                     (isStay && !isPropertyBased && staySelectedRoomType)
                   ) && receipt.map((x, index) => (
@@ -2553,3 +2664,6 @@ const Description = ({ classSection, listing, hostData }) => {
 };
 
 export default Description;
+
+
+
