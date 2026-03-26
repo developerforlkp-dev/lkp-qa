@@ -10,7 +10,7 @@ import CommentsProduct from "../../components/CommentsProduct";
 import Browse from "../../components/Browse";
 import Loader from "../../components/Loader";
 import { browse2 } from "../../mocks/browse";
-import { getListing, getHost } from "../../utils/api";
+import { getListing, getHost, getLeadDetails } from "../../utils/api";
 
 // Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
@@ -188,6 +188,7 @@ const ExperienceProduct = () => {
 
   const [listing, setListing] = useState(null);
   const [hostData, setHostData] = useState(null);
+  const [leadData, setLeadData] = useState(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -244,15 +245,25 @@ useEffect(() => {
         // ✅ Fetch host data in parallel (non-blocking)
         const leadUserId = data.leadUserId || data.host?.leadUserId;
         if (leadUserId) {
-          // Don't await - let it load in background
           getHost(leadUserId)
             .then((hostResponse) => {
-              if (!mounted) return;
-              setHostData(hostResponse || null);
+              if (mounted) setHostData(hostResponse || null);
             })
             .catch((hostErr) => {
               console.warn("⚠️ Failed to fetch host data:", hostErr);
-              // Don't block the page if host fetch fails
+            });
+        }
+
+        // ✅ Fetch lead details (address, contact, etc.) - get leadId from listing
+        // Try multiple possible properties for lead ID
+        const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
+        if (leadId) {
+          getLeadDetails(leadId)
+            .then((leadResponse) => {
+              if (mounted) setLeadData(leadResponse || null);
+            })
+            .catch((leadErr) => {
+              console.warn("⚠️ Failed to fetch lead details:", leadErr);
             });
         }
         
@@ -312,6 +323,23 @@ useEffect(() => {
   };
   
   const hostAvatar = getHostAvatar();
+  
+  // ✅ Build the host description with lead details (address, contact, etc.)
+  const hostDescription = useMemo(() => {
+    if (!leadData) return "";
+    
+    // Extract details from lead API response
+    const address = leadData.address || leadData.businessAddress || leadData.meetingAddress;
+    const contact = leadData.contactNumber || leadData.phone || leadData.mobileNumber || leadData.businessContact;
+    const email = leadData.email || leadData.businessEmail;
+    
+    const details = [];
+    if (address) details.push(`Address: ${address}`);
+    if (contact) details.push(`Contact: ${contact}`);
+    if (email) details.push(`Email: ${email}`);
+    
+    return details.join(" | ");
+  }, [leadData]);
 
   // ✅ Progressive rendering: Show content as soon as listing data is available
   // Don't wait for host data to render the main content
@@ -346,10 +374,7 @@ useEffect(() => {
           <CommentsProduct
             className={cn("section", styles.comment)}
             parametersUser={parametersUser}
-            info={
-              listing?.description ||
-              "Described by Queenstown House & Garden magazine as having 'one of the best views we've ever seen' you will love relaxing in this newly built"
-            }
+            info={hostDescription}
             socials={socials}
             buttonText="Contact"
             hostData={hostData}

@@ -6,7 +6,7 @@ module.exports = function (app) {
   app.use(
     '/api/event-orders',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8085',   //url of the backend server
+      target: 'http://69.62.77.33:8080',   //url of the backend server
       changeOrigin: true,   //url of the backend server
       secure: false,
       pathRewrite: (path) => `/api/event-orders${path}`,
@@ -30,8 +30,8 @@ module.exports = function (app) {
   app.use(
     '/api/orders',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8085/',
-      target: 'http://69.62.77.33:8085/',
+      target: 'http://69.62.77.33:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       // Only proxy requests that end with /event-details
@@ -57,8 +57,8 @@ module.exports = function (app) {
   app.use(
     '/api/orders/event',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8085/',
-      target: 'http://69.62.77.33:8085/',
+      target: 'http://69.62.77.33:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       pathRewrite: (path) => `/api/orders/event`,
@@ -82,8 +82,8 @@ module.exports = function (app) {
   app.use(
     '/api/events',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8085/',
-      target: 'http://69.62.77.33:8085/',
+      target: 'http://69.62.77.33:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       // When mounting a proxy on '/api/events', http-proxy-middleware forwards only
@@ -105,12 +105,36 @@ module.exports = function (app) {
     })
   );
 
+  // Lead details: /api/leads/* → http://69.62.77.33:8080/leads/*
+  app.use(
+    '/api/leads',
+    createProxyMiddleware({
+      target: 'http://69.62.77.33:8080/',
+      changeOrigin: true,
+      secure: false,
+      pathRewrite: (path) => `/leads${path}`,
+      logLevel: 'debug',
+      proxyTimeout: 60000,
+      timeout: 60000,
+      onProxyReq: (proxyReq, req, res) => {
+        console.log('[Proxy Leads]', req.method, req.url, '->', proxyReq.path);
+      },
+      onProxyRes: (proxyRes, req, res) => {
+        console.log('[Proxy Leads Response]', req.url, '->', proxyRes.statusCode);
+      },
+      onError: (err, req, res) => {
+        console.error('[Proxy Leads Error]', err.message);
+        res.status(500).send('Proxy error: ' + err.message);
+      }
+    })
+  );
+
   // All other /api → http://62.72.12.51:6000/
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8085/',
-      target: 'http://69.62.77.33:8085/',
+      target: 'http://69.62.77.33:8080/',
+      target: 'http://69.62.77.33:8080/',
       changeOrigin: true,
       secure: false,
       pathRewrite: (path, req) => `/api${path}`,

@@ -164,6 +164,24 @@ const Checkout = () => {
                   ...serverPricing,
                   discount: finalDiscount,
                   discountAmount: finalDiscount,
+                  // Prioritize local calculation (prevPricing) to ensure consistency with details page
+                  // only fall back to server if local is missing.
+                  tax: (Number(prevPricing.tax || 0) > 0)
+                    ? prevPricing.tax
+                    : (serverPricing.tax || serverPricing.taxAmount || 0),
+                  taxRate: (Number(prevPricing.taxRate || 0) > 0)
+                    ? prevPricing.taxRate
+                    : (serverPricing.taxRate || 0),
+                  commission: (Number(prevPricing.commission || 0) > 0)
+                    ? prevPricing.commission
+                    : (serverPricing.commission || serverPricing.platformFee || 0),
+                  commissionRate: (Number(prevPricing.commissionRate || 0) > 0)
+                    ? prevPricing.commissionRate
+                    : (serverPricing.commissionRate || 0),
+                  // If we use local components, we should also use local total for consistency in the breakdown table
+                  total: (Number(prevPricing.total || 0) > 0)
+                    ? prevPricing.total
+                    : (serverPricing.total || serverPricing.totalPrice || serverPricing.finalAmount || 0),
                 },
               };
             });
@@ -348,7 +366,7 @@ const Checkout = () => {
 
       const basePrice = pricing.basePrice || pricing.baseAmount || 0;
       const addonsTotal = pricing.addonsTotal || 0;
-      const commission = pricing.commission || pricing.platformCommission || 0;
+      const commission = pricing.commission || pricing.platformCommission || pricing.platformFee || 0;
       const tax = pricing.tax || pricing.taxAmount || 0;
       const discount = pricing.discount || pricing.discountAmount || 0;
 
@@ -375,7 +393,8 @@ const Checkout = () => {
 
       // Tax
       if (tax > 0) {
-        rows.push({ title: "Tax", value: fmt(tax) });
+        const rate = pricing.taxRate ? ` (${pricing.taxRate}%)` : "";
+        rows.push({ title: `Tax${rate}`, value: fmt(tax) });
       }
 
       // Discount

@@ -1263,7 +1263,25 @@ export const getPlaceDetails = async (placeId) => {
     throw error;
   }
 };
+// ✅ Get lead details (host details) from leads API
+export const getLeadDetails = async (leadId) => {
+  try {
+    if (!leadId) {
+      throw new Error("leadId is required");
+    }
 
+    // Ensure leadId is a number or string
+    const leadIdNum = Number(leadId);
+    const leadIdStr = (!isNaN(leadIdNum) && leadIdNum > 0) ? String(leadIdNum) : String(leadId);
 
+    // Call /api/leads/{id} which should be proxied correctly
+    const response = await ListingsAPI.get(`/leads/${leadIdStr}`);
+    const payload = response.data;
+    console.log("✅ Lead details fetched (raw):", payload);
 
-
+    return payload; 
+  } catch (error) {
+    console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};

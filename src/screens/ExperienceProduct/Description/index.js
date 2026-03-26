@@ -569,6 +569,7 @@ const Description = ({ classSection, listing, hostData }) => {
           maxSeats: apiSlot.capacity?.max_seats,
           pricePerPerson: apiSlot.pricing?.price_per_person,
           b2bRate: apiSlot.pricing?.b2b_rate,
+          groupBookingPricing: apiSlot.group_booking_pricing || [],
         };
       }
     }
@@ -623,6 +624,7 @@ const Description = ({ classSection, listing, hostData }) => {
         end_time: selectedTimeSlotData?.endTime,
         price_per_person: selectedTimeSlotData?.pricePerPerson,
         b2b_rate: selectedTimeSlotData?.b2bRate,
+        group_booking_pricing: selectedTimeSlotData?.groupBookingPricing || [],
       };
     }
 
@@ -836,13 +838,26 @@ const Description = ({ classSection, listing, hostData }) => {
     const guestCount = getGuestCount(guests);
     const billableGuestCount = getBillableGuestCount(guests);
     // Use availability data if available, then selected slot, then fallback to listing data
-    const pricePerPerson = selectedDateAvailability?.price_per_person
+    let pricePerPerson = selectedDateAvailability?.price_per_person
       ? parseFloat(selectedDateAvailability.price_per_person)
       : (selectedTimeSlotData?.pricePerPerson
         ? parseFloat(selectedTimeSlotData.pricePerPerson)
         : (listing?.timeSlots?.[0]?.pricePerPerson
           ? parseFloat(listing.timeSlots[0].pricePerPerson)
           : null));
+
+    // Handle group pricing: override if guestCount falls in a defined range
+    const groupPricing = selectedDateAvailability?.group_booking_pricing ||
+                         selectedTimeSlotData?.groupBookingPricing;
+    if (groupPricing && Array.isArray(groupPricing) && groupPricing.length > 0) {
+      const match = groupPricing.find(p =>
+        guestCount >= (p.group_count_from || p.groupCountFrom || 0) &&
+        guestCount <= (p.group_count_upto || p.groupCountUpto || Infinity)
+      );
+      if (match && (match.price_per_person || match.pricePerPerson)) {
+        pricePerPerson = parseFloat(match.price_per_person || match.pricePerPerson);
+      }
+    }
 
     // For stays: calculate actual nights between check-in and check-out
     const nightsCount = (isStay && selectedDate && selectedEndDate)
@@ -931,11 +946,15 @@ const Description = ({ classSection, listing, hostData }) => {
     }
 
     const subtotal = basePriceAmount + addOnsPrice;
-    const discountPercentage = parseFloat(
-      listing?.pricing?.discount?.total ||
-      listing?.pricing?.discount?.percentage ||
+    
+    // Check for API-level discount first, then fall back to billingConfig if needed
+    const apiDiscountPercentage = parseFloat(
+      listing?.pricing?.discount?.total || 
+      listing?.pricing?.discount?.percentage || 
       0
-    ) || 0;
+    );
+    const discountPercentage = apiDiscountPercentage || 0;
+    
     const discountAmount = (subtotal * discountPercentage) / 100;
     const taxableAmount = Math.max(subtotal - discountAmount, 0);
 
@@ -993,7 +1012,18 @@ const Description = ({ classSection, listing, hostData }) => {
 
     // Calculate and add taxes
     let totalTaxAmount = 0;
-    if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
+    const apiTaxPercentage = parseFloat(listing?.pricing?.tax?.total || 0);
+    
+    if (apiTaxPercentage > 0) {
+      const taxAmount = (taxableAmount * apiTaxPercentage) / 100;
+      totalTaxAmount = taxAmount;
+      receiptData.push({
+        title: `Tax (${apiTaxPercentage}%)`,
+        content: `${currency} ${taxAmount.toFixed(2)}`,
+        kind: "tax",
+        showInCheckout: true,
+      });
+    } else if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
       const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
       enabledTaxes.forEach(tax => {
         const taxAmount = (taxableAmount * parseFloat(tax.currentRate || 0)) / 100;
@@ -1007,7 +1037,32 @@ const Description = ({ classSection, listing, hostData }) => {
       });
     }
 
-    const total = taxableAmount + totalTaxAmount;
+    // Calculate Platform Commission (Service fee)
+    let pricingPlatformCommission = 0;
+    const apiCommissionPercentage = parseFloat(listing?.pricing?.commission || 0);
+    
+    if (apiCommissionPercentage > 0) {
+      pricingPlatformCommission = (subtotal * apiCommissionPercentage) / 100;
+      receiptData.push({
+        title: `Service fee (${apiCommissionPercentage}%)`,
+        content: `${currency} ${pricingPlatformCommission.toFixed(2)}`,
+        kind: "commission",
+        showInCheckout: true,
+      });
+    } else if (billingConfig?.commissions && Array.isArray(billingConfig.commissions)) {
+      const platformFee = billingConfig.commissions.find(c => c.type === "Platform Fee" && c.isEnabled);
+      if (platformFee) {
+        pricingPlatformCommission = (subtotal * parseFloat(platformFee.currentRate || 0)) / 100;
+        receiptData.push({
+          title: "Service fee",
+          content: `${currency} ${pricingPlatformCommission.toFixed(2)}`,
+          kind: "commission",
+          showInCheckout: true,
+        });
+      }
+    }
+
+    const total = taxableAmount + totalTaxAmount + pricingPlatformCommission;
 
     receiptData.push({
       title: "Total",
@@ -1035,8 +1090,12 @@ const Description = ({ classSection, listing, hostData }) => {
         addonsTotal: addOnsPrice,
         subtotal,
         discountPercentage,
-        discountAmount,
-        taxAmount: totalTaxAmount,
+        discount: discountAmount,
+        tax: totalTaxAmount,
+        taxRate: apiTaxPercentage || 0,
+        commission: pricingPlatformCommission,
+        commissionRate: apiCommissionPercentage || 0,
+        pricePerPerson: pricePerPerson,
         total,
       }
     };
@@ -1352,12 +1411,27 @@ const Description = ({ classSection, listing, hostData }) => {
       }
 
       // Calculate base price amount
-      const guestCount = billableGuests;
-      const pricePerPerson = selectedDateAvailability?.price_per_person
+      const guestCountForPricing = billableGuests;
+      let pricePerPerson = selectedDateAvailability?.price_per_person
         ? parseFloat(selectedDateAvailability.price_per_person)
         : (listing?.timeSlots?.[0]?.pricePerPerson
           ? parseFloat(listing.timeSlots[0].pricePerPerson)
           : null);
+
+      // Re-apply Group Pricing match logic here
+      const groupPricingRules = selectedDateAvailability?.group_booking_pricing || 
+                               selectedTimeSlotData?.groupBookingPricing;
+      if (groupPricingRules && Array.isArray(groupPricingRules) && groupPricingRules.length > 0) {
+        const totalGuests = getGuestCount(guests);
+        const match = groupPricingRules.find(p => 
+          totalGuests >= (p.group_count_from || p.groupCountFrom || 0) && 
+          totalGuests <= (p.group_count_upto || p.groupCountUpto || Infinity)
+        );
+        if (match && (match.price_per_person || match.pricePerPerson)) {
+          pricePerPerson = parseFloat(match.price_per_person || match.pricePerPerson);
+        }
+      }
+
       const pricePerNight = selectedDateAvailability?.b2b_rate
         ? parseFloat(selectedDateAvailability.b2b_rate)
         : (listing?.timeSlots?.[0]?.b2bRate
@@ -1367,7 +1441,7 @@ const Description = ({ classSection, listing, hostData }) => {
 
       let pricingBaseAmount = 0;
       if (pricePerPerson) {
-        pricingBaseAmount = pricePerPerson * guestCount * nights;
+        pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
       } else {
         pricingBaseAmount = pricePerNight * nights;
       }
@@ -1376,40 +1450,44 @@ const Description = ({ classSection, listing, hostData }) => {
       const pricingAddonsTotal = addOnsTotal || 0;
       const pricingSubtotal = pricingBaseAmount + pricingAddonsTotal;
 
-      // Calculate platform commission (from billing config)
+      // Calculate platform commission (from API pricing or billing config)
       let pricingPlatformCommission = 0;
-      if (billingConfig?.commissions && Array.isArray(billingConfig.commissions)) {
+      const apiCommissionPercentage = parseFloat(listing?.pricing?.commission || 0);
+      if (apiCommissionPercentage > 0) {
+        pricingPlatformCommission = (pricingSubtotal * apiCommissionPercentage) / 100;
+      } else if (billingConfig?.commissions && Array.isArray(billingConfig.commissions)) {
         const platformFee = billingConfig.commissions.find(c => c.type === "Platform Fee" && c.isEnabled);
         if (platformFee) {
           pricingPlatformCommission = (pricingSubtotal * parseFloat(platformFee.currentRate || 0)) / 100;
         }
       }
 
-      const pricingDiscountAmount = (pricingSubtotal * (parseFloat(
+      const apiDiscountPercentage = parseFloat(
         listing?.pricing?.discount?.total ||
         listing?.pricing?.discount?.percentage ||
         0
-      ) || 0)) / 100;
+      );
+      const pricingDiscountAmount = (pricingSubtotal * apiDiscountPercentage) / 100;
       const pricingTaxableAmount = Math.max(pricingSubtotal - pricingDiscountAmount, 0);
 
       // Calculate tax amount
       let pricingTaxAmount = 0;
-      if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
+      const apiTaxPercentage = parseFloat(listing?.pricing?.tax?.total || 0);
+      if (apiTaxPercentage > 0) {
+        pricingTaxAmount = (pricingTaxableAmount * apiTaxPercentage) / 100;
+      } else if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
         const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
         enabledTaxes.forEach(tax => {
-          const taxAmount = (pricingTaxableAmount * parseFloat(tax.currentRate || 0)) / 100;
-          pricingTaxAmount += taxAmount;
+          pricingTaxAmount += (pricingTaxableAmount * parseFloat(tax.currentRate || 0)) / 100;
         });
       }
 
-      // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
-      // eslint-disable-next-line no-unused-vars
-      const pricingTotal = pricingTaxableAmount + pricingTaxAmount;
+      // Calculate total price (subtotal + taxes - discounts + platform commission)
+      const pricingTotal = pricingTaxableAmount + pricingTaxAmount + pricingPlatformCommission;
 
       // Calculate host earnings (what the host receives: subtotal - platform commission)
-      const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
-      // eslint-disable-next-line no-unused-vars
-      const hostEarnings = isNaN(calculatedHostEarnings) ? 4950 : calculatedHostEarnings;
+      const calculatedHostEarnings = pricingSubtotal - pricingPlatformCommission;
+      const hostEarnings = isNaN(calculatedHostEarnings) ? pricingSubtotal : calculatedHostEarnings;
 
       // Calculate price per unit (price per person or price per night)
       // eslint-disable-next-line no-unused-vars
@@ -1467,6 +1545,15 @@ const Description = ({ classSection, listing, hostData }) => {
         bookingTime: bookingTime, // "HH:mm:ss"
         bookingSlotId: bookingSlotId || 0,
         guestCount: billableGuests,
+        // Pricing details
+        basePrice: pricingBaseAmount,
+        addonsTotal: pricingAddonsTotal,
+        taxAmount: pricingTaxAmount,
+        taxRate: apiTaxPercentage,
+        platformFee: pricingPlatformCommission,
+        commissionRate: apiCommissionPercentage,
+        discountAmount: pricingDiscountAmount,
+        totalPrice: pricingTotal,
         customer: {
           name: customerName || "Guest User",
           email: customerEmail || "guest@example.com",
