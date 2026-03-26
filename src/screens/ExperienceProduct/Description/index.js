@@ -102,9 +102,6 @@ const Description = ({ classSection, listing, hostData }) => {
     try {
       setStayAvailabilityLoading(true);
 
-      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-      const customerId = userInfo.customerId || userInfo.id || null;
-
       const stayId = listing?.stayId || listing?.stay_id || listing?.id;
       const checkInDate = selectedDate.format("YYYY-MM-DD");
       const checkOutDate = selectedEndDate.format("YYYY-MM-DD");

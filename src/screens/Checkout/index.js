@@ -332,7 +332,6 @@ const Checkout = () => {
   }, [bookingData, selectedAddOns]);
 
   const isStayBooking = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
-  const listingTitle = bookingData?.listingTitle || "Your trip";
   const tripTitle = isStayBooking ? "Your stay" : "Your trip";
 
   // Get first image

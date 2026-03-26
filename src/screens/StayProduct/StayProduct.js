@@ -267,7 +267,6 @@ const BookingSidebar = ({
 
   const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
-  const originalPrice = basePrice + totalExtraPrice;
   const price = discountedBasePrice + totalExtraPrice;
 
   // ─── Show total only when enough info is selected ────────────────────────
@@ -725,7 +724,6 @@ const RoomCard = ({ room, onSelect, discountPercentage, guests, stay }) => {
 
   const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
-  const originalPrice = basePrice + totalExtraPrice;
   const price = discountedBasePrice + totalExtraPrice;
 
   return (

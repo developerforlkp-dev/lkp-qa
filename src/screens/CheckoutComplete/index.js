@@ -352,7 +352,7 @@ const CheckoutComplete = () => {
         icon: paymentFailed ? "alert-circle" : "wallet",
       },
     ];
-  }, [booking, paymentSuccess, paymentData]);
+  }, [booking, paymentSuccess, paymentData, paymentFailed]);
 
   const items = useMemo(() => {
     // Format time slot with start and end time if available

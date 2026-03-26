@@ -161,9 +161,9 @@ const GuestPicker = ({
                     <div className={styles.categorySubtitle}>{category.subtitle}</div>
                   )}
                   {category.type === "pets" && category.showServiceAnimalLink && (
-                    <a href="#" className={styles.serviceAnimalLink}>
+                    <button type="button" className={styles.serviceAnimalLink}>
                       Bringing a service animal?
-                    </a>
+                    </button>
                   )}
                 </div>
                 <Counter

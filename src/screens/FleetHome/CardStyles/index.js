@@ -122,9 +122,6 @@ const transformListingToCard = (listing) => {
     rating: listing.averageRating ?? listing.rating ?? 0,
     reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
     briefDescription: listing.briefDescription ?? listing.shortDescription,
-    rating: listing.averageRating ?? listing.rating ?? 0,
-    reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
-    briefDescription: listing.briefDescription ?? listing.shortDescription,
     tags: listing.tags || [],
     host: listing.host,
     // Card component expects these optional fields

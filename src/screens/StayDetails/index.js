@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import cn from "classnames";
-import styles from "./StayDetails.module.sass";
 import Product from "../../components/Product";
 // Reuse components from ExperienceProduct if possible, or create simplified versions
 import Description from "../ExperienceProduct/Description";

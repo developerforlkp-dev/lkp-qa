@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import cn from "classnames";
-import styles from "./PlaceDetails.module.sass";
 import Product from "../../components/Product";
 import Description from "../ExperienceProduct/Description";
 import TabSection from "../ExperienceProduct/TabSection";

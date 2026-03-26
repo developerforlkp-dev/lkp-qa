@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { gsap } from 'gsap';
 import cn from 'classnames';
@@ -8,7 +8,6 @@ import styles from './HeroSectionAnimation.module.sass';
 const CARD_WIDTH = 60;
 const CARD_HEIGHT = 60;
 const CARD_GAP = 12;
-const CONTAINER_PADDING = 20;
 // Side margins matching the details panel (title/description)
 const SIDE_MARGIN_DESKTOP = 60;
 const SIDE_MARGIN_MOBILE = 20;
@@ -33,7 +32,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get container dimensions helper
-  const getContainerDimensions = () => {
+  const getContainerDimensions = useCallback(() => {
     if (!containerRef?.current) {
       return { width: 0, height: 0 };
     }
@@ -42,7 +41,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
       width: rect.width,
       height: rect.height,
     };
-  };
+  }, [containerRef]);
 
   // Validate image URL
   const validateImageUrl = (url) => {
@@ -56,7 +55,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
   };
 
   // Preload images
-  const loadImage = (src) => {
+  const loadImage = useCallback((src) => {
     return new Promise((resolve, reject) => {
       if (!validateImageUrl(src)) {
         reject(new Error(`Invalid image URL: ${src}`));
@@ -67,20 +66,20 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
       img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
       img.src = src;
     });
-  };
+  }, []);
 
   // Load all images
-  const loadAllImages = async () => {
+  const loadAllImages = useCallback(async () => {
     const promises = destinations.map(({ image }) => loadImage(image));
     return Promise.allSettled(promises);
-  };
+  }, [destinations, loadImage]);
 
   // Get card selector
   const getCard = (index) => `#hero-card-${index}`;
   const getCardContent = (index) => `#hero-card-content-${index}`;
 
   // Initialize animation - set up initial state, then use step() for first cycle (exactly like all others)
-  const init = (order, detailsEven) => {
+  const init = useCallback((order, detailsEven) => {
     if (!demoRef.current || !containerRef?.current) {
       console.warn('Hero section: Container or demo ref not available');
       return;
@@ -203,10 +202,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
         }, ANIMATION_DURATION);
       });
     }, ANIMATION_DURATION); // Match loop() timing - wait ANIMATION_DURATION before first step
-  };
+  // eslint-disable-next-line no-use-before-define
+  }, [getContainerDimensions, containerRef, demoRef, destinations, loop, step]);
 
   // Animation step
-  const step = (order, detailsEven) => {
+  const step = useCallback((order, detailsEven) => {
     return new Promise((resolve) => {
       if (isAnimatingRef.current) {
         resolve();
@@ -368,10 +368,10 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
         }
       });
     });
-  };
+  }, [getContainerDimensions, destinations]);
 
   // Animation loop - update refs and continue
-  const loop = async () => {
+  const loop = useCallback(async () => {
     await new Promise(resolve => setTimeout(resolve, ANIMATION_DURATION));
     
     // Check if component is still mounted and initialized
@@ -402,10 +402,10 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
         loop();
       }
     }, 0);
-  };
+  }, [step]);
 
   // Handle resize - get current values from refs
-  const handleResize = () => {
+  const handleResize = useCallback(() => {
     if (resizeTimeoutRef.current) {
       clearTimeout(resizeTimeoutRef.current);
     }
@@ -415,7 +415,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
         init(orderRef.current, detailsEvenRef_state.current);
       }
     }, RESIZE_DEBOUNCE);
-  };
+  }, [isInitialized, init]);
 
   useEffect(() => {
     // Check GSAP availability
@@ -578,6 +578,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
 
     start();
 
+    const demoRefCurrent = demoRef.current;
+
     // Setup resize handler
     const resizeHandler = () => {
       handleResize();
@@ -607,8 +609,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
       }
       
       // Kill all GSAP animations for this component's elements
-      if (demoRef.current) {
-        const cards = demoRef.current.querySelectorAll('.hero-card, .hero-card-content');
+      if (demoRefCurrent) {
+        const cards = demoRefCurrent.querySelectorAll('.hero-card, .hero-card-content');
         cards.forEach(card => {
           gsap.killTweensOf(card);
         });
@@ -620,11 +622,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
       detailsEvenRef_state.current = true;
       
       // Clear HTML content
-      if (demoRef.current) {
-        demoRef.current.innerHTML = '';
+      if (demoRefCurrent) {
+        demoRefCurrent.innerHTML = '';
       }
     };
-  }, [containerRef, destinations]);
+  }, [containerRef, destinations, getContainerDimensions, handleResize, init, loadAllImages]);
 
   // Handle button click navigation using event delegation
   useEffect(() => {
