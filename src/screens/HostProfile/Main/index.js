@@ -74,7 +74,6 @@ const Main = ({ hostId }) => {
   // Get rating and reviews
   const rating = statistics?.averageRating || 0;
   const reviewCount = statistics?.totalReviews || 0;
-  const totalListings = statistics?.totalListings || 0;
   const ratingDisplay = rating > 0 ? rating.toFixed(1) : "0.0";
   const reviewsText =
     reviewCount === 0

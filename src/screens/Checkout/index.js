@@ -7,22 +7,30 @@ import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
+import { getStayDetails } from "../../utils/api";
 
-const breadcrumbs = [
-  {
-    title: "Home",
-    url: "/",
-  },
-  {
-    title: "Confirm and pay",
-  },
-];
+const formatImageUrl = (url) => {
+  if (!url) return null;
+  const raw = String(url).trim();
+  if (!raw) return null;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("/")) return raw;
+  const [pathPart, queryPart] = raw.split("?");
+  const normalizedPath = String(pathPart).replaceAll("%2F", "/");
+  const encodedPath = encodeURI(normalizedPath);
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+};
+
+
+  // The correct breadcrumbs logic is placed in the component render method
+
 
 const Checkout = () => {
   const location = useLocation();
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(null);
+  const [stayImageUrl, setStayImageUrl] = useState(null);
 
   // Edit functionality state
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -178,6 +186,33 @@ const Checkout = () => {
   }, []);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
+  useEffect(() => {
+    if (bookingData?.stayId) {
+      getStayDetails(bookingData.stayId)
+        .then((data) => {
+          const rawCoverImg =
+            data?.coverImageUrl ||
+            data?.coverPhotoUrl ||
+            (Array.isArray(data?.listingMedia) && data.listingMedia[0]
+              ? (data.listingMedia[0].url || data.listingMedia[0].blobName || data.listingMedia[0].fileUrl)
+              : null) ||
+            (Array.isArray(data?.media) && data.media[0]
+              ? (data.media[0].url || data.media[0].blobName || data.media[0].fileUrl)
+              : null) ||
+            (Array.isArray(data?.images) && data.images[0]
+              ? (data.images[0].url || data.images[0].blobName || data.images[0].fileUrl || (typeof data.images[0] === "string" ? data.images[0] : null))
+              : null) ||
+            (Array.isArray(data?.propertyImages) && data.propertyImages[0]
+              ? (data.propertyImages[0].url || data.propertyImages[0].blobName || data.propertyImages[0].fileUrl || (typeof data.propertyImages[0] === "string" ? data.propertyImages[0] : null))
+              : null) ||
+            "";
+          if (rawCoverImg) {
+            setStayImageUrl(formatImageUrl(rawCoverImg));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [bookingData?.stayId]);
   const formatTime = (timeString) => {
     if (!timeString) return "";
     const [hours, minutes] = timeString.split(":");
@@ -297,18 +332,18 @@ const Checkout = () => {
   }, [bookingData, selectedAddOns]);
 
   const isStayBooking = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
-  const listingTitle = bookingData?.listingTitle || "Your trip";
   const tripTitle = isStayBooking ? "Your stay" : "Your trip";
 
   // Get first image
   const getListingImage = () => {
-    const image = bookingData?.listingImage;
+    if (stayImageUrl) return stayImageUrl;
+    const image = bookingData?.roomImage || bookingData?.listingImage;
     if (!image) return "/images/content/photo-checkout.jpg";
     if (Array.isArray(image)) {
       return image[0]?.url || image[0] || "/images/content/photo-checkout.jpg";
     }
     if (typeof image === 'string') {
-      return image;
+      return formatImageUrl(image);
     }
     return "/images/content/photo-checkout.jpg";
   };
@@ -317,6 +352,16 @@ const Checkout = () => {
     ? `${bookingData.listing.host.firstName} ${bookingData.listing.host.lastName || ''}`.trim()
     : (bookingData?.listing?.host?.name || "Host");
   const hostAvatar = bookingData?.listing?.host?.picture || bookingData?.listing?.host?.avatar;
+
+  const breadcrumbs = [
+    {
+      title: "Booking details",
+      url: bookingData?.listingId ? `/experience-product?id=${bookingData.listingId}` : "/experience-product",
+    },
+    {
+      title: "Confirm and pay",
+    },
+  ];
 
   return (
     <div className={cn("section-mb80", styles.section)}>

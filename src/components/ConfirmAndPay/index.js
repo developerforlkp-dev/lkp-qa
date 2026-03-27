@@ -77,20 +77,24 @@ const ConfirmAndPay = ({
                     <div className={styles.info}>Dates</div>
                     <input className={styles.input} type="text" />
                     <div className={styles.value}>{dateValue || "Select date"}</div>
-                    <button className={styles.edit} onClick={onEditDate}>
-                      <Icon name="edit" size="24" />
-                    </button>
-                    {datePicker}
+                    {onEditDate && (
+                      <button className={styles.edit} onClick={onEditDate}>
+                        <Icon name="edit" size="24" />
+                      </button>
+                    )}
+                    {onEditDate && datePicker}
                   </div>
                   {guests && (
                     <div className={styles.option}>
                       <div className={styles.info}>Guests</div>
                       <input className={styles.input} type="text" />
                       <div className={styles.value}>{guestValue || "Add guests"}</div>
-                      <button className={styles.edit} onClick={onEditGuests}>
-                        <Icon name="edit" size="24" />
-                      </button>
-                      {guestPicker}
+                      {onEditGuests && (
+                        <button className={styles.edit} onClick={onEditGuests}>
+                          <Icon name="edit" size="24" />
+                        </button>
+                      )}
+                      {onEditGuests && guestPicker}
                     </div>
                   )}
                 </>

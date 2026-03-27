@@ -1,6 +1,5 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import styles from "./HostProfile.module.sass";
 import Main from "./Main";
 import Testimonials from "../../components/Testimonials";
 

@@ -14,12 +14,17 @@
     +dark
         background: $n1
         box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3)
+    +m
+        padding: 12px 8px
+        min-width: auto
 
 .calendarHeader
     display: flex
     align-items: center
     justify-content: space-between
     margin-bottom: 12px
+    +m
+        margin-bottom: 8px
 
 .monthNav
     background: none
@@ -35,6 +40,8 @@
     border-radius: 8px
     +dark
         color: $n5
+    +m
+        font-size: 16px
     &:hover
         background: $n7
         color: $n1
@@ -45,12 +52,16 @@
 .monthLabel
     +body-bold-2
     font-size: 14px
+    +m
+        font-size: 13px
 
 .calendarGrid
     display: grid
     grid-template-columns: repeat(7, 1fr)
     gap: 4px
     width: 100%
+    +m
+        gap: 2px
 
 .dayHeader
     display: flex
@@ -63,6 +74,9 @@
     font-size: 12px
     +dark
         color: $n5
+    +m
+        font-size: 10px
+        padding: 4px 0
 
 .calendarDay
     aspect-ratio: 1

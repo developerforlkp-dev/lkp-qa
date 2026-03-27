@@ -42,6 +42,14 @@ const Description = ({ classSection, listing, hostData }) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  const normalizeBookingTime = (timeString) => {
+    if (!timeString) return "00:00";
+    const parts = String(timeString).split(":");
+    const hours = parts[0] ?? "00";
+    const minutes = parts[1] ?? "00";
+    return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+  };
+
   const handleCheckStayAvailability = async () => {
     try {
       if (!isStay || isPropertyBased) return;
@@ -94,9 +102,6 @@ const Description = ({ classSection, listing, hostData }) => {
     try {
       setStayAvailabilityLoading(true);
 
-      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-      const customerId = userInfo.customerId || userInfo.id || null;
-
       const stayId = listing?.stayId || listing?.stay_id || listing?.id;
       const checkInDate = selectedDate.format("YYYY-MM-DD");
       const checkOutDate = selectedEndDate.format("YYYY-MM-DD");
@@ -126,6 +131,8 @@ const Description = ({ classSection, listing, hostData }) => {
       let calculatedAmount = 0;
       let roomsNeeded = 1; // default to 1 room
 
+      let roomsNeeded = 1; // default to 1 room
+
       if (selectedRoomObject && staySelectedRoomType) {
         let basePrice = 0;
         let extraAdultPrice = parseFloat(selectedRoomObject.extraAdultPrice || listing?.stay?.extraAdultPrice || 0);
@@ -133,6 +140,8 @@ const Description = ({ classSection, listing, hostData }) => {
 
         if (selectedRoomObject.mealPlanPricing && selectedRoomObject.mealPlanPricing[mealPlanCode]) {
           const mp = selectedRoomObject.mealPlanPricing[mealPlanCode];
+          // Use b2cPrice ONLY — never fall back to b2bPrice for customer billing
+          basePrice = parseFloat(mp.b2cPrice || mp.price || 0);
           // Use b2cPrice ONLY — never fall back to b2bPrice for customer billing
           basePrice = parseFloat(mp.b2cPrice || mp.price || 0);
           if (mp.extraAdultPrice) extraAdultPrice = parseFloat(mp.extraAdultPrice);
@@ -153,486 +162,573 @@ const Description = ({ classSection, listing, hostData }) => {
         ) || 2;
         if (guestCount > roomCap) {
           roomsNeeded = Math.ceil(guestCount / roomCap);
-        }
-
-        // Extra guest pricing (applies within a single room's capacity)
-        const maxAdults = selectedRoomObject.maxAdults || listing?.stay?.maxAdults || 0;
-        const maxChildren = selectedRoomObject.maxChildren || listing?.stay?.maxChildren || 0;
-        const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdults);
-        const extraChildren = Math.max(0, (guests?.children || 0) - maxChildren);
-        const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
-
-        const amountPerNight = basePrice + totalExtraPrice;
-        const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
-        // Multiply by roomsNeeded so total amount reflects all rooms booked
-        calculatedAmount = amountPerNight * nightsCount * roomsNeeded;
-
-        console.log("💰 Booking amount calc:", { basePrice, roomCap, guestCount, roomsNeeded, amountPerNight, nightsCount, calculatedAmount });
+          else basePrice = parseFloat(selectedRoomObject.b2cPrice || selectedRoomObject.price || 0);
       }
+
+      // Compute how many rooms are needed for the guest count
+      const roomCap = Number(
+        selectedRoomObject.maxGuests ??
+        ((selectedRoomObject.maxAdults || 0) + (selectedRoomObject.maxChildren || 0))
+      ) || 2;
+      if (guestCount > roomCap) {
+        roomsNeeded = Math.ceil(guestCount / roomCap);
+      }
+
+      // Extra guest pricing (applies within a single room's capacity)
+      // Extra guest pricing (applies within a single room's capacity)
+      const maxAdults = selectedRoomObject.maxAdults || listing?.stay?.maxAdults || 0;
+      const maxChildren = selectedRoomObject.maxChildren || listing?.stay?.maxChildren || 0;
+      const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdults);
+      const extraChildren = Math.max(0, (guests?.children || 0) - maxChildren);
+      const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
+
+
+      const amountPerNight = basePrice + totalExtraPrice;
+      const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
+      // Multiply by roomsNeeded so total amount reflects all rooms booked
+      calculatedAmount = amountPerNight * nightsCount * roomsNeeded;
+
+      console.log("💰 Booking amount calc:", { basePrice, roomCap, guestCount, roomsNeeded, amountPerNight, nightsCount, calculatedAmount });
+      // Multiply by roomsNeeded so total amount reflects all rooms booked
+      calculatedAmount = amountPerNight * nightsCount * roomsNeeded;
+
+      console.log("💰 Booking amount calc:", { basePrice, roomCap, guestCount, roomsNeeded, amountPerNight, nightsCount, calculatedAmount });
+    }
+
 
 
       let orderData;
 
-      if (staySelectedRoomType && selectedRoomId) {
-        // Room-based stay: include rooms array with correct roomsBooked count
-        orderData = {
-          stayId: Number(stayId) || 0,
-          checkInDate,
-          checkOutDate,
-          numberOfGuests: guestCount,
-          amount: calculatedAmount, // B2C price × nights × roomsNeeded
-          paymentMethod: "razorpay",
-          rooms: [
-            {
-              roomId: selectedRoomId,
-              roomsBooked: roomsNeeded,  // ← correct: 1 or more based on guest count
-              mealPlanCode: mealPlanCode,
-            },
-          ],
-        };
-
-      } else {
-        // Property-based stay: send minimal body but calculate B2C amount properly
-        const propertyBasePrice = parseFloat(listing?.stay?.fullPropertyB2cPrice || listing?.stay?.b2cPrice || listing?.stay?.startingPrice || listing?.stay?.pricePerNight || listing?.stay?.price || 0);
-        const extraAdultPrice = parseFloat(listing?.stay?.fullPropertyExtraAdultPrice || listing?.stay?.extraAdultPrice || 0);
-        const extraChildPrice = parseFloat(listing?.stay?.fullPropertyExtraChildPrice || listing?.stay?.extraChildPrice || 0);
-
-        const maxAdults = listing?.stay?.maxAdults || 0;
-        const maxChildren = listing?.stay?.maxChildren || 0;
-
-        const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdults);
-        const extraChildren = Math.max(0, (guests?.children || 0) - maxChildren);
-
-        const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
-        const amountPerNight = propertyBasePrice + totalExtraPrice;
-        const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
-        calculatedAmount = amountPerNight * nightsCount;
-
-        orderData = {
-          stayId: Number(stayId) || 0,
-          checkInDate,
-          checkOutDate,
-          numberOfGuests: guestCount,
-          amount: calculatedAmount,
-          paymentMethod: "razorpay",
-        };
-      }
-
-      console.log("📦 Creating stay order (updated schema):", orderData);
-      const res = await createStayOrder(orderData);
-      console.log("✅ Stay order created:", res);
-
-      // Handle payment and redirect
-      const paymentResponse = res?.payment || res?.data?.payment || res?.order?.payment || res;
-      const rzpOrderId = paymentResponse?.razorpayOrderId || res?.razorpayOrderId || res?.order?.razorpayOrderId;
-      const rzpKeyId = paymentResponse?.razorpayKeyId || res?.razorpayKeyId || res?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
-
-      // Always use our frontend-calculated amount (b2cPrice × nights × roomsNeeded).
-      // The backend may add taxes/surcharges that inflate the Razorpay order amount —
-      // we display our calculated total to keep it consistent with the receipt breakdown.
-      const amountInPaise = Math.round(calculatedAmount * 100);
-      // Keep backend Razorpay order id & key for the actual payment flow
-
-      const currency = paymentResponse?.currency || res?.currency || res?.order?.currency || "INR";
-
-      localStorage.setItem("pendingPayment", JSON.stringify({
+    if (staySelectedRoomType && selectedRoomId) {
+      // Room-based stay: include rooms array with correct roomsBooked count
+      // Room-based stay: include rooms array with correct roomsBooked count
+      orderData = {
+        stayId: Number(stayId) || 0,
+        checkInDate,
+        checkOutDate,
+        numberOfGuests: guestCount,
+        amount: calculatedAmount, // B2C price × nights × roomsNeeded
         paymentMethod: "razorpay",
-        razorpayOrderId: rzpOrderId,
-        razorpayKeyId: rzpKeyId,
-        amount: amountInPaise,
-        currency: currency,
-      }));
+        amount: calculatedAmount, // B2C price × nights × roomsNeeded
+        paymentMethod: "razorpay",
+        rooms: [
+          {
+            roomId: selectedRoomId,
+            roomsBooked: roomsNeeded,  // ← correct: 1 or more based on guest count
+            roomsBooked: roomsNeeded,  // ← correct: 1 or more based on guest count
+            mealPlanCode: mealPlanCode,
+          },
+        ],
+      };
 
-      history.push("/checkout");
-    } catch (err) {
-      console.error("❌ Stay booking failed:", err);
-      alert(err.response?.data?.message || err.message || "Booking failed. Please try again.");
-    } finally {
-      setStayAvailabilityLoading(false);
+
+    } else {
+      // Property-based stay: send minimal body but calculate B2C amount properly
+      const propertyBasePrice = parseFloat(listing?.stay?.fullPropertyB2cPrice || listing?.stay?.b2cPrice || listing?.stay?.startingPrice || listing?.stay?.pricePerNight || listing?.stay?.price || 0);
+      const extraAdultPrice = parseFloat(listing?.stay?.fullPropertyExtraAdultPrice || listing?.stay?.extraAdultPrice || 0);
+      const extraChildPrice = parseFloat(listing?.stay?.fullPropertyExtraChildPrice || listing?.stay?.extraChildPrice || 0);
+
+      const maxAdults = listing?.stay?.maxAdults || 0;
+      const maxChildren = listing?.stay?.maxChildren || 0;
+
+      const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdults);
+      const extraChildren = Math.max(0, (guests?.children || 0) - maxChildren);
+
+      const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
+      const amountPerNight = propertyBasePrice + totalExtraPrice;
+      const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
+      calculatedAmount = amountPerNight * nightsCount;
+
+      orderData = {
+        stayId: Number(stayId) || 0,
+        checkInDate,
+        checkOutDate,
+        numberOfGuests: guestCount,
+        amount: calculatedAmount,
+        paymentMethod: "razorpay",
+      };
     }
-  };
+
+    console.log("📦 Creating stay order (updated schema):", orderData);
+    const res = await createStayOrder(orderData);
+    console.log("✅ Stay order created:", res);
+
+    // Handle payment and redirect
+    const paymentResponse = res?.payment || res?.data?.payment || res?.order?.payment || res;
+    const rzpOrderId = paymentResponse?.razorpayOrderId || res?.razorpayOrderId || res?.order?.razorpayOrderId;
+    const rzpKeyId = paymentResponse?.razorpayKeyId || res?.razorpayKeyId || res?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
+
+    // Always use our frontend-calculated amount (b2cPrice × nights × roomsNeeded).
+    // The backend may add taxes/surcharges that inflate the Razorpay order amount —
+    // we display our calculated total to keep it consistent with the receipt breakdown.
+    const amountInPaise = Math.round(calculatedAmount * 100);
+    // Keep backend Razorpay order id & key for the actual payment flow
+
+    // Always use our frontend-calculated amount (b2cPrice × nights × roomsNeeded).
+    // The backend may add taxes/surcharges that inflate the Razorpay order amount —
+    // we display our calculated total to keep it consistent with the receipt breakdown.
+    const amountInPaise = Math.round(calculatedAmount * 100);
+    // Keep backend Razorpay order id & key for the actual payment flow
+
+    const currency = paymentResponse?.currency || res?.currency || res?.order?.currency || "INR";
+
+    localStorage.setItem("pendingPayment", JSON.stringify({
+      paymentMethod: "razorpay",
+      razorpayOrderId: rzpOrderId,
+      razorpayKeyId: rzpKeyId,
+      amount: amountInPaise,
+      currency: currency,
+    }));
+
+    history.push("/checkout");
+  } catch (err) {
+    console.error("❌ Stay booking failed:", err);
+    alert(err.response?.data?.message || err.message || "Booking failed. Please try again.");
+  } finally {
+    setStayAvailabilityLoading(false);
+  }
+};
 
 
 
-  // Helper function to format time range with cleaner display
-  const formatTimeRange = (startTime, endTime) => {
-    if (!startTime || !endTime) return "";
-    return `${formatTime(startTime)} – ${formatTime(endTime)}`;
-  };
+// Helper function to format time range with cleaner display
+const formatTimeRange = (startTime, endTime) => {
+  if (!startTime || !endTime) return "";
+  return `${formatTime(startTime)} – ${formatTime(endTime)}`;
+};
 
-  // Don't pre-select date or time slot - let user choose
-  const formattedDefaultDate = "Select date";
+// Don't pre-select date or time slot - let user choose
+const formattedDefaultDate = "Select date";
 
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedEndDate, setSelectedEndDate] = useState(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [stayActiveDateField, setStayActiveDateField] = useState("checkin");
-  const [stayAvailabilityChecked, setStayAvailabilityChecked] = useState(false);
-  const [stayAvailabilityLoading, setStayAvailabilityLoading] = useState(false);
-  const [stayAvailabilityResult, setStayAvailabilityResult] = useState(null);
-  const [staySelectedRoomType, setStaySelectedRoomType] = useState("");
+const [selectedDate, setSelectedDate] = useState(null);
+const [selectedEndDate, setSelectedEndDate] = useState(null);
+const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+const [stayActiveDateField, setStayActiveDateField] = useState("checkin");
+const [stayAvailabilityChecked, setStayAvailabilityChecked] = useState(false);
+const [stayAvailabilityLoading, setStayAvailabilityLoading] = useState(false);
+const [stayAvailabilityResult, setStayAvailabilityResult] = useState(null);
+const [staySelectedRoomType, setStaySelectedRoomType] = useState("");
 
-  const [guests, setGuests] = useState({
-    adults: 1,
-    children: 0,
-    infants: 0,
-    pets: 0,
-  });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimeSlots, setShowTimeSlots] = useState(false);
-  const [showGuestPicker, setShowGuestPicker] = useState(false);
-  const [showRoomTypePicker, setShowRoomTypePicker] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const dateItemRef = useRef(null);
-  const timeItemRef = useRef(null);
-  const guestItemRef = useRef(null);
-  const checkoutItemRef = useRef(null);
-  const roomTypeItemRef = useRef(null);
-  const initialValuesSetRef = useRef(false);
+const [guests, setGuests] = useState({
+  adults: 1,
+  children: 0,
+  infants: 0,
+  pets: 0,
+});
+const [hasSelectedGuests, setHasSelectedGuests] = useState(false);
+const [showDatePicker, setShowDatePicker] = useState(false);
+const [showTimeSlots, setShowTimeSlots] = useState(false);
+const [showGuestPicker, setShowGuestPicker] = useState(false);
+const [showRoomTypePicker, setShowRoomTypePicker] = useState(false);
+const [showLoginModal, setShowLoginModal] = useState(false);
+const [isReserveSubmitting, setIsReserveSubmitting] = useState(false);
+const dateItemRef = useRef(null);
+const timeItemRef = useRef(null);
+const guestItemRef = useRef(null);
+const checkoutItemRef = useRef(null);
+const roomTypeItemRef = useRef(null);
+const initialValuesSetRef = useRef(false);
+const reserveSubmitLockRef = useRef(false);
 
-  useEffect(() => {
-    if (!showRoomTypePicker) return;
-    const handleDocMouseDown = (e) => {
-      const el = roomTypeItemRef.current;
-      if (!el) return;
-      if (el.contains(e.target)) return;
-      setShowRoomTypePicker(false);
-    };
-    document.addEventListener("mousedown", handleDocMouseDown);
-    return () => document.removeEventListener("mousedown", handleDocMouseDown);
-  }, [showRoomTypePicker]);
-
-  useEffect(() => {
-    if (!isStay) return;
-    // Only reset availability when DATES change, NOT when guest count changes.
-    // Guest count changes should not require re-checking availability.
-    setStayAvailabilityChecked(false);
-    setStayAvailabilityResult(null);
-    setStaySelectedRoomType("");
+useEffect(() => {
+  if (!showRoomTypePicker) return;
+  const handleDocMouseDown = (e) => {
+    const el = roomTypeItemRef.current;
+    if (!el) return;
+    if (el.contains(e.target)) return;
     setShowRoomTypePicker(false);
+  };
+  document.addEventListener("mousedown", handleDocMouseDown);
+  return () => document.removeEventListener("mousedown", handleDocMouseDown);
+}, [showRoomTypePicker]);
+
+useEffect(() => {
+  if (!isStay) return;
+  // Only reset availability when DATES change, NOT when guest count changes.
+  // Guest count changes should not require re-checking availability.
+  // Only reset availability when DATES change, NOT when guest count changes.
+  // Guest count changes should not require re-checking availability.
+  setStayAvailabilityChecked(false);
+  setStayAvailabilityResult(null);
+  setStaySelectedRoomType("");
+  setShowRoomTypePicker(false);
+}, [isStay, selectedDate, selectedEndDate]);
   }, [isStay, selectedDate, selectedEndDate]);
 
-  // Helper function to get guest count (supports both old and new format)
-  const getGuestCount = (guestsObj) => {
-    if (!guestsObj) return 0;
-    if (guestsObj.guests !== undefined) {
-      return guestsObj.guests;
+// Helper function to get guest count (supports both old and new format)
+const getGuestCount = (guestsObj) => {
+  if (!guestsObj) return 0;
+  if (guestsObj.guests !== undefined) {
+    return guestsObj.guests;
+  }
+  // Legacy format: adults + children
+  return (guestsObj.adults || 0) + (guestsObj.children || 0);
+};
+
+const minimumChargeAge = 12;
+
+const billableGuestLabel = useMemo(() => `Age 12+`, []);
+
+const childrenGuestLabel = useMemo(() => `Ages 6-12`, []);
+
+const getBillableGuestCount = (guestsObj) => {
+  if (!guestsObj) return 0;
+  if (isStay) {
+    return getGuestCount(guestsObj);
+  }
+  if (guestsObj.adults !== undefined || guestsObj.children !== undefined) {
+    return guestsObj.adults || 0;
+  }
+  return guestsObj.guests || 0;
+};
+
+const stayRoomTypeOptions = useMemo(() => {
+  const currentGuestCount = getGuestCount(guests);
+
+  // Choose candidates: from availability result or directly from listing
+  let candidates = [];
+  if (stayAvailabilityResult) {
+    const payload = stayAvailabilityResult;
+    candidates =
+      (Array.isArray(payload) && payload) ||
+      (Array.isArray(payload.roomTypes) && payload.roomTypes) ||
+      (Array.isArray(payload.rooms) && payload.rooms) ||
+      (Array.isArray(payload.data) && payload.data) ||
+      (Array.isArray(payload.data?.roomTypes) && payload.data.roomTypes) ||
+      [];
+  } else if (listing) {
+    candidates = listing.rooms || listing.roomTypes || listing.room_types || listing.stay?.rooms || [];
+  }
+
+  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+
+  const seenIds = new Set();
+  return candidates
+    .map((x) => {
+      if (typeof x === "string") {
+        if (seenIds.has(x)) return null;
+        seenIds.add(x);
+        return { value: x, label: x, raw: x };
+      }
+      const id =
+        x?.roomId ??
+        x?.room_id ??
+        x?.roomTypeId ??
+        x?.room_type_id ??
+        x?.id ??
+        x?.code ??
+        x?.name ??
+        x?.title;
+
+      if (!id || seenIds.has(String(id))) return null;
+      seenIds.add(String(id));
+
+      // Show ALL rooms regardless of guest count.
+      // Extra-room logic / messaging handles cases where guests > room capacity.
+      // Show ALL rooms regardless of guest count.
+      // Extra-room logic / messaging handles cases where guests > room capacity.
+      const maxRoomGuests = x?.maxGuests ?? x?.max_guests ?? x?.capacity ?? x?.maxAdults ?? 0;
+
+      const labelBase =
+        x?.roomName ??
+        x?.room_name ??
+        x?.roomTypeName ??
+        x?.room_type_name ??
+        x?.name ??
+        x?.title ??
+        String(id ?? "Room");
+
+      const availableRooms =
+        x?.availableRooms ?? x?.available_rooms ?? x?.availability ?? x?.available ?? null;
+
+      let label = String(labelBase);
+      if (typeof availableRooms === "number") {
+        label += ` (${availableRooms} available)`;
+      } else if (maxRoomGuests > 0) {
+        label += ` (Max ${maxRoomGuests})`;
+      }
+
+      if (typeof availableRooms === "number" && availableRooms <= 0) {
+        return null;
+      }
+
+      return { value: String(id), label: String(label), raw: x };
+    })
+    .filter(Boolean);
+}, [stayAvailabilityResult, listing, guests]);
+
+
+
+
+
+const guestCountText = useMemo(() => {
+  if (!isStay && !hasSelectedGuests) return "Add guests";
+  const total = getGuestCount(guests);
+  if (total === 0) return "Add guests";
+  if (total === 1) return "1 guest";
+  return `${total} guests`;
+}, [guests, hasSelectedGuests, isStay]);
+
+// Validation helper functions
+const isPastDate = (date) => {
+  if (!date) return false;
+  const today = moment().tz('Asia/Kolkata').startOf('day');
+  return date.isBefore(today, 'day');
+};
+
+const isPastTime = (date, timeString) => {
+  if (!date || !timeString) return false;
+  const now = moment().tz('Asia/Kolkata');
+  const today = moment().tz('Asia/Kolkata').startOf('day');
+
+  // Only check time if date is today
+  if (!date.isSame(today, 'day')) return false;
+
+  // Parse time string (HH:mm or HH:mm:ss)
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const slotTime = moment().tz('Asia/Kolkata').hours(hours).minutes(minutes).seconds(0);
+
+  return slotTime.isBefore(now);
+};
+
+const getMaxGuestsForSlot = () => {
+  // First check availability data for the selected date and slot
+  if (selectedDateAvailability) {
+    const maxSeats = selectedDateAvailability.max_seats;
+    if (maxSeats !== undefined && maxSeats !== null) {
+      return maxSeats;
     }
-    // Legacy format: adults + children
-    return (guestsObj.adults || 0) + (guestsObj.children || 0);
-  };
+  }
 
-  const stayRoomTypeOptions = useMemo(() => {
-    const currentGuestCount = getGuestCount(guests);
-
-    // Choose candidates: from availability result or directly from listing
-    let candidates = [];
-    if (stayAvailabilityResult) {
-      const payload = stayAvailabilityResult;
-      candidates =
-        (Array.isArray(payload) && payload) ||
-        (Array.isArray(payload.roomTypes) && payload.roomTypes) ||
-        (Array.isArray(payload.rooms) && payload.rooms) ||
-        (Array.isArray(payload.data) && payload.data) ||
-        (Array.isArray(payload.data?.roomTypes) && payload.data.roomTypes) ||
-        [];
-    } else if (listing) {
-      candidates = listing.rooms || listing.roomTypes || listing.room_types || listing.stay?.rooms || [];
+  // Fallback to slot data
+  if (selectedTimeSlotData) {
+    const maxSeats = selectedTimeSlotData.maxSeats || selectedTimeSlotData.max_seats;
+    if (maxSeats !== undefined && maxSeats !== null) {
+      return maxSeats;
     }
+  }
 
-    if (!Array.isArray(candidates) || candidates.length === 0) return [];
+  // No limit found
+  return null;
+};
 
-    const seenIds = new Set();
-    return candidates
-      .map((x) => {
-        if (typeof x === "string") {
-          if (seenIds.has(x)) return null;
-          seenIds.add(x);
-          return { value: x, label: x, raw: x };
-        }
-        const id =
-          x?.roomId ??
-          x?.room_id ??
-          x?.roomTypeId ??
-          x?.room_type_id ??
-          x?.id ??
-          x?.code ??
-          x?.name ??
-          x?.title;
-
-        if (!id || seenIds.has(String(id))) return null;
-        seenIds.add(String(id));
-
-        // Show ALL rooms regardless of guest count.
-        // Extra-room logic / messaging handles cases where guests > room capacity.
-        const maxRoomGuests = x?.maxGuests ?? x?.max_guests ?? x?.capacity ?? x?.maxAdults ?? 0;
-
-        const labelBase =
-          x?.roomName ??
-          x?.room_name ??
-          x?.roomTypeName ??
-          x?.room_type_name ??
-          x?.name ??
-          x?.title ??
-          String(id ?? "Room");
-
-        const availableRooms =
-          x?.availableRooms ?? x?.available_rooms ?? x?.availability ?? x?.available ?? null;
-
-        let label = String(labelBase);
-        if (typeof availableRooms === "number") {
-          label += ` (${availableRooms} available)`;
-        } else if (maxRoomGuests > 0) {
-          label += ` (Max ${maxRoomGuests})`;
-        }
-
-        if (typeof availableRooms === "number" && availableRooms <= 0) {
-          return null;
-        }
-
-        return { value: String(id), label: String(label), raw: x };
-      })
-      .filter(Boolean);
-  }, [stayAvailabilityResult, listing, guests]);
-
-
-
-
-
-  const guestCountText = useMemo(() => {
-    const total = getGuestCount(guests);
-    if (total === 0) return "Add guests";
-    if (total === 1) return "1 guest";
-    return `${total} guests`;
-  }, [guests]);
-
-  // Validation helper functions
-  const isPastDate = (date) => {
-    if (!date) return false;
-    const today = moment().tz('Asia/Kolkata').startOf('day');
-    return date.isBefore(today, 'day');
-  };
-
-  const isPastTime = (date, timeString) => {
-    if (!date || !timeString) return false;
-    const now = moment().tz('Asia/Kolkata');
-    const today = moment().tz('Asia/Kolkata').startOf('day');
-
-    // Only check time if date is today
-    if (!date.isSame(today, 'day')) return false;
-
-    // Parse time string (HH:mm or HH:mm:ss)
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const slotTime = moment().tz('Asia/Kolkata').hours(hours).minutes(minutes).seconds(0);
-
-    return slotTime.isBefore(now);
-  };
-
-  const getMaxGuestsForSlot = () => {
-    // First check availability data for the selected date and slot
-    if (selectedDateAvailability) {
-      const maxSeats = selectedDateAvailability.max_seats;
-      if (maxSeats !== undefined && maxSeats !== null) {
-        return maxSeats;
-      }
-    }
-
-    // Fallback to slot data
-    if (selectedTimeSlotData) {
-      const maxSeats = selectedTimeSlotData.maxSeats || selectedTimeSlotData.max_seats;
-      if (maxSeats !== undefined && maxSeats !== null) {
-        return maxSeats;
-      }
-    }
-
-    // No limit found
-    return null;
-  };
-
-  const validateBookingDateTime = () => {
-    if (isStay) {
-      if (!selectedDate) {
-        return { valid: false, error: "Please select a check-in date" };
-      }
-      if (!selectedEndDate) {
-        return { valid: false, error: "Please select a check-out date" };
-      }
-      if (isPastDate(selectedDate)) {
-        return { valid: false, error: "Cannot book for a past date. Please select a future date." };
-      }
-      if (selectedEndDate.isBefore(selectedDate, 'day')) {
-        return { valid: false, error: "Check-out date cannot be before check-in date" };
-      }
-      return { valid: true };
-    }
-
-
-
+const validateBookingDateTime = () => {
+  if (isStay) {
     if (!selectedDate) {
-      return { valid: false, error: "Please select a booking date" };
+      return { valid: false, error: "Please select a check-in date" };
     }
-
+    if (!selectedEndDate) {
+      return { valid: false, error: "Please select a check-out date" };
+    }
     if (isPastDate(selectedDate)) {
       return { valid: false, error: "Cannot book for a past date. Please select a future date." };
     }
-
-    if (!selectedTimeSlot) {
-      return { valid: false, error: "Please select a time slot" };
+    if (selectedEndDate.isBefore(selectedDate, 'day')) {
+      return { valid: false, error: "Check-out date cannot be before check-in date" };
     }
-
-    // Get the booking time
-    const bookingTime = selectedDateAvailability?.start_time || selectedTimeSlotData?.startTime;
-    if (!bookingTime) {
-      return { valid: false, error: "Please select a valid time slot" };
-    }
-
-    if (isPastTime(selectedDate, bookingTime)) {
-      return { valid: false, error: "Selected time slot has passed. Please choose a future time." };
-    }
-
     return { valid: true };
-  };
+  }
 
-  const validateGuestCount = () => {
-    const guestCount = getGuestCount(guests);
 
-    if (!guestCount || guestCount < 1) {
-      return { valid: false, error: "Please select at least 1 guest" };
-    }
 
-    const maxGuests = getMaxGuestsForSlot();
-    if (maxGuests !== null && guestCount > maxGuests) {
+  if (!selectedDate) {
+    return { valid: false, error: "Please select a booking date" };
+  }
+
+  if (isPastDate(selectedDate)) {
+    return { valid: false, error: "Cannot book for a past date. Please select a future date." };
+  }
+
+  if (!selectedTimeSlot) {
+    return { valid: false, error: "Please select a time slot" };
+  }
+
+  // Get the booking time
+  const bookingTime = selectedDateAvailability?.start_time || selectedTimeSlotData?.startTime;
+  if (!bookingTime) {
+    return { valid: false, error: "Please select a valid time slot" };
+  }
+
+  if (isPastTime(selectedDate, bookingTime)) {
+    return { valid: false, error: "Selected time slot has passed. Please choose a future time." };
+  }
+
+  return { valid: true };
+};
+
+const validateGuestCount = () => {
+  const guestCount = getGuestCount(guests);
+
+  if (!guestCount || guestCount < 1) {
+    return { valid: false, error: "Please select at least 1 guest" };
+  }
+
+  const maxGuests = getMaxGuestsForSlot();
+  if (maxGuests !== null && guestCount > maxGuests) {
+    return {
+      valid: false,
+      error: `Maximum ${maxGuests} guest${maxGuests === 1 ? '' : 's'} allowed for this slot. You selected ${guestCount} guest${guestCount === 1 ? '' : 's'}.`
+    };
+  }
+
+  // Also check available seats
+  if (selectedDateAvailability) {
+    const availableSeats = selectedDateAvailability.available_seats;
+    if (availableSeats !== undefined && guestCount > availableSeats) {
+      const slotName = selectedDateAvailability.slot_name || selectedTimeSlotData?.slotName || selectedTimeSlot || "selected slot";
       return {
         valid: false,
-        error: `Maximum ${maxGuests} guest${maxGuests === 1 ? '' : 's'} allowed for this slot. You selected ${guestCount} guest${guestCount === 1 ? '' : 's'}.`
+        error: `Only ${availableSeats} seat${availableSeats === 1 ? '' : 's'} available for "${slotName}" on ${selectedDate.format("MMM DD, YYYY")}. You requested ${guestCount} seat${guestCount === 1 ? '' : 's'}.`
       };
     }
+  }
 
-    // Also check available seats
-    if (selectedDateAvailability) {
-      const availableSeats = selectedDateAvailability.available_seats;
-      if (availableSeats !== undefined && guestCount > availableSeats) {
-        const slotName = selectedDateAvailability.slot_name || selectedTimeSlotData?.slotName || selectedTimeSlot || "selected slot";
-        return {
-          valid: false,
-          error: `Only ${availableSeats} seat${availableSeats === 1 ? '' : 's'} available for "${slotName}" on ${selectedDate.format("MMM DD, YYYY")}. You requested ${guestCount} seat${guestCount === 1 ? '' : 's'}.`
-        };
-      }
-    }
+  return { valid: true };
+};
 
-    return { valid: true };
-  };
-
-  // Find the selected timeSlot object to get maxSeats and for display
-  const selectedTimeSlotData = useMemo(() => {
-    // First try to find in slotsData from API
-    if (slotsData && slotsData.length > 0 && selectedTimeSlot) {
-      const apiSlot = slotsData.find(
-        (slot) => slot.slot_name === selectedTimeSlot || slot.slot_id?.toString() === selectedTimeSlot
-      );
-      if (apiSlot) {
-        // Transform API slot to expected format
-        return {
-          slotId: apiSlot.slot_id,
-          slot_id: apiSlot.slot_id,
-          slotName: apiSlot.slot_name,
-          startTime: apiSlot.schedule?.start_time,
-          endTime: apiSlot.schedule?.end_time,
-          startDate: apiSlot.schedule?.start_date,
-          endDate: apiSlot.schedule?.end_date,
-          maxSeats: apiSlot.capacity?.max_seats,
-          pricePerPerson: apiSlot.pricing?.price_per_person,
-          b2bRate: apiSlot.pricing?.b2b_rate,
-        };
-      }
-    }
-    // Fallback to listing timeSlots
-    if (!listing?.timeSlots || !selectedTimeSlot) return null;
-    return listing.timeSlots.find(
-      (slot) => slot.slotName === selectedTimeSlot || slot.slotId?.toString() === selectedTimeSlot
+// Find the selected timeSlot object to get maxSeats and for display
+const selectedTimeSlotData = useMemo(() => {
+  // First try to find in slotsData from API
+  if (slotsData && slotsData.length > 0 && selectedTimeSlot) {
+    const apiSlot = slotsData.find(
+      (slot) => slot.slot_name === selectedTimeSlot || slot.slot_id?.toString() === selectedTimeSlot
     );
-  }, [slotsData, listing?.timeSlots, selectedTimeSlot]);
-
-  // Filter availability data by selected slot for date picker
-  // If no slot is selected, show all availability (user can pick date first)
-  const filteredAvailabilityData = useMemo(() => {
-    if (!availabilityData.length) return [];
-
-    // If no slot is selected, show all availability
-    if (!selectedTimeSlotData && !selectedTimeSlot) {
-      return availabilityData;
-    }
-
-    const slotId = selectedTimeSlotData?.slotId || selectedTimeSlotData?.slot_id;
-    const slotName = selectedTimeSlotData?.slotName || selectedTimeSlot;
-
-    // Filter availability to only show dates for the selected slot
-    return availabilityData.filter(av =>
-      slotId ? av.slot_id === slotId : av.slot_name === slotName
-    );
-  }, [availabilityData, selectedTimeSlotData, selectedTimeSlot]);
-
-  // Get availability data for selected date and slot
-  const selectedDateAvailability = useMemo(() => {
-    if (!selectedDate) return null;
-    const dateStr = selectedDate.format("YYYY-MM-DD");
-
-    // 1. Try to find explicit availability from the array (updated by bookings)
-    const explicitAv = filteredAvailabilityData.find(av => av.date === dateStr);
-    if (explicitAv) return explicitAv;
-
-    // 2. Fallback: If no booking record exists for this date, construct a default based on slot/listing max
-    if (selectedTimeSlotData || selectedTimeSlot) {
-      const slotMax = selectedTimeSlotData?.maxSeats || listing?.maxGuests || 0;
+    if (apiSlot) {
+      // Transform API slot to expected format
       return {
-        date: dateStr,
-        booked_seats: 0,
-        available_seats: slotMax,
-        max_seats: slotMax,
-        is_available: true,
-        slot_id: selectedTimeSlotData?.slotId || selectedTimeSlotData?.slot_id,
-        slot_name: selectedTimeSlotData?.slotName || selectedTimeSlot,
-        start_time: selectedTimeSlotData?.startTime,
-        end_time: selectedTimeSlotData?.endTime,
-        price_per_person: selectedTimeSlotData?.pricePerPerson,
-        b2b_rate: selectedTimeSlotData?.b2bRate,
+        slotId: apiSlot.slot_id,
+        slot_id: apiSlot.slot_id,
+        slotName: apiSlot.slot_name,
+        startTime: apiSlot.schedule?.start_time,
+        endTime: apiSlot.schedule?.end_time,
+        startDate: apiSlot.schedule?.start_date,
+        endDate: apiSlot.schedule?.end_date,
+        maxSeats: apiSlot.capacity?.max_seats,
+        pricePerPerson: apiSlot.pricing?.price_per_person,
+        b2bRate: apiSlot.pricing?.b2b_rate,
+        groupBookingPricing: apiSlot.group_booking_pricing || [],
       };
     }
+  }
+  // Fallback to listing timeSlots
+  if (!listing?.timeSlots || !selectedTimeSlot) return null;
+  return listing.timeSlots.find(
+    (slot) => slot.slotName === selectedTimeSlot || slot.slotId?.toString() === selectedTimeSlot
+  );
+}, [slotsData, listing?.timeSlots, selectedTimeSlot]);
 
-    return null;
-  }, [selectedDate, filteredAvailabilityData, selectedTimeSlotData, selectedTimeSlot, listing?.maxGuests]);
+// Filter availability data by selected slot for date picker
+// If no slot is selected, show all availability (user can pick date first)
+const filteredAvailabilityData = useMemo(() => {
+  if (!availabilityData.length) return [];
 
-  // Get the selected timeSlot object for display
-  const selectedTimeSlotDisplay = useMemo(() => {
-    // Use availability data if available, otherwise fallback to timeSlot data
-    if (selectedDateAvailability) {
-      const { start_time, end_time } = selectedDateAvailability;
-      if (start_time && end_time) {
-        return formatTimeRange(start_time, end_time);
-      }
+  // If no slot is selected, show all availability
+  if (!selectedTimeSlotData && !selectedTimeSlot) {
+    return availabilityData;
+  }
+
+  const slotId = selectedTimeSlotData?.slotId || selectedTimeSlotData?.slot_id;
+  const slotName = selectedTimeSlotData?.slotName || selectedTimeSlot;
+
+  // Filter availability to only show dates for the selected slot
+  return availabilityData.filter(av =>
+    slotId ? av.slot_id === slotId : av.slot_name === slotName
+  );
+}, [availabilityData, selectedTimeSlotData, selectedTimeSlot]);
+
+// Get availability data for selected date and slot
+const selectedDateAvailability = useMemo(() => {
+  if (!selectedDate) return null;
+  if (!isStay && !selectedTimeSlot) return null;
+  const dateStr = selectedDate.format("YYYY-MM-DD");
+
+  // 1. Try to find explicit availability from the array (updated by bookings)
+  const explicitAv = filteredAvailabilityData.find(av => av.date === dateStr);
+  if (explicitAv) return explicitAv;
+
+  // 2. Fallback: If no booking record exists for this date, construct a default based on slot/listing max
+  if (selectedTimeSlotData || selectedTimeSlot) {
+    const slotMax = selectedTimeSlotData?.maxSeats || listing?.maxGuests || 0;
+    return {
+      date: dateStr,
+      booked_seats: 0,
+      available_seats: slotMax,
+      max_seats: slotMax,
+      is_available: true,
+      slot_id: selectedTimeSlotData?.slotId || selectedTimeSlotData?.slot_id,
+      slot_name: selectedTimeSlotData?.slotName || selectedTimeSlot,
+      start_time: selectedTimeSlotData?.startTime,
+      end_time: selectedTimeSlotData?.endTime,
+      price_per_person: selectedTimeSlotData?.pricePerPerson,
+      b2b_rate: selectedTimeSlotData?.b2bRate,
+      group_booking_pricing: selectedTimeSlotData?.groupBookingPricing || [],
+    };
+  }
+
+  return null;
+}, [selectedDate, filteredAvailabilityData, selectedTimeSlotData, selectedTimeSlot, listing?.maxGuests, isStay]);
+
+// Get the selected timeSlot object for display
+const selectedTimeSlotDisplay = useMemo(() => {
+  // Use availability data if available, otherwise fallback to timeSlot data
+  if (selectedDateAvailability) {
+    const { start_time, end_time } = selectedDateAvailability;
+    if (start_time && end_time) {
+      return formatTimeRange(start_time, end_time);
     }
+  }
 
-    if (!selectedTimeSlotData) {
-      return selectedTimeSlot || "Select time";
-    }
-    const { startTime, endTime, slotName } = selectedTimeSlotData;
-    if (startTime && endTime) {
-      return formatTimeRange(startTime, endTime);
-    }
-    return slotName || selectedTimeSlot || "Select time";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTimeSlotData, selectedTimeSlot, selectedDateAvailability]);
+  if (!selectedTimeSlotData) {
+    return selectedTimeSlot || "Select time";
+  }
+  const { startTime, endTime, slotName } = selectedTimeSlotData;
+  if (startTime && endTime) {
+    return formatTimeRange(startTime, endTime);
+  }
+  return slotName || selectedTimeSlot || "Select time";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [selectedTimeSlotData, selectedTimeSlot, selectedDateAvailability]);
 
-  const stayItems = [
+const stayItems = [
+  {
+    title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
+    category: "Check-in",
+    icon: "calendar",
+  },
+  {
+    title: selectedEndDate ? selectedEndDate.format("MMM DD, YYYY") : formattedDefaultDate,
+    category: "Check-out",
+    icon: "calendar",
+  },
+  {
+    title: guestCountText,
+    category: "Guest",
+    icon: "user",
+  },
+];
+
+if (!isPropertyBased) {
+  stayItems.push({
+    title: staySelectedRoomType
+      ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
+      : "Select room",
+    category: "Room type",
+    icon: "home",
+  });
+}
+
+const items = isStay
+  ? stayItems
+  : [
     {
       title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
-      category: "Check-in",
+      category: "Select date",
       icon: "calendar",
     },
     {
-      title: selectedEndDate ? selectedEndDate.format("MMM DD, YYYY") : formattedDefaultDate,
-      category: "Check-out",
-      icon: "calendar",
+      title: selectedTimeSlotDisplay || "Select time",
+      category: "Time slot",
+      icon: "clock",
     },
     {
       title: guestCountText,
@@ -640,138 +736,143 @@ const Description = ({ classSection, listing, hostData }) => {
       icon: "user",
     },
   ];
-
-  if (!isPropertyBased) {
-    stayItems.push({
-      title: staySelectedRoomType
-        ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
-        : "Select room",
-      category: "Room type",
-      icon: "home",
-    });
-  }
-
-  const items = isStay
-    ? stayItems
-    : [
-      {
-        title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
-        category: "Select date",
-        icon: "calendar",
+{
+  title: selectedDate ? selectedDate.format("MMM DD, YYYY") : formattedDefaultDate,
+    category: "Select date",
+      icon: "calendar",
       },
-      {
-        title: selectedTimeSlotDisplay || "Select time",
-        category: "Time slot",
-        icon: "clock",
+{
+  title: selectedTimeSlotDisplay || "Select time",
+    category: "Time slot",
+      icon: "clock",
       },
-      {
-        title: guestCountText,
-        category: "Guest",
-        icon: "user",
+{
+  title: guestCountText,
+    category: "Guest",
+      icon: "user",
       },
     ];
 
-  // Check if user is logged in
-  const isLoggedIn = () => {
-    const token = localStorage.getItem("jwtToken");
-    // Check if token exists and is not empty/null
-    return !!(token && token.trim() !== "");
-  };
+// Check if user is logged in
+const isLoggedIn = () => {
+  const token = localStorage.getItem("jwtToken");
+  // Check if token exists and is not empty/null
+  return !!(token && token.trim() !== "");
+};
 
-  const handleToggleAddOn = (addOnId, pricingType) => {
-    if (pricingType === "Group") {
-      // For Group pricing, toggle selection and initialize quantity to 1
-      setSelectedAddOns((prev) => {
-        if (prev.includes(addOnId)) {
-          // Remove from selection
-          setAddOnQuantities((qty) => {
-            const newQty = { ...qty };
-            delete newQty[addOnId];
-            return newQty;
-          });
-          return prev.filter((id) => id !== addOnId);
-        } else {
-          // Add to selection with quantity 1
-          setAddOnQuantities((qty) => ({
-            ...qty,
-            [addOnId]: 1,
-          }));
-          return [...prev, addOnId];
+const handleToggleAddOn = (addOnId, pricingType) => {
+  if (pricingType === "Group") {
+    // For Group pricing, toggle selection and initialize quantity to 1
+    setSelectedAddOns((prev) => {
+      if (prev.includes(addOnId)) {
+        // Remove from selection
+        setAddOnQuantities((qty) => {
+          const newQty = { ...qty };
+          delete newQty[addOnId];
+          return newQty;
+        });
+        return prev.filter((id) => id !== addOnId);
+      } else {
+        // Add to selection with quantity 1
+        setAddOnQuantities((qty) => ({
+          ...qty,
+          [addOnId]: 1,
+        }));
+        return [...prev, addOnId];
+      }
+    });
+  } else {
+    // For Individual pricing, simple toggle
+    setSelectedAddOns((prev) =>
+      prev.includes(addOnId)
+        ? prev.filter((id) => id !== addOnId)
+        : [...prev, addOnId]
+    );
+  }
+};
+
+const handleAddOnQuantityChange = (addOnId, newQuantity) => {
+  // If quantity reaches 0, deselect the addon
+  if (newQuantity <= 0) {
+    setSelectedAddOns((prev) => prev.filter((id) => id !== addOnId));
+    setAddOnQuantities((prev) => {
+      const newQty = { ...prev };
+      delete newQty[addOnId];
+      return newQty;
+    });
+  } else {
+    setAddOnQuantities((prev) => ({
+      ...prev,
+      [addOnId]: newQuantity,
+    }));
+  }
+};
+
+const lowestRoomPrice = useMemo(() => {
+  if (!isStay || !listing) return null;
+  const rooms = listing.rooms || listing.roomTypes || listing.room_types || listing.stay?.rooms || listing.stayDetails?.rooms || [];
+  if (!Array.isArray(rooms) || rooms.length === 0) return null;
+
+  let minB2cMealPrice = Infinity;
+  let minGeneralB2cPrice = Infinity;
+  let minB2cMealPrice = Infinity;
+  let minGeneralB2cPrice = Infinity;
+
+  rooms.forEach((room) => {
+    // 1. Check nested mealPlanPricing — use ONLY b2cPrice (never b2bPrice for customer display)
+    // 1. Check nested mealPlanPricing — use ONLY b2cPrice (never b2bPrice for customer display)
+    if (room.mealPlanPricing && typeof room.mealPlanPricing === 'object') {
+      Object.values(room.mealPlanPricing).forEach((plan) => {
+        if (plan) {
+          const val = parseFloat(plan.b2cPrice || plan.price || plan.amount || 0);
+          if (!isNaN(val) && val > 0 && val < minB2cMealPrice) {
+            minB2cMealPrice = val;
+          }
+          const val = parseFloat(plan.b2cPrice || plan.price || plan.amount || 0);
+          if (!isNaN(val) && val > 0 && val < minB2cMealPrice) {
+            minB2cMealPrice = val;
+          }
         }
       });
-    } else {
-      // For Individual pricing, simple toggle
-      setSelectedAddOns((prev) =>
-        prev.includes(addOnId)
-          ? prev.filter((id) => id !== addOnId)
-          : [...prev, addOnId]
-      );
     }
-  };
 
-  const handleAddOnQuantityChange = (addOnId, newQuantity) => {
-    // If quantity reaches 0, deselect the addon
-    if (newQuantity <= 0) {
-      setSelectedAddOns((prev) => prev.filter((id) => id !== addOnId));
-      setAddOnQuantities((prev) => {
-        const newQty = { ...prev };
-        delete newQty[addOnId];
-        return newQty;
-      });
-    } else {
-      setAddOnQuantities((prev) => ({
-        ...prev,
-        [addOnId]: newQuantity,
-      }));
-    }
-  };
-
-  const lowestRoomPrice = useMemo(() => {
-    if (!isStay || !listing) return null;
-    const rooms = listing.rooms || listing.roomTypes || listing.room_types || listing.stay?.rooms || listing.stayDetails?.rooms || [];
-    if (!Array.isArray(rooms) || rooms.length === 0) return null;
-
-    let minB2cMealPrice = Infinity;
-    let minGeneralB2cPrice = Infinity;
-
-    rooms.forEach((room) => {
-      // 1. Check nested mealPlanPricing — use ONLY b2cPrice (never b2bPrice for customer display)
-      if (room.mealPlanPricing && typeof room.mealPlanPricing === 'object') {
-        Object.values(room.mealPlanPricing).forEach((plan) => {
-          if (plan) {
-            const val = parseFloat(plan.b2cPrice || plan.price || plan.amount || 0);
-            if (!isNaN(val) && val > 0 && val < minB2cMealPrice) {
-              minB2cMealPrice = val;
-            }
-          }
-        });
-      }
-
-      // 2. Flat meal plan b2c prices
-      const mealPrices = [room.cpPrice, room.mapPrice, room.apPrice, room.cp_price, room.map_price, room.ap_price];
-      mealPrices.forEach((p) => {
-        const val = parseFloat(p);
+    // 2. Flat meal plan b2c prices
+    // 2. Flat meal plan b2c prices
+    const mealPrices = [room.cpPrice, room.mapPrice, room.apPrice, room.cp_price, room.map_price, room.ap_price];
+    mealPrices.forEach((p) => {
+      const val = parseFloat(p);
+      if (!isNaN(val) && val > 0 && val < minB2cMealPrice) {
+        minB2cMealPrice = val;
         if (!isNaN(val) && val > 0 && val < minB2cMealPrice) {
           minB2cMealPrice = val;
         }
       });
 
+    // 3. General b2cPrice (never b2bPrice)
+    const generalB2cPrices = [room.b2cPrice, room.b2c_price, room.price, room.amount];
+    generalB2cPrices.forEach((p) => {
       // 3. General b2cPrice (never b2bPrice)
       const generalB2cPrices = [room.b2cPrice, room.b2c_price, room.price, room.amount];
       generalB2cPrices.forEach((p) => {
         const val = parseFloat(p);
         if (!isNaN(val) && val > 0 && val < minGeneralB2cPrice) {
           minGeneralB2cPrice = val;
-        }
-      });
+          if (!isNaN(val) && val > 0 && val < minGeneralB2cPrice) {
+            minGeneralB2cPrice = val;
+          }
+        });
     });
 
+    const finalPrice = minB2cMealPrice !== Infinity ? minB2cMealPrice : (minGeneralB2cPrice !== Infinity ? minGeneralB2cPrice : null);
     const finalPrice = minB2cMealPrice !== Infinity ? minB2cMealPrice : (minGeneralB2cPrice !== Infinity ? minGeneralB2cPrice : null);
 
     if (finalPrice !== null || rooms.length > 0) {
       console.log(`📊 API Pricing Debug [Listing: ${listing?.id || listing?.stayId || 'unknown'}]:`, {
         isStay,
         foundRoomsCount: rooms.length,
+        minB2cMealPrice: minB2cMealPrice === Infinity ? 'N/A' : minB2cMealPrice,
+        minGeneralB2cPrice: minGeneralB2cPrice === Infinity ? 'N/A' : minGeneralB2cPrice,
+        selectedLowestB2cPrice: finalPrice,
         minB2cMealPrice: minB2cMealPrice === Infinity ? 'N/A' : minB2cMealPrice,
         minGeneralB2cPrice: minGeneralB2cPrice === Infinity ? 'N/A' : minGeneralB2cPrice,
         selectedLowestB2cPrice: finalPrice,
@@ -786,7 +887,7 @@ const Description = ({ classSection, listing, hostData }) => {
     return finalPrice;
   }, [listing, isStay]);
 
-  const { addOnsTotal, finalTotal, receipt, priceInfo } = useMemo(() => {
+  const { addOnsTotal, finalTotal, receipt, priceInfo, pricingBreakdown } = useMemo(() => {
     // Calculate addons price based on pricing type
     const addOnsPrice = selectedAddOns.reduce((sum, id) => {
       // Find addon from listing data
@@ -805,16 +906,30 @@ const Description = ({ classSection, listing, hostData }) => {
       return sum;
     }, 0);
 
-    // Calculate base price based on guest count and price type
+    // Total guests drive slot capacity; billable guests drive experience pricing.
     const guestCount = getGuestCount(guests);
+    const billableGuestCount = getBillableGuestCount(guests);
     // Use availability data if available, then selected slot, then fallback to listing data
-    const pricePerPerson = selectedDateAvailability?.price_per_person
+    let pricePerPerson = selectedDateAvailability?.price_per_person
       ? parseFloat(selectedDateAvailability.price_per_person)
       : (selectedTimeSlotData?.pricePerPerson
         ? parseFloat(selectedTimeSlotData.pricePerPerson)
         : (listing?.timeSlots?.[0]?.pricePerPerson
           ? parseFloat(listing.timeSlots[0].pricePerPerson)
           : null));
+
+    // Handle group pricing: override if guestCount falls in a defined range
+    const groupPricing = selectedDateAvailability?.group_booking_pricing ||
+      selectedTimeSlotData?.groupBookingPricing;
+    if (groupPricing && Array.isArray(groupPricing) && groupPricing.length > 0) {
+      const match = groupPricing.find(p =>
+        guestCount >= (p.group_count_from || p.groupCountFrom || 0) &&
+        guestCount <= (p.group_count_upto || p.groupCountUpto || Infinity)
+      );
+      if (match && (match.price_per_person || match.pricePerPerson)) {
+        pricePerPerson = parseFloat(match.price_per_person || match.pricePerPerson);
+      }
+    }
 
     // For stays: calculate actual nights between check-in and check-out
     const nightsCount = (isStay && selectedDate && selectedEndDate)
@@ -883,10 +998,12 @@ const Description = ({ classSection, listing, hostData }) => {
 
     let basePriceAmount;
     let priceDescription;
+    const billableGuestText = `${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}`;
+    const billablePriceDescription = `${currency} ${pricePerPerson?.toFixed?.(2) || "0.00"} x ${billableGuestText}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
 
     if (!isStay && pricePerPerson) {
       // Experience: Price per person
-      basePriceAmount = pricePerPerson * guestCount * nightsCount;
+      basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
       priceDescription = `${currency} ${pricePerPerson.toFixed(2)} × ${guestCount} ${guestCount === 1 ? 'guest' : 'guests'}${nightsCount > 1 ? ` × ${nightsCount} nights` : ''}`;
     } else {
       // Stay: Price per room per night × nights × rooms
@@ -896,12 +1013,29 @@ const Description = ({ classSection, listing, hostData }) => {
       priceDescription = `${currency} ${pricePerNight.toFixed(2)}${nightStr}${roomStr}`;
     }
 
+    if (!isStay && pricePerPerson) {
+      priceDescription = billablePriceDescription;
+    }
+
     const subtotal = basePriceAmount + addOnsPrice;
+
+    // Check for API-level discount first, then fall back to billingConfig if needed
+    const apiDiscountPercentage = parseFloat(
+      listing?.pricing?.discount?.total ||
+      listing?.pricing?.discount?.percentage ||
+      0
+    );
+    const discountPercentage = apiDiscountPercentage || 0;
+
+    const discountAmount = (subtotal * discountPercentage) / 100;
+    const taxableAmount = Math.max(subtotal - discountAmount, 0);
 
     const receiptData = [
       {
         title: priceDescription,
         content: `${currency} ${basePriceAmount.toFixed(2)}`,
+        kind: "base",
+        showInCheckout: true,
       },
     ];
 
@@ -923,11 +1057,15 @@ const Description = ({ classSection, listing, hostData }) => {
             receiptData.push({
               title: `${addonTitle} × ${quantity}`,
               content: `${currency} ${addonTotal.toFixed(2)}`,
+              kind: "addon",
+              showInCheckout: false,
             });
           } else {
             receiptData.push({
               title: addonTitle,
               content: `${currency} ${addonTotal.toFixed(2)}`,
+              kind: "addon",
+              showInCheckout: false,
             });
           }
         }
@@ -935,25 +1073,74 @@ const Description = ({ classSection, listing, hostData }) => {
       });
     }
 
+    if (discountAmount > 0) {
+      receiptData.push({
+        title: `Discount (${discountPercentage.toFixed(0)}%)`,
+        content: `- ${currency} ${discountAmount.toFixed(2)}`,
+        kind: "discount",
+        showInCheckout: false,
+      });
+    }
+
     // Calculate and add taxes
     let totalTaxAmount = 0;
-    if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
+    const apiTaxPercentage = parseFloat(listing?.pricing?.tax?.total || 0);
+
+    if (apiTaxPercentage > 0) {
+      const taxAmount = (taxableAmount * apiTaxPercentage) / 100;
+      totalTaxAmount = taxAmount;
+      receiptData.push({
+        title: `Tax (${apiTaxPercentage}%)`,
+        content: `${currency} ${taxAmount.toFixed(2)}`,
+        kind: "tax",
+        showInCheckout: true,
+      });
+    } else if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
       const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
       enabledTaxes.forEach(tax => {
-        const taxAmount = (subtotal * parseFloat(tax.currentRate || 0)) / 100;
+        const taxAmount = (taxableAmount * parseFloat(tax.currentRate || 0)) / 100;
         totalTaxAmount += taxAmount;
         receiptData.push({
           title: tax.name,
           content: `${currency} ${taxAmount.toFixed(2)}`,
+          kind: "tax",
+          showInCheckout: true,
         });
       });
     }
 
-    const total = subtotal + totalTaxAmount;
+    // Calculate Platform Commission (Service fee)
+    let pricingPlatformCommission = 0;
+    const apiCommissionPercentage = parseFloat(listing?.pricing?.commission || 0);
+
+    if (apiCommissionPercentage > 0) {
+      pricingPlatformCommission = (subtotal * apiCommissionPercentage) / 100;
+      receiptData.push({
+        title: `Service fee (${apiCommissionPercentage}%)`,
+        content: `${currency} ${pricingPlatformCommission.toFixed(2)}`,
+        kind: "commission",
+        showInCheckout: true,
+      });
+    } else if (billingConfig?.commissions && Array.isArray(billingConfig.commissions)) {
+      const platformFee = billingConfig.commissions.find(c => c.type === "Platform Fee" && c.isEnabled);
+      if (platformFee) {
+        pricingPlatformCommission = (subtotal * parseFloat(platformFee.currentRate || 0)) / 100;
+        receiptData.push({
+          title: "Service fee",
+          content: `${currency} ${pricingPlatformCommission.toFixed(2)}`,
+          kind: "commission",
+          showInCheckout: true,
+        });
+      }
+    }
+
+    const total = taxableAmount + totalTaxAmount + pricingPlatformCommission;
 
     receiptData.push({
       title: "Total",
       content: `${currency} ${total.toFixed(2)}`,
+      kind: "total",
+      showInCheckout: true,
     });
 
     const displayPriceValue = pricePerPerson || pricePerNight;
@@ -968,11 +1155,24 @@ const Description = ({ classSection, listing, hostData }) => {
         priceActual: priceActualText,
         time: priceTimeUnit,
         total: total,
+      },
+      pricingBreakdown: {
+        currency,
+        basePrice: basePriceAmount,
+        addonsTotal: addOnsPrice,
+        subtotal,
+        discountPercentage,
+        discount: discountAmount,
+        tax: totalTaxAmount,
+        taxRate: apiTaxPercentage || 0,
+        commission: pricingPlatformCommission,
+        commissionRate: apiCommissionPercentage || 0,
+        pricePerPerson: pricePerPerson,
+        total,
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAddOns, addOnQuantities, guests, listing, billingConfig, selectedDateAvailability, lowestRoomPrice, selectedTimeSlotData, isStay, isPropertyBased, staySelectedRoomType, selectedDate, selectedEndDate]);
-
 
   // Save booking data to localStorage
   const saveBookingData = () => {
@@ -1070,11 +1270,34 @@ const Description = ({ classSection, listing, hostData }) => {
       (Array.isArray(selectedRoomObj?.images) ? selectedRoomObj.images[0]?.url : null) ||
       null;
 
+    // Calculate roomsNeeded for the selected room
+    let stayRoomsNeeded = 1;
+    const stayGuestCount = getGuestCount(guests);
+    if (selectedRoomObj) {
+      const cap = Number(
+        selectedRoomObj.maxGuests ??
+        ((selectedRoomObj.maxAdults || 0) + (selectedRoomObj.maxChildren || 0))
+      ) || 2;
+      if (stayGuestCount > cap) stayRoomsNeeded = Math.ceil(stayGuestCount / cap);
+    }
+
+    // Get room image (prefer room photo, fall back to listing image)
+    const roomImage = selectedRoomObj?.photoUrl ||
+      selectedRoomObj?.imageUrl ||
+      selectedRoomObj?.coverPhotoUrl ||
+      (Array.isArray(selectedRoomObj?.images) ? selectedRoomObj.images[0]?.url : null) ||
+      null;
+
     const bookingData = {
+      stayId: isStay ? (listing?.stayId || listing?.stay_id || listing?.id) : null,
       listingId: listing?.listingId || listing?.id,
       listingTitle: listing?.title || listing?.name || listing?.listingTitle || "",
       listingImage: getFirstListingImage(),
       roomImage: roomImage || getFirstListingImage(),
+      hostName: (hostData?.firstName ? `${hostData?.firstName} ${hostData?.lastName || ""}`.trim() : hostData?.name) ||
+        (listing?.host?.firstName ? `${listing?.host?.firstName} ${listing?.host?.lastName || ""}`.trim() : listing?.host?.name) || "Host",
+      hostAvatar: hostData?.profilePhotoUrl || hostData?.avatar || hostData?.profileImage || hostData?.image ||
+        listing?.host?.profilePhotoUrl || listing?.host?.picture || listing?.host?.avatar || "/images/content/avatar.jpg",
       selectedDate: selectedDate ? selectedDate.format("YYYY-MM-DD") : null,
       selectedTimeSlot: selectedTimeSlot,
       guests: guests,
@@ -1082,6 +1305,7 @@ const Description = ({ classSection, listing, hostData }) => {
       addOnQuantities: addOnQuantities,
       receipt: receipt,
       finalTotal: finalTotal,
+      pricing: pricingBreakdown,
       // extra fields to help checkout display
       bookingSummary: {
         date: selectedDate ? selectedDate.format("YYYY-MM-DD") : null,
@@ -1089,6 +1313,7 @@ const Description = ({ classSection, listing, hostData }) => {
         endTime: summaryEndTime,
         slotId: summarySlotId,
         guestCount: stayGuestCount,
+        billableGuestCount: isStay ? stayGuestCount : getBillableGuestCount(guests),
       },
       // Stay-specific fields for "Your trip" section
       isStay,
@@ -1096,9 +1321,11 @@ const Description = ({ classSection, listing, hostData }) => {
       checkOutDate: isStay && selectedEndDate ? selectedEndDate.format("MMM DD, YYYY") : null,
       roomType: selectedRoomLabel || null,
       roomsBooked: isStay && !isPropertyBased ? stayRoomsNeeded : null,
+      roomsBooked: isStay && !isPropertyBased ? stayRoomsNeeded : null,
       mealPlan: staySelectedRoomType ? (mealPlanLabels[stayMealPlanCode] || stayMealPlanCode) : null,
       timestamp: new Date().toISOString(),
     };
+
 
 
     localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
@@ -1155,7 +1382,7 @@ const Description = ({ classSection, listing, hostData }) => {
     const hasTimeSlot = selectedTimeSlot !== null;
     const hasCheckout = selectedEndDate !== null;
     const guestCount = getGuestCount(guests);
-    const hasGuests = guestCount > 0;
+    const hasGuests = isStay ? guestCount > 0 : hasSelectedGuests && guestCount > 0;
 
     // Check if requested guests exceed available capacity
     // Use selectedDateAvailability (which now always has a value if a date/slot is picked)
@@ -1164,11 +1391,15 @@ const Description = ({ classSection, listing, hostData }) => {
       : true;
 
     return isStay ? (hasDate && hasCheckout && hasGuests) : (hasDate && hasTimeSlot && hasGuests && hasCapacity);
-  }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay, selectedDateAvailability]);
+  }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay, selectedDateAvailability, hasSelectedGuests]);
 
   const handleReserveClick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (reserveSubmitLockRef.current) {
+      return;
+    }
 
     if (isStay) {
       return;
@@ -1210,7 +1441,11 @@ const Description = ({ classSection, listing, hostData }) => {
     }
 
     // User is logged in, create order
+    let success = false;
     try {
+      reserveSubmitLockRef.current = true;
+      setIsReserveSubmitting(true);
+
       // Get customer info from localStorage or user profile
       const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
       const customerName = userInfo.name ||
@@ -1222,20 +1457,15 @@ const Description = ({ classSection, listing, hostData }) => {
         (userInfo.phone ? (userInfo.countryCode || "+91") + userInfo.phone : "") ||
         userInfo.phoneNumber ||
         userInfo.phone || "";
-      // Try to derive customerId from stored user info (various possible keys)
-      const customerId =
-        userInfo.customerId ||
-        userInfo.customer_id ||
-        userInfo.id ||
-        userInfo.userId ||
-        userInfo.customerID ||
-        null;
-
       // Get special requests (if any input field exists in future)
       const specialRequests = "";
 
       // Get listing ID
-      const listingId = listing?.listingId || listing?.id || 0;
+      const listingId = Number(listing?.listingId || listing?.id || 0);
+      if (!listingId || listingId < 1) {
+        alert("Invalid listing. Please reload the experience and try again.");
+        return;
+      }
 
       // Format booking date (YYYY-MM-DD)
       const bookingDate = selectedDate ? selectedDate.format("YYYY-MM-DD") : new Date().toISOString().split('T')[0];
@@ -1247,15 +1477,19 @@ const Description = ({ classSection, listing, hostData }) => {
       } else if (selectedTimeSlotData?.startTime) {
         bookingTime = selectedTimeSlotData.startTime;
       }
+      bookingTime = normalizeBookingTime(bookingTime);
 
       // Get booking slot ID
-      const bookingSlotId = selectedTimeSlotData?.slotId ||
+      const bookingSlotId = Number(
+        selectedTimeSlotData?.slotId ||
         selectedTimeSlotData?.slot_id ||
         selectedTimeSlotData?.id ||
-        0;
+        0
+      );
 
-      // Get number of guests
+      // Total guests reserve capacity; billable guests drive pricing and payment.
       const numberOfGuests = getGuestCount(guests);
+      const billableGuests = getBillableGuestCount(guests);
 
       // Validate available seats before proceeding
       if (selectedDateAvailability) {
@@ -1269,12 +1503,27 @@ const Description = ({ classSection, listing, hostData }) => {
       }
 
       // Calculate base price amount
-      const guestCount = getGuestCount(guests);
-      const pricePerPerson = selectedDateAvailability?.price_per_person
+      const guestCountForPricing = billableGuests;
+      let pricePerPerson = selectedDateAvailability?.price_per_person
         ? parseFloat(selectedDateAvailability.price_per_person)
         : (listing?.timeSlots?.[0]?.pricePerPerson
           ? parseFloat(listing.timeSlots[0].pricePerPerson)
           : null);
+
+      // Re-apply Group Pricing match logic here
+      const groupPricingRules = selectedDateAvailability?.group_booking_pricing ||
+        selectedTimeSlotData?.groupBookingPricing;
+      if (groupPricingRules && Array.isArray(groupPricingRules) && groupPricingRules.length > 0) {
+        const totalGuests = getGuestCount(guests);
+        const match = groupPricingRules.find(p =>
+          totalGuests >= (p.group_count_from || p.groupCountFrom || 0) &&
+          totalGuests <= (p.group_count_upto || p.groupCountUpto || Infinity)
+        );
+        if (match && (match.price_per_person || match.pricePerPerson)) {
+          pricePerPerson = parseFloat(match.price_per_person || match.pricePerPerson);
+        }
+      }
+
       const pricePerNight = selectedDateAvailability?.b2b_rate
         ? parseFloat(selectedDateAvailability.b2b_rate)
         : (listing?.timeSlots?.[0]?.b2bRate
@@ -1284,7 +1533,7 @@ const Description = ({ classSection, listing, hostData }) => {
 
       let pricingBaseAmount = 0;
       if (pricePerPerson) {
-        pricingBaseAmount = pricePerPerson * guestCount * nights;
+        pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
       } else {
         pricingBaseAmount = pricePerNight * nights;
       }
@@ -1293,36 +1542,44 @@ const Description = ({ classSection, listing, hostData }) => {
       const pricingAddonsTotal = addOnsTotal || 0;
       const pricingSubtotal = pricingBaseAmount + pricingAddonsTotal;
 
-      // Calculate platform commission (from billing config)
+      // Calculate platform commission (from API pricing or billing config)
       let pricingPlatformCommission = 0;
-      if (billingConfig?.commissions && Array.isArray(billingConfig.commissions)) {
+      const apiCommissionPercentage = parseFloat(listing?.pricing?.commission || 0);
+      if (apiCommissionPercentage > 0) {
+        pricingPlatformCommission = (pricingSubtotal * apiCommissionPercentage) / 100;
+      } else if (billingConfig?.commissions && Array.isArray(billingConfig.commissions)) {
         const platformFee = billingConfig.commissions.find(c => c.type === "Platform Fee" && c.isEnabled);
         if (platformFee) {
           pricingPlatformCommission = (pricingSubtotal * parseFloat(platformFee.currentRate || 0)) / 100;
         }
       }
 
+      const apiDiscountPercentage = parseFloat(
+        listing?.pricing?.discount?.total ||
+        listing?.pricing?.discount?.percentage ||
+        0
+      );
+      const pricingDiscountAmount = (pricingSubtotal * apiDiscountPercentage) / 100;
+      const pricingTaxableAmount = Math.max(pricingSubtotal - pricingDiscountAmount, 0);
+
       // Calculate tax amount
       let pricingTaxAmount = 0;
-      if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
+      const apiTaxPercentage = parseFloat(listing?.pricing?.tax?.total || 0);
+      if (apiTaxPercentage > 0) {
+        pricingTaxAmount = (pricingTaxableAmount * apiTaxPercentage) / 100;
+      } else if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
         const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
         enabledTaxes.forEach(tax => {
-          const taxAmount = (pricingSubtotal * parseFloat(tax.currentRate || 0)) / 100;
-          pricingTaxAmount += taxAmount;
+          pricingTaxAmount += (pricingTaxableAmount * parseFloat(tax.currentRate || 0)) / 100;
         });
       }
 
-      // Calculate discount (from billing config or default 0)
-      const pricingDiscountAmount = 0; // Can be enhanced with discount codes
-
-      // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
-      // eslint-disable-next-line no-unused-vars
-      const pricingTotal = pricingSubtotal + pricingTaxAmount - pricingDiscountAmount;
+      // Calculate total price (subtotal + taxes - discounts + platform commission)
+      const pricingTotal = pricingTaxableAmount + pricingTaxAmount + pricingPlatformCommission;
 
       // Calculate host earnings (what the host receives: subtotal - platform commission)
-      const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
-      // eslint-disable-next-line no-unused-vars
-      const hostEarnings = isNaN(calculatedHostEarnings) ? 4950 : calculatedHostEarnings;
+      const calculatedHostEarnings = pricingSubtotal - pricingPlatformCommission;
+      const hostEarnings = isNaN(calculatedHostEarnings) ? pricingSubtotal : calculatedHostEarnings;
 
       // Calculate price per unit (price per person or price per night)
       // eslint-disable-next-line no-unused-vars
@@ -1343,6 +1600,8 @@ const Description = ({ classSection, listing, hostData }) => {
 
           return {
             addonId: listingAddon.addon?.addonId ?? listingAddon.addonId ?? listingAddon.assignmentId,
+            addonName: listingAddon.addon?.title || "Add-on",
+            addonPrice: parseFloat(listingAddon.addon?.price || 0),
             quantity: quantity,
           };
         }
@@ -1356,7 +1615,7 @@ const Description = ({ classSection, listing, hostData }) => {
         return;
       }
 
-      if (!selectedTimeSlot || !bookingSlotId || bookingSlotId === 0) {
+      if (!selectedTimeSlot || !bookingSlotId || bookingSlotId < 1) {
         alert("Please select a time slot.");
         return;
       }
@@ -1375,10 +1634,18 @@ const Description = ({ classSection, listing, hostData }) => {
       const orderData = {
         listingId: listingId || 0,
         bookingDate: bookingDate,
-        bookingTime: bookingTime, // "HH:mm"
+        bookingTime: bookingTime, // "HH:mm:ss"
         bookingSlotId: bookingSlotId || 0,
-        guestCount: numberOfGuests || 1,
-        ...(customerId ? { customerId } : {}),
+        guestCount: billableGuests,
+        // Pricing details
+        basePrice: pricingBaseAmount,
+        addonsTotal: pricingAddonsTotal,
+        taxAmount: pricingTaxAmount,
+        taxRate: apiTaxPercentage,
+        platformFee: pricingPlatformCommission,
+        commissionRate: apiCommissionPercentage,
+        discountAmount: pricingDiscountAmount,
+        totalPrice: pricingTotal,
         customer: {
           name: customerName || "Guest User",
           email: customerEmail || "guest@example.com",
@@ -1498,6 +1765,7 @@ const Description = ({ classSection, listing, hostData }) => {
       }
 
       // Redirect to checkout or success page
+      success = true;
       proceedToCheckout();
 
     } catch (error) {
@@ -1533,6 +1801,11 @@ const Description = ({ classSection, listing, hostData }) => {
       }
 
       alert(errorMessage);
+    } finally {
+      if (!success) {
+        reserveSubmitLockRef.current = false;
+        setIsReserveSubmitting(false);
+      }
     }
   };
 
@@ -1658,6 +1931,10 @@ const Description = ({ classSection, listing, hostData }) => {
 
   // Create order from pending booking data (used after login)
   const createOrderFromPendingBooking = async () => {
+    if (reserveSubmitLockRef.current) {
+      return;
+    }
+
     const savedBooking = localStorage.getItem("pendingBooking");
     if (!savedBooking) {
       console.warn("No pending booking data found");
@@ -1676,19 +1953,14 @@ const Description = ({ classSection, listing, hostData }) => {
       (userInfo.phone ? (userInfo.countryCode || "+91") + userInfo.phone : "") ||
       userInfo.phoneNumber ||
       userInfo.phone || "";
-    const customerId =
-      userInfo.customerId ||
-      userInfo.customer_id ||
-      userInfo.id ||
-      userInfo.userId ||
-      userInfo.customerID ||
-      null;
-
     // Get special requests (if any input field exists in future)
     const specialRequests = "";
 
     // Get listing ID
-    const listingId = bookingData.listingId || listing?.listingId || listing?.id || 0;
+    const listingId = Number(bookingData.listingId || listing?.listingId || listing?.id || 0);
+    if (!listingId || listingId < 1) {
+      throw new Error("Invalid listing. Please reload the experience and try again.");
+    }
 
     // Format booking date
     const bookingDate = bookingData.selectedDate ||
@@ -1700,22 +1972,35 @@ const Description = ({ classSection, listing, hostData }) => {
       bookingTime = selectedDateAvailability.start_time;
     } else if (selectedTimeSlotData?.startTime) {
       bookingTime = selectedTimeSlotData.startTime;
+    } else if (bookingData?.bookingSummary?.time) {
+      bookingTime = bookingData.bookingSummary.time;
     }
+    bookingTime = normalizeBookingTime(bookingTime);
 
     // Get booking slot ID
-    const bookingSlotId = selectedTimeSlotData?.slotId ||
+    const bookingSlotId = Number(
+      selectedTimeSlotData?.slotId ||
       selectedTimeSlotData?.slot_id ||
       selectedTimeSlotData?.id ||
-      bookingData.selectedTimeSlot ||
-      0;
+      bookingData?.bookingSummary?.slotId ||
+      0
+    );
+
+    if (!bookingSlotId || bookingSlotId < 1) {
+      throw new Error("Invalid booking slot. Please reselect the date and time slot.");
+    }
+
+    if (!bookingTime || bookingTime === "00:00") {
+      throw new Error("Invalid booking time. Please reselect the date and time slot.");
+    }
 
     // Get number of guests
-    const numberOfGuests = bookingData.guests ?
-      getGuestCount(bookingData.guests) :
-      getGuestCount(guests);
+    const billableGuests = bookingData.guests ?
+      getBillableGuestCount(bookingData.guests) :
+      getBillableGuestCount(guests);
 
     // Calculate base price amount
-    const guestCount = numberOfGuests;
+    const guestCount = billableGuests;
     const pricePerPerson = selectedDateAvailability?.price_per_person
       ? parseFloat(selectedDateAvailability.price_per_person)
       : (listing?.timeSlots?.[0]?.pricePerPerson
@@ -1745,6 +2030,8 @@ const Description = ({ classSection, listing, hostData }) => {
         pricingAddonsTotal += addonPrice * quantity;
         addonsArray.push({
           addonId: addonData.id || addonData.addonId,
+          addonName: addonData.title || addonData.addonName || "Add-on",
+          addonPrice: addonPrice,
           quantity: quantity,
         });
       });
@@ -1761,20 +2048,26 @@ const Description = ({ classSection, listing, hostData }) => {
       }
     }
 
+    const pricingDiscountAmount = (pricingSubtotal * (parseFloat(
+      listing?.pricing?.discount?.total ||
+      listing?.pricing?.discount?.percentage ||
+      0
+    ) || 0)) / 100;
+    const pricingTaxableAmount = Math.max(pricingSubtotal - pricingDiscountAmount, 0);
+
     // Calculate tax amount
     let pricingTaxAmount = 0;
     if (billingConfig?.taxes && Array.isArray(billingConfig.taxes)) {
       const enabledTaxes = billingConfig.taxes.filter(tax => tax.isEnabled);
       enabledTaxes.forEach(tax => {
-        const taxAmount = (pricingSubtotal * parseFloat(tax.currentRate || 0)) / 100;
+        const taxAmount = (pricingTaxableAmount * parseFloat(tax.currentRate || 0)) / 100;
         pricingTaxAmount += taxAmount;
       });
     }
 
-    const pricingDiscountAmount = 0;
     // Calculate total price (subtotal + taxes - discounts, excluding platform commission)
     // eslint-disable-next-line no-unused-vars
-    const pricingTotal = pricingSubtotal + pricingTaxAmount - pricingDiscountAmount;
+    const pricingTotal = pricingTaxableAmount + pricingTaxAmount;
 
     // Calculate host earnings (what the host receives: subtotal - platform commission)
     const calculatedHostEarnings = (pricingSubtotal || 5500) - (pricingPlatformCommission || 550);
@@ -1788,10 +2081,9 @@ const Description = ({ classSection, listing, hostData }) => {
     const orderData = {
       listingId: listingId || 0,
       bookingDate: bookingDate,
-      bookingTime: bookingTime, // "HH:mm"
+      bookingTime: bookingTime, // "HH:mm:ss"
       bookingSlotId: bookingSlotId || 0,
-      guestCount: numberOfGuests || 1,
-      ...(customerId ? { customerId } : {}),
+      guestCount: billableGuests,
       customer: {
         name: customerName || "Guest User",
         email: customerEmail || "guest@example.com",
@@ -1804,6 +2096,9 @@ const Description = ({ classSection, listing, hostData }) => {
     };
 
     console.log("📦 Creating order after login:", orderData);
+
+    reserveSubmitLockRef.current = true;
+    setIsReserveSubmitting(true);
 
     // Create the order
     const orderResponse = await createOrder(orderData);
@@ -1842,6 +2137,8 @@ const Description = ({ classSection, listing, hostData }) => {
 
     // Redirect to checkout
     proceedToCheckout();
+    reserveSubmitLockRef.current = false;
+    setIsReserveSubmitting(false);
   };
 
   // Handle phone login callback (called after successful OTP verification)
@@ -1852,6 +2149,8 @@ const Description = ({ classSection, listing, hostData }) => {
     try {
       await createOrderFromPendingBooking();
     } catch (error) {
+      reserveSubmitLockRef.current = false;
+      setIsReserveSubmitting(false);
       console.error("Error creating order after login:", error);
       alert(error.response?.data?.message || error.message || "Failed to create order. Please try again.");
     }
@@ -1877,6 +2176,8 @@ const Description = ({ classSection, listing, hostData }) => {
           try {
             await createOrderFromPendingBooking();
           } catch (error) {
+            reserveSubmitLockRef.current = false;
+            setIsReserveSubmitting(false);
             console.error("Error creating order after login:", error);
             // Don't show alert for 400 errors - they're handled gracefully
             if (error.response?.status !== 400) {
@@ -1907,6 +2208,9 @@ const Description = ({ classSection, listing, hostData }) => {
       setShowGuestPicker(false);
     }
     else if (index === 2) {
+      if (!isStay && (!selectedDate || !selectedTimeSlot)) {
+        return;
+      }
       setShowGuestPicker(true);
       setShowDatePicker(false);
       setShowTimeSlots(false);
@@ -1952,11 +2256,19 @@ const Description = ({ classSection, listing, hostData }) => {
         setSelectedEndDate(null);
       }
     }
+    if (!isStay) {
+      setHasSelectedGuests(false);
+      setShowGuestPicker(false);
+    }
     setShowDatePicker(false);
   };
 
   const handleTimeSelect = (timeText) => {
     setSelectedTimeSlot(timeText);
+    if (!isStay) {
+      setHasSelectedGuests(false);
+      setShowGuestPicker(false);
+    }
     setShowTimeSlots(false);
   };
 
@@ -2248,7 +2560,18 @@ const Description = ({ classSection, listing, hostData }) => {
         listing?.stay?.pricePerNight ||
         listing?.stay?.price || 0
       );
+      // Property-based stay: fullPropertyB2cPrice may be directly on listing OR under listing.stay
+      price = parseFloat(
+        listing?.fullPropertyB2cPrice ||
+        listing?.stay?.fullPropertyB2cPrice ||
+        listing?.stay?.b2cPrice ||
+        listing?.stay?.startingPrice ||
+        listing?.stay?.pricePerNight ||
+        listing?.stay?.price || 0
+      );
     } else if (isStay) {
+      // Room-based stay: show the lowest room B2C price ("starting from")
+      price = lowestRoomPrice || parseFloat(listing?.stay?.startingPrice || listing?.stay?.pricePerNight || listing?.stay?.b2cPrice || 0);
       // Room-based stay: show the lowest room B2C price ("starting from")
       price = lowestRoomPrice || parseFloat(listing?.stay?.startingPrice || listing?.stay?.pricePerNight || listing?.stay?.b2cPrice || 0);
     } else {
@@ -2264,38 +2587,70 @@ const Description = ({ classSection, listing, hostData }) => {
     const currency = listing?.stay?.currency || listing?.currency || "INR";
     return price > 0 ? `${currency} ${price.toFixed(2)}` : "";
   }, [listing, isStay, isPropertyBased, slotsData, lowestRoomPrice]);
+}, [listing, isStay, isPropertyBased, slotsData, lowestRoomPrice]);
 
-  const displayTime = isStay ? "night" : "person";
+const displayTime = isStay ? "night" : "person";
 
-  return (
-    <>
-      <div className={cn(classSection, styles.section)}>
-        <div className={cn("container", styles.container)}>
-          <div className={styles.wrapper}>
-            <Details
-              className={styles.details}
-              listing={listing}
-              selectedAddOns={selectedAddOns}
-              addOnQuantities={addOnQuantities}
-              onToggleAddOn={handleToggleAddOn}
-              onAddOnQuantityChange={handleAddOnQuantityChange}
-            />
-            {(!isFood && !isPlace) && (
-              <Receipt
-                className={styles.receipt}
-                items={items}
-                hostData={hostData}
-                priceActual={displayPrice}
-                time={displayTime}
-                avatar={listing?.hostAvatar || listing?.avatar}
-                onItemClick={handleOpenDateTime}
-                renderItem={(item, index) => {
-                  if (index === 0) {
+return (
+  <>
+    <div className={cn(classSection, styles.section)}>
+      <div className={cn("container", styles.container)}>
+        <div className={styles.wrapper}>
+          <Details
+            className={styles.details}
+            listing={listing}
+            selectedAddOns={selectedAddOns}
+            addOnQuantities={addOnQuantities}
+            onToggleAddOn={handleToggleAddOn}
+            onAddOnQuantityChange={handleAddOnQuantityChange}
+          />
+          {(!isFood && !isPlace) && (
+            <Receipt
+              className={styles.receipt}
+              items={items}
+              hostData={hostData}
+              priceActual={displayPrice}
+              priceActual={displayPrice}
+              time={displayTime}
+              avatar={listing?.hostAvatar || listing?.avatar}
+              onItemClick={handleOpenDateTime}
+              renderItem={(item, index) => {
+                if (index === 0) {
+                  return (
+                    <div ref={dateItemRef} style={{ position: 'relative' }}>
+                      <div
+                        className={receiptStyles.item}
+                        onClick={() => handleOpenDateTime(0)}
+                        role="button"
+                      >
+                        <div className={receiptStyles.icon}>
+                          <Icon name={item.icon} size="24" />
+                        </div>
+                        <div className={receiptStyles.box}>
+                          <div className={receiptStyles.category}>{item.category}</div>
+                          <div className={receiptStyles.subtitle}>{item.title}</div>
+                        </div>
+                      </div>
+                      <InlineDatePicker
+                        visible={isStay ? (showDatePicker && stayActiveDateField === "checkin") : showDatePicker}
+                        onClose={() => setShowDatePicker(false)}
+                        onDateSelect={handleDateSelect}
+                        selectedDate={selectedDate ? selectedDate.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
+                        timeSlots={transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || [])}
+                        availabilityData={filteredAvailabilityData}
+                      />
+                    </div>
+                  );
+                }
+                if (index === 1) {
+                  if (isStay) {
+                    const stayPickerSelected =
+                      stayActiveDateField === "checkout" ? selectedEndDate : selectedDate;
                     return (
-                      <div ref={dateItemRef} style={{ position: 'relative' }}>
+                      <div ref={checkoutItemRef} style={{ position: 'relative' }}>
                         <div
                           className={receiptStyles.item}
-                          onClick={() => handleOpenDateTime(0)}
+                          onClick={() => handleOpenDateTime(1)}
                           role="button"
                         >
                           <div className={receiptStyles.icon}>
@@ -2307,248 +2662,235 @@ const Description = ({ classSection, listing, hostData }) => {
                           </div>
                         </div>
                         <InlineDatePicker
-                          visible={isStay ? (showDatePicker && stayActiveDateField === "checkin") : showDatePicker}
+                          visible={showDatePicker && stayActiveDateField === "checkout"}
                           onClose={() => setShowDatePicker(false)}
                           onDateSelect={handleDateSelect}
-                          selectedDate={selectedDate ? selectedDate.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
+                          selectedDate={stayPickerSelected ? stayPickerSelected.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
                           timeSlots={transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || [])}
                           availabilityData={filteredAvailabilityData}
                         />
                       </div>
                     );
                   }
-                  if (index === 1) {
-                    if (isStay) {
-                      const stayPickerSelected =
-                        stayActiveDateField === "checkout" ? selectedEndDate : selectedDate;
-                      return (
-                        <div ref={checkoutItemRef} style={{ position: 'relative' }}>
-                          <div
-                            className={receiptStyles.item}
-                            onClick={() => handleOpenDateTime(1)}
-                            role="button"
-                          >
-                            <div className={receiptStyles.icon}>
-                              <Icon name={item.icon} size="24" />
-                            </div>
-                            <div className={receiptStyles.box}>
-                              <div className={receiptStyles.category}>{item.category}</div>
-                              <div className={receiptStyles.subtitle}>{item.title}</div>
-                            </div>
-                          </div>
-                          <InlineDatePicker
-                            visible={showDatePicker && stayActiveDateField === "checkout"}
-                            onClose={() => setShowDatePicker(false)}
-                            onDateSelect={handleDateSelect}
-                            selectedDate={stayPickerSelected ? stayPickerSelected.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
-                            timeSlots={transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || [])}
-                            availabilityData={filteredAvailabilityData}
+
+                  // Determine whether any time slots exist and are valid for the selected day
+                  const availableTimeSlots = transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || []);
+                  // If a date is selected, filter by day of week to decide if the tile should be enabled
+                  const DAY_CODES_LOCAL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+                  const DAY_FLAGS_LOCAL = ['isSunday', 'isMonday', 'isTuesday', 'isWednesday', 'isThursday', 'isFriday', 'isSaturday'];
+                  const slotsForSelectedDay = (() => {
+                    if (!selectedDate) return availableTimeSlots;
+                    const dayIdx = selectedDate.day(); // moment's .day() returns 0=Sun…6=Sat
+                    const dayCode = DAY_CODES_LOCAL[dayIdx];
+                    const dayFlag = DAY_FLAGS_LOCAL[dayIdx];
+                    return availableTimeSlots.filter((slot) => {
+                      if (Array.isArray(slot.selected_days) && slot.selected_days.length > 0) {
+                        return slot.selected_days.includes(dayCode);
+                      }
+                      if (slot[dayFlag] !== undefined) return slot[dayFlag] === true;
+                      return true; // no day info, always show
+                    });
+                  })();
+                  const hasTimeSlots = slotsForSelectedDay.length > 0;
+                  return (
+                    <div ref={timeItemRef} style={{ position: 'relative' }}>
+                      <div
+                        className={receiptStyles.item}
+                        onClick={hasTimeSlots ? () => handleOpenDateTime(1) : undefined}
+                        role={hasTimeSlots ? "button" : undefined}
+                        style={{
+                          cursor: hasTimeSlots ? 'pointer' : 'not-allowed',
+                          opacity: hasTimeSlots ? 1 : 0.5,
+                          pointerEvents: hasTimeSlots ? 'auto' : 'none',
+                        }}
+                        title={hasTimeSlots ? undefined : "No time slots available for the selected date"}
+                      >
+                        <div className={receiptStyles.icon}>
+                          <Icon name={item.icon} size="24" />
+                        </div>
+                        <div className={receiptStyles.box}>
+                          <div className={receiptStyles.category}>{item.category}</div>
+                          <div className={receiptStyles.subtitle}>{item.title}</div>
+                        </div>
+                      </div>
+                      <TimeSlotsPicker
+                        visible={showTimeSlots && hasTimeSlots}
+                        onClose={() => setShowTimeSlots(false)}
+                        onTimeSelect={handleTimeSelect}
+                        selectedTime={selectedTimeSlot}
+                        timeSlots={availableTimeSlots}
+                        selectedDate={selectedDate}
+                      />
+                    </div>
+                  );
+                }
+                if (index === 2) {
+                  const canSelectGuests = isStay || (selectedDate && selectedTimeSlot);
+                  return (
+                    <div ref={guestItemRef} style={{ position: 'relative' }}>
+                      <div
+                        className={cn(receiptStyles.item, receiptStyles.guestCentered)}
+                        onClick={canSelectGuests ? () => handleOpenDateTime(2) : undefined}
+                        role={canSelectGuests ? "button" : undefined}
+                        style={{
+                          cursor: canSelectGuests ? 'pointer' : 'not-allowed',
+                          opacity: canSelectGuests ? 1 : 0.5,
+                          pointerEvents: canSelectGuests ? 'auto' : 'none',
+                        }}
+                        title={canSelectGuests ? undefined : "Please select date and time first"}
+                      >
+                        <div className={receiptStyles.icon}>
+                          <Icon name={item.icon} size="24" />
+                        </div>
+                        <div className={receiptStyles.box}>
+                          <div className={receiptStyles.category}>{item.category}</div>
+                          <div className={receiptStyles.subtitle}>{item.title}</div>
+                        </div>
+                      </div>
+                      <GuestPicker
+                        visible={showGuestPicker && canSelectGuests}
+                        onClose={() => setShowGuestPicker(false)}
+                        onGuestChange={(guestData) => {
+                          setGuests(guestData);
+                          if (!isStay) {
+                            setHasSelectedGuests(true);
+                          }
+                        }}
+                        initialGuests={guests}
+                        maxGuests={listing?.maxGuests || undefined}
+                        maxSeats={maxSeats}
+                        allowPets={listing?.allowPets || false}
+                        childrenAllowed={listing?.childrenAllowed !== false}
+                        infantsAllowed={listing?.infantsAllowed === true}
+                        adultsLabel="Guests"
+                        adultsSubtitle={billableGuestLabel}
+                        childrenSubtitle={childrenGuestLabel}
+                        requireAdultForChildren={false}
+                      />
+                    </div>
+                  );
+                }
+                if (index === 3 && !isPropertyBased) {
+                  const dropdownOptions = stayRoomTypeOptions.length > 0
+                    ? ["Select room", ...stayRoomTypeOptions.map((o) => o.label)]
+                    : ["Select room"];
+                  const selectedRoomLabel = staySelectedRoomType
+                    ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
+                    : "Select room";
+
+                  return (
+                    <div ref={roomTypeItemRef} style={{ position: 'relative', width: '100%' }}>
+                      <div className={cn(receiptStyles.item, { [receiptStyles.disabled]: stayRoomTypeOptions.length === 0 })}>
+                        <div className={receiptStyles.icon}>
+                          <Icon name={item.icon} size="24" />
+                        </div>
+                        <div className={receiptStyles.box} style={{ overflow: 'visible', zIndex: 51 }}>
+                          <div className={receiptStyles.category}>{item.category}</div>
+                          <Dropdown
+                            value={selectedRoomLabel}
+                            setValue={(label) => {
+                              if (label === "Select room") {
+                                setStaySelectedRoomType("");
+                              } else {
+                                const opt = stayRoomTypeOptions.find((o) => o.label === label);
+                                if (opt) setStaySelectedRoomType(opt.value);
+                              }
+                            }}
+                            options={dropdownOptions}
+                            empty
                           />
                         </div>
-                      );
-                    }
-
-                    // Determine whether any time slots exist and are valid for the selected day
-                    const availableTimeSlots = transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || []);
-                    // If a date is selected, filter by day of week to decide if the tile should be enabled
-                    const DAY_CODES_LOCAL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-                    const DAY_FLAGS_LOCAL = ['isSunday', 'isMonday', 'isTuesday', 'isWednesday', 'isThursday', 'isFriday', 'isSaturday'];
-                    const slotsForSelectedDay = (() => {
-                      if (!selectedDate) return availableTimeSlots;
-                      const dayIdx = selectedDate.day(); // moment's .day() returns 0=Sun…6=Sat
-                      const dayCode = DAY_CODES_LOCAL[dayIdx];
-                      const dayFlag = DAY_FLAGS_LOCAL[dayIdx];
-                      return availableTimeSlots.filter((slot) => {
-                        if (Array.isArray(slot.selected_days) && slot.selected_days.length > 0) {
-                          return slot.selected_days.includes(dayCode);
-                        }
-                        if (slot[dayFlag] !== undefined) return slot[dayFlag] === true;
-                        return true; // no day info, always show
-                      });
-                    })();
-                    const hasTimeSlots = slotsForSelectedDay.length > 0;
-                    return (
-                      <div ref={timeItemRef} style={{ position: 'relative' }}>
-                        <div
-                          className={receiptStyles.item}
-                          onClick={hasTimeSlots ? () => handleOpenDateTime(1) : undefined}
-                          role={hasTimeSlots ? "button" : undefined}
-                          style={{
-                            cursor: hasTimeSlots ? 'pointer' : 'not-allowed',
-                            opacity: hasTimeSlots ? 1 : 0.5,
-                            pointerEvents: hasTimeSlots ? 'auto' : 'none',
-                          }}
-                          title={hasTimeSlots ? undefined : "No time slots available for the selected date"}
-                        >
-                          <div className={receiptStyles.icon}>
-                            <Icon name={item.icon} size="24" />
-                          </div>
-                          <div className={receiptStyles.box}>
-                            <div className={receiptStyles.category}>{item.category}</div>
-                            <div className={receiptStyles.subtitle}>{item.title}</div>
-                          </div>
-                        </div>
-                        <TimeSlotsPicker
-                          visible={showTimeSlots && hasTimeSlots}
-                          onClose={() => setShowTimeSlots(false)}
-                          onTimeSelect={handleTimeSelect}
-                          selectedTime={selectedTimeSlot}
-                          timeSlots={availableTimeSlots}
-                          selectedDate={selectedDate}
-                        />
                       </div>
-                    );
-                  }
-                  if (index === 2) {
-                    return (
-                      <div ref={guestItemRef} style={{ position: 'relative' }}>
-                        <div
-                          className={cn(receiptStyles.item, receiptStyles.guestCentered)}
-                          onClick={() => handleOpenDateTime(2)}
-                          role="button"
-                        >
-                          <div className={receiptStyles.icon}>
-                            <Icon name={item.icon} size="24" />
-                          </div>
-                          <div className={receiptStyles.box}>
-                            <div className={receiptStyles.category}>{item.category}</div>
-                            <div className={receiptStyles.subtitle}>{item.title}</div>
-                          </div>
-                        </div>
-                        <GuestPicker
-                          visible={showGuestPicker}
-                          onClose={() => setShowGuestPicker(false)}
-                          onGuestChange={(guestData) => {
-                            setGuests(guestData);
-                          }}
-                          initialGuests={guests}
-                          maxGuests={listing?.maxGuests || undefined}
-                          maxSeats={maxSeats}
-                          allowPets={listing?.allowPets || false}
-                          childrenAllowed={listing?.childrenAllowed !== false}
-                          infantsAllowed={listing?.infantsAllowed === true}
-                          adultsLabel="Guests"
-                        />
-                      </div>
-                    );
-                  }
-                  if (index === 3 && !isPropertyBased) {
-                    const dropdownOptions = stayRoomTypeOptions.length > 0
-                      ? ["Select room", ...stayRoomTypeOptions.map((o) => o.label)]
-                      : ["Select room"];
-                    const selectedRoomLabel = staySelectedRoomType
-                      ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
-                      : "Select room";
-
-                    return (
-                      <div ref={roomTypeItemRef} style={{ position: 'relative', width: '100%' }}>
-                        <div className={cn(receiptStyles.item, { [receiptStyles.disabled]: stayRoomTypeOptions.length === 0 })}>
-                          <div className={receiptStyles.icon}>
-                            <Icon name={item.icon} size="24" />
-                          </div>
-                          <div className={receiptStyles.box} style={{ overflow: 'visible', zIndex: 51 }}>
-                            <div className={receiptStyles.category}>{item.category}</div>
-                            <Dropdown
-                              value={selectedRoomLabel}
-                              setValue={(label) => {
-                                if (label === "Select room") {
-                                  setStaySelectedRoomType("");
-                                } else {
-                                  const opt = stayRoomTypeOptions.find((o) => o.label === label);
-                                  if (opt) setStaySelectedRoomType(opt.value);
-                                }
-                              }}
-                              options={dropdownOptions}
-                              empty
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                }}
-              >
-                <div className={styles.btns}>
-                  <button className={cn("button-stroke", styles.button)}>
-                    <span>Save</span>
-                    <Icon name="plus" size="16" />
-                  </button>
-                  {isStay ? (
-                    <button
-                      type="button"
-                      className={cn("button", styles.button)}
-                      onClick={(isPropertyBased || stayAvailabilityChecked) ? handleBookStay : handleCheckStayAvailability}
-                      disabled={!selectedDate || !selectedEndDate || stayAvailabilityLoading}
-                      title={!selectedDate || !selectedEndDate ? "Please select check-in and check-out dates" : ""}
-                    >
-                      <span>
-                        {stayAvailabilityLoading
-                          ? ((isPropertyBased || stayAvailabilityChecked) ? "Processing..." : "Checking...")
-                          : ((isPropertyBased || stayAvailabilityChecked) ? "Book now" : "Check availability")
-                        }
-                      </span>
-                      <Icon name="bag" size="16" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className={cn("button", styles.button)}
-                      onClick={handleReserveClick}
-                      disabled={!isReserveEnabled}
-                      title={!isReserveEnabled ? "Please select date, time slot, and guests" : ""}
-                    >
-                      <span>{isFullyBooked ? "Fully Booked" : "Reserve"}</span>
-                      <Icon name="bag" size="16" />
-                    </button>
-                  )}
-                </div>
-                {isFullyBooked && (
-                  <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
-                    This slot is fully booked. Please select another date or time.
-                  </div>
-                )}
-                {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
-                  <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
-                    Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
-                  </div>
-                )}
-
-                <div className={styles.table}>
-                  {/* For room-based stays: hide receipt until a room type is chosen.
-                      For property-based stays: hide until dates are selected.
-                      For experiences/other: always show when receipt has items. */}
-                  {((!isStay) ||
-                    (isStay && isPropertyBased && selectedDate && selectedEndDate) ||
-                    (isStay && !isPropertyBased && staySelectedRoomType)
-                  ) && receipt.map((x, index) => (
-                    <div className={styles.line} key={index}>
-                      <div className={styles.cell}>{x.title}</div>
-                      <div className={styles.cell}>{x.content}</div>
                     </div>
-                  ))}
-                </div>
+                  );
+                }
 
-                <div className={styles.foot}>
-                  <button className={styles.report}>
-                    <Icon name="flag" size="12" />
-                    Report this property
+                return null;
+              }}
+            >
+              <div className={styles.btns}>
+                <button className={cn("button-stroke", styles.button)}>
+                  <span>Save</span>
+                  <Icon name="plus" size="16" />
+                </button>
+                {isStay ? (
+                  <button
+                    type="button"
+                    className={cn("button", styles.button)}
+                    onClick={(isPropertyBased || stayAvailabilityChecked) ? handleBookStay : handleCheckStayAvailability}
+                    disabled={!selectedDate || !selectedEndDate || stayAvailabilityLoading}
+                    title={!selectedDate || !selectedEndDate ? "Please select check-in and check-out dates" : ""}
+                  >
+                    <span>
+                      {stayAvailabilityLoading
+                        ? ((isPropertyBased || stayAvailabilityChecked) ? "Processing..." : "Checking...")
+                        : ((isPropertyBased || stayAvailabilityChecked) ? "Book now" : "Check availability")
+                      }
+                    </span>
+                    <Icon name="bag" size="16" />
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={cn("button", styles.button)}
+                    onClick={handleReserveClick}
+                    disabled={!isReserveEnabled || isReserveSubmitting}
+                    title={!isReserveEnabled ? "Please select date, time slot, and guests" : ""}
+                  >
+                    <span>{isReserveSubmitting ? "Processing..." : (isFullyBooked ? "Fully Booked" : "Reserve")}</span>
+                    <Icon name="bag" size="16" />
+                  </button>
+                )}
+              </div>
+              {isFullyBooked && (
+                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
+                  This slot is fully booked. Please select another date or time.
                 </div>
-              </Receipt>
-            )}
-          </div>
+              )}
+              {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
+                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
+                  Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
+                </div>
+              )}
+
+              <div className={styles.table}>
+                {/* For room-based stays: hide receipt until a room type is chosen.
+                      For property-based stays: hide until dates are selected.
+                      For experiences/other: only show after guests are explicitly selected. */}
+                {((!isStay && hasSelectedGuests) ||
+                  (isStay && isPropertyBased && selectedDate && selectedEndDate) ||
+                  (isStay && !isPropertyBased && staySelectedRoomType)
+                ) && receipt.map((x, index) => (
+                  <div className={styles.line} key={index}>
+                    <div className={styles.cell}>{x.title}</div>
+                    <div className={styles.cell}>{x.content}</div>
+                  </div>
+                ))}
+              </div>
+
+
+              <div className={styles.foot}>
+                <button className={styles.report}>
+                  <Icon name="flag" size="12" />
+                  Report this property
+                </button>
+              </div>
+            </Receipt>
+          )}
         </div>
       </div>
-      <LoginModal
-        visible={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onGoogleLogin={handleGoogleLogin}
-        onPhoneLogin={handlePhoneLogin}
-      />
-    </>
-  );
+    </div>
+    <LoginModal
+      visible={showLoginModal}
+      onClose={() => setShowLoginModal(false)}
+      onGoogleLogin={handleGoogleLogin}
+      onPhoneLogin={handlePhoneLogin}
+    />
+  </>
+);
 };
 
 export default Description;
+
+
+

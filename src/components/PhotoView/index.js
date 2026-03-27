@@ -13,7 +13,7 @@ const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
 );
 
-const PhotoView = ({ title, initialSlide, visible, items, onClose }) => {
+const PhotoView = ({ title, initialSlide, visible, items, onClose, listingId, options }) => {
   const [current, setCurrent] = useState(initialSlide);
 
   const escFunction = useCallback(
@@ -75,7 +75,15 @@ const PhotoView = ({ title, initialSlide, visible, items, onClose }) => {
           <div className={styles.container}>
             <div className={styles.control}>
               <Link
-                to="/full-photo"
+                to={{
+                  pathname: "/full-photo",
+                  state: {
+                    gallery: items,
+                    title,
+                    listingId,
+                    options: options || [],
+                  },
+                }}
                 className={cn("button-stroke button-small", styles.button)}
                 onClick={onClose}
               >

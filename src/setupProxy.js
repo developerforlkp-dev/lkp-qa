@@ -105,6 +105,30 @@ module.exports = function (app) {
     })
   );
 
+  // Lead details: /api/leads/* → http://69.62.77.33:8080/leads/*
+  app.use(
+    '/api/leads',
+    createProxyMiddleware({
+      target: 'http://69.62.77.33:8080/',
+      changeOrigin: true,
+      secure: false,
+      pathRewrite: (path) => `/leads${path}`,
+      logLevel: 'debug',
+      proxyTimeout: 60000,
+      timeout: 60000,
+      onProxyReq: (proxyReq, req, res) => {
+        console.log('[Proxy Leads]', req.method, req.url, '->', proxyReq.path);
+      },
+      onProxyRes: (proxyRes, req, res) => {
+        console.log('[Proxy Leads Response]', req.url, '->', proxyRes.statusCode);
+      },
+      onError: (err, req, res) => {
+        console.error('[Proxy Leads Error]', err.message);
+        res.status(500).send('Proxy error: ' + err.message);
+      }
+    })
+  );
+
   // All other /api → http://62.72.12.51:6000/
   app.use(
     '/api',

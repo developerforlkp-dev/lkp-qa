@@ -7,7 +7,7 @@ import Map from "../Map";
 import Share from "../Share";
 import Favorite from "../Favorite";
 
-const Actions = ({ className }) => {
+const Actions = ({ className, mapLocation }) => {
   const history = useHistory();
 
   const handleClose = (e) => {
@@ -24,7 +24,7 @@ const Actions = ({ className }) => {
   return (
     <div className={cn(className, styles.actions)}>
       <div className={styles.list}>
-        <Map />
+        <Map location={mapLocation} />
         <Share />
         <Favorite className={styles.favorite} />
         <button

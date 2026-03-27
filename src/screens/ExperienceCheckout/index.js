@@ -5,19 +5,20 @@ import styles from "./ExperienceCheckout.module.sass";
 import Control from "../../components/Control";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
-import InlineDatePicker from "../../components/InlineDatePicker";
-import GuestPicker from "../../components/GuestPicker";
-import { getOrderDetails } from "../../utils/api";
+import { getOrderDetails, getStayDetails, getListingAddons } from "../../utils/api";
 
-const breadcrumbs = [
-  {
-    title: "Spectacular views of Queenstown",
-    url: "/experience-product",
-  },
-  {
-    title: "Confirm and pay",
-  },
-];
+const formatImageUrl = (url) => {
+  if (!url) return null;
+  const raw = String(url).trim();
+  if (!raw) return null;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("/")) return raw;
+  const [pathPart, queryPart] = raw.split("?");
+  const normalizedPath = String(pathPart).replaceAll("%2F", "/");
+  const encodedPath = encodeURI(normalizedPath);
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+};
+
 
 const Checkout = () => {
   const location = useLocation();
@@ -26,120 +27,8 @@ const Checkout = () => {
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(true);
-
-  // Edit functionality state
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showGuestPicker, setShowGuestPicker] = useState(false);
-
-  // Date selection handler
-  const handleDateSelect = (startDateText, endDateText) => {
-    if (!bookingData) return;
-
-    // Update booking data with new date
-    const newBookingData = { ...bookingData };
-
-    // Update date summary
-    if (newBookingData.bookingSummary) {
-      newBookingData.bookingSummary.date = startDateText;
-      if (endDateText && endDateText !== startDateText) {
-        // handle range if needed
-      }
-    }
-    newBookingData.selectedDate = startDateText;
-
-    // Validate time slot for new date (reset if invalid? or keep if valid?)
-
-    setBookingData(newBookingData);
-    setShowDatePicker(false);
-  };
-
-  // Guest selection handler
-  const handleGuestChange = (newGuests) => {
-    if (!bookingData) return;
-
-    const newBookingData = { ...bookingData };
-
-    // Update guests object
-    newBookingData.guests = newGuests;
-
-    // Update summary text
-    const totalGuests = (newGuests.adults || 0) + (newGuests.children || 0);
-    if (newBookingData.bookingSummary) {
-      newBookingData.bookingSummary.guestCount = totalGuests;
-    }
-
-    // Recalculate prices
-    // Try to find price per person from priceDetails or extract from receipt
-    let pricePerPerson = newBookingData.priceDetails?.pricePerPerson || 0;
-
-    // Fallback: extract from receipt if not found
-    if (!pricePerPerson && newBookingData.receipt) {
-      const baseRow = newBookingData.receipt.find(r => r.title.toLowerCase().includes('guest') || r.title.toLowerCase().includes('adult') || r.title.toLowerCase().includes('night'));
-      if (baseRow) {
-        // Extract price from string like "INR 800.00 x 1 guest" or "800 x 1"
-        // We look for the first number (allowing decimals)
-        const matches = baseRow.title.match(/(\d+(\.\d+)?)/);
-        if (matches && matches[0]) {
-          pricePerPerson = parseFloat(matches[0]);
-        }
-      }
-    }
-
-    // Try to update total price if we have enough info
-    if (pricePerPerson > 0) {
-      // Calculate new base total
-      const newBaseTotal = pricePerPerson * totalGuests;
-
-      // Add add-ons
-      const addOnsTotal = selectedAddOns.reduce(
-        (sum, addOn) => sum + (addOn?.priceValue || addOn?.price || 0),
-        0
-      );
-
-      const newFinalTotal = newBaseTotal + addOnsTotal;
-
-      if (newBookingData.priceDetails) {
-        newBookingData.priceDetails.totalPrice = newFinalTotal;
-      }
-      newBookingData.finalTotal = newFinalTotal;
-
-      // Update payment data (amount to pay)
-      // Store in paise (x100) because components expect Razorpay format and divide by 100 if > 1000
-      setPaymentData(prev => ({
-        ...prev,
-        amount: newFinalTotal * 100
-      }));
-
-      // Update receipt table
-      if (newBookingData.receipt) {
-        const newReceipt = [...newBookingData.receipt];
-        // Ideally identify row by title
-        const baseRowIndex = newReceipt.findIndex(r => r.title.toLowerCase().includes('adult') || r.title.toLowerCase().includes('guest') || r.title.toLowerCase().includes('night'));
-
-        if (baseRowIndex >= 0) {
-          const currency = newBookingData.currency || "INR";
-          newReceipt[baseRowIndex] = {
-            ...newReceipt[baseRowIndex],
-            title: `${currency} ${pricePerPerson.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? 'guest' : 'guests'}`,
-            content: `${currency} ${newBaseTotal.toFixed(2)}`
-          };
-        }
-
-        // Update total row
-        const totalRowIndex = newReceipt.findIndex(r => r.title.includes('Total') || r.title === 'Total');
-        if (totalRowIndex >= 0) {
-          const currency = newBookingData.currency || "INR";
-          newReceipt[totalRowIndex] = {
-            ...newReceipt[totalRowIndex],
-            content: `${currency} ${newFinalTotal.toFixed(2)}`
-          };
-        }
-        newBookingData.receipt = newReceipt;
-      }
-    }
-
-    setBookingData(newBookingData);
-  };
+  const [stayImageUrl, setStayImageUrl] = useState(null);
+  const [addonDetails, setAddonDetails] = useState([]);
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -211,29 +100,20 @@ const Checkout = () => {
     }
   }, [bookingData]);
 
-  // Check payment status when component mounts
+  // Check payment status when component mounts, and also load server-side pricing
   useEffect(() => {
-    const checkPaymentStatus = async () => {
+    const checkPaymentAndLoadPricing = async () => {
       setCheckingPayment(true);
 
       try {
-        // Check if payment was already successful
-        const paymentSuccess = localStorage.getItem("razorpayPaymentSuccess");
-        if (paymentSuccess) {
-          // Payment already succeeded, allow user to proceed
-          setCheckingPayment(false);
-          return;
-        }
-
-        // Check if there's a pending orderId
         const pendingOrderId = localStorage.getItem("pendingOrderId");
         if (!pendingOrderId) {
-          // No order created yet, allow normal checkout flow
           setCheckingPayment(false);
           return;
         }
 
-        // Fetch order details to check payment status
+        // Always fetch order details — needed for server pricing (commission, tax, etc.)
+        // regardless of whether payment already succeeded
         const orderDetails = await getOrderDetails(pendingOrderId);
         const order = orderDetails?.order || orderDetails;
 
@@ -241,24 +121,106 @@ const Checkout = () => {
           const paymentStatus = order.paymentStatus || "PENDING";
           const normalizedStatus = String(paymentStatus).toUpperCase().trim();
 
-          // If payment failed, redirect to complete page with failure status
           if (normalizedStatus === "FAILED" || normalizedStatus === "FAILURE") {
             localStorage.setItem("paymentFailed", "true");
             localStorage.setItem("paymentFailureOrderId", String(order.orderId || pendingOrderId));
             history.push("/experience-checkout-complete");
             return;
           }
+
+          // ✅ Always merge server-side pricing so commission/tax/discount always show
+          // The order creation response has `.pricing`, but `getOrderDetails` might only have flat fields on `order`.
+          const serverPricing = orderDetails?.pricing || order?.pricing || {
+            basePrice: order?.basePrice,
+            addonsTotal: order?.addonsTotal,
+            commission: order?.platformFee || order?.commission,
+            commissionRate: order?.commissionRate,
+            tax: order?.taxAmount || order?.tax,
+            discount: order?.discountAmount || order?.discount,
+            total: order?.totalPrice || order?.finalAmount || order?.total,
+            guestCount: order?.numberOfGuests,
+            pricePerPerson: order?.pricePerPerson,
+          };
+
+          if (serverPricing) {
+            setBookingData((prev) => {
+              const prevPricing = prev?.pricing || {};
+              
+              // Get local discount calculate from Experience Details pg
+              const localDiscount = prevPricing.discountAmount || prevPricing.discount || 0;
+              
+              // Prefer server discount unless it's falsely 0 while local had one
+              let finalDiscount = serverPricing.discount || serverPricing.discountAmount || 0;
+              if (Number(finalDiscount) === 0 && Number(localDiscount) > 0) {
+                finalDiscount = localDiscount;
+              }
+
+              return {
+                ...(prev || {}),
+                hostName: order?.hostName || orderDetails?.hostName || prev?.hostName,
+                hostAvatar: "/images/content/avatar.jpg",
+                pricing: {
+                  ...prevPricing,
+                  ...serverPricing,
+                  discount: finalDiscount,
+                  discountAmount: finalDiscount,
+                  // Prioritize local calculation (prevPricing) to ensure consistency with details page
+                  // only fall back to server if local is missing.
+                  tax: (Number(prevPricing.tax || 0) > 0)
+                    ? prevPricing.tax
+                    : (serverPricing.tax || serverPricing.taxAmount || 0),
+                  taxRate: (Number(prevPricing.taxRate || 0) > 0)
+                    ? prevPricing.taxRate
+                    : (serverPricing.taxRate || 0),
+                  commission: (Number(prevPricing.commission || 0) > 0)
+                    ? prevPricing.commission
+                    : (serverPricing.commission || serverPricing.platformFee || 0),
+                  commissionRate: (Number(prevPricing.commissionRate || 0) > 0)
+                    ? prevPricing.commissionRate
+                    : (serverPricing.commissionRate || 0),
+                  // If we use local components, we should also use local total for consistency in the breakdown table
+                  total: (Number(prevPricing.total || 0) > 0)
+                    ? prevPricing.total
+                    : (serverPricing.total || serverPricing.totalPrice || serverPricing.finalAmount || 0),
+                },
+              };
+            });
+          }
+
+          // ✅ Also enrich addonDetails from the server breakdown addons
+          const serverAddons = serverPricing?.breakdown?.addons || order.addons || [];
+          if (serverAddons.length > 0) {
+            const listingId = order.listingId || orderDetails?.listingId;
+            if (listingId) {
+              getListingAddons(listingId).then((allAddons) => {
+                const merged = serverAddons.map((oa) => {
+                  const addonId = oa.addonId || oa.id;
+                  const full = allAddons.find(
+                    (a) => String(a.addonId || a.id) === String(addonId)
+                  );
+                  return {
+                    addonId,
+                    name: oa.addonName || full?.title || full?.name || full?.addonName || "Add-on",
+                    quantity: oa.quantity || 1,
+                    pricePerUnit: oa.pricePerUnit || oa.addonPrice || oa.price || 0,
+                    totalPrice: oa.totalPrice || (oa.pricePerUnit || oa.addonPrice || oa.price || 0) * (oa.quantity || 1),
+                    image: full?.imageUrl || full?.image || full?.coverImageUrl || null,
+                  };
+                });
+                setAddonDetails(merged);
+              }).catch(console.error);
+            }
+          }
         }
 
         setCheckingPayment(false);
       } catch (error) {
         console.error("Error checking payment status:", error);
-        // If error checking, allow normal checkout flow
         setCheckingPayment(false);
       }
     };
 
-    checkPaymentStatus();
+    checkPaymentAndLoadPricing();
   }, [history]);
 
 
@@ -267,7 +229,68 @@ const Checkout = () => {
     setSelectedAddOns((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  // Fallback: build addonDetails from selectedAddOns if server breakdown not yet loaded
+  useEffect(() => {
+    const listingId = bookingData?.listingId;
+    if (!listingId) return;
+    // Skip if server pricing already set addonDetails (via the payment check useEffect)
+    if (addonDetails.length > 0) return;
+
+    // Source: selectedAddOns from location.state (items like { id, title, price, ... })
+    const fallbackAddons = bookingData?.selectedAddOns || selectedAddOns || [];
+    if (!fallbackAddons.length) return;
+
+    getListingAddons(listingId).then((allAddons) => {
+      const merged = fallbackAddons.map((oa) => {
+        const addonId = oa.addonId || oa.id;
+        const full = allAddons.find(
+          (a) => String(a.addonId || a.id) === String(addonId)
+        );
+        return {
+          addonId,
+          // Try all possible name fields
+          name: oa.addonName || oa.title || full?.title || full?.name || full?.addonName || "Add-on",
+          quantity: oa.quantity || 1,
+          pricePerUnit: oa.pricePerUnit || oa.addonPrice || oa.price || 0,
+          totalPrice:
+            oa.totalPrice ||
+            (oa.pricePerUnit || oa.addonPrice || oa.price || 0) * (oa.quantity || 1),
+          image: full?.imageUrl || full?.image || full?.coverImageUrl || null,
+        };
+      });
+      setAddonDetails(merged);
+    }).catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingData?.listingId]);
+
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
+  useEffect(() => {
+    if (bookingData?.stayId) {
+      getStayDetails(bookingData.stayId)
+        .then((data) => {
+          const rawCoverImg =
+            data?.coverImageUrl ||
+            data?.coverPhotoUrl ||
+            (Array.isArray(data?.listingMedia) && data.listingMedia[0]
+              ? (data.listingMedia[0].url || data.listingMedia[0].blobName || data.listingMedia[0].fileUrl)
+              : null) ||
+            (Array.isArray(data?.media) && data.media[0]
+              ? (data.media[0].url || data.media[0].blobName || data.media[0].fileUrl)
+              : null) ||
+            (Array.isArray(data?.images) && data.images[0]
+              ? (data.images[0].url || data.images[0].blobName || data.images[0].fileUrl || (typeof data.images[0] === "string" ? data.images[0] : null))
+              : null) ||
+            (Array.isArray(data?.propertyImages) && data.propertyImages[0]
+              ? (data.propertyImages[0].url || data.propertyImages[0].blobName || data.propertyImages[0].fileUrl || (typeof data.propertyImages[0] === "string" ? data.propertyImages[0] : null))
+              : null) ||
+            "";
+          if (rawCoverImg) {
+            setStayImageUrl(formatImageUrl(rawCoverImg));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [bookingData?.stayId]);
   const formatTime = (timeString) => {
     if (!timeString) return "";
     const [hours, minutes] = timeString.split(":");
@@ -331,22 +354,70 @@ const Checkout = () => {
     ];
   }, [bookingData]);
 
-  // Build price table from receipt if provided
+  // Build price breakdown table from bookingData.pricing
   // eslint-disable-next-line no-unused-vars
   const { addOnsTotal, finalTotal, table } = useMemo(() => {
-    if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
-      const rows = bookingData.receipt.map((r) => ({
-        title: r.title,
-        value: r.content,
-      }));
+    const pricing = bookingData?.pricing;
+    const cur = pricing?.currency || paymentData?.currency || "INR";
+    const fmt = (n) => `${cur} ${Number(n || 0).toFixed(2)}`;
+
+    if (pricing) {
+      const rows = [];
+
+      const basePrice = pricing.basePrice || pricing.baseAmount || 0;
+      const addonsTotal = pricing.addonsTotal || 0;
+      const commission = pricing.commission || pricing.platformCommission || pricing.platformFee || 0;
+      const tax = pricing.tax || pricing.taxAmount || 0;
+      const discount = pricing.discount || pricing.discountAmount || 0;
+
+      // Base price
+      if (basePrice > 0) {
+        const guests = pricing.guestCount || 1;
+        const ppp = pricing.pricePerPerson;
+        const label = ppp
+          ? `Base price (${ppp} × ${guests} guest${guests !== 1 ? 's' : ''})`
+          : "Base price";
+        rows.push({ title: label, value: fmt(basePrice) });
+      }
+
+      // // Add-ons subtotal
+      // if (addonsTotal > 0) {
+      //   rows.push({ title: "Add-ons", value: fmt(addonsTotal) });
+      // }
+
+      // Commission / service fee
+      if (commission > 0) {
+        const rate = pricing.commissionRate ? ` (${pricing.commissionRate}%)` : "";
+        rows.push({ title: `Service fee${rate}`, value: fmt(commission) });
+      }
+
+      // Tax
+      if (tax > 0) {
+        const rate = pricing.taxRate ? ` (${pricing.taxRate}%)` : "";
+        rows.push({ title: `Tax${rate}`, value: fmt(tax) });
+      }
+
+      // Discount
+      if (discount > 0) {
+        rows.push({ title: "Discount", value: `- ${fmt(discount)}` });
+      }
+
       return {
-        addOnsTotal: bookingData.addOnsTotal || 0,
-        finalTotal: bookingData.finalTotal || 0,
+        addOnsTotal: addonsTotal,
+        finalTotal: pricing.total || pricing.finalAmount || 0,
         table: rows,
       };
     }
 
-    // Fallback: compute a minimal table from selectedAddOns only
+    // Fallback: receipt-based rows
+    if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
+      const rows = bookingData.receipt
+        .filter((r) => r?.kind === "tax")
+        .map((r) => ({ title: r.title, value: r.content }));
+      return { addOnsTotal: 0, finalTotal: 0, table: rows };
+    }
+
+    // Last resort
     const addOnsPrice = selectedAddOns.reduce(
       (sum, addOn) => sum + (addOn?.priceValue || addOn?.price || 0),
       0
@@ -354,14 +425,9 @@ const Checkout = () => {
     return {
       addOnsTotal: addOnsPrice,
       finalTotal: addOnsPrice,
-      table: [
-        {
-          title: "Add-ons",
-          value: `${addOnsPrice}`,
-        },
-      ],
+      table: [{ title: "Add-ons", value: `${addOnsPrice}` }],
     };
-  }, [bookingData, selectedAddOns]);
+  }, [bookingData, selectedAddOns, paymentData]);
 
   // Show loading state while checking payment status
   if (checkingPayment) {
@@ -377,9 +443,19 @@ const Checkout = () => {
   }
 
   const listingTitle = bookingData?.listingTitle || "Your trip";
+  const breadcrumbs = [
+    {
+      title: "Booking details",
+      url: bookingData?.listingId ? `/experience-product?id=${bookingData.listingId}` : "/experience-product",
+    },
+    {
+      title: "Confirm and pay",
+    },
+  ];
   // Get first image - ensure it's a single image URL, not an array
   const getListingImage = () => {
-    const image = bookingData?.listingImage;
+    if (stayImageUrl) return stayImageUrl;
+    const image = bookingData?.roomImage || bookingData?.listingImage;
     if (!image) return "/images/content/photo-1.1.jpg";
     // If it's an array, get the first item
     if (Array.isArray(image)) {
@@ -387,15 +463,13 @@ const Checkout = () => {
     }
     // If it's a string, return it
     if (typeof image === 'string') {
-      return image;
+      return formatImageUrl(image);
     }
     return "/images/content/photo-1.1.jpg";
   };
   const listingImage = getListingImage();
-  const hostName = bookingData?.listing?.host?.firstName
-    ? `${bookingData.listing.host.firstName} ${bookingData.listing.host.lastName || ''}`.trim()
-    : (bookingData?.listing?.host?.name || "Host");
-  const hostAvatar = bookingData?.listing?.host?.picture || bookingData?.listing?.host?.avatar;
+  const hostName = bookingData?.hostName || "Host";
+  const hostAvatar = bookingData?.hostAvatar || "/images/content/avatar.jpg";
 
   return (
     <div className={cn("section-mb80", styles.section)}>
@@ -415,25 +489,6 @@ const Checkout = () => {
             currency={paymentData?.currency || "INR"}
             dateValue={items[0]?.title}
             guestValue={items[2]?.title}
-            onEditDate={() => setShowDatePicker(true)}
-            onEditGuests={() => setShowGuestPicker(true)}
-            datePicker={(
-              <InlineDatePicker
-                visible={showDatePicker}
-                onClose={() => setShowDatePicker(false)}
-                onDateSelect={handleDateSelect}
-                selectedDate={bookingData?.selectedDate ? new Date(bookingData.selectedDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
-              />
-            )}
-            guestPicker={(
-              <GuestPicker
-                visible={showGuestPicker}
-                onClose={() => setShowGuestPicker(false)}
-                onGuestChange={handleGuestChange}
-                initialGuests={bookingData?.guests || { adults: 1, children: 0, infants: 0 }}
-                maxGuests={bookingData?.listing?.maxGuests || 10}
-              />
-            )}
           />
           <PriceDetails
             className={styles.price}
@@ -442,6 +497,7 @@ const Checkout = () => {
             title={listingTitle}
             items={items}
             table={table}
+            addonDetails={addonDetails}
             amountToPay={paymentData?.amount}
             currency={paymentData?.currency || "INR"}
             hostName={hostName}

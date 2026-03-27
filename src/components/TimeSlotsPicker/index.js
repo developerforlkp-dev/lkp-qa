@@ -146,7 +146,7 @@ const TimeSlotsPicker = ({
     }
 
     return rawSlots;
-  }, [timeSlots, times, selectedDayIndex]);
+  }, [timeSlots, times, selectedDayIndex, selectedDate]);
 
   const [time, setTime] = useState(selectedTime || (slots[0]?.id || slots[0]?.slotName));
 

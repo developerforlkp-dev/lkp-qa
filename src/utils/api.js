@@ -16,9 +16,21 @@ const getApiBaseURL = () => {
   return "/api";
 };
 
+const getOrdersApiBaseURL = () => {
+  if (process.env.REACT_APP_ORDERS_API_URL) {
+    return process.env.REACT_APP_ORDERS_API_URL;
+  }
+
+  return "/api";
+};
 // ✅ Create axios instance with base URL
 export const ListingsAPI = axios.create({
   baseURL: getApiBaseURL(),
+  headers: { "Content-Type": "application/json" },
+});
+
+export const OrdersAPI = axios.create({
+  baseURL: getOrdersApiBaseURL(),
   headers: { "Content-Type": "application/json" },
 });
 
@@ -43,6 +55,28 @@ ListingsAPI.interceptors.request.use((config) => {
       console.log("🔑 JWT token attached to request:", config.url);
     } else {
       console.warn("⚠️ No JWT token found in localStorage for request:", config.url);
+    }
+  }
+  return config;
+});
+
+
+OrdersAPI.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("jwtToken");
+    const fullURL = `${config.baseURL}${config.url}`;
+
+    console.log("Orders API Request:");
+    console.log("  - Method:", config.method?.toUpperCase());
+    console.log("  - Base URL:", config.baseURL);
+    console.log("  - URL:", config.url);
+    console.log("  - Full URL:", fullURL);
+    console.log("  - Data:", config.data);
+    console.log("  - Headers:", config.headers);
+
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
   }
   return config;
@@ -200,6 +234,43 @@ export const getListing = async (id) => {
   } catch (error) {
     console.error("❌ Error fetching listing:", error);
     throw error;
+  }
+};
+
+export const getListingMedia = async (listingId) => {
+  try {
+    if (!listingId) {
+      throw new Error("listingId is required");
+    }
+
+    const response = await ListingsAPI.get(`/listings/${listingId}/media`);
+    const payload = response.data;
+    console.log("✅ Listing media fetched (raw):", payload);
+
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.media)) return payload.media;
+
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching listing media:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getListingAddons = async (listingId) => {
+  try {
+    if (!listingId) throw new Error("listingId is required");
+    const response = await ListingsAPI.get(`/listings/${listingId}/addons`);
+    const payload = response.data;
+    console.log("✅ Listing addons fetched (raw):", payload);
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.addons)) return payload.addons;
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching listing addons:", error.response?.data || error.message);
+    return [];
   }
 };
 
@@ -406,7 +477,7 @@ export const getAvailability = async (listingId, startDate, endDate, slotId) => 
 export const createOrder = async (orderData) => {
   try {
     console.log("📤 Creating order with data:", JSON.stringify(orderData, null, 2));
-    const response = await ListingsAPI.post("/orders", orderData);
+    const response = await OrdersAPI.post("/orders", orderData);
     console.log("✅ Order created successfully:", response.data);
     return response.data;
   } catch (error) {
@@ -542,7 +613,7 @@ export const getOrderDetails = async (orderId) => {
     const orderIdNum = Number(orderId);
     const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
 
-    const response = await ListingsAPI.get(`/orders/${orderIdStr}`);
+    const response = await OrdersAPI.get(`/orders/${orderIdStr}`);
     const payload = response.data;
     console.log("✅ Order details fetched (raw):", payload);
 
@@ -1192,4 +1263,25 @@ export const getPlaceDetails = async (placeId) => {
     throw error;
   }
 };
+// ✅ Get lead details (host details) from leads API
+export const getLeadDetails = async (leadId) => {
+  try {
+    if (!leadId) {
+      throw new Error("leadId is required");
+    }
 
+    // Ensure leadId is a number or string
+    const leadIdNum = Number(leadId);
+    const leadIdStr = (!isNaN(leadIdNum) && leadIdNum > 0) ? String(leadIdNum) : String(leadId);
+
+    // Call /api/leads/{id} which should be proxied correctly
+    const response = await ListingsAPI.get(`/leads/${leadIdStr}`);
+    const payload = response.data;
+    console.log("✅ Lead details fetched (raw):", payload);
+
+    return payload; 
+  } catch (error) {
+    console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};

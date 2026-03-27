@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import cn from "classnames";
 import styles from "./TabSection.module.sass";
 import Icon from "../../../components/Icon";
- 
+
 
 const tabs = [
   {
@@ -50,7 +50,6 @@ const tabContent = {
     title: "Rules & Policies",
     content: [
       "Minimum age requirement: 12 years old. Participants under 18 must be accompanied by an adult.",
-      "Cancellation policy: Free cancellation up to 24 hours before the activity. 50% refund for cancellations within 24 hours.",
       "Weather policy: Activities may be rescheduled or refunded in case of severe weather conditions.",
       "Health requirements: Participants must be in good physical health. Please inform us of any medical conditions.",
       "Safety first: All participants must follow the guide's instructions at all times.",
@@ -92,13 +91,13 @@ const TabSection = ({ classSection, listing }) => {
     const base = tabContent["what-to-bring"];
     const setting = Array.isArray(listing?.guestRequirements)
       ? listing.guestRequirements.find(
-          (gr) => gr?.setting?.settingId === 4 && gr?.setting?.isActive
-        )
+        (gr) => gr?.setting?.settingId === 4 && gr?.setting?.isActive
+      )
       : null;
     const items = setting && Array.isArray(setting.questions)
       ? setting.questions
-          .filter((q) => q?.question?.isActive)
-          .map((q) => q.question.title)
+        .filter((q) => q?.question?.isActive)
+        .map((q) => q.question.title)
       : base.content;
     return {
       title: base.title,
@@ -110,13 +109,13 @@ const TabSection = ({ classSection, listing }) => {
     const base = tabContent["rules-policies"];
     const setting = Array.isArray(listing?.guestRequirements)
       ? listing.guestRequirements.find(
-          (gr) => gr?.setting?.settingId === 6 && gr?.setting?.isActive
-        )
+        (gr) => gr?.setting?.settingId === 6 && gr?.setting?.isActive
+      )
       : null;
     const items = setting && Array.isArray(setting.questions)
       ? setting.questions
-          .filter((q) => q?.question?.isActive)
-          .map((q) => q.question.title)
+        .filter((q) => q?.question?.isActive)
+        .map((q) => q.question.title)
       : base.content;
     return {
       title: base.title,

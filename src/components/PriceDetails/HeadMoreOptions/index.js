@@ -20,13 +20,13 @@ const HeadMoreOptions = ({ className, image, title, hostName, hostAvatar }) => {
           </div>
           <div className={styles.man}>{hostName || "Host"}</div>
         </div>
-        <div className={styles.parameters}>
+        {/* <div className={styles.parameters}>
           {parameters.map((x, index) => (
             <div className={styles.parameter} key={index}>
               {x}
             </div>
           ))}
-        </div>
+        </div> */}
         <div className={styles.rating}>
           <Icon name="star" size="20" />
           <div className={styles.number}>4.8</div>

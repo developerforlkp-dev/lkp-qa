@@ -67,6 +67,7 @@ const InlineDatePicker = ({
         // If no date is selected, auto-advance to the first month that has available slots
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const now = new Date();
 
         const availableDates = availabilityData
           .filter((av) => av.is_available && (av.available_seats === undefined || av.available_seats > 0))

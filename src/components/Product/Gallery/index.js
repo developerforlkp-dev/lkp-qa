@@ -5,7 +5,7 @@ import styles from "./Gallery.module.sass";
 import Icon from "../../Icon";
 import PhotoView from "../../PhotoView";
 
-const Gallery = ({ className, items, type, title, options }) => {
+const Gallery = ({ className, items, type, title, options, listingId }) => {
   const [initialSlide, setInitialSlide] = useState(0);
   const [visible, setVisible] = useState(false);
 
@@ -69,7 +69,8 @@ const Gallery = ({ className, items, type, title, options }) => {
                 state: { 
                   gallery: items,
                   title: title || "Gallery",
-                  options: options || []
+                  options: options || [],
+                  listingId,
                 }
               }}
               className={cn(styles.preview, styles.morePhotos)}
@@ -86,10 +87,12 @@ const Gallery = ({ className, items, type, title, options }) => {
         </div>
       </div>
       <PhotoView
-        title="Spectacular views of Queenstowsdffn"
+        title={title || "Gallery"}
         initialSlide={initialSlide}
         visible={visible}
         items={items}
+        listingId={listingId}
+        options={options}
         onClose={() => setVisible(false)}
       />
     </>

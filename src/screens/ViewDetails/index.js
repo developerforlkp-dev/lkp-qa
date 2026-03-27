@@ -1182,7 +1182,15 @@ const ViewDetails = () => {
     <div className={cn("section", styles.section)}>
       <div className={cn("container", styles.container)}>
         <header className={styles.header}>
-          <h1 className={cn("h2", styles.title)}>{booking.title}</h1>
+          <Link
+            to="/bookings"
+            className={cn("button-stroke", "button-small")}
+            style={{ marginBottom: "24px", display: "inline-flex", alignItems: "center", gap: "8px" }}
+          >
+            <Icon name="arrow-prev" size="14" />
+            <span>Back to Bookings</span>
+          </Link>
+          <h1 className={cn("h2", styles.title)} style={{ marginTop: "16px" }}>{booking.title}</h1>
         </header>
 
         <div className={styles.banner}>
@@ -1463,7 +1471,7 @@ const ViewDetails = () => {
 
         {/* Addons Section */}
         {booking.addons && booking.addons.length > 0 && (
-          <div className={cn(styles.card, styles.addonsCard)}>
+          <div className={cn(styles.card, styles.addonsCard, "mb-5")} style={{ marginBottom: 32 }}>
             <h2 className={styles.cardTitle}>Addons</h2>
             <div className={styles.addonsList}>
               {booking.addons.map((addon, index) => (
