@@ -6,6 +6,7 @@ import axios from "axios";
 // 2. Relative path "/api" (works with setupProxy.js in dev and vercel.json rewrites in production)
 // This allows flexibility to point to different backend URLs without changing frontend code
 // For example, in development you can set REACT_APP_API_URL=http://localhost:5000 to bypass the proxy and call backend directly.
+//
 const getApiBaseURL = () => {
   // Check if environment variable is set
   if (process.env.REACT_APP_API_URL) {

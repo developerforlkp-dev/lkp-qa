@@ -39,9 +39,6 @@ import StayProduct from "./screens/StayProduct";
 import StayDetails from "./screens/StayDetails";
 import FoodDetails from "./screens/FoodDetails";
 import PlaceDetails from "./screens/PlaceDetails";
-import StayDetails from "./screens/StayDetails";
-import FoodDetails from "./screens/FoodDetails";
-import PlaceDetails from "./screens/PlaceDetails";
 
 function App() {
   // Get Google Client ID from environment variable
