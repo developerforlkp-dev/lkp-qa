@@ -452,6 +452,7 @@ const Checkout = () => {
       title: "Confirm and pay",
     },
   ];
+  //test
   // Get first image - ensure it's a single image URL, not an array
   const getListingImage = () => {
     if (stayImageUrl) return stayImageUrl;
