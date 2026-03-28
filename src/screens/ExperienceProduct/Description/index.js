@@ -2647,10 +2647,10 @@ return (
                     const stayPickerSelected =
                       stayActiveDateField === "checkout" ? selectedEndDate : selectedDate;
                     return (
-                      <div ref={checkoutItemRef} style={{ position: 'relative' }}>
+                      <div ref={dateItemRef} style={{ position: 'relative' }}>
                         <div
                           className={receiptStyles.item}
-                          onClick={() => handleOpenDateTime(1)}
+                          onClick={() => handleOpenDateTime(0)}
                           role="button"
                         >
                           <div className={receiptStyles.icon}>
@@ -2662,10 +2662,10 @@ return (
                           </div>
                         </div>
                         <InlineDatePicker
-                          visible={showDatePicker && stayActiveDateField === "checkout"}
+                          visible={isStay ? (showDatePicker && stayActiveDateField === "checkin") : showDatePicker}
                           onClose={() => setShowDatePicker(false)}
                           onDateSelect={handleDateSelect}
-                          selectedDate={stayPickerSelected ? stayPickerSelected.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
+                          selectedDate={selectedDate ? selectedDate.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
                           timeSlots={transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || [])}
                           availabilityData={filteredAvailabilityData}
                         />
@@ -2846,12 +2846,31 @@ return (
                 <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
                   This slot is fully booked. Please select another date or time.
                 </div>
-              )}
-              {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
-                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
-                  Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
+                {isFullyBooked && (
+                  <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
+                    This slot is fully booked. Please select another date or time.
+                  </div>
+                )}
+                {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
+                  <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
+                    Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
+                  </div>
+                )}
+
+                <div className={styles.table}>
+                  {/* For room-based stays: hide receipt until a room type is chosen.
+                      For property-based stays: hide until dates are selected.
+                      For experiences/other: always show when receipt has items. */}
+                  {((!isStay) ||
+                    (isStay && isPropertyBased && selectedDate && selectedEndDate) ||
+                    (isStay && !isPropertyBased && staySelectedRoomType)
+                  ) && receipt.map((x, index) => (
+                    <div className={styles.line} key={index}>
+                      <div className={styles.cell}>{x.title}</div>
+                      <div className={styles.cell}>{x.content}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
 
               <div className={styles.table}>
                 {/* For room-based stays: hide receipt until a room type is chosen.
