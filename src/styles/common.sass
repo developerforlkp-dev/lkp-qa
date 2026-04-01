@@ -12,6 +12,21 @@ body
         background: $n1
         color: $n8
 
+// Light-mode safety overrides: ensure core text and placeholders are readable
+// These rules intentionally target broad element types in the light theme
+// (they do not modify eventFlowTheme files) and use specificity to win
+// against third-party CSS that may load later.
+body:not(.dark-mode)
+    h1, h2, h3, h4, h5, h6,
+    p, span, div, label, button, a,
+    input, textarea, li, strong, em
+        color: $n2 !important
+
+    // placeholders
+    input::placeholder,
+    textarea::placeholder
+        color: $n4 !important
+
 a
     text-decoration: none
 
