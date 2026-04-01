@@ -348,8 +348,6 @@ const getBillableGuestCount = (guestsObj) => {
 };
 
 const stayRoomTypeOptions = useMemo(() => {
-  const currentGuestCount = getGuestCount(guests);
-
   // Choose candidates: from availability result or directly from listing
   let candidates = [];
   if (stayAvailabilityResult) {
@@ -627,6 +625,59 @@ const selectedDateAvailability = useMemo(() => {
 
   return null;
 }, [selectedDate, filteredAvailabilityData, selectedTimeSlotData, selectedTimeSlot, listing?.maxGuests, isStay]);
+
+const availableTimeSlotsForSelectedDate = useMemo(() => {
+  if (isStay) return [];
+
+  const availableTimeSlots = transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || []);
+  if (!selectedDate) return availableTimeSlots;
+
+  const DAY_CODES_LOCAL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const DAY_FLAGS_LOCAL = ['isSunday', 'isMonday', 'isTuesday', 'isWednesday', 'isThursday', 'isFriday', 'isSaturday'];
+  const dayIdx = selectedDate.day();
+  const dayCode = DAY_CODES_LOCAL[dayIdx];
+  const dayFlag = DAY_FLAGS_LOCAL[dayIdx];
+
+  return availableTimeSlots.filter((slot) => {
+    const slotStartDate = slot.startDate || slot.start_date;
+    const slotEndDate = slot.endDate || slot.end_date;
+    const isWithinDateRange = (!slotStartDate || !selectedDate.isBefore(moment(slotStartDate), "day"))
+      && (!slotEndDate || !selectedDate.isAfter(moment(slotEndDate), "day"));
+
+    if (!isWithinDateRange) return false;
+
+    if (Array.isArray(slot.selected_days) && slot.selected_days.length > 0) {
+      return slot.selected_days.includes(dayCode);
+    }
+    if (slot[dayFlag] !== undefined) return slot[dayFlag] === true;
+    return true;
+  });
+}, [isStay, transformedTimeSlots, listing?.timeSlots, selectedDate]);
+
+const hasFutureTimeSlots = useMemo(() => {
+  if (isStay || !selectedDate) return true;
+  if (isPastDate(selectedDate)) return false;
+
+  if (availableTimeSlotsForSelectedDate.length === 0) {
+    return false;
+  }
+
+  return availableTimeSlotsForSelectedDate.some((slot) => {
+    const slotStartTime = slot.startTime || slot.start_time;
+    if (!slotStartTime) return true;
+    return !isPastTime(selectedDate, slotStartTime);
+  });
+}, [isStay, selectedDate, availableTimeSlotsForSelectedDate]);
+
+const selectedSlotPassed = useMemo(() => {
+  if (isStay || !selectedDate || !selectedTimeSlot) return false;
+  if (isPastDate(selectedDate)) return true;
+
+  const bookingTime = selectedDateAvailability?.start_time || selectedTimeSlotData?.startTime;
+  if (!bookingTime) return false;
+
+  return isPastTime(selectedDate, bookingTime);
+}, [isStay, selectedDate, selectedTimeSlot, selectedDateAvailability, selectedTimeSlotData]);
 
 // Get the selected timeSlot object for display
 const selectedTimeSlotDisplay = useMemo(() => {
@@ -1298,28 +1349,6 @@ const lowestRoomPrice = useMemo(() => {
 
     return isStay ? (hasDate && hasCheckout && hasGuests) : (hasDate && hasTimeSlot && hasGuests && hasCapacity);
   }, [selectedDate, selectedEndDate, selectedTimeSlot, guests, isStay, selectedDateAvailability, hasSelectedGuests]);
-
-  const shouldShowPricingDetails = useMemo(() => {
-    if (!isStay) {
-      const guestCount = getGuestCount(guests);
-      return Boolean(selectedDate && selectedTimeSlot && hasSelectedGuests && guestCount > 0);
-    }
-
-    if (isPropertyBased) {
-      return Boolean(selectedDate && selectedEndDate);
-    }
-
-    return Boolean(staySelectedRoomType);
-  }, [
-    guests,
-    hasSelectedGuests,
-    isPropertyBased,
-    isStay,
-    selectedDate,
-    selectedEndDate,
-    selectedTimeSlot,
-    staySelectedRoomType,
-  ]);
 
   const handleReserveClick = async (e) => {
     e.preventDefault();
@@ -2565,8 +2594,6 @@ return (
                 }
                 if (index === 1) {
                   if (isStay) {
-                    const stayPickerSelected =
-                      stayActiveDateField === "checkout" ? selectedEndDate : selectedDate;
                     return (
                       <div ref={dateItemRef} style={{ position: 'relative' }}>
                         <div
@@ -2721,145 +2748,10 @@ return (
                             empty
                           />
                         </div>
-                      );
-                    }
+                      </div>
+                    </div>
+                  );
 
-                    //// Determine whether any time slots exist and are valid for the selected day
-                    const availableTimeSlots = transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || []);
-                    // If a date is selected, filter by day of week to decide if the tile should be enabled
-                    const DAY_CODES_LOCAL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-                    const DAY_FLAGS_LOCAL = ['isSunday', 'isMonday', 'isTuesday', 'isWednesday', 'isThursday', 'isFriday', 'isSaturday'];
-                    const slotsForSelectedDay = (() => {
-                      if (!selectedDate) return availableTimeSlots;
-                      const dayIdx = selectedDate.day(); // moment's .day() returns 0=Sun…6=Sat
-                      const dayCode = DAY_CODES_LOCAL[dayIdx];
-                      const dayFlag = DAY_FLAGS_LOCAL[dayIdx];
-                      return availableTimeSlots.filter((slot) => {
-                        if (Array.isArray(slot.selected_days) && slot.selected_days.length > 0) {
-                          return slot.selected_days.includes(dayCode);
-                        }
-                        if (slot[dayFlag] !== undefined) return slot[dayFlag] === true;
-                        return true; // no day info, always show
-                      });
-                    })();
-                    const hasTimeSlots = slotsForSelectedDay.length > 0;
-                    // Enforce workflow: date -> time -> guest for experiences (non-stays).
-                    // Time selection is only allowed when a date is selected for experiences.
-                    const canOpenTime = isStay ? hasTimeSlots : (selectedDate && hasTimeSlots);
-                    return (
-                      <div ref={timeItemRef} style={{ position: 'relative' }}>
-                        <div
-                          className={receiptStyles.item}
-                          onClick={canOpenTime ? () => handleOpenDateTime(1) : undefined}
-                          role={canOpenTime ? "button" : undefined}
-                          style={{
-                            cursor: canOpenTime ? 'pointer' : 'not-allowed',
-                            opacity: canOpenTime ? 1 : 0.5,
-                            pointerEvents: canOpenTime ? 'auto' : 'none',
-                          }}
-                          title={
-                            !hasTimeSlots ? "No time slots available for the selected date" :
-                            (!selectedDate && !isStay ? "Please select a date first" : undefined)
-                          }
-                        >
-                          <div className={receiptStyles.icon}>
-                            <Icon name={item.icon} size="24" />
-                          </div>
-                          <div className={receiptStyles.box}>
-                            <div className={receiptStyles.category}>{item.category}</div>
-                            <div className={receiptStyles.subtitle}>{item.title}</div>
-                          </div>
-                        </div>
-                        <TimeSlotsPicker
-                          visible={showTimeSlots && hasTimeSlots && (isStay || !!selectedDate)}
-                          onClose={() => setShowTimeSlots(false)}
-                          onTimeSelect={handleTimeSelect}
-                          selectedTime={selectedTimeSlot}
-                          timeSlots={availableTimeSlots}
-                          selectedDate={selectedDate}
-                        />
-                      </div>
-                    );
-                  }
-                  if (index === 2) {
-                    const canSelectGuests = isStay || (selectedDate && selectedTimeSlot);
-                    return (
-                      <div ref={guestItemRef} style={{ position: 'relative' }}>
-                        <div
-                          className={cn(receiptStyles.item, receiptStyles.guestCentered)}
-                          onClick={canSelectGuests ? () => handleOpenDateTime(2) : undefined}
-                          role={canSelectGuests ? "button" : undefined}
-                          style={{
-                            cursor: canSelectGuests ? 'pointer' : 'not-allowed',
-                            opacity: canSelectGuests ? 1 : 0.5,
-                            pointerEvents: canSelectGuests ? 'auto' : 'none',
-                          }}
-                          title={canSelectGuests ? undefined : "Please select date and time first"}
-                        >
-                          <div className={receiptStyles.icon}>
-                            <Icon name={item.icon} size="24" />
-                          </div>
-                          <div className={receiptStyles.box}>
-                            <div className={receiptStyles.category}>{item.category}</div>
-                            <div className={receiptStyles.subtitle}>{item.title}</div>
-                          </div>
-                        </div>
-                        <GuestPicker
-                          visible={showGuestPicker && canSelectGuests}
-                          onClose={() => setShowGuestPicker(false)}
-                          onGuestChange={(guestData) => {
-                            setGuests(guestData);
-                            if (!isStay) {
-                              setHasSelectedGuests(true);
-                            }
-                          }}
-                          initialGuests={guests}
-                          maxGuests={listing?.maxGuests || undefined}
-                          maxSeats={maxSeats}
-                          allowPets={listing?.allowPets || false}
-                          childrenAllowed={listing?.childrenAllowed !== false}
-                          infantsAllowed={listing?.infantsAllowed === true}
-                          adultsLabel="Guests"
-                          adultsSubtitle={billableGuestLabel}
-                          childrenSubtitle={childrenGuestLabel}
-                          requireAdultForChildren={false}
-                        />
-                      </div>
-                    );
-                  }
-                  if (index === 3 && !isPropertyBased) {
-                    const dropdownOptions = stayRoomTypeOptions.length > 0
-                      ? ["Select room", ...stayRoomTypeOptions.map((o) => o.label)]
-                      : ["Select room"];
-                    const selectedRoomLabel = staySelectedRoomType
-                      ? (stayRoomTypeOptions.find((o) => o.value === staySelectedRoomType)?.label || "Room")
-                      : "Select room";
-
-                    return (
-                      <div ref={roomTypeItemRef} style={{ position: 'relative', width: '100%' }}>
-                        <div className={cn(receiptStyles.item, { [receiptStyles.disabled]: stayRoomTypeOptions.length === 0 })}>
-                          <div className={receiptStyles.icon}>
-                            <Icon name={item.icon} size="24" />
-                          </div>
-                          <div className={receiptStyles.box} style={{ overflow: 'visible', zIndex: 51 }}>
-                            <div className={receiptStyles.category}>{item.category}</div>
-                            <Dropdown
-                              value={selectedRoomLabel}
-                              setValue={(label) => {
-                                if (label === "Select room") {
-                                  setStaySelectedRoomType("");
-                                } else {
-                                  const opt = stayRoomTypeOptions.find((o) => o.label === label);
-                                  if (opt) setStaySelectedRoomType(opt.value);
-                                }
-                              }}
-                              options={dropdownOptions}
-                              empty
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
                   }
 
                   return null;
@@ -2938,66 +2830,9 @@ return (
                       <div className={styles.cell}>{x.title}</div>
                       <div className={styles.cell}>{x.content}</div>
                     </div>
-                  );
+                  ))
                 }
-
-                return null;
-              }}
-            >
-              <div className={styles.btns}>
-                <button className={cn("button-stroke", styles.button)}>
-                  <span>Save</span>
-                  <Icon name="plus" size="16" />
-                </button>
-                {isStay ? (
-                  <button
-                    type="button"
-                    className={cn("button", styles.button)}
-                    onClick={(isPropertyBased || stayAvailabilityChecked) ? handleBookStay : handleCheckStayAvailability}
-                    disabled={!selectedDate || !selectedEndDate || stayAvailabilityLoading}
-                    title={!selectedDate || !selectedEndDate ? "Please select check-in and check-out dates" : ""}
-                  >
-                    <span>
-                      {stayAvailabilityLoading
-                        ? ((isPropertyBased || stayAvailabilityChecked) ? "Processing..." : "Checking...")
-                        : ((isPropertyBased || stayAvailabilityChecked) ? "Book now" : "Check availability")
-                      }
-                    </span>
-                    <Icon name="bag" size="16" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={cn("button", styles.button)}
-                    onClick={handleReserveClick}
-                    disabled={!isReserveEnabled || isReserveSubmitting}
-                    title={!isReserveEnabled ? "Please select date, time slot, and guests" : ""}
-                  >
-                    <span>{isReserveSubmitting ? "Processing..." : (isFullyBooked ? "Fully Booked" : "Reserve")}</span>
-                    <Icon name="bag" size="16" />
-                  </button>
-                )}
-              </div>
-              {isFullyBooked && (
-                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
-                  This slot is fully booked. Please select another date or time.
                 </div>
-              )}
-              {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
-                <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
-                  Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
-                </div>
-              )}
-              <div className={styles.table}>
-                {shouldShowPricingDetails && receipt.map((x, index) => (
-                  <div className={styles.line} key={index}>
-                    <div className={styles.cell}>{x.title}</div>
-                    <div className={styles.cell}>{x.content}</div>
-                  </div>
-                ))}
-              </div>
-
-
               <div className={styles.foot}>
                 <button className={styles.report}>
                   <Icon name="flag" size="12" />

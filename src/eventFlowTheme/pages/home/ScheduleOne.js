@@ -1,7 +1,6 @@
 "use client";
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import GuestPicker from '../../../components/GuestPicker';
 import { createEventOrder, getEventDetails } from '../../../utils/api';
 
 const formatTimeLabel = (timeValue) => {
@@ -39,6 +38,185 @@ const asNumber = (value) => {
     return Number.isFinite(num) ? num : null;
 };
 
+const normalizeGuestSelection = (guests = {}) => ({
+    adults: Math.max(0, Number(guests?.adults ?? 1) || 0),
+    children: Math.max(0, Number(guests?.children ?? 0) || 0),
+    infants: Math.max(0, Number(guests?.infants ?? 0) || 0),
+    pets: Math.max(0, Number(guests?.pets ?? 0) || 0),
+});
+
+const parseBookingLimit = (...values) => {
+    for (const value of values) {
+        if (value === undefined || value === null || value === '') continue;
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return value > 0 ? value : undefined;
+        }
+
+        if (typeof value === 'string') {
+            const numericMatch = value.match(/\d+/);
+            if (numericMatch) {
+                const parsed = Number(numericMatch[0]);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                    return parsed;
+                }
+            }
+        }
+    }
+
+    return undefined;
+};
+
+const ScheduleGuestPicker = ({ visible, guests, maxGuests, onGuestChange, onClose }) => {
+    const pickerRef = useRef(null);
+    const normalizedGuests = normalizeGuestSelection(guests);
+    const maxAllowed = parseBookingLimit(maxGuests);
+    const totalGuests = normalizedGuests.adults + normalizedGuests.children;
+    const guestCountLabel = totalGuests === 1 ? '1 guest' : `${totalGuests} guests`;
+
+    useEffect(() => {
+        if (!visible) return undefined;
+
+        const handleDocumentMouseDown = (event) => {
+            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+                onClose?.();
+            }
+        };
+
+        document.addEventListener('mousedown', handleDocumentMouseDown);
+        return () => document.removeEventListener('mousedown', handleDocumentMouseDown);
+    }, [visible, onClose]);
+
+    if (!visible) return null;
+
+    const updateGuests = (updater) => {
+        const nextGuests = normalizeGuestSelection(typeof updater === 'function' ? updater(normalizedGuests) : updater);
+        onGuestChange?.(nextGuests);
+    };
+
+    const updateCategory = (type, delta) => {
+        updateGuests((currentGuests) => {
+            const nextGuests = { ...currentGuests };
+            const currentValue = nextGuests[type] || 0;
+            let nextValue = Math.max(0, currentValue + delta);
+
+            if (type === 'adults') {
+                const adultMin = currentGuests.infants > 0 ? 1 : 0;
+                nextValue = Math.max(adultMin, nextValue);
+                const nextTotal = nextValue + currentGuests.children;
+                if (maxAllowed !== undefined && nextTotal > maxAllowed) {
+                    nextValue = Math.max(adultMin, maxAllowed - currentGuests.children);
+                }
+                nextGuests.adults = nextValue;
+                if (nextGuests.infants > nextValue) {
+                    nextGuests.infants = nextValue;
+                }
+            } else if (type === 'children') {
+                const nextTotal = currentGuests.adults + nextValue;
+                if (maxAllowed !== undefined && nextTotal > maxAllowed) {
+                    nextValue = Math.max(0, maxAllowed - currentGuests.adults);
+                }
+                nextGuests.children = nextValue;
+            } else if (type === 'infants') {
+                nextValue = Math.min(nextValue, currentGuests.adults);
+                nextGuests.infants = nextValue;
+            }
+
+            return nextGuests;
+        });
+    };
+
+    const categories = [
+        {
+            key: 'adults',
+            label: 'Guests',
+            subtitle: 'Age 13+',
+            value: normalizedGuests.adults,
+            min: normalizedGuests.infants > 0 ? 1 : 0,
+            max: maxAllowed !== undefined ? Math.max(0, maxAllowed - normalizedGuests.children) : undefined,
+        },
+        {
+            key: 'children',
+            label: 'Children',
+            subtitle: 'Ages 2-12',
+            value: normalizedGuests.children,
+            min: 0,
+            max: maxAllowed !== undefined ? Math.max(0, maxAllowed - normalizedGuests.adults) : undefined,
+        },
+        {
+            key: 'infants',
+            label: 'Infants',
+            subtitle: 'Under 2',
+            value: normalizedGuests.infants,
+            min: 0,
+            max: normalizedGuests.adults,
+        },
+    ];
+
+    return (
+        <div
+            ref={pickerRef}
+            className="schedule-one__local-picker"
+            onMouseDown={(event) => {
+                event.stopPropagation();
+            }}
+        >
+            <div className="schedule-one__local-picker-header">
+                <div>
+                    <div className="schedule-one__local-picker-label">GUESTS</div>
+                    <div className="schedule-one__local-picker-value">{guestCountLabel}</div>
+                </div>
+                <button type="button" className="schedule-one__local-picker-collapse" onClick={onClose}>
+                    <span className="icon-up-arrow"></span>
+                </button>
+            </div>
+            <div className="schedule-one__local-picker-content">
+                {categories.map((category) => {
+                    const isMinusDisabled = category.value <= category.min;
+                    const isPlusDisabled = category.max !== undefined && category.value >= category.max;
+
+                    return (
+                        <div key={category.key} className="schedule-one__local-picker-row">
+                            <div className="schedule-one__local-picker-copy">
+                                <div className="schedule-one__local-picker-row-title">{category.label}</div>
+                                <div className="schedule-one__local-picker-row-subtitle">{category.subtitle}</div>
+                            </div>
+                            <div className="schedule-one__local-picker-controls">
+                                <button
+                                    type="button"
+                                    className="schedule-one__local-picker-btn"
+                                    disabled={isMinusDisabled}
+                                    onClick={() => updateCategory(category.key, -1)}
+                                >
+                                    -
+                                </button>
+                                <span className="schedule-one__local-picker-count">{category.value}</span>
+                                <button
+                                    type="button"
+                                    className="schedule-one__local-picker-btn"
+                                    disabled={isPlusDisabled}
+                                    onClick={() => updateCategory(category.key, 1)}
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="schedule-one__local-picker-footer">
+                {maxAllowed !== undefined && (
+                    <div className="schedule-one__local-picker-note">
+                        This place has a maximum of {maxAllowed} guests, not including infants. Pets aren't allowed.
+                    </div>
+                )}
+                <button type="button" className="schedule-one__local-picker-close" onClick={onClose}>
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const getSlotIdentifier = (slot, fallbackIndex = '') => {
     if (slot && typeof slot === 'object') {
         return String(slot.slotId || slot.id || slot.eventSlotId || fallbackIndex);
@@ -64,12 +242,7 @@ const ScheduleOne = () => {
     const [openGuestPickerFor, setOpenGuestPickerFor] = useState(null);
     const [readyToConfirmFor, setReadyToConfirmFor] = useState(null);
     const [bookingTicketKey, setBookingTicketKey] = useState(null);
-    const [selectedGuests, setSelectedGuests] = useState({
-        adults: 1,
-        children: 0,
-        infants: 0,
-        pets: 0,
-    });
+    const [selectedGuestsByTicket, setSelectedGuestsByTicket] = useState({});
 
     useEffect(() => {
         let mounted = true;
@@ -276,10 +449,19 @@ const ScheduleOne = () => {
     }, [activeTab, scheduleTabs]);
 
     const activeScheduleTab = scheduleTabs.find((tab) => tab.id === activeTab) || scheduleTabs[0] || null;
-    const totalGuests = selectedGuests.adults + selectedGuests.children;
-    const guestCountLabel = totalGuests === 1 ? '1 guest' : `${totalGuests} guests`;
+
+    const getGuestsForTicket = (ticketKey) => {
+        return normalizeGuestSelection(selectedGuestsByTicket[ticketKey] || {
+            adults: 1,
+            children: 0,
+            infants: 0,
+            pets: 0,
+        });
+    };
 
     const handleScheduleBooking = async (ticket, slotDetail, bookingDate, ticketKey) => {
+        const selectedGuests = getGuestsForTicket(ticketKey);
+        const totalGuests = selectedGuests.adults + selectedGuests.children;
         if (totalGuests < 1 || bookingTicketKey) return;
 
         if (!hasValidJwtToken()) {
@@ -471,11 +653,20 @@ const ScheduleOne = () => {
                                     >
                                         <div className="schedule-one__tab-content-box">
                                             {ticketTypes.map((ticket, index) => {
+                                                const ticketKey = getTicketKey(ticket, index);
+                                                const selectedGuests = getGuestsForTicket(ticketKey);
+                                                const totalGuests = selectedGuests.adults + selectedGuests.children;
+                                                const guestCountLabel = totalGuests === 1 ? '1 guest' : `${totalGuests} guests`;
+                                                const guestLimit = parseBookingLimit(
+                                                    ticket?.maxPerBooking,
+                                                    ticket?.max_per_booking,
+                                                    ticket?.maxGuests,
+                                                    eventInfo?.totalCapacity
+                                                );
                                                 const unitPrice = getNumericPrice(ticket?.price);
                                                 const totalPrice = Math.max(1, totalGuests) * unitPrice;
                                                 const price = formatPrice(totalPrice);
                                                 const perGuestPrice = formatPrice(unitPrice);
-                                                const ticketKey = getTicketKey(ticket, index);
                                                 const isPickerOpen = openGuestPickerFor === ticketKey;
                                                 const isReadyToConfirm = readyToConfirmFor === ticketKey;
                                                 const isBookingCurrentTicket = bookingTicketKey === ticketKey;
@@ -538,9 +729,9 @@ const ScheduleOne = () => {
                                                                 <span className={`schedule-one__guest-count${isReadyToConfirm ? ' schedule-one__guest-count--active' : ''}`}>
                                                                     Guests: {guestCountLabel}
                                                                 </span>
-                                                                {ticket?.maxPerBooking && (
+                                                                {guestLimit && (
                                                                     <span style={{ display: 'block', marginTop: 4, fontSize: 12, color: '#aaa' }}>
-                                                                        Max {ticket.maxPerBooking} per booking
+                                                                        Max {guestLimit} per booking
                                                                     </span>
                                                                 )}
                                                             </p>
@@ -605,17 +796,18 @@ const ScheduleOne = () => {
                                                                             event.stopPropagation();
                                                                         }}
                                                                     >
-                                                                        <GuestPicker
+                                                                        <ScheduleGuestPicker
                                                                             visible={true}
-                                                                            className="schedule-one__guest-picker"
+                                                                            guests={selectedGuests}
+                                                                            maxGuests={guestLimit}
                                                                             onClose={() => setOpenGuestPickerFor(null)}
-                                                                            onGuestChange={(guestData) => setSelectedGuests(guestData)}
-                                                                            initialGuests={selectedGuests}
-                                                                            maxGuests={ticket?.maxPerBooking || eventInfo?.totalCapacity || undefined}
-                                                                            allowPets={false}
-                                                                            childrenAllowed={true}
-                                                                            infantsAllowed={true}
-                                                                            adultsLabel="Guests"
+                                                                            onGuestChange={(guestData) => {
+                                                                                const normalizedGuests = normalizeGuestSelection(guestData);
+                                                                                setSelectedGuestsByTicket((prev) => ({
+                                                                                    ...prev,
+                                                                                    [ticketKey]: normalizedGuests,
+                                                                                }));
+                                                                            }}
                                                                         />
                                                                     </div>
                                                                 )}
@@ -631,7 +823,11 @@ const ScheduleOne = () => {
                         </div>
                     )}
 
-                    {readyToConfirmFor && totalGuests < 1 && (
+                    {readyToConfirmFor && (() => {
+                        const readyGuests = getGuestsForTicket(readyToConfirmFor);
+                        const readyGuestTotal = readyGuests.adults + readyGuests.children;
+                        return readyGuestTotal < 1;
+                    })() && (
                         <div className="schedule-one__selection-note">Please select at least 1 guest to continue.</div>
                     )}
                 </div>
