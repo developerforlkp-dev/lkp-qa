@@ -211,7 +211,35 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     return mappedStatus;
   };
 
-  const status = getOrderStatus(apiBooking.orderStatus);
+  let status = getOrderStatus(apiBooking.orderStatus);
+
+  // If the backend says Upcoming (PENDING/CONFIRMED) but the booking date and time have
+  // already passed, show the booking in Completed instead for consistency with Bookings list.
+  if (status === "Pending" || status === "Confirmed") {
+    const bookingDateStr =
+      apiBooking.checkOutDate ||
+      apiBooking.checkInDate ||
+      apiBooking.bookingDate ||
+      apiBooking.eventDate ||
+      apiBooking.eventDetails?.eventDate ||
+      null;
+
+    if (bookingDateStr) {
+      const deadline = new Date(bookingDateStr);
+      const endTimeStr = apiBooking.timeSlotEndTime || apiBooking.checkOutTime || apiBooking.endTime || apiBooking.bookingTime;
+
+      if (endTimeStr && typeof endTimeStr === 'string' && endTimeStr.includes(':')) {
+        const parts = endTimeStr.split(':').map(Number);
+        deadline.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      } else {
+        deadline.setHours(23, 59, 59, 999);
+      }
+
+      if (deadline < new Date()) {
+        status = "Completed";
+      }
+    }
+  }
 
   // Also store the original orderStatus for reference
   const originalOrderStatus = apiBooking.orderStatus;
