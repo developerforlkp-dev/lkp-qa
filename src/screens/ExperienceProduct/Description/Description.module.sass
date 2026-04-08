@@ -54,16 +54,13 @@
     .button
         flex: 1
         min-width: 0
-        &:first-child
-            flex: 0 0 auto
+        &:only-child
+            width: 100%
+            flex: 1 1 100%
         &:disabled
             opacity: 0.6
             cursor: not-allowed
             pointer-events: none
-            +m
-                width: 100%
-        &:nth-child(2)
-            flex: 1 1 auto
             +m
                 width: 100%
 

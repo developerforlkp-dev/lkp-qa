@@ -5,7 +5,6 @@ import { useHistory } from "react-router-dom";
 import Icon from "../Icon";
 import Map from "../Map";
 import Share from "../Share";
-import Favorite from "../Favorite";
 
 const Actions = ({ className, mapLocation }) => {
   const history = useHistory();
@@ -26,7 +25,6 @@ const Actions = ({ className, mapLocation }) => {
       <div className={styles.list}>
         <Map location={mapLocation} />
         <Share />
-        <Favorite className={styles.favorite} />
         <button
           type="button"
           className={cn("button-circle-stroke button-small", styles.button)}
