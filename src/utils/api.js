@@ -1,15 +1,16 @@
 import axios from "axios";
 
-export const DEFAULT_API_BASE_URL =
-  "https://salmon-smoke-07a330b00.2.azurestaticapps.net/api";
+export const DEFAULT_API_BASE_URL = "/api";
+
+const normalizeApiBaseURL = (url) => url?.replace(/\/+$/, "") || DEFAULT_API_BASE_URL;
 
 // Get API base URL from environment variable or use default
 // Priority:
 // 1. REACT_APP_API_URL environment variable
-// 2. Azure Static Apps API base URL
+// 2. Same-origin /api (works with CRA proxy, Vercel rewrites, and reverse proxies)
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+    return normalizeApiBaseURL(process.env.REACT_APP_API_URL);
   }
 
   return DEFAULT_API_BASE_URL;
@@ -17,7 +18,7 @@ const getApiBaseURL = () => {
 
 const getOrdersApiBaseURL = () => {
   if (process.env.REACT_APP_ORDERS_API_URL) {
-    return process.env.REACT_APP_ORDERS_API_URL;
+    return normalizeApiBaseURL(process.env.REACT_APP_ORDERS_API_URL);
   }
 
   return DEFAULT_API_BASE_URL;
