@@ -10,7 +10,12 @@ import CommentsProduct from "../../components/CommentsProduct";
 import Browse from "../../components/Browse";
 import Loader from "../../components/Loader";
 import { browse2 } from "../../mocks/browse";
-import { getListing, getHost, getLeadDetails } from "../../utils/api";
+import {
+  DEFAULT_API_BASE_URL,
+  getListing,
+  getHost,
+  getLeadDetails,
+} from "../../utils/api";
 
 // Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
@@ -191,6 +196,7 @@ const ExperienceProduct = () => {
   const [leadData, setLeadData] = useState(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [publicExperiences, setPublicExperiences] = useState([]);
 
 useEffect(() => {
   let mounted = true;
@@ -283,6 +289,38 @@ useEffect(() => {
   };
 
   load();
+
+  // New fetch logic for Explore Kerala
+  const fetchKeralaListings = async () => {
+    try {
+      const resp = await fetch(
+        `${DEFAULT_API_BASE_URL}/public/listings/filter?businessInterestId=1&categoryType=States&limit=12&offset=0&sortBy=newest`,
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "true"
+          }
+        }
+      );
+      const data = await resp.json();
+      if (Array.isArray(data?.listings)) {
+        setPublicExperiences(
+          data.listings.map((item) => ({
+            title: item.title || "Experience",
+            counter: item.city || item.location || "Kerala",
+            category: "black",
+            categoryText: item.basePrice ? `from ₹${item.basePrice}` : item.individualPrice ? `from ₹${item.individualPrice}` : "",
+            src: item.coverPhotoUrl ? formatImageUrl(item.coverPhotoUrl) : "/images/content/browse-pic-1.jpg",
+            srcSet: item.coverPhotoUrl ? formatImageUrl(item.coverPhotoUrl) : "/images/content/browse-pic-1@2x.jpg",
+            url: `/experience-product?id=${item.listingId || item.id}`,
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to fetch Kerala listings", err);
+    }
+  };
+  fetchKeralaListings();
+
   return () => {
     mounted = false;
   };
@@ -382,13 +420,15 @@ useEffect(() => {
         </>
       )}
       
-      <Browse
-        classSection="section"
-        headSmall
-        classTitle="h4"
-        title="Explore mountains in New Zealand"
-        items={browse2}
-      />
+      {publicExperiences.length > 0 && (
+        <Browse
+          classSection="section"
+          headSmall
+          classTitle="h4"
+          title="Explore Kerala"
+          items={publicExperiences}
+        />
+      )}
     </>
   );
 };

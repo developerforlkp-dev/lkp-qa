@@ -443,6 +443,9 @@ const Checkout = () => {
   }
 
   const listingTitle = bookingData?.listingTitle || "Your trip";
+  const backUrl =
+    bookingData?.returnTo ||
+    (bookingData?.eventId ? `/event?id=${bookingData.eventId}` : null);
   const breadcrumbs = [
     {
       title: "Booking details",
@@ -452,6 +455,7 @@ const Checkout = () => {
       title: "Confirm and pay",
     },
   ];
+  //test 3
   // Get first image - ensure it's a single image URL, not an array
   const getListingImage = () => {
     if (stayImageUrl) return stayImageUrl;
@@ -477,6 +481,7 @@ const Checkout = () => {
         <Control
           className={styles.control}
           urlHome="/"
+          backUrl={backUrl}
           breadcrumbs={breadcrumbs}
         />
         <div className={styles.wrapper}>

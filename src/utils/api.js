@@ -1,30 +1,80 @@
 import axios from "axios";
 
-// Get API base URL from environment variable or use default
-// Priority:
-// 1. REACT_APP_API_URL environment variable (for production with custom domain)
-// 2. Relative path "/api" (works with setupProxy.js in dev and vercel.json rewrites in production)
-// This allows flexibility to point to different backend URLs without changing frontend code
-// For example, in development you can set REACT_APP_API_URL=http://localhost:5000 to bypass the proxy and call backend directly.
-//
-const getApiBaseURL = () => {
-  // Check if environment variable is set
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
+
+const API_BASE_URLS = {
+  development: normalizeBaseUrl(process.env.REACT_APP_API_URL_DEV) ||
+    "https://lkp-dev-backend.azurewebsites.net/api",
+  qa: normalizeBaseUrl(process.env.REACT_APP_API_URL_QA) ||
+    "https://lkp-dev-backend.azurewebsites.net/api",
+  production: normalizeBaseUrl(process.env.REACT_APP_API_URL_PROD) ||
+    "https://lkp-dev-backend.azurewebsites.net/api",
+};
+
+const getRuntimeEnvironment = () => {
+  if (process.env.REACT_APP_RUNTIME_ENV) {
+    return process.env.REACT_APP_RUNTIME_ENV.toLowerCase();
   }
 
-  // Use relative path - works with:
-  // - Development: setupProxy.js proxies /api to http://localhost:5000/api
-  // - Production: vercel.json rewrites /api to http://69.62.77.33/api
-  return "/api";
+  if (typeof window === "undefined") {
+    return process.env.NODE_ENV === "development" ? "development" : "production";
+  }
+
+  const hostname = window.location.hostname.toLowerCase();
+
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".local")
+  ) {
+    return "development";
+  }
+
+  if (
+    hostname.includes("qa") ||
+    hostname.includes("uat") ||
+    hostname.includes("staging")
+  ) {
+    return "qa";
+  }
+
+  if (hostname.includes("dev")) {
+    return "development";
+  }
+
+  return "production";
+};
+
+export const DEFAULT_API_BASE_URL = (() => {
+  if (process.env.REACT_APP_API_URL) {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL);
+  }
+
+  const runtimeEnvironment = getRuntimeEnvironment();
+  return (
+    API_BASE_URLS[runtimeEnvironment] ||
+    API_BASE_URLS.production
+  );
+})();
+
+// Get API base URL from environment variable or use default
+// Priority:
+// 1. REACT_APP_API_URL environment variable
+// 2. Runtime environment-specific base URL
+const getApiBaseURL = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL);
+  }
+
+  return DEFAULT_API_BASE_URL;
 };
 
 const getOrdersApiBaseURL = () => {
   if (process.env.REACT_APP_ORDERS_API_URL) {
-    return process.env.REACT_APP_ORDERS_API_URL;
+    return normalizeBaseUrl(process.env.REACT_APP_ORDERS_API_URL);
   }
 
-  return "/api";
+  return DEFAULT_API_BASE_URL;
 };
 // ✅ Create axios instance with base URL
 export const ListingsAPI = axios.create({

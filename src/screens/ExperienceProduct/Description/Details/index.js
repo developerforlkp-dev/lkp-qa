@@ -361,6 +361,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           </div>
         </div>
       )}
+      {/* The What's Included section is temporarily hidden 
       <div className={styles.info}>{whatsIncludedSetting?.setting?.title || "What's Included"}</div>
       <div className={styles.optionsWrapper}>
         <div className={styles.options}>
@@ -372,6 +373,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           ))}
         </div>
       </div>
+      */}
 
       {/* Addon Detail Modal */}
       <Modal

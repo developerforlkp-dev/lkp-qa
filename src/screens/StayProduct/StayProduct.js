@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./StayProduct.module.sass";
 import Icon from "../../components/Icon";
+import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import { getStayDetails, getStayRoomAvailability, createStayOrder } from "../../utils/api";
 
@@ -185,8 +186,8 @@ const BookingSidebar = ({
 }) => {
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const [showRoomTypeDropdown, setShowRoomTypeDropdown] = useState(false);
-  const checkInInputRef = useRef(null);
-  const checkOutInputRef = useRef(null);
+  const [showStayDatePicker, setShowStayDatePicker] = useState(false);
+  const [activeDateField, setActiveDateField] = useState("checkin");
 
   const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
   const isRoomBased = !isPropertyBased && (
@@ -298,23 +299,30 @@ const formatDateLabel = (dateStr) => {
   return m.format("MMM DD, YYYY");
 };
 
-const openDatePicker = (ref) => {
-  const el = ref?.current;
-  if (!el) return;
-  try {
-    if (typeof el.showPicker === "function") {
-      el.showPicker();
-      return;
-    }
-  } catch (e) {
-    // ignore
+const openDatePicker = (field) => {
+  setActiveDateField(field);
+  setShowStayDatePicker(true);
+};
+
+const handleStayDateSelect = (startDateText) => {
+  if (!startDateText) return;
+
+  const parsed = moment(startDateText, ["MMM DD, YYYY", "YYYY-MM-DD", "MM/DD/YYYY"], true);
+  if (!parsed.isValid()) return;
+
+  const nextValue = parsed.format("YYYY-MM-DD");
+
+  if (activeDateField === "checkout") {
+    setCheckOutDate(nextValue);
+    setShowStayDatePicker(false);
+    return;
   }
-  try {
-    el.focus();
-    el.click();
-  } catch (e) {
-    // ignore
+
+  setCheckInDate(nextValue);
+  if (checkOutDate && moment(nextValue).isAfter(moment(checkOutDate), "day")) {
+    setCheckOutDate("");
   }
+  setShowStayDatePicker(false);
 };
 
 return (
@@ -361,11 +369,12 @@ return (
           className={styles.dateCard}
           role="button"
           tabIndex={0}
-          onClick={() => openDatePicker(checkInInputRef)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => openDatePicker("checkin")}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              openDatePicker(checkInInputRef);
+              openDatePicker("checkin");
             }
           }}
         >
@@ -376,26 +385,18 @@ return (
               <Icon name="calendar" size="16" />
             </div>
           </div>
-          <input
-            className={styles.dateInputOverlay}
-            ref={checkInInputRef}
-            type="date"
-            value={checkInDate || ""}
-            onChange={(e) => setCheckInDate(e.target.value)}
-            min={moment().format("YYYY-MM-DD")}
-            aria-label="Check-in"
-          />
         </div>
 
         <div
           className={styles.dateCard}
           role="button"
           tabIndex={0}
-          onClick={() => openDatePicker(checkOutInputRef)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => openDatePicker("checkout")}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              openDatePicker(checkOutInputRef);
+              openDatePicker("checkout");
             }
           }}
         >
@@ -406,17 +407,25 @@ return (
               <Icon name="calendar" size="16" />
             </div>
           </div>
-          <input
-            className={styles.dateInputOverlay}
-            ref={checkOutInputRef}
-            type="date"
-            value={checkOutDate || ""}
-            onChange={(e) => setCheckOutDate(e.target.value)}
-            min={checkInDate || moment().format("YYYY-MM-DD")}
-            aria-label="Check-out"
-          />
         </div>
       </div>
+      {showStayDatePicker && (
+        <div
+          className={styles.stayDatePickerWrap}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <InlineDatePicker
+            visible={showStayDatePicker}
+            onClose={() => setShowStayDatePicker(false)}
+            onDateSelect={handleStayDateSelect}
+            selectedDate={activeDateField === "checkout" ? checkOutDate : checkInDate}
+            timeSlots={[]}
+            availabilityData={[]}
+            className={styles.stayDatePicker}
+          />
+        </div>
+      )}
 
       <div className={styles.guestField}>
         <div

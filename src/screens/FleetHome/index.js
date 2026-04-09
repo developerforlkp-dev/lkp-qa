@@ -205,6 +205,38 @@ const FleetHome = () => {
 
             console.log(`✅ Section ${section.sectionId} has ${listings.length} listings`);
 
+            // Filter out expired experience listings: if an experience has an end
+            // date and that date is before today, remove it from homepage display.
+            if (activeFilter === "experience" && Array.isArray(listings) && listings.length > 0) {
+              const now = moment();
+              const dateFields = [
+                'endDate', 'end_date', 'eventEndDate', 'event_end_date',
+                'availableUntil', 'availabilityEnd', 'availability_end',
+                'bookingEndDate', 'booking_end_date', 'endsAt', 'endAt',
+                'eventDate', 'event_date'
+              ];
+
+              const beforeCount = listings.length;
+              listings = listings.filter((listing) => {
+                if (!listing || typeof listing !== 'object') return true;
+                for (const f of dateFields) {
+                  const raw = listing[f];
+                  if (!raw) continue;
+                  const m = moment(String(raw));
+                  if (!m.isValid()) continue;
+                  // exclude if end date is strictly before today
+                  if (m.isBefore(now, 'day')) return false;
+                  // if valid and not before today, keep it
+                  return true;
+                }
+                // no date field found — keep listing
+                return true;
+              });
+              const afterCount = listings.length;
+              if (beforeCount !== afterCount) {
+                console.log(`ℹ️ Filtered ${beforeCount - afterCount} expired experience listing(s) from section ${section.sectionId}`);
+              }
+            }
 
             return {
               section: sectionInfo,

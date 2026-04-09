@@ -5,11 +5,15 @@ import { useHistory } from "react-router-dom";
 import Icon from "../Icon";
 import Breadcrumbs from "../Breadcrumbs";
 
-const Control = ({ className, urlHome, breadcrumbs }) => {
+const Control = ({ className, urlHome, breadcrumbs, backUrl }) => {
   const history = useHistory();
 
   const handleBack = (e) => {
     e.preventDefault();
+    if (backUrl) {
+      history.push(backUrl);
+      return;
+    }
     // Check if there's history to go back to
     if (window.history.length > 1) {
       history.goBack();

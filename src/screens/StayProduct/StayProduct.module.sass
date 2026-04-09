@@ -722,6 +722,7 @@
     height: 16px
 
 .datesSection
+  position: relative
   display: grid
   grid-template-columns: 1fr 1fr
   gap: 12px
@@ -779,6 +780,16 @@
   height: 100%
   opacity: 0
   cursor: pointer
+  pointer-events: none
+
+.stayDatePickerWrap
+  position: absolute
+  top: calc(100% + 8px)
+  left: 0
+  z-index: 30
+
+.stayDatePicker
+  min-width: 320px
 
 .dateField
   label

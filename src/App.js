@@ -35,8 +35,10 @@ import ListYourProperty from "./screens/ListYourProperty";
 import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import EventProduct from "./screens/EventProduct";
+import EventFlowHome from "./eventFlowTheme/pages/home";
+import EventDetailsPage from "./eventFlowTheme/pages/event-details";
 import StayProduct from "./screens/StayProduct";
-import StayDetails from "./screens/StayDetails";
+import StayDetails from "./screens/stayDetails/StayDetails";
 import FoodDetails from "./screens/FoodDetails";
 import PlaceDetails from "./screens/PlaceDetails";
 
@@ -82,6 +84,15 @@ function App() {
             render={() => (
               <Page separatorHeader>
                 <ExperienceProduct />
+              </Page>
+            )}
+          />
+          <Route
+            exact
+            path="/event-product"
+            render={() => (
+              <Page separatorHeader>
+                <EventProduct />
               </Page>
             )}
           />
@@ -333,10 +344,15 @@ function App() {
             exact
             path="/event"
             render={() => (
-              <Page separatorHeader>
-                <EventProduct />
+              <Page separatorHeader fooferHide>
+                <EventFlowHome />
               </Page>
             )}
+          />
+          <Route
+            exact
+            path="/event-details"
+            render={() => <EventDetailsPage />}
           />
           <Route
             exact
