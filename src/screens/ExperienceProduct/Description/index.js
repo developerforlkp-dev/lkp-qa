@@ -2821,7 +2821,7 @@ return (
                   </div>
                 )}
 
-                <div className={styles.table}>
+              <div className={styles.table}>
                   {/* For room-based stays: hide receipt until a room type is chosen.
                       For property-based stays: hide until dates are selected.
                       For experiences/other: only show after guests are explicitly selected. */}
