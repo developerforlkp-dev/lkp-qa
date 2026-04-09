@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const DEFAULT_API_BASE_URL =
-  "https://salmon-smoke-07a330b00.2.azurestaticapps.net/api";
+  "https://lkp-qa-backend.azurewebsites.net/api";
 
 // Get API base URL from environment variable or use default
 // Priority:
