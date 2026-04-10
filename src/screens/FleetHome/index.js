@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useHistory } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
@@ -45,6 +46,8 @@ const FleetHome = () => {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const history = useHistory();
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
 
@@ -80,6 +83,29 @@ const FleetHome = () => {
   // Handle guest change
   const handleGuestChange = (newGuests) => {
     setGuests(newGuests);
+  };
+
+  // Handle Search
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.append("search", searchQuery);
+    if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
+    
+    const guestTotal = guests.adults + guests.children;
+    if (guestTotal > 0) params.append("guests", guestTotal);
+
+    // Map activeFilter to backend business interest string
+    const interestMap = {
+      experience: "EXPERIENCE",
+      events: "EVENT",
+      stays: "STAY",
+      food: "FOOD",
+      places: "PLACE"
+    };
+    
+    params.append("businessInterest", interestMap[activeFilter] || "EXPERIENCE");
+
+    history.push(`/listings?${params.toString()}`);
   };
 
 
@@ -305,7 +331,14 @@ const FleetHome = () => {
               <Icon name="arrow-right" size="16" />
               <div className={styles.searchFieldContent}>
                 <div className={styles.searchLabel}>Where to?</div>
-                <input type="text" placeholder="Search Destination" className={styles.searchInput} />
+                <input
+                  type="text"
+                  placeholder="Search Destination"
+                  className={styles.searchInput}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
               </div>
             </div>
             {showCalendar && (
@@ -360,7 +393,7 @@ const FleetHome = () => {
                 className={styles.guestPicker}
               />
             </div>
-            <button className={styles.searchButton}>Search</button>
+            <button className={styles.searchButton} onClick={handleSearch}>Search</button>
           </div>
 
           <div className={styles.filtersContainer}>

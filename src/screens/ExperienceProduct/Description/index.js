@@ -336,16 +336,12 @@ const billableGuestLabel = useMemo(() => `Age 12+`, []);
 
 const childrenGuestLabel = useMemo(() => `Ages 6-12`, []);
 
-const getBillableGuestCount = (guestsObj) => {
-  if (!guestsObj) return 0;
-  if (isStay) {
+  const getBillableGuestCount = (guestsObj) => {
+    if (!guestsObj) return 0;
+    // For both stays and experiences, billable count should be the total number of guests (adults + children)
+    // to match "Price x Number of count" logic for Individual pricing.
     return getGuestCount(guestsObj);
-  }
-  if (guestsObj.adults !== undefined || guestsObj.children !== undefined) {
-    return guestsObj.adults || 0;
-  }
-  return guestsObj.guests || 0;
-};
+  };
 
 const stayRoomTypeOptions = useMemo(() => {
   // Choose candidates: from availability result or directly from listing
@@ -755,36 +751,36 @@ const isLoggedIn = () => {
   return !!(token && token.trim() !== "");
 };
 
-const handleToggleAddOn = (addOnId, pricingType) => {
-  if (pricingType === "Group") {
-    // For Group pricing, toggle selection and initialize quantity to 1
-    setSelectedAddOns((prev) => {
-      if (prev.includes(addOnId)) {
-        // Remove from selection
-        setAddOnQuantities((qty) => {
-          const newQty = { ...qty };
-          delete newQty[addOnId];
-          return newQty;
-        });
-        return prev.filter((id) => id !== addOnId);
-      } else {
-        // Add to selection with quantity 1
-        setAddOnQuantities((qty) => ({
-          ...qty,
-          [addOnId]: 1,
-        }));
-        return [...prev, addOnId];
-      }
-    });
-  } else {
-    // For Individual pricing, simple toggle
-    setSelectedAddOns((prev) =>
-      prev.includes(addOnId)
-        ? prev.filter((id) => id !== addOnId)
-        : [...prev, addOnId]
-    );
-  }
-};
+  const handleToggleAddOn = (addOnId, pricingType) => {
+    if (pricingType === "Individual") {
+      // For Individual pricing, toggle selection and initialize quantity to 1
+      setSelectedAddOns((prev) => {
+        if (prev.includes(addOnId)) {
+          // Remove from selection
+          setAddOnQuantities((qty) => {
+            const newQty = { ...qty };
+            delete newQty[addOnId];
+            return newQty;
+          });
+          return prev.filter((id) => id !== addOnId);
+        } else {
+          // Add to selection with quantity 1
+          setAddOnQuantities((qty) => ({
+            ...qty,
+            [addOnId]: 1,
+          }));
+          return [...prev, addOnId];
+        }
+      });
+    } else {
+      // For Group pricing, simple toggle (fixed price)
+      setSelectedAddOns((prev) =>
+        prev.includes(addOnId)
+          ? prev.filter((id) => id !== addOnId)
+          : [...prev, addOnId]
+      );
+    }
+  };
 
 const handleAddOnQuantityChange = (addOnId, newQuantity) => {
   // If quantity reaches 0, deselect the addon
@@ -878,7 +874,7 @@ const lowestRoomPrice = useMemo(() => {
       if (listingAddon) {
         const price = parseFloat(listingAddon.addon?.price || 0);
         const pricingType = listingAddon.addon?.pricingType || "Individual";
-        const quantity = pricingType === "Group" ? (addOnQuantities[id] || 1) : billableGuestCount;
+        const quantity = pricingType === "Individual" ? (addOnQuantities[id] || 1) : 1;
         return sum + (price * quantity);
       }
 
@@ -974,25 +970,26 @@ const lowestRoomPrice = useMemo(() => {
     }
     const currency = listing?.currency || "INR";
 
+    const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
     let basePriceAmount;
     let priceDescription;
-    const billableGuestText = `${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}`;
-    const billablePriceDescription = `${currency} ${pricePerPerson?.toFixed?.(2) || "0.00"} x ${billableGuestText}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
 
-    if (!isStay && pricePerPerson) {
-      // Experience: Price per person
-      basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
-      priceDescription = `${currency} ${pricePerPerson.toFixed(2)} × ${guestCount} ${guestCount === 1 ? 'guest' : 'guests'}${nightsCount > 1 ? ` × ${nightsCount} nights` : ''}`;
+    if (!isStay) {
+      if (experiencePricingType === "Group") {
+        // Group Pricing: Fixed price applied once
+        basePriceAmount = pricePerNight * nightsCount;
+        priceDescription = `${currency} ${pricePerNight.toFixed(2)}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
+      } else {
+        // Individual Pricing: Price per person x total guest count
+        basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
+        priceDescription = `${currency} ${pricePerPerson.toFixed(2)} x ${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
+      }
     } else {
       // Stay: Price per room per night × nights × rooms
       basePriceAmount = pricePerNight * nightsCount * roomsNeeded;
       const roomStr = roomsNeeded > 1 ? ` × ${roomsNeeded} room${roomsNeeded > 1 ? 's' : ''}` : '';
       const nightStr = nightsCount > 1 ? ` × ${nightsCount} nights` : '';
       priceDescription = `${currency} ${pricePerNight.toFixed(2)}${nightStr}${roomStr}`;
-    }
-
-    if (!isStay && pricePerPerson) {
-      priceDescription = billablePriceDescription;
     }
 
     const subtotal = basePriceAmount + addOnsPrice;
@@ -1028,7 +1025,7 @@ const lowestRoomPrice = useMemo(() => {
         if (listingAddon) {
           const price = parseFloat(listingAddon.addon?.price || 0);
           const pricingType = listingAddon.addon?.pricingType || "Individual";
-          const quantity = pricingType === "Group" ? (addOnQuantities[id] || 1) : billableGuestCountForReceipt;
+          const quantity = pricingType === "Individual" ? (addOnQuantities[id] || 1) : 1;
           const addonTotal = price * quantity;
           const addonTitle = listingAddon.addon?.title || "Add-on";
 
@@ -1162,13 +1159,13 @@ const lowestRoomPrice = useMemo(() => {
         );
         if (listingAddon) {
           return {
-              id: listingAddon.addon?.addonId ?? listingAddon.addonId ?? listingAddon.assignmentId,
-              title: listingAddon.addon?.title,
-              price: listingAddon.addon?.price,
-              currency: listingAddon.addon?.currency,
-              pricingType: listingAddon.addon?.pricingType,
-              quantity: listingAddon.addon?.pricingType === "Group" ? (addOnQuantities[id] || 1) : getBillableGuestCount(guests),
-            };
+            id: listingAddon.addon?.addonId ?? listingAddon.addonId ?? listingAddon.assignmentId,
+            title: listingAddon.addon?.title,
+            price: listingAddon.addon?.price,
+            currency: listingAddon.addon?.currency,
+            pricingType: listingAddon.addon?.pricingType,
+            quantity: listingAddon.addon?.pricingType === "Individual" ? (addOnQuantities[id] || 1) : 1,
+          };
         }
         // No fallback - return null if not found in API
         return null;
@@ -1322,7 +1319,7 @@ const lowestRoomPrice = useMemo(() => {
               price: listingAddon.addon?.price,
               currency: listingAddon.addon?.currency,
               pricingType: listingAddon.addon?.pricingType,
-              quantity: listingAddon.addon?.pricingType === "Group" ? (addOnQuantities[id] || 1) : 1,
+              quantity: listingAddon.addon?.pricingType === "Individual" ? (addOnQuantities[id] || 1) : 1,
             };
           }
           return null;
@@ -1498,9 +1495,16 @@ const lowestRoomPrice = useMemo(() => {
       const nights = 1; // Default to 1 night
 
       let pricingBaseAmount = 0;
-      if (pricePerPerson) {
+      const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
+
+      if (experiencePricingType === "Group") {
+        // Group Pricing: Fixed price
+        pricingBaseAmount = pricePerNight * nights;
+      } else if (pricePerPerson) {
+        // Individual Pricing: Price per person
         pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
       } else {
+        // Fallback
         pricingBaseAmount = pricePerNight * nights;
       }
 
@@ -1562,7 +1566,7 @@ const lowestRoomPrice = useMemo(() => {
 
         if (listingAddon) {
           const pricingType = listingAddon.addon?.pricingType || "Individual";
-          const quantity = pricingType === "Group" ? (addOnQuantities[id] || 1) : 1;
+          const quantity = pricingType === "Individual" ? (addOnQuantities[id] || 1) : 1;
 
           return {
             addonId: listingAddon.addon?.addonId ?? listingAddon.addonId ?? listingAddon.assignmentId,
@@ -2761,10 +2765,6 @@ return (
                 }}
               >
                 <div className={styles.btns}>
-                  <button className={cn("button-stroke", styles.button)}>
-                    <span>Save</span>
-                    <Icon name="plus" size="16" />
-                  </button>
                   {isStay ? (
                     <button
                       type="button"

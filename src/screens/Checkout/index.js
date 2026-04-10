@@ -8,6 +8,7 @@ import PriceDetails from "../../components/PriceDetails";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import { getStayDetails } from "../../utils/api";
+import { buildExperienceUrl } from "../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -356,7 +357,9 @@ const Checkout = () => {
   const breadcrumbs = [
     {
       title: "Booking details",
-      url: bookingData?.listingId ? `/experience-product?id=${bookingData.listingId}` : "/experience-product",
+      url: bookingData?.listingId
+        ? buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId)
+        : "/experience-product",
     },
     {
       title: "Confirm and pay",

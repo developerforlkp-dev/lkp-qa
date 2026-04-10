@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import cn from "classnames";
 import styles from "./Details.module.sass";
 import Icon from "../../../../components/Icon";
@@ -78,7 +78,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
       const price = parseFloat(a?.addon?.price || 0);
       const currency = a?.addon?.currency || "";
       const pricingType = a?.addon?.pricingType || "Individual";
-      const quantity = pricingType === "Group" ? (addOnQuantities?.[addonId] || 1) : 1;
+      const quantity = pricingType === "Individual" ? (addOnQuantities?.[addonId] || 1) : 1;
       const totalPrice = price * quantity;
 
       const isSelected = selectedAddOns?.includes(addonId);
@@ -94,7 +94,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
         id: addonId,
         title: a?.addon?.title || "Addon",
         description: description,
-        price: pricingType === "Group" && isSelected
+        price: pricingType === "Individual" && isSelected
           ? `${currency} ${price.toFixed(2)}${quantity > 1 ? ` × ${quantity} = ${currency} ${totalPrice.toFixed(2)}` : ` = ${currency} ${totalPrice.toFixed(2)}`}`
           : `${currency} ${price.toFixed(2)}`,
         priceValue: price,
@@ -168,15 +168,22 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
   };
 
   // Only show the 'What's Included' setting (settingId = 7)
-  const whatsIncludedSetting = Array.isArray(listing?.guestRequirements)
-    ? listing.guestRequirements.find((gr) => gr?.setting?.settingId === 7 && gr?.setting?.isActive)
-    : null;
-
-  const requirementItems = whatsIncludedSetting && Array.isArray(whatsIncludedSetting.questions)
-    ? whatsIncludedSetting.questions
-      .filter((q) => q?.question?.isActive)
-      .map((q) => ({ title: q.question.title, icon: "flag" }))
-    : [];
+  // Aggregate all active guest requirements for the 'What\'s Included' / Rules section
+  const requirementItems = useMemo(() => {
+    if (!Array.isArray(listing?.guestRequirements)) return [];
+    
+    return listing.guestRequirements
+      .filter((gr) => gr?.setting?.isActive && Array.isArray(gr.questions))
+      .flatMap((gr) => {
+        const settingTitle = gr.setting.title || "Requirement";
+        return gr.questions
+          .filter((q) => q?.question?.isActive)
+          .map((q) => ({
+            title: `${settingTitle}: ${q.question.title}`,
+            icon: "check",
+          }));
+      });
+  }, [listing]);
 
   // Determine section title based on listing type
   const isStayLocal = Boolean(listing?.propertyName || listing?.propertyType === "STAY" || listing?.stayId || listing?.stay_id);
@@ -290,8 +297,8 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           <div className={styles.addOnsList}>
             {displayAddOns.map((addOn) => {
               const isSelected = selectedAddOns.includes(addOn.id);
-              const isGroupPricing = addOn.pricingType === "Group";
-              const quantity = isGroupPricing ? (addOnQuantities?.[addOn.id] || 1) : 1;
+              const isIndividualPricing = addOn.pricingType === "Individual";
+              const quantity = isIndividualPricing ? (addOnQuantities?.[addOn.id] || 1) : 1;
 
               const addonImageUrl = getAddonImageUrl(addOn);
 
@@ -335,7 +342,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
                     </div>
                     <div className={styles.addOnFoot}>
                       <div className={styles.addOnControls}>
-                        {isGroupPricing && isSelected ? (
+                        {isIndividualPricing && isSelected ? (
                           <Counter
                             className={styles.addOnCounter}
                             value={quantity}
@@ -361,19 +368,21 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           </div>
         </div>
       )}
-      {/* The What's Included section is temporarily hidden 
-      <div className={styles.info}>{whatsIncludedSetting?.setting?.title || "What's Included"}</div>
-      <div className={styles.optionsWrapper}>
-        <div className={styles.options}>
-          {(requirementItems.length ? requirementItems : options).map((x, index) => (
-            <div className={styles.option} key={index}>
-              <Icon name={x.icon} size="24" />
-              {x.title}
+      {requirementItems.length > 0 && (
+        <div className={styles.requirementsSection} style={{ marginTop: "32px", paddingTop: "32px", borderTop: "1px solid #E6E8EC" }}>
+          <div className={styles.info} style={{ marginBottom: "24px" }}>Guest Requirements & Instructions</div>
+          <div className={styles.optionsWrapper}>
+            <div className={styles.options}>
+              {requirementItems.map((x, index) => (
+                <div className={styles.option} key={index}>
+                  <Icon name={x.icon} size="24" />
+                  {x.title}
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-      */}
+      )}
 
       {/* Addon Detail Modal */}
       <Modal

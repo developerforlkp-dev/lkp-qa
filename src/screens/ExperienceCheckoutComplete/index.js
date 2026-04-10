@@ -5,6 +5,7 @@ import Control from "../../components/Control";
 import CheckoutSlider from "./CheckoutSlider";
 import CheckoutComplete from "../../components/CheckoutComplete";
 import { getStayDetails } from "../../utils/api";
+import { buildExperienceUrl } from "../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -28,7 +29,9 @@ const ExperienceCheckoutComplete = () => {
   const breadcrumbs = useMemo(() => [
     {
       title: booking?.listingTitle || "Experience Details",
-      url: booking?.listingId ? `/experience-product?id=${booking.listingId}` : "/experience-product",
+      url: booking?.listingId
+        ? buildExperienceUrl(booking?.listingTitle || "experience", booking.listingId)
+        : "/experience-product",
     },
     {
       title: "Confirm and pay",

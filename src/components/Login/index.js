@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import cn from "classnames";
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import styles from "./Login.module.sass";
 import Icon from "../Icon";
 import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
@@ -72,32 +72,31 @@ const Login = ({ onClose }) => {
     }
   };
 
+  // Setup custom Google login
+  const login = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => setError("Google login failed. Please try again."),
+    flow: 'implicit',
+  });
+
   // Handle Google login success
-  const handleGoogleSuccess = async (credentialResponse) => {
+  async function handleGoogleSuccess(tokenResponse) {
     try {
       setLoading(true);
       setError("");
 
-      console.log("🔵 Google OAuth credential received:", {
-        credential: credentialResponse.credential ? `${credentialResponse.credential.substring(0, 20)}...` : "null",
-        select_by: credentialResponse.select_by
-      });
-
-      const response = await loginWithGoogle(credentialResponse.credential);
+      console.log("🔵 Google OAuth token received");
+      
+      // Send access token to backend
+      const response = await loginWithGoogle(tokenResponse.access_token);
 
       // Store JWT token from response
       const token = response?.token;
       if (token) {
         localStorage.setItem("jwtToken", token);
-        console.log("✅ JWT token stored in localStorage");
-      } else {
-        console.warn("⚠️ No JWT token found in response:", response);
       }
 
-      // Extract customer data from response
       const customer = response?.customer || {};
-
-      // Store user info: firstName, lastName, email
       const userInfo = {
         firstName: customer?.firstName || "",
         lastName: customer?.lastName || "",
@@ -106,36 +105,18 @@ const Login = ({ onClose }) => {
         loginMethod: 'google'
       };
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
-      console.log("✅ User info stored in localStorage:", userInfo);
 
-      // Also store individual values for easy access
-      if (customer?.firstName) {
-        localStorage.setItem("firstName", customer.firstName);
-      }
-      if (customer?.lastName) {
-        localStorage.setItem("lastName", customer.lastName);
-      }
-      if (customer?.email) {
-        localStorage.setItem("email", customer.email);
-      }
-
-      // Close modal and reload to update header
       if (onClose) {
         onClose();
       }
       window.location.reload();
     } catch (err) {
       console.error("Google login error:", err);
-      setError(err.response?.data?.message || err.message || "Google login failed. Please try again.");
+      setError(err.response?.data?.message || err.message || "Google login failed.");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handle Google login error
-  const handleGoogleError = () => {
-    setError("Google login failed. Please try again.");
-  };
+  }
 
   // Send OTP when phone number is submitted
   const handlePhoneSubmit = async (e) => {
@@ -239,22 +220,18 @@ const Login = ({ onClose }) => {
           <div className={cn("h3", styles.title)}>Sign up on Fleet</div>
           <div className={styles.info}>Use Your OpenID to Sign up</div>
           <div className={styles.btns}>
-            <div className={styles.googleWrapper}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap={false}
-                theme="outline"
-                size="medium"
-                text="signin_with"
-                shape="rectangular"
-                logo_alignment="left"
-                locale="en"
-              />
-            </div>
-            <button type="button" className={cn("button-black", styles.button)}>
-              <Icon name="apple" size="16" />
-              <span>Apple</span>
+            <button 
+              className={cn("button-stroke", styles.googleBtn)} 
+              onClick={() => login()}
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.6429 10.2273C19.6429 9.53409 19.5804 8.86364 19.4643 8.21591H10V12.0227H15.4018C15.1696 13.2727 14.4643 14.3295 13.4018 15.0455V17.5114H16.6429C18.5357 15.7614 19.6429 13.2045 19.6429 10.2273Z" fill="#4285F4"/>
+                <path d="M10 20C12.7 20 14.9643 19.1023 16.6429 17.5114L13.4018 15.0455C12.5089 15.6477 11.3571 16.0114 10 16.0114C7.39286 16.0114 5.18304 14.25 4.39286 11.875H1.05357V14.4659C2.70536 17.75 6.08929 20 10 20Z" fill="#34A853"/>
+                <path d="M4.39286 11.875C4.19196 11.2727 4.07589 10.6364 4.07589 10C4.07589 9.36364 4.19196 8.72727 4.39286 8.125V5.53409H1.05357C0.383929 6.875 0 8.39773 0 10C0 11.6023 0.383929 13.125 1.05357 14.4659L4.39286 11.875Z" fill="#FBBC05"/>
+                <path d="M10 3.98864C11.4688 3.98864 12.7857 4.49432 13.8214 5.48295L16.7143 2.58523C14.9643 0.982955 12.7 0 10 0C6.08929 0 2.70536 2.25 1.05357 5.53409L4.39286 8.125C5.18304 5.75 7.39286 3.98864 10 3.98864Z" fill="#EA4335"/>
+              </svg>
+              <span>Continue with Google</span>
             </button>
           </div>
           <div className={styles.note}>Or continue with phone number</div>

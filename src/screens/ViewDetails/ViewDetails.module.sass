@@ -672,3 +672,456 @@
     color: $n4
     line-height: 1.6
 
+// Premium Modal & Form Styles
+.cancelModalOuter
+    max-width: 480px !important
+    & > div
+        padding: 0
+    +m
+        max-width: calc(100% - 40px) !important
+        width: auto !important
+
+.cancelModalContent
+    display: flex
+    flex-direction: column
+    min-height: 200px
+    background: $n8
+    border-radius: 20px
+    overflow: hidden
+    +dark
+        background: $n1
+    +m
+        min-height: auto
+        border-radius: 16px
+
+.cancelModalHeader
+    padding: 32px 32px 24px
+    +m
+        padding: 24px 24px 20px
+
+
+.cancelModalTitle
+    +body-bold-1
+    font-size: 20px
+    line-height: 1.4
+    margin: 0 0 8px 0
+    color: $n2
+    +dark
+        color: $n8
+    +m
+        font-size: 18px
+        line-height: 1.3
+
+.cancelModalDescription
+    +body-2
+    font-size: 14px
+    line-height: 1.5
+    margin: 0
+    color: $n4
+    +dark
+        color: $n5
+
+.cancelModalBody
+    padding: 0 32px 24px
+    +m
+        padding: 0 24px 20px
+
+.cancelModalFormGroup
+    margin-bottom: 20px
+    &:last-of-type
+        margin-bottom: 0
+
+.cancelModalLabel
+    display: block
+    +body-bold-2
+    font-size: 14px
+    margin-bottom: 8px
+    color: $n2
+    +dark
+        color: $n8
+
+.required
+    color: #0097B2
+
+.cancelModalInput,
+.cancelModalTextarea
+    width: 100%
+    padding: 12px 16px
+    border: 1px solid $n6
+    border-radius: 8px
+    +body-2
+    font-size: 14px
+    color: $n2
+    background: $n8
+    transition: all .2s ease
+    box-sizing: border-box
+    font-family: inherit
+    +dark
+        background: $n1
+        border-color: $n3
+        color: $n8
+    &:focus
+        outline: none
+        border-color: $p4
+        box-shadow: 0 0 0 3px rgba($p4, 0.1)
+
+.cancelModalTextarea
+    min-height: 100px
+    resize: vertical
+
+.inputError
+    border-color: #0097B2
+    &:focus
+        border-color: #0097B2
+        box-shadow: 0 0 0 3px rgba(0, 151, 178, 0.1)
+
+.cancelModalError
+    margin-top: 12px
+    padding: 12px 16px
+    border-radius: 8px
+    background: rgba(0, 151, 178, 0.1)
+    border: 1px solid rgba(0, 151, 178, 0.3)
+    +body-2
+    font-size: 14px
+    color: #0097B2
+    line-height: 1.5
+
+.cancelModalFooter
+    display: flex
+    gap: 12px
+    padding: 24px 32px 32px
+    border-top: 1px solid $n6
+    +dark
+        border-color: $n3
+    +m
+        flex-direction: column-reverse
+        padding: 20px 24px 24px
+        gap: 12px
+
+.cancelModalBtn
+    flex: 1
+    justify-content: center
+    min-width: 0
+    &:disabled
+        opacity: 0.6
+        cursor: not-allowed
+    +m
+        flex: none
+        width: 100%
+
+// Receipt Modal - Unified Width for better fitting
+.receiptModalOuter
+    max-width: 640px !important
+    backdrop-filter: blur(12px)
+    +m
+        max-width: 100% !important
+        width: calc(100% - 32px) !important
+
+.receiptModalContainer
+    padding: 0 !important
+
+.receiptModalContent
+    position: relative
+    display: flex
+    flex-direction: column
+    background: $n8
+    border-radius: 20px
+    overflow: hidden
+    +dark
+        background: $n1
+
+.receiptModalHeader
+    display: flex
+    align-items: center
+    justify-content: space-between
+    padding: 20px 24px
+    border-bottom: 1px solid $n6
+    +dark
+        border-color: $n3
+    +m
+        padding: 16px
+    
+.receiptModalTitle
+    +body-bold-2
+    margin: 0
+    font-size: 18px
+    color: $n2
+    +dark
+        color: $n8
+
+.downloadPdfButton
+    display: inline-flex
+    align-items: center
+    gap: 8px
+    background: $p4
+    color: $n8
+    border-radius: 8px
+    padding: 0 16px
+    height: 40px
+    transition: all 0.2s ease
+    margin-right: 36px // Avoid overlap with Modal's default absolute close button
+    +dark
+        background: $n8
+        color: $n1
+    svg
+        fill: $n8
+        +dark
+            fill: $n1
+    span
+        +caption-bold-1
+    &:hover
+        background: $n1
+        transform: translateY(-1px)
+        +dark
+            background: black
+
+.receiptPrintArea
+    padding: 0
+    background: transparent
+    border-radius: 24px
+    +m
+        padding: 0
+
+
+.receiptTicket
+    background: $n8
+    border-radius: 0 0 20px 20px
+    position: relative
+    +dark
+        background: $n1
+
+.receiptBrand
+    display: flex
+    flex-direction: column
+    align-items: center
+    padding: 32px 0 24px
+    background: linear-gradient(180deg, rgba($p4, 0.08) 0%, rgba($p4, 0) 100%)
+    border-bottom: 2px dashed $n6
+    position: relative
+    border-radius: 24px 24px 0 0
+    // Side punches for ticket look
+    &:before, &:after
+        content: ""
+        position: absolute
+        bottom: -10px
+        width: 20px
+        height: 20px
+        border-radius: 50%
+        background: $n7
+        +dark
+            background: $n2
+    &:before
+        left: -10px
+    &:after
+        right: -10px
+    +dark
+        border-color: $n3
+
+.brandLogo
+    color: $p4
+    margin-bottom: 4px
+    svg
+        fill: $p4
+        width: 20px
+        height: 20px
+
+.brandName
+    +caption-bold-1
+    color: $n1
+    text-transform: uppercase
+    letter-spacing: 0.1em
+    +dark
+        color: $n8
+
+.receiptTicketBody
+    padding: 24px
+    +m
+        padding: 16px
+
+.receiptTitle
+    +body-bold-2
+    font-size: 18px
+    text-align: center
+    margin-bottom: 4px
+    color: $n2
+    +dark
+        color: $n8
+
+.receiptBookingId
+    +caption-2
+    text-align: center
+    color: $n4
+    margin-bottom: 16px
+
+.dottedDivider
+    height: 1px
+    background-image: linear-gradient(to right, $n5 30%, transparent 30%)
+    background-size: 5px 1px
+    background-repeat: repeat-x
+    margin: 16px 0
+    +dark
+        background-image: linear-gradient(to right, $n4 20%, transparent 20%)
+
+.pricingBreakdown
+    display: flex
+    flex-direction: column
+    gap: 6px
+
+.receiptPriceRow
+    display: flex
+    justify-content: space-between
+    +caption-1
+    color: $n4
+    +dark
+        color: $n5
+
+.priceValue
+    color: $n2
+    font-weight: 600
+    +dark
+        color: $n8
+
+.discountRow
+    color: $p4 !important
+    .priceValue
+        color: $p4
+
+.invoiceTotal
+    margin-top: 4px
+    padding: 8px 0
+    align-items: center
+
+.totalLabel
+    +body-bold-2
+    color: $n1
+    +dark
+        color: $n8
+
+.totalValue
+    font-size: 24px
+    font-weight: 700
+    line-height: 1.2
+    color: $p4
+
+.receiptInfoSections
+    display: grid
+    grid-template-columns: 1fr 1fr
+    gap: 16px
+    margin-top: 16px
+    +m
+        grid-template-columns: 1fr
+
+.receiptLabel
+    +caption-bold-2
+    color: $n4
+    margin-bottom: 2px
+    text-transform: uppercase
+    letter-spacing: 0.05em
+
+.infoText
+    +body-bold-2
+    font-size: 14px
+    color: $n2
+    +dark
+        color: $n8
+
+.infoSubtext
+    +caption-2
+    color: $n4
+
+.receiptFooterNote
+    margin-top: 24px
+    text-align: center
+    position: relative
+    p
+        +caption-2
+        font-size: 11px
+        color: $n5
+        line-height: 1.4
+        max-width: 200px
+        margin: 0 auto
+
+.stamp
+    position: absolute
+    top: -8px
+    right: -2px
+    border: 1px solid rgba($p4, 0.3)
+    color: rgba($p4, 0.4)
+    padding: 2px 8px
+    border-radius: 3px
+    font-weight: 900
+    font-size: 11px
+    transform: rotate(-10deg)
+    pointer-events: none
+    letter-spacing: 0.1em
+
+// Robust Print Fix: Targeting the structure to avoid blank pages
+@media print
+    html, body
+        height: auto !important
+        overflow: visible !important
+        background: white !important
+        margin: 0 !important
+        padding: 0 !important
+
+    // Hide EVERYTHING by default
+    body *
+        visibility: hidden !important
+
+    // Specifically show ONLY the receipt ticket and its contents
+    .receiptPrintArea, .receiptPrintArea *
+        visibility: visible !important
+    
+    .receiptPrintArea
+        position: absolute !important
+        left: 0 !important
+        top: 0 !important
+        width: 100% !important
+        margin: 0 !important
+        padding: 40px !important
+        display: block !important
+        background: white !important
+        max-height: none !important
+        overflow: visible !important
+        visibility: visible !important
+
+    .receiptTicket
+        box-shadow: none !important
+        border: 1px solid #eee !important
+        background: white !important
+        width: 100% !important
+        max-width: 500px !important
+        margin: 0 auto !important
+        border-radius: 20px !important
+        visibility: visible !important
+        overflow: visible !important
+
+    .receiptBrand
+        background: #fdfdfd !important
+        border-bottom: 2px dashed #eee !important
+        &:before, &:after
+            background: white !important
+            border: 1px solid #eee !important
+    
+    .brandName, .receiptTitle, .totalLabel, .infoText
+        color: black !important
+        visibility: visible !important
+    
+    .totalValue
+        color: #0097B2 !important
+        visibility: visible !important
+    
+    .receiptLabel, .infoSubtext, .receiptFooterNote p
+        color: #666 !important
+        visibility: visible !important
+    
+    .dottedDivider
+        background-image: linear-gradient(to right, #ddd 40%, transparent 40%) !important
+        visibility: visible !important
+    
+    .stamp
+        border-color: rgba(0, 151, 178, 0.3) !important
+        color: rgba(0, 151, 178, 0.4) !important
+        visibility: visible !important
+
+
