@@ -1,14 +1,14 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
+const BACKEND = 'https://lkp-dev-backend.azurewebsites.net'
 module.exports = function (app) {
-  // Event orders (legacy): /api/event-orders/* → http://62.72.12.51:8080/api/event-orders/*
-  // Needed for event cancel flow endpoints like /api/event-orders/{id}/cancel
+  // Event orders (legacy): /api/event-orders/* → BACKEND/api/event-orders/*
   app.use(
     '/api/event-orders',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080',   //url of the backend server
-      changeOrigin: true,   //url of the backend server
-      secure: false,
+      target: BACKEND,
+      changeOrigin: true,
+      secure: true,
       pathRewrite: (path) => `/api/event-orders${path}`,
       logLevel: 'debug',
       proxyTimeout: 60000,
@@ -26,15 +26,13 @@ module.exports = function (app) {
     })
   );
 
-  // Event order details: /api/orders/*/event-details → http://62.72.12.51:8080/api/orders/*/event-details
+  // Event order details: /api/orders/*/event-details → BACKEND/api/orders/*/event-details
   app.use(
     '/api/orders',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080/',
-      target: 'http://69.62.77.33:8080/',
+      target: BACKEND,
       changeOrigin: true,
-      secure: false,
-      // Only proxy requests that end with /event-details
+      secure: true,
       pathFilter: (path) => path.includes('/event-details'),
       pathRewrite: (path) => `/api/orders${path}`,
       logLevel: 'debug',
@@ -53,14 +51,13 @@ module.exports = function (app) {
     })
   );
 
-  // Event order creation: /api/orders/event → http://62.72.12.51:8080/api/orders/event
+  // Event order creation: /api/orders/event → BACKEND/api/orders/event
   app.use(
     '/api/orders/event',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080/',
-      target: 'http://69.62.77.33:8080/',
+      target: BACKEND,
       changeOrigin: true,
-      secure: false,
+      secure: true,
       pathRewrite: (path) => `/api/orders/event`,
       logLevel: 'debug',
       proxyTimeout: 60000,
@@ -78,16 +75,13 @@ module.exports = function (app) {
     })
   );
 
-  // Event details: /api/events/* → http://62.72.12.51:8080/api/events/* (must be before /api)
+  // Event details: /api/events/* → BACKEND/api/events/*
   app.use(
     '/api/events',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080/',
-      target: 'http://69.62.77.33:8080/',
+      target: BACKEND,
       changeOrigin: true,
-      secure: false,
-      // When mounting a proxy on '/api/events', http-proxy-middleware forwards only
-      // the remaining path (e.g. '/7/public'). The backend expects '/api/events/7/public'.
+      secure: true,
       pathRewrite: (path) => `/api/events${path}`,
       logLevel: 'debug',
       proxyTimeout: 60000,
@@ -105,13 +99,13 @@ module.exports = function (app) {
     })
   );
 
-  // Lead details: /api/leads/* → http://69.62.77.33:8080/leads/*
+  // Lead details: /api/leads/* → BACKEND/leads/*
   app.use(
     '/api/leads',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080/',
+      target: BACKEND,
       changeOrigin: true,
-      secure: false,
+      secure: true,
       pathRewrite: (path) => `/leads${path}`,
       logLevel: 'debug',
       proxyTimeout: 60000,
@@ -129,14 +123,13 @@ module.exports = function (app) {
     })
   );
 
-  // All other /api → http://62.72.12.51:6000/
+  // All other /api → BACKEND
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://69.62.77.33:8080/',
-      target: 'http://69.62.77.33:8080/',
+      target: BACKEND,
       changeOrigin: true,
-      secure: false,
+      secure: true,
       pathRewrite: (path, req) => `/api${path}`,
       logLevel: 'debug',
       proxyTimeout: 60000,
@@ -154,4 +147,3 @@ module.exports = function (app) {
     })
   );
 };
-

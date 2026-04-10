@@ -2,68 +2,25 @@ import axios from "axios";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 
-const API_BASE_URLS = {
-  development: normalizeBaseUrl(process.env.REACT_APP_API_URL_DEV) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
-  qa: normalizeBaseUrl(process.env.REACT_APP_API_URL_QA) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
-  production: normalizeBaseUrl(process.env.REACT_APP_API_URL_PROD) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
-};
 
-const getRuntimeEnvironment = () => {
-  if (process.env.REACT_APP_RUNTIME_ENV) {
-    return process.env.REACT_APP_RUNTIME_ENV.toLowerCase();
-  }
 
-  if (typeof window === "undefined") {
-    return process.env.NODE_ENV === "development" ? "development" : "production";
-  }
-
-  const hostname = window.location.hostname.toLowerCase();
-
-  if (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname.endsWith(".local")
-  ) {
-    return "development";
-  }
-
-  if (
-    hostname.includes("qa") ||
-    hostname.includes("uat") ||
-    hostname.includes("staging")
-  ) {
-    return "qa";
-  }
-
-  if (hostname.includes("dev")) {
-    return "development";
-  }
-
-  return "production";
-};
+const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
+  "https://lkp-prod-backend.azurewebsites.net/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
-  if (process.env.REACT_APP_API_URL) {
-    return normalizeBaseUrl(process.env.REACT_APP_API_URL);
-  }
-
-  const runtimeEnvironment = getRuntimeEnvironment();
-  return (
-    API_BASE_URLS[runtimeEnvironment] ||
-    API_BASE_URLS.production
-  );
+  return API_BASE_URL;
 })();
+
 
 // Get API base URL from environment variable or use default
 // Priority:
 // 1. REACT_APP_API_URL environment variable
+
 // 2. Runtime environment-specific base URL
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
     return normalizeBaseUrl(process.env.REACT_APP_API_URL);
+
   }
 
   return DEFAULT_API_BASE_URL;
@@ -72,6 +29,7 @@ const getApiBaseURL = () => {
 const getOrdersApiBaseURL = () => {
   if (process.env.REACT_APP_ORDERS_API_URL) {
     return normalizeBaseUrl(process.env.REACT_APP_ORDERS_API_URL);
+
   }
 
   return DEFAULT_API_BASE_URL;
