@@ -57,7 +57,6 @@ export const DEFAULT_API_BASE_URL = (() => {
   );
 })();
 
-
 // Get API base URL from environment variable or use default
 // Priority:
 // 1. REACT_APP_API_URL environment variable
