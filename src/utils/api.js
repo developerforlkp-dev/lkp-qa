@@ -6,9 +6,9 @@ const API_BASE_URLS = {
   development: normalizeBaseUrl(process.env.REACT_APP_API_URL_DEV) ||
     "https://lkp-dev-backend.azurewebsites.net/api",
   qa: normalizeBaseUrl(process.env.REACT_APP_API_URL_QA) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
+    "https://lkp-qa-backend.azurewebsites.net/api",
   production: normalizeBaseUrl(process.env.REACT_APP_API_URL_PROD) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
+    "https://lkp-prod-backend.azurewebsites.net/api",
 };
 
 const getRuntimeEnvironment = () => {
