@@ -4,8 +4,11 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings } from "../../utils/api";
 import Rating from "../../components/Rating";
+import Modal from "../../components/Modal";
+import Receipt from "../../components/Receipt";
+import html2pdf from "html2pdf.js";
 
 // Helper function to format image URLs
 const formatImageUrl = (url) => {
@@ -211,7 +214,35 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     return mappedStatus;
   };
 
-  const status = getOrderStatus(apiBooking.orderStatus);
+  let status = getOrderStatus(apiBooking.orderStatus);
+
+  // If the backend says Upcoming (PENDING/CONFIRMED) but the booking date and time have
+  // already passed, show the booking in Completed instead for consistency with Bookings list.
+  if (status === "Pending" || status === "Confirmed") {
+    const bookingDateStr =
+      apiBooking.checkOutDate ||
+      apiBooking.checkInDate ||
+      apiBooking.bookingDate ||
+      apiBooking.eventDate ||
+      apiBooking.eventDetails?.eventDate ||
+      null;
+
+    if (bookingDateStr) {
+      const deadline = new Date(bookingDateStr);
+      const endTimeStr = apiBooking.timeSlotEndTime || apiBooking.checkOutTime || apiBooking.endTime || apiBooking.bookingTime;
+
+      if (endTimeStr && typeof endTimeStr === 'string' && endTimeStr.includes(':')) {
+        const parts = endTimeStr.split(':').map(Number);
+        deadline.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      } else {
+        deadline.setHours(23, 59, 59, 999);
+      }
+
+      if (deadline < new Date()) {
+        status = "Completed";
+      }
+    }
+  }
 
   // Also store the original orderStatus for reference
   const originalOrderStatus = apiBooking.orderStatus;
@@ -262,19 +293,21 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.address = eventData.address;
     }
 
-    if (eventData.venueDistrict) {
-      location.city = eventData.venueDistrict;
-    } else if (eventData.city) {
-      location.city = eventData.city;
-    }
+    // Map city/district
+    location.city = pickText(
+      eventData.venueDistrict,
+      eventData.venueCity,
+      eventData.city,
+      eventData.district
+    ) || "TBD";
 
-    if (eventData.venueState) {
-      location.country = eventData.venueState;
-    } else if (eventData.state) {
-      location.country = eventData.state;
-    } else if (eventData.country) {
-      location.country = eventData.country;
-    }
+    // Map country/state
+    location.country = pickText(
+      eventData.venueCountry,
+      eventData.country,
+      eventData.venueState,
+      eventData.state
+    ) || "TBD";
 
     // Build directions URL - prefer coordinates if available
     if (location.latitude && location.longitude) {
@@ -301,26 +334,37 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.longitude = parseFloat(listingData.longitude);
     }
 
-    // Check various possible location fields
-    if (listingData.address) {
-      location.address = listingData.address;
-    }
-    if (listingData.city) {
-      location.city = listingData.city;
-    }
-    if (listingData.state) {
-      location.country = listingData.state;
-    } else if (listingData.country) {
-      location.country = listingData.country;
-    }
+    // Map address
+    location.address = pickText(
+      listingData.meetingAddress,
+      listingData.meetingPoint,
+      listingData.address,
+      listingData.fullAddress
+    ) || "TBD";
 
-    // If there's a location string, try to parse it
-    if (listingData.location && typeof listingData.location === 'string') {
+    // Map city
+    location.city = pickText(
+      listingData.meetingCity,
+      listingData.city,
+      listingData.meetingDistrict,
+      listingData.district
+    ) || "TBD";
+
+    // Map country
+    location.country = pickText(
+      listingData.meetingCountry,
+      listingData.country,
+      listingData.meetingState,
+      listingData.state
+    ) || "TBD";
+
+    // If still TBD city/country, try to parse the 'location' field if it exists
+    if ((location.city === "TBD" || location.country === "TBD") && listingData.location && typeof listingData.location === 'string') {
       const locationParts = listingData.location.split(',').map(s => s.trim());
       if (locationParts.length >= 2) {
-        location.city = locationParts[0];
-        location.country = locationParts.slice(1).join(', ');
-      } else {
+        if (location.city === "TBD") location.city = locationParts[0];
+        if (location.country === "TBD") location.country = locationParts.slice(1).join(', ');
+      } else if (location.city === "TBD") {
         location.city = listingData.location;
       }
     }
@@ -345,17 +389,28 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.latitude = parseFloat(stayData.latitude);
       location.longitude = parseFloat(stayData.longitude);
     }
-    if (stayData.address) {
-      location.address = stayData.address;
-    }
-    if (stayData.city) {
-      location.city = stayData.city;
-    }
-    if (stayData.state) {
-      location.country = stayData.state;
-    } else if (stayData.country) {
-      location.country = stayData.country;
-    }
+    
+    // Map address
+    location.address = pickText(
+      stayData.address,
+      stayData.fullAddress,
+      stayData.location,
+      location.address
+    ) || "TBD";
+
+    // Map city
+    location.city = pickText(
+      stayData.city,
+      stayData.district,
+      location.city
+    ) || "TBD";
+
+    // Map country
+    location.country = pickText(
+      stayData.country,
+      stayData.state,
+      location.country
+    ) || "TBD";
 
     // Build directions URL
     if (location.latitude && location.longitude) {
@@ -371,22 +426,17 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     }
   }
 
-  // Fallback: if no location data, use a default or try to construct from available data
+  // Final fallback: if no location data, use listing.location or meetingInstructions
   if (location.city === "TBD" && location.country === "TBD" && !location.latitude) {
-    // Try to get any location info from the listing
-    if (listingData?.meetingPoint) {
-      location.address = listingData.meetingPoint;
+    if (listingData?.location && typeof listingData.location === 'string') {
+      const lp = listingData.location.split(',').map(s => s.trim());
+      location.city = lp[0] || "TBD";
+      if (lp.length > 1) location.country = lp.slice(1).join(", ");
     }
-    if (listingData?.meetingInstructions) {
-      // Try to extract location from meeting instructions
+    
+    if (listingData?.meetingInstructions && location.address === "TBD") {
       const instructions = listingData.meetingInstructions;
-      if (instructions.includes(',')) {
-        const parts = instructions.split(',').map(s => s.trim());
-        location.address = parts[0];
-        if (parts.length > 1) {
-          location.city = parts[1];
-        }
-      } else {
+      if (instructions.length < 100) { // Only use if it looks like a short address
         location.address = instructions;
       }
     }
@@ -533,26 +583,42 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Extract guest requirements from listing data
   if (listingData?.guestRequirements && Array.isArray(listingData.guestRequirements)) {
-    // Find "Rules and Policies" (settingId: 17) for Host Instructions
-    const rulesAndPolicies = listingData.guestRequirements.find(
-      (gr) => gr?.setting?.settingId === 17 && gr?.setting?.isActive
-    );
+    listingData.guestRequirements.forEach((gr) => {
+      const setting = gr?.setting;
+      if (!setting?.isActive || !Array.isArray(gr.questions)) return;
 
-    if (rulesAndPolicies && Array.isArray(rulesAndPolicies.questions)) {
-      result.notes.hostInstructions = rulesAndPolicies.questions
+      const title = setting.title || "";
+      const questions = gr.questions
         .filter((q) => q?.question?.isActive)
         .map((q) => q.question.title);
-    }
 
-    // Find "What's to Bring" (settingId: 18) for Guest Requirements
-    const whatsToBring = listingData.guestRequirements.find(
-      (gr) => gr?.setting?.settingId === 18 && gr?.setting?.isActive
-    );
+      if (questions.length === 0) return;
 
-    if (whatsToBring && Array.isArray(whatsToBring.questions)) {
-      result.notes.requirements = whatsToBring.questions
-        .filter((q) => q?.question?.isActive)
-        .map((q) => q.question.title);
+      // Categorize based on title keywords or specific IDs
+      const titleLower = title.toLowerCase();
+      const isGuestContext = 
+        titleLower.includes("bring") || 
+        titleLower.includes("requirement") || 
+        titleLower.includes("eligibility") ||
+        titleLower.includes("included") ||
+        [4, 6, 7, 18].includes(setting.settingId);
+
+      // Prepend the category title for better context in individual bullet points
+      const formattedQuestions = questions.map((q) => `${title}: ${q}`);
+
+      if (isGuestContext) {
+        result.notes.requirements.push(...formattedQuestions);
+      } else {
+        result.notes.hostInstructions.push(...formattedQuestions);
+      }
+    });
+  }
+
+  // Ensure meeting instructions are also included in host notes
+  if (listingData?.meetingInstructions) {
+    const meetingNote = `Meeting Instructions: ${listingData.meetingInstructions}`;
+    if (!result.notes.hostInstructions.includes(meetingNote)) {
+      result.notes.hostInstructions.unshift(meetingNote);
     }
   }
 
@@ -587,6 +653,95 @@ const ViewDetails = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [reviewError, setReviewError] = useState(null);
+  const [orderIdsEligibleForReview, setOrderIdsEligibleForReview] = useState(new Set());
+
+  // Cancellation state
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState(null);
+
+  // Receipt state
+  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
+  const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
+  const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
+
+  const handleCancelBookingClick = () => {
+    setCancelModalVisible(true);
+    setCancelReason("");
+    setCancelError(null);
+  };
+
+  const handleCloseCancelModal = () => {
+    setCancelModalVisible(false);
+    setCancelReason("");
+    setCancelError(null);
+  };
+
+  const handleCancelBooking = async () => {
+    if (!cancelReason.trim()) {
+      setCancelError("Please provide a reason for cancellation.");
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelError(null);
+
+    try {
+      const cancelRequestBody = {
+        reason: cancelReason.trim(),
+        adminOverride: false,
+      };
+
+      if (booking.isEventOrder) {
+        await cancelEventOrder(booking.orderId, cancelRequestBody);
+      } else {
+        await cancelOrder(booking.orderId, cancelRequestBody);
+      }
+
+      // Update local state to show as cancelled
+      setBooking(prev => ({
+        ...prev,
+        status: "Cancelled",
+        statusTone: "cancelled",
+        originalOrderStatus: "CANCELLED",
+        originalData: {
+          ...prev.originalData,
+          orderStatus: "CANCELLED"
+        }
+      }));
+
+      handleCloseCancelModal();
+    } catch (err) {
+      console.error("Error cancelling booking:", err);
+      setCancelError(
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to cancel booking. Please try again."
+      );
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleDownloadReceiptClick = () => {
+    setReceiptModalVisible(true);
+  };
+
+  const handlePrintReceipt = () => {
+    const element = document.getElementById("receipt-ticket-pdf");
+    if (!element) return;
+    
+    const opt = {
+      margin:       10,
+      filename:     `LKP_Receipt_${booking.orderId}.pdf`,
+      image:        { type: 'jpeg', quality: 1 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      jsPDF:        { unit: 'px', format: [element.offsetWidth + 20, element.offsetHeight + 20], orientation: 'portrait' }
+    };
+
+    html2pdf().from(element).set(opt).save();
+  };
 
   useEffect(() => {
     const loadBooking = async () => {
@@ -963,6 +1118,27 @@ const ViewDetails = () => {
     loadBooking();
   }, [bookingId, bookingType]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const loadReviewEligibility = async () => {
+      if (!booking?.orderId || !isCompletedOrder) return;
+      try {
+        const eligibleData = await getEligibleBookings();
+        const eligibleList = Array.isArray(eligibleData) ? eligibleData : [];
+        const eligibleIds = new Set(
+          eligibleList
+            .map((item) => (item?.orderId != null ? Number(item.orderId) : null))
+            .filter(Boolean)
+        );
+        setOrderIdsEligibleForReview(eligibleIds);
+      } catch (err) {
+        console.warn("⚠️ Failed to fetch review eligibility in details page:", err?.message || err);
+        setOrderIdsEligibleForReview(new Set());
+      }
+    };
+
+    loadReviewEligibility();
+  }, [booking?.orderId, isCompletedOrder]);
+
   const getInitialTab = () => {
     if (!booking) return "cancellation";
     if (booking.notes.cancellationPolicy) return "cancellation";
@@ -1032,6 +1208,11 @@ const ViewDetails = () => {
         customerId: customerId,
       });
 
+      setOrderIdsEligibleForReview((prev) => {
+        const next = new Set(prev);
+        next.delete(Number(booking.orderId));
+        return next;
+      });
       setReviewSubmitted(true);
       setReviewText("");
       setReviewRating(0);
@@ -1138,35 +1319,41 @@ const ViewDetails = () => {
   };
 
   const getActionButtons = () => {
-    // Get status from multiple sources for reliability
     const status = booking.status?.toLowerCase() ||
       booking.statusTone ||
       (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
 
     if (status === "upcoming" || status === "pending" || status === "confirmed") {
       return [
-        { label: "Message Host", variant: "primary" },
-        { label: "Download Receipt", variant: "secondary" },
-        { label: "Cancel Booking", variant: "secondary" },
+        { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
+        { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
       ];
     } else if (status === "completed") {
-      return [
-        { label: "Message Host", variant: "primary" },
-        { label: "Download Receipt", variant: "secondary" },
-        { label: "Leave Review", variant: "secondary" },
+      const actions = [
+        { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
       ];
+      if (canLeaveReview) {
+        actions.push({
+          label: "Leave Review",
+          variant: "secondary",
+          onClick: () => {
+            const reviewSection = document.querySelector(`.${styles.reviewCard}`);
+            if (reviewSection) {
+              reviewSection.scrollIntoView({ behavior: "smooth" });
+            }
+          },
+        });
+      }
+      return actions;
     } else if (status === "cancelled" || status === "canceled") {
       return [
-        { label: "Explore Alternatives", variant: "primary" },
-        { label: "View Cancellation", variant: "secondary" },
-        { label: "Contact Support", variant: "secondary" },
+        { label: "Explore Alternatives", variant: "primary", onClick: () => window.location.href = "/catalog" },
+        { label: "Contact Support", variant: "secondary", onClick: () => window.location.href = "/support" },
       ];
     } else {
-      // Default actions
       return [
-        { label: "Message Host", variant: "primary" },
-        { label: "Download Receipt", variant: "secondary" },
-        { label: "Contact Support", variant: "secondary" },
+        { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
+        { label: "Contact Support", variant: "secondary", onClick: () => window.location.href = "/support" },
       ];
     }
   };
@@ -1554,7 +1741,7 @@ const ViewDetails = () => {
         </div>
 
         {/* Review Section - Only show for completed orders */}
-        {(booking.originalData?.orderStatus && String(booking.originalData.orderStatus).toUpperCase() === "COMPLETED") && (
+        {(isCompletedOrder && (canLeaveReview || reviewSubmitted)) && (
           <div className={cn(styles.card, styles.reviewCard)}>
             <h2 className={styles.cardTitle}>Leave a Review</h2>
             {reviewSubmitted ? (
@@ -1622,6 +1809,7 @@ const ViewDetails = () => {
                 key={index}
                 type="button"
                 className={getButtonClassName(action.variant)}
+                onClick={action.onClick}
               >
                 {action.label}
               </button>
@@ -1629,6 +1817,170 @@ const ViewDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Cancellation Modal */}
+      <Modal
+        visible={cancelModalVisible}
+        onClose={handleCloseCancelModal}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>
+              Cancel Booking
+            </h2>
+            <p className={styles.cancelModalDescription}>
+              Please provide a reason for cancelling this booking.
+            </p>
+          </div>
+          <div className={styles.cancelModalBody}>
+            <div className={styles.cancelModalFormGroup}>
+              <label htmlFor="cancelReason" className={styles.cancelModalLabel}>
+                Reason for Cancellation <span className={styles.required}>*</span>
+              </label>
+              <textarea
+                id="cancelReason"
+                className={cn(styles.cancelModalInput, styles.cancelModalTextarea, {
+                  [styles.inputError]: cancelError && !cancelReason.trim(),
+                })}
+                value={cancelReason}
+                onChange={(e) => {
+                  setCancelReason(e.target.value);
+                  setCancelError(null);
+                }}
+                placeholder="Enter the reason for cancellation..."
+                rows={4}
+                disabled={isCancelling}
+              />
+            </div>
+            {cancelError && (
+              <div className={styles.cancelModalError}>
+                {cancelError}
+              </div>
+            )}
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={handleCloseCancelModal}
+              disabled={isCancelling}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={handleCancelBooking}
+              disabled={isCancelling || !cancelReason.trim()}
+            >
+              {isCancelling ? "Cancelling..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Receipt Modal */}
+      <Modal
+        visible={receiptModalVisible}
+        onClose={() => setReceiptModalVisible(false)}
+        outerClassName={styles.receiptModalOuter}
+        containerClassName={styles.receiptModalContainer}
+      >
+        <div className={styles.receiptModalContent}>
+          <div className={styles.receiptModalHeader}>
+            <h2 className={styles.receiptModalTitle}>Booking Receipt</h2>
+            <button 
+              className={cn("button-small", styles.downloadPdfButton)}
+              onClick={handlePrintReceipt}
+            >
+              <Icon name="download" size="16" />
+              <span>Download PDF</span>
+            </button>
+          </div>
+          <div className={styles.receiptPrintArea}>
+            <div id="receipt-ticket-pdf" className={styles.receiptTicket}>
+              <div className={styles.receiptBrand}>
+                <div className={styles.brandLogo}>
+                  <Icon name="star" size="24" />
+                </div>
+                <div className={styles.brandName}>LKP Experiences</div>
+              </div>
+              
+              <div className={styles.receiptTicketBody}>
+                <div className={styles.receiptTitle}>{booking.title}</div>
+                <div className={styles.receiptBookingId}>Order Reference: #LKP-{booking.orderId}</div>
+                
+                <div className={styles.dottedDivider}></div>
+                
+                <div className={styles.receiptInfoSections}>
+                  <div className={styles.infoCol}>
+                    <div className={styles.receiptLabel}>Date & Time</div>
+                    <div className={styles.infoText}>{booking.startDate}</div>
+                    <div className={styles.infoSubtext}>
+                      {booking.startTime && booking.endTime 
+                        ? `${booking.startTime} - ${booking.endTime}` 
+                        : (booking.bookingTime || "Confirmed Slot")}
+                    </div>
+                  </div>
+                  <div className={styles.infoCol}>
+                    <div className={styles.receiptLabel}>Guests</div>
+                    <div className={styles.infoText}>{booking.guestCount} {booking.guestCount === 1 ? "Guest" : "Guests"}</div>
+                  </div>
+                </div>
+
+                <div className={styles.dottedDivider}></div>
+                
+                <div className={styles.pricingBreakdown}>
+                  <div className={styles.receiptPriceRow}>
+                    <span className={styles.priceLabel}>Base Fare</span>
+                    <span className={styles.priceValue}>{booking.pricing.basePrice}</span>
+                  </div>
+                  {booking.addons?.map((addon, index) => (
+                    <div key={index} className={styles.receiptPriceRow}>
+                      <span className={styles.priceLabel}>{addon.name} (x{addon.quantity})</span>
+                      <span className={styles.priceValue}>{addon.total}</span>
+                    </div>
+                  ))}
+                  {booking.pricing.discountAmount && (
+                    <div className={cn(styles.receiptPriceRow, styles.discountRow)}>
+                      <span className={styles.priceLabel}>Privilege Discount</span>
+                      <span className={styles.priceValue}>-{booking.pricing.discountAmount}</span>
+                    </div>
+                  )}
+                  
+                  <div className={styles.dottedDivider}></div>
+                  
+                  <div className={cn(styles.receiptPriceRow, styles.invoiceTotal)}>
+                    <span className={styles.totalLabel}>Total Paid</span>
+                    <span className={styles.totalValue}>{booking.pricing.total}</span>
+                  </div>
+                </div>
+                
+                <div className={styles.dottedDivider}></div>
+                
+                <div className={styles.receiptInfoSections}>
+                  <div className={styles.infoCol}>
+                    <div className={styles.receiptLabel}>Guest Profile</div>
+                    <div className={styles.infoText}>{booking.guest.name}</div>
+                    <div className={styles.infoSubtext}>{booking.guest.email}</div>
+                  </div>
+                  <div className={styles.infoCol}>
+                    <div className={styles.receiptLabel}>Venue Location</div>
+                    <div className={styles.infoText}>{booking.location.city}</div>
+                    <div className={styles.infoSubtext}>{booking.location.address}</div>
+                  </div>
+                </div>
+                
+                <div className={styles.receiptFooterNote}>
+                  <p>Thank you for choosing Little Known Planet. We hope you have an extraordinary experience!</p>
+                  <div className={styles.stamp}>VERIFIED</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

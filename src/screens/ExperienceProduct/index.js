@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ExperienceProduct.module.sass";
 import Product from "../../components/Product";
@@ -16,6 +16,7 @@ import {
   getHost,
   getLeadDetails,
 } from "../../utils/api";
+import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
 
 // Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
@@ -187,9 +188,12 @@ const socials = [
 
 const ExperienceProduct = () => {
   const location = useLocation();
+  const history = useHistory();
+  const { slugAndId } = useParams();
   const params = new URLSearchParams(location.search);
+  const idFromPath = extractExperienceIdFromSlugAndId(slugAndId);
   const idParam = params.get("id");
-  const id = idParam ? idParam : "2"; // default to 2 as requested
+  const id = idFromPath || idParam || "2"; // default to 2 as requested
 
   const [listing, setListing] = useState(null);
   const [hostData, setHostData] = useState(null);
@@ -247,6 +251,15 @@ useEffect(() => {
         }
 
         setGalleryItems(galleryImages.length ? galleryImages : []);
+
+        // Canonicalize URL to /experience/<slug>-<id> once title is available
+        const canonicalUrl = buildExperienceUrl(
+          data.title || "experience",
+          data.listingId || data.id || id
+        );
+        if (location.pathname !== canonicalUrl) {
+          history.replace(canonicalUrl);
+        }
 
         // ✅ Fetch host data in parallel (non-blocking)
         const leadUserId = data.leadUserId || data.host?.leadUserId;
@@ -311,7 +324,7 @@ useEffect(() => {
             categoryText: item.basePrice ? `from ₹${item.basePrice}` : item.individualPrice ? `from ₹${item.individualPrice}` : "",
             src: item.coverPhotoUrl ? formatImageUrl(item.coverPhotoUrl) : "/images/content/browse-pic-1.jpg",
             srcSet: item.coverPhotoUrl ? formatImageUrl(item.coverPhotoUrl) : "/images/content/browse-pic-1@2x.jpg",
-            url: `/experience-product?id=${item.listingId || item.id}`,
+            url: buildExperienceUrl(item.title || "experience", item.listingId || item.id),
           }))
         );
       }
@@ -324,7 +337,7 @@ useEffect(() => {
   return () => {
     mounted = false;
   };
-}, [id, location.search]); // ✅ Also depend on location.search to ensure effect runs on route changes
+}, [id, location.search, location.pathname, history]); // ✅ Also depend on route changes
 
   // Build options dynamically from listing and host data
   const listingOptions = useMemo(() => {

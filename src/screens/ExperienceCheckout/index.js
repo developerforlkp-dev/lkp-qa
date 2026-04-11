@@ -6,6 +6,7 @@ import Control from "../../components/Control";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import { getOrderDetails, getStayDetails, getListingAddons } from "../../utils/api";
+import { buildExperienceUrl } from "../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -372,12 +373,26 @@ const Checkout = () => {
 
       // Base price
       if (basePrice > 0) {
-        const guests = pricing.guestCount || 1;
-        const ppp = pricing.pricePerPerson;
-        const label = ppp
-          ? `Base price (${ppp} × ${guests} guest${guests !== 1 ? 's' : ''})`
-          : "Base price";
-        rows.push({ title: label, value: fmt(basePrice) });
+        if (pricing.allowChildPricing && pricing.childrenCount > 0) {
+          const adults = pricing.adultsCount || 0;
+          const children = pricing.childrenCount || 0;
+          const ppp = pricing.pricePerPerson || 0;
+          const cpp = pricing.childPricePerChild || 0;
+
+          if (adults > 0) {
+             rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
+          }
+          if (children > 0) {
+             rows.push({ title: `Children (${fmt(cpp)} × ${children})`, value: fmt(cpp * children) });
+          }
+        } else {
+          const guests = pricing.guestCount || 1;
+          const ppp = pricing.pricePerPerson;
+          const label = ppp
+            ? `Base price (${fmt(ppp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
+            : "Base price";
+          rows.push({ title: label, value: fmt(basePrice) });
+        }
       }
 
       // // Add-ons subtotal
@@ -449,7 +464,9 @@ const Checkout = () => {
   const breadcrumbs = [
     {
       title: "Booking details",
-      url: bookingData?.listingId ? `/experience-product?id=${bookingData.listingId}` : "/experience-product",
+      url: bookingData?.listingId
+        ? buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId)
+        : "/experience-product",
     },
     {
       title: "Confirm and pay",

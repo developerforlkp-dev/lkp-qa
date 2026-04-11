@@ -2,65 +2,21 @@ import axios from "axios";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 
-const API_BASE_URLS = {
-  development: normalizeBaseUrl(process.env.REACT_APP_API_URL_DEV) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
-  qa: normalizeBaseUrl(process.env.REACT_APP_API_URL_QA) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
-  production: normalizeBaseUrl(process.env.REACT_APP_API_URL_PROD) ||
-    "https://lkp-dev-backend.azurewebsites.net/api",
-};
 
-const getRuntimeEnvironment = () => {
-  if (process.env.REACT_APP_RUNTIME_ENV) {
-    return process.env.REACT_APP_RUNTIME_ENV.toLowerCase();
-  }
 
-  if (typeof window === "undefined") {
-    return process.env.NODE_ENV === "development" ? "development" : "production";
-  }
-
-  const hostname = window.location.hostname.toLowerCase();
-
-  if (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname.endsWith(".local")
-  ) {
-    return "development";
-  }
-
-  if (
-    hostname.includes("qa") ||
-    hostname.includes("uat") ||
-    hostname.includes("staging")
-  ) {
-    return "qa";
-  }
-
-  if (hostname.includes("dev")) {
-    return "development";
-  }
-
-  return "production";
-};
+const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
+  "http://api.dev.littleknownplanet.com/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
-  if (process.env.REACT_APP_API_URL) {
-    return normalizeBaseUrl(process.env.REACT_APP_API_URL);
-  }
+  return API_BASE_URL;
 
-  const runtimeEnvironment = getRuntimeEnvironment();
-  return (
-    API_BASE_URLS[runtimeEnvironment] ||
-    API_BASE_URLS.production
-  );
 })();
 
 
 // Get API base URL from environment variable or use default
 // Priority:
 // 1. REACT_APP_API_URL environment variable
+
 // 2. Runtime environment-specific base URL
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
@@ -443,6 +399,45 @@ export const loginWithGoogle = async (idToken) => {
     console.error("  - Response data:", error.response?.data);
     console.error("  - Full error:", error);
     console.error("  - Check Network tab for failed request");
+    throw error;
+  }
+};
+
+// ✅ Customer Profile API functions
+export const getCustomerProfile = async () => {
+  try {
+    const response = await ListingsAPI.get("/customers/auth/me");
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching customer profile:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const updateCustomerProfile = async (profileData) => {
+  try {
+    const response = await ListingsAPI.put("/customers/auth/me", profileData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error updating customer profile:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Image upload for avatar
+export const uploadCustomerAvatar = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error uploading customer avatar:", error.response?.data || error.message);
     throw error;
   }
 };

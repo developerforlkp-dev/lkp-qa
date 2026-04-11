@@ -89,37 +89,69 @@ const TabSection = ({ classSection, listing }) => {
 
   const dynamicWhatToBring = useMemo(() => {
     const base = tabContent["what-to-bring"];
-    const setting = Array.isArray(listing?.guestRequirements)
-      ? listing.guestRequirements.find(
-        (gr) => gr?.setting?.settingId === 4 && gr?.setting?.isActive
-      )
-      : null;
-    const items = setting && Array.isArray(setting.questions)
-      ? setting.questions
-        .filter((q) => q?.question?.isActive)
-        .map((q) => q.question.title)
-      : base.content;
+    const requirementItems = [];
+
+    // Aggregate ALL settings that match "bring", "carry", or related keywords
+    if (Array.isArray(listing?.guestRequirements)) {
+      listing.guestRequirements.forEach((gr) => {
+        const setting = gr?.setting;
+        if (!setting?.isActive || !Array.isArray(gr.questions)) return;
+
+        const title = setting.title || "";
+        const titleLower = title.toLowerCase();
+        
+        // Match IDs or title keywords
+        if (setting.settingId === 4 || titleLower.includes("bring") || titleLower.includes("carry")) {
+          const questions = gr.questions
+            .filter((q) => q?.question?.isActive)
+            .map((q) => q.question.title);
+          
+          if (questions.length > 0) {
+            // Append with category title if it's a custom section
+            const isDefault = titleLower === "what to bring";
+            requirementItems.push(...questions.map(q => isDefault ? q : `${title}: ${q}`));
+          }
+        }
+      });
+    }
+
     return {
       title: base.title,
-      content: items,
+      content: requirementItems.length > 0 ? requirementItems : base.content,
     };
   }, [listing]);
 
   const dynamicRulesPolicies = useMemo(() => {
     const base = tabContent["rules-policies"];
-    const setting = Array.isArray(listing?.guestRequirements)
-      ? listing.guestRequirements.find(
-        (gr) => gr?.setting?.settingId === 6 && gr?.setting?.isActive
-      )
-      : null;
-    const items = setting && Array.isArray(setting.questions)
-      ? setting.questions
-        .filter((q) => q?.question?.isActive)
-        .map((q) => q.question.title)
-      : base.content;
+    const policyItems = [];
+
+    // Aggregate ALL settings that match "rule", "policy", or related keywords
+    if (Array.isArray(listing?.guestRequirements)) {
+      listing.guestRequirements.forEach((gr) => {
+        const setting = gr?.setting;
+        if (!setting?.isActive || !Array.isArray(gr.questions)) return;
+
+        const title = setting.title || "";
+        const titleLower = title.toLowerCase();
+
+        // Match IDs or title keywords
+        if (setting.settingId === 6 || titleLower.includes("rule") || titleLower.includes("policy") || titleLower.includes("requirement") || titleLower.includes("safety")) {
+          const questions = gr.questions
+            .filter((q) => q?.question?.isActive)
+            .map((q) => q.question.title);
+
+          if (questions.length > 0) {
+            // Append with category title if it's a custom section
+            const isDefault = titleLower === "rules & policies";
+            policyItems.push(...questions.map(q => isDefault ? q : `${title}: ${q}`));
+          }
+        }
+      });
+    }
+
     return {
       title: base.title,
-      content: items,
+      content: policyItems.length > 0 ? policyItems : base.content,
     };
   }, [listing]);
 

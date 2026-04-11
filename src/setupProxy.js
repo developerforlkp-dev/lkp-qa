@@ -1,6 +1,6 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-const BACKEND = 'https://lkp-dev-backend.azurewebsites.net'
+const BACKEND = 'http://api.dev.littleknownplanet.com'
 module.exports = function (app) {
   // Event orders (legacy): /api/event-orders/* → BACKEND/api/event-orders/*
   app.use(

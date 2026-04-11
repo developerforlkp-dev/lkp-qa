@@ -117,6 +117,9 @@ const normalizeSlots = (rawSlots) => {
         return { id: null, name: s };
       }
       if (s && typeof s === "object") {
+        // Skip inactive slots
+        if (s.is_active === false || s.isActive === false) return null;
+
         const slotId =
           asNumber(s?.id) ??
           asNumber(s?.slotId) ??

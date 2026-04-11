@@ -7,6 +7,7 @@ import DestinationCard from "../DestinationCard";
 import Destination from "../../../components/Destination";
 import HorizontalScroll from "../../../components/HorizontalScroll";
 import styles from "../FleetHome.module.sass";
+import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
 /**
  * Card Styles Components for Homepage Sections
@@ -86,7 +87,7 @@ const getEntityImageUrl = (listing) => {
 };
 
 const getEntityUrl = (listing, id) => {
-  if (!listing || typeof listing !== "object") return `/experience-product?id=${id}`;
+  if (!listing || typeof listing !== "object") return buildExperienceUrl("experience", id);
   const isEvent = listing.eventId !== undefined || listing.event_id !== undefined;
   const isStay = listing.stayId !== undefined || listing.stay_id !== undefined;
   const isFood = listing.foodMenuId !== undefined;
@@ -97,7 +98,7 @@ const getEntityUrl = (listing, id) => {
   if (isFood) return `/food-details?id=${id}`;
   if (isPlace) return `/place-details?id=${id}`;
 
-  return `/experience-product?id=${id}`;
+  return buildExperienceUrl(listing.title || "experience", id);
 };
 
 // Transform API listing to Card component format
@@ -195,9 +196,16 @@ export const CardCarousel = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -226,9 +234,16 @@ export const CardGrid = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -253,9 +268,16 @@ export const CardDestination = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -284,9 +306,16 @@ export const CardDestinationHorizontal = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -327,8 +356,11 @@ export const HomepageSectionCard = ({ section, listings, className }) => {
   // Use cardStyle exactly as provided by API (case-sensitive)
   const cardStyle = section.cardStyle || "CARD_RECT_VERTICAL_DETAIL";
 
-  // Log section card style for debugging
-  console.log(`📋 Section: "${section.sectionTitle}" → Card Style: ${cardStyle}`);
+  // Log section details for debugging the "Starting From" price
+  console.log(`[CardStyles] 📋 Rendering Section: "${section.sectionTitle}"`);
+  console.log(`[CardStyles] 💰 priceStartingFrom:`, section.priceStartingFrom);
+  console.log(`[CardStyles] 🎨 Applied Card Style:`, cardStyle);
+  console.log(`[CardStyles] 📦 Section Data:`, section);
 
   // Map API cardStyle values to component card styles (case-sensitive matching)
   // Supports both new descriptive names and old names for backward compatibility

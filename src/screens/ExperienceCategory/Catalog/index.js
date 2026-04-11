@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import cn from "classnames";
 import styles from "./Catalog.module.sass";
 import Sorting from "../../../components/Sorting";
@@ -10,6 +11,7 @@ import Loader from "../../../components/Loader";
 import { browse2 } from "../../../mocks/browse";
 import { experience } from "../../../mocks/experience";
 import { getListings } from "../../../utils/api";
+import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
 const breadcrumbs = [
   {
@@ -40,8 +42,10 @@ const saleOptions = ["On sales", "On delivery", "In exchange"];
 
 const Catalog = () => {
   const [sale, setSale] = useState(saleOptions[0]);
-  const [listings, setListings] = useState([]);
+  const [allListings, setAllListings] = useState([]);
+  const [filteredListings, setFilteredListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { search } = useLocation();
 
   useEffect(() => {
     let mounted = true;
@@ -50,10 +54,11 @@ const Catalog = () => {
         setLoading(true);
         const data = await getListings("EXPERIENCE", 50, 0);
         const adapted = (Array.isArray(data) ? data : []).map((l) => ({
+          ...l, // Keep original data for filtering
           title: l.title || "",
           src: l.coverPhotoUrl || "",
           srcSet: l.coverPhotoUrl || "",
-          url: `/experience-product?id=${l.listingId || l.id || 2}`,
+          url: buildExperienceUrl(l.title || "experience", l.listingId || l.id || 2),
           priceOld: "",
           priceActual: "",
           options: [],
@@ -63,13 +68,13 @@ const Catalog = () => {
           rating: "",
           reviews: "",
         }));
-        if (mounted) setListings(adapted);
+        if (mounted) setAllListings(adapted);
       } catch (e) {
         if (process.env.NODE_ENV !== "production") {
           // eslint-disable-next-line no-console
           console.error("Failed to load listings", e);
         }
-        if (mounted) setListings([]);
+        if (mounted) setAllListings([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -79,6 +84,27 @@ const Catalog = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const query = params.get("search")?.toLowerCase() || "";
+    
+    if (!query) {
+      setFilteredListings(allListings);
+    } else {
+      const filtered = allListings.filter(l => 
+        l.title?.toLowerCase().includes(query) || 
+        l.categoryTitle?.toLowerCase().includes(query) ||
+        l.city?.toLowerCase().includes(query)
+      );
+      setFilteredListings(filtered);
+    }
+  }, [allListings, search]);
+
+  const searchParams = new URLSearchParams(search);
+  const displayDate = searchParams.get("date") || "May 1 - 14";
+  const displayGuests = searchParams.get("guests") ? `${searchParams.get("guests")} guests` : "2 guests";
+  const searchTitle = searchParams.get("search") ? `Results for "${searchParams.get("search")}"` : "Places to experience";
+
   return (
     <div className={cn("section", styles.section)}>
       <Sorting
@@ -86,9 +112,9 @@ const Catalog = () => {
         urlHome="/"
         breadcrumbs={breadcrumbs}
         navigation={navigation}
-        title="Places to experience"
-        sale="300+ experiences"
-        details="May 1 - 14, 2 guests"
+        title={searchTitle}
+        sale={`${filteredListings.length > 0 ? filteredListings.length : '300+'} experiences`}
+        details={`${displayDate}, ${displayGuests}`}
         sorting={sale}
         setSorting={setSale}
         sortingOptions={saleOptions}
@@ -106,10 +132,14 @@ const Catalog = () => {
           <div className={styles.list}>
             {loading ? (
               <Loader className={styles.loader} />
-            ) : listings.length > 0 ? (
-              listings.map((x, index) => (
+            ) : filteredListings.length > 0 ? (
+              filteredListings.map((x, index) => (
                 <Card className={styles.card} item={x} key={index} />
               ))
+            ) : allListings.length > 0 ? (
+              <div style={{ padding: "2rem", textAlign: "center", width: "100%" }}>
+                <p>No results found for your search.</p>
+              </div>
             ) : (
               experience.map((x, index) => (
                 <Card className={styles.card} item={x} key={index} />

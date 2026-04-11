@@ -80,6 +80,15 @@ function App() {
           />
           <Route
             exact
+            path="/experience/:slugAndId"
+            render={() => (
+              <Page separatorHeader>
+                <ExperienceProduct />
+              </Page>
+            )}
+          />
+          <Route
+            exact
             path="/experience-product"
             render={() => (
               <Page separatorHeader>
