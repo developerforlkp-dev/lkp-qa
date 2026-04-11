@@ -5,7 +5,7 @@ const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 
 
 const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
-  "http://api.dev.littleknownplanet.com/api";
+  "https://api.qa.littleknownplanet.com/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
   return API_BASE_URL;
