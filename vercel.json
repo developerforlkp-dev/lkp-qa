@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://lkp-dev-backend.azurewebsites.net/api/:path*"
+      "destination": "http://api.dev.littleknownplanet.com/api/:path*"
     }
   ]
 }
