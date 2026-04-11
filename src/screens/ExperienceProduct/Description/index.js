@@ -138,8 +138,18 @@ const Description = ({ classSection, listing, hostData }) => {
 
         if (selectedRoomObject.mealPlanPricing && selectedRoomObject.mealPlanPricing[mealPlanCode]) {
           const mp = selectedRoomObject.mealPlanPricing[mealPlanCode];
-          // Use b2cPrice ONLY — never fall back to b2bPrice for customer billing
-          basePrice = parseFloat(mp.b2cPrice || mp.price || 0);
+          // Determine if the check-in date falls within any seasonal period
+          const checkIn = selectedDate.format("YYYY-MM-DD");
+          const activeSeason = listing?.seasonalPeriods?.find(p =>
+            moment(checkIn).isSameOrAfter(p.startDate) && moment(checkIn).isSameOrBefore(p.endDate)
+          );
+
+          if (activeSeason && mp.hikePrice && parseFloat(mp.hikePrice) > 0) {
+            basePrice = parseFloat(mp.hikePrice);
+          } else {
+            // Use b2cPrice ONLY — never fall back to b2bPrice for customer billing
+            basePrice = parseFloat(mp.b2cPrice || mp.price || 0);
+          }
           if (mp.extraAdultPrice) extraAdultPrice = parseFloat(mp.extraAdultPrice);
           if (mp.extraChildPrice) extraChildPrice = parseFloat(mp.extraChildPrice);
         } else {
@@ -332,9 +342,19 @@ const getGuestCount = (guestsObj) => {
 
 const minimumChargeAge = 12;
 
-const billableGuestLabel = useMemo(() => `Age 12+`, []);
+const billableGuestLabel = useMemo(() => {
+  if (listing?.childAgeTo !== undefined) {
+    return `Age ${listing.childAgeTo + 1}+`;
+  }
+  return `Age 12+`;
+}, [listing?.childAgeTo]);
 
-const childrenGuestLabel = useMemo(() => `Ages 6-12`, []);
+const childrenGuestLabel = useMemo(() => {
+  if (listing?.childAgeFrom !== undefined && listing?.childAgeTo !== undefined) {
+    return `Ages ${listing.childAgeFrom}-${listing.childAgeTo}`;
+  }
+  return `Ages 6-12`;
+}, [listing?.childAgeFrom, listing?.childAgeTo]);
 
   const getBillableGuestCount = (guestsObj) => {
     if (!guestsObj) return 0;
@@ -625,7 +645,8 @@ const selectedDateAvailability = useMemo(() => {
 const availableTimeSlotsForSelectedDate = useMemo(() => {
   if (isStay) return [];
 
-  const availableTimeSlots = transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || []);
+  const availableTimeSlots = (transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || []))
+    .filter(slot => slot.is_active !== false && slot.isActive !== false);
   if (!selectedDate) return availableTimeSlots;
 
   const DAY_CODES_LOCAL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -804,15 +825,28 @@ const lowestRoomPrice = useMemo(() => {
   const rooms = listing.rooms || listing.roomTypes || listing.room_types || listing.stay?.rooms || listing.stayDetails?.rooms || [];
   if (!Array.isArray(rooms) || rooms.length === 0) return null;
 
+  // Determine if the check-in date falls within any seasonal period
+  const checkIn = selectedDate ? selectedDate.format("YYYY-MM-DD") : null;
+  const activeSeason = (checkIn && listing?.seasonalPeriods)
+    ? listing.seasonalPeriods.find(p =>
+      moment(checkIn).isSameOrAfter(p.startDate) && moment(checkIn).isSameOrBefore(p.endDate)
+    )
+    : null;
+
   let minB2cMealPrice = Infinity;
   let minGeneralB2cPrice = Infinity;
 
   rooms.forEach((room) => {
-    // 1. Check nested mealPlanPricing — use ONLY b2cPrice (never b2bPrice for customer display)
+    // 1. Check nested mealPlanPricing
     if (room.mealPlanPricing && typeof room.mealPlanPricing === 'object') {
       Object.values(room.mealPlanPricing).forEach((plan) => {
         if (plan) {
-          const val = parseFloat(plan.b2cPrice || plan.price || plan.amount || 0);
+          let val = 0;
+          if (activeSeason && plan?.hikePrice && parseFloat(plan.hikePrice) > 0) {
+            val = parseFloat(plan.hikePrice);
+          } else {
+            val = parseFloat(plan.b2cPrice || plan.price || plan.amount || 0);
+          }
           if (!isNaN(val) && val > 0 && val < minB2cMealPrice) {
             minB2cMealPrice = val;
           }
@@ -820,7 +854,7 @@ const lowestRoomPrice = useMemo(() => {
       });
     }
 
-    // 2. Flat meal plan b2c prices
+    // 2. Flat meal plan b2c prices (Legacy fields - usually don't have hikePrice equivalent here)
     const mealPrices = [room.cpPrice, room.mapPrice, room.apPrice, room.cp_price, room.map_price, room.ap_price];
     mealPrices.forEach((p) => {
       const val = parseFloat(p);
@@ -829,7 +863,7 @@ const lowestRoomPrice = useMemo(() => {
       }
     });
 
-    // 3. General b2cPrice (never b2bPrice)
+    // 3. General b2cPrice
     const generalB2cPrices = [room.b2cPrice, room.b2c_price, room.price, room.amount];
     generalB2cPrices.forEach((p) => {
       const val = parseFloat(p);
@@ -842,22 +876,18 @@ const lowestRoomPrice = useMemo(() => {
   const finalPrice = minB2cMealPrice !== Infinity ? minB2cMealPrice : (minGeneralB2cPrice !== Infinity ? minGeneralB2cPrice : null);
 
   if (finalPrice !== null || rooms.length > 0) {
-      console.log(`📊 API Pricing Debug [Listing: ${listing?.id || listing?.stayId || 'unknown'}]:`, {
-        isStay,
-        foundRoomsCount: rooms.length,
-        minB2cMealPrice: minB2cMealPrice === Infinity ? 'N/A' : minB2cMealPrice,
-        minGeneralB2cPrice: minGeneralB2cPrice === Infinity ? 'N/A' : minGeneralB2cPrice,
-        selectedLowestB2cPrice: finalPrice,
-        firstRoomSample: rooms[0] ? {
-          name: rooms[0].roomName || rooms[0].name,
-          mealPlanPricing: rooms[0].mealPlanPricing,
-          b2cPrice: rooms[0].b2cPrice
-        } : 'empty'
-      });
-    }
+    console.log(`📊 API Pricing Debug [Listing: ${listing?.id || listing?.stayId || 'unknown'}]:`, {
+      isStay,
+      foundRoomsCount: rooms.length,
+      isSeasonal: !!activeSeason,
+      minB2cMealPrice: minB2cMealPrice === Infinity ? 'N/A' : minB2cMealPrice,
+      minGeneralB2cPrice: minGeneralB2cPrice === Infinity ? 'N/A' : minGeneralB2cPrice,
+      selectedLowestB2cPrice: finalPrice,
+    });
+  }
 
-    return finalPrice;
-  }, [listing, isStay]);
+  return finalPrice;
+}, [listing, isStay, selectedDate]);
 
   const { addOnsTotal, finalTotal, receipt, priceInfo, pricingBreakdown } = useMemo(() => {
     // Determine guest counts early so individual-priced addons can be multiplied per guest
@@ -952,9 +982,23 @@ const lowestRoomPrice = useMemo(() => {
         String(r.roomId ?? r.room_id ?? r.roomTypeId ?? r.id ?? r.code) === String(staySelectedRoomType)
       );
       if (selRoom?.mealPlanPricing) {
+        // Determine if the check-in date falls within any seasonal period
+        const checkIn = selectedDate ? selectedDate.format("YYYY-MM-DD") : null;
+        const activeSeason = (checkIn && listing?.seasonalPeriods)
+          ? listing.seasonalPeriods.find(p =>
+            moment(checkIn).isSameOrAfter(p.startDate) && moment(checkIn).isSameOrBefore(p.endDate)
+          )
+          : null;
+
         const plans = Object.values(selRoom.mealPlanPricing);
         pricePerNight = plans.reduce((best, plan) => {
-          const val = parseFloat(plan?.b2cPrice || plan?.price || 0);
+          // If an active season is found, prioritize hikePrice over b2cPrice
+          let val = 0;
+          if (activeSeason && plan?.hikePrice && parseFloat(plan.hikePrice) > 0) {
+            val = parseFloat(plan.hikePrice);
+          } else {
+            val = parseFloat(plan?.b2cPrice || plan?.price || 0);
+          }
           return val > 0 && (best === 0 || val < best) ? val : best;
         }, 0);
       }
@@ -971,6 +1015,9 @@ const lowestRoomPrice = useMemo(() => {
     const currency = listing?.currency || "INR";
 
     const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
+    const allowChildPricing = Boolean(listing?.allowChildPricing || listing?.childPricingAllowed);
+    const childPricePerChild = parseFloat(listing?.childPricePerChild || listing?.childPrice || 0);
+
     let basePriceAmount;
     let priceDescription;
 
@@ -981,8 +1028,24 @@ const lowestRoomPrice = useMemo(() => {
         priceDescription = `${currency} ${pricePerNight.toFixed(2)}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
       } else {
         // Individual Pricing: Price per person x total guest count
-        basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
-        priceDescription = `${currency} ${pricePerPerson.toFixed(2)} x ${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
+        if (allowChildPricing && guests.children > 0) {
+          const adultsCount = guests.adults || 0;
+          const childrenCount = guests.children || 0;
+          const infantsCount = guests.infants || 0;
+
+          const adultsTotal = pricePerPerson * adultsCount * nightsCount;
+          const childrenTotal = childPricePerChild * childrenCount * nightsCount;
+          basePriceAmount = adultsTotal + childrenTotal;
+
+          const adultDesc = `${adultsCount} ${adultsCount === 1 ? "Adult" : "Adults"} x ${currency} ${pricePerPerson.toFixed(2)}`;
+          const childDesc = `${childrenCount} ${childrenCount === 1 ? "Child" : "Children"} x ${currency} ${childPricePerChild.toFixed(2)}`;
+          const nightDesc = nightsCount > 1 ? ` x ${nightsCount} nights` : "";
+
+          priceDescription = `${adultDesc}, ${childDesc}${nightDesc}`;
+        } else {
+          basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
+          priceDescription = `${currency} ${pricePerPerson.toFixed(2)} x ${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
+        }
       }
     } else {
       // Stay: Price per room per night × nights × rooms
@@ -1144,6 +1207,10 @@ const lowestRoomPrice = useMemo(() => {
         commission: pricingPlatformCommission,
         commissionRate: apiCommissionPercentage || 0,
         pricePerPerson: pricePerPerson,
+        adultsCount: (guests.adults || 0),
+        childrenCount: (guests.children || 0),
+        allowChildPricing,
+        childPricePerChild,
         total,
       }
     };
@@ -1496,13 +1563,21 @@ const lowestRoomPrice = useMemo(() => {
 
       let pricingBaseAmount = 0;
       const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
+      const allowChildPricing = Boolean(listing?.allowChildPricing || listing?.childPricingAllowed);
+      const childPricePerChild = parseFloat(listing?.childPricePerChild || listing?.childPrice || 0);
 
       if (experiencePricingType === "Group") {
         // Group Pricing: Fixed price
         pricingBaseAmount = pricePerNight * nights;
       } else if (pricePerPerson) {
-        // Individual Pricing: Price per person
-        pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
+        // Individual Pricing
+        if (allowChildPricing && guests.children > 0) {
+          const adultsTotal = pricePerPerson * (guests.adults || 0) * nights;
+          const childrenTotal = childPricePerChild * (guests.children || 0) * nights;
+          pricingBaseAmount = adultsTotal + childrenTotal;
+        } else {
+          pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
+        }
       } else {
         // Fallback
         pricingBaseAmount = pricePerNight * nights;
@@ -2336,8 +2411,12 @@ const lowestRoomPrice = useMemo(() => {
         const slotsResponse = await getListingSlots(validListingId, startDateStr, endDateStr);
         console.log("✅ Slots data received:", slotsResponse);
 
-        // Extract slots array from response
-        const slots = slotsResponse?.slots || [];
+        // Extract slots array from response and filter by is_active status
+        const slots = (slotsResponse?.slots || []).filter(slot => {
+          // If is_active is explicitly false, hide it. 
+          // Treat undefined or true as active.
+          return slot.is_active !== false && slot.isActive !== false;
+        });
         setSlotsData(slots);
 
         // Transform slots to match expected timeSlots format
@@ -2705,11 +2784,9 @@ return (
                       <GuestPicker
                         visible={showGuestPicker && canSelectGuests}
                         onClose={() => setShowGuestPicker(false)}
-                        onGuestChange={(guestData) => {
-                          setGuests(guestData);
-                          if (!isStay) {
-                            setHasSelectedGuests(true);
-                          }
+                        onGuestChange={(g) => {
+                          setGuests(g);
+                          setHasSelectedGuests(true);
                         }}
                         initialGuests={guests}
                         maxGuests={listing?.maxGuests || undefined}

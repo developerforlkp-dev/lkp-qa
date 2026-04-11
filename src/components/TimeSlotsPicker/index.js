@@ -118,6 +118,14 @@ const TimeSlotsPicker = ({
       );
     }
 
+    // Filter by is_active status (respect persistent toggle from admin panel)
+    rawSlots = rawSlots.filter((s) => {
+      const slotData = s.slot || s;
+      // If is_active is explicitly false, hide it. 
+      // Treat undefined or true as active.
+      return slotData.is_active !== false && slotData.isActive !== false;
+    });
+
     // If the selected date is TODAY, filter out time slots that have already passed
     if (selectedDate) {
       try {

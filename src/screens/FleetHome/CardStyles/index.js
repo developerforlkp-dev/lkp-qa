@@ -196,9 +196,16 @@ export const CardCarousel = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -227,9 +234,16 @@ export const CardGrid = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -254,9 +268,16 @@ export const CardDestination = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}
@@ -285,9 +306,16 @@ export const CardDestinationHorizontal = ({ section, listings, className }) => {
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <Link to="/listings" className={styles.sectionTitleLink}>
-          <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-        </Link>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to="/listings" className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
         {section.description && (
           <p className={styles.sectionSubtitle}>{section.description}</p>
         )}

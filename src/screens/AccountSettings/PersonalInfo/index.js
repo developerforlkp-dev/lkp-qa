@@ -1,30 +1,151 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import styles from "./PersonalInfo.module.sass";
-import { Link } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import TextInput from "../../../components/TextInput";
-import TextArea from "../../../components/TextArea";
 import Icon from "../../../components/Icon";
-import Dropdown from "../../../components/Dropdown";
-
-const optionsLocation = ["Location", "USA", "Russia"];
-const optionsSpeak = ["English (United States)", "Russian", "Chinese"];
+import Loader from "../../../components/Loader";
+import { 
+  getCustomerProfile, 
+  updateCustomerProfile, 
+  uploadCustomerAvatar 
+} from "../../../utils/api";
 
 const PersonalInfo = () => {
-  const [location, setLocation] = useState(optionsLocation[0]);
-  const [speak, setSpeak] = useState(optionsSpeak[0]);
+  const history = useHistory();
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  
+  const [profile, setProfile] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    avatarUrl: "",
+    countryCode: "+91"
+  });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const data = await getCustomerProfile();
+      if (data && data.customer) {
+        const { firstName, lastName, email, phone, avatarUrl, countryCode } = data.customer;
+        setProfile({
+          firstName: firstName || "",
+          lastName: lastName || "",
+          email: email || "",
+          phone: phone || "",
+          avatarUrl: avatarUrl || "",
+          countryCode: countryCode || "+91"
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setUpdating(true);
+      await updateCustomerProfile(profile);
+      alert("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Failed to update profile.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const result = await uploadCustomerAvatar(file);
+      // Assuming result contains the new avatarUrl
+      if (result && (result.avatarUrl || result.url)) {
+        const newUrl = result.avatarUrl || result.url;
+        setProfile(prev => ({ ...prev, avatarUrl: newUrl }));
+      } else {
+        // Fallback or re-fetch
+        fetchProfile();
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("jwtToken");
+    history.push("/");
+    window.location.reload();
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.loaderWrapper}>
+        <Loader />
+      </div>
+    );
+  }
 
   return (
-    <form className={styles.section}>
+    <form className={styles.section} onSubmit={handleSubmit}>
       <div className={styles.head}>
         <div className={cn("h2", styles.title)}>Personal info</div>
-        <Link
+        <button
+          type="button"
           className={cn("button-stroke button-small", styles.button)}
-          to="/profile"
+          onClick={handleLogout}
         >
-          View profile
-        </Link>
+          <Icon name="close-circle" size="16" />
+          <span>Logout</span>
+        </button>
       </div>
+
+      <div className={styles.avatarSection}>
+        <div className={styles.avatar}>
+          <img 
+            src={profile.avatarUrl || "/images/content/avatar-variant-1.jpg"} 
+            alt="Avatar" 
+            onError={(e) => { e.target.src = "/images/content/avatar-variant-1.jpg"; }}
+          />
+        </div>
+        <div className={styles.avatarDetails}>
+          <div className={styles.category}>Profile picture</div>
+          <div className={styles.note}>PNG, JPEG. Max 5MB.</div>
+          <div className={styles.avatarAction}>
+            <label className={cn("button-stroke button-small", styles.button)}>
+              <span>{uploading ? "Uploading..." : "Upload new picture"}</span>
+              <input 
+                type="file" 
+                className={styles.avatarInput} 
+                onChange={handleAvatarChange} 
+                accept="image/*"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
       <div className={styles.list}>
         <div className={styles.item}>
           <div className={styles.category}>Account info</div>
@@ -33,20 +154,24 @@ const PersonalInfo = () => {
               <div className={styles.col}>
                 <TextInput
                   className={styles.field}
-                  label="Display Name"
-                  name="display-name"
+                  label="First Name"
+                  name="firstName"
+                  value={profile.firstName}
+                  onChange={handleChange}
                   type="text"
-                  placeholder="Enter your display name"
+                  placeholder="Your first name"
                   required
                 />
               </div>
               <div className={styles.col}>
                 <TextInput
                   className={styles.field}
-                  label="real name"
-                  name="real-name"
+                  label="Last Name"
+                  name="lastName"
+                  value={profile.lastName}
+                  onChange={handleChange}
                   type="text"
-                  placeholder="Enter your real name"
+                  placeholder="Your last name"
                   required
                 />
               </div>
@@ -57,6 +182,8 @@ const PersonalInfo = () => {
                   className={styles.field}
                   label="Phone"
                   name="phone"
+                  value={profile.phone}
+                  onChange={handleChange}
                   type="tel"
                   placeholder="Phone number"
                   required
@@ -65,81 +192,30 @@ const PersonalInfo = () => {
               <div className={styles.col}>
                 <TextInput
                   className={styles.field}
-                  label="email"
+                  label="Email"
                   name="email"
+                  value={profile.email}
+                  onChange={handleChange}
                   type="email"
                   placeholder="Email"
-                  required
+                  disabled
                 />
-              </div>
-            </div>
-            <TextArea
-              className={styles.field}
-              label="bio"
-              name="bio"
-              placeholder="About yourself in a few words"
-              required
-            />
-            <div className={styles.row}>
-              <div className={styles.col}>
-                <div className={styles.label}>lives in</div>
-                <Dropdown
-                  className={styles.dropdown}
-                  value={location}
-                  setValue={setLocation}
-                  options={optionsLocation}
-                />
-              </div>
-              <div className={styles.col}>
-                <div className={styles.label}>speak</div>
-                <Dropdown
-                  className={styles.dropdown}
-                  value={speak}
-                  setValue={setSpeak}
-                  options={optionsSpeak}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className={styles.item}>
-          <div className={styles.category}>Social</div>
-          <div className={styles.fieldset}>
-            <div className={styles.row}>
-              <div className={styles.col}>
-                <TextInput
-                  className={styles.field}
-                  label="website"
-                  name="site"
-                  type="text"
-                  placeholder="Your site URL"
-                  required
-                />
-              </div>
-              <div className={styles.col}>
-                <TextInput
-                  className={styles.field}
-                  label="twitter"
-                  name="twitter"
-                  type="text"
-                  placeholder="@twitter username"
-                  required
-                />
-                <button
-                  className={cn("button-stroke button-small", styles.button)}
-                >
-                  Verify account
-                </button>
+                <div className={styles.note} style={{ marginTop: '4px', fontSize: '12px', color: '#777E90' }}>
+                  Email cannot be changed
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
       <div className={styles.controls}>
-        <button className={cn("button", styles.button)}>Update profile</button>
-        <button className={styles.clear}>
+        <button className={cn("button", styles.button)} type="submit" disabled={updating}>
+          {updating ? "Updating..." : "Update profile"}
+        </button>
+        <button className={styles.clear} type="button" onClick={fetchProfile}>
           <Icon name="close" size="16" />
-          Clear all
+          Reset changes
         </button>
       </div>
     </form>

@@ -16,23 +16,9 @@ const items = [
   {
     menu: [
       {
-        title: "Messages",
-        icon: "comment",
-        url: "/messages",
-      },
-      {
         title: "Bookings",
         icon: "home",
         url: "/bookings",
-      },
-    ],
-  },
-  {
-    menu: [
-      {
-        title: "List your property",
-        icon: "building",
-        url: "/list-your-property",
       },
       {
         title: "Host an experience",
@@ -82,16 +68,19 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
               className={styles.link}
               to="/support"
               activeClassName={styles.active}
+              onClick={() => setVisibleNav(false)}
             >
-              Support
+              <Icon name="help" size="24" className={styles.mobileIcon} />
+              <span>Support</span>
             </NavLink>
-
             <NavLink
-              className={cn("button-stroke button-small", styles.button)}
+              className={cn(styles.link, styles.mobileOnlyLink)}
+              to="/bookings"
               activeClassName={styles.active}
-              to="/list-your-property"
+              onClick={() => setVisibleNav(false)}
             >
-              List your property
+              <Icon name="home" size="24" className={styles.mobileIcon} />
+              <span>Bookings</span>
             </NavLink>
           </div>
           <button
@@ -103,6 +92,15 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
           >
             <Icon name={darkMode.value ? "sun" : "moon"} size="24" />
           </button>
+          {!shouldShowLogin && (
+            <NavLink
+              className={cn(styles.link, styles.bookingsLink)}
+              to="/bookings"
+              activeClassName={styles.active}
+            >
+              Bookings
+            </NavLink>
+          )}
           <Notification className={styles.notification} />
           {shouldShowLogin ? (
             <button className={styles.login} onClick={() => setVisible(true)}>

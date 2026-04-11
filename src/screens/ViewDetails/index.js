@@ -293,19 +293,21 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.address = eventData.address;
     }
 
-    if (eventData.venueDistrict) {
-      location.city = eventData.venueDistrict;
-    } else if (eventData.city) {
-      location.city = eventData.city;
-    }
+    // Map city/district
+    location.city = pickText(
+      eventData.venueDistrict,
+      eventData.venueCity,
+      eventData.city,
+      eventData.district
+    ) || "TBD";
 
-    if (eventData.venueState) {
-      location.country = eventData.venueState;
-    } else if (eventData.state) {
-      location.country = eventData.state;
-    } else if (eventData.country) {
-      location.country = eventData.country;
-    }
+    // Map country/state
+    location.country = pickText(
+      eventData.venueCountry,
+      eventData.country,
+      eventData.venueState,
+      eventData.state
+    ) || "TBD";
 
     // Build directions URL - prefer coordinates if available
     if (location.latitude && location.longitude) {
@@ -332,26 +334,37 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.longitude = parseFloat(listingData.longitude);
     }
 
-    // Check various possible location fields
-    if (listingData.address) {
-      location.address = listingData.address;
-    }
-    if (listingData.city) {
-      location.city = listingData.city;
-    }
-    if (listingData.state) {
-      location.country = listingData.state;
-    } else if (listingData.country) {
-      location.country = listingData.country;
-    }
+    // Map address
+    location.address = pickText(
+      listingData.meetingAddress,
+      listingData.meetingPoint,
+      listingData.address,
+      listingData.fullAddress
+    ) || "TBD";
 
-    // If there's a location string, try to parse it
-    if (listingData.location && typeof listingData.location === 'string') {
+    // Map city
+    location.city = pickText(
+      listingData.meetingCity,
+      listingData.city,
+      listingData.meetingDistrict,
+      listingData.district
+    ) || "TBD";
+
+    // Map country
+    location.country = pickText(
+      listingData.meetingCountry,
+      listingData.country,
+      listingData.meetingState,
+      listingData.state
+    ) || "TBD";
+
+    // If still TBD city/country, try to parse the 'location' field if it exists
+    if ((location.city === "TBD" || location.country === "TBD") && listingData.location && typeof listingData.location === 'string') {
       const locationParts = listingData.location.split(',').map(s => s.trim());
       if (locationParts.length >= 2) {
-        location.city = locationParts[0];
-        location.country = locationParts.slice(1).join(', ');
-      } else {
+        if (location.city === "TBD") location.city = locationParts[0];
+        if (location.country === "TBD") location.country = locationParts.slice(1).join(', ');
+      } else if (location.city === "TBD") {
         location.city = listingData.location;
       }
     }
@@ -376,17 +389,28 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.latitude = parseFloat(stayData.latitude);
       location.longitude = parseFloat(stayData.longitude);
     }
-    if (stayData.address) {
-      location.address = stayData.address;
-    }
-    if (stayData.city) {
-      location.city = stayData.city;
-    }
-    if (stayData.state) {
-      location.country = stayData.state;
-    } else if (stayData.country) {
-      location.country = stayData.country;
-    }
+    
+    // Map address
+    location.address = pickText(
+      stayData.address,
+      stayData.fullAddress,
+      stayData.location,
+      location.address
+    ) || "TBD";
+
+    // Map city
+    location.city = pickText(
+      stayData.city,
+      stayData.district,
+      location.city
+    ) || "TBD";
+
+    // Map country
+    location.country = pickText(
+      stayData.country,
+      stayData.state,
+      location.country
+    ) || "TBD";
 
     // Build directions URL
     if (location.latitude && location.longitude) {
@@ -402,22 +426,17 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     }
   }
 
-  // Fallback: if no location data, use a default or try to construct from available data
+  // Final fallback: if no location data, use listing.location or meetingInstructions
   if (location.city === "TBD" && location.country === "TBD" && !location.latitude) {
-    // Try to get any location info from the listing
-    if (listingData?.meetingPoint) {
-      location.address = listingData.meetingPoint;
+    if (listingData?.location && typeof listingData.location === 'string') {
+      const lp = listingData.location.split(',').map(s => s.trim());
+      location.city = lp[0] || "TBD";
+      if (lp.length > 1) location.country = lp.slice(1).join(", ");
     }
-    if (listingData?.meetingInstructions) {
-      // Try to extract location from meeting instructions
+    
+    if (listingData?.meetingInstructions && location.address === "TBD") {
       const instructions = listingData.meetingInstructions;
-      if (instructions.includes(',')) {
-        const parts = instructions.split(',').map(s => s.trim());
-        location.address = parts[0];
-        if (parts.length > 1) {
-          location.city = parts[1];
-        }
-      } else {
+      if (instructions.length < 100) { // Only use if it looks like a short address
         location.address = instructions;
       }
     }
