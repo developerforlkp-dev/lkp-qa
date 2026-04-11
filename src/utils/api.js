@@ -447,6 +447,45 @@ export const loginWithGoogle = async (idToken) => {
   }
 };
 
+// ✅ Customer Profile API functions
+export const getCustomerProfile = async () => {
+  try {
+    const response = await ListingsAPI.get("/customers/auth/me");
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching customer profile:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const updateCustomerProfile = async (profileData) => {
+  try {
+    const response = await ListingsAPI.put("/customers/auth/me", profileData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error updating customer profile:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Image upload for avatar
+export const uploadCustomerAvatar = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error uploading customer avatar:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Get billing configuration for a listing
 export const getBillingConfiguration = async (listingId) => {
   try {

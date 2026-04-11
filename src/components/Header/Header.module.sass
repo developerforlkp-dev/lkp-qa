@@ -90,8 +90,10 @@
     margin-right: auto
 
 .link
-    margin-left: auto
+    margin-right: 32px
     +button-2
+    &:last-child
+        margin-right: 0
     color: $n2
     +dark
         color: $n8
@@ -107,6 +109,9 @@
         +poppins
         font-size: 24px
         font-weight: 600
+        svg
+            fill: $n4
+            margin-right: 16px
     &:hover,
     &.active
         color: $n2
@@ -118,6 +123,21 @@
             +m
                 background: none
                 color: $n8
+    
+.mobileIcon
+    display: none
+    +m
+        display: block
+
+.mobileOnlyLink
+    display: flex
+    +rmin(768)
+        display: none
+
+.bookingsLink
+    margin-left: 20px
+    +m
+        display: none
     
 .language
     margin-left: 40px
