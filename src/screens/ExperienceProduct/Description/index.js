@@ -332,9 +332,19 @@ const getGuestCount = (guestsObj) => {
 
 const minimumChargeAge = 12;
 
-const billableGuestLabel = useMemo(() => `Age 12+`, []);
+const billableGuestLabel = useMemo(() => {
+  if (listing?.childAgeTo !== undefined) {
+    return `Age ${listing.childAgeTo + 1}+`;
+  }
+  return `Age 12+`;
+}, [listing?.childAgeTo]);
 
-const childrenGuestLabel = useMemo(() => `Ages 6-12`, []);
+const childrenGuestLabel = useMemo(() => {
+  if (listing?.childAgeFrom !== undefined && listing?.childAgeTo !== undefined) {
+    return `Ages ${listing.childAgeFrom}-${listing.childAgeTo}`;
+  }
+  return `Ages 6-12`;
+}, [listing?.childAgeFrom, listing?.childAgeTo]);
 
   const getBillableGuestCount = (guestsObj) => {
     if (!guestsObj) return 0;
@@ -971,6 +981,9 @@ const lowestRoomPrice = useMemo(() => {
     const currency = listing?.currency || "INR";
 
     const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
+    const allowChildPricing = Boolean(listing?.allowChildPricing || listing?.childPricingAllowed);
+    const childPricePerChild = parseFloat(listing?.childPricePerChild || listing?.childPrice || 0);
+
     let basePriceAmount;
     let priceDescription;
 
@@ -981,8 +994,24 @@ const lowestRoomPrice = useMemo(() => {
         priceDescription = `${currency} ${pricePerNight.toFixed(2)}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
       } else {
         // Individual Pricing: Price per person x total guest count
-        basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
-        priceDescription = `${currency} ${pricePerPerson.toFixed(2)} x ${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
+        if (allowChildPricing && guests.children > 0) {
+          const adultsCount = guests.adults || 0;
+          const childrenCount = guests.children || 0;
+          const infantsCount = guests.infants || 0;
+
+          const adultsTotal = pricePerPerson * adultsCount * nightsCount;
+          const childrenTotal = childPricePerChild * childrenCount * nightsCount;
+          basePriceAmount = adultsTotal + childrenTotal;
+
+          const adultDesc = `${adultsCount} ${adultsCount === 1 ? "Adult" : "Adults"} x ${currency} ${pricePerPerson.toFixed(2)}`;
+          const childDesc = `${childrenCount} ${childrenCount === 1 ? "Child" : "Children"} x ${currency} ${childPricePerChild.toFixed(2)}`;
+          const nightDesc = nightsCount > 1 ? ` x ${nightsCount} nights` : "";
+
+          priceDescription = `${adultDesc}, ${childDesc}${nightDesc}`;
+        } else {
+          basePriceAmount = pricePerPerson * billableGuestCount * nightsCount;
+          priceDescription = `${currency} ${pricePerPerson.toFixed(2)} x ${billableGuestCount} ${billableGuestCount === 1 ? "guest" : "guests"}${nightsCount > 1 ? ` x ${nightsCount} nights` : ""}`;
+        }
       }
     } else {
       // Stay: Price per room per night × nights × rooms
@@ -1144,6 +1173,10 @@ const lowestRoomPrice = useMemo(() => {
         commission: pricingPlatformCommission,
         commissionRate: apiCommissionPercentage || 0,
         pricePerPerson: pricePerPerson,
+        adultsCount: (guests.adults || 0),
+        childrenCount: (guests.children || 0),
+        allowChildPricing,
+        childPricePerChild,
         total,
       }
     };
@@ -1496,13 +1529,21 @@ const lowestRoomPrice = useMemo(() => {
 
       let pricingBaseAmount = 0;
       const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
+      const allowChildPricing = Boolean(listing?.allowChildPricing || listing?.childPricingAllowed);
+      const childPricePerChild = parseFloat(listing?.childPricePerChild || listing?.childPrice || 0);
 
       if (experiencePricingType === "Group") {
         // Group Pricing: Fixed price
         pricingBaseAmount = pricePerNight * nights;
       } else if (pricePerPerson) {
-        // Individual Pricing: Price per person
-        pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
+        // Individual Pricing
+        if (allowChildPricing && guests.children > 0) {
+          const adultsTotal = pricePerPerson * (guests.adults || 0) * nights;
+          const childrenTotal = childPricePerChild * (guests.children || 0) * nights;
+          pricingBaseAmount = adultsTotal + childrenTotal;
+        } else {
+          pricingBaseAmount = pricePerPerson * guestCountForPricing * nights;
+        }
       } else {
         // Fallback
         pricingBaseAmount = pricePerNight * nights;
@@ -2705,11 +2746,9 @@ return (
                       <GuestPicker
                         visible={showGuestPicker && canSelectGuests}
                         onClose={() => setShowGuestPicker(false)}
-                        onGuestChange={(guestData) => {
-                          setGuests(guestData);
-                          if (!isStay) {
-                            setHasSelectedGuests(true);
-                          }
+                        onGuestChange={(g) => {
+                          setGuests(g);
+                          setHasSelectedGuests(true);
                         }}
                         initialGuests={guests}
                         maxGuests={listing?.maxGuests || undefined}
