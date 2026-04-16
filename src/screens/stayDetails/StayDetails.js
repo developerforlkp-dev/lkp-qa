@@ -8,6 +8,7 @@ import TabSection from "../ExperienceProduct/TabSection";
 import CommentsProduct from "../../components/CommentsProduct";
 import Browse from "../../components/Browse";
 import Loader from "../../components/Loader";
+import RoomCards from "./RoomCards";
 
 import { browse2 } from "../../mocks/browse";
 import { getStayDetails, getHost } from "../../utils/api";
@@ -194,6 +195,7 @@ const StayDetails = () => {
       {stay && (
         <>
           <Description classSection="section" listing={stay} hostData={hostData} />
+          <RoomCards listing={stay} />
           <TabSection classSection="section" listing={stay} />
           <CommentsProduct
             className={cn("section")}
