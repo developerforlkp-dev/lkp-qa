@@ -605,6 +605,21 @@
   svg
     fill: currentColor
 
+.roomCardCounterWrap
+  display: flex
+  flex-direction: column
+  align-items: flex-end
+  gap: 8px
+
+.counterLabel
+  font-size: 11px
+  font-weight: 700
+  color: #6B7280
+  text-transform: uppercase
+  letter-spacing: 0.05em
+  +dark
+    color: $n5
+
 // Sidebar
 .sidebar
   position: sticky
@@ -1012,28 +1027,67 @@
   button
     width: 32px
     height: 32px
-    border: 1px solid $n6
+    border: 1.5px solid #3b82f6 // Explicit blue border for visibility
     border-radius: 50%
-    background: transparent
+    background: white
     font-size: 18px
-    color: $n2
+    font-weight: 600
+    color: #3b82f6
     cursor: pointer
     display: flex
     align-items: center
     justify-content: center
+    transition: all 0.2s
     +dark
-      border-color: $n4
+      background: $n2
+      border-color: #3b82f6
       color: $n8
     &:hover:not(:disabled)
-      border-color: $p1
-      color: $p1
+      background: #3b82f6
+      color: white
     &:disabled
       opacity: 0.3
       cursor: default
+      border-color: #E5E7EB
+      color: #9CA3AF
+      background: #F9FAFB
   span
     min-width: 24px
     text-align: center
-    font-weight: 600
+    font-weight: 700
+    font-size: 15px
+
+.roomSelectorField
+  margin-top: 16px
+  margin-bottom: 24px
+
+.roomSelectorCard
+  padding: 14px 16px
+  background: white
+  border: 1px solid #E5E7EB
+  border-radius: 12px
+  transition: all 0.2s
+  +dark
+    background: $n3
+    border-color: $n4
+  &:hover
+    border-color: #3b82f6
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05)
+
+.roomCounterNote
+  margin-top: 8px
+  padding: 0 4px
+  font-size: 12px
+  font-weight: 500
+  color: #6B7280
+  line-height: 1.4
+  +dark
+    color: $n5
+
+.counterRow
+  display: flex
+  align-items: center
+  flex-shrink: 0
 
 .checkBtn
   width: 100%
@@ -1438,6 +1492,13 @@
   +dark
     color: $n8
     border-color: $n4
+
+.priceDetailsStack
+  display: flex
+  flex-direction: column
+  gap: 2px
+  span
+    line-height: 1.4
 
 // Animations
 @keyframes fadeIn

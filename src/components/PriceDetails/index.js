@@ -87,7 +87,17 @@ const PriceDetails = ({
           <div className={styles.table}>
             {table.map((x, index) => (
               <div className={styles.row} key={index}>
-                <div className={styles.cell}>{x.title}</div>
+                <div className={styles.cell}>
+                  {typeof x.title === "string" && (x.title.includes(" × ") || x.title.includes(" x ")) ? (
+                    <div className={styles.priceDetailsStack}>
+                      {x.title.split(/(?= [×x] )/).map((part, i) => (
+                        <span key={i}>{part.trim()}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    x.title
+                  )}
+                </div>
                 <div className={styles.cell}>{x.value}</div>
               </div>
             ))}

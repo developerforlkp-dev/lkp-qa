@@ -4,8 +4,7 @@ const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 
 
 
-const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
-  "https://api.qa.littleknownplanet.com/api";
+const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) || "/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
   return API_BASE_URL;
@@ -429,7 +428,7 @@ export const uploadCustomerAvatar = async (file) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
-    
+
     const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -1330,7 +1329,7 @@ export const getLeadDetails = async (leadId) => {
     const payload = response.data;
     console.log("✅ Lead details fetched (raw):", payload);
 
-    return payload; 
+    return payload;
   } catch (error) {
     console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
     throw error;

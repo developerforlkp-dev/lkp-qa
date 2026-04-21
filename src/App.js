@@ -38,7 +38,7 @@ import EventProduct from "./screens/EventProduct";
 import EventFlowHome from "./eventFlowTheme/pages/home";
 import EventDetailsPage from "./eventFlowTheme/pages/event-details";
 import StayProduct from "./screens/StayProduct";
-import StayDetails from "./screens/stayDetails/StayDetails";
+import StayDetails from "./screens/StayDetails";
 import FoodDetails from "./screens/FoodDetails";
 import PlaceDetails from "./screens/PlaceDetails";
 
