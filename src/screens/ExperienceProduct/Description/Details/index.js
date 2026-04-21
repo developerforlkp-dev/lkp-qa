@@ -5,6 +5,7 @@ import Icon from "../../../../components/Icon";
 import Switch from "../../../../components/Switch";
 import Counter from "../../../../components/Counter";
 import Modal from "../../../../components/Modal";
+import RoomCards from "../../../StayDetails/RoomCards";
 
 const facts = [
   {
@@ -69,7 +70,7 @@ const options = [
   },
 ];
 
-const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggleAddOn, onAddOnQuantityChange }) => {
+const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggleAddOn, onAddOnQuantityChange, onRoomSelect, selectedRoomId, roomsCount, onRoomsCountChange }) => {
   const [selectedAddonModal, setSelectedAddonModal] = useState(null);
 
   const displayAddOns = Array.isArray(listing?.addons) && listing.addons.length
@@ -224,6 +225,14 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
           </>
         )}
       </div>
+      <RoomCards 
+        listing={listing} 
+        onRoomSelect={onRoomSelect} 
+        selectedRoomId={selectedRoomId} 
+        roomsCount={roomsCount}
+        onRoomsCountChange={onRoomsCountChange}
+        noContainer 
+      />
       <div className={styles.facts}>
         {(
           (() => {

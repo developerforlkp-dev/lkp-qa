@@ -1,0 +1,342 @@
+@import ../../styles/helpers
+
+.section
+  margin-top: -80px
+  margin-bottom: 64px
+  padding-top: 0
+  padding-bottom: 0
+  +d
+    margin-top: -60px
+  +m
+    margin-top: -40px
+
+.title
+  margin-bottom: 32px
+  font-size: 32px
+  font-weight: 700
+  letter-spacing: -0.02em
+  color: $n1
+  +m
+    margin-bottom: 24px
+    font-size: 24px
+  +dark
+    color: $n8
+
+.list
+  display: grid
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))
+  gap: 24px
+  +m
+    grid-template-columns: 1fr
+    gap: 20px
+
+.card
+  display: flex
+  flex-direction: column
+  background: $n8
+  border: 1px solid $n6
+  border-radius: 20px
+  overflow: hidden
+  position: relative
+  transition: box-shadow .25s, transform .25s, border-color .25s
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06)
+  &:hover
+    box-shadow: 0 12px 36px rgba(0,0,0,0.1)
+    transform: translateY(-4px)
+    .img
+      transform: scale(1.1)
+  +dark
+    background: $n2
+    border-color: $n3
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18)
+    &:hover
+      box-shadow: 0 12px 36px rgba(0,0,0,0.4)
+
+.cardSelected
+  border-color: $p1 !important
+  box-shadow: 0 0 0 3px rgba($p1, 0.25), 0 8px 32px rgba(0,0,0,0.08)
+  +dark
+    box-shadow: 0 0 0 3px rgba($p1, 0.25), 0 8px 32px rgba(0,0,0,0.3)
+
+.imgWrap
+  position: relative
+  padding-bottom: 56%
+  background: $n6
+  overflow: hidden
+  +dark
+    background: $n3
+
+.img
+  position: absolute
+  top: 0
+  left: 0
+  width: 100%
+  height: 100%
+  object-fit: cover
+  transition: transform .6s cubic-bezier(0.4, 0, 0.2, 1)
+
+.badge
+  position: absolute
+  top: 12px
+  left: 12px
+  padding: 4px 12px
+  border-radius: 24px
+  background: $p1
+  color: $white
+  font-size: 11px
+  font-weight: 700
+  text-transform: uppercase
+  letter-spacing: .08em
+  z-index: 1
+
+.selectedBadge
+  position: absolute
+  top: 12px
+  right: 12px
+  padding: 4px 10px
+  border-radius: 20px
+  background: $p1
+  color: $white
+  font-size: 11px
+  font-weight: 700
+  z-index: 1
+
+.body
+  display: flex
+  flex-direction: column
+  flex-grow: 1
+  padding: 24px
+  +m
+    padding: 20px
+
+.roomName
+  margin-bottom: 8px
+  font-size: 20px
+  font-weight: 700
+  line-height: 1.2
+  color: $n1
+  +dark
+    color: $n8
+
+.capacity
+  display: flex
+  align-items: center
+  gap: 6px
+  margin-bottom: 12px
+  font-size: 13px
+  font-weight: 500
+  color: $n4
+
+.desc
+  margin-bottom: 20px
+  font-size: 14px
+  color: $n4
+  line-height: 1.6
+  flex-grow: 1
+  display: -webkit-box
+  -webkit-line-clamp: 3
+  -webkit-box-orient: vertical
+  overflow: hidden
+  +dark
+    color: rgba($n8, 0.6)
+
+.planSection
+  margin-bottom: 20px
+  display: flex
+  flex-direction: column
+
+.planLabel
+  margin-bottom: 8px
+  font-size: 11px
+  font-weight: 700
+  letter-spacing: .08em
+  text-transform: uppercase
+  color: $n4
+  +dark
+    color: rgba($n8, 0.45)
+
+.dropdown
+  position: relative
+  user-select: none
+
+.dropdownTrigger
+  display: flex
+  align-items: center
+  justify-content: space-between
+  height: 44px
+  padding: 0 14px
+  border-radius: 12px
+  background: $n7
+  border: 1.5px solid $n6
+  color: $n2
+  font-size: 14px
+  font-weight: 500
+  cursor: pointer
+  transition: border-color .15s, background .15s
+  +dark
+    background: rgba($white, 0.08)
+    border-color: rgba($white, 0.2)
+    color: $white
+  &.open
+    border-color: $p1
+
+.dropdownArrow
+  margin-left: 8px
+  font-size: 10px
+  opacity: 0.7
+  transition: transform .2s
+  &.open
+    transform: rotate(180deg)
+
+.dropdownList
+  position: absolute
+  top: calc(100% + 6px)
+  left: 0
+  right: 0
+  z-index: 1000
+  background: $white
+  border: 1.5px solid $n6
+  border-radius: 12px
+  overflow: hidden
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1)
+  +dark
+    background: #1a2030
+    border-color: rgba($p1, 0.4)
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5)
+
+.dropdownOption
+  padding: 11px 14px
+  font-size: 14px
+  color: $n2
+  cursor: pointer
+  transition: background .12s, color .12s
+  border-bottom: 1px solid $n7
+  +dark
+    color: #e0e4f0
+    border-bottom-color: rgba($white, 0.07)
+  &:last-child
+    border-bottom: none
+  &:hover
+    background: $n7
+    +dark
+      background: rgba($white, 0.06)
+  &.selected
+    font-weight: 700
+    color: $p1
+    background: rgba($p1, 0.05)
+    +dark
+      background: rgba($p1, 0.12)
+
+.singlePlan
+  padding: 10px 14px
+  border-radius: 12px
+  background: $n7
+  border: 1.5px solid $n6
+  color: $n2
+  font-size: 14px
+  font-weight: 500
+  +dark
+    background: rgba($white, 0.05)
+    border-color: rgba($white, 0.12)
+    color: #e0e4f0
+
+.foot
+  display: flex
+  align-items: center
+  justify-content: space-between
+  padding-top: 20px
+  border-top: 1px solid $n6
+  +dark
+    border-color: rgba($white, 0.08)
+
+.price
+  display: flex
+  flex-direction: column
+
+.priceLabel
+  font-size: 11px
+  font-weight: 600
+  color: $n4
+  text-transform: uppercase
+  letter-spacing: .06em
+  margin-bottom: 2px
+  +dark
+    color: rgba($n8, 0.45)
+
+.amount
+  font-size: 22px
+  font-weight: 700
+  color: $n1
+  +dark
+    color: $white
+
+.perNight
+  font-size: 13px
+  color: $n4
+  +dark
+    color: rgba($n8, 0.5)
+
+.bookBtn
+  height: 40px
+  padding: 0 22px
+  border-radius: 20px
+  background: $p1
+  color: $white
+  font-size: 14px
+  font-weight: 700
+  border: none
+  cursor: pointer
+  transition: opacity .2s, transform .15s
+  &:hover
+    opacity: .88
+    transform: scale(1.04)
+  &:active
+    transform: scale(.97)
+  &.selected
+    background: darken($p1, 10%)
+
+.counterWrap
+  display: flex
+  align-items: center
+  gap: 16px
+  height: 44px
+  padding: 0 12px
+  background: rgba($p1, 0.08)
+  border-radius: 22px
+  border: 1.5px solid rgba($p1, 0.3)
+  +dark
+    background: rgba($p1, 0.15)
+    border-color: rgba($p1, 0.45)
+
+.counterBtn
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 28px
+  height: 28px
+  border-radius: 50%
+  background: $p1
+  border: none
+  color: $white
+  cursor: pointer
+  transition: transform 0.1s, opacity 0.2s
+  &:hover:not(:disabled)
+    transform: scale(1.1)
+    opacity: 0.9
+  &:active:not(:disabled)
+    transform: scale(0.9)
+  &:disabled
+    background: $n5
+    cursor: default
+    opacity: 0.5
+  svg
+    fill: currentColor
+
+.countValue
+  font-size: 16px
+  font-weight: 700
+  color: $n1
+  min-width: 14px
+  text-align: center
+  +dark
+    color: $n8

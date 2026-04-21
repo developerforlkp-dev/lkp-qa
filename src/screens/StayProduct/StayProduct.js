@@ -178,6 +178,9 @@ const BookingSidebar = ({
   onBooking,
   numberOfNights,
   roomsNeeded,
+  roomsCount,
+  setRoomsCount,
+  minRoomsNeeded,
   roomCapacityMessage
 }) => {
   const [showGuestPicker, setShowGuestPicker] = useState(false);
@@ -199,25 +202,78 @@ const BookingSidebar = ({
   // Shown at the top as a "starting from" price before selection.
   const getMealPlanPriceForRoom = (room) => {
     if (!room) return 0;
+
+    const activeSeasonObj = room?.seasonalPeriods?.find(p =>
+      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+    ) || stay?.seasonalPeriods?.find(p =>
+      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+    );
+
+    const roomActiveSeasonData = activeSeasonObj ? (
+      room?.seasonalPricing?.[activeSeasonObj.tempId] ||
+      room?.[activeSeasonObj.tempId] ||
+      stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || 
+      stay?.[activeSeasonObj.tempId]
+    ) : null;
+
     const mp = room.mealPlanPricing;
     if (mp) {
       // Try each plan in priority order
       for (const code of ["MAP", "CP", "BB", "AP", "EP"]) {
         const plan = mp[code];
         if (plan) {
+          if (activeSeasonObj && parseFloat(plan.hikePrice || 0) > 0) return parseFloat(plan.hikePrice);
           const p = parseFloat(plan.b2cPrice || plan.b2bPrice || plan.price || 0);
           if (p > 0) return p;
         }
       }
     }
-    return parseFloat(room.b2cPrice || room.mapPrice || room.cpPrice || room.bbPrice || room.apPrice || room.epPrice || room.price || 0);
+    
+    if (roomActiveSeasonData) {
+      if (parseFloat(roomActiveSeasonData.hikePrice || 0) > 0) return parseFloat(roomActiveSeasonData.hikePrice);
+      if (parseFloat(roomActiveSeasonData.b2cPrice || 0) > 0) return parseFloat(roomActiveSeasonData.b2cPrice);
+    }
+    
+    return parseFloat(room.hikePrice || room.b2cPrice || room.mapPrice || room.cpPrice || room.bbPrice || room.apPrice || room.epPrice || room.price || 0);
   };
+
+  const activeSeason = useMemo(() => {
+    if (!checkInDate || !stay?.seasonalPeriods) {
+      console.log('Season check skipped:', { checkInDate, hasSeasonalPeriods: !!stay?.seasonalPeriods });
+      return null;
+    }
+    const found = stay.seasonalPeriods.find(p =>
+      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+    );
+    console.log('Season found for checkInDate', checkInDate, ':', found);
+    return found;
+  }, [checkInDate, stay?.seasonalPeriods]);
+
+  const activeSeasonData = activeSeason ? (stay?.propertySeasonalPricing?.[activeSeason.tempId] || stay?.[activeSeason.tempId]) : null;
+  
+  if (checkInDate) {
+    console.log('activeSeasonData resolved as:', activeSeasonData, 'for tempId:', activeSeason?.tempId);
+  }
+
 
   // startingFromPricePerNight — shown at top even before room selection
   // Uses availableRooms prop to reliably detect room-based pricing
   // (stay.rooms may be empty on initial render before API re-populates rooms)
   const startingFromPricePerNight = useMemo(() => {
     if (isPropertyBased) {
+      if (activeSeasonData) {
+        const sPrice = parseFloat(
+          activeSeasonData?.fullPropertyHikePrice ||
+          stay?.fullPropertyHikePrice ||
+          activeSeasonData?.fullPropertyB2cPrice ||
+          activeSeasonData?.b2cPrice ||
+          activeSeasonData?.price || 0
+        );
+        if (sPrice > 0) return sPrice;
+      }
       return parseFloat(
         stay?.fullPropertyB2cPrice ||
         stay?.b2cPrice ||
@@ -237,12 +293,16 @@ const BookingSidebar = ({
     }
     return 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stay, isPropertyBased, isRoomBased, selectedRoom, availableRooms]);
+  }, [stay, isPropertyBased, isRoomBased, selectedRoom, availableRooms, activeSeasonData]);
 
 // basePrice is what we use for the active price line and total calculation
 const basePrice = isRoomBased
   ? getMealPlanPriceForRoom(selectedRoom) || startingFromPricePerNight
   : parseFloat(
+    (isPropertyBased && activeSeasonData ? activeSeasonData.fullPropertyHikePrice : null) ||
+    (isPropertyBased && activeSeasonData ? stay?.fullPropertyHikePrice : null) ||
+    (isPropertyBased && activeSeasonData ? activeSeasonData.fullPropertyB2cPrice : null) ||
+    (isPropertyBased && activeSeasonData ? activeSeasonData.b2cPrice : null) ||
     (isPropertyBased ? stay?.fullPropertyB2cPrice : null) ||
     stay?.b2cPrice ||
     stay?.fullPropertyB2cPrice ||
@@ -259,8 +319,9 @@ const discountedBasePrice = discountPercentage > 0
 const extraAdults = Math.max(0, (guests?.adults || 0) - (stay?.maxAdults || 0));
 const extraChildren = Math.max(0, (guests?.children || 0) - (stay?.maxChildren || 0));
 
-const extraAdultPrice = parseFloat(stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
-const extraChildPrice = parseFloat(stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
+const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || activeSeasonData?.fullPropertyExtraAdultPrice || stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
+const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || activeSeasonData?.fullPropertyExtraChildPrice || stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
+
 
 const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
@@ -579,6 +640,39 @@ return (
         </div>
       )}
 
+      {/* Redesigned Manual room count selector */}
+      {isRoomBased && selectedRoom && (
+        <div className={styles.roomSelectorField}>
+          <div className={styles.roomSelectorCard}>
+            <div className={styles.guestLabel}>NUMBER OF ROOMS</div>
+            <div className={styles.guestValueRow}>
+              <div className={styles.guestValue}>
+                {roomsCount} {roomsCount === 1 ? "Room" : "Rooms"}
+              </div>
+              <div className={styles.counterRow}>
+                <div className={styles.counter}>
+                  <button
+                    onClick={() => setRoomsCount(Math.max(minRoomsNeeded, roomsCount - 1))}
+                    disabled={roomsCount <= minRoomsNeeded}
+                    aria-label="Decrease room count"
+                  >-</button>
+                  <span>{roomsCount}</span>
+                  <button
+                    onClick={() => setRoomsCount(Math.min(Number(selectedRoom.units || 99), roomsCount + 1))}
+                    disabled={roomsCount >= Number(selectedRoom.units || 99)}
+                    aria-label="Increase room count"
+                  >+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className={styles.roomCounterNote}>
+             {minRoomsNeeded > 1 && `Min ${minRoomsNeeded} rooms required for your group · `}
+             {selectedRoom.units ? `Only ${selectedRoom.units} rooms available` : "Up to 99 rooms available"}
+          </div>
+        </div>
+      )}
+
       {/* Room capacity message – add another room or no room available */}
       {roomCapacityMessage && (
         <div className={cn(
@@ -594,9 +688,31 @@ return (
       {showTotal && numberOfNights > 0 && (
         <div className={styles.totalBreakdown}>
           <div className={styles.totalRow}>
-            <span>{formatPrice(price)} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""}</span>
-            <span>{formatPrice(totalPerStay)}</span>
+            <span>
+              {selectedRoom?.roomName || "Room"} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}
+              {roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""}
+            </span>
+            <span>{formatPrice(discountedBasePrice * numberOfNights * roomsNeeded)}</span>
           </div>
+
+          {extraAdults > 0 && (
+            <div className={styles.totalRow}>
+              <span>
+                Extra Adult{extraAdults > 1 ? "s" : ""} ({formatPrice(extraAdultPrice)}/night × {extraAdults} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""})
+              </span>
+              <span>{formatPrice(extraAdults * extraAdultPrice * numberOfNights * roomsNeeded)}</span>
+            </div>
+          )}
+
+          {extraChildren > 0 && (
+            <div className={styles.totalRow}>
+              <span>
+                Extra Child{extraChildren > 1 ? "ren" : ""} ({formatPrice(extraChildPrice)}/night × {extraChildren} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""})
+              </span>
+              <span>{formatPrice(extraChildren * extraChildPrice * numberOfNights * roomsNeeded)}</span>
+            </div>
+          )}
+
           <div className={cn(styles.totalRow, styles.totalRowFinal)}>
             <span>Total</span>
             <span>{formatPrice(totalPerStay)}</span>
@@ -700,7 +816,18 @@ const PropertyDetails = ({ stay }) => {
 };
 
 // Room Card Component
-const RoomCard = ({ room, onSelect, discountPercentage, guests, stay }) => {
+const RoomCard = ({
+  room,
+  onSelect,
+  discountPercentage,
+  guests,
+  stay,
+  checkInDate,
+  selectedRoom,
+  roomsCount,
+  setRoomsCount,
+  minRoomsNeeded
+}) => {
   const images = room?.roomImages || room?.images || [];
   const image = room?.imageUrl || images[0] || room?.coverImageUrl;
   const roomTags = room?.roomAmenities || room?.amenities || [];
@@ -711,7 +838,30 @@ const RoomCard = ({ room, onSelect, discountPercentage, guests, stay }) => {
     ? Number(room.maxGuests)
     : (Number(room.maxAdults) || 0) + (Number(room.maxChildren) || 0) || 2;
 
-  const basePrice = parseFloat(room.b2cPrice || room.price || 0);
+  const activeSeason = useMemo(() => {
+    if (!checkInDate) return null;
+    return room?.seasonalPeriods?.find(p =>
+      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+    ) || stay?.seasonalPeriods?.find(p =>
+      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+    );
+  }, [checkInDate, room?.seasonalPeriods, stay?.seasonalPeriods]);
+
+  const activeSeasonData = activeSeason ? (
+    room?.seasonalPricing?.[activeSeason.tempId] ||
+    room?.[activeSeason.tempId] || 
+    stay?.propertySeasonalPricing?.[activeSeason.tempId] || 
+    stay?.[activeSeason.tempId]
+  ) : null;
+
+  const basePrice = parseFloat(
+    (activeSeasonData && parseFloat(activeSeasonData.hikePrice) > 0 ? activeSeasonData.hikePrice : null) ||
+    activeSeasonData?.b2cPrice ||
+    room.hikePrice || room.b2cPrice || room.price || 0
+  );
+  
   const discountedBasePrice = discountPercentage > 0
     ? basePrice * (1 - discountPercentage / 100)
     : basePrice;
@@ -724,8 +874,8 @@ const RoomCard = ({ room, onSelect, discountPercentage, guests, stay }) => {
   const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdults);
   const extraChildren = Math.max(0, (guests?.children || 0) - maxChildren);
 
-  const extraAdultPrice = parseFloat(room.extraAdultPrice || stay?.extraAdultPrice || 0);
-  const extraChildPrice = parseFloat(room.extraChildPrice || stay?.extraChildPrice || 0);
+  const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || room.extraAdultPrice || stay?.extraAdultPrice || 0);
+  const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || room.extraChildPrice || stay?.extraChildPrice || 0);
 
   const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
@@ -822,10 +972,27 @@ const RoomCard = ({ room, onSelect, discountPercentage, guests, stay }) => {
               </div>
             </div>
           </div>
-          <button className={styles.selectRoomBtn} onClick={() => onSelect(room)}>
-            Select Room
-            <Icon name="arrow-right" size="14" />
-          </button>
+          {selectedRoom && (selectedRoom.roomId === room.roomId || selectedRoom.id === room.id) ? (
+            <div className={styles.roomCardCounterWrap}>
+              <div className={styles.counterLabel}>Select Quantity</div>
+              <div className={styles.counter}>
+                <button
+                  onClick={() => setRoomsCount(Math.max(minRoomsNeeded, roomsCount - 1))}
+                  disabled={roomsCount <= minRoomsNeeded}
+                >-</button>
+                <span>{roomsCount}</span>
+                <button
+                  onClick={() => setRoomsCount(Math.min(Number(room.units || 99), roomsCount + 1))}
+                  disabled={roomsCount >= Number(room.units || 99)}
+                >+</button>
+              </div>
+            </div>
+          ) : (
+            <button className={styles.selectRoomBtn} onClick={() => onSelect(room)}>
+              Select Room
+              <Icon name="arrow-right" size="14" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -833,7 +1000,19 @@ const RoomCard = ({ room, onSelect, discountPercentage, guests, stay }) => {
 };
 
 // Available Rooms Section
-const AvailableRooms = ({ rooms, availabilityChecked, onSelectRoom, selectedRoom, discountPercentage, guests, stay }) => {
+const AvailableRooms = ({
+  rooms,
+  availabilityChecked,
+  onSelectRoom,
+  selectedRoom,
+  discountPercentage,
+  guests,
+  stay,
+  checkInDate,
+  roomsCount,
+  setRoomsCount,
+  minRoomsNeeded
+}) => {
   const totalGuests = (guests?.adults || 0) + (guests?.children || 0);
 
   if (!rooms || rooms.length === 0) {
@@ -874,6 +1053,11 @@ const AvailableRooms = ({ rooms, availabilityChecked, onSelectRoom, selectedRoom
             discountPercentage={discountPercentage}
             guests={guests}
             stay={stay}
+            checkInDate={checkInDate}
+            selectedRoom={selectedRoom}
+            roomsCount={roomsCount}
+            setRoomsCount={setRoomsCount}
+            minRoomsNeeded={minRoomsNeeded}
           />
         ))}
       </div>
@@ -1055,6 +1239,7 @@ const StayProduct = () => {
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomsCount, setRoomsCount] = useState(1);
 
   const numberOfNights = useMemo(() => {
     if (!checkInDate || !checkOutDate) return 0;
@@ -1073,36 +1258,55 @@ const StayProduct = () => {
   const filteredRoomsByGuests = availableRooms;
 
   // Extra-room logic: if selected room's max capacity < totalGuests, suggest more rooms
-  const { roomsNeeded, roomCapacityMessage } = useMemo(() => {
-    if (!selectedRoom || !isRoomBased) return { roomsNeeded: 1, roomCapacityMessage: null };
+  const { roomsNeeded, roomCapacityMessage, minRoomsNeeded } = useMemo(() => {
+    if (!selectedRoom || !isRoomBased) return { roomsNeeded: 1, minRoomsNeeded: 1, roomCapacityMessage: null };
     const totalGuests = (guests?.adults || 0) + (guests?.children || 0);
 
     const roomCapacity = selectedRoom.maxGuests != null
       ? Number(selectedRoom.maxGuests)
       : (Number(selectedRoom.maxAdults) || 0) + (Number(selectedRoom.maxChildren) || 0) || 2;
-    if (totalGuests <= roomCapacity) return { roomsNeeded: 1, roomCapacityMessage: null };
 
-    const needed = Math.ceil(totalGuests / roomCapacity);
-    // Check if that many rooms are available (units field)
+    const minNeeded = Math.ceil(totalGuests / roomCapacity);
     const availableUnits = Number(selectedRoom.units || selectedRoom.availableRooms || selectedRoom.availableUnits || 99);
-    if (availableUnits >= needed) {
-      return {
-        roomsNeeded: needed,
-        roomCapacityMessage: {
-          type: "info",
-          text: `Your group of ${totalGuests} needs ${needed} room${needed > 1 ? "s" : ""} (max ${roomCapacity} guests/room). ${needed} rooms will be booked.`
-        }
-      };
-    } else {
+    
+    // Final rooms needed is the max of automatically required and user selection
+    const finalRoomsNeeded = Math.max(minNeeded, roomsCount);
+
+    if (availableUnits < finalRoomsNeeded) {
       return {
         roomsNeeded: availableUnits,
+        minRoomsNeeded: minNeeded,
         roomCapacityMessage: {
           type: "warning",
           text: `Only ${availableUnits} room${availableUnits !== 1 ? "s" : ""} available for this type. Please reduce guest count or choose a different room.`
         }
       };
     }
-  }, [selectedRoom, guests, isRoomBased]);
+
+    if (finalRoomsNeeded > minNeeded) {
+      return {
+        roomsNeeded: finalRoomsNeeded,
+        minRoomsNeeded: minNeeded,
+        roomCapacityMessage: {
+          type: "info",
+          text: `You have selected ${finalRoomsNeeded} rooms. Your group fits in ${minNeeded} room${minNeeded > 1 ? "s" : ""}.`
+        }
+      };
+    }
+
+    if (minNeeded > 1) {
+      return {
+        roomsNeeded: finalRoomsNeeded,
+        minRoomsNeeded: minNeeded,
+        roomCapacityMessage: {
+          type: "info",
+          text: `Your group of ${totalGuests} needs ${minNeeded} room${minNeeded > 1 ? "s" : ""} (max ${roomCapacity} guests/room). ${minNeeded} rooms will be booked.`
+        }
+      };
+    }
+
+    return { roomsNeeded: finalRoomsNeeded, minRoomsNeeded: minNeeded, roomCapacityMessage: null };
+  }, [selectedRoom, guests, isRoomBased, roomsCount]);
 
   // Clear selected room if it no longer fits the current guest count
   useEffect(() => {
@@ -1225,6 +1429,17 @@ const StayProduct = () => {
       return;
     }
 
+    // Get customer info for the order
+    const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+    const customerName = userInfo.name ||
+      (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") ||
+      userInfo.customerName || "Guest User";
+    const customerEmail = userInfo.email || userInfo.customerEmail || "guest@example.com";
+    const customerPhone = userInfo.customerPhone ||
+      (userInfo.phone ? (userInfo.countryCode || "+91") + userInfo.phone : "") ||
+      userInfo.phoneNumber ||
+      userInfo.phone || "+911234567890";
+
     let bookingPayload;
 
     if (isRoomBased && selectedRoom) {
@@ -1241,17 +1456,35 @@ const StayProduct = () => {
       const mealPlanCode = selectedRoom.selectedMealPlan || getMealPlanCode(selectedRoom);
 
       // Calculate B2C price for the selected room based on meal plan, as the room's base b2cPrice could be null in the API
+      const activeSeasonObj = selectedRoom.seasonalPeriods?.find(p =>
+        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+      ) || stay?.seasonalPeriods?.find(p =>
+        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+      );
+      const activeSeasonData = activeSeasonObj ? (
+        selectedRoom?.seasonalPricing?.[activeSeasonObj.tempId] || 
+        selectedRoom?.[activeSeasonObj.tempId] || 
+        stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || 
+        stay?.[activeSeasonObj.tempId]
+      ) : null;
+
       let basePrice = 0;
-      let extraAdultPrice = parseFloat(selectedRoom.extraAdultPrice || stay?.extraAdultPrice || 0);
-      let extraChildPrice = parseFloat(selectedRoom.extraChildPrice || stay?.extraChildPrice || 0);
+      let extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || selectedRoom.extraAdultPrice || stay?.extraAdultPrice || 0);
+      let extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || selectedRoom.extraChildPrice || stay?.extraChildPrice || 0);
 
       if (selectedRoom.mealPlanPricing && selectedRoom.mealPlanPricing[mealPlanCode]) {
         const mp = selectedRoom.mealPlanPricing[mealPlanCode];
-        basePrice = parseFloat(mp.b2cPrice || mp.b2bPrice || mp.price || 0);
+        basePrice = activeSeasonObj && parseFloat(mp.hikePrice || 0) > 0 
+          ? parseFloat(mp.hikePrice) 
+          : parseFloat(mp.b2cPrice || mp.b2bPrice || mp.price || 0);
         if (mp.extraAdultPrice) extraAdultPrice = parseFloat(mp.extraAdultPrice);
         if (mp.extraChildPrice) extraChildPrice = parseFloat(mp.extraChildPrice);
       } else {
-        if (mealPlanCode === "BB" && Number(selectedRoom.bbPrice) > 0) basePrice = parseFloat(selectedRoom.bbPrice);
+        if (activeSeasonData && parseFloat(activeSeasonData.hikePrice || 0) > 0) basePrice = parseFloat(activeSeasonData.hikePrice);
+        else if (activeSeasonData && parseFloat(activeSeasonData.b2cPrice || 0) > 0) basePrice = parseFloat(activeSeasonData.b2cPrice);
+        else if (mealPlanCode === "BB" && Number(selectedRoom.bbPrice) > 0) basePrice = parseFloat(selectedRoom.bbPrice);
         else if (mealPlanCode === "CP" && Number(selectedRoom.cpPrice) > 0) basePrice = parseFloat(selectedRoom.cpPrice);
         else if (mealPlanCode === "MAP" && Number(selectedRoom.mapPrice) > 0) basePrice = parseFloat(selectedRoom.mapPrice);
         else if (mealPlanCode === "AP" && Number(selectedRoom.apPrice) > 0) basePrice = parseFloat(selectedRoom.apPrice);
@@ -1275,21 +1508,42 @@ const StayProduct = () => {
         checkInDate,
         checkOutDate,
         numberOfGuests: (guests.adults || 1) + (guests.children || 0),
+        customerName,
+        customerEmail,
+        customerPhone,
         amount: calculatedAmount * roomsNeeded, // Multiply by rooms needed for group bookings
         paymentMethod: "razorpay", // Explicitly request Razorpay
         rooms: [
           {
             roomId: selectedRoom.roomId || selectedRoom.id,
             roomsBooked: roomsNeeded,
+            adults: guests.adults || 1,
+            children: guests.children || 0,
             mealPlanCode: mealPlanCode,
           },
         ],
       };
     } else {
       // Property-based stay: no rooms array needed
-      const propertyBasePrice = parseFloat(stay?.fullPropertyB2cPrice || stay?.b2cPrice || stay?.startingPrice || stay?.pricePerNight || stay?.price || 0);
-      const extraAdultPrice = parseFloat(stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
-      const extraChildPrice = parseFloat(stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
+      const activeSeasonObj = stay?.seasonalPeriods?.find(p =>
+        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
+        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
+      );
+      const activeSeasonData = activeSeasonObj ? (stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || stay?.[activeSeasonObj.tempId]) : null;
+
+      const propertyBasePrice = parseFloat(
+        (activeSeasonData && parseFloat(activeSeasonData.fullPropertyHikePrice) > 0 ? activeSeasonData.fullPropertyHikePrice : null) ||
+        (activeSeasonData && parseFloat(stay?.fullPropertyHikePrice) > 0 ? stay?.fullPropertyHikePrice : null) ||
+        activeSeasonData?.fullPropertyB2cPrice ||
+        activeSeasonData?.b2cPrice ||
+        stay?.fullPropertyB2cPrice ||
+        stay?.b2cPrice ||
+        stay?.startingPrice ||
+        stay?.pricePerNight ||
+        stay?.price || 0
+      );
+      const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || activeSeasonData?.fullPropertyExtraAdultPrice || stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
+      const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || activeSeasonData?.fullPropertyExtraChildPrice || stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
 
       const extraAdults = Math.max(0, (guests?.adults || 0) - (stay?.maxAdults || 0));
       const extraChildren = Math.max(0, (guests?.children || 0) - (stay?.maxChildren || 0));
@@ -1304,8 +1558,12 @@ const StayProduct = () => {
         checkInDate,
         checkOutDate,
         numberOfGuests: (guests.adults || 1) + (guests.children || 0),
+        customerName,
+        customerEmail,
+        customerPhone,
         amount: calculatedAmountProperty,
         paymentMethod: "razorpay",
+        rooms: [],
       };
     }
 
@@ -1493,6 +1751,11 @@ const StayProduct = () => {
                 discountPercentage={discountPercentage}
                 guests={guests}
                 stay={stay}
+                checkInDate={checkInDate}
+                selectedRoom={selectedRoom}
+                roomsCount={roomsCount}
+                setRoomsCount={setRoomsCount}
+                minRoomsNeeded={minRoomsNeeded}
               />
             )}
 
@@ -1522,6 +1785,9 @@ const StayProduct = () => {
               discountPercentage={discountPercentage}
               numberOfNights={numberOfNights}
               roomsNeeded={roomsNeeded}
+              roomsCount={roomsCount}
+              setRoomsCount={setRoomsCount}
+              minRoomsNeeded={minRoomsNeeded}
               roomCapacityMessage={roomCapacityMessage}
             />
           </div>

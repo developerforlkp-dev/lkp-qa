@@ -429,7 +429,7 @@ export const uploadCustomerAvatar = async (file) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
-    
+
     const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -1330,7 +1330,7 @@ export const getLeadDetails = async (leadId) => {
     const payload = response.data;
     console.log("✅ Lead details fetched (raw):", payload);
 
-    return payload; 
+    return payload;
   } catch (error) {
     console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
     throw error;

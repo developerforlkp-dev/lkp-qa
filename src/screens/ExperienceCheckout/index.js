@@ -400,11 +400,13 @@ const Checkout = () => {
       //   rows.push({ title: "Add-ons", value: fmt(addonsTotal) });
       // }
 
-      // Commission / service fee
+      // Commission / service fee - Hidden for guest view as per requirement (host deduction)
+      /*
       if (commission > 0) {
         const rate = pricing.commissionRate ? ` (${pricing.commissionRate}%)` : "";
         rows.push({ title: `Service fee${rate}`, value: fmt(commission) });
       }
+      */
 
       // Tax
       if (tax > 0) {

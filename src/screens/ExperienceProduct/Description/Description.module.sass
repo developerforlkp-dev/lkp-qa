@@ -57,14 +57,17 @@
         &:only-child
             width: 100%
             flex: 1 1 100%
+            +m
+                flex: none
+                width: 100%
         &:disabled
             opacity: 0.6
             cursor: not-allowed
             pointer-events: none
-            +m
-                width: 100%
         +m
-            height: 56px
+            flex: none !important
+            width: 100% !important
+            height: 56px !important
             border-radius: 28px
 
 .table
@@ -101,8 +104,6 @@
         min-width: 0
         flex: 1
         overflow: hidden
-        text-overflow: ellipsis
-        white-space: nowrap
         word-break: break-word
     &:nth-child(2)
         flex-shrink: 0
@@ -232,3 +233,12 @@
         left: -9999px !important
         top: auto !important
         pointer-events: none !important
+
+.priceDetailsStack
+    display: flex
+    flex-direction: column
+    gap: 2px
+    span
+        display: block
+        line-height: 1.4
+        white-space: normal

@@ -134,14 +134,19 @@
         margin-bottom: 4px
 
 .cell
+    display: flex
+    flex-direction: column
     &:first-child
         margin-right: auto
         color: $n4
+        flex: 1
+        min-width: 0
     &:nth-child(2)
         flex-shrink: 0
         margin-left: 20px
         text-align: right
         font-weight: 500
+        padding-top: 2px
 
 .addOnsSection
     margin-top: 24px
@@ -255,3 +260,13 @@
         top: -1px
         margin-right: 8px
         fill: $n4
+
+.priceDetailsStack
+    display: flex
+    flex-direction: column
+    gap: 2px
+    span
+        display: block
+        line-height: 1.4
+        font-size: 13px
+        white-space: normal
