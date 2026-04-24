@@ -346,11 +346,14 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       apiBooking?.eventCoverImageUrl ||
       apiBooking?.eventDetails?.eventCoverImageUrl ||
       apiBooking?.listing?.eventCoverImageUrl ||
+      apiBooking?.listingCoverPhotoUrl ||
       apiBooking?.coverPhotoUrl ||
       null;
   } else {
     // For non-event orders, use listing data
-    if (listingData?.coverPhotoUrl) {
+    if (listingData?.listingCoverPhotoUrl) {
+      coverPhotoUrl = listingData.listingCoverPhotoUrl;
+    } else if (listingData?.coverPhotoUrl) {
       coverPhotoUrl = listingData.coverPhotoUrl;
     } else if (stayData) {
       // Try all common image fields from the stay API response
@@ -366,8 +369,12 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
         (Array.isArray(stayData.images) ? stayData.images[0] : null) ||
         (Array.isArray(stayData.propertyImages) ? stayData.propertyImages[0] : null) ||
         null;
+    } else if (apiBooking?.listingCoverPhotoUrl) {
+      coverPhotoUrl = apiBooking.listingCoverPhotoUrl;
     } else if (apiBooking?.listingCoverPhoto) {
       coverPhotoUrl = apiBooking.listingCoverPhoto;
+    } else if (apiBooking?.listing?.listingCoverPhotoUrl) {
+      coverPhotoUrl = apiBooking.listing.listingCoverPhotoUrl;
     } else if (apiBooking?.listing?.coverPhotoUrl) {
       coverPhotoUrl = apiBooking.listing.coverPhotoUrl;
     } else if (apiBooking?.coverPhotoUrl) {
