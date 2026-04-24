@@ -411,6 +411,7 @@ const tabs = [
 const actionsByStatus = {
   Upcoming: [
     { label: "View Details", variant: "primary" },
+    { label: "Leave review", variant: "secondary" },
     { label: "Cancel Booking", variant: "secondary" },
   ],
   Completed: [
@@ -450,6 +451,24 @@ const Main = ({
   const [reviewError, setReviewError] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [orderIdsEligibleForReview, setOrderIdsEligibleForReview] = useState(new Set());
+
+  // Fetch review eligibility on mount
+  useEffect(() => {
+    const fetchEligibility = async () => {
+      try {
+        const eligibleData = await getEligibleBookings();
+        const eligibleList = Array.isArray(eligibleData) ? eligibleData : [];
+        const eligibleIds = new Set(
+          eligibleList.map((o) => (o.orderId != null ? Number(o.orderId) : null)).filter(Boolean)
+        );
+        setOrderIdsEligibleForReview(eligibleIds);
+        console.log("✅ Fetched review eligibility on mount:", eligibleIds.size, "orders");
+      } catch (error) {
+        console.warn("⚠️ Failed to fetch review eligibility on mount:", error);
+      }
+    };
+    fetchEligibility();
+  }, []);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -804,6 +823,7 @@ const Main = ({
       await submitOrderReview(bookingToReview.orderId, {
         rating: reviewRating,
         comment: reviewComment.trim() || undefined,
+        listingId: bookingToReview.bookingData?.listingId,
       });
       setOrderIdsEligibleForReview((prev) => {
         const next = new Set(prev);
