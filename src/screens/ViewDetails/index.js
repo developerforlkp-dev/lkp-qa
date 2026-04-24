@@ -1120,7 +1120,7 @@ const ViewDetails = () => {
 
   useEffect(() => {
     const loadReviewEligibility = async () => {
-      if (!booking?.orderId || !isCompletedOrder) return;
+      if (!booking?.orderId) return;
       try {
         const eligibleData = await getEligibleBookings();
         const eligibleList = Array.isArray(eligibleData) ? eligibleData : [];
@@ -1137,7 +1137,7 @@ const ViewDetails = () => {
     };
 
     loadReviewEligibility();
-  }, [booking?.orderId, isCompletedOrder]);
+  }, [booking?.orderId]);
 
   const getInitialTab = () => {
     if (!booking) return "cancellation";
@@ -1324,10 +1324,23 @@ const ViewDetails = () => {
       (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
 
     if (status === "upcoming" || status === "pending" || status === "confirmed") {
-      return [
+      const actions = [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
         { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
       ];
+      if (canLeaveReview) {
+        actions.push({
+          label: "Leave Review",
+          variant: "secondary",
+          onClick: () => {
+            const reviewSection = document.querySelector(`.${styles.reviewCard}`);
+            if (reviewSection) {
+              reviewSection.scrollIntoView({ behavior: "smooth" });
+            }
+          },
+        });
+      }
+      return actions;
     } else if (status === "completed") {
       const actions = [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
