@@ -200,14 +200,16 @@ const FleetHome = () => {
 
             // Fallback: if the section listings endpoint returns empty, try the dedicated public endpoints.
             const sectionTitle = sectionInfo?.sectionTitle || section?.sectionTitle || "";
-            const isEventsSection = typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("events");
-            const isStaysSection = typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("stay");
-            const isFoodSection = typeof sectionTitle === "string" && (sectionTitle.toLowerCase().includes("food") || sectionTitle.toLowerCase().includes("menu"));
+            const isEventsSection = activeFilter === "events" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("event"));
+            const isStaysSection = activeFilter === "stays" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("stay"));
+            const isFoodSection = activeFilter === "food" || (typeof sectionTitle === "string" && (sectionTitle.toLowerCase().includes("food") || sectionTitle.toLowerCase().includes("menu")));
+            
             if (isEventsSection && (!listings || listings.length === 0)) {
               try {
-                const eventListings = await getEventListings(12, 0);
-                if (Array.isArray(eventListings) && eventListings.length > 0) {
-                  listings = eventListings;
+                const eventResult = await getEventListings(12, 0);
+                const eventListingsArray = Array.isArray(eventResult?.events) ? eventResult.events : (Array.isArray(eventResult) ? eventResult : []);
+                if (eventListingsArray.length > 0) {
+                  listings = eventListingsArray;
                 }
               } catch (eventErr) {
                 console.warn("⚠️ Failed to fetch event listings fallback:", eventErr);
@@ -216,7 +218,7 @@ const FleetHome = () => {
             if (isStaysSection && (!listings || listings.length === 0)) {
               try {
                 const stayResult = await getStayListings(12, 0);
-                const stayListings = Array.isArray(stayResult?.listings) ? stayResult.listings : [];
+                const stayListings = Array.isArray(stayResult?.listings) ? stayResult.listings : (Array.isArray(stayResult?.stays) ? stayResult.stays : (Array.isArray(stayResult) ? stayResult : []));
                 if (stayListings.length > 0) {
                   listings = stayListings;
                 }
@@ -227,7 +229,7 @@ const FleetHome = () => {
             if (isFoodSection && (!listings || listings.length === 0)) {
               try {
                 const foodResult = await getFoodMenus(12, 0);
-                const foodListings = Array.isArray(foodResult?.listings) ? foodResult.listings : [];
+                const foodListings = Array.isArray(foodResult?.listings) ? foodResult.listings : (Array.isArray(foodResult?.menus) ? foodResult.menus : (Array.isArray(foodResult) ? foodResult : []));
                 if (foodListings.length > 0) {
                   listings = foodListings;
                 }
