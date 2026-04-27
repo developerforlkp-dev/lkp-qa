@@ -51,7 +51,7 @@ const ExperienceProduct = () => {
   const params = new URLSearchParams(location.search);
   const idFromPath = extractExperienceIdFromSlugAndId(slugAndId);
   const idParam = params.get("id");
-  const id = idFromPath || idParam || "2";
+  const id = idFromPath || idParam || "1";
 
   const { tokens: { A, FG, M, B, W, BG, S, AL, AH } } = useTheme();
   const [listing, setListing] = useState(null);
