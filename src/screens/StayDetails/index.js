@@ -13,6 +13,13 @@ import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
 import { getStayDetails, getHost } from "../../utils/api";
 
+const fixImageUrl = (url) => {
+  if (!url) return "";
+  let u = typeof url === 'string' ? url : (url.url || url.src || url.mediaUrl || url.coverImageUrl || url.coverPhotoUrl || "");
+  if (!u || typeof u !== 'string') return "";
+  return u.replace(/%25/g, '%');
+};
+
 /* ─── TOKENS & THEME ─────────── */
 const THEMES = {
   light: {
@@ -159,12 +166,25 @@ function Rev({ children, delay = 0, style = {}, className = "" }) {
 function Chars({ text, cls = "", style = {}, delay = 0 }) {
   const r = useRef(null);
   const v = useInView(r, { once: true, margin: "-40px" });
+  let charIdx = 0;
   return (
     <div ref={r} className={cls} style={style}>
-      {text?.split("").map((c, i) => (
-        <motion.span key={i} initial={{ y: "105%", opacity: 0 }} animate={v ? { y: 0, opacity: 1 } : {}} transition={{ duration: 0.7, ease: E, delay: delay + i * 0.028 }} style={{ display: "inline-block", whiteSpace: c === " " ? "pre" : "normal" }}>
-          {c}
-        </motion.span>
+      {text?.split(" ").map((word, wIdx, arr) => (
+        <span key={wIdx} style={{ display: "inline-block", whiteSpace: "nowrap" }}>
+          {word.split("").map((c, i) => {
+            const currentIdx = charIdx++;
+            return (
+              <motion.span key={i} initial={{ y: "105%", opacity: 0 }} animate={v ? { y: 0, opacity: 1 } : {}} transition={{ duration: 0.7, ease: E, delay: delay + currentIdx * 0.028 }} style={{ display: "inline-block" }}>
+                {c}
+              </motion.span>
+            );
+          })}
+          {wIdx < arr.length - 1 && (
+            <motion.span initial={{ y: "105%", opacity: 0 }} animate={v ? { y: 0, opacity: 1 } : {}} transition={{ duration: 0.7, ease: E, delay: delay + (charIdx++) * 0.028 }} style={{ display: "inline-block", whiteSpace: "pre" }}>
+              {" "}
+            </motion.span>
+          )}
+        </span>
       ))}
     </div>
   );
@@ -312,6 +332,11 @@ function StayHeroCarousel({ stay, galleryItems }) {
   const items = useMemo(() => Array(12).fill(itemConfigs).flat(), [itemConfigs]);
   const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
 
+  const titleWords = title.toUpperCase().split(" ");
+  const titleMid = Math.ceil(titleWords.length / 2);
+  const titleLine1 = titleWords.slice(0, titleMid).join(" ");
+  const titleLine2 = titleWords.slice(titleMid).join(" ");
+
   return (
     <section style={{ position: "relative", height: "100vh", background: BG, overflow: "hidden", display: "flex", alignItems: "center", paddingTop: 80 }}>
       {/* Background Decor */}
@@ -323,7 +348,8 @@ function StayHeroCarousel({ stay, galleryItems }) {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(to bottom, rgba(0,0,0,0.4), transparent)", zIndex: 2, pointerEvents: "none" }} />
 
       <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", zIndex: 20, pointerEvents: "none", textAlign: "center", width: "90%" }}>
-        <Chars text={title.toUpperCase()} cls="font-display" style={{ fontSize: "clamp(3rem, 11vw, 8.5rem)", fontWeight: 700, color: W, letterSpacing: "-0.02em", lineHeight: 0.9 }} />
+        <Chars text={titleLine1} cls="font-display" style={{ fontSize: "clamp(3rem, 11vw, 8.5rem)", fontWeight: 700, color: W, letterSpacing: "-0.02em", lineHeight: 1.1, paddingBottom: "0.15em", display: "block" }} />
+        {titleLine2 && <Chars text={titleLine2} cls="font-display" style={{ fontSize: "clamp(3rem, 11vw, 8.5rem)", fontWeight: 700, color: W, letterSpacing: "-0.02em", lineHeight: 1.1, paddingBottom: "0.15em", display: "block" }} />}
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
           style={{ fontSize: 12, letterSpacing: "0.45em", textTransform: "uppercase", color: "rgba(255,255,255,0.8)", marginTop: 12 }}>{toDisplayString(stay?.propertyType) || "Bespoke Stay Experience"}</motion.p>
       </div>
@@ -349,7 +375,7 @@ function StayHeroCarousel({ stay, galleryItems }) {
               boxShadow: "0 30px 60px -15px rgba(0,0,0,0.4)"
             }}
           >
-            <img src={galleryItems.length > 0 ? galleryItems[i % galleryItems.length] : "https://picsum.photos/seed/stay/800/600"} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+            <img src={fixImageUrl(galleryItems.length > 0 ? galleryItems[i % galleryItems.length] : "https://picsum.photos/seed/stay/800/600")} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
           </motion.div>
         ))}
       </motion.div>
@@ -411,52 +437,83 @@ function StayAmenities({ stay }) {
     <section style={{ background: W, padding: "140px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <Soul y={100} s={0.08}>
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 80, borderBottom: `1px solid ${B}`, paddingBottom: 100 }}>
-            <Rev style={{ flex: "1 1 500px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80 }}>
+            {/* Left Column: Descriptions */}
+            <Rev>
               <p style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 28 }}>
                 <MapPin size={16} />
                 {[stay?.city, stay?.state, stay?.country].filter(Boolean).join(", ") || stay?.location || stay?.address || "Location"}
               </p>
               {(() => {
                 const short = stay?.shortDescription || "";
+                if (!short) return (
+                  <>
+                    <Chars text="A sanctuary redefined" cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden" }} />
+                    <Chars text="at the water's edge." delay={0.12} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: A, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 32, display: "block", overflow: "hidden" }} />
+                  </>
+                );
                 const words = short.trim().split(" ");
                 const mid = Math.ceil(words.length / 2);
                 const line1 = words.slice(0, mid).join(" ");
                 const line2 = words.slice(mid).join(" ");
-                return short ? (
+                return (
                   <>
-                    <Chars text={line1} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1, marginBottom: 12 }} />
-                    {line2 && <Chars text={line2} delay={0.2} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: A, lineHeight: 1, marginBottom: 32 }} />}
-                  </>
-                ) : (
-                  <>
-                    <Chars text="A sanctuary redefined" cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1, marginBottom: 12 }} />
-                    <Chars text="at the water's edge." delay={0.2} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: A, lineHeight: 1, marginBottom: 32 }} />
+                    <Chars text={line1} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden" }} />
+                    {line2 && <Chars text={line2} delay={0.12} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: A, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 32, display: "block", overflow: "hidden" }} />}
                   </>
                 );
               })()}
-              <p style={{ fontSize: 16, color: M, lineHeight: 1.85, maxWidth: 600 }}>
+              <p style={{ fontSize: 16, color: M, lineHeight: 1.85 }}>
                 {stay?.detailedDescription || stay?.description || "Experience the pinnacle of hospitality where architecture meets the raw beauty of nature."}
               </p>
             </Rev>
-            
-            {/* Top Grid: Show mixed icons for impact */}
-            <Rev delay={0.2} style={{ flex: "1 1 400px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 48px", alignContent: "center" }}>
-              {[...dynamicAmenities, ...dynamicFacilities].slice(0, 8).map((label, i) => {
-                const IconComp = getIcon(label);
-                return (
-                  <motion.div key={i}
-                    animate={{ y: [0, (i % 2 === 0 ? -6 : 6), 0] }}
-                    transition={{ duration: 4 + i * 0.4, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <IconComp size={18} color={A} />
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{toDisplayString(label)}</span>
-                  </motion.div>
-                );
-              })}
-            </Rev>
+
+            {/* Right Column: Amenities & Facilities */}
+            <div>
+              {dynamicAmenities.length > 0 && (
+                <Rev delay={0.1} style={{ marginBottom: 48 }}>
+                  <div style={{ paddingBottom: 16, borderBottom: `1px solid ${B}`, marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+                    <Sparkles size={18} color={A} />
+                    <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: FG, fontWeight: 700 }}>Property Amenities</p>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px 32px" }}>
+                    {dynamicAmenities.map((label, i) => {
+                      const IconComp = getIcon(label);
+                      return (
+                        <motion.div key={i} whileHover={{ x: 6 }} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <IconComp size={16} color={A} />
+                          </div>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>{label}</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </Rev>
+              )}
+
+              {dynamicFacilities.length > 0 && (
+                <Rev delay={0.2}>
+                  <div style={{ paddingBottom: 16, borderBottom: `1px solid ${B}`, marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+                    <Building size={18} color={A} />
+                    <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: FG, fontWeight: 700 }}>Facilities & Services</p>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px 32px" }}>
+                    {dynamicFacilities.map((label, i) => {
+                      const IconComp = getIcon(label);
+                      return (
+                        <motion.div key={i} whileHover={{ x: 6 }} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <IconComp size={16} color={A} />
+                          </div>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>{label}</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </Rev>
+              )}
+            </div>
           </div>
         </Soul>
       </div>
@@ -615,72 +672,93 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   const frontOffice = stay?.contactInformation?.frontOfficePhone || stay?.frontOfficePhone || stay?.frontOfficeContact;
 
   return (
-    <section style={{ background: W, padding: "140px 36px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 100 }} className="pol-contact-grid">
-        <Soul y={150} r={-2}>
-          <SHdr idx="05" label="Stay Guidelines" />
-          <div style={{ borderTop: `1px solid ${B}` }}>
-            {policies.map((rule) => (
-              <PolicyItem key={rule.id} rule={rule} A={A} FG={FG} M={M} B={B} />
-            ))}
-          </div>
-        </Soul>
-
-        <Rev delay={0.2}>
-          <div style={{ background: BG, padding: 48, border: `1px solid ${B}`, borderRadius: 32, display: "flex", flexDirection: "column", height: "100%", boxShadow: "0 40px 80px -20px rgba(0,0,0,0.1)" }}>
-            <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 700 }}>Property Contacts</p>
-
-            <div style={{ marginBottom: 32, paddingBottom: 32, borderBottom: `1px solid ${B}` }}>
-              <p style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Primary Contact</p>
-              <p style={{ fontSize: 18, fontWeight: 800, color: FG, marginBottom: 16 }}>{primaryName}</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <a href={`tel:${primaryPhoneNum}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-                  <Phone size={16} color={A} />
-                  <span style={{ fontSize: 15, fontWeight: 600, color: FG }}>{primaryPhoneNum}</span>
-                </a>
-                <a href={`mailto:${primaryEmailAddress}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-                  <Mail size={16} color={A} />
-                  <span style={{ fontSize: 15, fontWeight: 600, color: FG }}>{primaryEmailAddress}</span>
-                </a>
-              </div>
-            </div>
-
-            {(salesName || salesPhoneNum || salesEmailAddress) && (
-              <div style={{ marginBottom: 32, paddingBottom: 32, borderBottom: `1px solid ${B}` }}>
-                <p style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Sales Contact</p>
-                {salesName && <p style={{ fontSize: 16, fontWeight: 700, color: FG, marginBottom: 16 }}>{salesName}</p>}
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {salesPhoneNum && (
-                    <a href={`tel:${salesPhoneNum}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-                      <Phone size={16} color={A} />
-                      <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>{salesPhoneNum}</span>
-                    </a>
-                  )}
-                  {salesEmailAddress && (
-                    <a href={`mailto:${salesEmailAddress}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-                      <Mail size={16} color={A} />
-                      <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>{salesEmailAddress}</span>
-                    </a>
-                  )}
+    <section style={{ background: BG, padding: "140px 36px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        
+        {/* Contact Section */}
+        <div style={{ marginBottom: 120 }}>
+          <SHdr idx="04" label="Property Contacts" />
+          <Chars text="Host Contact" cls="font-display" style={{ fontSize: "clamp(2rem,4vw,3.5rem)", fontWeight: 700, lineHeight: 1.1, paddingBottom: "0.15em", color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em" }} />
+          
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 32 }}>
+            <Rev delay={0.1}>
+              <div style={{ background: W, padding: 52, border: `1px solid ${B}` }}>
+                <p style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Primary Contact</p>
+                <h3 className="font-display" style={{ fontSize: "clamp(1.8rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>
+                  {primaryName}
+                </h3>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <a href={`tel:${primaryPhoneNum}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+                    <Phone size={18} color={A} />
+                    <span style={{ fontSize: 16, fontWeight: 600, color: FG }}>{primaryPhoneNum}</span>
+                  </a>
+                  <a href={`mailto:${primaryEmailAddress}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+                    <Mail size={18} color={A} />
+                    <span style={{ fontSize: 16, fontWeight: 600, color: FG }}>{primaryEmailAddress}</span>
+                  </a>
                 </div>
               </div>
+            </Rev>
+
+            {(salesName || salesPhoneNum || salesEmailAddress) && (
+              <Rev delay={0.2}>
+                <div style={{ background: W, padding: 52, border: `1px solid ${B}` }}>
+                  <p style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Sales Contact</p>
+                  {salesName ? (
+                    <h3 className="font-display" style={{ fontSize: "clamp(1.8rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>{salesName}</h3>
+                  ) : (
+                    <div style={{ height: 24, marginBottom: 24 }} />
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {salesPhoneNum && (
+                      <a href={`tel:${salesPhoneNum}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+                        <Phone size={18} color={A} />
+                        <span style={{ fontSize: 16, fontWeight: 600, color: FG }}>{salesPhoneNum}</span>
+                      </a>
+                    )}
+                    {salesEmailAddress && (
+                      <a href={`mailto:${salesEmailAddress}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+                        <Mail size={18} color={A} />
+                        <span style={{ fontSize: 16, fontWeight: 600, color: FG }}>{salesEmailAddress}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </Rev>
             )}
 
             {frontOffice && (
-              <div style={{ marginBottom: 40 }}>
-                <p style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Front Office</p>
-                <a href={`tel:${frontOffice}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-                  <Building size={16} color={A} />
-                  <span style={{ fontSize: 15, fontWeight: 600, color: FG }}>{frontOffice}</span>
-                </a>
-              </div>
+              <Rev delay={0.3}>
+                <div style={{ background: W, padding: 52, border: `1px solid ${B}` }}>
+                  <p style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 6 }}>Front Office</p>
+                  <div style={{ height: 36, marginBottom: 24 }} />
+                  <a href={`tel:${frontOffice}`} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+                    <Building size={18} color={A} />
+                    <span style={{ fontSize: 16, fontWeight: 600, color: FG }}>{frontOffice}</span>
+                  </a>
+                </div>
+              </Rev>
             )}
-
-            <motion.button className="shimmer-cta" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ width: "100%", padding: 20, border: "none", cursor: "none", textTransform: "uppercase", letterSpacing: "0.2em", fontSize: 11 }}>
-              Verify Availability
-            </motion.button>
           </div>
-        </Rev>
+        </div>
+
+        {/* Guidelines Section */}
+        <SHdr idx="05" label="Stay Guidelines" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "start" }} className="grid-2">
+          <Rev delay={0.1}>
+            <Chars text="Property" cls="font-display" style={{ fontSize: "clamp(2rem,4vw,3.5rem)", fontWeight: 700, lineHeight: 1.1, paddingBottom: "0.15em", color: FG, overflow: "hidden", letterSpacing: "-0.02em" }} />
+            <Chars text="Rules." delay={0.08} cls="font-display" style={{ fontSize: "clamp(2rem,4vw,3.5rem)", fontWeight: 700, lineHeight: 1.1, paddingBottom: "0.15em", color: "transparent", WebkitTextStroke: `2px ${A}`, overflow: "hidden", letterSpacing: "-0.02em" }} />
+          </Rev>
+          <Rev delay={0.2}>
+            <div style={{ borderTop: `1px solid ${B}` }}>
+              {policies.map((rule) => (
+                <PolicyItem key={rule.id} rule={rule} A={A} FG={FG} M={M} B={B} />
+              ))}
+            </div>
+          </Rev>
+        </div>
+
       </div>
     </section>
   );
@@ -800,37 +878,40 @@ const StayDetails = () => {
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
           <SHdr idx="02" label="Property Overview" />
           
-          <div style={{ background: THEMES.light.W, padding: 48, borderRadius: 24, border: `1px solid ${THEMES.light.B}`, marginBottom: 0 }}>
-            <h4 style={{ fontSize: 18, fontWeight: 700, color: THEMES.light.FG, marginBottom: 8 }}>Basic Information</h4>
-            <p style={{ fontSize: 13, color: THEMES.light.M, marginBottom: 40 }}>Comprehensive property details provided by the host.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "stretch" }}>
+            {/* Left: Main Image */}
+            <Rev delay={0.1} style={{ position: "relative", width: "100%", height: "100%", minHeight: 400, overflow: "hidden", border: `1px solid ${THEMES.light.B}` }}>
+              {(() => {
+                const coverImg = stay?.coverPhotoUrl || stay?.coverPhoto || stay?.coverImageUrl || stay?.mainImage || stay?.image || stay?.imageUrl || galleryItems[0];
+                return coverImg ? (
+                  <img src={fixImageUrl(coverImg)} alt="Property Cover" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: THEMES.light.S }} />
+                );
+              })()}
+            </Rev>
             
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 40, marginBottom: 48 }}>
-              <div>
-                <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", color: THEMES.light.A, marginBottom: 8, fontWeight: 700 }}>Property Name</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: THEMES.light.FG }}>{stay?.propertyName || stay?.title || "—"}</p>
+            {/* Right: Spec Grid */}
+            <Rev delay={0.2}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 1, backgroundColor: THEMES.light.B, border: `1px solid ${THEMES.light.B}` }}>
+                {[
+                  ["Property Name", stay?.propertyName || stay?.title || "—"],
+                  ["Property Type", toDisplayString(stay?.propertyType) || "—"],
+                  ["Property Category", toDisplayString(stay?.propertyCategory) || "—"],
+                  ["Star Rating", stay?.starRating ? (String(stay.starRating).toLowerCase().includes('star') ? stay.starRating : `${stay.starRating} Star`) : "—"],
+                  ["Location Category", toDisplayString(stay?.locationCategory) || "—"]
+                ].map(([k, v], i) => (
+                  <motion.div key={k} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
+                    whileHover={{ backgroundColor: THEMES.light.AL, paddingLeft: 40 }}
+                    style={{ padding: "28px 32px", backgroundColor: THEMES.light.W, display: "flex", flexDirection: "column", justifyContent: "center", transition: "padding 0.3s ease" }}>
+                    <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: THEMES.light.M, fontWeight: 700, marginBottom: 8 }}>{k}</span>
+                    <span className="font-display" style={{ fontSize: "1.4rem", color: THEMES.light.FG, fontWeight: 700 }}>{v}</span>
+                  </motion.div>
+                ))}
               </div>
-              
-              <div>
-                <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", color: THEMES.light.A, marginBottom: 8, fontWeight: 700 }}>Property Type</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: THEMES.light.FG }}>{toDisplayString(stay?.propertyType) || "—"}</p>
-              </div>
-              
-              <div>
-                <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", color: THEMES.light.A, marginBottom: 8, fontWeight: 700 }}>Property Category</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: THEMES.light.FG }}>{toDisplayString(stay?.propertyCategory) || "—"}</p>
-              </div>
-              
-              <div>
-                <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", color: THEMES.light.A, marginBottom: 8, fontWeight: 700 }}>Star Rating</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: THEMES.light.FG }}>{stay?.starRating ? (String(stay.starRating).toLowerCase().includes('star') ? stay.starRating : `${stay.starRating} Star`) : "—"}</p>
-              </div>
-
-              <div>
-                <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", color: THEMES.light.A, marginBottom: 8, fontWeight: 700 }}>Location Category</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: THEMES.light.FG }}>{toDisplayString(stay?.locationCategory) || "—"}</p>
-              </div>
-            </div>
+            </Rev>
           </div>
+
         </div>
       </div>
 
@@ -900,9 +981,9 @@ function StayLocation({ stay }) {
         <SHdr idx="02" label="PREPARATION" />
         
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 100, marginTop: 40 }}>
-          {/* Left Column: Meeting Point Card */}
+          {/* Left Column: Location Card */}
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-            <h2 className="font-display" style={{ fontSize: 48, fontWeight: 700, color: FG }}>Meeting Point</h2>
+            <h2 className="font-display" style={{ fontSize: 48, fontWeight: 700, color: FG }}>Location</h2>
             <div style={{ background: S, borderRadius: 2, overflow: "hidden", border: `1px solid ${B}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
               {/* Card Header Area */}
               <div style={{ padding: "24px 32px", background: BG, borderBottom: `1px solid ${B}` }}>

@@ -20,14 +20,21 @@ const formatPrice = (raw) => {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 };
 
+const fixImageUrl = (url) => {
+  if (!url) return "";
+  let u = typeof url === 'string' ? url : (url.url || url.src || url.mediaUrl || url.coverImageUrl || url.coverPhotoUrl || "");
+  if (!u || typeof u !== 'string') return "";
+  return u.replace(/%25/g, '%');
+};
+
 const resolveCoverImage = (room) => {
   const media = room.media || [];
   const first = media[0];
   if (first) {
     const u = typeof first === "string" ? first : first.url || first.src;
-    if (u) return u;
+    if (u) return fixImageUrl(u);
   }
-  return room.coverImageUrl || room.coverPhotoUrl || room.coverImage || null;
+  return fixImageUrl(room.coverImageUrl || room.coverPhotoUrl || room.coverImage || null);
 };
 
 const getPriceForPlan = (room, code) => {
@@ -93,8 +100,78 @@ const CustomDropdown = ({ options, value, onChange }) => {
   );
 };
 
+/* ---------- Room Modal ---------------------------------------------- */
+const RoomModal = ({ room, onClose }) => {
+  const name = room.roomName || room.roomTypeName || room.name || "Room Details";
+  const desc = room.roomDescription || room.description || room.shortDescription;
+  const capacity = room.maxGuests || (room.maxAdults ? room.maxAdults + (room.maxChildren || 0) : null);
+  const totalRooms = room.totalRooms || room.totalUnits || null;
+  const features = getRoomFeatures(room);
+  
+  // Compile all images safely
+  const media = room.media || [];
+  const allImages = [];
+  const coverImage = resolveCoverImage(room);
+  if (coverImage) allImages.push(coverImage);
+  media.forEach(m => {
+    const u = fixImageUrl(typeof m === "string" ? m : m.url || m.src);
+    if (u && !allImages.includes(u)) allImages.push(u);
+  });
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={onClose} />
+      <div style={{ position: "relative", background: "#fff", width: "100%", maxWidth: 900, maxHeight: "90vh", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1, boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }}>
+        
+        {/* Close Button */}
+        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+
+        {/* Gallery */}
+        {allImages.length > 0 && (
+          <div style={{ height: 380, display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", background: "#f3f3f1" }}>
+            {allImages.map((img, i) => (
+              <img key={i} src={img} alt="" style={{ height: "100%", width: "100%", flexShrink: 0, objectFit: "cover", scrollSnapAlign: "start" }} />
+            ))}
+          </div>
+        )}
+
+        {/* Details Body */}
+        <div style={{ padding: "40px 48px", overflowY: "auto", flex: 1, background: "#FBFBF9" }}>
+          <h2 style={{ fontSize: 32, fontWeight: 700, marginBottom: 16, fontFamily: "var(--font-fraunces, Georgia, serif)", color: "#0F0F0F" }}>{name}</h2>
+          
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
+            {capacity != null && <span style={{ fontSize: 13, fontWeight: 600, padding: "8px 16px", background: "#E6E6E3", borderRadius: 8, color: "#0F0F0F" }}>Max {capacity} Guests</span>}
+            {totalRooms != null && <span style={{ fontSize: 13, fontWeight: 600, padding: "8px 16px", background: "#E6E6E3", borderRadius: 8, color: "#0F0F0F" }}>{totalRooms} Units Available</span>}
+            {room.extraBedAllowed && <span style={{ fontSize: 13, fontWeight: 600, padding: "8px 16px", background: "#E6E6E3", borderRadius: 8, color: "#0F0F0F" }}>Extra Bed Allowed</span>}
+          </div>
+
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: "#555", marginBottom: 40 }}>{desc}</p>
+
+          {features.length > 0 && (
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, color: "#0F0F0F" }}>Amenities & Features</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+                {features.map((f, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0097B2" }} />
+                    <span style={{ fontSize: 15, color: "#333", fontWeight: 500 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ---------- RoomCard (Horizontal Layout) ------------------------------ */
 const RoomCard = ({ room, onRoomSelect, isSelected, roomsCount, onRoomsCountChange }) => {
+  const [showModal, setShowModal] = useState(false);
+
   const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
   if (!allPlans.length) {
     if (room.epPrice) allPlans.push("EP");
@@ -186,9 +263,19 @@ const RoomCard = ({ room, onRoomSelect, isSelected, roomsCount, onRoomsCountChan
         )}
 
         {/* CTA */}
-        <div className={styles.foot}>
+        <div className={styles.foot} style={{ display: "flex", gap: 16, alignItems: "center", justifyContent: "space-between" }}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+            style={{ 
+              background: "transparent", border: "1px solid #E6E6E3", color: "#0F0F0F",
+              padding: "0 16px", height: 44, borderRadius: 8, fontSize: 12, fontWeight: 700, 
+              cursor: "pointer", whiteSpace: "nowrap" 
+            }}>
+            View Details
+          </button>
+
           {isSelected ? (
-            <div className={styles.counterRow}>
+            <div className={styles.counterRow} style={{ flex: 1, justifyContent: "flex-end", gap: 12 }}>
               <div className={styles.counterWrap}>
                 <button className={styles.counterBtn} onClick={() => onRoomsCountChange(Math.max(1, roomsCount - 1))} disabled={roomsCount <= 1}>
                   <Icon name="minus" size="16" />
@@ -198,13 +285,15 @@ const RoomCard = ({ room, onRoomSelect, isSelected, roomsCount, onRoomsCountChan
                   <Icon name="plus" size="16" />
                 </button>
               </div>
-              <button className={cn(styles.bookBtn, styles.selectedBtn)} onClick={handleSelect}>✓ Room Selected</button>
+              <button className={cn(styles.bookBtn, styles.selectedBtn)} onClick={handleSelect}>✓ Selected</button>
             </div>
           ) : (
-            <button className={styles.bookBtn} onClick={handleSelect}>SELECT ROOM</button>
+            <button className={styles.bookBtn} onClick={handleSelect} style={{ flex: 1, maxWidth: 160 }}>SELECT ROOM</button>
           )}
         </div>
       </div>
+      
+      {showModal && <RoomModal room={room} onClose={() => setShowModal(false)} />}
     </div>
   );
 };

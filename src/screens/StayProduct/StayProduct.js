@@ -1104,6 +1104,13 @@ const AmenitiesTab = ({ stay }) => {
   // (maybe it's all in one list).
   const hasBoth = propertyAmenities.length > 0 && facilitiesServices.length > 0;
 
+  // Helper to extract display text from string or object
+  const extractLabel = (item) => {
+    if (!item) return "";
+    if (typeof item === "string") return item;
+    return item.facilityName || item.amenityName || item.name || item.title || item.label || item.value || "";
+  };
+
   let leftList = propertyAmenities;
   let rightList = facilitiesServices;
 
@@ -1128,7 +1135,7 @@ const AmenitiesTab = ({ stay }) => {
                 <div className={styles.checkCircleGreen}>
                   <Icon name="tick" size="14" />
                 </div>
-                <span>{toDisplayString(amenity)}</span>
+                <span>{extractLabel(amenity)}</span>
               </div>
             )) : <p className={styles.emptyText}>Not available</p>}
           </div>
@@ -1139,12 +1146,12 @@ const AmenitiesTab = ({ stay }) => {
             <h3>Facilities & Services</h3>
           </div>
           <div className={styles.amenityList}>
-            {rightList.length > 0 ? rightList.map((amenity, idx) => (
+            {rightList.length > 0 ? rightList.map((facility, idx) => (
               <div key={idx} className={styles.amenityItemCell}>
                 <div className={styles.checkCircleBlue}>
                   <Icon name="tick" size="14" />
                 </div>
-                <span>{toDisplayString(amenity)}</span>
+                <span>{extractLabel(facility)}</span>
               </div>
             )) : <p className={styles.emptyText}>Not available</p>}
           </div>
