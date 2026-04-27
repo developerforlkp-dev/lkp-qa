@@ -445,19 +445,46 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
     const extractText = (r) => {
       if (!r) return "";
       if (typeof r === 'string') return r;
-      // CMS component keys often mirror their labels
       const val = r.propertyRule || r.policyRule || r.rule || r.text || r.content || r.description || r.value || r.title || r.name;
       if (val && typeof val === 'string') return val;
-      // Fallback: grab the first string value found in the object
       const firstStringVal = Object.values(r).find(v => typeof v === 'string');
       return firstStringVal || "";
     };
 
+    // Helper to deeply search the stay object for a specific array structure
+    const findArrayWithKey = (obj, targetKey, targetName) => {
+      if (!obj || typeof obj !== 'object') return null;
+      
+      // If we find an array, check if it matches what we're looking for
+      if (Array.isArray(obj) && obj.length > 0) {
+        if (typeof obj[0] === 'string' && targetName && targetName.test(obj[0])) return obj;
+        if (typeof obj[0] === 'object' && obj[0] !== null) {
+          if (targetKey in obj[0] || 'rule' in obj[0] || 'policyRule' in obj[0] || 'propertyRule' in obj[0]) {
+            return obj;
+          }
+        }
+      }
+
+      // Explicitly check named properties on the current level first to prioritize them
+      const commonNames = ['propertyRules', 'propertyRule', 'rules', 'propertyRulesDefaultTemplate', 'cancellationPolicyRules', 'cancellationRules', 'cancellationPolicy'];
+      for (const key of commonNames) {
+        if (obj[key] && Array.isArray(obj[key]) && obj[key].length > 0) return obj[key];
+      }
+
+      // Recursively search children
+      for (const key in obj) {
+        const result = findArrayWithKey(obj[key], targetKey, targetName);
+        if (result) return result;
+      }
+      return null;
+    };
+
     // Property Rules
     let propertyRulesBody = "";
-    const rawPropRules = stay?.propertyRules || stay?.propertyRule || stay?.rules;
+    const rawPropRules = stay?.propertyRulesDefaultTemplate || stay?.propertyRules || stay?.propertyRule || findArrayWithKey(stay, 'propertyRule');
+    
     if (Array.isArray(rawPropRules) && rawPropRules.length > 0) {
-      propertyRulesBody = rawPropRules.map(r => `• ${extractText(r)}`).filter(t => t !== "• ").join("\n");
+      propertyRulesBody = rawPropRules.map(r => `• ${extractText(r)}`).filter(t => t !== "• " && t !== "•").join("\n");
     } else if (stay?.houseRules) {
       propertyRulesBody = stay.houseRules;
     }
@@ -470,10 +497,11 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
     
     // Cancellation Policy
     let cancelPolicyBody = "";
-    const rawCancelRules = stay?.cancellationPolicyRules || stay?.cancellationPolicyRule || stay?.cancellationRules;
+    const rawCancelRules = stay?.cancellationPolicyRules || stay?.cancellationPolicyRule || stay?.cancellationRules || findArrayWithKey(stay, 'policyRule');
+    
     if (Array.isArray(rawCancelRules) && rawCancelRules.length > 0) {
-      cancelPolicyBody = rawCancelRules.map(r => `• ${extractText(r)}`).filter(t => t !== "• ").join("\n");
-      const summary = stay?.generatedPolicySummary || stay?.policySummary;
+      cancelPolicyBody = rawCancelRules.map(r => `• ${extractText(r)}`).filter(t => t !== "• " && t !== "•").join("\n");
+      const summary = stay?.generatedPolicySummary || stay?.policySummary || (stay?.cancellationPolicy && typeof stay.cancellationPolicy === 'string' ? stay.cancellationPolicy : null);
       if (summary) cancelPolicyBody += `\n\nSummary:\n${summary}`;
     } else if (stay?.generatedPolicySummary || stay?.policySummary) {
       cancelPolicyBody = stay?.generatedPolicySummary || stay?.policySummary;
@@ -522,7 +550,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
     <section style={{ background: W, padding: "140px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 100 }} className="pol-contact-grid">
         <Soul y={150} r={-2}>
-          <SHdr idx="03" label="Stay Guidelines" />
+          <SHdr idx="04" label="Stay Guidelines" />
           <div style={{ borderTop: `1px solid ${B}` }}>
             {policies.map((rule) => (
               <PolicyItem key={rule.id} rule={rule} A={A} FG={FG} M={M} B={B} />
@@ -631,6 +659,8 @@ const StayDetails = () => {
 
         if (data) {
           setStay(data);
+          // DEBUG: Log full stay payload to identify exact field names for rules/policies
+          console.log("🏨 STAY FULL PAYLOAD:", JSON.stringify(data, null, 2));
           const galleryImages = [];
           const cover = data.coverPhotoUrl || data.coverImageUrl || data.coverPhoto || data.coverImage || data.cover;
           if (cover) galleryImages.push(formatImageUrl(cover));
@@ -745,12 +775,68 @@ const StayDetails = () => {
         </div>
       </div>
 
-      <Mq items={["Bespoke Service", "Privacy Guaranteed", "Direct Connection"]} size="sm" bg={THEMES.light.S} accent />
+      {(() => {
+        const tags = [
+          ...(Array.isArray(stay?.tags) ? stay.tags.map(t => typeof t === 'string' ? t : (t?.name || t?.tag || t?.label)) : []),
+          ...(Array.isArray(stay?.amenities) ? stay.amenities.slice(0, 3).map(a => typeof a === 'string' ? a : (a?.name || a?.amenity)) : []),
+          stay?.propertyType ? toDisplayString(stay.propertyType) : null,
+          stay?.locationCategory ? toDisplayString(stay.locationCategory) : null,
+          stay?.starRating ? `${stay.starRating} Star` : null,
+        ].filter(Boolean);
+        const marqueeItems = tags.length > 0 ? tags : ["Bespoke Service", "Privacy Guaranteed", "Direct Connection"];
+        return <Mq items={marqueeItems} size="sm" bg={THEMES.light.S} accent />;
+      })()}
+
+      <StayLocation stay={stay} />
 
       <StayPoliciesAndContact stay={stay} hostData={hostData} hostAvatar={hostAvatar} />
 
     </ScopedThemeProvider>
   );
 };
+
+function StayLocation({ stay }) {
+  const { tokens: { A, BG, FG, M, S, B } } = useTheme();
+
+  // Robustly extract the full address from various possible backend fields
+  const address = stay?.address || stay?.location || stay?.meetingAddress || stay?.businessAddress || [stay?.city, stay?.state, stay?.country].filter(Boolean).join(", ");
+  const city = stay?.city || "Destination";
+  const mapLink = stay?.googleMapLink || stay?.mapUrl || `https://maps.google.com/?q=${encodeURIComponent(address || city)}`;
+
+  if (!address && !stay?.city) return null;
+
+  return (
+    <section style={{ background: BG, padding: "140px 36px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 80, alignItems: "center" }}>
+        <div style={{ flex: "1 1 400px" }}>
+          <SHdr idx="03" label="Location & Surroundings" />
+          <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 24, lineHeight: 1.4 }}>
+            {city}
+          </p>
+          <div style={{ display: "flex", gap: 16, marginBottom: 40, alignItems: "flex-start" }}>
+            <MapPin size={24} color={A} style={{ marginTop: 4, flexShrink: 0 }} />
+            <p style={{ fontSize: 16, color: M, lineHeight: 1.6, maxWidth: 400 }}>{address}</p>
+          </div>
+          <a href={mapLink} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "16px 32px", borderRadius: 30, background: FG, color: BG, textDecoration: "none", fontSize: 14, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
+            <Navigation size={18} />
+            Get Directions
+          </a>
+        </div>
+        
+        <div style={{ flex: "1.5 1 500px", height: 500, borderRadius: 32, overflow: "hidden", border: `1px solid ${B}`, position: "relative", background: S, boxShadow: "0 40px 80px -20px rgba(0,0,0,0.1)" }}>
+           <iframe
+            title="Property Location Map"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            loading="lazy"
+            allowFullScreen
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(address || city)}&t=m&z=13&output=embed&iwloc=near`}
+          ></iframe>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default StayDetails;
