@@ -6,8 +6,6 @@ import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, 
 import { useTheme } from "./Theme";
 import { Rev, Chars } from "./UI";
 
-// Original functional components
-import DateSingle from "../DateSingle";
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import { createEventOrder, createOrder, getEventSlotAvailability } from "../../utils/api";
@@ -357,6 +355,80 @@ const addDateRangeKeys = (keys, startValue, endValue) => {
   }
 };
 
+const hasWeekdayFlags = (source = {}) => (
+  [
+    source.isSunday,
+    source.isMonday,
+    source.isTuesday,
+    source.isWednesday,
+    source.isThursday,
+    source.isFriday,
+    source.isSaturday,
+    source.is_sunday,
+    source.is_monday,
+    source.is_tuesday,
+    source.is_wednesday,
+    source.is_thursday,
+    source.is_friday,
+    source.is_saturday,
+  ].some((value) => value === true || value === false)
+);
+
+const isWeekdayEnabled = (source = {}, weekday) => {
+  const flags = [
+    [source.isSunday, source.is_sunday],
+    [source.isMonday, source.is_monday],
+    [source.isTuesday, source.is_tuesday],
+    [source.isWednesday, source.is_wednesday],
+    [source.isThursday, source.is_thursday],
+    [source.isFriday, source.is_friday],
+    [source.isSaturday, source.is_saturday],
+  ];
+  const values = flags[weekday] || [];
+  const explicit = values.find((value) => value === true || value === false);
+  return explicit !== false;
+};
+
+const addScheduleDateKeys = (keys, source = {}, fallback = {}) => {
+  const startKey = getDateKey(
+    source.startDate ||
+    source.slotStartDate ||
+    source.availableFrom ||
+    source.bookingStartDate ||
+    fallback.startDate ||
+    fallback.bookingStartDate
+  );
+  const endKey = getDateKey(
+    source.endDate ||
+    source.slotEndDate ||
+    source.availableTo ||
+    source.bookingEndDate ||
+    fallback.endDate ||
+    fallback.bookingEndDate ||
+    startKey
+  );
+
+  if (!startKey) return;
+
+  const start = new Date(`${startKey}T00:00:00`);
+  const end = new Date(`${endKey || startKey}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    keys.add(startKey);
+    return;
+  }
+
+  const current = start <= end ? start : end;
+  const last = start <= end ? end : start;
+  const shouldFilterByWeekday = hasWeekdayFlags(source);
+
+  while (current <= last) {
+    if (!shouldFilterByWeekday || isWeekdayEnabled(source, current.getDay())) {
+      keys.add(current.toISOString().slice(0, 10));
+    }
+    current.setDate(current.getDate() + 1);
+  }
+};
+
 const normalizeEventSlots = (slots = [], fallbackPrice = 0) => (
   Array.isArray(slots) ? slots
     .map((slot, index) => {
@@ -479,7 +551,7 @@ const normalizeEventAvailability = (payload) => {
   return records;
 };
 
-function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, tokens }) {
+function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, tokens, emptyMessage = "No available dates." }) {
   const { A, AL, BG, FG, M, B, S, W } = tokens;
   const initialDate = selectedDate && typeof selectedDate.toDate === "function"
     ? selectedDate.toDate()
@@ -554,7 +626,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
       </div>
       {availableDateKeys.size === 0 && (
         <div style={{ marginTop: 12, color: M, fontSize: 12, fontWeight: 600, textAlign: "center" }}>
-          No available dates for this event.
+          {emptyMessage}
         </div>
       )}
     </div>
@@ -601,6 +673,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const eventFallbackSlots = useMemo(() => (
     listing?.eventSlots || listing?.slots || listing?.timeSlots || []
   ), [listing?.eventSlots, listing?.slots, listing?.timeSlots]);
+  const timeSlots = useMemo(() => (
+    Array.isArray(listing?.timeSlots) ? listing.timeSlots : []
+  ), [listing?.timeSlots]);
   const ticketApplicableSlots = useMemo(() => {
     return getTicketSlotRestrictions(selectedTicket);
   }, [selectedTicket]);
@@ -710,9 +785,32 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     return keys;
   }, [eventSlots, isEventBooking, isEventSlotAccessible, listing?.bookingEndDate, listing?.bookingStartDate, listing?.endDate, listing?.eventEndDate, listing?.eventStartDate, listing?.startDate]);
-  const isEventDateHighlighted = useCallback((day) => (
-    isEventBooking && eventAvailableDateKeys.has(getDateKey(day))
-  ), [eventAvailableDateKeys, isEventBooking]);
+  const experienceAvailableDateKeys = useMemo(() => {
+    if (isEventBooking) return new Set();
+    const keys = new Set();
+    const schedules = [
+      ...(Array.isArray(timeSlots) ? timeSlots : []),
+      ...(Array.isArray(listing?.slots) ? listing.slots : []),
+      ...(Array.isArray(listing?.availability) ? listing.availability : []),
+      ...(Array.isArray(listing?.availableDates) ? listing.availableDates : []),
+    ];
+
+    if (schedules.length > 0) {
+      schedules.forEach((schedule) => {
+        if (!schedule) return;
+        if (typeof schedule === "string") {
+          const key = getDateKey(schedule);
+          if (key) keys.add(key);
+          return;
+        }
+        addScheduleDateKeys(keys, schedule, listing);
+      });
+    } else {
+      addScheduleDateKeys(keys, listing, listing);
+    }
+
+    return keys;
+  }, [isEventBooking, listing, timeSlots]);
 
   const listingId = listing?.listingId;
 
@@ -777,9 +875,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return sum + (parseFloat(addon.price) || 0);
   }, 0);
 
-  // Extract time slots from listing
-  const timeSlots = listing?.timeSlots || [];
-  
   // Extract proper price depending on whether a time slot is selected
   const selectedSlotData = timeSlots.find(s => s.slotName === startTime || s.startTime === startTime) || timeSlots[0];
   const selectedSlotSeatLimit = getSlotSeatLimit(selectedSlotData);
@@ -1380,19 +1475,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         onDateSelect={setStartDate}
                         availableDateKeys={eventAvailableDateKeys}
                         tokens={{ A, AL, BG, FG, M, B, S, W }}
+                        emptyMessage="No available dates for this event."
                       />
                     ) : (
-                      <div style={{ background: S, borderRadius: 16, padding: "8px", border: `1px solid ${B}` }}>
-                        <DateSingle 
-                          withPortal={true}
-                          date={startDate}
-                          onDateChange={(date) => setStartDate(date)}
-                          placeholder="Pick a date"
-                          id="jui-booking-date"
-                          plain
-                          isDayHighlighted={isEventBooking ? isEventDateHighlighted : undefined}
-                        />
-                      </div>
+                      <EventInlineCalendar
+                        selectedDate={startDate}
+                        onDateSelect={setStartDate}
+                        availableDateKeys={experienceAvailableDateKeys}
+                        tokens={{ A, AL, BG, FG, M, B, S, W }}
+                        emptyMessage="No available dates for this experience."
+                      />
                     )}
                   </div>
 
