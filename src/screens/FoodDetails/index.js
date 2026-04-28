@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef } from "react";
+import useDarkMode from "use-dark-mode";
 import { useLocation, Link } from "react-router-dom";
-import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import { 
   Utensils, Star, Clock, MapPin, ChefHat, Award, Leaf, Globe, 
   Coffee, Info, ChevronRight, Phone, Instagram, Check, ArrowRight, ArrowDown 
@@ -37,7 +38,8 @@ const ThemeContext = createContext({ theme: "light", toggleTheme: () => { }, tok
 const useTheme = () => useContext(ThemeContext);
 
 function ScopedThemeProvider({ children }) {
-  const [theme, setTheme] = useState("light");
+  const darkMode = useDarkMode(false);
+  const theme = darkMode.value ? "dark" : "light";
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ function ScopedThemeProvider({ children }) {
     }
   }, [theme]);
 
-  const toggleTheme = () => setTheme(prev => prev === "light" ? "dark" : "light");
+  const toggleTheme = () => darkMode.toggle();
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, tokens: THEMES[theme] }}>
@@ -74,6 +76,25 @@ const ScopedStyles = () => (
       position: relative;
     }
     .food-details-premium a, .food-details-premium button { cursor: none; }
+    
+    /* Header Blending */
+    [class*="Header_header"] {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+      z-index: 1000 !important;
+      transition: all 0.4s ease;
+    }
+
+    [class*="Header_headerBorder"] {
+      box-shadow: none !important;
+    }
+
     @keyframes marquee-l { from{transform:translateX(0)} to{transform:translateX(-50%)} }
     @keyframes marquee-r { from{transform:translateX(-50%)} to{transform:translateX(0)} }
     @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-16px) rotate(1deg)} }
@@ -91,6 +112,7 @@ const ScopedStyles = () => (
     @media(max-width:768px){
       .food-details-premium .desk-only { display: none !important; }
       .chef-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+      [class*="Header_header"] { position: absolute !important; }
     }
   `}</style>
 );
@@ -164,22 +186,73 @@ function Mq({ items, dir = "l", size = "sm", bg, accent = false }) {
   const { tokens: { A, BG, M, B } } = useTheme();
   const bgColor = bg ?? BG;
   const sep = "  ·  ";
-  const chunk = items.join(sep) + sep;
-  const repeated = chunk + chunk;
   const fsMap = { sm: "0.65rem", lg: "clamp(2.2rem,5vw,4rem)", xl: "clamp(3.5rem,9vw,7.5rem)" };
   const fs = fsMap[size];
   const col = accent ? A : M;
-  const cls = dir === "l" ? "mq-l" : "mq-r";
   const padV = size === "xl" ? "28px 0" : size === "lg" ? "20px 0" : "11px 0";
+  const speed = size === "sm" ? 0.04 : 0.06;
+
+  // Duplicate items enough to always overflow
+  const CLONES = 8;
+  const allItems = Array(CLONES).fill(items).flat();
+
+  const trackRef = useRef(null);
+  const x = useMotionValue(0);
+  const [setW, setSetW] = useState(0);
+
+  // Measure the width of one full set
+  useEffect(() => {
+    const measure = () => {
+      if (trackRef.current) {
+        const child = trackRef.current.firstElementChild;
+        if (child) {
+          const allChildren = Array.from(trackRef.current.children);
+          const oneSetCount = items.length;
+          const width = allChildren.slice(0, oneSetCount).reduce((sum, el) => sum + el.offsetWidth, 0);
+          if (width > 0) setSetW(width);
+        }
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [items]);
+
+  useAnimationFrame((_, delta) => {
+    if (setW <= 0) return;
+    const move = (delta || 16) * speed;
+    const current = x.get();
+    if (dir === "l") {
+      const next = current - move;
+      x.set(next <= -setW ? next + setW : next);
+    } else {
+      const next = current + move;
+      x.set(next >= 0 ? next - setW : next);
+    }
+  });
+
   return (
     <div style={{ overflow: "hidden", background: bgColor, borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}`, padding: padV }}>
-      <div className={cls}>
-        {[0, 1].map(i => (
-          <span key={i} className={size !== "sm" ? "font-display" : ""} style={{ fontSize: fs, fontWeight: size !== "sm" ? 700 : 500, color: col, whiteSpace: "nowrap", letterSpacing: size === "sm" ? "0.28em" : "-0.01em", textTransform: size === "sm" ? "uppercase" : "none", paddingRight: size === "sm" ? 32 : 56 }}>
-            {repeated}
+      <motion.div ref={trackRef} style={{ x, display: "flex", whiteSpace: "nowrap", willChange: "transform" }}>
+        {allItems.map((item, i) => (
+          <span
+            key={i}
+            className={size !== "sm" ? "font-display" : ""}
+            style={{
+              fontSize: fs,
+              fontWeight: size !== "sm" ? 700 : 500,
+              color: col,
+              whiteSpace: "nowrap",
+              letterSpacing: size === "sm" ? "0.28em" : "-0.01em",
+              textTransform: size === "sm" ? "uppercase" : "none",
+              paddingRight: size === "sm" ? 32 : 56,
+              flexShrink: 0,
+            }}
+          >
+            {item}{sep}
           </span>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -210,10 +283,13 @@ function CulinaryHero({ food, galleryItems }) {
   const philosophy = food?.description?.split('.')[0] + "." || "Where the alchemy of tradition meets the precision of the future.";
 
   return (
-    <section ref={r} style={{ position: "relative", minHeight: "140vh", background: BG, overflow: "hidden" }}>
+    <section ref={r} style={{ position: "relative", minHeight: "100vh", background: BG, overflow: "hidden" }}>
       <motion.div style={{ y: yHero, position: "absolute", inset: 0, zIndex: 1, opacity: 0.6 }}>
         <img src={coverImg} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.4) saturate(1.2)" }} alt={title} />
       </motion.div>
+
+      {/* Top Gradient for Header Blending */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "200px", background: "linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)", zIndex: 2, pointerEvents: "none" }} />
 
       {/* Floating Ingredients Layer */}
       {galleryItems.length > 1 && (
@@ -227,7 +303,7 @@ function CulinaryHero({ food, galleryItems }) {
         </motion.div>
       )}
 
-      <div style={{ position: "relative", zIndex: 10, height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+      <div style={{ position: "relative", zIndex: 10, height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", paddingTop: 80 }}>
         <motion.div style={{ opacity, y: yText }}>
            <p style={{ fontSize: 11, letterSpacing: "0.6em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 32 }}>Epicurean Odyssey — {toDisplayString(food?.category) || "Cuisine"}</p>
            <h1 className="font-display" style={{ fontSize: "clamp(3.5rem, 8vw, 7.5rem)", fontWeight: 800, color: FG, lineHeight: 1.1, letterSpacing: "0.15em", margin: 0, textTransform: "uppercase" }}>
@@ -275,18 +351,29 @@ function ChefSection({ food, hostData, hostAvatar }) {
             <div>
                <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 32 }}>Curator of Taste</p>
                <h2 className="font-display" style={{ fontSize: "clamp(3rem, 6vw, 4.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 44 }}>
-                 Engineering <br/><span style={{ color: A }}>Sensory Architecture.</span>
+                 {(() => {
+                    const short = food?.shortDescription || "";
+                    if (!short) return <>Engineering <br/><span style={{ color: A }}>Sensory Architecture.</span></>;
+                    const words = short.trim().split(" ");
+                    const mid = Math.ceil(words.length / 2);
+                    return (
+                      <>
+                        {words.slice(0, mid).join(" ")} <br/>
+                        <span style={{ color: A }}>{words.slice(mid).join(" ") || "Experience."}</span>
+                      </>
+                    );
+                 })()}
                </h2>
                <p style={{ fontSize: 16, color: M, lineHeight: 1.85, marginBottom: 48, maxWidth: 500 }}>
-                 &ldquo;{food?.description || "We don't just serve food; we orchestrate biological responses. In our kitchen, heritage secrets meet high-pressure laboratory physics."}&rdquo;
+                 &ldquo;{food?.detailedDescription || food?.description || "We don't just serve food; we orchestrate biological responses. In our kitchen, heritage secrets meet high-pressure laboratory physics."}&rdquo;
                </p>
                
                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
                   {[
-                    { label: "Host", value: hostData?.displayName || "Aura Curator" },
-                    { label: "Vision", value: "Circular Gastronomy" },
-                    { label: "Location", value: toDisplayString(food?.city) || "Global" },
-                    { label: "Rating", value: `${food?.rating || "4.9"} Stars` }
+                    { label: "Dietary Options", value: food?.dietaryOptions || (food?.isVeg ? "VEG" : food?.isNonVeg ? "Non-Veg" : "VEG & Non-Veg") },
+                    { label: "Alcohol Served", value: food?.alcoholServed === true || food?.isAlcoholServed === true ? "Yes" : "No" },
+                    { label: "Family Friendly", value: food?.isFamilyFriendly === true || food?.familyFriendly === true ? "Yes" : "No" },
+                    { label: "Serve mode", value: food?.serveMode || food?.serviceMode || "Dine-In" }
                   ].map(it => (
                     <div key={it.label}>
                        <p style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 8, fontWeight: 700 }}>{it.label}</p>
@@ -337,6 +424,83 @@ function DishGallery({ galleryItems, food }) {
   );
 }
 
+function LocationSection({ food }) {
+  const { tokens: { A, FG, M, BG, W, B, S } } = useTheme();
+
+  return (
+    <section style={{ background: W, padding: "130px 36px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SHdr idx="03" label="Location & Access" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="chef-grid">
+           <Rev delay={0.1}>
+             <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Restaurant Location</h3>
+             <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
+               <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                 <MapPin size={20} color={A} />
+                 <div>
+                   <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{food?.meetingLocationName || "Culinary Venue"}</p>
+                   <p style={{ fontSize: 13, color: M, marginTop: 4 }}>{food?.meetingAddress || food?.address || "The exact location coordinates and access instructions will be shared upon booking confirmation."}</p>
+                 </div>
+               </div>
+               <div style={{ background: W, border: `1px solid ${B}`, height: 250, marginTop: 16, position: "relative", overflow: "hidden" }}>
+                  {(() => {
+                    const lat = food?.meetingLatitude || food?.latitude;
+                    const lng = food?.meetingLongitude || food?.longitude;
+                    const address = food?.meetingAddress || food?.address;
+                    const query = (lat && lng) ? `${lat},${lng}` : (address ? encodeURIComponent(address) : null);
+                    
+                    if (query) {
+                      return (
+                        <iframe 
+                          width="100%" 
+                          height="100%" 
+                          frameBorder="0" 
+                          style={{ border: 0 }} 
+                          src={`https://maps.google.com/maps?q=${query}&hl=en&z=14&output=embed`} 
+                          allowFullScreen 
+                          title="Meeting Location"
+                        />
+                      );
+                    }
+                    return (
+                      <>
+                        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
+                          <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                        </div>
+                      </>
+                    );
+                  })()}
+               </div>
+             </div>
+           </Rev>
+           <Rev delay={0.2}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                <div>
+                  <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Location Details</h3>
+                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
+                    {[
+                      { label: "Address", val: food?.meetingAddress || food?.address },
+                      { label: "District", val: food?.meetingDistrict || food?.district },
+                      { label: "State", val: food?.meetingState || food?.state || food?.city },
+                      { label: "Landmark", val: food?.nearestLandmark || food?.meetingLandmark || food?.landmark || "Near City Center" },
+                      { label: "Directions", val: food?.meetingInstructions || food?.directions }
+                    ].filter(x => x.val).map((item, i) => (
+                      <li key={i} style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                         <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>{item.label}</span>
+                         <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.6 }}>{item.val}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+           </Rev>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ReservationNoir({ food, hostData }) {
   const { tokens: { A, FG, M, BG, S, B, AL } } = useTheme();
 
@@ -346,22 +510,30 @@ function ReservationNoir({ food, hostData }) {
          <Soul y={100}>
             <div style={{ background: S, border: `1px solid ${B}`, borderRadius: 40, padding: 64, display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 64 }} className="res-grid">
                <div>
-                  <h3 className="font-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", fontWeight: 700, color: FG, marginBottom: 28 }}>Transcend the <br/><span style={{ color: A }}>Standard Meal.</span></h3>
+                  <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>Contact & Additional Info</p>
+                  <h3 className="font-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", fontWeight: 700, color: FG, marginBottom: 28 }}>Transcending the <br/><span style={{ color: A }}>Standard Meal.</span></h3>
                   <p style={{ fontSize: 15, color: M, lineHeight: 1.8, maxWidth: 450, marginBottom: 48 }}>
-                     Our tables are finite. The experience is infinite. We require 48-hour prior notification for the bespoke molecular taster menu.
+                     {food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response."}
                   </p>
                   
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, rowGap: 32 }}>
                      <div>
-                        <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 16 }}>Dine-In Sessions</p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                           <p style={{ fontSize: 13, color: FG, fontWeight: 600 }}>{food?.startTime || "01:00 PM"} — {food?.endTime || "04:00 PM"}</p>
-                           <p style={{ fontSize: 13, color: FG, fontWeight: 600 }}>Evening by Appointment</p>
-                        </div>
+                        <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 12 }}>Managed By</p>
+                        <p style={{ fontSize: 14, color: FG, fontWeight: 600 }}>{hostData?.displayName || food?.host?.displayName || "Owner"}</p>
                      </div>
                      <div>
-                        <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 16 }}>Hotline</p>
-                        <p style={{ fontSize: 20, color: FG, fontWeight: 700 }}>{hostData?.phone || food?.host?.phone || hostData?.email || "Contact Host"}</p>
+                        <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 12 }}>Contact Phone</p>
+                        <p style={{ fontSize: 14, color: FG, fontWeight: 700 }}>{hostData?.phone || food?.host?.phone || "9876543675"}</p>
+                     </div>
+                     <div>
+                        <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 12 }}>Website or Social Link</p>
+                        <a href={food?.website || "https://adithyan-portfolio.pages.dev/"} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: A, fontWeight: 600, textDecoration: "none" }}>
+                           {food?.instagram || food?.host?.instagram || "@culinary_craft"}
+                        </a>
+                     </div>
+                     <div>
+                        <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 12 }}>Instagram Handle</p>
+                        <p style={{ fontSize: 14, color: FG, fontWeight: 600 }}>{food?.instagram || food?.host?.instagram || "@culinary_craft"}</p>
                      </div>
                   </div>
                </div>
@@ -476,16 +648,27 @@ const FoodDetails = () => {
             
             <CulinaryHero food={food} galleryItems={galleryItems} />
             
-            <Mq items={["Avant Cuisine", "Molecular Art", "Sonic Plating", "Epicurean Odyssey"]} size="sm" bg={THEMES.light.S} accent />
+            {(() => {
+                const curated = Array.isArray(food?.curatedContent) 
+                    ? food.curatedContent.map(c => typeof c === 'string' ? c : (c?.name || c?.title || c?.value)).filter(Boolean)
+                    : [];
+                const tags = Array.isArray(food?.tags)
+                    ? food.tags.map(t => typeof t === 'string' ? t : (t?.name || t?.tag || t?.label || t?.value)).filter(Boolean)
+                    : [];
+                const items = curated.length > 0 ? curated : tags.length > 0 ? tags : ["Avant Cuisine", "Molecular Art", "Sonic Plating", "Epicurean Odyssey"];
+                return <Mq items={items} size="sm" bg="var(--S)" accent />;
+            })()}
             
             <ChefSection food={food} hostData={hostData} hostAvatar={hostAvatar} />
             
-            <Mq items={["Heritage Taste", "Liquid Alchemy", "Curated Palette", "Biological Response"]} bg={THEMES.light.S} />
+            <Mq items={["Heritage Taste", "Liquid Alchemy", "Curated Palette", "Biological Response"]} bg="var(--S)" />
             
             <DishGallery galleryItems={galleryItems} food={food} />
             
-            <Mq items={["Bespoke Reservations", "Finite Tables", "Infinite Experience"]} size="sm" bg={THEMES.light.S} accent />
+            <Mq items={["Bespoke Reservations", "Finite Tables", "Infinite Experience"]} size="sm" bg="var(--S)" accent />
             
+            <LocationSection food={food} />
+
             <ReservationNoir food={food} hostData={hostData} />
             
             <Footer />
