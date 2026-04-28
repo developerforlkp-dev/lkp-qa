@@ -28,6 +28,17 @@ const formatImageUrl = (url) => {
   return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
+const getActivityImageUrl = (activity) => {
+  const firstImage = Array.isArray(activity?.images) ? activity.images[0] : null;
+  if (!firstImage) return null;
+
+  const rawUrl = typeof firstImage === "string"
+    ? firstImage
+    : firstImage.url || firstImage.fileUrl || firstImage.imageUrl;
+
+  return formatImageUrl(rawUrl);
+};
+
 /* ─── KINETIC BACKGROUND ────────────────────────── */
 function ExperienceBg({ progress, src }) {
   const { tokens: { A, BG } } = useTheme();
@@ -342,16 +353,18 @@ const ExperienceProduct = () => {
                     <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
                        <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
                        
-                       {(listing?.keyActivities || []).map((it, i) => (
+                       {(listing?.keyActivities || []).map((it, i) => {
+                         const activityImageUrl = getActivityImageUrl(it);
+                         return (
                          <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
                             whileHover={{ x: 10 }}
                             style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
                            <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
                            <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
-                             {it.images && it.images.length > 0 && (
+                             {activityImageUrl && (
                                <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
                                  <img 
-                                   src={formatImageUrl(it.images[0]?.imageUrl || it.images[0]?.url || it.images[0]?.fileUrl || (typeof it.images[0] === 'string' ? it.images[0] : null))} 
+                                   src={activityImageUrl} 
                                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                                    alt={it.name}
                                    onError={(e) => {
@@ -377,7 +390,8 @@ const ExperienceProduct = () => {
                              </div>
                            </div>
                          </motion.div>
-                       ))}
+                         );
+                       })}
                        {(!listing?.keyActivities || listing.keyActivities.length === 0) && (
                          <p style={{ color: M, fontSize: 14, marginLeft: 48 }}>Itinerary details are being finalized for this experience.</p>
                        )}
