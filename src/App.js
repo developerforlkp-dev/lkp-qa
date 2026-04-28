@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import "react-dates/lib/css/_datepicker.css";
@@ -41,6 +42,8 @@ import StayProduct from "./screens/StayProduct";
 import StayDetails from "./screens/StayDetails";
 import FoodDetails from "./screens/FoodDetails";
 import PlaceDetails from "./screens/PlaceDetails";
+import { ThemeProvider } from "./components/JUI/Theme";
+import { Cursor, ProgressBar } from "./components/JUI/UI";
 
 function App() {
   // Get Google Client ID from environment variable
@@ -58,10 +61,13 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-      <Router>
-        <Switch>
-          <Route
-            exact
+      <ThemeProvider>
+        <Router>
+          <Cursor />
+          <ProgressBar />
+          <Switch>
+            <Route
+              exact
             path="/"
             render={() => (
               <Page>
@@ -82,18 +88,14 @@ function App() {
             exact
             path="/experience/:slugAndId"
             render={() => (
-              <Page separatorHeader>
-                <ExperienceProduct />
-              </Page>
+              <ExperienceProduct />
             )}
           />
           <Route
             exact
             path="/experience-product"
             render={() => (
-              <Page separatorHeader>
-                <ExperienceProduct />
-              </Page>
+              <ExperienceProduct />
             )}
           />
           <Route
@@ -399,8 +401,9 @@ function App() {
               </Page>
             )}
           />
-        </Switch>
-      </Router>
+          </Switch>
+        </Router>
+      </ThemeProvider>
     </GoogleOAuthProvider>
   );
 }

@@ -17,6 +17,8 @@ const DateSingle = ({
   onDateChange,
   id,
   plain,
+  withPortal,
+  openDirection,
 }) => {
   const [internalDate, setInternalDate] = useState(null);
   const [focused, setFocused] = useState(false);
@@ -53,6 +55,8 @@ const DateSingle = ({
           readOnly
           noBorder
           numberOfMonths={1}
+          withPortal={withPortal}
+          openDirection={openDirection}
         />
       </div>
     );
@@ -88,6 +92,8 @@ const DateSingle = ({
           readOnly
           noBorder
           numberOfMonths={1}
+          withPortal={withPortal}
+          openDirection={openDirection}
         />
       </div>
     </div>

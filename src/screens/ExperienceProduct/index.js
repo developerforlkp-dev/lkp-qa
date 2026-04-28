@@ -1,190 +1,51 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
-import styles from "./ExperienceProduct.module.sass";
-import Product from "../../components/Product";
-import Description from "./Description";
-import Itinerary from "../../components/Itinerary";
-import TabSection from "./TabSection";
-import CommentsProduct from "../../components/CommentsProduct";
-import Browse from "../../components/Browse";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus } from "lucide-react";
+import { useTheme } from "../../components/JUI/Theme";
+import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
+import Header from "../../components/Header";
+import { Footer } from "../../components/JUI/Footer";
+import { BookingSystem } from "../../components/JUI/BookingSystem";
 import Loader from "../../components/Loader";
-import { browse2 } from "../../mocks/browse";
 import {
-  DEFAULT_API_BASE_URL,
   getListing,
   getHost,
   getLeadDetails,
 } from "../../utils/api";
 import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
 
-// Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
   if (!url) return null;
-  
-  // Already a full URL
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-  
-  // Azure blob storage path (e.g., "leads/3/listings/6/cover-photo/image.jpg")
-  if (url.startsWith("leads/")) {
-    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
-  }
-  
-  // Relative path - prepend base URL if needed
-  if (url.startsWith("/")) {
-    return url;
-  }
-  
-  // Otherwise assume it's a blob storage path
-  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
+  const raw = String(url).trim();
+  if (!raw) return null;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("/")) return raw;
+  const [pathPart, queryPart] = raw.split("?");
+  const normalizedPath = String(pathPart).replaceAll("%2F", "/").replace(/\\/g, "/");
+  const encodedPath = encodeURI(normalizedPath);
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
-// Helper function to build options from listing data
-const buildOptionsFromListing = (listing, hostData) => {
-  const options = [];
-  
-  // 1. Superhost - check if host is superhost
-  if (hostData?.isSuperhost || listing?.host?.isSuperhost) {
-    options.push({
-      title: "Superhost",
-      icon: "home",
-    });
-  }
-  
-  // 2. Location - prioritize meeting location fields, then fallback to other location fields
-  const locationParts = [];
-  
-  // First try meeting location fields (meetingCity, meetingState, meetingCountry)
-  if (listing?.meetingCity) locationParts.push(listing.meetingCity);
-  if (listing?.meetingState) locationParts.push(listing.meetingState);
-  if (listing?.meetingCountry) locationParts.push(listing.meetingCountry);
-  
-  // If no meeting location, try regular location fields
-  if (locationParts.length === 0) {
-    if (listing?.city) locationParts.push(listing.city);
-    if (listing?.state) locationParts.push(listing.state);
-    if (listing?.country) locationParts.push(listing.country);
-  }
-  
-  // If still no location, try location field or meetingAddress
-  if (locationParts.length === 0) {
-    if (listing?.location) {
-      locationParts.push(listing.location);
-    } else if (listing?.meetingAddress) {
-      locationParts.push(listing.meetingAddress);
-    }
-  }
-  
-  if (locationParts.length > 0) {
-    options.push({
-      title: locationParts.join(", "),
-      icon: "flag",
-    });
-  }
-  
-  // 3. Category/Tags - use category, tags, or categoryName
-  if (listing?.category) {
-    options.push({
-      title: listing.category,
-      icon: "route",
-    });
-  } else if (listing?.categoryName) {
-    options.push({
-      title: listing.categoryName,
-      icon: "route",
-    });
-  } else if (Array.isArray(listing?.tags) && listing.tags.length > 0) {
-    // Use first tag as category
-    options.push({
-      title: listing.tags[0],
-      icon: "route",
-    });
-  }
-  
-  // 4. Activity/Experience type - from keyActivities or activityType
-  if (listing?.activityType) {
-    options.push({
-      title: listing.activityType,
-      icon: "car",
-    });
-  } else if (Array.isArray(listing?.keyActivities) && listing.keyActivities.length > 0) {
-    // Use first key activity
-    const firstActivity = listing.keyActivities[0];
-    if (firstActivity?.title) {
-      options.push({
-        title: firstActivity.title,
-        icon: "car",
-      });
-    }
-  }
-  
-  // Return default options if no listing data
-  if (options.length === 0) {
-    return [
-      {
-        title: "Superhost",
-        icon: "home",
-      },
-      {
-        title: "Location",
-        icon: "flag",
-      },
-    ];
-  }
-  
-  return options;
-};
+/* ─── KINETIC BACKGROUND ────────────────────────── */
+function ExperienceBg({ progress, src }) {
+  const { tokens: { A, BG } } = useTheme();
+  const scale = useTransform(progress, [0, 1], [1, 1.2]);
+  const opacity = useTransform(progress, [0, 0.8], [0.6, 0]);
+  const blur = useTransform(progress, [0, 0.5], [0, 10]);
 
-// Build parametersUser dynamically from listing data
-const buildParametersUser = (listing, hostData) => {
-  const params = [];
-  
-  // Add Superhost if applicable
-  if (hostData?.isSuperhost || listing?.host?.isSuperhost) {
-    params.push({
-      title: "Superhost",
-      icon: "home",
-    });
-  }
-  
-  // Add reviews count if available
-  const reviewCount = listing?.totalReviews || listing?.reviewCount || listing?.reviews || 0;
-  if (reviewCount > 0) {
-    params.push({
-      title: `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`,
-      icon: "star-outline",
-    });
-  }
-  
-  // Return default if no data
-  if (params.length === 0) {
-    return [
-      {
-        title: "Superhost",
-        icon: "home",
-      },
-    ];
-  }
-  
-  return params;
-};
-
-const socials = [
-  {
-    title: "twitter",
-    url: "https://twitter.com/ui8",
-  },
-  {
-    title: "instagram",
-    url: "https://www.instagram.com/ui8net/",
-  },
-  {
-    title: "facebook",
-    url: "https://www.facebook.com/ui8.net/",
-  },
-];
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0 }}>
+      <motion.div style={{ scale, opacity, filter: `blur(${blur}px)`, width: "100%", height: "100%", position: "relative" }}>
+        <img src={src || "/gallery/concert.png"} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.5) contrast(1.1)" }} alt="" />
+        <motion.div animate={{ opacity: [0.1, 0.3, 0.1] }} transition={{ duration: 5, repeat: Infinity }} style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 30% 40%, ${A}44 0%, transparent 60%)` }} />
+        <motion.div animate={{ opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 7, repeat: Infinity, delay: 2 }} style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 70% 60%, ${A}33 0%, transparent 50%)` }} />
+      </motion.div>
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 60%, #080808 100%)` }} />
+    </div>
+  );
+}
 
 const ExperienceProduct = () => {
   const location = useLocation();
@@ -193,257 +54,588 @@ const ExperienceProduct = () => {
   const params = new URLSearchParams(location.search);
   const idFromPath = extractExperienceIdFromSlugAndId(slugAndId);
   const idParam = params.get("id");
-  const id = idFromPath || idParam || "2"; // default to 2 as requested
+  const id = idFromPath || idParam || "1";
 
+  const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const [listing, setListing] = useState(null);
   const [hostData, setHostData] = useState(null);
   const [leadData, setLeadData] = useState(null);
   const [galleryItems, setGalleryItems] = useState([]);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [publicExperiences, setPublicExperiences] = useState([]);
+  const [sc, setSc] = useState(false);
 
-useEffect(() => {
-  let mounted = true;
-  
-  // ✅ Immediately reset state when ID changes to prevent showing old data
-  setListing(null);
-  setHostData(null);
-  setGalleryItems([]);
-  setLoading(true);
-  
-  const load = async () => {
-    try {
-      // ✅ Fetch listing data first (critical path)
-      const data = await getListing(id);
-      if (!mounted) return;
+  const handleToggleAddon = (addon) => {
+    const addonId = addon.addonId || addon.id;
+    setSelectedAddOns((prev) =>
+      prev.some(a => (a.addonId || a.id) === addonId)
+        ? prev.filter(a => (a.addonId || a.id) !== addonId)
+        : [...prev, addon]
+    );
+  };
 
-      if (data) {
-        // ✅ Set listing immediately for progressive rendering
-        setListing(data);
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    
+    const load = async () => {
+      try {
+        const data = await getListing(id);
+        if (!mounted) return;
 
-        // ✅ Build gallery dynamically from API (optimized with for loops)
-        const galleryImages = [];
-
-        // 1️⃣ Add cover photo (if exists)
-        if (data.coverPhotoUrl) {
-          const formattedUrl = formatImageUrl(data.coverPhotoUrl);
-          if (formattedUrl) galleryImages.push(formattedUrl);
-        }
-
-        // 2️⃣ Add listingMedia images
-        if (Array.isArray(data.listingMedia)) {
-          for (const media of data.listingMedia) {
-            const imageUrl = formatImageUrl(media.url || media.fileUrl);
-            if (imageUrl) galleryImages.push(imageUrl);
+        if (data) {
+          setListing(data);
+          const galleryImages = [];
+          if (data.coverPhotoUrl) {
+            const formattedUrl = formatImageUrl(data.coverPhotoUrl);
+            if (formattedUrl) galleryImages.push(formattedUrl);
           }
-        }
-
-        // 3️⃣ Add keyActivities images
-        if (Array.isArray(data.keyActivities)) {
-          for (const activity of data.keyActivities) {
-            if (Array.isArray(activity.images)) {
-              for (const img of activity.images) {
-                const imageUrl = formatImageUrl(img.url || img.imageUrl);
-                if (imageUrl) galleryImages.push(imageUrl);
-              }
+          if (Array.isArray(data.listingMedia)) {
+            for (const media of data.listingMedia) {
+              const imageUrl = formatImageUrl(media.url || media.fileUrl);
+              if (imageUrl) galleryImages.push(imageUrl);
             }
           }
-        }
+          setGalleryItems(galleryImages);
 
-        setGalleryItems(galleryImages.length ? galleryImages : []);
+          const canonicalUrl = buildExperienceUrl(data.title || "experience", data.listingId || data.id || id);
+          if (location.pathname !== canonicalUrl) history.replace(canonicalUrl);
 
-        // Canonicalize URL to /experience/<slug>-<id> once title is available
-        const canonicalUrl = buildExperienceUrl(
-          data.title || "experience",
-          data.listingId || data.id || id
-        );
-        if (location.pathname !== canonicalUrl) {
-          history.replace(canonicalUrl);
-        }
-
-        // ✅ Fetch host data in parallel (non-blocking)
-        const leadUserId = data.leadUserId || data.host?.leadUserId;
-        if (leadUserId) {
-          getHost(leadUserId)
-            .then((hostResponse) => {
-              if (mounted) setHostData(hostResponse || null);
-            })
-            .catch((hostErr) => {
-              console.warn("⚠️ Failed to fetch host data:", hostErr);
-            });
-        }
-
-        // ✅ Fetch lead details (address, contact, etc.) - get leadId from listing
-        // Try multiple possible properties for lead ID
-        const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
-        if (leadId) {
-          getLeadDetails(leadId)
-            .then((leadResponse) => {
-              if (mounted) setLeadData(leadResponse || null);
-            })
-            .catch((leadErr) => {
-              console.warn("⚠️ Failed to fetch lead details:", leadErr);
-            });
-        }
-        
-        // ✅ Mark loading as complete once listing is ready
-        setLoading(false);
-      } else {
-        setListing(null);
-        setGalleryItems([]);
-        setLoading(false);
-      }
-    } catch (e) {
-      console.error("Failed to load listing", e);
-      setListing(null);
-      setGalleryItems([]);
-      setLoading(false);
-    } 
-  };
-
-  load();
-
-  // New fetch logic for Explore Kerala
-  const fetchKeralaListings = async () => {
-    try {
-      const resp = await fetch(
-        `${DEFAULT_API_BASE_URL}/public/listings/filter?businessInterestId=1&categoryType=States&limit=12&offset=0&sortBy=newest`,
-        {
-          headers: {
-            "ngrok-skip-browser-warning": "true"
+          const hostId = data.hostId || data.host?.id || data.host?.hostId || data.leadUserId || data.host?.leadUserId;
+          if (hostId) {
+            getHost(hostId).then(resp => mounted && setHostData(resp.host || resp)).catch(e => console.warn(e));
           }
+
+          const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
+          if (leadId) {
+            getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => console.warn(e));
+          }
+          setLoading(false);
         }
-      );
-      const data = await resp.json();
-      if (Array.isArray(data?.listings)) {
-        setPublicExperiences(
-          data.listings.map((item) => ({
-            title: item.title || "Experience",
-            counter: item.city || item.location || "Kerala",
-            category: "black",
-            categoryText: item.basePrice ? `from ₹${item.basePrice}` : item.individualPrice ? `from ₹${item.individualPrice}` : "",
-            src: item.coverPhotoUrl ? formatImageUrl(item.coverPhotoUrl) : "/images/content/browse-pic-1.jpg",
-            srcSet: item.coverPhotoUrl ? formatImageUrl(item.coverPhotoUrl) : "/images/content/browse-pic-1@2x.jpg",
-            url: buildExperienceUrl(item.title || "experience", item.listingId || item.id),
-          }))
-        );
-      }
-    } catch (err) {
-      console.error("Failed to fetch Kerala listings", err);
-    }
-  };
-  fetchKeralaListings();
+      } catch (e) {
+        console.error(e);
+        setLoading(false);
+      } 
+    };
+    load();
+    return () => { mounted = false; };
+  }, [id]);
 
-  return () => {
-    mounted = false;
-  };
-}, [id, location.search, location.pathname, history]); // ✅ Also depend on route changes
+  useEffect(() => {
+    const h = () => setSc(window.scrollY > 40);
+    window.addEventListener("scroll", h);
+    return () => window.removeEventListener("scroll", h);
+  }, []);
 
-  // Build options dynamically from listing and host data
-  const listingOptions = useMemo(() => {
-    return buildOptionsFromListing(listing, hostData);
-  }, [listing, hostData]);
-  
-  // Build parametersUser dynamically from listing and host data
-  const parametersUser = useMemo(() => {
-    return buildParametersUser(listing, hostData);
-  }, [listing, hostData]);
+  const heroRef = useRef(null);
+  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const textY = useTransform(heroProgress, [0, 1], [0, -200]);
+  const fade = useTransform(heroProgress, [0, 0.6], [1, 0]);
 
-  // Get rating and reviews from listing
-  const rating = listing?.averageRating || listing?.rating || null;
-  const reviews = listing?.totalReviews || listing?.reviewCount || listing?.reviews || null;
-  
-  // Get host avatar - try multiple possible fields and format URL
-  const getHostAvatar = () => {
-    const avatarUrl = hostData?.profilePhotoUrl || 
-                      hostData?.avatar || 
-                      hostData?.profileImage ||
-                      hostData?.image ||
-                      listing?.host?.profilePhotoUrl ||
-                      listing?.host?.avatar ||
-                      listing?.host?.profileImage ||
-                      listing?.host?.image ||
-                      null;
-    
-    // Format the avatar URL if it exists
-    if (avatarUrl) {
-      return formatImageUrl(avatarUrl);
-    }
-    
-    return null;
-  };
-  
-  const hostAvatar = getHostAvatar();
-  
-  // ✅ Build the host description with lead details (address, contact, etc.)
-  const hostDescription = useMemo(() => {
-    if (!leadData) return "";
-    
-    // Extract details from lead API response
-    const address = leadData.address || leadData.businessAddress || leadData.meetingAddress;
-    const contact = leadData.contactNumber || leadData.phone || leadData.mobileNumber || leadData.businessContact;
-    const email = leadData.email || leadData.businessEmail;
-    
-    const details = [];
-    if (address) details.push(`Address: ${address}`);
-    if (contact) details.push(`Contact: ${contact}`);
-    if (email) details.push(`Email: ${email}`);
-    
-    return details.join(" | ");
-  }, [leadData]);
-
-  // ✅ Progressive rendering: Show content as soon as listing data is available
-  // Don't wait for host data to render the main content
   if (loading && !listing) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader />
-      </div>
-    );
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}><Loader /></div>;
   }
+
+  const description = listing?.description || listing?.aboutListing || "A multisensory odyssey that blurs the line between perception and possibility.";
+  const summary = listing?.summary || listing?.listingSummary || "High-fidelity touchpoints that respond to your presence in real-time.";
+  const displayTags = listing?.tags?.length > 0 ? listing.tags : ["Artistic Evolution", "Deep Immersion", "Sonic Archeology"];
 
   return (
     <>
-      <Product
-        classSection="section-mb64"
-        title={listing?.title || "Spectacular views of Queenstown"}
-        options={listingOptions}
-        gallery={galleryItems && galleryItems.length > 0 ? galleryItems : []}
-        listingId={listing?.listingId || listing?.id}
-        type="experience"
-        rating={rating}
-        reviews={reviews}
-        hostAvatar={hostAvatar}
-        mapLocation={listing?.meetingAddress || listing?.location || listing?.city}
-      />
+      <motion.div
+        className={cn("slim-header-wrapper", { "force-dark": !sc && theme === "light" })}
+        initial={{ y: -72, opacity: 0 }} 
+        animate={{ y: 0, opacity: 1 }} 
+        transition={{ duration: 0.85, ease: E }}
+        style={{ 
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, 
+          transition: "all 0.4s", 
+          background: sc ? (theme === 'light' ? "rgba(251,251,249,0.92)" : "rgba(8,8,8,0.92)") : "transparent", 
+          backdropFilter: sc ? "blur(20px)" : "none", 
+          borderBottom: sc ? `1px solid ${B}` : "1px solid transparent" 
+        }}
+      >
+        <Header />
+      </motion.div>
+      <main style={{ background: BG }}>
+        {/* HERO SECTION */}
+        <section ref={heroRef} style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center" }}>
+          <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
+          <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
+             <motion.div style={{ opacity: fade, y: textY }}>
+               <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
+                  <Rev>
+                    <h1 style={{ fontSize: "clamp(4.5rem, 12vw, 10rem)", fontWeight: 900, lineHeight: 0.85, color: "#FFFFFF", marginBottom: 40, letterSpacing: "-0.04em" }} className="font-display">
+                      {listing?.title}
+                    </h1>
+                  </Rev>
+                  <Rev delay={0.2}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }} className="hero-stats">
+                      <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
+                         <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>01. Atmospherics</p>
+                         <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.experienceType || "A multisensory odyssey that blurs the line between perception and possibility."}</p>
+                      </div>
+                      <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
+                         <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>02. Interaction</p>
+                         <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.activityType || "High-fidelity touchpoints that respond to your presence in real-time."}</p>
+                      </div>
+                   </div>
+                </Rev>
+             </motion.div>
+          </div>
+           <motion.div style={{ position: "absolute", bottom: 60, left: 60, display: "flex", alignItems: "center", gap: 20, opacity: fade }}>
+             <motion.div animate={{ height: [40, 80, 40] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} style={{ width: 1, background: "#FFFFFF" }} />
+             <span style={{ fontSize: 10, letterSpacing: "0.5em", textTransform: "uppercase", color: "#8C8C88", fontWeight: 600 }}>Scroll to explore</span>
+           </motion.div>
+        </section>
 
-      {listing && (
-        <>
-          <Description classSection="section" listing={listing} hostData={hostData} />
-          <Itinerary classSection="section" listing={listing} />
-          <TabSection classSection="section" listing={listing} />
-          <CommentsProduct
-            className={cn("section", styles.comment)}
-            parametersUser={parametersUser}
-            info={hostDescription}
-            socials={socials}
-            buttonText="Contact"
-            hostData={hostData}
-          />
-        </>
-      )}
-      
-      {publicExperiences.length > 0 && (
-        <Browse
-          classSection="section"
-          headSmall
-          classTitle="h4"
-          title="Explore Kerala"
-          items={publicExperiences}
-        />
-      )}
+        <Mq items={displayTags} size="sm" bg={BG} />
+
+        {/* GALLERY SECTION */}
+        <section style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
+          {(() => {
+            const baseItems = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
+            let filledItems = [...baseItems];
+            while(filledItems.length < 8) {
+              filledItems = [...filledItems, ...baseItems];
+            }
+            const doubledItems = [...filledItems, ...filledItems];
+
+            return (
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+                style={{ display: "flex", gap: 16, width: "max-content", paddingLeft: 16 }}
+              >
+                {doubledItems.map((img, i) => (
+                  <motion.div 
+                    key={i} 
+                    whileHover={{ scale: 0.98 }}
+                    style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}` }}
+                  >
+                    <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Gallery" />
+                  </motion.div>
+                ))}
+              </motion.div>
+            );
+          })()}
+        </section>
+
+        <Mq items={displayTags} bg={BG} />
+
+        {/* DETAILS SECTION */}
+        <section style={{ background: BG, padding: "180px 36px 130px" }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+            <SHdr idx="01" label="Overview" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }} className="details-grid">
+              <Soul delay={0.1} style={{ gridColumn: "span 2" }}>
+                <div style={{ background: W, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                   <div>
+                     <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 16, fontWeight: 600 }}>What We Do</p>
+                     <h2 style={{ fontSize: "clamp(2rem,4vw,3.2rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 24 }}>A Guided Journey</h2>
+                     <p style={{ color: M, fontSize: 14, lineHeight: 1.8 }}>{description}</p>
+                   </div>
+                </div>
+              </Soul>
+              <Soul y={120} r={5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Clock size={28} color={A} style={{ marginBottom: 16 }} />
+                  <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.duration || "2.5 Hrs"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Duration</p>
+                </div>
+              </Soul>
+              <Soul y={120} r={-5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <User size={28} color={A} style={{ marginBottom: 16 }} />
+                  <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.minimumAge || "18+"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Minimum Age</p>
+                </div>
+              </Soul>
+
+              <Soul y={120} r={5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Zap size={28} color={A} style={{ marginBottom: 16 }} />
+                  <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.difficultyLevel || "Moderate"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Difficulty</p>
+                </div>
+              </Soul>
+
+              {/* Addons & Itinerary */}
+              <Rev delay={0.4} style={{ gridColumn: "span 5", marginTop: 16 }}>
+                <div style={{ background: W, border: `1px solid ${B}`, padding: "64px", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80 }} className="details-inner">
+                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+                     <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Included Add-ons</p>
+                     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                       {(listing?.addons || []).length > 0 ? (listing.addons.map((item, i) => {
+                         const addon = item.addon || item;
+                         const addonId = addon.addonId || addon.id;
+                         const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                         const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
+                         
+                         return (
+                           <motion.div 
+                             key={i} 
+                             whileHover={{ x: 10 }} 
+                             transition={{ duration: 0.3 }} 
+                             style={{ 
+                               display: "flex", 
+                               gap: 24, 
+                               alignItems: "flex-start", 
+                               padding: "20px",
+                               background: isSelected ? AL : "transparent",
+                               borderRadius: 24,
+                               border: `1px solid ${isSelected ? A : "transparent"}`,
+                               transition: "0.3s"
+                             }}
+                           >
+                             <div style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
+                               {addonImage ? (
+                                 <img 
+                                   src={formatImageUrl(addonImage)} 
+                                   style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                   alt={addon.title} 
+                                   onError={(e) => {
+                                     e.target.onerror = null;
+                                     e.target.src = "/images/content/placeholder.jpg";
+                                   }}
+                                 />
+                               ) : (
+                                 <Plus size={24} color={A} />
+                               )}
+                             </div>
+                             <div style={{ flex: 1 }}>
+                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 8 }}>{addon.title}</p>
+                                 <button 
+                                   onClick={() => handleToggleAddon(addon)}
+                                   style={{ 
+                                     background: isSelected ? A : S,
+                                     color: isSelected ? "#FFF" : FG,
+                                     border: `1px solid ${isSelected ? A : B}`,
+                                     borderRadius: 100,
+                                     padding: "6px 16px",
+                                     fontSize: 11,
+                                     fontWeight: 700,
+                                     cursor: "pointer",
+                                     textTransform: "uppercase",
+                                     letterSpacing: "0.05em"
+                                   }}
+                                 >
+                                   {isSelected ? "Selected" : "Add"}
+                                 </button>
+                               </div>
+                               <p style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
+                               {addon.price > 0 && (
+                                 <p style={{ fontSize: 13, fontWeight: 700, color: A, marginTop: 8 }}>+ ₹{addon.price}</p>
+                               )}
+                             </div>
+                           </motion.div>
+                         );
+                       })) : (
+                         <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
+                       )}
+                     </div>
+                  </div>
+
+                  <div>
+                    <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>The Narrative Flow</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
+                       <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
+                       
+                       {(listing?.keyActivities || []).map((it, i) => (
+                         <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
+                            whileHover={{ x: 10 }}
+                            style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
+                           <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
+                           <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
+                             {it.images && it.images.length > 0 && (
+                               <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
+                                 <img 
+                                   src={formatImageUrl(it.images[0]?.imageUrl || it.images[0]?.url || it.images[0]?.fileUrl || (typeof it.images[0] === 'string' ? it.images[0] : null))} 
+                                   style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                   alt={it.name}
+                                   onError={(e) => {
+                                     e.target.onerror = null;
+                                     e.target.src = "/images/content/photo-1.1.jpg";
+                                   }}
+                                 />
+                               </div>
+                             )}
+                             <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                               <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: A, fontFamily: "monospace", textTransform: "uppercase" }}>Activity {i + 1}</span>
+                                  <span className="font-display" style={{ fontSize: "clamp(1.1rem, 2vw, 1.4rem)", fontWeight: 700, color: FG }}>{it.name}</span>
+                               </div>
+                               <p style={{ fontSize: 13, color: "#000", marginTop: 8, lineHeight: 1.6, maxWidth: 480, fontWeight: 500 }}>
+                                 {it.description}
+                               </p>
+                               {it.pilot && (
+                                 <div style={{ fontSize: 11, color: M, marginTop: 4, opacity: 0.9 }}>
+                                   {it.pilot}
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+                         </motion.div>
+                       ))}
+                       {(!listing?.keyActivities || listing.keyActivities.length === 0) && (
+                         <p style={{ color: M, fontSize: 14, marginLeft: 48 }}>Itinerary details are being finalized for this experience.</p>
+                       )}
+                    </div>
+                  </div>
+                </div>
+              </Rev>
+            </div>
+          </div>
+        </section>
+
+        <Mq items={displayTags} size="sm" bg={BG} />
+
+        {/* PREPARATION SECTION */}
+        <section style={{ background: W, padding: "130px 36px" }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+            <SHdr idx="02" label="Preparation" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
+               <Rev delay={0.1}>
+                 <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
+                 <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
+                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                     <MapPin size={20} color={A} />
+                     <div>
+                       <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</p>
+                       <p style={{ fontSize: 13, color: M, marginTop: 4 }}>{listing?.meetingAddress || "Arrive via Gate 3 (Private Entrance). Our concierge will meet you at the inner courtyard."}</p>
+                     </div>
+                   </div>
+                   <div style={{ background: W, border: `1px solid ${B}`, height: 200, marginTop: 16, position: "relative", overflow: "hidden" }}>
+                      {listing?.meetingLatitude && listing?.meetingLongitude ? (
+                        <iframe 
+                          width="100%" 
+                          height="100%" 
+                          frameBorder="0" 
+                          style={{ border: 0 }} 
+                          src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`} 
+                          allowFullScreen 
+                          title="Meeting Location"
+                        />
+                      ) : (
+                        <>
+                          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
+                            <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                          </div>
+                        </>
+                      )}
+                   </div>
+                 </div>
+               </Rev>
+               <Rev delay={0.2}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                    <div>
+                      <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Location Details</h3>
+                      <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
+                        {[
+                          { label: "Address", val: listing?.meetingAddress },
+                          { label: "District", val: listing?.meetingDistrict },
+                          { label: "State", val: listing?.meetingState },
+                          { label: "Country", val: listing?.meetingCountry },
+                          { label: "Landmark", val: listing?.meetingLandmark },
+                          { label: "Instructions", val: listing?.meetingInstructions }
+                        ].filter(x => x.val).map((item, i) => (
+                          <li key={i} style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                             <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>{item.label}</span>
+                             <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.6 }}>{item.val}</span>
+                          </li>
+                        ))}
+                        {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry) && (
+                          <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                             <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>Region</span>
+                             <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+               </Rev>
+            </div>
+          </div>
+        </section>
+
+        <Mq items={displayTags} size="sm" bg={BG} />
+
+        {/* HOST & REVIEWS SECTION */}
+        <section style={{ background: BG, padding: "130px 36px" }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
+             <Rev delay={0.1}>
+               <SHdr idx="03" label="The Host" />
+               <div style={{ padding: 48, background: W, border: `1px solid ${B}` }}>
+                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
+                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
+                 <p style={{ fontSize: 13, color: M, lineHeight: 1.8 }}>{hostData?.about || "An expert guide who will personally lead the Experience group through the unseen veins of the venue, offering context and narrative to every installation."}</p>
+                 {leadData && (
+                   <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+                     <div style={{ display: "flex", alignItems: "center", gap: 10, color: FG, fontSize: 13 }}><Phone size={14} color={A} /> {leadData.contactNumber}</div>
+                     <div style={{ display: "flex", alignItems: "center", gap: 10, color: FG, fontSize: 13 }}><Info size={14} color={A} /> {leadData.email}</div>
+                   </div>
+                 )}
+               </div>
+             </Rev>
+             <Rev delay={0.2}>
+               <SHdr idx="04" label="Testimonials" />
+               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {[
+                    { q: "A completely transcendent journey. It changes the way you look at a festival entirely.", a: "Vogue India" },
+                    { q: "The curation was intensely personal. Every corner held a secret waiting to be unlocked.", a: "GQ" }
+                  ].map((rev, i) => (
+                    <div key={i} style={{ padding: 32, background: S, border: `1px solid ${B}` }}>
+                      <p style={{ fontSize: 14, fontStyle: "italic", color: FG, lineHeight: 1.7, marginBottom: 16 }}>&ldquo;{rev.q}&rdquo;</p>
+                      <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>— {rev.a}</p>
+                    </div>
+                  ))}
+               </div>
+             </Rev>
+          </div>
+        </section>
+
+        <ExperiencePolicies listing={listing} />
+        <Footer />
+        <BookingSystem listing={listing} selectedAddOns={selectedAddOns} />
+      </main>
+      <style>{`
+        @media(max-width: 900px) { 
+          .hero-stats { grid-template-columns: 1fr !important; gap: 40px !important; } 
+          .gal-grid { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 240px !important; gap: 8px !important; }
+          .details-grid { grid-template-columns: 1fr !important; }
+          .details-grid > div { grid-column: span 1 !important; }
+          .prep-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
+          .host-grid { grid-template-columns: 1fr !important; }
+        }
+        .slim-header-wrapper > div { padding: 4px 0 !important; }
+        .slim-header-wrapper img { width: 140px !important; }
+        
+        /* Force dark styles when over hero in light mode */
+        .force-dark [class*="Header_link"], 
+        .force-dark [class*="Header_bookingsLink"],
+        .force-dark [class*="Header_themeToggle"] svg {
+          color: #FCFCFD !important;
+          fill: #FCFCFD !important;
+        }
+        .force-dark [class*="Header_logo"] img {
+          filter: brightness(0) invert(1) !important;
+        }
+      `}</style>
     </>
   );
 };
+
+function PolicyItem({ req }) {
+  const { tokens: { FG, A, M, AL, B } } = useTheme();
+  const [op, setOp] = useState(false);
+  
+  const title = req.setting?.title;
+  const description = req.setting?.description;
+  const questions = req.questions || [];
+
+  return (
+    <motion.div style={{ borderBottom: `1px solid ${B}` }} whileHover={{ backgroundColor: AL }}>
+      <div 
+        onClick={() => setOp(!op)} 
+        style={{ 
+          width: "100%", 
+          display: "flex", 
+          alignItems: "flex-start", 
+          justifyContent: "space-between", 
+          padding: "24px 16px", 
+          background: "none", 
+          border: "none", 
+          cursor: "pointer", 
+          textAlign: "left" 
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 8 }}>{title}</span>
+          {description && (
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.5, whiteSpace: "pre-line", margin: 0 }}>
+              {description}
+            </p>
+          )}
+        </div>
+        <ChevronDown size={18} color={M} style={{ transform: op ? 'rotate(180deg)' : 'none', transition: '0.3s', marginTop: 4, flexShrink: 0 }} />
+      </div>
+      
+      <AnimatePresence>
+        {op && questions.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ padding: "0 16px 24px", overflow: "hidden" }}
+          >
+            <div style={{ padding: "20px", background: AL, borderRadius: 16, border: `1px solid ${B}` }}>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
+                {questions.map((q, j) => (
+                  <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                     <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                     <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.question?.title}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function ExperiencePolicies({ listing }) {
+  const { tokens: { FG, W, B, A, M } } = useTheme();
+  
+  return (
+    <section style={{ background: W, padding: "130px 36px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SHdr idx="05" label="Rules & Policies" />
+        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80 }} className="pol-grid">
+          <Rev delay={0.1}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <Chars 
+                text="Know Before" 
+                cls="font-display" 
+                style={{ 
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)", 
+                  fontWeight: 700, 
+                  lineHeight: 0.95, 
+                  color: FG, 
+                  letterSpacing: "-0.02em"
+                }} 
+              />
+              <Chars 
+                text="You Go." 
+                cls="font-display" 
+                style={{ 
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)", 
+                  fontWeight: 700, 
+                  lineHeight: 0.95, 
+                  color: FG, 
+                  letterSpacing: "-0.02em"
+                }} 
+              />
+            </div>
+          </Rev>
+          <Rev delay={0.2}>
+            <div style={{ borderTop: `1px solid ${B}` }}>
+              {listing?.guestRequirements?.length > 0 ? (
+                listing.guestRequirements.map((req, i) => (
+                  <PolicyItem key={`req-${i}`} req={req} />
+                ))
+              ) : (
+                <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific requirements listed for this experience.</p>
+              )}
+            </div>
+          </Rev>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default ExperienceProduct;

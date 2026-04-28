@@ -428,7 +428,6 @@ export const uploadCustomerAvatar = async (file) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
-
     const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
