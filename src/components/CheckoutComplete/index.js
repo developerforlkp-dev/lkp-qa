@@ -110,9 +110,6 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
             <Link className={cn("button-stroke", styles.button)} to="/bookings">
               Your trips
             </Link>
-            <Link className={cn("button", styles.button)} to={isStay ? "/stays" : "/things-to-do"}>
-              Explore {isStay ? "places to stay" : "things to do"}
-            </Link>
           </>
         )}
       </div>

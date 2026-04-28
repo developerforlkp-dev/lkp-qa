@@ -548,23 +548,11 @@ const Main = ({
           setTransformedCompletedBookings([]);
         }
 
-        // Set the correct tab based on first booking status (or most common status)
-        // Only set default tab on initial load - never override user's manual selection
-        if (!initialTabSet && (regularTransformed.length > 0 || completedTransformed.length > 0)) {
-          const statusCounts = {
-            upcoming: regularTransformed.filter(b => b.statusTone === "upcoming").length,
-            completed: completedTransformed.length,
-            cancelled: regularTransformed.filter(b => b.statusTone === "cancelled").length,
-          };
-
-          // Set tab to the one with most bookings, defaulting to upcoming
-          const defaultTab = Object.keys(statusCounts).reduce((a, b) =>
-            statusCounts[a] > statusCounts[b] ? a : b, "upcoming"
-          );
-
-          setActiveTab(defaultTab);
-          setDisplayedTab(defaultTab);
-          setInitialTabSet(true); // Mark that initial tab has been set - prevent future auto-switching
+        // Always open on the Upcoming tab on initial load
+        if (!initialTabSet) {
+          setActiveTab("upcoming");
+          setDisplayedTab("upcoming");
+          setInitialTabSet(true);
         }
       } catch (error) {
         console.error("Error transforming booking data:", error);

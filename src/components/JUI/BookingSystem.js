@@ -643,7 +643,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   // Real State management
   const [startDate, setStartDate] = useState(null);
   const [startTime, setStartTime] = useState(null);
-  const [guests, setGuests] = useState({ adults: 1, children: 0, infants: 0 });
+  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 });
   const totalGuests = guests.adults + guests.children;
   const [showTimePicker, setShowTimePicker] = useState(false);
   const isEventBooking = type === "event";
@@ -886,13 +886,54 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const bookingGuestLimit = isEventBooking
     ? (eventGuestLimits.length > 0 ? Math.min(...eventGuestLimits) : undefined)
     : guestSeatLimit;
-  const extractedPrice = isEventBooking ? eventGuestPricing.finalUnitPrice : selectedSlotData?.pricePerPerson 
+  const rawExperiencePrice = selectedSlotData?.pricePerPerson 
     || listing?.timeSlots?.[0]?.pricePerPerson
     || listing?.pricing?.basePrice
     || listing?.basePrice
     || listing?.price 
     || listing?.b2cPrice 
     || "0";
+
+  // Group pricing: override rawExperiencePrice if guest count matches a tier
+  const groupPricingRules = !isEventBooking
+    ? (selectedSlotData?.group_booking_pricing || selectedSlotData?.groupBookingPricing || [])
+    : [];
+  const matchedGroupTier = groupPricingRules.length > 0
+    ? groupPricingRules.find(p =>
+        totalGuests >= (p.group_count_from || p.groupCountFrom || 0) &&
+        totalGuests <= (p.group_count_upto || p.groupCountUpto || Infinity)
+      )
+    : null;
+  const groupOverridePrice = matchedGroupTier
+    ? parseFloat(matchedGroupTier.price_per_person || matchedGroupTier.pricePerPerson || matchedGroupTier.price || 0)
+    : null;
+  // Effective raw base price: group tier wins when matched, else use slot/listing price
+  const effectiveRawPrice = (groupOverridePrice != null && groupOverridePrice > 0)
+    ? groupOverridePrice
+    : rawExperiencePrice;
+
+  const experienceGuestPricing = !isEventBooking
+    ? calculateEventGuestPricing(effectiveRawPrice, listing?.pricing)
+    : null;
+  const extractedPrice = isEventBooking
+    ? eventGuestPricing.finalUnitPrice
+    : (experienceGuestPricing?.finalUnitPrice ?? parseFloat(effectiveRawPrice || 0));
+
+  // Child pricing for experiences
+  const childrenAllowed = !isEventBooking && Boolean(
+    listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren ?? true
+  );
+  const rawChildPrice = !isEventBooking
+    ? (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0)
+    : 0;
+  const childGuestPricing = !isEventBooking && childrenAllowed && rawChildPrice > 0
+    ? calculateEventGuestPricing(rawChildPrice, listing?.pricing)
+    : null;
+  // Effective per-child price (after discount + tax), fallback to adult price if no child price set
+  const effectiveChildPrice = childGuestPricing
+    ? childGuestPricing.finalUnitPrice
+    : extractedPrice;
+  const hasChildPricing = childrenAllowed && rawChildPrice > 0 && guests.children > 0;
   
   const data = {
     price: extractedPrice,
@@ -900,7 +941,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     icon: type === "stay" ? Bed : (type === "food" ? ChefHat : Ticket)
   };
 
-  const baseTotal = parseFloat(data.price || 0) * totalGuests;
+  // Compute totals with child pricing split
+  const adultSubtotal = parseFloat(extractedPrice || 0) * (isEventBooking ? totalGuests : guests.adults);
+  const childSubtotal = !isEventBooking ? (effectiveChildPrice * guests.children) : 0;
+  const baseTotal = isEventBooking
+    ? parseFloat(data.price || 0) * totalGuests
+    : adultSubtotal + childSubtotal;
   const finalTotal = baseTotal + addOnsTotal;
   const eventBaseTotal = eventGuestPricing.baseUnitPrice * totalGuests;
   const eventDiscountTotal = eventGuestPricing.discountAmount * totalGuests;
@@ -924,13 +970,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       return clamped;
     }
 
-    if (clamped.adults < 1) clamped.adults = 1;
-
     const overLimit = clamped.adults + clamped.children - seatLimit;
     if (overLimit > 0) {
       const childrenReduction = Math.min(clamped.children, overLimit);
       clamped.children -= childrenReduction;
-      clamped.adults = Math.max(1, clamped.adults - (overLimit - childrenReduction));
+      clamped.adults = Math.max(0, clamped.adults - (overLimit - childrenReduction));
     }
 
     if (clamped.infants > clamped.adults) clamped.infants = clamped.adults;
@@ -1165,12 +1209,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     const addOnQuantities = {};
     const receipt = [];
     
-    receipt.push({
-      title: `₹${data.price} x ${totalGuests} ${data.unit}${totalGuests > 1 ? 's' : ''}`,
-      content: `₹${baseTotal}`,
-      kind: "base",
-      showInCheckout: true
-    });
+    // Adult row
+    if (guests.adults > 0) {
+      const adultLineTotal = parseFloat(extractedPrice || 0) * guests.adults;
+      receipt.push({
+        title: `₹${Number(extractedPrice || 0).toFixed(2)} × ${guests.adults} adult${guests.adults > 1 ? 's' : ''}`,
+        content: `₹${adultLineTotal.toFixed(2)}`,
+        kind: "base",
+        showInCheckout: true
+      });
+    }
+    // Child row (if children selected and child pricing applies)
+    if (guests.children > 0) {
+      const childLineTotal = effectiveChildPrice * guests.children;
+      receipt.push({
+        title: `₹${Number(effectiveChildPrice || 0).toFixed(2)} × ${guests.children} child${guests.children > 1 ? 'ren' : ''}`,
+        content: `₹${childLineTotal.toFixed(2)}`,
+        kind: "base-child",
+        showInCheckout: true
+      });
+    }
     
     selectedAddOns.forEach(item => {
       const addon = item.addon || item;
@@ -1207,13 +1265,22 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       pricing: {
         currency: "INR",
         basePrice: baseTotal,
+        // Adult/child split for checkout page
+        allowChildPricing: hasChildPricing,
+        adultsCount: guests.adults,
+        childrenCount: guests.children,
+        pricePerPerson: parseFloat(extractedPrice || 0),
+        childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+        discount: (experienceGuestPricing?.discountAmount ?? 0) * guests.adults
+          + (childGuestPricing ? (childGuestPricing.discountAmount * guests.children) : 0),
+        discountRate: experienceGuestPricing?.discountRate ?? 0,
+        tax: (experienceGuestPricing?.taxAmount ?? 0) * guests.adults
+          + (childGuestPricing ? (childGuestPricing.taxAmount * guests.children) : 0),
+        taxRate: experienceGuestPricing?.customerTaxRate ?? 0,
         addonsTotal: addOnsTotal,
         subtotal: baseTotal + addOnsTotal,
-        discount: 0,
-        tax: 0,
         total: finalTotal,
         guestCount: totalGuests,
-        pricePerPerson: parseFloat(extractedPrice || 0)
       },
       bookingSummary: {
         date: dateStr,
@@ -1338,6 +1405,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : Boolean(startDate && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && !bookingLoading);
   const triggerDisabled = isEventBooking && !ticketSaleWindow.isOpen;
 
+  // Check if all experience dates/slots are in the past
+  const isExperienceClosed = useMemo(() => {
+    if (isEventBooking) return false;
+    if (experienceAvailableDateKeys.size === 0) return false; // no date info, don't block
+    const todayKey = moment().format("YYYY-MM-DD");
+    // If every available date key is strictly before today, it's closed
+    return [...experienceAvailableDateKeys].every(key => key < todayKey);
+  }, [isEventBooking, experienceAvailableDateKeys]);
+
   return (
     <>
       <style>{`
@@ -1444,26 +1520,54 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       {ticketSaleWindow.message}
                     </p>
                   )}
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>₹{Number(data.price || 0).toFixed(2)}</span>
-                    <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>per {data.unit}</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                    {(() => {
+                      // Price without discount but with tax applied
+                      const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
+                      const hasDiscount = gp && gp.discountRate > 0;
+                      const priceWithoutDiscount = gp
+                        ? gp.baseUnitPrice * (1 + (gp.customerTaxRate / 100))
+                        : null;
+                      return (
+                        <>
+                          {hasDiscount && priceWithoutDiscount != null && (
+                            <span style={{ fontSize: 20, fontWeight: 600, color: M, textDecoration: "line-through" }}>
+                              ₹{Number(priceWithoutDiscount).toFixed(2)}
+                            </span>
+                          )}
+                          <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>₹{Number(data.price || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>per {data.unit}</span>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
-                      <Star size={14} fill={A} color={A} />
-                      <span style={{ fontSize: 16, fontWeight: 700, color: FG }}>4.9</span>
-                    </div>
-                    <p style={{ fontSize: 12, color: M, marginTop: 2 }}>124 verified reviews</p>
-                  </div>
                   <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 12, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
                     <X size={20} />
                   </button>
                 </div>
               </div>
 
-              {/* Main Content - 2 Columns */}
+              {/* Closed state — all dates have passed */}
+              {isExperienceClosed ? (
+                <div style={{ padding: "60px 40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${B}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+                    <Clock size={32} color={M} />
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: FG }}>This experience is closed</div>
+                  <div style={{ fontSize: 14, color: M, fontWeight: 500, maxWidth: 340, lineHeight: 1.6 }}>
+                    All available dates and time slots for this experience have passed. Please check back later or contact the host for upcoming schedules.
+                  </div>
+                  <button
+                    onClick={() => setShow(false)}
+                    style={{ marginTop: 8, padding: "12px 32px", background: A, color: "#fff", border: "none", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 1, background: B }}>
                 {/* Left Column: Date & Ticket */}
                 <div style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
@@ -1639,7 +1743,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         <Counter
                           value={guests.adults}
                           setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, adults: v }))}
-                          min={bookingGuestLimit === 0 ? 0 : 1}
+                          min={0}
                           max={adultMax}
                         />
                       </div>
@@ -1704,6 +1808,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 <ShieldCheck size={14} />
                 <span>Secure payment processed by Little Known Planet</span>
               </div>
+              </>
+              )}
             </motion.div>
           </div>
         )}

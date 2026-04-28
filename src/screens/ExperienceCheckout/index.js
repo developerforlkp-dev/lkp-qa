@@ -210,6 +210,16 @@ const Checkout = () => {
                   total: (Number(prevPricing.total || 0) > 0)
                     ? prevPricing.total
                     : (serverPricing.total || serverPricing.totalPrice || serverPricing.finalAmount || 0),
+                  // Always preserve child-pricing fields from local — server never returns these
+                  pricePerPerson: (Number(prevPricing.pricePerPerson || 0) > 0)
+                    ? prevPricing.pricePerPerson
+                    : (serverPricing.pricePerPerson || 0),
+                  allowChildPricing: prevPricing.allowChildPricing ?? serverPricing.allowChildPricing ?? false,
+                  adultsCount: prevPricing.adultsCount ?? serverPricing.adultsCount,
+                  childrenCount: prevPricing.childrenCount ?? serverPricing.childrenCount,
+                  childPricePerChild: (Number(prevPricing.childPricePerChild || 0) > 0)
+                    ? prevPricing.childPricePerChild
+                    : (serverPricing.childPricePerChild || 0),
                 },
               };
             });
