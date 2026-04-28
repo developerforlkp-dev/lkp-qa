@@ -26,7 +26,7 @@ const Checkout = () => {
   const history = useHistory();
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
-  const [paymentData, setPaymentData] = useState(null);
+  const [paymentData, setPaymentData] = useState(location.state?.paymentData || null);
   const [checkingPayment, setCheckingPayment] = useState(true);
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [addonDetails, setAddonDetails] = useState([]);
@@ -86,11 +86,13 @@ const Checkout = () => {
         } catch (e) {
           console.error("Error saving actual paid amount:", e);
         }
+      } else if (location.state?.paymentData) {
+        setPaymentData(location.state.paymentData);
       }
     } catch (e) {
       console.error("Error reading payment data:", e);
     }
-  }, []);
+  }, [location.state]);
 
   // Persist snapshot for completion screen
   useEffect(() => {
@@ -119,6 +121,31 @@ const Checkout = () => {
         const order = orderDetails?.order || orderDetails;
 
         if (order) {
+          let checkoutBooking = location.state?.bookingData || null;
+          if (!checkoutBooking) {
+            try {
+              const savedBooking = localStorage.getItem("pendingBooking");
+              checkoutBooking = savedBooking ? JSON.parse(savedBooking) : null;
+            } catch {
+              checkoutBooking = null;
+            }
+          }
+          const isExperienceCheckout = Boolean(checkoutBooking?.listingId) && !checkoutBooking?.eventId;
+          const orderListingId = order?.listingId || orderDetails?.listingId || order?.listing?.listingId;
+          const isStaleEventOrder =
+            isExperienceCheckout &&
+            (
+              (orderListingId && String(orderListingId) !== String(checkoutBooking.listingId)) ||
+              (!orderListingId && Boolean(order?.eventId || orderDetails?.eventId || order?.eventTitle || orderDetails?.eventTitle || order?.eventDetails || orderDetails?.eventDetails))
+            );
+
+          if (isStaleEventOrder) {
+            localStorage.removeItem("pendingOrderId");
+            console.warn("Ignored stale event order while loading experience checkout:", pendingOrderId);
+            setCheckingPayment(false);
+            return;
+          }
+
           const paymentStatus = order.paymentStatus || "PENDING";
           const normalizedStatus = String(paymentStatus).toUpperCase().trim();
 
@@ -222,7 +249,7 @@ const Checkout = () => {
     };
 
     checkPaymentAndLoadPricing();
-  }, [history]);
+  }, [history, location.state]);
 
 
   // eslint-disable-next-line no-unused-vars
@@ -294,11 +321,15 @@ const Checkout = () => {
   }, [bookingData?.stayId]);
   const formatTime = (timeString) => {
     if (!timeString) return "";
-    const [hours, minutes] = timeString.split(":");
+    const raw = String(timeString).trim();
+    const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?/);
+    if (!match) return raw;
+    const hours = match[1];
+    const minutes = match[2] || "00";
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
+    return `${hour12}:${String(minutes).padStart(2, "0")} ${ampm}`;
   };
 
   // Build booking items (date, time, guests) for summary
@@ -460,9 +491,10 @@ const Checkout = () => {
   }
 
   const listingTitle = bookingData?.listingTitle || "Your trip";
+  const isEventBooking = Boolean(bookingData?.eventId);
   const backUrl =
     bookingData?.returnTo ||
-    (bookingData?.eventId ? `/event?id=${bookingData.eventId}` : null);
+    (isEventBooking ? `/event?id=${bookingData.eventId}` : null);
   const breadcrumbs = [
     {
       title: "Booking details",
@@ -506,13 +538,14 @@ const Checkout = () => {
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
-            title="Your trip"
+            title={isEventBooking ? "Your event" : "Your trip"}
             buttonUrl="/experience-checkout-complete"
             guests
             amountToPay={paymentData?.amount}
             currency={paymentData?.currency || "INR"}
             dateValue={items[0]?.title}
             guestValue={items[2]?.title}
+            paymentData={paymentData}
           />
           <PriceDetails
             className={styles.price}

@@ -176,7 +176,7 @@ export function Mq({ items, dir = "l", size = "sm", bg, accent = false }) {
 export function SHdr({ idx, label }) {
   const { tokens: { A, B } } = useTheme();
   return (
-    <Rev style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 52 }}>
+    <Rev style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
       <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>{idx} — {label}</span>
       <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.2 }} style={{ flex: 1, height: 1, background: B, transformOrigin: "left" }} />
     </Rev>

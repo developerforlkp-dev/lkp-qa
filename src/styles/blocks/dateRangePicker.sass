@@ -123,6 +123,31 @@
         +dark-common
             background: $n8
             color: $n2
+    .CalendarDay__highlighted_calendar
+        position: relative
+        background: rgba(0, 151, 178, 0.10)
+        color: #0097B2
+        font-weight: 700
+        &:after
+            content: ""
+            position: absolute
+            left: 50%
+            bottom: 7px
+            width: 5px
+            height: 5px
+            border-radius: 50%
+            background: #0097B2
+            transform: translateX(-50%)
+        &:hover
+            background: rgba(0, 151, 178, 0.18)
+            color: #0097B2
+    .CalendarDay__highlighted_calendar.CalendarDay__selected,
+    .CalendarDay__highlighted_calendar.CalendarDay__selected:hover,
+    .CalendarDay__highlighted_calendar.CalendarDay__selected:active
+        background: #0097B2
+        color: #ffffff
+        &:after
+            background: #ffffff
     .CalendarDay__hovered_span,
     .CalendarDay__hovered_span:hover,
     .CalendarDay__selected_span,

@@ -17,6 +17,7 @@ const ConfirmAndPay = ({
   onEditGuests,
   datePicker,
   guestPicker,
+  paymentData,
   // Stay-specific props
   isStay,
   checkInDate,
@@ -103,7 +104,7 @@ const ConfirmAndPay = ({
           </div>
         </div>
         <div className={styles.item}>
-          <CreditCard className={styles.credit} buttonUrl={buttonUrl} hidePaymentFields />
+          <CreditCard className={styles.credit} buttonUrl={buttonUrl} hidePaymentFields paymentData={paymentData} />
         </div>
       </div>
     </div>

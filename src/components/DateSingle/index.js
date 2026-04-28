@@ -19,6 +19,7 @@ const DateSingle = ({
   plain,
   withPortal,
   openDirection,
+  isDayHighlighted,
 }) => {
   const [internalDate, setInternalDate] = useState(null);
   const [focused, setFocused] = useState(false);
@@ -57,6 +58,7 @@ const DateSingle = ({
           numberOfMonths={1}
           withPortal={withPortal}
           openDirection={openDirection}
+          isDayHighlighted={isDayHighlighted}
         />
       </div>
     );
@@ -94,6 +96,7 @@ const DateSingle = ({
           numberOfMonths={1}
           withPortal={withPortal}
           openDirection={openDirection}
+          isDayHighlighted={isDayHighlighted}
         />
       </div>
     </div>

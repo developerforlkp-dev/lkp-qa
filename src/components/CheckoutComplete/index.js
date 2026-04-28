@@ -4,7 +4,13 @@ import { Link } from "react-router-dom";
 import styles from "./CheckoutComplete.module.sass";
 import Icon from "../Icon";
 
-const CheckoutComplete = ({ className, title, parameters, options, items, paymentFailed = false, onRetryPayment, isStay, hostName, avatarUrl, rating, reviews }) => {
+const CheckoutComplete = ({ className, title, parameters, options, items, paymentFailed = false, onRetryPayment, isStay, isEvent, hostName, avatarUrl, rating, reviews }) => {
+  const bookedMessage = isStay
+    ? "Your stay has been booked!"
+    : isEvent
+      ? "Your event has been booked!"
+      : "Your trip has been booked!";
+
   return (
     <div className={cn(className, styles.complete)}>
       <div className={styles.head}>
@@ -19,7 +25,7 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
           <>
             <div className={cn("h2", styles.title)}>Congratulation!</div>
             <div className={styles.info}>
-              {isStay ? "Your stay has been booked!" : "Your trip has been booked!"}{" "}
+              {bookedMessage}{" "}
               <span role="img" aria-label="firework">
                 🎉
               </span>

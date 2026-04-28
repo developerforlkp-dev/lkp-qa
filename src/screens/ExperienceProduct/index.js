@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Baby, Languages, ShieldCheck } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
@@ -25,6 +25,17 @@ const formatImageUrl = (url) => {
   const normalizedPath = String(pathPart).replaceAll("%2F", "/").replace(/\\/g, "/");
   const encodedPath = encodeURI(normalizedPath);
   return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+};
+
+const getActivityImageUrl = (activity) => {
+  const firstImage = Array.isArray(activity?.images) ? activity.images[0] : null;
+  if (!firstImage) return null;
+
+  const rawUrl = typeof firstImage === "string"
+    ? firstImage
+    : firstImage.url || firstImage.fileUrl || firstImage.imageUrl;
+
+  return formatImageUrl(rawUrl);
 };
 
 /* ─── KINETIC BACKGROUND ────────────────────────── */
@@ -63,6 +74,7 @@ const ExperienceProduct = () => {
   const [leadData, setLeadData] = useState(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const handleToggleAddon = (addon) => {
@@ -77,7 +89,7 @@ const ExperienceProduct = () => {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    
+
     const load = async () => {
       try {
         const data = await getListing(id);
@@ -103,7 +115,20 @@ const ExperienceProduct = () => {
 
           const hostId = data.hostId || data.host?.id || data.host?.hostId || data.leadUserId || data.host?.leadUserId;
           if (hostId) {
-            getHost(hostId).then(resp => mounted && setHostData(resp.host || resp)).catch(e => console.warn(e));
+            getHost(hostId).then(resp => {
+              if (mounted) {
+                setHostData(resp.host || resp);
+                const allReviews = [
+                  ...(data.reviews || []),
+                  ...(data.recentReviews || []),
+                  ...(resp.recentReviews || []),
+                  ...(resp.reviews || [])
+                ];
+                // Remove duplicates if any (by id)
+                const uniqueReviews = Array.from(new Map(allReviews.map(r => [r.id || r.reviewId || r.comment, r])).values());
+                setReviews(uniqueReviews);
+              }
+            }).catch(e => console.warn(e));
           }
 
           const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
@@ -115,7 +140,7 @@ const ExperienceProduct = () => {
       } catch (e) {
         console.error(e);
         setLoading(false);
-      } 
+      }
     };
     load();
     return () => { mounted = false; };
@@ -130,9 +155,9 @@ const ExperienceProduct = () => {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}><Loader /></div>;
   }
 
-  const description = listing?.description || listing?.aboutListing || "A multisensory odyssey that blurs the line between perception and possibility.";
-  const summary = listing?.summary || listing?.listingSummary || "High-fidelity touchpoints that respond to your presence in real-time.";
-  const displayTags = listing?.tags?.length > 0 ? listing.tags : ["Artistic Evolution", "Deep Immersion", "Sonic Archeology"];
+  const description = listing?.description || listing?.aboutListing || "";
+  const summary = listing?.summary || listing?.listingSummary || "";
+  const displayTags = listing?.tags || [];
 
   return (
     <Page>
@@ -141,41 +166,41 @@ const ExperienceProduct = () => {
         <section ref={heroRef} style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center" }}>
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
           <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
-             <motion.div style={{ opacity: fade, y: textY }}>
-               <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
-                  <Rev>
-                    <h1 style={{ fontSize: "clamp(4.5rem, 12vw, 10rem)", fontWeight: 900, lineHeight: 0.85, color: "#FFFFFF", marginBottom: 40, letterSpacing: "-0.04em" }} className="font-display">
-                      {listing?.title}
-                    </h1>
-                  </Rev>
-                  <Rev delay={0.2}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }} className="hero-stats">
-                      <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
-                         <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>01. Atmospherics</p>
-                         <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.experienceType || "A multisensory odyssey that blurs the line between perception and possibility."}</p>
-                      </div>
-                      <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
-                         <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>02. Interaction</p>
-                         <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.activityType || "High-fidelity touchpoints that respond to your presence in real-time."}</p>
-                      </div>
-                   </div>
-                </Rev>
-             </motion.div>
+            <motion.div style={{ opacity: fade, y: textY }}>
+              <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
+              <Rev>
+                <h1 style={{ fontSize: "clamp(4.5rem, 12vw, 10rem)", fontWeight: 900, lineHeight: 0.85, color: "#FFFFFF", marginBottom: 40, letterSpacing: "-0.04em" }} className="font-display">
+                  {listing?.title}
+                </h1>
+              </Rev>
+              <Rev delay={0.2}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }} className="hero-stats">
+                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
+                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>01. Atmospherics</p>
+                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.experienceType || "A multisensory odyssey that blurs the line between perception and possibility."}</p>
+                  </div>
+                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
+                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>02. Interaction</p>
+                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.activityType || "High-fidelity touchpoints that respond to your presence in real-time."}</p>
+                  </div>
+                </div>
+              </Rev>
+            </motion.div>
           </div>
-           <motion.div style={{ position: "absolute", bottom: 60, left: 60, display: "flex", alignItems: "center", gap: 20, opacity: fade }}>
-             <motion.div animate={{ height: [40, 80, 40] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} style={{ width: 1, background: "#FFFFFF" }} />
-             <span style={{ fontSize: 10, letterSpacing: "0.5em", textTransform: "uppercase", color: "#8C8C88", fontWeight: 600 }}>Scroll to explore</span>
-           </motion.div>
+          <motion.div style={{ position: "absolute", bottom: 60, left: 60, display: "flex", alignItems: "center", gap: 20, opacity: fade }}>
+            <motion.div animate={{ height: [40, 80, 40] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} style={{ width: 1, background: "#FFFFFF" }} />
+            <span style={{ fontSize: 10, letterSpacing: "0.5em", textTransform: "uppercase", color: "#8C8C88", fontWeight: 600 }}>Scroll to explore</span>
+          </motion.div>
         </section>
 
-        <Mq items={displayTags} size="sm" bg={BG} />
+
 
         {/* GALLERY SECTION */}
         <section style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
           {(() => {
             const baseItems = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
             let filledItems = [...baseItems];
-            while(filledItems.length < 8) {
+            while (filledItems.length < 8) {
               filledItems = [...filledItems, ...baseItems];
             }
             const doubledItems = [...filledItems, ...filledItems];
@@ -187,8 +212,8 @@ const ExperienceProduct = () => {
                 style={{ display: "flex", gap: 16, width: "max-content", paddingLeft: 16 }}
               >
                 {doubledItems.map((img, i) => (
-                  <motion.div 
-                    key={i} 
+                  <motion.div
+                    key={i}
                     whileHover={{ scale: 0.98 }}
                     style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}` }}
                   >
@@ -200,167 +225,270 @@ const ExperienceProduct = () => {
           })()}
         </section>
 
-        <Mq items={displayTags} bg={BG} />
+
 
         {/* DETAILS SECTION */}
-        <section style={{ background: BG, padding: "180px 36px 130px" }}>
+        <section style={{ background: BG, padding: "48px 36px 80px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
             <SHdr idx="01" label="Overview" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }} className="details-grid">
-              <Soul delay={0.1} style={{ gridColumn: "span 2" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                   <div>
-                     <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 16, fontWeight: 600 }}>What We Do</p>
-                     <h2 style={{ fontSize: "clamp(2rem,4vw,3.2rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 24 }}>A Guided Journey</h2>
-                     <p style={{ color: M, fontSize: 14, lineHeight: 1.8 }}>{description}</p>
-                   </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20 }} className="details-grid">
+              <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
+                <div style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 12, fontWeight: 600 }}>What We Do</p>
+                    <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>A Guided Journey</h2>
+                    <p style={{ color: M, fontSize: 14, lineHeight: 1.7 }}>{description}</p>
+                  </div>
                 </div>
               </Soul>
-              <Soul y={120} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-                  <Clock size={28} color={A} style={{ marginBottom: 16 }} />
-                  <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.duration || "2.5 Hrs"}</p>
+              <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Clock size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
+                    {listing?.duration ? `${listing.duration} ${listing.durationUnit || "Hrs"}` : "2.5 Hrs"}
+                  </p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Duration</p>
                 </div>
               </Soul>
-              <Soul y={120} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-                  <User size={28} color={A} style={{ marginBottom: 16 }} />
-                  <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.minimumAge || "18+"}</p>
-                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Minimum Age</p>
+              <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <User size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.minimumAge || "18+"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Min Age</p>
                 </div>
               </Soul>
-
-              <Soul y={120} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 48, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-                  <Zap size={28} color={A} style={{ marginBottom: 16 }} />
-                  <p style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.difficultyLevel || "Moderate"}</p>
+              <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Zap size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.difficultyLevel || "Moderate"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Difficulty</p>
                 </div>
               </Soul>
+              <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Baby size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Infants</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Languages size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 16, fontWeight: 700, color: FG, marginBottom: 4 }}>
+                    {Array.isArray(listing?.languagesOffered) ? listing.languagesOffered[0] : (listing?.languages || "English")}
+                  </p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Languages</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <ShieldCheck size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
+                    {listing?.privateOptionAvailable ? "Available" : "Not Available"}
+                  </p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Private Option</p>
+                </div>
+              </Soul>
+            </div>
 
-              {/* Addons & Itinerary */}
-              <Rev delay={0.4} style={{ gridColumn: "span 5", marginTop: 16 }}>
-                <div style={{ background: W, border: `1px solid ${B}`, padding: "64px", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80 }} className="details-inner">
-                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
-                     <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Included Add-ons</p>
-                     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                       {(listing?.addons || []).length > 0 ? (listing.addons.map((item, i) => {
-                         const addon = item.addon || item;
-                         const addonId = addon.addonId || addon.id;
-                         const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
-                         const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
-                         
-                         return (
-                           <motion.div 
-                             key={i} 
-                             whileHover={{ x: 10 }} 
-                             transition={{ duration: 0.3 }} 
-                             style={{ 
-                               display: "flex", 
-                               gap: 24, 
-                               alignItems: "flex-start", 
-                               padding: "20px",
-                               background: isSelected ? AL : "transparent",
-                               borderRadius: 24,
-                               border: `1px solid ${isSelected ? A : "transparent"}`,
-                               transition: "0.3s"
-                             }}
-                           >
-                             <div style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
-                               {addonImage ? (
-                                 <img 
-                                   src={formatImageUrl(addonImage)} 
-                                   style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                                   alt={addon.title} 
-                                   onError={(e) => {
-                                     e.target.onerror = null;
-                                     e.target.src = "/images/content/placeholder.jpg";
-                                   }}
-                                 />
-                               ) : (
-                                 <Plus size={24} color={A} />
-                               )}
-                             </div>
-                             <div style={{ flex: 1 }}>
-                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 8 }}>{addon.title}</p>
-                                 <button 
-                                   onClick={() => handleToggleAddon(addon)}
-                                   style={{ 
-                                     background: isSelected ? A : S,
-                                     color: isSelected ? "#FFF" : FG,
-                                     border: `1px solid ${isSelected ? A : B}`,
-                                     borderRadius: 100,
-                                     padding: "6px 16px",
-                                     fontSize: 11,
-                                     fontWeight: 700,
-                                     cursor: "pointer",
-                                     textTransform: "uppercase",
-                                     letterSpacing: "0.05em"
-                                   }}
-                                 >
-                                   {isSelected ? "Selected" : "Add"}
-                                 </button>
-                               </div>
-                               <p style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
-                               {addon.price > 0 && (
-                                 <p style={{ fontSize: 13, fontWeight: 700, color: A, marginTop: 8 }}>+ ₹{addon.price}</p>
-                               )}
-                             </div>
-                           </motion.div>
-                         );
-                       })) : (
-                         <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
-                       )}
-                     </div>
+            <div style={{ margin: "40px -36px" }}>
+              <Mq items={listing?.tags || displayTags} bg={BG} />
+            </div>
+
+            <Rev delay={0.4} style={{ marginTop: 16 }}>
+              <div style={{ background: W, border: `1px solid ${B}`, padding: "64px", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80 }} className="details-inner">
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Included Add-ons</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                    {(listing?.addons || []).length > 0 ? (listing.addons.map((item, i) => {
+                      const addon = item.addon || item;
+                      const addonId = addon.addonId || addon.id;
+                      const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                      const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
+
+                      return (
+                        <motion.div
+                          key={i}
+                          whileHover={{ x: 10 }}
+                          transition={{ duration: 0.3 }}
+                          style={{
+                            display: "flex",
+                            gap: 24,
+                            alignItems: "flex-start",
+                            padding: "20px",
+                            background: isSelected ? AL : "transparent",
+                            borderRadius: 24,
+                            border: `1px solid ${isSelected ? A : "transparent"}`,
+                            transition: "0.3s"
+                          }}
+                        >
+                          <div style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
+                            {addonImage ? (
+                              <img
+                                src={formatImageUrl(addonImage)}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                alt={addon.title}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "/images/content/placeholder.jpg";
+                                }}
+                              />
+                            ) : (
+                              <Plus size={24} color={A} />
+                            )}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                              <p style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 8 }}>{addon.title}</p>
+                              <button
+                                onClick={() => handleToggleAddon(addon)}
+                                style={{
+                                  background: isSelected ? A : S,
+                                  color: isSelected ? "#FFF" : FG,
+                                  border: `1px solid ${isSelected ? A : B}`,
+                                  borderRadius: 100,
+                                  padding: "6px 16px",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em"
+                                }}
+                              >
+                                {isSelected ? "Selected" : "Add"}
+                              </button>
+                            </div>
+                            <p style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
+                            {addon.price > 0 && (
+                              <p style={{ fontSize: 13, fontWeight: 700, color: A, marginTop: 8 }}>+ ₹{addon.price}</p>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })) : (
+                      <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
+                    )}
                   </div>
+                </div>
 
-                  <div>
-                    <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>The Narrative Flow</p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
-                       <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
-                       
-                       {(listing?.keyActivities || []).map((it, i) => (
-                         <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
-                            whileHover={{ x: 10 }}
-                            style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
-                           <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
-                           <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
-                             {it.images && it.images.length > 0 && (
-                               <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
-                                 <img 
-                                   src={formatImageUrl(it.images[0]?.imageUrl || it.images[0]?.url || it.images[0]?.fileUrl || (typeof it.images[0] === 'string' ? it.images[0] : null))} 
-                                   style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                                   alt={it.name}
-                                   onError={(e) => {
-                                     e.target.onerror = null;
-                                     e.target.src = "/images/content/photo-1.1.jpg";
-                                   }}
-                                 />
-                               </div>
-                             )}
-                             <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-                               <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
-                                  <span style={{ fontSize: 12, fontWeight: 800, color: A, fontFamily: "monospace", textTransform: "uppercase" }}>Activity {i + 1}</span>
-                                  <span className="font-display" style={{ fontSize: "clamp(1.1rem, 2vw, 1.4rem)", fontWeight: 700, color: FG }}>{it.name}</span>
-                               </div>
-                               <p style={{ fontSize: 13, color: "#000", marginTop: 8, lineHeight: 1.6, maxWidth: 480, fontWeight: 500 }}>
-                                 {it.description}
-                               </p>
-                               {it.pilot && (
-                                 <div style={{ fontSize: 11, color: M, marginTop: 4, opacity: 0.9 }}>
-                                   {it.pilot}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                         </motion.div>
-                       ))}
-                       {(!listing?.keyActivities || listing.keyActivities.length === 0) && (
-                         <p style={{ color: M, fontSize: 14, marginLeft: 48 }}>Itinerary details are being finalized for this experience.</p>
-                       )}
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>The Narrative Flow</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
+                    <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
+
+                    {(listing?.keyActivities || []).map((it, i) => {
+                      const activityImageUrl = getActivityImageUrl(it);
+                      return (
+                        <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
+                          whileHover={{ x: 10 }}
+                          style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
+                          <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
+                          <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
+                            {activityImageUrl && (
+                              <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
+                                <img
+                                  src={activityImageUrl}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  alt={it.name}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "/images/content/photo-1.1.jpg";
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                              <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
+                                <span style={{ fontSize: 12, fontWeight: 800, color: A, fontFamily: "monospace", textTransform: "uppercase" }}>Activity {i + 1}</span>
+                                <span className="font-display" style={{ fontSize: "clamp(1.1rem, 2vw, 1.4rem)", fontWeight: 700, color: FG }}>{it.name}</span>
+                              </div>
+                              <p style={{ fontSize: 13, color: "#000", marginTop: 8, lineHeight: 1.6, maxWidth: 480, fontWeight: 500 }}>
+                                {it.description}
+                              </p>
+                              {it.pilot && (
+                                <div style={{ fontSize: 11, color: M, marginTop: 4, opacity: 0.9 }}>
+                                  {it.pilot}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                    {(!listing?.keyActivities || listing.keyActivities.length === 0) && (
+                      <p style={{ color: M, fontSize: 14, marginLeft: 48 }}>Itinerary details are being finalized for this experience.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Rev>
+          </div>
+        </section>
+
+
+
+        {/* PREPARATION SECTION */}
+        <section style={{ background: W, padding: "80px 36px" }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+            <SHdr idx="02" label="Preparation" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
+              <Rev delay={0.1}>
+                <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
+                <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <MapPin size={20} color={A} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</p>
+                      <p style={{ fontSize: 13, color: M, marginTop: 4 }}>{listing?.meetingAddress || "Arrive via Gate 3 (Private Entrance). Our concierge will meet you at the inner courtyard."}</p>
                     </div>
+                  </div>
+                  <div style={{ background: W, border: `1px solid ${B}`, height: 200, marginTop: 16, position: "relative", overflow: "hidden" }}>
+                    {listing?.meetingLatitude && listing?.meetingLongitude ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
+                        allowFullScreen
+                        title="Meeting Location"
+                      />
+                    ) : (
+                      <>
+                        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
+                          <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Rev>
+              <Rev delay={0.2}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                  <div>
+                    <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Location Details</h3>
+                    <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
+                      {[
+                        { label: "Address", val: listing?.meetingAddress },
+                        { label: "District", val: listing?.meetingDistrict },
+                        { label: "State", val: listing?.meetingState },
+                        { label: "Country", val: listing?.meetingCountry },
+                        { label: "Landmark", val: listing?.meetingLandmark },
+                        { label: "Instructions", val: listing?.meetingInstructions }
+                      ].filter(x => x.val).map((item, i) => (
+                        <li key={i} style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>{item.label}</span>
+                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.6 }}>{item.val}</span>
+                        </li>
+                      ))}
+                      {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry) && (
+                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>Region</span>
+                          <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
+                        </li>
+                      )}
+                    </ul>
                   </div>
                 </div>
               </Rev>
@@ -368,114 +496,52 @@ const ExperienceProduct = () => {
           </div>
         </section>
 
-        <Mq items={displayTags} size="sm" bg={BG} />
+        <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
-        {/* PREPARATION SECTION */}
-        <section style={{ background: W, padding: "130px 36px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <SHdr idx="02" label="Preparation" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
-               <Rev delay={0.1}>
-                 <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
-                 <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
-                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                     <MapPin size={20} color={A} />
-                     <div>
-                       <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</p>
-                       <p style={{ fontSize: 13, color: M, marginTop: 4 }}>{listing?.meetingAddress || "Arrive via Gate 3 (Private Entrance). Our concierge will meet you at the inner courtyard."}</p>
-                     </div>
-                   </div>
-                   <div style={{ background: W, border: `1px solid ${B}`, height: 200, marginTop: 16, position: "relative", overflow: "hidden" }}>
-                      {listing?.meetingLatitude && listing?.meetingLongitude ? (
-                        <iframe 
-                          width="100%" 
-                          height="100%" 
-                          frameBorder="0" 
-                          style={{ border: 0 }} 
-                          src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`} 
-                          allowFullScreen 
-                          title="Meeting Location"
-                        />
-                      ) : (
-                        <>
-                          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
-                            <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
-                          </div>
-                        </>
-                      )}
-                   </div>
-                 </div>
-               </Rev>
-               <Rev delay={0.2}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
-                    <div>
-                      <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Location Details</h3>
-                      <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
-                        {[
-                          { label: "Address", val: listing?.meetingAddress },
-                          { label: "District", val: listing?.meetingDistrict },
-                          { label: "State", val: listing?.meetingState },
-                          { label: "Country", val: listing?.meetingCountry },
-                          { label: "Landmark", val: listing?.meetingLandmark },
-                          { label: "Instructions", val: listing?.meetingInstructions }
-                        ].filter(x => x.val).map((item, i) => (
-                          <li key={i} style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                             <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>{item.label}</span>
-                             <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.6 }}>{item.val}</span>
-                          </li>
-                        ))}
-                        {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry) && (
-                          <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                             <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                             <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
-               </Rev>
-            </div>
-          </div>
-        </section>
-
-        <Mq items={displayTags} size="sm" bg={BG} />
+        <ExperiencePolicies listing={listing} reviews={reviews} />
 
         {/* HOST & REVIEWS SECTION */}
-        <section style={{ background: BG, padding: "130px 36px" }}>
+        <section style={{ background: BG, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
-             <Rev delay={0.1}>
-               <SHdr idx="03" label="The Host" />
-               <div style={{ padding: 48, background: W, border: `1px solid ${B}` }}>
-                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
-                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
-                 <p style={{ fontSize: 13, color: M, lineHeight: 1.8 }}>{hostData?.about || "An expert guide who will personally lead the Experience group through the unseen veins of the venue, offering context and narrative to every installation."}</p>
-                 {leadData && (
-                   <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
-                     <div style={{ display: "flex", alignItems: "center", gap: 10, color: FG, fontSize: 13 }}><Phone size={14} color={A} /> {leadData.contactNumber}</div>
-                     <div style={{ display: "flex", alignItems: "center", gap: 10, color: FG, fontSize: 13 }}><Info size={14} color={A} /> {leadData.email}</div>
-                   </div>
-                 )}
-               </div>
-             </Rev>
-             <Rev delay={0.2}>
-               <SHdr idx="04" label="Testimonials" />
-               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {[
-                    { q: "A completely transcendent journey. It changes the way you look at a festival entirely.", a: "Vogue India" },
-                    { q: "The curation was intensely personal. Every corner held a secret waiting to be unlocked.", a: "GQ" }
-                  ].map((rev, i) => (
-                    <div key={i} style={{ padding: 32, background: S, border: `1px solid ${B}` }}>
-                      <p style={{ fontSize: 14, fontStyle: "italic", color: FG, lineHeight: 1.7, marginBottom: 16 }}>&ldquo;{rev.q}&rdquo;</p>
-                      <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>— {rev.a}</p>
-                    </div>
-                  ))}
-               </div>
-             </Rev>
+            <Rev delay={0.1} style={{ height: "100%" }}>
+              <SHdr idx="04" label="The Host" />
+              <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
+                <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
+                <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
+                <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.about || "An expert guide who will personally lead the Experience group through the unseen veins of the venue, offering context and narrative to every installation."}</p>
+                {leadData && (
+                  <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 24 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Phone size={14} color={A} /> {leadData.contactNumber}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Info size={14} color={A} /> {leadData.email}</div>
+                  </div>
+                )}
+              </div>
+            </Rev>
+            <Rev delay={0.2} style={{ height: "100%" }}>
+              <SHdr idx="05" label="Testimonials" />
+              <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
+                {reviews.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                    {reviews.slice(0, 2).map((rev, i) => (
+                      <div key={i} style={{ borderBottom: i === 0 && reviews.length > 1 ? `1px solid ${B}` : "none", paddingBottom: i === 0 && reviews.length > 1 ? 24 : 0 }}>
+                        <p style={{ fontSize: 13, fontStyle: "italic", color: FG, lineHeight: 1.6, marginBottom: 12 }}>
+                          &ldquo;{rev.comment || rev.content || rev.reviewText || rev.text || "Wonderful experience!"}&rdquo;
+                        </p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: A }}>{rev.customerName || rev.author || "Guest"}</span>
+                          {rev.rating && <span style={{ fontSize: 10, color: M }}>• {rev.rating} ★</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 13, color: M }}>No testimonials shared yet.</p>
+                )}
+              </div>
+            </Rev>
           </div>
         </section>
 
-        <ExperiencePolicies listing={listing} />
         <BookingSystem listing={listing} selectedAddOns={selectedAddOns} />
       </main>
       <style>{`
@@ -495,25 +561,25 @@ const ExperienceProduct = () => {
 function PolicyItem({ req }) {
   const { tokens: { FG, A, M, AL, B } } = useTheme();
   const [op, setOp] = useState(false);
-  
+
   const title = req.setting?.title;
   const description = req.setting?.description;
   const questions = req.questions || [];
 
   return (
     <motion.div style={{ borderBottom: `1px solid ${B}` }} whileHover={{ backgroundColor: AL }}>
-      <div 
-        onClick={() => setOp(!op)} 
-        style={{ 
-          width: "100%", 
-          display: "flex", 
-          alignItems: "flex-start", 
-          justifyContent: "space-between", 
-          padding: "24px 16px", 
-          background: "none", 
-          border: "none", 
-          cursor: "pointer", 
-          textAlign: "left" 
+      <div
+        onClick={() => setOp(!op)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          padding: "24px 16px",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left"
         }}
       >
         <div style={{ flex: 1 }}>
@@ -526,10 +592,10 @@ function PolicyItem({ req }) {
         </div>
         <ChevronDown size={18} color={M} style={{ transform: op ? 'rotate(180deg)' : 'none', transition: '0.3s', marginTop: 4, flexShrink: 0 }} />
       </div>
-      
+
       <AnimatePresence>
         {op && questions.length > 0 && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -539,8 +605,8 @@ function PolicyItem({ req }) {
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
                 {questions.map((q, j) => (
                   <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                     <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
-                     <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.question?.title}</span>
+                    <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                    <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.question?.title}</span>
                   </li>
                 ))}
               </ul>
@@ -552,37 +618,93 @@ function PolicyItem({ req }) {
   );
 }
 
-function ExperiencePolicies({ listing }) {
-  const { tokens: { FG, W, B, A, M } } = useTheme();
-  
+function ReviewsItem({ reviews }) {
+  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+  const [op, setOp] = useState(false);
+
   return (
-    <section style={{ background: W, padding: "130px 36px" }}>
+    <motion.div style={{ borderBottom: `1px solid ${B}` }} whileHover={{ backgroundColor: AL }}>
+      <div
+        onClick={() => setOp(!op)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "24px 16px",
+          cursor: "pointer",
+          textAlign: "left"
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 4 }}>Reviews</span>
+          <p style={{ fontSize: 13, color: M, margin: 0 }}>{reviews.length} guests shared their experience</p>
+        </div>
+        <ChevronDown size={18} color={M} style={{ transform: op ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+      </div>
+
+      <AnimatePresence>
+        {op && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ padding: "0 16px 24px", overflow: "hidden" }}
+          >
+            <div style={{ padding: "24px", background: AL, borderRadius: 16, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 24 }}>
+              {reviews.length > 0 ? (
+                reviews.slice(0, 3).map((rev, i) => (
+                  <div key={i} style={{ borderBottom: i === Math.min(reviews.length, 3) - 1 ? "none" : `1px solid ${B}`, paddingBottom: i === Math.min(reviews.length, 3) - 1 ? 0 : 24 }}>
+                    <p style={{ fontSize: 14, fontStyle: "italic", color: FG, lineHeight: 1.6, marginBottom: 16 }}>&ldquo;{rev.comment || rev.text}&rdquo;</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 32, height: 32, background: A, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: W, fontWeight: 700 }}>
+                        {(rev.customerName || rev.author || "G")[0]}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{rev.customerName || rev.author}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p style={{ fontSize: 14, color: M, textAlign: "center", margin: 0 }}>No reviews shared for this experience yet.</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function ExperiencePolicies({ listing, reviews }) {
+  const { tokens: { FG, W, B, A, M } } = useTheme();
+
+  return (
+    <section style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <SHdr idx="05" label="Rules & Policies" />
+        <SHdr idx="03" label="Rules & Policies" />
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80 }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <Chars 
-                text="Know Before" 
-                cls="font-display" 
-                style={{ 
-                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)", 
-                  fontWeight: 700, 
-                  lineHeight: 0.95, 
-                  color: FG, 
+              <Chars
+                text="Know Before"
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
                   letterSpacing: "-0.02em"
-                }} 
+                }}
               />
-              <Chars 
-                text="You Go." 
-                cls="font-display" 
-                style={{ 
-                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)", 
-                  fontWeight: 700, 
-                  lineHeight: 0.95, 
-                  color: FG, 
+              <Chars
+                text="You Go."
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
                   letterSpacing: "-0.02em"
-                }} 
+                }}
               />
             </div>
           </Rev>
@@ -594,6 +716,16 @@ function ExperiencePolicies({ listing }) {
                 ))
               ) : (
                 <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific requirements listed for this experience.</p>
+              )}
+              {(listing?.cancellationPolicyText || listing?.cancellationPolicy) && (
+                <PolicyItem
+                  req={{
+                    setting: {
+                      title: "Cancellation Policy",
+                      description: listing.cancellationPolicyText || listing.cancellationPolicy
+                    }
+                  }}
+                />
               )}
             </div>
           </Rev>

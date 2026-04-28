@@ -1628,25 +1628,18 @@ const lowestRoomPrice = useMemo(() => {
         bookingDate: bookingDate,
         bookingTime: bookingTime, // "HH:mm:ss"
         bookingSlotId: bookingSlotId || 0,
-        guestCount: billableGuests,
-        // Pricing details
-        basePrice: pricingBaseAmount,
-        addonsTotal: pricingAddonsTotal,
-        taxAmount: pricingTaxAmount,
-        taxRate: calculatedTaxRate,
-        platformFee: pricingPlatformCommission,
-        commissionRate: apiCommissionPercentage,
-        discountAmount: pricingDiscountAmount,
-        totalPrice: pricingTotal,
+        guestCount: numberOfGuests,
+        childCount: guests.children || 0,
+        childPricePerChild: childPricePerChild || 0,
         customer: {
           name: customerName || "Guest User",
           email: customerEmail || "guest@example.com",
           phone: customerPhone || "+911234567890",
         },
         specialRequests: specialRequests || "",
+        paymentMethod: "razorpay",
         addons: addonsArray,
         guestAnswers: guestAnswers,
-        paymentMethod: "razorpay",
       };
 
       console.log("📦 Creating order:", orderData);
@@ -1660,10 +1653,16 @@ const lowestRoomPrice = useMemo(() => {
       const createdOrderId = orderResponse?.orderId ||
         orderResponse?.data?.orderId ||
         orderResponse?.order?.orderId ||
+        orderResponse?.id ||
+        orderResponse?.data?.id ||
+        orderResponse?.order?.id ||
         null;
       if (createdOrderId) {
         localStorage.setItem("pendingOrderId", String(createdOrderId));
         console.log("💾 Saved pending orderId:", createdOrderId);
+      } else {
+        localStorage.removeItem("pendingOrderId");
+        console.warn("No orderId found on orderResponse; cleared pendingOrderId to avoid stale checkout data.");
       }
 
       // Save payment details for checkout (e.g., Razorpay) - handle multiple response shapes
@@ -1990,6 +1989,10 @@ const lowestRoomPrice = useMemo(() => {
     const billableGuests = bookingData.guests ?
       getBillableGuestCount(bookingData.guests) :
       getBillableGuestCount(guests);
+    const totalGuestsForOrder =
+      bookingData?.bookingSummary?.guestCount ||
+      bookingData?.guests?.guests ||
+      (bookingData?.guests ? (bookingData.guests.adults || 0) + (bookingData.guests.children || 0) : getGuestCount(guests));
 
     // Calculate base price amount
     const guestCount = billableGuests;
@@ -2087,25 +2090,18 @@ const lowestRoomPrice = useMemo(() => {
       bookingDate: bookingDate,
       bookingTime: bookingTime, // "HH:mm:ss"
       bookingSlotId: bookingSlotId || 0,
-      guestCount: billableGuests,
-      // Pricing details
-      basePrice: pricingBaseAmount,
-      addonsTotal: pricingAddonsTotal,
-      taxAmount: pricingTaxAmount,
-      taxRate: calculatedTaxRate,
-      platformFee: pricingPlatformCommission,
-      commissionRate: apiCommissionPercentage,
-      discountAmount: pricingDiscountAmount,
-      totalPrice: pricingTotal,
+      guestCount: totalGuestsForOrder,
+      childCount: bookingData.guests?.children || 0,
+      childPricePerChild: bookingData.pricing?.childPricePerChild || listing?.childPricePerChild || listing?.childPrice || 0,
       customer: {
         name: customerName || "Guest User",
         email: customerEmail || "guest@example.com",
         phone: customerPhone || "+911234567890",
       },
       specialRequests: specialRequests || "",
+      paymentMethod: "razorpay",
       addons: addonsArray,
       guestAnswers: guestAnswers,
-      paymentMethod: "razorpay",
     };
 
     console.log("📦 Creating order after login:", orderData);
@@ -2116,6 +2112,21 @@ const lowestRoomPrice = useMemo(() => {
     // Create the order
     const orderResponse = await createOrder(orderData);
     console.log("✅ Order created:", orderResponse);
+
+    const createdOrderId = orderResponse?.orderId ||
+      orderResponse?.data?.orderId ||
+      orderResponse?.order?.orderId ||
+      orderResponse?.id ||
+      orderResponse?.data?.id ||
+      orderResponse?.order?.id ||
+      null;
+    if (createdOrderId) {
+      localStorage.setItem("pendingOrderId", String(createdOrderId));
+      console.log("💾 Saved pending orderId:", createdOrderId);
+    } else {
+      localStorage.removeItem("pendingOrderId");
+      console.warn("No orderId found on orderResponse; cleared pendingOrderId to avoid stale checkout data.");
+    }
 
     // Save payment details for checkout (e.g., Razorpay)
     try {

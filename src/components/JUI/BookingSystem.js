@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHistory, useLocation } from "react-router-dom";
+import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown } from "lucide-react";
 import { useTheme } from "./Theme";
@@ -9,11 +10,563 @@ import { Rev, Chars } from "./UI";
 import DateSingle from "../DateSingle";
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
+import { createEventOrder, createOrder, getEventSlotAvailability } from "../../utils/api";
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [] }) {
+const asNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const asDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatSaleDate = (date) => (
+  date
+    ? date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : ""
+);
+
+const asSeatLimit = (value) => {
+  const parsed = asNumber(value);
+  return parsed != null && parsed >= 0 ? parsed : undefined;
+};
+
+const getSlotSeatLimit = (slot) => (
+  asSeatLimit(slot?.maxSeats) ??
+  asSeatLimit(slot?.max_seats) ??
+  asSeatLimit(slot?.capacity?.maxSeats) ??
+  asSeatLimit(slot?.capacity?.max_seats) ??
+  asSeatLimit(slot?.availableSeats) ??
+  asSeatLimit(slot?.available_seats)
+);
+
+const getSlotId = (slot) => (
+  asNumber(slot) ??
+  asNumber(slot?.eventSlotId) ??
+  asNumber(slot?.event_slot_id) ??
+  asNumber(slot?.slotId) ??
+  asNumber(slot?.slot_id) ??
+  asNumber(slot?.id)
+);
+
+const getSlotLabel = (slot, index = 0) => (
+  (typeof slot === "string" || typeof slot === "number" ? String(slot) : "") ||
+  slot?.slotName ||
+  slot?.slot_name ||
+  slot?.name ||
+  slot?.title ||
+  slot?.label ||
+  slot?.startTime ||
+  slot?.slotStartTime ||
+  slot?.time ||
+  `Slot ${index + 1}`
+);
+
+const getSlotAccessKeys = (slot, index = 0) => {
+  const rawIds = slot && typeof slot === "object"
+    ? [
+        slot.eventSlotId,
+        slot.event_slot_id,
+        slot.slotId,
+        slot.slot_id,
+        slot.id,
+      ]
+    : [slot];
+  const ids = rawIds
+    .map((value) => asNumber(value))
+    .filter((value) => value != null);
+  const label = String(getSlotLabel(slot, index) || "").trim().toLowerCase();
+  return [
+    ...ids.map((id) => `id:${id}`),
+    label ? `label:${label}` : null,
+  ].filter(Boolean);
+};
+
+const getTicketId = (ticket) => (
+  asNumber(ticket?.ticketTypeId) ??
+  asNumber(ticket?.ticket_type_id) ??
+  asNumber(ticket?.typeId) ??
+  asNumber(ticket?.id)
+);
+
+const getTicketName = (ticket, index = 0) => (
+  ticket?.name ||
+  ticket?.ticketTypeName ||
+  ticket?.typeName ||
+  ticket?.title ||
+  ticket?.ticketName ||
+  `Ticket ${index + 1}`
+);
+
+const getTicketPrice = (ticket, fallback = 0) => (
+  asNumber(ticket?.price) ??
+  asNumber(ticket?.ticketTypePrice) ??
+  asNumber(ticket?.typePrice) ??
+  asNumber(ticket?.ticketPrice) ??
+  asNumber(ticket?.individualPrice) ??
+  asNumber(ticket?.amount) ??
+  asNumber(ticket?.basePrice) ??
+  fallback
+);
+
+const getTicketTotalTickets = (ticket) => (
+  asNumber(ticket?.totalTickets) ??
+  asNumber(ticket?.totalTicket) ??
+  asNumber(ticket?.total_tickets) ??
+  asNumber(ticket?.total_ticket)
+);
+
+const getTicketMaxPerBooking = (ticket) => (
+  asNumber(ticket?.maxPerBooking) ??
+  asNumber(ticket?.max_per_booking) ??
+  asNumber(ticket?.maxTicketsPerBooking) ??
+  asNumber(ticket?.max_tickets_per_booking)
+);
+
+const getTicketAvailabilityTotal = (item) => (
+  asNumber(item?.totalTickets) ??
+  asNumber(item?.totalTicket) ??
+  asNumber(item?.total_tickets) ??
+  asNumber(item?.total_ticket) ??
+  asNumber(item?.capacity) ??
+  asNumber(item?.totalCapacity) ??
+  asNumber(item?.total_capacity) ??
+  asNumber(item?.total)
+);
+
+const getTicketAvailabilityRemaining = (item) => (
+  asNumber(item?.remainingTickets) ??
+  asNumber(item?.remainingTicket) ??
+  asNumber(item?.ticketsRemaining) ??
+  asNumber(item?.remaining_tickets) ??
+  asNumber(item?.remaining_ticket) ??
+  asNumber(item?.availableTickets) ??
+  asNumber(item?.availableTicket) ??
+  asNumber(item?.available_tickets) ??
+  asNumber(item?.available_ticket) ??
+  asNumber(item?.availableQuantity) ??
+  asNumber(item?.available_quantity) ??
+  asNumber(item?.availableCount) ??
+  asNumber(item?.available_count) ??
+  asNumber(item?.remaining) ??
+  asNumber(item?.available)
+);
+
+const getTicketAvailabilityBooked = (item) => (
+  asNumber(item?.bookedTickets) ??
+  asNumber(item?.bookedTicket) ??
+  asNumber(item?.booked_tickets) ??
+  asNumber(item?.booked_ticket) ??
+  asNumber(item?.soldTickets) ??
+  asNumber(item?.sold_tickets) ??
+  asNumber(item?.usedTickets) ??
+  asNumber(item?.used_tickets) ??
+  asNumber(item?.bookedCount) ??
+  asNumber(item?.booked_count) ??
+  asNumber(item?.booked) ??
+  asNumber(item?.sold)
+);
+
+const getTicketGroupPricingTiers = (ticket) => {
+  const tiers =
+    ticket?.groupPricingTiers ??
+    ticket?.group_pricing_tiers ??
+    ticket?.groupBookingPricing ??
+    ticket?.group_booking_pricing ??
+    [];
+  return Array.isArray(tiers) ? tiers : [];
+};
+
+const getEffectiveTicketPrice = (ticket, quantity, fallbackPrice = 0) => {
+  const basePrice = getTicketPrice(ticket, fallbackPrice);
+  const tier = getTicketGroupPricingTiers(ticket).find((item) => {
+    const min = asNumber(item?.minQuantity ?? item?.min_quantity ?? item?.groupCountFrom ?? item?.group_count_from) ?? 0;
+    const max = asNumber(item?.maxQuantity ?? item?.max_quantity ?? item?.groupCountUpto ?? item?.group_count_upto) ?? Infinity;
+    return quantity >= min && quantity <= max;
+  });
+  const tierPrice = asNumber(tier?.pricePerTicket ?? tier?.price_per_ticket ?? tier?.price ?? tier?.ticketPrice);
+  return {
+    price: tierPrice ?? basePrice,
+    tier: tier || null,
+    basePrice,
+  };
+};
+
+const getRateFromPricing = (...values) => {
+  for (const value of values) {
+    const parsed = asNumber(value);
+    if (parsed != null) return parsed;
+  }
+  return 0;
+};
+
+const calculateEventGuestPricing = (unitPrice, pricing = {}) => {
+  const baseUnitPrice = asNumber(unitPrice) ?? 0;
+  const discount = pricing?.discount || {};
+  const tax = pricing?.tax || {};
+  const discountRate = getRateFromPricing(
+    discount.customer,
+    discount.guest,
+    discount.total,
+    pricing?.discountRate,
+    pricing?.discount
+  );
+  const customerTaxRate = getRateFromPricing(
+    tax.customer,
+    tax.guest,
+    pricing?.customerTax,
+    pricing?.customerTaxRate,
+    pricing?.taxRate,
+    tax.total
+  );
+  const discountAmount = baseUnitPrice * (discountRate / 100);
+  const priceAfterDiscount = Math.max(0, baseUnitPrice - discountAmount);
+  const taxAmount = priceAfterDiscount * (customerTaxRate / 100);
+  const finalUnitPrice = priceAfterDiscount + taxAmount;
+
+  return {
+    baseUnitPrice,
+    discountRate,
+    discountAmount,
+    priceAfterDiscount,
+    customerTaxRate,
+    taxAmount,
+    finalUnitPrice,
+  };
+};
+
+const getTicketSaleWindow = (listing, ticket) => {
+  const startsAt = asDate(
+    ticket?.ticketSaleStartDate ??
+    ticket?.ticket_sale_start_date ??
+    ticket?.saleStartDate ??
+    listing?.ticketSaleStartDate ??
+    listing?.ticket_sale_start_date ??
+    listing?.saleStartDate
+  );
+  const endsAt = asDate(
+    ticket?.ticketSaleEndDate ??
+    ticket?.ticket_sale_end_date ??
+    ticket?.saleEndDate ??
+    listing?.ticketSaleEndDate ??
+    listing?.ticket_sale_end_date ??
+    listing?.saleEndDate ??
+    listing?.bookingCutoffTime
+  );
+  const now = new Date();
+
+  if (startsAt && now < startsAt) {
+    return {
+      isOpen: false,
+      status: "upcoming",
+      message: `Booking is not open yet. Ticket sales start on ${formatSaleDate(startsAt)}.`,
+    };
+  }
+
+  if (endsAt && now > endsAt) {
+    return {
+      isOpen: false,
+      status: "closed",
+      message: `Booking date is closed. Ticket sales ended on ${formatSaleDate(endsAt)}.`,
+    };
+  }
+
+  return {
+    isOpen: true,
+    status: "open",
+    message: endsAt ? `Ticket sales close on ${formatSaleDate(endsAt)}.` : "",
+  };
+};
+
+const getTicketSlotRestrictions = (ticket) => {
+  const sources = [
+    ticket?.applicableSlots,
+    ticket?.applicable_slots,
+    ticket?.eventSlots,
+    ticket?.event_slots,
+    ticket?.allowedSlots,
+    ticket?.allowed_slots,
+    ticket?.slotIds,
+    ticket?.slot_ids,
+    ticket?.slots,
+  ];
+  const source = sources.find((item) => Array.isArray(item) && item.length > 0);
+  return source || [];
+};
+
+const getDateKey = (value) => {
+  if (!value) return "";
+  if (typeof value?.format === "function") return value.format("YYYY-MM-DD");
+  if (typeof value === "string") {
+    const match = value.match(/\d{4}-\d{2}-\d{2}/);
+    if (match) return match[0];
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
+const normalizeBookingTime = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const match = raw.match(/^(\d{1,2})(?::(\d{1,2}))?/);
+  if (!match) return raw;
+  const hours = String(Math.min(Math.max(Number(match[1]) || 0, 0), 23)).padStart(2, "0");
+  const minutes = String(Math.min(Math.max(Number(match[2]) || 0, 0), 59)).padStart(2, "0");
+  return `${hours}:${minutes}:00`;
+};
+
+const getRazorpayKeyFromCache = () => {
+  try {
+    const cachedKey = localStorage.getItem("lastRazorpayKeyId");
+    if (cachedKey) return cachedKey;
+    const pendingPayment = localStorage.getItem("pendingPayment");
+    if (pendingPayment) return JSON.parse(pendingPayment)?.razorpayKeyId;
+  } catch (e) {
+    console.warn("Could not read cached Razorpay key:", e);
+  }
+  return null;
+};
+
+const addDateRangeKeys = (keys, startValue, endValue) => {
+  const startKey = getDateKey(startValue);
+  const endKey = getDateKey(endValue || startValue);
+  if (!startKey) return;
+
+  const start = new Date(`${startKey}T00:00:00`);
+  const end = new Date(`${endKey}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    keys.add(startKey);
+    return;
+  }
+
+  const current = start <= end ? start : end;
+  const last = start <= end ? end : start;
+  while (current <= last) {
+    keys.add(current.toISOString().slice(0, 10));
+    current.setDate(current.getDate() + 1);
+  }
+};
+
+const normalizeEventSlots = (slots = [], fallbackPrice = 0) => (
+  Array.isArray(slots) ? slots
+    .map((slot, index) => {
+      if (!slot) return null;
+      const source = typeof slot === "string" ? { slotName: slot } : slot;
+      if (source.is_active === false || source.isActive === false) return null;
+      const id = getSlotId(source);
+      return {
+        ...source,
+        id: id ?? source.id ?? source.slotId ?? `slot-${index}`,
+        eventSlotId: id,
+        slotName: getSlotLabel(source, index),
+        startTime: source.startTime || source.time || source.slotTime || "",
+        endTime: source.endTime || "",
+        pricePerPerson: source.pricePerPerson ?? source.price ?? fallbackPrice
+      };
+    })
+    .filter(Boolean) : []
+);
+
+const unwrapAvailabilityPayload = (payload) => {
+  if (!payload) return payload;
+  return payload.data ?? payload.availability ?? payload.slotAvailability ?? payload.slotAvailabilities ?? payload;
+};
+
+const getAvailabilityTicketId = (item) => (
+  asNumber(item?.ticketTypeId) ??
+  asNumber(item?.ticket_type_id) ??
+  asNumber(item?.ticketId) ??
+  asNumber(item?.ticket_id) ??
+  asNumber(item?.typeId) ??
+  asNumber(item?.id)
+);
+
+const getAvailabilitySlotId = (item) => (
+  getSlotId(item) ??
+  asNumber(item?.eventSlot?.eventSlotId) ??
+  asNumber(item?.slot?.eventSlotId) ??
+  asNumber(item?.slot?.slotId)
+);
+
+const normalizeEventAvailability = (payload) => {
+  const source = unwrapAvailabilityPayload(payload);
+  const records = [];
+
+  const pushRecord = (item, parent = {}) => {
+    if (!item || typeof item !== "object") return;
+    const ticketId = getAvailabilityTicketId(item) ?? getAvailabilityTicketId(parent);
+    const slotId = getAvailabilitySlotId(item) ?? getAvailabilitySlotId(parent);
+    const total = getTicketAvailabilityTotal(item) ?? getTicketAvailabilityTotal(parent);
+    const booked = getTicketAvailabilityBooked(item) ?? getTicketAvailabilityBooked(parent);
+    const explicitRemaining = getTicketAvailabilityRemaining(item) ?? getTicketAvailabilityRemaining(parent);
+    const remaining = explicitRemaining ?? (total != null && booked != null ? Math.max(0, total - booked) : undefined);
+    const isAvailable = item.isAvailable ?? item.available ?? item.inStock ?? parent.isAvailable ?? parent.available;
+
+    if (ticketId == null && slotId == null && total == null && remaining == null && isAvailable == null) return;
+    records.push({ ...parent, ...item, ticketId, slotId, total, remaining, isAvailable });
+  };
+
+  const visit = (value, parent = {}) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => visit(item, parent));
+      return;
+    }
+    if (typeof value !== "object") return;
+
+    const nestedSlotArrays = [
+      value.slots,
+      value.eventSlots,
+      value.event_slots,
+      value.timeSlots,
+      value.time_slots,
+      value.slotAvailability,
+      value.slotAvailabilities,
+    ].filter(Array.isArray);
+
+    if (nestedSlotArrays.length > 0) {
+      nestedSlotArrays.forEach((items) => items.forEach((item) => visit(item, item)));
+      return;
+    }
+
+    const nestedTicketArrays = [
+      value.ticketTypes,
+      value.ticket_types,
+      value.tickets,
+      value.availability,
+      value.availabilities,
+      value.ticketAvailability,
+      value.ticketAvailabilities,
+    ].filter(Array.isArray);
+
+    if (nestedTicketArrays.length > 0) {
+      nestedTicketArrays.forEach((items) => items.forEach((item) => pushRecord(item, value)));
+      return;
+    }
+
+    const keyedTicketEntries = Object.entries(value).filter(([, item]) => (
+      item && typeof item === "object" && !Array.isArray(item)
+    ));
+
+    if (
+      getAvailabilityTicketId(value) != null ||
+      getTicketAvailabilityTotal(value) != null ||
+      getTicketAvailabilityRemaining(value) != null ||
+      value.isAvailable != null ||
+      value.available != null
+    ) {
+      pushRecord(value, parent);
+      return;
+    }
+
+    keyedTicketEntries.forEach(([key, item]) => {
+      const numericKey = asNumber(key);
+      pushRecord({ ...item, ticketTypeId: item.ticketTypeId ?? item.ticket_type_id ?? numericKey }, parent);
+    });
+  };
+
+  visit(source);
+  return records;
+};
+
+function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, tokens }) {
+  const { A, AL, BG, FG, M, B, S, W } = tokens;
+  const initialDate = selectedDate && typeof selectedDate.toDate === "function"
+    ? selectedDate.toDate()
+    : new Date();
+  const [viewDate, setViewDate] = useState(initialDate);
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const selectedKey = getDateKey(selectedDate);
+  const cells = [
+    ...Array.from({ length: firstDay }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => {
+      const day = index + 1;
+      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return { day, key, isAvailable: availableDateKeys.has(key) };
+    }),
+  ];
+
+  return (
+    <div style={{ background: S, borderRadius: 16, padding: 18, border: `1px solid ${B}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <button
+          type="button"
+          onClick={() => setViewDate(new Date(year, month - 1, 1))}
+          style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: FG, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <ChevronDown size={15} style={{ transform: "rotate(90deg)" }} />
+        </button>
+        <div style={{ fontSize: 14, fontWeight: 800, color: FG }}>
+          {viewDate.toLocaleString("en-IN", { month: "long", year: "numeric" })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setViewDate(new Date(year, month + 1, 1))}
+          style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: FG, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <ChevronDown size={15} style={{ transform: "rotate(-90deg)" }} />
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 6 }}>
+        {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+          <div key={`${day}-${index}`} style={{ textAlign: "center", fontSize: 10, fontWeight: 800, color: M, padding: "4px 0" }}>
+            {day}
+          </div>
+        ))}
+        {cells.map((cell, index) => {
+          if (!cell) return <div key={`blank-${index}`} />;
+          const isSelected = selectedKey === cell.key;
+          return (
+            <button
+              key={cell.key}
+              type="button"
+              disabled={!cell.isAvailable}
+              onClick={() => onDateSelect(moment(cell.key))}
+              style={{
+                aspectRatio: "1 / 1",
+                minWidth: 0,
+                borderRadius: 12,
+                border: `1px solid ${isSelected ? A : cell.isAvailable ? `${A}55` : "transparent"}`,
+                background: isSelected ? A : cell.isAvailable ? AL : "transparent",
+                color: isSelected ? W : cell.isAvailable ? FG : `${M}55`,
+                cursor: cell.isAvailable ? "pointer" : "not-allowed",
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              {cell.day}
+            </button>
+          );
+        })}
+      </div>
+      {availableDateKeys.size === 0 && (
+        <div style={{ marginTop: 12, color: M, fontSize: 12, fontWeight: 600, textAlign: "center" }}>
+          No available dates for this event.
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience" }) {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W } } = useTheme();
+  const isMountedRef = useRef(true);
   const [show, setShow] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
   
   // Real State management
   const [startDate, setStartDate] = useState(null);
@@ -21,8 +574,202 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [guests, setGuests] = useState({ adults: 1, children: 0, infants: 0 });
   const totalGuests = guests.adults + guests.children;
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const isEventBooking = type === "event";
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const eventTickets = useMemo(() => {
+    if (!isEventBooking) return [];
+    if (Array.isArray(listing?.ticketTypes)) return listing.ticketTypes;
+    if (Array.isArray(listing?.tickets)) return listing.tickets;
+    if (Array.isArray(listing?.ticketTiers)) return listing.ticketTiers;
+    return [];
+  }, [isEventBooking, listing?.ticketTypes, listing?.tickets, listing?.ticketTiers]);
+  const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
+  const [selectedEventSlotIds, setSelectedEventSlotIds] = useState([]);
+  const selectedEventSlotId = selectedEventSlotIds[0] || "";
+  const selectedTicket = useMemo(() => (
+    eventTickets.find(ticket => String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId) === String(selectedTicketTypeId)) || eventTickets[0] || null
+  ), [eventTickets, selectedTicketTypeId]);
+  const ticketSaleWindow = useMemo(() => (
+    isEventBooking ? getTicketSaleWindow(listing, selectedTicket) : { isOpen: true, status: "open", message: "" }
+  ), [isEventBooking, listing, selectedTicket]);
+  const eventFallbackSlots = useMemo(() => (
+    listing?.eventSlots || listing?.slots || listing?.timeSlots || []
+  ), [listing?.eventSlots, listing?.slots, listing?.timeSlots]);
+  const ticketApplicableSlots = useMemo(() => {
+    return getTicketSlotRestrictions(selectedTicket);
+  }, [selectedTicket]);
+  const ticketNameRestriction = useMemo(() => {
+    const name = String(getTicketName(selectedTicket) || "").toLowerCase();
+    if (name.includes("vip")) return "all";
+    if (name.includes("evening")) return "evening";
+    if (name.includes("general") || name.includes("morning")) return "morning";
+    return "";
+  }, [selectedTicket]);
+  const canSelectMultipleEventSlots = ticketNameRestriction === "all";
+  const ticketHasSlotRestrictions = ticketApplicableSlots.length > 0 || Boolean(ticketNameRestriction);
+  const allEventSlotSource = useMemo(() => (
+    eventFallbackSlots.length > 0 ? eventFallbackSlots : ticketApplicableSlots
+  ), [eventFallbackSlots, ticketApplicableSlots]);
+  const eventPrice = getTicketPrice(selectedTicket, asNumber(listing?.ticketPrice) ?? asNumber(listing?.price) ?? asNumber(listing?.basePrice) ?? 0);
+  const effectiveEventPrice = useMemo(() => (
+    getEffectiveTicketPrice(selectedTicket, totalGuests, eventPrice)
+  ), [selectedTicket, totalGuests, eventPrice]);
+  const eventGuestPricing = useMemo(() => (
+    calculateEventGuestPricing(effectiveEventPrice.price, listing?.pricing)
+  ), [effectiveEventPrice.price, listing?.pricing]);
+  const selectedTicketTotalTickets = getTicketTotalTickets(selectedTicket);
+  const selectedTicketMaxPerBooking = getTicketMaxPerBooking(selectedTicket);
+  const eventIdForAvailability = asNumber(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId);
+  const [eventAvailabilityLoading, setEventAvailabilityLoading] = useState(false);
+  const [eventAvailabilityError, setEventAvailabilityError] = useState("");
+  const [eventAvailabilityRecords, setEventAvailabilityRecords] = useState([]);
+  const eventSlots = useMemo(() => (
+    normalizeEventSlots(allEventSlotSource, eventPrice)
+  ), [allEventSlotSource, eventPrice]);
+  const accessibleSlotKeys = useMemo(() => {
+    if (!ticketHasSlotRestrictions) return null;
+    const keys = new Set();
+    ticketApplicableSlots.forEach((slot, index) => {
+      getSlotAccessKeys(slot, index).forEach(key => keys.add(key));
+    });
+    return keys;
+  }, [ticketApplicableSlots, ticketHasSlotRestrictions]);
+  const isEventSlotAccessible = useCallback((slot, index = 0) => {
+    if (!ticketHasSlotRestrictions) return true;
+    if (ticketNameRestriction === "all") return true;
+    if (accessibleSlotKeys && accessibleSlotKeys.size > 0 && getSlotAccessKeys(slot, index).some(key => accessibleSlotKeys.has(key))) {
+      return true;
+    }
+    if (ticketNameRestriction) {
+      const slotLabel = String(getSlotLabel(slot, index) || "").toLowerCase();
+      return slotLabel.includes(ticketNameRestriction);
+    }
+    return false;
+  }, [accessibleSlotKeys, ticketHasSlotRestrictions, ticketNameRestriction]);
+  const selectedEventSlot = useMemo(() => (
+    eventSlots.find((slot, index) => String(slot.eventSlotId ?? slot.id) === String(selectedEventSlotId) && isEventSlotAccessible(slot, index)) || null
+  ), [eventSlots, selectedEventSlotId, isEventSlotAccessible]);
+  const selectedEventSlots = useMemo(() => (
+    eventSlots.filter((slot, index) => selectedEventSlotIds.includes(String(slot.eventSlotId ?? slot.id)) && isEventSlotAccessible(slot, index))
+  ), [eventSlots, selectedEventSlotIds, isEventSlotAccessible]);
+  const selectedTicketAvailability = useMemo(() => {
+    if (!isEventBooking || !selectedTicket) return null;
+    const ticketId = getTicketId(selectedTicket);
+    if (ticketId == null) return null;
+
+    const ticketRecords = eventAvailabilityRecords.filter((item) => String(item.ticketId) === String(ticketId));
+    if (ticketRecords.length === 0) return null;
+
+    const selectedSlotIds = selectedEventSlots
+      .map((slot) => getSlotId(slot))
+      .filter((value) => value != null)
+      .map(String);
+    const scopedRecords = selectedSlotIds.length > 0
+      ? ticketRecords.filter((item) => item.slotId == null || selectedSlotIds.includes(String(item.slotId)))
+      : ticketRecords;
+    const records = scopedRecords.length > 0 ? scopedRecords : ticketRecords;
+    const totals = records.map((item) => item.total).filter((value) => value != null);
+    const remainings = records.map((item) => item.remaining).filter((value) => value != null);
+    const total = totals.length > 0 ? totals.reduce((sum, value) => sum + value, 0) : undefined;
+    const remaining = remainings.length > 0 ? remainings.reduce((sum, value) => sum + value, 0) : undefined;
+    const unavailable = records.some((item) => item.isAvailable === false) || remaining === 0;
+
+    return {
+      total,
+      remaining,
+      isSoldOut: unavailable,
+    };
+  }, [eventAvailabilityRecords, isEventBooking, selectedEventSlots, selectedTicket]);
+  const selectedTicketRemainingTickets = selectedTicketAvailability?.remaining;
+  const selectedTicketAvailabilityTotal = selectedTicketAvailability?.total ?? selectedTicketTotalTickets;
+  const selectedTicketSoldOut = Boolean(selectedTicketAvailability?.isSoldOut);
+  const eventAvailableDateKeys = useMemo(() => {
+    if (!isEventBooking) return new Set();
+    const keys = new Set();
+
+    eventSlots.forEach((slot, index) => {
+      if (!isEventSlotAccessible(slot, index)) return;
+      addDateRangeKeys(
+        keys,
+        slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate,
+        slot.slotEndDate || slot.endDate || slot.end_date
+      );
+    });
+
+    addDateRangeKeys(
+      keys,
+      listing?.startDate || listing?.eventStartDate || listing?.bookingStartDate,
+      listing?.endDate || listing?.eventEndDate || listing?.bookingEndDate || listing?.startDate
+    );
+
+    return keys;
+  }, [eventSlots, isEventBooking, isEventSlotAccessible, listing?.bookingEndDate, listing?.bookingStartDate, listing?.endDate, listing?.eventEndDate, listing?.eventStartDate, listing?.startDate]);
+  const isEventDateHighlighted = useCallback((day) => (
+    isEventBooking && eventAvailableDateKeys.has(getDateKey(day))
+  ), [eventAvailableDateKeys, isEventBooking]);
 
   const listingId = listing?.listingId;
+
+  useEffect(() => {
+    if (!isEventBooking || selectedTicketTypeId || eventTickets.length === 0) return;
+    const firstTicket = eventTickets[0];
+    setSelectedTicketTypeId(String(firstTicket.id ?? firstTicket.ticketTypeId ?? firstTicket.typeId ?? "ticket-0"));
+  }, [eventTickets, isEventBooking, selectedTicketTypeId]);
+
+  useEffect(() => {
+    if (!isEventBooking || !show || !eventIdForAvailability) return;
+
+    let cancelled = false;
+    setEventAvailabilityLoading(true);
+    setEventAvailabilityError("");
+
+    getEventSlotAvailability(eventIdForAvailability)
+      .then((payload) => {
+        if (cancelled || !isMountedRef.current) return;
+        const normalized = normalizeEventAvailability(payload);
+        console.log("Event slot availability raw payload:", payload);
+        console.log("Event slot availability normalized records:", normalized);
+        setEventAvailabilityRecords(normalized);
+      })
+      .catch((error) => {
+        if (cancelled || !isMountedRef.current) return;
+        setEventAvailabilityRecords([]);
+        setEventAvailabilityError(error?.response?.data?.message || error?.response?.data?.error || error?.message || "Could not load ticket availability.");
+      })
+      .finally(() => {
+        if (!cancelled && isMountedRef.current) setEventAvailabilityLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [eventIdForAvailability, isEventBooking, show]);
+
+  useEffect(() => {
+    if (!isEventBooking) return;
+    const validSelectedSlots = eventSlots.filter((slot, index) => (
+      selectedEventSlotIds.includes(String(slot.eventSlotId ?? slot.id)) && isEventSlotAccessible(slot, index)
+    ));
+    if (validSelectedSlots.length > 0) {
+      const nextSelection = canSelectMultipleEventSlots
+        ? validSelectedSlots.map((slot) => String(slot.eventSlotId ?? slot.id))
+        : [String(validSelectedSlots[0].eventSlotId ?? validSelectedSlots[0].id)];
+      if (nextSelection.join("|") !== selectedEventSlotIds.join("|")) {
+        setSelectedEventSlotIds(nextSelection);
+      }
+      setStartTime(validSelectedSlots.map((slot) => slot.slotName).join(", "));
+      return;
+    }
+    const firstSlot = eventSlots.find((slot, index) => isEventSlotAccessible(slot, index));
+    setSelectedEventSlotIds(firstSlot ? [String(firstSlot.eventSlotId ?? firstSlot.id)] : []);
+    setStartTime(firstSlot ? firstSlot.slotName : null);
+  }, [canSelectMultipleEventSlots, eventSlots, isEventBooking, selectedEventSlotIds, isEventSlotAccessible]);
 
   // Calculate addon total
   const addOnsTotal = selectedAddOns.reduce((sum, item) => {
@@ -35,7 +782,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   
   // Extract proper price depending on whether a time slot is selected
   const selectedSlotData = timeSlots.find(s => s.slotName === startTime || s.startTime === startTime) || timeSlots[0];
-  const extractedPrice = selectedSlotData?.pricePerPerson 
+  const selectedSlotSeatLimit = getSlotSeatLimit(selectedSlotData);
+  const guestSeatLimit = isEventBooking ? undefined : selectedSlotSeatLimit;
+  const eventTicketAvailableLimit = isEventBooking && selectedTicketRemainingTickets !== undefined
+    ? Math.max(0, selectedTicketRemainingTickets)
+    : undefined;
+  const eventGuestLimits = [selectedTicketMaxPerBooking, eventTicketAvailableLimit].filter((value) => value !== undefined);
+  const bookingGuestLimit = isEventBooking
+    ? (eventGuestLimits.length > 0 ? Math.min(...eventGuestLimits) : undefined)
+    : guestSeatLimit;
+  const extractedPrice = isEventBooking ? eventGuestPricing.finalUnitPrice : selectedSlotData?.pricePerPerson 
     || listing?.timeSlots?.[0]?.pricePerPerson
     || listing?.pricing?.basePrice
     || listing?.basePrice
@@ -45,19 +801,270 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   
   const data = {
     price: extractedPrice,
-    unit: type === "stay" ? "night" : "person",
+    unit: isEventBooking ? "ticket" : (type === "stay" ? "night" : "person"),
     icon: type === "stay" ? Bed : (type === "food" ? ChefHat : Ticket)
   };
 
-  const baseTotal = parseFloat(data.price) * totalGuests;
+  const baseTotal = parseFloat(data.price || 0) * totalGuests;
   const finalTotal = baseTotal + addOnsTotal;
+  const eventBaseTotal = eventGuestPricing.baseUnitPrice * totalGuests;
+  const eventDiscountTotal = eventGuestPricing.discountAmount * totalGuests;
+  const eventTaxTotal = eventGuestPricing.taxAmount * totalGuests;
 
-  const handleReserve = () => {
+  const clampGuestsToSeatLimit = useCallback((nextGuests) => {
+    if (bookingGuestLimit === undefined) return nextGuests;
+
+    const seatLimit = Math.max(0, bookingGuestLimit);
+    const clamped = {
+      ...nextGuests,
+      adults: Math.max(0, asNumber(nextGuests?.adults) ?? 0),
+      children: Math.max(0, asNumber(nextGuests?.children) ?? 0),
+      infants: Math.max(0, asNumber(nextGuests?.infants) ?? 0),
+    };
+
+    if (seatLimit === 0) {
+      clamped.adults = 0;
+      clamped.children = 0;
+      clamped.infants = 0;
+      return clamped;
+    }
+
+    if (clamped.adults < 1) clamped.adults = 1;
+
+    const overLimit = clamped.adults + clamped.children - seatLimit;
+    if (overLimit > 0) {
+      const childrenReduction = Math.min(clamped.children, overLimit);
+      clamped.children -= childrenReduction;
+      clamped.adults = Math.max(1, clamped.adults - (overLimit - childrenReduction));
+    }
+
+    if (clamped.infants > clamped.adults) clamped.infants = clamped.adults;
+    return clamped;
+  }, [bookingGuestLimit]);
+
+  useEffect(() => {
+    if (bookingGuestLimit === undefined) return;
+
+    setGuests((current) => {
+      const clamped = clampGuestsToSeatLimit(current);
+      if (
+        clamped.adults === current.adults &&
+        clamped.children === current.children &&
+        clamped.infants === current.infants
+      ) {
+        return current;
+      }
+      return clamped;
+    });
+  }, [bookingGuestLimit, clampGuestsToSeatLimit]);
+
+  const updateGuestsWithinSeatLimit = useCallback((updater) => {
+    setGuests((current) => {
+      const nextGuests = typeof updater === "function" ? updater(current) : updater;
+      return clampGuestsToSeatLimit(nextGuests);
+    });
+  }, [clampGuestsToSeatLimit]);
+
+  const adultMax = bookingGuestLimit !== undefined
+    ? Math.max(bookingGuestLimit === 0 ? 0 : 1, bookingGuestLimit - (guests.children || 0))
+    : undefined;
+  const childMax = bookingGuestLimit !== undefined
+    ? Math.max(0, bookingGuestLimit - (guests.adults || 0))
+    : undefined;
+
+  const handleReserve = async () => {
     if (!startDate) return;
+    if (!isEventBooking && guestSeatLimit !== undefined && totalGuests > guestSeatLimit) {
+      alert(`Only ${guestSeatLimit} seat${guestSeatLimit === 1 ? "" : "s"} available for this slot.`);
+      return;
+    }
+    localStorage.removeItem("pendingPayment");
+    localStorage.removeItem("pendingOrderId");
+    localStorage.removeItem("actualPaidAmount");
+    localStorage.removeItem("razorpayPaymentSuccess");
+    localStorage.removeItem("paymentFailed");
+
+    if (isEventBooking) {
+      if (!selectedTicket || selectedEventSlots.length === 0 || totalGuests < 1 || bookingLoading) return;
+      if (!ticketSaleWindow.isOpen) {
+        alert(ticketSaleWindow.message);
+        return;
+      }
+      if (selectedTicketSoldOut) {
+        alert("Ticket sold out.");
+        return;
+      }
+      if (selectedTicketMaxPerBooking !== undefined && totalGuests > selectedTicketMaxPerBooking) {
+        alert(`You can book a maximum of ${selectedTicketMaxPerBooking} ticket${selectedTicketMaxPerBooking === 1 ? "" : "s"} at a time.`);
+        return;
+      }
+      if (selectedTicketRemainingTickets !== undefined && totalGuests > selectedTicketRemainingTickets) {
+        alert(`Only ${selectedTicketRemainingTickets} ticket${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining for this ticket type.`);
+        return;
+      }
+
+      const dateStr = startDate.format("YYYY-MM-DD");
+      const eventIdNum = asNumber(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId) ?? 0;
+      const eventSlotIdNum = getSlotId(selectedEventSlot);
+      const eventSlotIds = selectedEventSlots.map((slot) => getSlotId(slot)).filter(Boolean);
+      const ticketTypeId = getTicketId(selectedTicket);
+      const ticketTypeName = getTicketName(selectedTicket);
+      const pricePerTicket = asNumber(effectiveEventPrice.price) ?? 0;
+      const customerDetails = (() => {
+        const userInfoRaw = localStorage.getItem("userInfo");
+        const userInfo = userInfoRaw ? JSON.parse(userInfoRaw) : {};
+        return {
+          firstName: userInfo?.firstName || localStorage.getItem("firstName") || "",
+          lastName: userInfo?.lastName || localStorage.getItem("lastName") || "",
+          email: userInfo?.email || localStorage.getItem("email") || "",
+          phone: userInfo?.customerPhone || userInfo?.phoneNumber || userInfo?.phone || localStorage.getItem("phone") || localStorage.getItem("phoneNumber") || "",
+        };
+      })();
+
+      if (!eventIdNum || !eventSlotIdNum || !ticketTypeId) {
+        alert("Unable to book: event ticket or slot information is missing.");
+        return;
+      }
+
+      const payload = {
+        eventId: eventIdNum,
+        eventSlotId: eventSlotIdNum,
+        eventSlotIds,
+        bookingDate: dateStr,
+        numberOfGuests: totalGuests,
+        customerDetails,
+        tickets: [{
+          ticketTypeId,
+          ticketTypeName,
+          quantity: totalGuests,
+          pricePerTicket: Number(pricePerTicket.toFixed(2)),
+        }],
+        appliedDiscountCode: null,
+        notes: null,
+      };
+
+      try {
+        if (isMountedRef.current) setBookingLoading(true);
+        const res = await createEventOrder(payload);
+        const order = res?.order || res;
+        const payment = res?.payment || res?.data?.payment || res?.order?.payment || order?.payment || null;
+        const orderId = order?.orderId || order?.id || res?.orderId || res?.id;
+        const razorpayOrderId = payment?.razorpayOrderId || order?.razorpayOrderId || res?.razorpayOrderId || order?.razorpay_order_id || res?.razorpay_order_id;
+        const currency = listing?.currency || payment?.currency || "INR";
+        const amountInPaise = payment?.amount || Math.round(finalTotal * 100);
+        const razorpayKeyId =
+          payment?.razorpayKeyId ||
+          payment?.razorpay_key_id ||
+          payment?.keyId ||
+          order?.razorpayKeyId ||
+          res?.razorpayKeyId ||
+          order?.razorpay_key_id ||
+          res?.razorpay_key_id ||
+          order?.razorpayKey ||
+          res?.razorpayKey ||
+          order?.keyId ||
+          res?.keyId ||
+          process.env.REACT_APP_RAZORPAY_KEY_ID ||
+          getRazorpayKeyFromCache() ||
+          "rzp_test_RaBjdu0Ed3p1gN";
+
+        if (razorpayKeyId) {
+          try { localStorage.setItem("lastRazorpayKeyId", razorpayKeyId); } catch (e) {}
+        }
+
+        const bookingData = {
+          eventId: eventIdNum,
+          eventSlotId: eventSlotIdNum,
+          eventSlotIds,
+          listingTitle: listing?.title || "Event Booking",
+          listingImage: listing?.coverPhotoUrl || listing?.listingMedia?.[0]?.url || "",
+          returnTo: `/event-details?id=${eventIdNum}`,
+          bookingSummary: {
+            date: dateStr,
+            time: selectedEventSlots.map((slot) => slot.startTime || slot.slotName).filter(Boolean).join(", "),
+            guestCount: totalGuests,
+          },
+          guests,
+          priceDetails: {
+            pricePerPerson: eventGuestPricing.finalUnitPrice,
+            basePricePerTicket: pricePerTicket,
+            totalPrice: finalTotal,
+          },
+          pricing: {
+            currency,
+            pricePerPerson: eventGuestPricing.finalUnitPrice,
+            basePrice: eventBaseTotal,
+            discount: eventDiscountTotal,
+            discountRate: eventGuestPricing.discountRate,
+            tax: eventTaxTotal,
+            taxRate: eventGuestPricing.customerTaxRate,
+            total: finalTotal,
+            guestCount: totalGuests,
+          },
+          receipt: [
+            {
+              title: `${currency} ${eventGuestPricing.finalUnitPrice.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? "ticket" : "tickets"}`,
+              content: `${currency} ${finalTotal.toFixed(2)}`,
+            },
+            {
+              title: "Total",
+              content: `${currency} ${finalTotal.toFixed(2)}`,
+            },
+          ],
+          currency,
+          finalTotal,
+          ticketType: ticketTypeName,
+          ticketTypeId,
+          selectedSlot: selectedEventSlot,
+          selectedSlots: selectedEventSlots,
+        };
+
+        const paymentData = {
+          orderId,
+          razorpayOrderId,
+          razorpayKeyId,
+          amount: amountInPaise,
+          currency: payment?.currency || currency,
+          paymentMethod: "razorpay",
+          eventId: eventIdNum,
+          eventSlotId: eventSlotIdNum,
+          eventSlotIds,
+          discount: payment?.discount || res?.discount || 0,
+          finalAmount: payment?.finalAmount || amountInPaise,
+        };
+
+        localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+        localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
+        if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+        localStorage.removeItem("razorpayPaymentSuccess");
+        localStorage.removeItem("paymentFailed");
+
+        history.replace("/experience-checkout", {
+          bookingData,
+          paymentData,
+        });
+      } catch (e) {
+        console.error("Event booking failed:", e?.response?.data || e?.message || e);
+        alert(e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.");
+      } finally {
+        if (isMountedRef.current) setBookingLoading(false);
+      }
+      return;
+    }
     
     const dateStr = startDate.format("YYYY-MM-DD");
-    let url = `/experience-checkout?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}`;
-    if (startTime) url += `&startTime=${startTime}`;
+    const slotId = getSlotId(selectedSlotData);
+    const bookingTime = normalizeBookingTime(
+      selectedSlotData?.startTime ||
+      selectedSlotData?.slotStartTime ||
+      selectedSlotData?.time ||
+      startTime
+    );
+
+    if (!listingId || !slotId || !bookingTime) {
+      alert("Unable to book: experience slot information is missing.");
+      return;
+    }
 
     const guestsObj = { ...guests, guests: totalGuests };
     const addOnQuantities = {};
@@ -120,19 +1127,121 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         billableGuestCount: totalGuests
       }
     };
-    
-    // Pass selected addons and full bookingData to the checkout page
-    history.push({
-      pathname: "/experience-checkout",
-      search: url.split("?")[1] ? "?" + url.split("?")[1] : "",
-      state: { 
-        addOns: selectedAddOns.map(item => item.addon || item),
-        bookingData: bookingData
+
+    const addons = selectedAddOns.map((item) => {
+      const addon = item.addon || item;
+      const addonId = addon.addonId || addon.id;
+      if (!addonId) return null;
+      return {
+        addonId,
+        addonName: addon.title || addon.name || addon.addonName || "Add-on",
+        addonPrice: parseFloat(addon.price || addon.addonPrice || 0),
+        quantity: addon.quantity || 1,
+      };
+    }).filter(Boolean);
+
+    const userInfo = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("userInfo") || "{}");
+      } catch {
+        return {};
       }
-    });
+    })();
+
+    const orderData = {
+      listingId: Number(listingId),
+      bookingDate: dateStr,
+      bookingTime,
+      bookingSlotId: Number(slotId),
+      guestCount: totalGuests,
+      childCount: guests.children || 0,
+      childPricePerChild: Number(listing?.childPricePerChild || listing?.childPrice || 0),
+      customer: {
+        name: userInfo.name || (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || "Guest User",
+        email: userInfo.email || userInfo.customerEmail || "guest@example.com",
+        phone: userInfo.customerPhone || userInfo.phoneNumber || userInfo.phone || "+911234567890",
+      },
+      specialRequests: "",
+      paymentMethod: "razorpay",
+      addons,
+      guestAnswers: [],
+    };
+
+    try {
+      if (isMountedRef.current) setBookingLoading(true);
+      console.log("Creating experience order from BookingSystem:", orderData);
+      const res = await createOrder(orderData);
+      console.log("Experience order created from BookingSystem:", res);
+
+      const order = res?.order || res?.data?.order || res;
+      const payment = res?.payment || res?.data?.payment || order?.payment || null;
+      const orderId = order?.orderId || order?.id || res?.orderId || res?.id || res?.data?.orderId || res?.data?.id;
+      const razorpayOrderId =
+        payment?.razorpayOrderId ||
+        payment?.razorpay_order_id ||
+        order?.razorpayOrderId ||
+        order?.razorpay_order_id ||
+        res?.razorpayOrderId ||
+        res?.razorpay_order_id;
+      const razorpayKeyId =
+        payment?.razorpayKeyId ||
+        payment?.razorpay_key_id ||
+        payment?.keyId ||
+        order?.razorpayKeyId ||
+        order?.razorpay_key_id ||
+        res?.razorpayKeyId ||
+        res?.razorpay_key_id ||
+        process.env.REACT_APP_RAZORPAY_KEY_ID ||
+        getRazorpayKeyFromCache() ||
+        "rzp_test_RaBjdu0Ed3p1gN";
+      const currency = payment?.currency || order?.currency || res?.currency || "INR";
+      const amountInPaise = payment?.amount || order?.amount || res?.amount || Math.round(finalTotal * 100);
+
+      if (!razorpayOrderId) {
+        alert("Payment order was not created. Please try booking again.");
+        return;
+      }
+
+      const paymentData = {
+        orderId,
+        razorpayOrderId,
+        razorpayKeyId,
+        amount: amountInPaise,
+        currency,
+        paymentMethod: "razorpay",
+        discount: payment?.discount || res?.discount || 0,
+        finalAmount: payment?.finalAmount || amountInPaise,
+        paidAmount: payment?.paidAmount || payment?.finalAmount || amountInPaise,
+      };
+
+      localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+      localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
+      localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
+      if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+      if (razorpayKeyId) localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
+
+      history.push({
+        pathname: "/experience-checkout",
+        search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}`,
+        state: {
+          addOns: selectedAddOns.map(item => item.addon || item),
+          bookingData,
+          paymentData,
+        }
+      });
+    } catch (e) {
+      console.error("Experience booking failed:", e?.response?.data || e?.message || e);
+      alert(e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.");
+    } finally {
+      if (isMountedRef.current) setBookingLoading(false);
+    }
   };
 
   const IconComp = data.icon;
+  const canReserve = isEventBooking
+    ? Boolean(ticketSaleWindow.isOpen && startDate && selectedTicket && selectedEventSlots.length > 0 && getSlotId(selectedEventSlots[0]) && totalGuests >= 1 && (selectedTicketMaxPerBooking === undefined || totalGuests <= selectedTicketMaxPerBooking) && (selectedTicketRemainingTickets === undefined || totalGuests <= selectedTicketRemainingTickets) && !selectedTicketSoldOut && !eventAvailabilityLoading && !bookingLoading)
+    : Boolean(startDate && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && !bookingLoading);
+  const triggerDisabled = isEventBooking && !ticketSaleWindow.isOpen;
 
   return (
     <>
@@ -147,33 +1256,61 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       `}</style>
       {/* Floating Trigger */}
       <motion.button
-        onClick={() => setShow(true)}
+        onClick={() => {
+          if (triggerDisabled) return;
+          setShow(true);
+        }}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={triggerDisabled ? undefined : { scale: 1.05 }}
+        whileTap={triggerDisabled ? undefined : { scale: 0.95 }}
+        disabled={triggerDisabled}
+        title={triggerDisabled ? ticketSaleWindow.message : undefined}
         style={{
           position: "fixed",
-          bottom: 40,
-          right: 40,
+          bottom: 30,
+          right: 30,
           background: A,
           color: "#FFF",
-          padding: "16px 32px",
+          padding: "12px 24px",
           borderRadius: 100,
           display: "flex",
           alignItems: "center",
-          gap: 12,
-          boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+          gap: 10,
+          boxShadow: "0 15px 35px rgba(0,0,0,0.2)",
           border: "none",
-          cursor: "pointer",
+          cursor: triggerDisabled ? "not-allowed" : "pointer",
           zIndex: 1000,
           fontWeight: 600,
-          fontSize: 15
+          fontSize: 14,
+          opacity: triggerDisabled ? 0.76 : 1
         }}
       >
-        <IconComp size={20} />
-        Reserve Now
+        <IconComp size={18} />
+        {triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : triggerLabel}
       </motion.button>
+      {triggerDisabled && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 88,
+            right: 30,
+            maxWidth: 320,
+            background: BG,
+            color: FG,
+            border: `1px solid ${B}`,
+            borderRadius: 16,
+            padding: "12px 16px",
+            boxShadow: "0 15px 35px rgba(0,0,0,0.14)",
+            zIndex: 1000,
+            fontSize: 12,
+            fontWeight: 600,
+            lineHeight: 1.45,
+          }}
+        >
+          {ticketSaleWindow.message}
+        </div>
+      )}
 
       <AnimatePresence>
         {show && (
@@ -192,153 +1329,288 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               style={{
                 position: "relative",
-                width: "100%",
-                maxWidth: 420,
+                width: "95%",
+                maxWidth: 850,
                 background: BG,
-                borderRadius: 24,
-                boxShadow: "0 40px 100px rgba(0,0,0,0.4)",
-                border: `1px solid ${B}`
+                borderRadius: 32,
+                boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
+                border: `1px solid ${B}`,
+                overflow: "hidden"
               }}
             >
               {/* Header */}
-              <div style={{ padding: "32px 32px 16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                      <span style={{ fontSize: 28, fontWeight: 700, color: FG }}>₹{data.price}</span>
-                      <span style={{ fontSize: 13, color: M }}>/{data.unit}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                      <Star size={12} fill={A} color={A} />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: FG }}>4.9</span>
-                      <span style={{ fontSize: 12, color: M }}>(124 reviews)</span>
-                    </div>
+              <div style={{ padding: "32px 40px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h2 style={{ fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 8 }}>
+                    {isEventBooking ? "Reserve Your Event" : "Reserve Your Experience"}
+                  </h2>
+                  {isEventBooking && ticketSaleWindow.message && (
+                    <p style={{ fontSize: 12, color: ticketSaleWindow.isOpen ? M : "#d14343", fontWeight: 700, marginBottom: 8 }}>
+                      {ticketSaleWindow.message}
+                    </p>
+                  )}
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>₹{Number(data.price || 0).toFixed(2)}</span>
+                    <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>per {data.unit}</span>
                   </div>
-                  <button onClick={() => setShow(false)} style={{ background: S, border: "none", padding: 8, borderRadius: 100, cursor: "pointer", color: FG }}>
-                    <X size={18} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
+                      <Star size={14} fill={A} color={A} />
+                      <span style={{ fontSize: 16, fontWeight: 700, color: FG }}>4.9</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: M, marginTop: 2 }}>124 verified reviews</p>
+                  </div>
+                  <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 12, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
+                    <X size={20} />
                   </button>
                 </div>
               </div>
 
-              {/* Selector Grid */}
-              <div style={{ padding: "0 32px 32px" }}>
-                <div style={{ 
-                  border: `1px solid ${B}`, 
-                  borderRadius: 20, 
-                  background: S 
-                }}>
-                  {/* Date Picker Integration */}
-                  <div style={{ borderBottom: `1px solid ${B}`, padding: "16px 20px" }}>
-                    <div style={{ fontSize: 10, color: M, fontWeight: 700, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.05em" }}>Select Date</div>
-                    <DateSingle 
-                      withPortal={true}
-                      date={startDate}
-                      onDateChange={(date) => setStartDate(date)}
-                      placeholder="Pick a date"
-                      id="jui-booking-date"
-                      plain
-                    />
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-                    {/* Time Slot Integration */}
-                    <div 
-                      onClick={() => setShowTimePicker(true)}
-                      style={{ borderRight: `1px solid ${B}`, padding: "16px 20px", cursor: "pointer", position: "relative" }}
-                    >
-                      <div style={{ fontSize: 10, color: M, fontWeight: 700, textTransform: "uppercase", marginBottom: 4, letterSpacing: "0.05em" }}>Time</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: FG, display: "flex", alignItems: "center", gap: 8 }}>
-                        {startTime || "Select Time"}
-                        <ChevronDown size={14} color={M} />
-                      </div>
-                      
-                      <TimeSlotsPicker 
-                        visible={showTimePicker}
-                        onClose={() => setShowTimePicker(false)}
-                        onTimeSelect={(t) => setStartTime(t)}
-                        selectedTime={startTime}
-                        timeSlots={timeSlots}
+              {/* Main Content - 2 Columns */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 1, background: B }}>
+                {/* Left Column: Date & Ticket */}
+                <div style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>01. Select Date</div>
+                    {isEventBooking ? (
+                      <EventInlineCalendar
                         selectedDate={startDate}
-                        style={{ position: "absolute", top: "100%", left: 0, zIndex: 10, width: "200%" }}
+                        onDateSelect={setStartDate}
+                        availableDateKeys={eventAvailableDateKeys}
+                        tokens={{ A, AL, BG, FG, M, B, S, W }}
                       />
-                    </div>
-
-                    <div style={{ padding: "16px 20px" }}>
-                      <div style={{ fontSize: 10, color: M, fontWeight: 700, textTransform: "uppercase", marginBottom: 12, letterSpacing: "0.05em" }}>Guests</div>
-                      
-                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 13, color: FG, fontWeight: 600 }}>Adults</span>
-                          <Counter 
-                            value={guests.adults} 
-                            setValue={(val) => setGuests(prev => ({ ...prev, adults: val }))} 
-                            min={1} 
-                          />
-                        </div>
-                        
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 13, color: FG, fontWeight: 600 }}>Children</span>
-                          <Counter 
-                            value={guests.children} 
-                            setValue={(val) => setGuests(prev => ({ ...prev, children: val }))} 
-                            min={0} 
-                          />
-                        </div>
+                    ) : (
+                      <div style={{ background: S, borderRadius: 16, padding: "8px", border: `1px solid ${B}` }}>
+                        <DateSingle 
+                          withPortal={true}
+                          date={startDate}
+                          onDateChange={(date) => setStartDate(date)}
+                          placeholder="Pick a date"
+                          id="jui-booking-date"
+                          plain
+                          isDayHighlighted={isEventBooking ? isEventDateHighlighted : undefined}
+                        />
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total & Summary */}
-                <div style={{ marginTop: 24, padding: "20px 0", borderTop: `1px solid ${B}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                    <span style={{ color: M, fontSize: 13 }}>₹{data.price} x {totalGuests} {data.unit}{totalGuests > 1 ? 's' : ''}</span>
-                    <span style={{ color: FG, fontWeight: 600, fontSize: 13 }}>₹{baseTotal}</span>
+                    )}
                   </div>
 
-                  {selectedAddOns.length > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                      <span style={{ color: M, fontSize: 13 }}>Add-ons ({selectedAddOns.length})</span>
-                      <span style={{ color: FG, fontWeight: 600, fontSize: 13 }}>+₹{addOnsTotal}</span>
+                  {isEventBooking && (
+                    <div>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>02. Ticket Type</div>
+                      {eventTickets.length > 0 ? (
+                        <div style={{ position: "relative" }}>
+                          <select
+                            value={selectedTicketTypeId}
+                            onChange={(e) => {
+                              setSelectedTicketTypeId(e.target.value);
+                              setSelectedEventSlotIds([]);
+                              setStartTime(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              appearance: "none",
+                              padding: "16px 20px",
+                              borderRadius: 16,
+                              border: `1px solid ${B}`,
+                              background: S,
+                              color: FG,
+                              cursor: "pointer",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              outline: "none"
+                            }}
+                          >
+                            {eventTickets.map((ticket, index) => {
+                              const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
+                              const ticketBasePrice = getTicketPrice(ticket, 0);
+                              const ticketEffectivePrice = getEffectiveTicketPrice(ticket, totalGuests, ticketBasePrice).price;
+                              const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
+                              return (
+                                <option key={ticketId} value={ticketId}>
+                                  {getTicketName(ticket, index)} - ₹{Number(ticketGuestPrice || 0).toFixed(2)}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <ChevronDown size={18} color={M} style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                          {eventAvailabilityLoading && (
+                            <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 700 }}>
+                              Checking ticket availability...
+                            </div>
+                          )}
+                          {!eventAvailabilityLoading && selectedTicketSoldOut && (
+                            <div style={{ marginTop: 10, fontSize: 12, color: "#d14343", fontWeight: 800 }}>
+                              Ticket sold out.
+                            </div>
+                          )}
+                          {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
+                            <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 700 }}>
+                              {selectedTicketRemainingTickets !== undefined ? `Remaining tickets: ${selectedTicketRemainingTickets}` : "Remaining tickets: --"}
+                              {selectedTicketAvailabilityTotal !== undefined ? ` / Total tickets: ${selectedTicketAvailabilityTotal}` : ""}
+                            </div>
+                          )}
+                          {eventAvailabilityError && (
+                            <div style={{ marginTop: 4, fontSize: 12, color: "#d14343", fontWeight: 600 }}>
+                              {eventAvailabilityError}
+                            </div>
+                          )}
+                          {selectedTicketMaxPerBooking !== undefined && (
+                            <div style={{ marginTop: 4, fontSize: 12, color: M, fontWeight: 600 }}>
+                              Maximum {selectedTicketMaxPerBooking} per booking.
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ padding: "16px", background: S, borderRadius: 16, fontSize: 13, color: M }}>No ticket types available.</div>
+                      )}
                     </div>
                   )}
-
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                    <span style={{ color: M, fontSize: 13 }}>Service fee</span>
-                    <span style={{ color: FG, fontWeight: 600, fontSize: 13 }}>₹0</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${B}` }}>
-                    <span style={{ color: FG, fontWeight: 700, fontSize: 16 }}>Total</span>
-                    <span style={{ color: A, fontWeight: 700, fontSize: 16 }}>₹{finalTotal}</span>
-                  </div>
                 </div>
 
+                {/* Right Column: Slots & Guests */}
+                <div style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 32 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>{isEventBooking ? "03. Choose Slot" : "02. Select Time"}</div>
+                    
+                    {isEventBooking ? (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        {eventSlots.length > 0 ? eventSlots.map((slot, index) => {
+                          const slotId = String(slot.eventSlotId ?? slot.id);
+                          const isDisabled = !isEventSlotAccessible(slot, index);
+                          const isSelected = selectedEventSlotIds.includes(slotId);
+                          return (
+                            <button
+                              key={slotId}
+                              disabled={isDisabled}
+                              onClick={() => {
+                                if (isDisabled) return;
+                                if (canSelectMultipleEventSlots) {
+                                  setSelectedEventSlotIds(cur => cur.includes(slotId) ? cur.filter(id => id !== slotId) : [...cur, slotId]);
+                                } else {
+                                  setSelectedEventSlotIds([slotId]);
+                                  setStartTime(slot.slotName);
+                                }
+                              }}
+                              style={{
+                                padding: "14px",
+                                borderRadius: 16,
+                                border: `1.5px solid ${isSelected ? A : B}`,
+                                background: isSelected ? AL : BG,
+                                color: isSelected ? A : FG,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                cursor: isDisabled ? "not-allowed" : "pointer",
+                                opacity: isDisabled ? 0.4 : 1,
+                                textAlign: "center",
+                                transition: "0.2s"
+                              }}
+                            >
+                              {slot.slotName}
+                              {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{slot.endTime}</span>}
+                            </button>
+                          );
+                        }) : <div style={{ gridColumn: "span 2", padding: "20px", textAlign: "center", color: M }}>No slots available</div>}
+                      </div>
+                    ) : (
+                      <div style={{ position: "relative" }}>
+                        <div 
+                          onClick={() => setShowTimePicker(!showTimePicker)}
+                          style={{ padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                        >
+                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : M }}>{startTime || "Select Time"}</span>
+                          <ChevronDown size={18} color={M} />
+                        </div>
+                        {showTimePicker && (
+                          <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, zIndex: 100, background: BG, border: `1px solid ${B}`, borderRadius: 16, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", padding: "8px" }}>
+                            <TimeSlotsPicker 
+                              visible={true}
+                              onClose={() => setShowTimePicker(false)}
+                              onTimeSelect={(t) => { setStartTime(t); setShowTimePicker(false); }}
+                              selectedTime={startTime}
+                              timeSlots={timeSlots}
+                              selectedDate={startDate}
+                              plain
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>{isEventBooking ? "04. Guests" : "03. Guests"}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Adults</span>
+                        <Counter
+                          value={guests.adults}
+                          setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, adults: v }))}
+                          min={bookingGuestLimit === 0 ? 0 : 1}
+                          max={adultMax}
+                        />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
+                        <Counter
+                          value={guests.children}
+                          setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                          min={0}
+                          max={childMax}
+                        />
+                      </div>
+                    </div>
+                    {guestSeatLimit !== undefined && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 600 }}>
+                        Maximum {guestSeatLimit} seat{guestSeatLimit === 1 ? "" : "s"} for this slot.
+                      </div>
+                    )}
+                    {isEventBooking && selectedTicketMaxPerBooking !== undefined && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 600 }}>
+                        Maximum {selectedTicketMaxPerBooking} ticket{selectedTicketMaxPerBooking === 1 ? "" : "s"} per booking.
+                      </div>
+                    )}
+                    {isEventBooking && effectiveEventPrice.tier && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: A, fontWeight: 800 }}>
+                        Group price applied: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} base per ticket.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Button */}
+              <div style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total amount</span>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
+                </div>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  disabled={!canReserve || bookingLoading}
                   onClick={handleReserve}
-                  disabled={!startDate || !startTime}
                   style={{
-                    width: "100%",
-                    background: (!startDate || !startTime) ? M : A,
+                    padding: "18px 48px",
+                    background: canReserve ? A : B,
                     color: "#FFF",
-                    padding: "16px",
-                    borderRadius: 14,
+                    borderRadius: 16,
                     border: "none",
-                    fontSize: 15,
-                    fontWeight: 700,
-                    cursor: (!startDate || !startTime) ? "not-allowed" : "pointer",
-                    marginTop: 4,
-                    boxShadow: `0 10px 30px ${AL}`
+                    fontSize: 16,
+                    fontWeight: 800,
+                    cursor: canReserve ? "pointer" : "not-allowed",
+                    boxShadow: canReserve ? `0 10px 30px ${A}44` : "none",
+                    transition: "0.3s"
                   }}
                 >
-                  Reserve Experience
+                  {bookingLoading ? "Processing..." : reserveLabel}
                 </motion.button>
-
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24, color: M, fontSize: 12 }}>
-                  <ShieldCheck size={14} />
-                  <span>Secure payment processed by Little Known Planet</span>
-                </div>
+              </div>
+              
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 40px 32px", color: M, fontSize: 12, background: BG }}>
+                <ShieldCheck size={14} />
+                <span>Secure payment processed by Little Known Planet</span>
               </div>
             </motion.div>
           </div>

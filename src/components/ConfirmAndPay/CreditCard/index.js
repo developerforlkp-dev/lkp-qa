@@ -17,7 +17,7 @@ const cards = [
   },
 ];
 
-const CreditCard = ({ className, buttonUrl, hidePaymentFields = false }) => {
+const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null }) => {
   const [save, setSave] = useState(true);
   const history = useHistory();
 
@@ -37,9 +37,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false }) => {
     let payment = null;
     try {
       const raw = localStorage.getItem("pendingPayment");
-      payment = raw ? JSON.parse(raw) : null;
+      payment = raw ? JSON.parse(raw) : paymentData;
     } catch (_) {
-      payment = null;
+      payment = paymentData;
     }
 
     // Debug log to help verify state
