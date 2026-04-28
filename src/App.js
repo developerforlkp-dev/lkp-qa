@@ -387,7 +387,7 @@ function App() {
             exact
             path="/food-details"
             render={() => (
-              <Page separatorHeader>
+            <Page separatorHeader fooferHide>
                 <FoodDetails />
               </Page>
             )}
