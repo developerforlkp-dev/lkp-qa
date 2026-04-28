@@ -199,12 +199,25 @@ function Rev({ children, delay = 0, style = {} }) {
 function Chars({ text, cls = "", style = {}, delay = 0 }) {
   const r = useRef(null);
   const v = useInView(r, { once: true, margin: "-40px" });
+  let charIdx = 0;
   return (
     <div ref={r} className={cls} style={style}>
-      {text?.split("").map((c, i) => (
-        <motion.span key={i} initial={{ y: "105%", opacity: 0 }} animate={v ? { y: 0, opacity: 1 } : {}} transition={{ duration: 0.7, ease: E, delay: delay + i * 0.028 }} style={{ display: "inline-block", whiteSpace: c === " " ? "pre" : "normal" }}>
-          {c}
-        </motion.span>
+      {text?.split(" ").map((word, wIdx, arr) => (
+        <span key={wIdx} style={{ display: "inline-block", whiteSpace: "nowrap" }}>
+          {word.split("").map((c, i) => {
+            const currentIdx = charIdx++;
+            return (
+              <motion.span key={i} initial={{ y: "105%", opacity: 0 }} animate={v ? { y: 0, opacity: 1 } : {}} transition={{ duration: 0.7, ease: E, delay: delay + currentIdx * 0.028 }} style={{ display: "inline-block" }}>
+                {c}
+              </motion.span>
+            );
+          })}
+          {wIdx < arr.length - 1 && (
+            <motion.span initial={{ y: "105%", opacity: 0 }} animate={v ? { y: 0, opacity: 1 } : {}} transition={{ duration: 0.7, ease: E, delay: delay + (charIdx++) * 0.028 }} style={{ display: "inline-block", whiteSpace: "pre" }}>
+              {" "}
+            </motion.span>
+          )}
+        </span>
       ))}
     </div>
   );
