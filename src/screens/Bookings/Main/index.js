@@ -142,6 +142,8 @@ const transformMultipleBookings = async (bookingsArray) => {
 
 // Transform API booking data to component format
 const transformBookingData = (apiBooking, listingData = null, eventData = null, stayData = null) => {
+  const eventDetails = eventData?.event || eventData?.data?.event || eventData?.data || eventData;
+
   // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -213,7 +215,10 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     apiBooking?.eventId != null;
 
   const title = isEventOrder
-    ? (apiBooking?.eventTitle ||
+    ? (eventDetails?.title ||
+      eventDetails?.eventTitle ||
+      eventDetails?.name ||
+      apiBooking?.eventTitle ||
       apiBooking?.eventDetails?.eventTitle ||
       apiBooking?.listing?.eventTitle ||
       apiBooking?.title ||
@@ -244,14 +249,20 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // For event orders, check event location first
   if (isEventOrder) {
-    if (eventData?.fullVenueAddress) {
-      location = eventData.fullVenueAddress;
-    } else if (eventData?.venueFullAddress) {
-      location = eventData.venueFullAddress;
-    } else if (eventData?.venueSearchLocation) {
-      location = eventData.venueSearchLocation;
-    } else if (eventData?.venueName) {
-      location = eventData.venueName;
+    if (eventDetails?.fullVenueAddress) {
+      location = eventDetails.fullVenueAddress;
+    } else if (eventDetails?.venueFullAddress) {
+      location = eventDetails.venueFullAddress;
+    } else if (eventDetails?.venueSearchLocation) {
+      location = eventDetails.venueSearchLocation;
+    } else if (eventDetails?.venueName) {
+      location = eventDetails.venueName;
+    } else if (eventDetails?.venueDistrict && eventDetails?.venueState) {
+      location = `${eventDetails.venueDistrict}, ${eventDetails.venueState}`;
+    } else if (eventDetails?.venueDistrict) {
+      location = eventDetails.venueDistrict;
+    } else if (eventDetails?.venueState) {
+      location = eventDetails.venueState;
     } else if (apiBooking?.eventDetails?.venueFullAddress) {
       location = apiBooking.eventDetails.venueFullAddress;
     } else if (apiBooking?.eventDetails?.venueName) {
@@ -339,10 +350,13 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   if (isEventOrder) {
     // For event orders, prioritize event-specific cover images
-    coverPhotoUrl = eventData?.coverImage ||
-      eventData?.coverImageUrl ||
-      eventData?.coverPhotoUrl ||
-      eventData?.imageUrl ||
+    coverPhotoUrl = eventDetails?.coverImage ||
+      eventDetails?.coverImageUrl ||
+      eventDetails?.coverPhotoUrl ||
+      eventDetails?.imageUrl ||
+      (Array.isArray(eventDetails?.media) && eventDetails.media[0]
+        ? (eventDetails.media[0].url || eventDetails.media[0].imageUrl || eventDetails.media[0].fileUrl)
+        : null) ||
       apiBooking?.eventCoverImageUrl ||
       apiBooking?.eventDetails?.eventCoverImageUrl ||
       apiBooking?.listing?.eventCoverImageUrl ||

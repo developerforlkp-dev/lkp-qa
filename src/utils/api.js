@@ -583,6 +583,21 @@ export const createEventOrder = async (orderData) => {
   }
 };
 
+export const getEventSlotAvailability = async (eventId) => {
+  try {
+    if (!eventId) {
+      throw new Error("eventId is required");
+    }
+
+    const response = await ListingsAPI.get(`/events/${eventId}/slot-availability`);
+    console.log("Event slot availability fetched:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching event slot availability:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Get slots for a listing
 export const getListingSlots = async (listingId, startDate, endDate) => {
   try {
@@ -1172,7 +1187,7 @@ export const cancelOrder = async (orderId, cancelData) => {
   }
 };
 
-// ✅ Cancel an EVENT order (some backends expose a separate event-orders cancellation flow)
+// ✅ Cancel an EVENT order
 export const cancelEventOrder = async (orderId, cancelData) => {
   try {
     if (!orderId) {
@@ -1190,15 +1205,9 @@ export const cancelEventOrder = async (orderId, cancelData) => {
       adminOverride: cancelData.adminOverride || false,
     };
 
-    try {
-      const response = await ListingsAPI.post(`/event-orders/${orderIdStr}/cancel`, body);
-      console.log("✅ Event order cancelled successfully:", response.data);
-      return response.data;
-    } catch (err) {
-      const response = await ListingsAPI.post(`/orders/${orderIdStr}/cancel`, body);
-      console.log("✅ Event order cancelled successfully (fallback /orders):", response.data);
-      return response.data;
-    }
+    const response = await ListingsAPI.post(`/orders/${orderIdStr}/cancel`, body);
+    console.log("✅ Event order cancelled successfully:", response.data);
+    return response.data;
   } catch (error) {
     console.error("❌ Error cancelling event order:", error.response?.data || error.message);
     throw error;

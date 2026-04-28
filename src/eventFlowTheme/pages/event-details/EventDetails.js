@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useRef } from "react";
+import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users } from "lucide-react";
@@ -367,6 +367,12 @@ function Hero({ event }) {
   const title = event?.title || "SOLSTICE";
   const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
   const venueStr = event?.venueFullAddress || "Mumbai";
+  const getCategoryDisplayName = (category, fallbackName) => {
+    if (category && typeof category === "object") {
+      return category.displayName || category.display_name || category.name || "";
+    }
+    return category || fallbackName || "";
+  };
   const splitTitle = (str) => {
     if (!str) return ["", ""];
     if (str.includes("SOLSTICE")) return ["SOL", "STICE"];
@@ -379,7 +385,10 @@ function Hero({ event }) {
     return [words.slice(0, middle).join(" "), words.slice(middle).join(" ")];
   };
   const [titlePart1, titlePart2] = splitTitle(title);
-  const heroTags = event?.category ? [event.category, "Live Event", "Experience"] : ["Live Music", "Contemporary Art", "Immersive"];
+  const heroTags = [
+    getCategoryDisplayName(event?.primaryCategory, event?.primaryCategoryName || event?.category),
+    getCategoryDisplayName(event?.subCategory, event?.subCategoryName),
+  ].map((tag) => String(tag || "").trim()).filter(Boolean);
 
   return (
     <section style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
@@ -394,13 +403,15 @@ function Hero({ event }) {
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }} style={{ position: "relative", zIndex: 2, maxWidth: 1320, margin: "0 auto", padding: "64px 36px 0", width: "100%" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-          {heroTags.map((t, i) => (
-            <motion.span key={t} className="hero-tag-pill" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ scale: 1.04, transition: { duration: 0.35, ease: E } }} style={{ position: "relative", display: "inline-flex", alignItems: "center", fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", fontWeight: 600, color: A, border: `1px solid ${A}40`, padding: "5px 14px", cursor: "default", transformOrigin: "center", willChange: "transform", transition: "background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}>
-              {t}
-            </motion.span>
-          ))}
-        </div>
+        {heroTags.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+            {heroTags.map((t, i) => (
+              <motion.span key={t} className="hero-tag-pill" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ scale: 1.04, transition: { duration: 0.35, ease: E } }} style={{ position: "relative", display: "inline-flex", alignItems: "center", fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", fontWeight: 600, color: A, border: `1px solid ${A}40`, padding: "5px 14px", cursor: "default", transformOrigin: "center", willChange: "transform", transition: "background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}>
+                {t}
+              </motion.span>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1320, margin: "0 auto", padding: "0 36px", width: "100%" }}>
@@ -764,32 +775,120 @@ function Rules({ event }) {
   
   const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions || event?.checkInInstruction || "Check-in instructions will be shared before the event.";
   const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText || "Cancellation policy will be shared before booking.";
+  const guestRequirementQuestions = useMemo(() => {
+    const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
+    return guestRequirements.flatMap((requirement, requirementIndex) => {
+    const questions = Array.isArray(requirement?.questions) ? requirement.questions : [];
+    return questions.map((question, questionIndex) => ({
+      id: question?.questionId || `${requirement?.settingId || requirementIndex}-${questionIndex}`,
+      title: question?.title || question?.question || `Question ${questionIndex + 1}`,
+      body: question?.helpText || question?.description || requirement?.description || "Please provide this information during booking.",
+      required: Boolean(question?.required),
+      fieldType: question?.fieldType || question?.type || "",
+      defaultValueBool: Boolean(question?.defaultValueBool ?? question?.default_value_bool ?? question?.defaultValue ?? question?.default_value),
+    }));
+    });
+  }, [event?.guestRequirements]);
+  const [booleanValues, setBooleanValues] = useState({});
+
+  useEffect(() => {
+    const nextValues = {};
+    guestRequirementQuestions.forEach((question) => {
+      if (String(question.fieldType || "").toLowerCase() === "boolean") {
+        nextValues[question.id] = question.defaultValueBool;
+      }
+    });
+    setBooleanValues(nextValues);
+  }, [guestRequirementQuestions]);
   
   const displayRules = [
     { id: 1, title: "Check-in Instructions", body: checkInInstructions },
     { id: 2, title: "Cancellation Policy", body: cancellationPolicy },
   ];
+  const dropdownRow = (item, index) => {
+    const isBooleanField = String(item.fieldType || "").toLowerCase() === "boolean";
+    const toggleValue = Boolean(booleanValues[item.id]);
+
+    return (
+    <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
+      <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(index + 1).padStart(2, "0")}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{item.title}</span>
+        </span>
+        <ChevronDown size={16} color={M} />
+      </summary>
+      <div style={{ padding: "0 0 20px 48px" }}>
+        <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: 0 }}>{item.body}</p>
+        {isBooleanField && (
+          <button
+            type="button"
+            onClick={() => setBooleanValues((current) => ({ ...current, [item.id]: !toggleValue }))}
+            aria-pressed={toggleValue}
+            style={{
+              marginTop: 16,
+              width: 52,
+              height: 28,
+              borderRadius: 999,
+              border: `1px solid ${toggleValue ? A : B}`,
+              background: toggleValue ? A : S,
+              cursor: "pointer",
+              padding: 3,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: toggleValue ? "flex-end" : "flex-start",
+              transition: "0.2s ease",
+            }}
+          >
+            <span style={{ width: 20, height: 20, borderRadius: "50%", background: W, boxShadow: "0 2px 8px rgba(0,0,0,0.18)", display: "block" }} />
+          </button>
+        )}
+      </div>
+    </details>
+    );
+  };
 
   return (
     <section id="rules" style={{ background: W, padding: "130px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <style>{`
+          #rules details summary::-webkit-details-marker {
+            display: none;
+          }
+          #rules details[open] summary svg {
+            transform: rotate(180deg);
+          }
+          #rules details summary svg {
+            transition: transform 0.25s ease;
+          }
+        `}</style>
         <SHdr idx="04" label="Event Rules & Policies" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "start" }} className="grid-2">
           <Rev delay={0.1}>
-            <Chars text="House" cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: FG, overflow: "hidden", letterSpacing: "-0.02em" }} />
-            <Chars text="Rules." delay={0.08} cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: "transparent", WebkitTextStroke: `2px ${A}`, overflow: "hidden", letterSpacing: "-0.02em" }} />
+            <Chars text="Rules &" cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: FG, overflow: "hidden", letterSpacing: "-0.02em" }} />
+            <Chars text="Policy." delay={0.08} cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: "transparent", WebkitTextStroke: `2px ${A}`, overflow: "hidden", letterSpacing: "-0.02em" }} />
           </Rev>
           <Rev delay={0.2}>
-            <div style={{ borderTop: `1px solid ${B}` }}>
-              {displayRules.map(rule => (
-                <div key={rule.id} style={{ borderBottom: `1px solid ${B}`, padding: "20px 16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                    <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(rule.id).padStart(2, "0")}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{rule.title}</span>
+            <div>
+              <h3 style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: A, fontWeight: 800, margin: "0 0 18px" }}>
+                Rules & Policy
+              </h3>
+              <div style={{ borderTop: `1px solid ${B}` }}>
+                {displayRules.map((rule, index) => dropdownRow(rule, index))}
+              </div>
+
+              <h3 style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: A, fontWeight: 800, margin: "44px 0 18px" }}>
+                Guest Requirements
+              </h3>
+              <div style={{ borderTop: `1px solid ${B}` }}>
+                {guestRequirementQuestions.length > 0 ? (
+                  guestRequirementQuestions.map((question, index) => dropdownRow(question, index))
+                ) : (
+                  <div style={{ borderBottom: `1px solid ${B}`, padding: "20px 16px", fontSize: 13, color: M }}>
+                    No guest requirements have been added for this event.
                   </div>
-                  <p style={{ padding: "10px 0 0 48px", fontSize: 13, color: M, lineHeight: 1.85 }}>{rule.body}</p>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
           </Rev>
         </div>
@@ -863,6 +962,14 @@ function EventBookingPopup({ event }) {
     id: ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`,
     name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
     price: ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0,
+    totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
+    maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
+    groupPricingTiers: Array.isArray(ticket.groupPricingTiers) ? ticket.groupPricingTiers :
+                       Array.isArray(ticket.group_pricing_tiers) ? ticket.group_pricing_tiers :
+                       Array.isArray(ticket.groupBookingPricing) ? ticket.groupBookingPricing :
+                       Array.isArray(ticket.group_booking_pricing) ? ticket.group_booking_pricing : [],
+    ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
+    ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
     applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
                      Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
                      Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
@@ -901,6 +1008,8 @@ function EventBookingPopup({ event }) {
     basePrice: ticketPrice,
     price: ticketPrice,
     b2cPrice: ticketPrice,
+    ticketSaleStartDate: event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
+    ticketSaleEndDate: event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
     pricing: {
       ...(event?.pricing || {}),
       basePrice: ticketPrice

@@ -491,9 +491,10 @@ const Checkout = () => {
   }
 
   const listingTitle = bookingData?.listingTitle || "Your trip";
+  const isEventBooking = Boolean(bookingData?.eventId);
   const backUrl =
     bookingData?.returnTo ||
-    (bookingData?.eventId ? `/event?id=${bookingData.eventId}` : null);
+    (isEventBooking ? `/event?id=${bookingData.eventId}` : null);
   const breadcrumbs = [
     {
       title: "Booking details",
@@ -537,7 +538,7 @@ const Checkout = () => {
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
-            title="Your trip"
+            title={isEventBooking ? "Your event" : "Your trip"}
             buttonUrl="/experience-checkout-complete"
             guests
             amountToPay={paymentData?.amount}

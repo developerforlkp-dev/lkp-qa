@@ -126,6 +126,7 @@ const ExperienceCheckoutComplete = () => {
   }, [booking?.stayId]);
 
   const title = booking?.listingTitle || "Your booking is confirmed";
+  const isEventBooking = Boolean(booking?.eventId);
 
   const gallery = useMemo(() => {
     // Prefer stay image fetched from API if we have stayId, else fallback to booking stored images
@@ -416,6 +417,7 @@ const ExperienceCheckoutComplete = () => {
               options={options}
               items={items}
               paymentFailed={paymentFailed}
+              isEvent={isEventBooking}
               onRetryPayment={() => {
                 // Redirect back to checkout to retry payment
                 window.location.href = "/experience-checkout";
