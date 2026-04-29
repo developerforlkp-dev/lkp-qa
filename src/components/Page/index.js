@@ -36,16 +36,16 @@ const Page = ({
   return (
     <div className={styles.page}>
       <motion.div
-        className={cn("slim-header-wrapper", { "force-dark": !scrolled && theme === "light" })}
+        className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" })}
         initial={{ y: -72, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
         transition={{ duration: 0.85, ease: E }}
         style={{ 
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, 
+          position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, zIndex: 100, 
           transition: "all 0.4s", 
-          background: scrolled ? (theme === 'light' ? "rgba(251,251,249,0.92)" : "rgba(8,8,8,0.92)") : "transparent", 
-          backdropFilter: scrolled ? "blur(20px)" : "none", 
-          borderBottom: scrolled ? `1px solid ${B}` : "1px solid transparent" 
+          background: (scrolled || separatorHeader) ? (theme === 'light' ? "rgba(251,251,249,0.92)" : "rgba(8,8,8,0.92)") : "transparent", 
+          backdropFilter: (scrolled || separatorHeader) ? "blur(20px)" : "none", 
+          borderBottom: (scrolled || separatorHeader) ? `1px solid ${B}` : "1px solid transparent" 
         }}
       >
         <Header
@@ -56,7 +56,7 @@ const Page = ({
         />
       </motion.div>
       
-      <div className={styles.inner} style={{ paddingTop: scrolled ? 0 : 0 }}>
+      <div className={styles.inner}>
         {children}
       </div>
 

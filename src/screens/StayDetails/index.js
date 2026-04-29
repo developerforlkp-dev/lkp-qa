@@ -299,7 +299,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
   });
 
   return (
-    <section style={{ position: "relative", height: "85vh", background: BG, overflow: "hidden", padding: "30px 0" }}>
+    <section style={{ position: "relative", height: "85vh", background: BG, overflow: "hidden", padding: "0" }}>
       {/* Looping Image Track */}
       <motion.div style={{ x: wrappedX, display: "flex", height: "100%", width: "fit-content" }}>
         <BentoGridImages />
