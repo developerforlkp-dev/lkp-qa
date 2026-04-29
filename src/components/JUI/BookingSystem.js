@@ -365,6 +365,15 @@ const addDateRangeKeys = (keys, startValue, endValue) => {
   }
 };
 
+const WEEKDAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+const getSelectedDayCodes = (source = {}) => {
+  const schedule = source.schedule || {};
+  const selectedDays = source.selected_days || source.selectedDays || schedule.selected_days || schedule.selectedDays;
+  if (!Array.isArray(selectedDays) || selectedDays.length === 0) return null;
+  return new Set(selectedDays.map((day) => String(day).trim().toUpperCase()).filter(Boolean));
+};
+
 const hasWeekdayFlags = (source = {}) => (
   [
     source.isSunday,
@@ -385,6 +394,9 @@ const hasWeekdayFlags = (source = {}) => (
 );
 
 const isWeekdayEnabled = (source = {}, weekday) => {
+  const selectedDayCodes = getSelectedDayCodes(source);
+  if (selectedDayCodes) return selectedDayCodes.has(WEEKDAY_CODES[weekday]);
+
   const flags = [
     [source.isSunday, source.is_sunday],
     [source.isMonday, source.is_monday],
@@ -400,20 +412,35 @@ const isWeekdayEnabled = (source = {}, weekday) => {
 };
 
 const addScheduleDateKeys = (keys, source = {}, fallback = {}) => {
+  const schedule = source.schedule || {};
   const startKey = getDateKey(
     source.startDate ||
+    source.start_date ||
     source.slotStartDate ||
+    source.slot_start_date ||
     source.availableFrom ||
+    source.available_from ||
     source.bookingStartDate ||
+    source.booking_start_date ||
+    schedule.startDate ||
+    schedule.start_date ||
     fallback.startDate ||
+    fallback.start_date ||
     fallback.bookingStartDate
   );
   const endKey = getDateKey(
     source.endDate ||
+    source.end_date ||
     source.slotEndDate ||
+    source.slot_end_date ||
     source.availableTo ||
+    source.available_to ||
     source.bookingEndDate ||
+    source.booking_end_date ||
+    schedule.endDate ||
+    schedule.end_date ||
     fallback.endDate ||
+    fallback.end_date ||
     fallback.bookingEndDate ||
     startKey
   );
@@ -429,7 +456,7 @@ const addScheduleDateKeys = (keys, source = {}, fallback = {}) => {
 
   const current = start <= end ? start : end;
   const last = start <= end ? end : start;
-  const shouldFilterByWeekday = hasWeekdayFlags(source);
+  const shouldFilterByWeekday = Boolean(getSelectedDayCodes(source)) || hasWeekdayFlags(source);
 
   while (current <= last) {
     if (!shouldFilterByWeekday || isWeekdayEnabled(source, current.getDay())) {
@@ -1132,6 +1159,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     ? childGuestPricing.finalUnitPrice
     : extractedPrice;
   const hasChildPricing = childrenAllowed && rawChildPrice > 0 && guests.children > 0;
+  const baseAdultPricePerPerson = parseFloat(effectiveRawPrice || 0);
+  const baseChildPricePerChild = hasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
   
   const data = {
     price: extractedPrice,
@@ -1145,6 +1174,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const baseTotal = isEventBooking
     ? parseFloat(data.price || 0) * totalGuests
     : adultSubtotal + childSubtotal;
+  const rawBaseTotal = !isEventBooking
+    ? (baseAdultPricePerPerson * guests.adults) + (baseChildPricePerChild * guests.children)
+    : baseTotal;
   const finalTotal = baseTotal + addOnsTotal;
   const eventBaseTotal = eventGuestPricing.baseUnitPrice * totalGuests;
   const eventDiscountTotal = eventGuestPricing.discountAmount * totalGuests;
@@ -1470,13 +1502,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       finalTotal: finalTotal,
       pricing: {
         currency: "INR",
-        basePrice: baseTotal,
+        basePrice: rawBaseTotal,
         // Adult/child split for checkout page
         allowChildPricing: hasChildPricing,
         adultsCount: guests.adults,
         childrenCount: guests.children,
         pricePerPerson: parseFloat(extractedPrice || 0),
+        basePricePerPerson: baseAdultPricePerPerson,
+        adultBasePricePerPerson: baseAdultPricePerPerson,
         childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+        baseChildPricePerChild,
         discount: (experienceGuestPricing?.discountAmount ?? 0) * guests.adults
           + (childGuestPricing ? (childGuestPricing.discountAmount * guests.children) : 0),
         discountRate: experienceGuestPricing?.discountRate ?? 0,
@@ -1484,7 +1519,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           + (childGuestPricing ? (childGuestPricing.taxAmount * guests.children) : 0),
         taxRate: experienceGuestPricing?.customerTaxRate ?? 0,
         addonsTotal: addOnsTotal,
-        subtotal: baseTotal + addOnsTotal,
+        subtotal: rawBaseTotal + addOnsTotal,
         total: finalTotal,
         guestCount: totalGuests,
       },
@@ -1613,6 +1648,25 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : Boolean(startDate && selectedSlotData && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && (!privateBooking || selectedSlotPrivateBookingAvailable) && !selectedSlotHasPrivateBooking && !bookingLoading);
   const triggerDisabled = isEventBooking && !ticketSaleWindow.isOpen;
 
+  const handleOpenBooking = useCallback(() => {
+    if (triggerDisabled) return;
+    setShow(true);
+
+    if (isEventBooking || !listingId || !slotsLookupEndDate) return;
+
+    const todayKey = getDateKey(new Date());
+    getListingSlots(listingId, todayKey, slotsLookupEndDate)
+      .then((payload) => {
+        if (!isMountedRef.current || selectedDateKey !== todayKey) return;
+        const normalized = normalizeExperienceSlots(unwrapSlotsPayload(payload), todayKey);
+        setDateFilteredSlots(normalized);
+        setDateFilteredSlotsLoaded(true);
+      })
+      .catch((error) => {
+        console.warn("Could not preload slots on reserve click:", error?.response?.data || error?.message || error);
+      });
+  }, [isEventBooking, listingId, selectedDateKey, slotsLookupEndDate, triggerDisabled]);
+
   // Check if all experience dates/slots are in the past
   const isExperienceClosed = useMemo(() => {
     if (isEventBooking) return false;
@@ -1635,10 +1689,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       `}</style>
       {/* Floating Trigger */}
       <motion.button
-        onClick={() => {
-          if (triggerDisabled) return;
-          setShow(true);
-        }}
+        onClick={handleOpenBooking}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         whileHover={triggerDisabled ? undefined : { scale: 1.05 }}
@@ -1730,20 +1781,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   )}
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                     {(() => {
-                      // Price without discount but with tax applied
                       const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
                       const hasDiscount = gp && gp.discountRate > 0;
-                      const priceWithoutDiscount = gp
-                        ? gp.baseUnitPrice * (1 + (gp.customerTaxRate / 100))
-                        : null;
+                      const baseDisplayPrice = gp ? gp.baseUnitPrice : Number(data.price || 0);
+                      const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
                       return (
                         <>
-                          {hasDiscount && priceWithoutDiscount != null && (
+                          {hasDiscount && baseDisplayPrice != null && (
                             <span style={{ fontSize: 20, fontWeight: 600, color: M, textDecoration: "line-through" }}>
-                              ₹{Number(priceWithoutDiscount).toFixed(2)}
+                              ₹{Number(baseDisplayPrice).toFixed(2)}
                             </span>
                           )}
-                          <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>₹{Number(data.price || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>₹{Number(discountedDisplayPrice || 0).toFixed(2)}</span>
                           <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>per {data.unit}</span>
                         </>
                       );
@@ -1950,7 +1999,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           </div>
                         )}
                         {!slotsLoading && !slotsError && privateBookingMessage && (
-                          <div style={{ marginTop: 10, fontSize: 12, color: dateHasPrivateBookingAvailable ? M : "#d14343", fontWeight: 700 }}>
+                          <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 700 }}>
                             {privateBookingMessage}
                           </div>
                         )}
@@ -2041,6 +2090,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total amount</span>
                   <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
+                  <span style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 600 }}>Including all taxes.</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.02 }}

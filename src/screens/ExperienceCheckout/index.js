@@ -190,6 +190,18 @@ const Checkout = () => {
                 pricing: {
                   ...prevPricing,
                   ...serverPricing,
+                  basePrice: (Number(prevPricing.basePrice || 0) > 0)
+                    ? prevPricing.basePrice
+                    : (serverPricing.basePrice || serverPricing.baseAmount || 0),
+                  basePricePerPerson: (Number(prevPricing.basePricePerPerson || prevPricing.adultBasePricePerPerson || 0) > 0)
+                    ? (prevPricing.basePricePerPerson || prevPricing.adultBasePricePerPerson)
+                    : (serverPricing.basePricePerPerson || serverPricing.adultBasePricePerPerson || 0),
+                  adultBasePricePerPerson: (Number(prevPricing.adultBasePricePerPerson || prevPricing.basePricePerPerson || 0) > 0)
+                    ? (prevPricing.adultBasePricePerPerson || prevPricing.basePricePerPerson)
+                    : (serverPricing.adultBasePricePerPerson || serverPricing.basePricePerPerson || 0),
+                  baseChildPricePerChild: (Number(prevPricing.baseChildPricePerChild || 0) > 0)
+                    ? prevPricing.baseChildPricePerChild
+                    : (serverPricing.baseChildPricePerChild || 0),
                   discount: finalDiscount,
                   discountAmount: finalDiscount,
                   // Prioritize local calculation (prevPricing) to ensure consistency with details page
@@ -417,8 +429,8 @@ const Checkout = () => {
         if (pricing.allowChildPricing && pricing.childrenCount > 0) {
           const adults = pricing.adultsCount || 0;
           const children = pricing.childrenCount || 0;
-          const ppp = pricing.pricePerPerson || 0;
-          const cpp = pricing.childPricePerChild || 0;
+          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || 0;
+          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || 0;
 
           if (adults > 0) {
              rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
@@ -428,7 +440,7 @@ const Checkout = () => {
           }
         } else {
           const guests = pricing.guestCount || 1;
-          const ppp = pricing.pricePerPerson;
+          const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
           const label = ppp
             ? `Base price (${fmt(ppp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
             : "Base price";
