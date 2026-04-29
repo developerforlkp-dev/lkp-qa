@@ -715,9 +715,7 @@ const StayDetails = () => {
   const [checkInDate, setCheckInDate] = useState(null);
   const [checkOutDate, setCheckOutDate] = useState(null);
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
-  const [externalRoomId, setExternalRoomId] = useState(null);
-  const [externalMealPlan, setExternalMealPlan] = useState(null);
-  const [externalRoomsCount, setExternalRoomsCount] = useState(1);
+  const [selectedRooms, setSelectedRooms] = useState([]); // Array of {roomId, mealPlan, count}
   const [bookingLoading, setBookingLoading] = useState(false);
 
   const formatImageUrl = (url) => {
@@ -730,11 +728,20 @@ const StayDetails = () => {
   };
 
   const handleRoomSelect = useCallback((roomId, mealPlan) => {
-    const newRoomId = String(roomId);
-    if (newRoomId !== externalRoomId) setExternalRoomsCount(1);
-    setExternalRoomId(newRoomId);
-    setExternalMealPlan(mealPlan || null);
-  }, [externalRoomId]);
+    const rid = String(roomId);
+    setSelectedRooms(prev => {
+      const exists = prev.find(r => r.roomId === rid);
+      if (exists) return prev.filter(r => r.roomId !== rid);
+      return [...prev, { roomId: rid, mealPlan: mealPlan || "EP", count: 1 }];
+    });
+  }, []);
+
+  const handleRoomCountChange = useCallback((roomId, count) => {
+    const rid = String(roomId);
+    setSelectedRooms(prev => prev.map(r => 
+      r.roomId === rid ? { ...r, count: Math.max(1, count) } : r
+    ));
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -811,9 +818,8 @@ const StayDetails = () => {
           <RoomCards
             listing={stay}
             onRoomSelect={handleRoomSelect}
-            selectedRoomId={externalRoomId}
-            roomsCount={externalRoomsCount}
-            onRoomsCountChange={setExternalRoomsCount}
+            selectedRooms={selectedRooms}
+            onRoomsCountChange={handleRoomCountChange}
             noContainer
           />
         </div>
@@ -839,10 +845,8 @@ const StayDetails = () => {
         setCheckOutDate={setCheckOutDate}
         guests={guests}
         setGuests={setGuests}
-        selectedRoomId={externalRoomId}
-        selectedMealPlan={externalMealPlan}
-        roomsCount={externalRoomsCount}
-        onRoomsCountChange={setExternalRoomsCount}
+        selectedRooms={selectedRooms}
+        onRoomsCountChange={handleRoomCountChange}
       />
 
 

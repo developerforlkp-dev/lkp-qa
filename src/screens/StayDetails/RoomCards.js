@@ -67,37 +67,50 @@ const getPriceForPlan = (room, code) => {
 /* Extract feature tags from room data */
 const getRoomFeatures = (room, listing) => {
   const features = [];
-  if (Array.isArray(room.amenities)) {
-    room.amenities.forEach(a => {
-      const label = typeof a === "string" ? a : a?.name || a?.amenity || a?.title;
+  
+  // 1. Prioritize roomAmenities (Enriched objects from backend)
+  if (Array.isArray(room.roomAmenities) && room.roomAmenities.length > 0) {
+    room.roomAmenities.forEach(ra => {
+      const label = ra.displayName || ra.code || ra.name;
       if (label) features.push(label);
     });
-  }
-  if (Array.isArray(room.amenityIds) && Array.isArray(listing?.amenities)) {
+  } 
+  // 2. Fallback to legacy amenityIds if roomAmenities is missing
+  else if (Array.isArray(room.amenityIds) && Array.isArray(listing?.amenities)) {
     room.amenityIds.forEach(id => {
-      // Handle both string and number comparisons safely
       const matched = listing.amenities.find(a => 
         String(a.id) === String(id) || 
         String(a.amenityId) === String(id) ||
         String(a.selectionId) === String(id)
       );
-      const label = matched?.amenityName || matched?.name || matched?.amenity || matched?.title;
+      const label = matched?.amenityName || matched?.name || matched?.amenity || matched?.title || matched?.displayName;
       if (label) features.push(label);
     });
   }
+
+  // 3. Add other generic amenities/features if present
+  if (Array.isArray(room.amenities)) {
+    room.amenities.forEach(a => {
+      const label = typeof a === "string" ? a : a?.name || a?.amenity || a?.title || a?.displayName;
+      if (label) features.push(label);
+    });
+  }
+
   if (Array.isArray(room.features)) {
     room.features.forEach(f => {
       const label = typeof f === "string" ? f : f?.name || f?.feature;
       if (label) features.push(label);
     });
   }
+
   if (Array.isArray(room.tags)) {
     room.tags.forEach(t => {
       const label = typeof t === "string" ? t : t?.name || t?.tag;
       if (label) features.push(label);
     });
   }
-  // Add some fallback mock ones if needed for testing visually, but better to be accurate.
+
+  // Final unique list
   return [...new Set(features)].filter(Boolean);
 };
 
@@ -382,7 +395,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 };
 
 /* ---------- RoomCards section ---------------------------------------- */
-const RoomCards = ({ listing, onRoomSelect, selectedRoomId, noContainer, roomsCount, onRoomsCountChange }) => {
+const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onRoomsCountChange }) => {
   const rooms = listing?.rooms || listing?.roomTypes || listing?.room_types || listing?.stay?.rooms || [];
   if (!Array.isArray(rooms) || rooms.length === 0) return null;
 
@@ -390,15 +403,16 @@ const RoomCards = ({ listing, onRoomSelect, selectedRoomId, noContainer, roomsCo
     <div className={styles.list}>
       {rooms.map((room, idx) => {
         const roomId = String(room.roomId ?? room.id ?? idx);
+        const selection = selectedRooms.find(r => r.roomId === roomId);
         return (
           <RoomCard
             key={roomId}
             room={room}
             listing={listing}
             onRoomSelect={onRoomSelect}
-            isSelected={selectedRoomId === roomId}
-            roomsCount={roomsCount}
-            onRoomsCountChange={onRoomsCountChange}
+            isSelected={!!selection}
+            roomsCount={selection?.count || 1}
+            onRoomsCountChange={(count) => onRoomsCountChange(roomId, count)}
           />
         );
       })}
