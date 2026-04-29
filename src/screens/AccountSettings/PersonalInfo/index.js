@@ -16,6 +16,8 @@ const PersonalInfo = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [success, setSuccess] = useState(false);
   
   const [profile, setProfile] = useState({
     firstName: "",
@@ -50,6 +52,7 @@ const PersonalInfo = () => {
           customerId 
         } = data.customer;
         
+        console.log("✅ Profile loaded:", data.customer);
         setProfile({
           firstName: firstName || "",
           lastName: lastName || "",
@@ -81,16 +84,17 @@ const PersonalInfo = () => {
       
       // Strictly only 6 fields as requested by the backend spec
       const requestBody = {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        email: profile.email,
-        phone: profile.phone,
-        countryCode: profile.countryCode,
-        avatarUrl: profile.avatarUrl
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        email: profile.email && profile.email.trim() !== "" ? profile.email : null,
+        phone: profile.phone || "",
+        countryCode: profile.countryCode || "+91",
+        avatarUrl: profile.avatarUrl && profile.avatarUrl.trim() !== "" ? profile.avatarUrl : null
       };
 
       await updateCustomerProfile(requestBody);
-      alert("Profile updated successfully!");
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile.");
@@ -105,11 +109,20 @@ const PersonalInfo = () => {
 
     try {
       setUploading(true);
+      
+      // Local preview
+      const localUrl = URL.createObjectURL(file);
+      setPreviewUrl(localUrl);
+      
+      console.log("⬆️ Uploading avatar file:", file.name);
       const result = await uploadCustomerAvatar(file);
+      console.log("✅ Avatar upload result:", result);
+      
       // Assuming result contains the new avatarUrl
       if (result && (result.avatarUrl || result.url)) {
         const newUrl = result.avatarUrl || result.url;
         setProfile(prev => ({ ...prev, avatarUrl: newUrl }));
+        setPreviewUrl(null); // Clear preview once we have the real URL
       } else {
         // Fallback or re-fetch
         fetchProfile();
@@ -151,11 +164,26 @@ const PersonalInfo = () => {
 
       <div className={styles.avatarSection}>
         <div className={styles.avatar}>
-          <img 
-            src={profile.avatarUrl || "/images/content/avatar-variant-1.jpg"} 
-            alt="Avatar" 
-            onError={(e) => { e.target.src = "/images/content/avatar-variant-1.jpg"; }}
-          />
+          {previewUrl || (profile.avatarUrl && profile.avatarUrl.trim() !== "") ? (
+            <img 
+              src={previewUrl || profile.avatarUrl} 
+              alt="Avatar" 
+              onLoad={() => {
+                if (previewUrl || profile.avatarUrl) {
+                  console.log("🖼️ Avatar image rendered:", previewUrl || profile.avatarUrl);
+                }
+              }}
+              onError={(e) => { 
+                console.warn("⚠️ Avatar failed to load, clearing URL to trigger initial fallback:", previewUrl || profile.avatarUrl);
+                if (previewUrl) setPreviewUrl(null);
+                setProfile(prev => ({ ...prev, avatarUrl: "" }));
+              }}
+            />
+          ) : (
+            <div className={styles.initialsAvatar}>
+              {profile.firstName ? profile.firstName.charAt(0) : "U"}
+            </div>
+          )}
         </div>
         <div className={styles.avatarDetails}>
           <div className={styles.category}>Profile picture</div>
@@ -242,11 +270,7 @@ const PersonalInfo = () => {
                   onChange={handleChange}
                   type="email"
                   placeholder="Email"
-                  disabled
                 />
-                <div className={styles.note} style={{ marginTop: '4px', fontSize: '12px', color: '#777E90' }}>
-                  Email cannot be changed
-                </div>
               </div>
             </div>
           </div>
@@ -254,13 +278,21 @@ const PersonalInfo = () => {
       </div>
       
       <div className={styles.controls}>
-        <button className={cn("button", styles.button)} type="submit" disabled={updating}>
-          {updating ? "Updating..." : "Update profile"}
-        </button>
-        <button className={styles.clear} type="button" onClick={fetchProfile}>
-          <Icon name="close" size="16" />
-          Reset changes
-        </button>
+        <div className={styles.btns}>
+          <button className={cn("button", styles.button)} type="submit" disabled={updating}>
+            {updating ? "Updating..." : "Update profile"}
+          </button>
+          <button className={styles.clear} type="button" onClick={fetchProfile}>
+            <Icon name="close" size="16" />
+            Reset changes
+          </button>
+        </div>
+        {success && (
+          <div className={styles.successMessage}>
+            <Icon name="check-circle" size="20" />
+            <span>Profile updated successfully!</span>
+          </div>
+        )}
       </div>
     </form>
   );
