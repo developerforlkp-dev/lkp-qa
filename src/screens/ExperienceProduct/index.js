@@ -879,7 +879,11 @@ function PolicyItem({ req }) {
   const questions = req.questions || [];
 
   return (
-    <motion.div style={{ borderBottom: `1px solid ${B}` }} whileHover={{ backgroundColor: AL }}>
+    <motion.div 
+      layout
+      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }} 
+      whileHover={{ backgroundColor: AL }}
+    >
       <div
         onClick={() => setOp(!op)}
         style={{
@@ -891,37 +895,47 @@ function PolicyItem({ req }) {
           background: "none",
           border: "none",
           cursor: "pointer",
-          textAlign: "left"
+          textAlign: "left",
+          userSelect: "none"
         }}
       >
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 8 }}>{title}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 8, transition: "color 0.3s" }}>{title}</span>
           {description && (
             <p style={{ fontSize: 13, color: M, lineHeight: 1.5, whiteSpace: "pre-line", margin: 0 }}>
               {description}
             </p>
           )}
         </div>
-        <ChevronDown size={18} color={M} style={{ transform: op ? 'rotate(180deg)' : 'none', transition: '0.3s', marginTop: 4, flexShrink: 0 }} />
+        <motion.div
+          animate={{ rotate: op ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          style={{ marginTop: 4, flexShrink: 0, display: "flex", alignItems: "center" }}
+        >
+          <ChevronDown size={18} color={M} />
+        </motion.div>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {op && questions.length > 0 && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            style={{ padding: "0 16px 24px", overflow: "hidden" }}
+            transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+            style={{ overflow: "hidden" }}
           >
-            <div style={{ padding: "20px", background: AL, borderRadius: 16, border: `1px solid ${B}` }}>
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
-                {questions.map((q, j) => (
-                  <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                    <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
-                    <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.question?.title}</span>
-                  </li>
-                ))}
-              </ul>
+            <div style={{ padding: "0 16px 24px" }}>
+              <div style={{ padding: "20px", background: AL, borderRadius: 16, border: `1px solid ${B}` }}>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
+                  {questions.map((q, j) => (
+                    <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                      <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.question?.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </motion.div>
         )}
@@ -935,7 +949,11 @@ function ReviewsItem({ reviews }) {
   const [op, setOp] = useState(false);
 
   return (
-    <motion.div style={{ borderBottom: `1px solid ${B}` }} whileHover={{ backgroundColor: AL }}>
+    <motion.div 
+      layout
+      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }} 
+      whileHover={{ backgroundColor: AL }}
+    >
       <div
         onClick={() => setOp(!op)}
         style={{
@@ -944,40 +962,50 @@ function ReviewsItem({ reviews }) {
           justifyContent: "space-between",
           padding: "24px 16px",
           cursor: "pointer",
-          textAlign: "left"
+          textAlign: "left",
+          userSelect: "none"
         }}
       >
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 4 }}>Reviews</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 4, transition: "color 0.3s" }}>Reviews</span>
           <p style={{ fontSize: 13, color: M, margin: 0 }}>{reviews.length} guests shared their experience</p>
         </div>
-        <ChevronDown size={18} color={M} style={{ transform: op ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+        <motion.div
+          animate={{ rotate: op ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          style={{ flexShrink: 0, display: "flex", alignItems: "center" }}
+        >
+          <ChevronDown size={18} color={M} />
+        </motion.div>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {op && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            style={{ padding: "0 16px 24px", overflow: "hidden" }}
+            transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+            style={{ overflow: "hidden" }}
           >
-            <div style={{ padding: "24px", background: AL, borderRadius: 16, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 24 }}>
-              {reviews.length > 0 ? (
-                reviews.slice(0, 3).map((rev, i) => (
-                  <div key={i} style={{ borderBottom: i === Math.min(reviews.length, 3) - 1 ? "none" : `1px solid ${B}`, paddingBottom: i === Math.min(reviews.length, 3) - 1 ? 0 : 24 }}>
-                    <p style={{ fontSize: 14, fontStyle: "italic", color: FG, lineHeight: 1.6, marginBottom: 16 }}>&ldquo;{rev.comment || rev.text}&rdquo;</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 32, height: 32, background: A, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: W, fontWeight: 700 }}>
-                        {(rev.customerName || rev.author || "G")[0]}
+            <div style={{ padding: "0 16px 24px" }}>
+              <div style={{ padding: "24px", background: AL, borderRadius: 16, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 24 }}>
+                {reviews.length > 0 ? (
+                  reviews.slice(0, 3).map((rev, i) => (
+                    <div key={i} style={{ borderBottom: i === Math.min(reviews.length, 3) - 1 ? "none" : `1px solid ${B}`, paddingBottom: i === Math.min(reviews.length, 3) - 1 ? 0 : 24 }}>
+                      <p style={{ fontSize: 14, fontStyle: "italic", color: FG, lineHeight: 1.6, marginBottom: 16 }}>&ldquo;{rev.comment || rev.text}&rdquo;</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 32, height: 32, background: A, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: W, fontWeight: 700 }}>
+                          {(rev.customerName || rev.author || "G")[0]}
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{rev.customerName || rev.author}</span>
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{rev.customerName || rev.author}</span>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p style={{ fontSize: 14, color: M, textAlign: "center", margin: 0 }}>No reviews shared for this experience yet.</p>
-              )}
+                  ))
+                ) : (
+                  <p style={{ fontSize: 14, color: M, textAlign: "center", margin: 0 }}>No reviews shared for this experience yet.</p>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -993,7 +1021,7 @@ function ExperiencePolicies({ listing, reviews }) {
     <section style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="03" label="Rules & Policies" />
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80 }} className="pol-grid">
+        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <Chars
