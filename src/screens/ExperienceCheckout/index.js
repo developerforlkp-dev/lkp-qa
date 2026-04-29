@@ -27,7 +27,7 @@ const Checkout = () => {
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(location.state?.paymentData || null);
-  const [checkingPayment, setCheckingPayment] = useState(true);
+  const [checkingPayment, setCheckingPayment] = useState(location.state?.bookingData ? false : true);
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [addonDetails, setAddonDetails] = useState([]);
 
@@ -106,7 +106,9 @@ const Checkout = () => {
   // Check payment status when component mounts, and also load server-side pricing
   useEffect(() => {
     const checkPaymentAndLoadPricing = async () => {
-      setCheckingPayment(true);
+      if (!location.state?.bookingData && !bookingData) {
+        setCheckingPayment(true);
+      }
 
       try {
         const pendingOrderId = localStorage.getItem("pendingOrderId");
@@ -502,7 +504,7 @@ const Checkout = () => {
   // Show loading state while checking payment status
   if (checkingPayment) {
     return (
-      <div className={cn("section-mb80", styles.section)}>
+      <div className={cn("section-mb80", styles.section)} style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className={cn("container", styles.container)}>
           <div style={{ padding: "3rem", textAlign: "center" }}>
             <p>Checking payment status...</p>
