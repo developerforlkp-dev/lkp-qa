@@ -1155,7 +1155,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   // Calculate addon total
   const addOnsTotal = selectedAddOns.reduce((sum, item) => {
     const addon = item.addon || item;
-    return sum + (parseFloat(addon.price) || 0);
+    const quantity = item.quantity || 1;
+    return sum + ((parseFloat(addon.price) || 0) * quantity);
   }, 0);
 
   // Extract proper price depending on whether a time slot is selected
@@ -1543,10 +1544,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     selectedAddOns.forEach(item => {
       const addon = item.addon || item;
       const id = addon.addonId || addon.id;
-      addOnQuantities[id] = 1;
+      const quantity = item.quantity || 1;
+      addOnQuantities[id] = quantity;
       receipt.push({
-        title: addon.title || "Add-on",
-        content: `₹${addon.price || 0}`,
+        title: `${addon.title || "Add-on"} × ${quantity}`,
+        content: `₹${((parseFloat(addon.price) || 0) * quantity).toFixed(2)}`,
         kind: "addon",
         showInCheckout: false
       });

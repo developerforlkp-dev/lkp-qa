@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Baby, Languages, ShieldCheck, ChevronLeft } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
@@ -78,13 +78,23 @@ const ExperienceProduct = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const handleToggleAddon = (addon) => {
+  const handleUpdateAddonQuantity = (addon, delta) => {
     const addonId = addon.addonId || addon.id;
-    setSelectedAddOns((prev) =>
-      prev.some(a => (a.addonId || a.id) === addonId)
-        ? prev.filter(a => (a.addonId || a.id) !== addonId)
-        : [...prev, addon]
-    );
+    setSelectedAddOns((prev) => {
+      const existingIndex = prev.findIndex(a => (a.addonId || a.id) === addonId);
+      if (existingIndex > -1) {
+        const newQuantity = (prev[existingIndex].quantity || 1) + delta;
+        if (newQuantity <= 0) {
+          return prev.filter((_, i) => i !== existingIndex);
+        }
+        const updated = [...prev];
+        updated[existingIndex] = { ...updated[existingIndex], quantity: newQuantity };
+        return updated;
+      } else if (delta > 0) {
+        return [...prev, { ...addon, quantity: 1 }];
+      }
+      return prev;
+    });
   };
 
   useEffect(() => {
@@ -344,27 +354,56 @@ const ExperienceProduct = () => {
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                               <p style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 8 }}>{addon.title}</p>
-                              <button
-                                onClick={() => handleToggleAddon(addon)}
-                                style={{
-                                  background: isSelected ? A : S,
-                                  color: isSelected ? "#FFF" : FG,
-                                  border: `1px solid ${isSelected ? A : B}`,
-                                  borderRadius: 100,
-                                  padding: "6px 16px",
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.05em"
-                                }}
-                              >
-                                {isSelected ? "Selected" : "Add"}
-                              </button>
+                              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                {isSelected ? (
+                                  <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "4px 8px", border: `1px solid ${B}` }}>
+                                    <button
+                                      onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                                    >
+                                      <Minus size={14} />
+                                    </button>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, minWidth: 20, textAlign: "center" }}>
+                                      {selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1}
+                                    </span>
+                                    <button
+                                      onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                                    >
+                                      <Plus size={14} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                    style={{
+                                      background: S,
+                                      color: FG,
+                                      border: `1px solid ${B}`,
+                                      borderRadius: 100,
+                                      padding: "6px 20px",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em"
+                                    }}
+                                  >
+                                    Add
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <p style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
                             {addon.price > 0 && (
-                              <p style={{ fontSize: 13, fontWeight: 700, color: A, marginTop: 8 }}>+ ₹{addon.price}</p>
+                              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: A }}>+ ₹{addon.price}</p>
+                                {isSelected && (selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1) > 1 && (
+                                  <p style={{ fontSize: 12, fontWeight: 500, color: M }}>
+                                    × {selectedAddOns.find(a => (a.addonId || a.id) === addonId).quantity} = ₹{(addon.price * selectedAddOns.find(a => (a.addonId || a.id) === addonId).quantity).toFixed(2)}
+                                  </p>
+                                )}
+                              </div>
                             )}
                           </div>
                         </motion.div>
@@ -373,6 +412,22 @@ const ExperienceProduct = () => {
                       <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
                     )}
                   </div>
+                  {selectedAddOns.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{ marginTop: 40, padding: "24px 32px", background: AL, borderRadius: 24, border: `1px solid ${A}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                    >
+                      <div>
+                        <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 4 }}>Add-ons Summary</p>
+                        <p style={{ fontSize: 13, color: M, fontWeight: 500 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, fontWeight: 700, marginBottom: 4 }}>Subtotal</p>
+                        <p style={{ fontSize: 24, fontWeight: 900, color: FG }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
                 <div>
