@@ -547,6 +547,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     startTime: null, // Will be populated from slot data
     endTime: null, // Will be populated from slot data
     guestCount: apiBooking.numberOfGuests || 0,
+    adultsCount: apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
+    childrenCount: apiBooking.guests?.children || apiBooking.originalData?.guests?.children || apiBooking.originalData?.pricing?.childrenCount || apiBooking.childrenCount || apiBooking.childCount || apiBooking.children || 0,
     location: location,
     bannerImage: {
       src: coverPhotoUrl,
@@ -1140,11 +1142,7 @@ const ViewDetails = () => {
   }, [booking?.orderId]);
 
   const getInitialTab = () => {
-    if (!booking) return "cancellation";
-    if (booking.notes.cancellationPolicy) return "cancellation";
-    if (booking.notes.hostInstructions) return "host";
-    if (booking.notes.requirements) return "requirements";
-    return "cancellation";
+    return "host";
   };
 
   const [activeNotesTab, setActiveNotesTab] = useState(getInitialTab);
@@ -1260,9 +1258,7 @@ const ViewDetails = () => {
   }
 
   const notesTabs = [
-    { id: "cancellation", label: "Cancellation Policy" },
     { id: "host", label: "Host Instructions" },
-    { id: "requirements", label: "Guest Requirements" },
   ];
 
   const getNotesContent = () => {
@@ -1436,7 +1432,20 @@ const ViewDetails = () => {
             <div className={styles.summaryItem}>
               <div className={styles.summaryLabel}>Guests</div>
               <div className={styles.summaryValue}>
-                {booking.guestCount} {booking.guestCount === 1 ? "guest" : "guests"}
+                {(() => {
+                  const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
+                  const children = booking.childrenCount || 0;
+                  if (adults > 0 || children > 0) {
+                    return (
+                      <>
+                        {adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : ""}
+                        {adults > 0 && children > 0 ? ", " : ""}
+                        {children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : ""}
+                      </>
+                    );
+                  }
+                  return `${booking.guestCount} ${booking.guestCount === 1 ? "guest" : "guests"}`;
+                })()}
               </div>
             </div>
             <div className={styles.summaryItem}>
@@ -1613,11 +1622,11 @@ const ViewDetails = () => {
               )}
               {booking.pricing.taxAmount && parseFloat(booking.originalData?.taxAmount || 0) > 0 && (
                 <div className={styles.paymentRow}>
-                  <span>Taxes</span>
+                  <span>Taxes (paid by you)</span>
                   <span>{booking.pricing.taxAmount}</span>
                 </div>
               )}
-              {booking.pricing.platformFee && parseFloat(booking.originalData?.platformFee || 0) > 0 && (
+              {booking.pricing.platformFee && parseFloat(booking.originalData?.platformFee || 0) > 0 && !["confirmed", "pending", "cancelled", "canceled", "upcoming"].includes(String(booking.status || booking.statusTone || booking.originalData?.orderStatus).toLowerCase()) && (
                 <div className={styles.paymentRow}>
                   <span>Platform Fee</span>
                   <span>{booking.pricing.platformFee}</span>
@@ -1688,26 +1697,7 @@ const ViewDetails = () => {
           </div>
         )}
 
-        {/* Discounts Section */}
-        {booking.discounts && booking.discounts.length > 0 && (
-          <div className={cn(styles.card, styles.discountsCard)}>
-            <h2 className={styles.cardTitle}>Discounts Applied</h2>
-            <div className={styles.discountsList}>
-              {booking.discounts.map((discount, index) => (
-                <div key={index} className={styles.discountItem}>
-                  <div className={styles.discountName}>
-                    {discount.name}
-                    {discount.percentage > 0 && (
-                      <span className={styles.discountPercentage}> ({discount.percentage}%)</span>
-                    )}
-                  </div>
-                  <div className={styles.discountAmount}>{discount.amount}</div>
-                  <div className={styles.discountSponsor}>Sponsored by: {discount.sponsor}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         {/* Special Requests Section */}
         {booking.specialRequests && (
@@ -1938,7 +1928,22 @@ const ViewDetails = () => {
                   </div>
                   <div className={styles.infoCol}>
                     <div className={styles.receiptLabel}>Guests</div>
-                    <div className={styles.infoText}>{booking.guestCount} {booking.guestCount === 1 ? "Guest" : "Guests"}</div>
+                    <div className={styles.infoText}>
+                      {(() => {
+                        const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
+                        const children = booking.childrenCount || 0;
+                        if (adults > 0 || children > 0) {
+                          return (
+                            <>
+                              {adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : ""}
+                              {adults > 0 && children > 0 ? ", " : ""}
+                              {children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : ""}
+                            </>
+                          );
+                        }
+                        return `${booking.guestCount} ${booking.guestCount === 1 ? "Guest" : "Guests"}`;
+                      })()}
+                    </div>
                   </div>
                 </div>
 

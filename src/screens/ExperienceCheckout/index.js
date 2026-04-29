@@ -464,7 +464,7 @@ const Checkout = () => {
       // Tax
       if (tax > 0) {
         const rate = pricing.taxRate ? ` (${pricing.taxRate}%)` : "";
-        rows.push({ title: `Tax${rate}`, value: fmt(tax) });
+        rows.push({ title: `Taxes (paid by you)${rate}`, value: fmt(tax) });
       }
 
       // Discount

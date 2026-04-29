@@ -934,8 +934,7 @@ const Main = ({
                           <span className={styles.category}>
                             {booking.category}
                           </span>
-                          {booking.bookingData?.paymentStatus &&
-                           booking.bookingData?.orderStatus !== "CANCELLED" && (
+                          {booking.bookingData?.orderStatus && (
                             <>
                               <span className={styles.dot} aria-hidden="true">
                                 •
@@ -950,14 +949,16 @@ const Main = ({
                                 lineHeight: "1",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
-                                backgroundColor: booking.bookingData.paymentStatus === "SUCCESS" ? "#E8F5E9" :
-                                                 booking.bookingData.paymentStatus === "PENDING" ? "#FFF3E0" :
-                                                 booking.bookingData.paymentStatus === "FAILED" ? "#FFEBEE" : "#FFEBEE",
-                                color: booking.bookingData.paymentStatus === "SUCCESS" ? "#2E7D32" :
-                                       booking.bookingData.paymentStatus === "PENDING" ? "#E65100" :
-                                       booking.bookingData.paymentStatus === "FAILED" ? "#C62828" : "#C62828",
+                                backgroundColor: booking.bookingData.orderStatus === "CONFIRMED" ? "#E8F5E9" :
+                                                 booking.bookingData.orderStatus === "COMPLETED" ? "#E3F2FD" :
+                                                 booking.bookingData.orderStatus === "PENDING"   ? "#FFF3E0" :
+                                                 booking.bookingData.orderStatus === "CANCELLED" ? "#FFEBEE" : "#F3F4F6",
+                                color: booking.bookingData.orderStatus === "CONFIRMED" ? "#2E7D32" :
+                                       booking.bookingData.orderStatus === "COMPLETED" ? "#1565C0" :
+                                       booking.bookingData.orderStatus === "PENDING"   ? "#E65100" :
+                                       booking.bookingData.orderStatus === "CANCELLED" ? "#C62828" : "#6B7280",
                               }}>
-                                {booking.bookingData.paymentStatus}
+                                {booking.bookingData.orderStatus}
                               </span>
                             </>
                           )}
