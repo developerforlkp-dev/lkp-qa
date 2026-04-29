@@ -35,7 +35,18 @@ const PhotoView = ({ title, initialSlide, visible, items, onClose, listingId, op
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    visible ? disableBodyScroll(scrollRef) : enableBodyScroll(scrollRef);
+    const targetElement = scrollRef.current;
+    if (visible && targetElement) {
+      disableBodyScroll(targetElement);
+    }
+    return () => {
+      if (targetElement) {
+        enableBodyScroll(targetElement);
+      } else {
+        // Fallback to ensure scroll is enabled
+        enableBodyScroll(document.body);
+      }
+    };
   }, [visible]);
 
   useEffect(() => {
