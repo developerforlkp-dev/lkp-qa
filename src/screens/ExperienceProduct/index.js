@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
@@ -199,10 +199,40 @@ const ExperienceProduct = () => {
               </Rev>
             </motion.div>
           </div>
-          <motion.div style={{ position: "absolute", bottom: 60, left: 60, display: "flex", alignItems: "center", gap: 20, opacity: fade }}>
-            <motion.div animate={{ height: [40, 80, 40] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} style={{ width: 1, background: "#FFFFFF" }} />
-            <span style={{ fontSize: 10, letterSpacing: "0.5em", textTransform: "uppercase", color: "#8C8C88", fontWeight: 600 }}>Scroll to explore</span>
-          </motion.div>
+          {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
+            <motion.div 
+              style={{ position: "absolute", bottom: 60, right: 60, opacity: fade }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <motion.div 
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 12, 
+                  background: "rgba(255, 255, 255, 0.03)", 
+                  backdropFilter: "blur(12px)", 
+                  padding: "12px 24px", 
+                  borderRadius: 100, 
+                  border: `1px solid ${A}33`,
+                  boxShadow: `0 10px 30px rgba(0,0,0,0.2), inset 0 0 20px ${A}11`,
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <Sparkles color={A} size={14} />
+                <span style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "#FFFFFF", fontWeight: 800 }}>
+                  {(() => {
+                    const activeDiscounts = listing.earlyBirdDiscounts.filter(d => d.isActive);
+                    const minDays = Math.min(...activeDiscounts.map(d => d.daysInAdvance));
+                    const maxPercentage = Math.max(...activeDiscounts.map(d => d.percentage));
+                    return `Book ${minDays} Days Advance: ${maxPercentage}% Off`;
+                  })()}
+                </span>
+              </motion.div>
+            </motion.div>
+          )}
         </section>
 
 
