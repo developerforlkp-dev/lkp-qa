@@ -562,12 +562,21 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const selectedKey = getDateKey(selectedDate);
+
+  // Today's date key (YYYY-MM-DD) for past-date comparison
+  const todayKey = getDateKey(new Date());
+  const now = new Date();
+  const isViewingCurrentOrPastMonth =
+    year < now.getFullYear() ||
+    (year === now.getFullYear() && month <= now.getMonth());
+
   const cells = [
     ...Array.from({ length: firstDay }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => {
       const day = index + 1;
       const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      return { day, key, isAvailable: availableDateKeys.has(key) };
+      const isPast = key < todayKey;
+      return { day, key, isAvailable: !isPast && availableDateKeys.has(key), isPast };
     }),
   ];
 
@@ -577,7 +586,8 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
         <button
           type="button"
           onClick={() => setViewDate(new Date(year, month - 1, 1))}
-          style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: FG, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          disabled={isViewingCurrentOrPastMonth}
+          style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: isViewingCurrentOrPastMonth ? `${M}44` : FG, cursor: isViewingCurrentOrPastMonth ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: isViewingCurrentOrPastMonth ? 0.4 : 1 }}
         >
           <ChevronDown size={15} style={{ transform: "rotate(90deg)" }} />
         </button>
@@ -607,16 +617,18 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
               type="button"
               disabled={!cell.isAvailable}
               onClick={() => onDateSelect(moment(cell.key))}
+              title={cell.isPast ? "Past date" : undefined}
               style={{
                 aspectRatio: "1 / 1",
                 minWidth: 0,
                 borderRadius: 12,
                 border: `1px solid ${isSelected ? A : cell.isAvailable ? `${A}55` : "transparent"}`,
                 background: isSelected ? A : cell.isAvailable ? AL : "transparent",
-                color: isSelected ? W : cell.isAvailable ? FG : `${M}55`,
+                color: isSelected ? W : cell.isPast ? `${M}33` : cell.isAvailable ? FG : `${M}55`,
                 cursor: cell.isAvailable ? "pointer" : "not-allowed",
                 fontSize: 12,
                 fontWeight: 800,
+                textDecoration: cell.isPast ? "line-through" : "none",
               }}
             >
               {cell.day}

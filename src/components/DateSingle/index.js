@@ -3,6 +3,7 @@ import cn from "classnames";
 import styles from "./DateSingle.module.sass";
 import "react-dates/initialize";
 import { SingleDatePicker } from "react-dates";
+import moment from "moment";
 import Icon from "../Icon";
 
 const DateSingle = ({
@@ -59,6 +60,7 @@ const DateSingle = ({
           withPortal={withPortal}
           openDirection={openDirection}
           isDayHighlighted={isDayHighlighted}
+          isOutsideRange={(day) => day.isBefore(moment(), "day")}
         />
       </div>
     );
@@ -97,6 +99,7 @@ const DateSingle = ({
           withPortal={withPortal}
           openDirection={openDirection}
           isDayHighlighted={isDayHighlighted}
+          isOutsideRange={(day) => day.isBefore(moment(), "day")}
         />
       </div>
     </div>
