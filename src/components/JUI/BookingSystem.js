@@ -38,6 +38,16 @@ const asSeatLimit = (value) => {
   return parsed != null && parsed >= 0 ? parsed : undefined;
 };
 
+const asBoolean = (value, fallback = false) => {
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return fallback;
+};
+
 const getSlotSeatLimit = (slot) => (
   asSeatLimit(slot?.maxSeats) ??
   asSeatLimit(slot?.max_seats) ??
@@ -197,6 +207,34 @@ const getEffectiveTicketPrice = (ticket, quantity, fallbackPrice = 0) => {
     tier: tier || null,
     basePrice,
   };
+};
+
+const getGroupPricingTierPrice = (tiers = [], guestCount = 0) => {
+  if (!Array.isArray(tiers) || tiers.length === 0) return null;
+
+  const tier = tiers.find((item) => {
+    const min = asNumber(
+      item?.group_count_from ??
+      item?.groupCountFrom ??
+      item?.minQuantity ??
+      item?.min_quantity ??
+      item?.minGuests ??
+      item?.min_guests
+    ) ?? 0;
+    const max = asNumber(
+      item?.group_count_upto ??
+      item?.groupCountUpto ??
+      item?.maxQuantity ??
+      item?.max_quantity ??
+      item?.maxGuests ??
+      item?.max_guests
+    ) ?? Infinity;
+    return guestCount >= min && guestCount <= max;
+  });
+
+  return tier
+    ? asNumber(tier.price_per_person ?? tier.pricePerPerson ?? tier.price ?? tier.amount)
+    : null;
 };
 
 const getRateFromPricing = (...values) => {
@@ -695,10 +733,23 @@ const getLatestExperienceSlotEndDate = (listing) => {
 
 function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, tokens, emptyMessage = "No available dates." }) {
   const { A, AL, BG, FG, M, B, S, W } = tokens;
-  const initialDate = selectedDate && typeof selectedDate.toDate === "function"
-    ? selectedDate.toDate()
-    : new Date();
-  const [viewDate, setViewDate] = useState(initialDate);
+  const getInitialViewDate = useCallback(() => {
+    if (selectedDate && typeof selectedDate.toDate === "function") return selectedDate.toDate();
+    if (selectedDate) return makeLocalDate(getDateKey(selectedDate));
+
+    const todayKey = getDateKey(new Date());
+    const availableKeys = [...availableDateKeys].filter((key) => key >= todayKey).sort();
+    const currentMonthPrefix = todayKey.slice(0, 7);
+    const currentMonthKey = availableKeys.find((key) => key.slice(0, 7) === currentMonthPrefix);
+    const firstAvailableKey = currentMonthKey || availableKeys[0];
+    return firstAvailableKey ? makeLocalDate(firstAvailableKey) : new Date();
+  }, [availableDateKeys, selectedDate]);
+  const [viewDate, setViewDate] = useState(() => getInitialViewDate());
+
+  useEffect(() => {
+    setViewDate(getInitialViewDate());
+  }, [getInitialViewDate]);
+
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
@@ -1123,15 +1174,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const groupPricingRules = !isEventBooking
     ? (selectedSlotData?.group_booking_pricing || selectedSlotData?.groupBookingPricing || [])
     : [];
-  const matchedGroupTier = groupPricingRules.length > 0
-    ? groupPricingRules.find(p =>
-        totalGuests >= (p.group_count_from || p.groupCountFrom || 0) &&
-        totalGuests <= (p.group_count_upto || p.groupCountUpto || Infinity)
-      )
-    : null;
-  const groupOverridePrice = matchedGroupTier
-    ? parseFloat(matchedGroupTier.price_per_person || matchedGroupTier.pricePerPerson || matchedGroupTier.price || 0)
-    : null;
+  const groupOverridePrice = getGroupPricingTierPrice(groupPricingRules, totalGuests);
   // Effective raw base price: group tier wins when matched, else use slot/listing price
   const effectiveRawPrice = (groupOverridePrice != null && groupOverridePrice > 0)
     ? groupOverridePrice
@@ -1145,8 +1188,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : (experienceGuestPricing?.finalUnitPrice ?? parseFloat(effectiveRawPrice || 0));
 
   // Child pricing for experiences
-  const childrenAllowed = !isEventBooking && Boolean(
-    listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren ?? true
+  const childrenAllowed = !isEventBooking && asBoolean(
+    listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren,
+    true
   );
   const rawChildPrice = !isEventBooking
     ? (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0)
@@ -1226,6 +1270,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       return clamped;
     });
   }, [bookingGuestLimit, clampGuestsToSeatLimit]);
+
+  useEffect(() => {
+    if (isEventBooking || childrenAllowed) return;
+    setGuests((current) => (
+      current.children === 0 ? current : { ...current, children: 0 }
+    ));
+  }, [childrenAllowed, isEventBooking]);
 
   const updateGuestsWithinSeatLimit = useCallback((updater) => {
     setGuests((current) => {
@@ -2056,15 +2107,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           max={adultMax}
                         />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
-                        <Counter
-                          value={guests.children}
-                          setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
-                          min={0}
-                          max={childMax}
-                        />
-                      </div>
+                      {(isEventBooking || childrenAllowed) && (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
+                          <Counter
+                            value={guests.children}
+                            setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                            min={0}
+                            max={childMax}
+                          />
+                        </div>
+                      )}
                     </div>
                     {guestSeatLimit !== undefined && (
                       <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 600 }}>
