@@ -3,6 +3,8 @@ import cn from "classnames";
 import moment from "moment";
 import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./EventProduct.module.sass";
+import Page from "../../components/Page";
+import ProductNavbar from "../../components/ProductNavbar";
 import Icon from "../../components/Icon";
 import Loader from "../../components/Loader";
 import Actions from "../../components/Actions";
@@ -11,6 +13,7 @@ import Browse from "../../components/Browse";
 import GuestPicker from "../../components/GuestPicker";
 import { browse2 } from "../../mocks/browse";
 import { useLocation, useHistory } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import { createEventOrder, getEventDetails } from "../../utils/api";
 import Modal from "../../components/Modal";
 import Login from "../../components/Login";
@@ -318,19 +321,19 @@ const EventProduct = () => {
         const rawGallery = payload?.gallery ?? payload?.images ?? payload?.photos ?? payload?.media;
         const derivedGallery = Array.isArray(rawGallery)
           ? rawGallery
-              .map((g) => {
-                if (typeof g === "string") return asNonEmptyString(g);
-                if (g && typeof g === "object") {
-                  return (
-                    asNonEmptyString(g?.url) ||
-                    asNonEmptyString(g?.src) ||
-                    asNonEmptyString(g?.imageUrl) ||
-                    asNonEmptyString(g?.mediaUrl)
-                  );
-                }
-                return null;
-              })
-              .filter(Boolean)
+            .map((g) => {
+              if (typeof g === "string") return asNonEmptyString(g);
+              if (g && typeof g === "object") {
+                return (
+                  asNonEmptyString(g?.url) ||
+                  asNonEmptyString(g?.src) ||
+                  asNonEmptyString(g?.imageUrl) ||
+                  asNonEmptyString(g?.mediaUrl)
+                );
+              }
+              return null;
+            })
+            .filter(Boolean)
           : [];
 
         const ticketSaleEndIso =
@@ -395,7 +398,7 @@ const EventProduct = () => {
           payload?.eventSlots ||
           payload?.event_slots ||
           normalizedTicketTypes.flatMap((t) => t.applicableSlots || []);
-        
+
         // Normalize slots to get full slot objects with IDs
         const normalizedSlots = normalizeSlots(rawSlots);
         const slotNames = normalizedSlots.map((s) => s.name).filter(Boolean);
@@ -404,10 +407,10 @@ const EventProduct = () => {
         const derivedArtists = backendArtists.length > 0
           ? backendArtists
           : slotNames.map((name, index) => ({
-              title: name,
-              description: "",
-              image: (derivedGallery.length > 0 ? derivedGallery : dummyEventData.gallery)[index % (derivedGallery.length > 0 ? derivedGallery.length : dummyEventData.gallery.length)],
-            }));
+            title: name,
+            description: "",
+            image: (derivedGallery.length > 0 ? derivedGallery : dummyEventData.gallery)[index % (derivedGallery.length > 0 ? derivedGallery.length : dummyEventData.gallery.length)],
+          }));
 
         const derivedVenueSearchLocation =
           asNonEmptyString(payload?.venueSearchLocation) ||
@@ -567,35 +570,35 @@ const EventProduct = () => {
       asNumber(event?.slot_id) ??
       asNumber(event?.defaultSlotId) ??
       asNumber(event?.default_slot_id);
-    
+
     if (directSlotId && directSlotId > 0) {
       console.log("📍 Using direct eventSlotId:", directSlotId);
       return directSlotId;
     }
-    
+
     // Try to get from the slots array (first available slot)
     if (Array.isArray(event?.slots) && event.slots.length > 0) {
       const firstSlot = event.slots[0];
-      const slotIdFromArray = 
-        asNumber(firstSlot?.id) ?? 
-        asNumber(firstSlot?.slotId) ?? 
+      const slotIdFromArray =
+        asNumber(firstSlot?.id) ??
+        asNumber(firstSlot?.slotId) ??
         asNumber(firstSlot?.eventSlotId);
       if (slotIdFromArray && slotIdFromArray > 0) {
         console.log("📍 Using slotId from slots array:", slotIdFromArray);
         return slotIdFromArray;
       }
     }
-    
+
     // Try to get from ticket types' applicable slots
     if (Array.isArray(event?.ticketTypes)) {
       for (const ticketType of event.ticketTypes) {
         if (Array.isArray(ticketType?.applicableSlots) && ticketType.applicableSlots.length > 0) {
           const slot = ticketType.applicableSlots[0];
           // Check all possible slot ID field names
-          const slotId = 
-            asNumber(slot?.eventSlotId) ?? 
+          const slotId =
+            asNumber(slot?.eventSlotId) ??
             asNumber(slot?.event_slot_id) ??
-            asNumber(slot?.slotId) ?? 
+            asNumber(slot?.slotId) ??
             asNumber(slot?.slot_id) ??
             asNumber(slot?.id);
           if (slotId && slotId > 0) {
@@ -605,18 +608,18 @@ const EventProduct = () => {
         }
       }
     }
-    
+
     // Log warning if no slot ID found
     console.warn("⚠️ Could not find eventSlotId in event data:", {
       eventSlotId: event?.eventSlotId,
       slotId: event?.slotId,
       slots: event?.slots,
-      ticketTypes: event?.ticketTypes?.map(t => ({ 
-        id: t.id, 
-        applicableSlots: t.applicableSlots 
+      ticketTypes: event?.ticketTypes?.map(t => ({
+        id: t.id,
+        applicableSlots: t.applicableSlots
       }))
     });
-    
+
     return 0;
   };
 
@@ -646,13 +649,13 @@ const EventProduct = () => {
 
     const quantity = Math.max(1, (guests?.adults || 0) + (guests?.children || 0));
     const pricePerTicket = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
-    
+
     // Calculate total number of guests (required by backend)
     const numberOfGuests = quantity;
-    
+
     // Get booking date - use event start date or today's date
     const bookingDate = event?.startDate || moment().format("YYYY-MM-DD");
-    
+
     // Get ticket type name (required by backend)
     const ticketTypeName = selectedType?.name || selectedType?.ticketTypeName || "General Admission";
 
@@ -691,7 +694,7 @@ const EventProduct = () => {
       // Extract order and payment info from response (same pattern as experience)
       const order = res?.order || res;
       console.log("📋 Order object:", order);
-      
+
       // Extract payment object (same as experience checkout)
       const payment =
         res?.payment ||
@@ -700,23 +703,23 @@ const EventProduct = () => {
         order?.payment ||
         null;
       console.log("💳 Payment object:", payment);
-      
+
       const orderId = order?.orderId || order?.id || res?.orderId || res?.id;
-      const razorpayOrderId = 
+      const razorpayOrderId =
         payment?.razorpayOrderId ||
-        order?.razorpayOrderId || 
-        res?.razorpayOrderId || 
-        order?.razorpay_order_id || 
+        order?.razorpayOrderId ||
+        res?.razorpayOrderId ||
+        order?.razorpay_order_id ||
         res?.razorpay_order_id;
-      
+
       console.log("🔑 Extracted orderId:", orderId);
       console.log("🔑 Extracted razorpayOrderId:", razorpayOrderId);
-      
+
       // Calculate total amount (in paise for Razorpay)
       const totalAmount = quantity * pricePerTicket;
       // Use amount from payment response if available, otherwise calculate
       const amountInPaise = payment?.amount || Math.round(totalAmount * 100);
-      
+
       // Get currency from event or default to INR
       const currency = event?.currency || "INR";
 
@@ -728,23 +731,23 @@ const EventProduct = () => {
         listingTitle: event?.title || "Event Booking",
         listingImage: event?.coverImage || event?.gallery?.[0],
         returnTo: `/event?id=${eventIdNum}`,
-        
+
         // Booking summary
         bookingSummary: {
           date: moment(bookingDate).format("MMM DD, YYYY"),
           time: event?.startTime || "",
           guestCount: numberOfGuests,
         },
-        
+
         // Guest details
         guests: guests,
-        
+
         // Price details
         priceDetails: {
           pricePerPerson: pricePerTicket,
           totalPrice: totalAmount,
         },
-        
+
         // Receipt for display
         receipt: [
           {
@@ -756,11 +759,11 @@ const EventProduct = () => {
             content: `${currency} ${totalAmount.toFixed(2)}`,
           },
         ],
-        
+
         // Currency
         currency: currency,
         finalTotal: totalAmount,
-        
+
         // Ticket info
         ticketType: ticketTypeName,
         ticketTypeId: getTicketTypeIdForBooking(selectedType),
@@ -774,7 +777,7 @@ const EventProduct = () => {
           // Try to get from a previous successful payment
           const cachedPayment = localStorage.getItem("lastRazorpayKeyId");
           if (cachedPayment) return cachedPayment;
-          
+
           // Try to get from pending payment (if experience was booked before)
           const pendingPayment = localStorage.getItem("pendingPayment");
           if (pendingPayment) {
@@ -789,14 +792,14 @@ const EventProduct = () => {
 
       // Hardcoded fallback key for production (test mode)
       const RAZORPAY_FALLBACK_KEY = "rzp_test_RaBjdu0Ed3p1gN";
-      
-      const razorpayKeyId = 
+
+      const razorpayKeyId =
         payment?.razorpayKeyId ||
         payment?.razorpay_key_id ||
         payment?.keyId ||
-        order?.razorpayKeyId || 
-        res?.razorpayKeyId || 
-        order?.razorpay_key_id || 
+        order?.razorpayKeyId ||
+        res?.razorpayKeyId ||
+        order?.razorpay_key_id ||
         res?.razorpay_key_id ||
         order?.razorpayKey ||
         res?.razorpayKey ||
@@ -805,16 +808,16 @@ const EventProduct = () => {
         process.env.REACT_APP_RAZORPAY_KEY_ID || // Fallback to env variable
         getCachedRazorpayKey() || // Fallback to cached key from experience
         RAZORPAY_FALLBACK_KEY; // Final fallback - hardcoded key
-      
+
       console.log("🔑 Extracted razorpayKeyId:", razorpayKeyId);
-      
+
       // Save the key for future use if we got it
       if (razorpayKeyId) {
         try {
           localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
-        } catch (e) {}
+        } catch (e) { }
       }
-      
+
       // Warn if missing critical payment data
       if (!razorpayOrderId) {
         console.warn("⚠️ razorpayOrderId is missing from API response!");
@@ -845,7 +848,7 @@ const EventProduct = () => {
       localStorage.setItem("pendingBooking", JSON.stringify(bookingDataForCheckout));
       localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
       localStorage.setItem("pendingOrderId", String(orderId));
-      
+
       // Clear any previous payment status
       localStorage.removeItem("razorpayPaymentSuccess");
       localStorage.removeItem("paymentFailed");
@@ -925,11 +928,14 @@ const EventProduct = () => {
       )}
       {/* Hero Section with Title, Actions, and Gallery */}
       <div className={cn("section-mb64", styles.hero)} style={{ zIndex: 50 }}>
+        <ProductNavbar top={100} left={60} />
         <div className={cn("container", styles.heroContainer)}>
           {/* Header with Title and Actions */}
           <div className={styles.heroHeader}>
             <div className={styles.heroTitleBox}>
-              <h1 className={styles.heroTitle}>{event.title}</h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
+                <h1 className={styles.heroTitle}>{event.title}</h1>
+              </div>
             </div>
             <div className={styles.heroActions}>
               <Actions />
@@ -940,13 +946,13 @@ const EventProduct = () => {
           {allImages.length > 0 && (
             <div className={styles.heroGallery}>
               {/* Main Large Image on Left */}
-              <div 
+              <div
                 className={styles.heroMainImage}
                 onClick={() => setGalleryIndex(0)}
               >
-                <img 
-                  src={selectedHeroImage || "/images/content/main-pic-1.jpg"} 
-                  alt={event.title} 
+                <img
+                  src={selectedHeroImage || "/images/content/main-pic-1.jpg"}
+                  alt={event.title}
                 />
               </div>
 
@@ -961,13 +967,13 @@ const EventProduct = () => {
                       className={styles.heroGridImage}
                       onClick={() => setGalleryIndex(imgIdx)}
                     >
-                      <img 
-                        src={img} 
-                        alt={`Event ${imgIdx + 1}`} 
+                      <img
+                        src={img}
+                        alt={`Event ${imgIdx + 1}`}
                       />
                       {/* Show all photos button on last image */}
                       {isLast && allImages.length > 4 && (
-                        <button 
+                        <button
                           className={styles.showAllPhotos}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1062,7 +1068,7 @@ const EventProduct = () => {
             <div className={styles.bookingCard}>
               {/* Event Information Heading */}
               <h3 className={styles.bookingCardTitle}>Event Information</h3>
-              
+
               {/* Event Details List */}
               <div className={styles.eventDetailsList}>
                 <div className={styles.eventDetailItem}>
@@ -1090,13 +1096,13 @@ const EventProduct = () => {
                   <span>Music</span>
                 </div>
                 {/* Guest/Attendee Selector */}
-                <div 
+                <div
                   ref={guestItemRef}
                   className={cn(styles.eventDetailItem, styles.clickableItem)}
                   style={{ position: 'relative' }}
                 >
                   <Icon name="user" size="18" />
-                  <div 
+                  <div
                     className={styles.guestSelector}
                     onClick={() => {
                       setShowGuestPicker(!showGuestPicker);
@@ -1106,11 +1112,11 @@ const EventProduct = () => {
                   >
                     <span className={styles.guestLabel}>Guest</span>
                     <span className={styles.guestValue}>
-                      {guests.adults + guests.children === 0 
-                        ? "Add guests" 
-                        : guests.adults + guests.children === 1 
-                        ? "1 guest" 
-                        : `${guests.adults + guests.children} guests`}
+                      {guests.adults + guests.children === 0
+                        ? "Add guests"
+                        : guests.adults + guests.children === 1
+                          ? "1 guest"
+                          : `${guests.adults + guests.children} guests`}
                     </span>
                   </div>
                   <GuestPicker
@@ -1130,25 +1136,25 @@ const EventProduct = () => {
                 {/* Ticket Type Selector */}
                 {event.ticketTypes && event.ticketTypes.length > 0 && (
                   <OutsideClickHandler onOutsideClick={() => setShowTicketTypePicker(false)}>
-                    <div 
+                    <div
                       ref={ticketTypeItemRef}
                       className={cn(styles.eventDetailItem, styles.clickableItem)}
                       style={{ position: 'relative' }}
                     >
                       <Icon name="bag" size="18" />
-                      <div 
+                      <div
                         className={styles.guestSelector}
                         onClick={() => setShowTicketTypePicker(!showTicketTypePicker)}
                         role="button"
                       >
-                      <span className={styles.guestLabel}>Ticket Type</span>
-                      <span className={styles.guestValue}>
-                        {(() => {
-                          const selectedType = event.ticketTypes.find(t => t.id === selectedTicketType) || event.ticketTypes[0];
-                          const price = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
-                          return `${selectedType?.name || "Ticket"} - ${displayCurrency} ${price.toFixed(2)}`;
-                        })()}
-                      </span>
+                        <span className={styles.guestLabel}>Ticket Type</span>
+                        <span className={styles.guestValue}>
+                          {(() => {
+                            const selectedType = event.ticketTypes.find(t => t.id === selectedTicketType) || event.ticketTypes[0];
+                            const price = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
+                            return `${selectedType?.name || "Ticket"} - ${displayCurrency} ${price.toFixed(2)}`;
+                          })()}
+                        </span>
                       </div>
                       {showTicketTypePicker && (
                         <div className={styles.ticketTypePicker}>
@@ -1205,7 +1211,7 @@ const EventProduct = () => {
                     })()}
                   </span>
                 </div>
-                <button 
+                <button
                   className={cn("button", styles.bookButton)}
                   disabled={!isBookingOpen() || bookingLoading}
                   onClick={() => {

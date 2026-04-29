@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useHistory } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import ProductNavbar from "../../components/ProductNavbar";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./StayProduct.module.sass";
@@ -97,6 +99,7 @@ const Gallery = ({ images }) => {
 
 // Header Component
 const Header = ({ stay, onShare }) => {
+  const history = useHistory();
   const tags = [];
   {
     const propertyTypeLabel = toDisplayString(stay?.propertyType);
@@ -113,6 +116,7 @@ const Header = ({ stay, onShare }) => {
 
   return (
     <div className={styles.header}>
+      <ProductNavbar top={100} left={60} />
       <div className={styles.tags}>
         {tags.map((tag, idx) => (
           <span key={idx} className={styles.tag}>{tag}</span>
@@ -214,7 +218,7 @@ const BookingSidebar = ({
     const roomActiveSeasonData = activeSeasonObj ? (
       room?.seasonalPricing?.[activeSeasonObj.tempId] ||
       room?.[activeSeasonObj.tempId] ||
-      stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || 
+      stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] ||
       stay?.[activeSeasonObj.tempId]
     ) : null;
 
@@ -230,12 +234,12 @@ const BookingSidebar = ({
         }
       }
     }
-    
+
     if (roomActiveSeasonData) {
       if (parseFloat(roomActiveSeasonData.hikePrice || 0) > 0) return parseFloat(roomActiveSeasonData.hikePrice);
       if (parseFloat(roomActiveSeasonData.b2cPrice || 0) > 0) return parseFloat(roomActiveSeasonData.b2cPrice);
     }
-    
+
     return parseFloat(room.hikePrice || room.b2cPrice || room.mapPrice || room.cpPrice || room.bbPrice || room.apPrice || room.epPrice || room.price || 0);
   };
 
@@ -253,7 +257,7 @@ const BookingSidebar = ({
   }, [checkInDate, stay?.seasonalPeriods]);
 
   const activeSeasonData = activeSeason ? (stay?.propertySeasonalPricing?.[activeSeason.tempId] || stay?.[activeSeason.tempId]) : null;
-  
+
   if (checkInDate) {
     console.log('activeSeasonData resolved as:', activeSeasonData, 'for tempId:', activeSeason?.tempId);
   }
@@ -295,503 +299,503 @@ const BookingSidebar = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stay, isPropertyBased, isRoomBased, selectedRoom, availableRooms, activeSeasonData]);
 
-// basePrice is what we use for the active price line and total calculation
-const basePrice = isRoomBased
-  ? getMealPlanPriceForRoom(selectedRoom) || startingFromPricePerNight
-  : parseFloat(
-    (isPropertyBased && activeSeasonData ? activeSeasonData.fullPropertyHikePrice : null) ||
-    (isPropertyBased && activeSeasonData ? stay?.fullPropertyHikePrice : null) ||
-    (isPropertyBased && activeSeasonData ? activeSeasonData.fullPropertyB2cPrice : null) ||
-    (isPropertyBased && activeSeasonData ? activeSeasonData.b2cPrice : null) ||
-    (isPropertyBased ? stay?.fullPropertyB2cPrice : null) ||
-    stay?.b2cPrice ||
-    stay?.fullPropertyB2cPrice ||
-    stay?.startingPrice ||
-    stay?.pricePerNight ||
-    stay?.price ||
-    0
-  );
+  // basePrice is what we use for the active price line and total calculation
+  const basePrice = isRoomBased
+    ? getMealPlanPriceForRoom(selectedRoom) || startingFromPricePerNight
+    : parseFloat(
+      (isPropertyBased && activeSeasonData ? activeSeasonData.fullPropertyHikePrice : null) ||
+      (isPropertyBased && activeSeasonData ? stay?.fullPropertyHikePrice : null) ||
+      (isPropertyBased && activeSeasonData ? activeSeasonData.fullPropertyB2cPrice : null) ||
+      (isPropertyBased && activeSeasonData ? activeSeasonData.b2cPrice : null) ||
+      (isPropertyBased ? stay?.fullPropertyB2cPrice : null) ||
+      stay?.b2cPrice ||
+      stay?.fullPropertyB2cPrice ||
+      stay?.startingPrice ||
+      stay?.pricePerNight ||
+      stay?.price ||
+      0
+    );
 
-const discountedBasePrice = discountPercentage > 0
-  ? basePrice * (1 - discountPercentage / 100)
-  : basePrice;
+  const discountedBasePrice = discountPercentage > 0
+    ? basePrice * (1 - discountPercentage / 100)
+    : basePrice;
 
-const extraAdults = Math.max(0, (guests?.adults || 0) - (stay?.maxAdults || 0));
-const extraChildren = Math.max(0, (guests?.children || 0) - (stay?.maxChildren || 0));
+  const extraAdults = Math.max(0, (guests?.adults || 0) - (stay?.maxAdults || 0));
+  const extraChildren = Math.max(0, (guests?.children || 0) - (stay?.maxChildren || 0));
 
-const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || activeSeasonData?.fullPropertyExtraAdultPrice || stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
-const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || activeSeasonData?.fullPropertyExtraChildPrice || stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
+  const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || activeSeasonData?.fullPropertyExtraAdultPrice || stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
+  const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || activeSeasonData?.fullPropertyExtraChildPrice || stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
 
 
-const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
+  const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
-const price = discountedBasePrice + totalExtraPrice;
+  const price = discountedBasePrice + totalExtraPrice;
 
-// ─── Show total only when enough info is selected ────────────────────────
-const totalGuests = (guests?.adults || 0) + (guests?.children || 0);
-// For room-based: need a selected room AND guest count > 0
-// For property-based: always show after dates are selected
-const showTotal = isRoomBased
-  ? totalGuests > 0 && !!selectedRoom
-  : totalGuests > 0;
+  // ─── Show total only when enough info is selected ────────────────────────
+  const totalGuests = (guests?.adults || 0) + (guests?.children || 0);
+  // For room-based: need a selected room AND guest count > 0
+  // For property-based: always show after dates are selected
+  const showTotal = isRoomBased
+    ? totalGuests > 0 && !!selectedRoom
+    : totalGuests > 0;
 
-const totalPerStay = price * (roomsNeeded || 1) * numberOfNights;
+  const totalPerStay = price * (roomsNeeded || 1) * numberOfNights;
 
-// Always display stay prices in INR (₹) for this booking flow
-const formatPrice = (amount) => {
-  return `₹${Number(amount).toLocaleString("en-IN")}`;
-};
+  // Always display stay prices in INR (₹) for this booking flow
+  const formatPrice = (amount) => {
+    return `₹${Number(amount).toLocaleString("en-IN")}`;
+  };
 
-const guestText = () => {
-  const total = (guests?.adults || 0) + (guests?.children || 0);
-  if (total === 0) return "Add guests";
-  if (total === 1) return "1 guest";
-  return `${total} guests`;
-};
+  const guestText = () => {
+    const total = (guests?.adults || 0) + (guests?.children || 0);
+    if (total === 0) return "Add guests";
+    if (total === 1) return "1 guest";
+    return `${total} guests`;
+  };
 
-const formatDateLabel = (dateStr) => {
-  if (!dateStr) return "Add date";
-  const m = moment(dateStr, "YYYY-MM-DD", true);
-  if (!m.isValid()) return "Add date";
-  return m.format("MMM DD, YYYY");
-};
+  const formatDateLabel = (dateStr) => {
+    if (!dateStr) return "Add date";
+    const m = moment(dateStr, "YYYY-MM-DD", true);
+    if (!m.isValid()) return "Add date";
+    return m.format("MMM DD, YYYY");
+  };
 
-const openDatePicker = (field) => {
-  setActiveDateField(field);
-  setShowStayDatePicker(true);
-};
+  const openDatePicker = (field) => {
+    setActiveDateField(field);
+    setShowStayDatePicker(true);
+  };
 
-const handleStayDateSelect = (startDateText) => {
-  if (!startDateText) return;
+  const handleStayDateSelect = (startDateText) => {
+    if (!startDateText) return;
 
-  const parsed = moment(startDateText, ["MMM DD, YYYY", "YYYY-MM-DD", "MM/DD/YYYY"], true);
-  if (!parsed.isValid()) return;
+    const parsed = moment(startDateText, ["MMM DD, YYYY", "YYYY-MM-DD", "MM/DD/YYYY"], true);
+    if (!parsed.isValid()) return;
 
-  const nextValue = parsed.format("YYYY-MM-DD");
+    const nextValue = parsed.format("YYYY-MM-DD");
 
-  if (activeDateField === "checkout") {
-    setCheckOutDate(nextValue);
+    if (activeDateField === "checkout") {
+      setCheckOutDate(nextValue);
+      setShowStayDatePicker(false);
+      return;
+    }
+
+    setCheckInDate(nextValue);
+    if (checkOutDate && moment(nextValue).isAfter(moment(checkOutDate), "day")) {
+      setCheckOutDate("");
+    }
     setShowStayDatePicker(false);
-    return;
-  }
+  };
 
-  setCheckInDate(nextValue);
-  if (checkOutDate && moment(nextValue).isAfter(moment(checkOutDate), "day")) {
-    setCheckOutDate("");
-  }
-  setShowStayDatePicker(false);
-};
-
-return (
-  <div className={styles.sidebar}>
-    <div className={styles.priceCard}>
-      {/* Base price per night - always visible, even before selecting dates/guests */}
-      {startingFromPricePerNight > 0 && (
-        <div className={styles.startingFromRow}>
-          <span className={styles.startingFromLabel}>{isRoomBased && !selectedRoom ? "From" : ""}</span>
-          <span className={styles.startingFromPrice}>{formatPrice(startingFromPricePerNight)}</span>
-          <span className={styles.startingFromSuffix}>/ night</span>
-        </div>
-      )}
-      <div className={styles.priceRow}>
-        <div className={styles.priceGroup}>
-          {discountPercentage > 0 && showTotal && (
+  return (
+    <div className={styles.sidebar}>
+      <div className={styles.priceCard}>
+        {/* Base price per night - always visible, even before selecting dates/guests */}
+        {startingFromPricePerNight > 0 && (
+          <div className={styles.startingFromRow}>
+            <span className={styles.startingFromLabel}>{isRoomBased && !selectedRoom ? "From" : ""}</span>
+            <span className={styles.startingFromPrice}>{formatPrice(startingFromPricePerNight)}</span>
+            <span className={styles.startingFromSuffix}>/ night</span>
+          </div>
+        )}
+        <div className={styles.priceRow}>
+          <div className={styles.priceGroup}>
+            {discountPercentage > 0 && showTotal && (
               <div className={styles.oldPrice}>
                 <span className={styles.strikedPart}>{formatPrice(basePrice)}</span>
                 {totalExtraPrice > 0 && (
                   <span className={styles.plusPart}> + {formatPrice(totalExtraPrice)}</span>
                 )}
               </div>
-          )}
-          {showTotal && (
-            <div className={styles.currentPriceRow}>
-              <span className={styles.price}>{formatPrice(price)}</span>
-              <span className={styles.perNight}>/ night</span>
-              {discountPercentage > 0 && (
-                <span className={styles.discountBadge}>{discountPercentage}% OFF</span>
-              )}
-            </div>
-          )}
-        </div>
-        {stay?.rating > 0 && (
-          <div className={styles.ratingBadge}>
-            <Icon name="star" size="14" />
-            <span>{stay.rating}</span>
-          </div>
-        )}
-      </div>
-
-      <div className={styles.datesSection}>
-        <div
-          className={styles.dateCard}
-          role="button"
-          tabIndex={0}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => openDatePicker("checkin")}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openDatePicker("checkin");
-            }
-          }}
-        >
-          <div className={styles.dateCardTop}>CHECK-IN</div>
-          <div className={styles.dateCardBottom}>
-            <div className={styles.dateValue}>{formatDateLabel(checkInDate)}</div>
-            <div className={styles.dateIcon}>
-              <Icon name="calendar" size="16" />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={styles.dateCard}
-          role="button"
-          tabIndex={0}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => openDatePicker("checkout")}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openDatePicker("checkout");
-            }
-          }}
-        >
-          <div className={styles.dateCardTop}>CHECK-OUT</div>
-          <div className={styles.dateCardBottom}>
-            <div className={styles.dateValue}>{formatDateLabel(checkOutDate)}</div>
-            <div className={styles.dateIcon}>
-              <Icon name="calendar" size="16" />
-            </div>
-          </div>
-        </div>
-      </div>
-      {showStayDatePicker && (
-        <div
-          className={styles.stayDatePickerWrap}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <InlineDatePicker
-            visible={showStayDatePicker}
-            onClose={() => setShowStayDatePicker(false)}
-            onDateSelect={handleStayDateSelect}
-            selectedDate={activeDateField === "checkout" ? checkOutDate : checkInDate}
-            timeSlots={[]}
-            availabilityData={[]}
-            className={styles.stayDatePicker}
-          />
-        </div>
-      )}
-
-      <div className={styles.guestField}>
-        <div
-          className={cn(styles.guestSelector, showGuestPicker && styles.guestSelectorOpen)}
-          onClick={() => setShowGuestPicker(!showGuestPicker)}
-          role="button"
-          tabIndex={0}
-          aria-expanded={showGuestPicker}
-          aria-haspopup="listbox"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setShowGuestPicker(!showGuestPicker);
-            }
-          }}
-        >
-          <div className={styles.guestLabel}>GUESTS</div>
-          <div className={styles.guestValueRow}>
-            <div className={styles.guestValue}>{guestText()}</div>
-            <div className={styles.guestIconGroup}>
-              <Icon name="user" size="16" />
-              <span className={cn(styles.guestChevron, showGuestPicker && styles.guestChevronOpen)}>
-                <Icon name="arrow-down" size="14" />
-              </span>
-            </div>
-          </div>
-        </div>
-        {showGuestPicker && (
-          <div className={styles.guestPicker}>
-            <div className={styles.guestType}>
-              <div className={styles.guestTypeInfo}>
-                <span className={styles.guestTypeName}>Adults</span>
-                <div className={styles.guestTypeDetails}>
-                  {stay?.maxAdults && <span className={styles.includedLabel}>Included: {stay.maxAdults}</span>}
-                  {(stay?.maxExtraAdultsAllowed > 0 || parseFloat(stay?.extraAdultPrice) > 0) && (
-                    <span className={styles.extraLabel}>
-                      + {stay?.maxExtraAdultsAllowed || 0} Extra (₹{stay?.extraAdultPrice}/night)
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className={styles.counter}>
-                <button
-                  onClick={() => setGuests(g => ({ ...g, adults: Math.max(1, (g.adults || 0) - 1) }))}
-                  disabled={(guests?.adults || 0) <= 1}
-                >-</button>
-                <span>{guests?.adults || 0}</span>
-                <button
-                  onClick={() => setGuests(g => ({ ...g, adults: Math.min((stay?.maxAdults || 0) + (stay?.maxExtraAdultsAllowed || 0), (g.adults || 0) + 1) }))}
-                  disabled={(guests?.adults || 0) >= ((stay?.maxAdults || 0) + (stay?.maxExtraAdultsAllowed || 0))}
-                >+</button>
-              </div>
-            </div>
-            <div className={styles.guestType}>
-              <div className={styles.guestTypeInfo}>
-                <span className={styles.guestTypeName}>Children</span>
-                <div className={styles.guestTypeDetails}>
-                  {stay?.maxChildren !== undefined && <span className={styles.includedLabel}>Included: {stay.maxChildren}</span>}
-                  {(stay?.maxExtraChildrenAllowed > 0 || parseFloat(stay?.extraChildPrice) > 0) && (
-                    <span className={styles.extraLabel}>
-                      + {stay?.maxExtraChildrenAllowed || 0} Extra (₹{stay?.extraChildPrice}/night)
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className={styles.counter}>
-                <button
-                  onClick={() => setGuests(g => ({ ...g, children: Math.max(0, (g.children || 0) - 1) }))}
-                  disabled={(guests?.children || 0) <= 0}
-                >-</button>
-                <span>{guests?.children || 0}</span>
-                <button
-                  onClick={() => setGuests(g => ({ ...g, children: Math.min((stay?.maxChildren || 0) + (stay?.maxExtraChildrenAllowed || 0), (g.children || 0) + 1) }))}
-                  disabled={(guests?.children || 0) >= ((stay?.maxChildren || 0) + (stay?.maxExtraChildrenAllowed || 0))}
-                >+</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Room type selector - always visible for room-based stays; options from availability API (auto-called when dates set) */}
-      {isRoomBased && (
-        <div className={styles.roomTypeField}>
-          <div
-            className={cn(
-              styles.roomTypeSelector,
-              showRoomTypeDropdown && styles.roomTypeSelectorOpen,
-              (availabilityLoading || !(filteredRoomsByGuests?.length > 0)) && styles.roomTypeSelectorDisabled
             )}
-            onClick={() => {
-              if (availabilityLoading || !(filteredRoomsByGuests?.length > 0)) return;
-              setShowRoomTypeDropdown(!showRoomTypeDropdown);
-            }}
+            {showTotal && (
+              <div className={styles.currentPriceRow}>
+                <span className={styles.price}>{formatPrice(price)}</span>
+                <span className={styles.perNight}>/ night</span>
+                {discountPercentage > 0 && (
+                  <span className={styles.discountBadge}>{discountPercentage}% OFF</span>
+                )}
+              </div>
+            )}
+          </div>
+          {stay?.rating > 0 && (
+            <div className={styles.ratingBadge}>
+              <Icon name="star" size="14" />
+              <span>{stay.rating}</span>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.datesSection}>
+          <div
+            className={styles.dateCard}
             role="button"
-            tabIndex={filteredRoomsByGuests?.length > 0 ? 0 : -1}
-            aria-expanded={showRoomTypeDropdown}
-            aria-haspopup="listbox"
-            aria-disabled={availabilityLoading || !(filteredRoomsByGuests?.length > 0)}
+            tabIndex={0}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => openDatePicker("checkin")}
             onKeyDown={(e) => {
-              if (availabilityLoading || !(filteredRoomsByGuests?.length > 0)) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                setShowRoomTypeDropdown(!showRoomTypeDropdown);
+                openDatePicker("checkin");
               }
             }}
           >
-            <div className={styles.guestLabel}>ROOM TYPE</div>
-            <div className={styles.guestValueRow}>
-              <div className={styles.guestValue}>
-                {availabilityLoading
-                  ? "Checking availability..."
-                  : selectedRoom
-                    ? (selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || `Room ${selectedRoom.roomId || selectedRoom.id}`)
-                    : (filteredRoomsByGuests?.length > 0
-                      ? "Select room"
-                      : (checkInDate && checkOutDate ? "Loading rooms..." : "Select dates first"))}
+            <div className={styles.dateCardTop}>CHECK-IN</div>
+            <div className={styles.dateCardBottom}>
+              <div className={styles.dateValue}>{formatDateLabel(checkInDate)}</div>
+              <div className={styles.dateIcon}>
+                <Icon name="calendar" size="16" />
               </div>
-              <span className={cn(styles.guestChevron, showRoomTypeDropdown && styles.guestChevronOpen)}>
-                <Icon name="arrow-down" size="14" />
-              </span>
             </div>
           </div>
-          {showRoomTypeDropdown && Array.isArray(filteredRoomsByGuests) && filteredRoomsByGuests.length > 0 && (
-            <div className={styles.roomTypeDropdown} role="listbox">
-              {filteredRoomsByGuests.map((room) => {
-                const roomLabel = room.roomName || room.name || room.roomTypeName || `Room ${room.roomId || room.id}`;
-                const maxG = room.maxGuests != null
-                  ? Number(room.maxGuests)
-                  : (Number(room.maxAdults) || 0) + (Number(room.maxChildren) || 0);
-                const roomDisplayPrice = getMealPlanPriceForRoom(room);
-                const isSelected = selectedRoom && (selectedRoom.roomId === room.roomId || selectedRoom.id === room.id);
-                return (
-                  <div
-                    key={room.roomId || room.id}
-                    role="option"
-                    aria-selected={isSelected}
-                    className={cn(styles.roomTypeOption, isSelected && styles.roomTypeOptionSelected)}
-                    onClick={() => {
-                      onSelectRoom(room);
-                      setShowRoomTypeDropdown(false);
-                    }}
-                  >
-                    <span className={styles.roomTypeOptionName}>
-                      {roomLabel}{maxG > 0 ? ` (Max ${maxG})` : ""}
-                    </span>
-                    <span className={styles.roomTypeOptionPrice}>
-                      {roomDisplayPrice > 0 ? `${formatPrice(roomDisplayPrice)}/night` : ""}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Redesigned Manual room count selector */}
-      {isRoomBased && selectedRoom && (
-        <div className={styles.roomSelectorField}>
-          <div className={styles.roomSelectorCard}>
-            <div className={styles.guestLabel}>NUMBER OF ROOMS</div>
-            <div className={styles.guestValueRow}>
-              <div className={styles.guestValue}>
-                {roomsCount} {roomsCount === 1 ? "Room" : "Rooms"}
+          <div
+            className={styles.dateCard}
+            role="button"
+            tabIndex={0}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => openDatePicker("checkout")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openDatePicker("checkout");
+              }
+            }}
+          >
+            <div className={styles.dateCardTop}>CHECK-OUT</div>
+            <div className={styles.dateCardBottom}>
+              <div className={styles.dateValue}>{formatDateLabel(checkOutDate)}</div>
+              <div className={styles.dateIcon}>
+                <Icon name="calendar" size="16" />
               </div>
-              <div className={styles.counterRow}>
+            </div>
+          </div>
+        </div>
+        {showStayDatePicker && (
+          <div
+            className={styles.stayDatePickerWrap}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <InlineDatePicker
+              visible={showStayDatePicker}
+              onClose={() => setShowStayDatePicker(false)}
+              onDateSelect={handleStayDateSelect}
+              selectedDate={activeDateField === "checkout" ? checkOutDate : checkInDate}
+              timeSlots={[]}
+              availabilityData={[]}
+              className={styles.stayDatePicker}
+            />
+          </div>
+        )}
+
+        <div className={styles.guestField}>
+          <div
+            className={cn(styles.guestSelector, showGuestPicker && styles.guestSelectorOpen)}
+            onClick={() => setShowGuestPicker(!showGuestPicker)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={showGuestPicker}
+            aria-haspopup="listbox"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowGuestPicker(!showGuestPicker);
+              }
+            }}
+          >
+            <div className={styles.guestLabel}>GUESTS</div>
+            <div className={styles.guestValueRow}>
+              <div className={styles.guestValue}>{guestText()}</div>
+              <div className={styles.guestIconGroup}>
+                <Icon name="user" size="16" />
+                <span className={cn(styles.guestChevron, showGuestPicker && styles.guestChevronOpen)}>
+                  <Icon name="arrow-down" size="14" />
+                </span>
+              </div>
+            </div>
+          </div>
+          {showGuestPicker && (
+            <div className={styles.guestPicker}>
+              <div className={styles.guestType}>
+                <div className={styles.guestTypeInfo}>
+                  <span className={styles.guestTypeName}>Adults</span>
+                  <div className={styles.guestTypeDetails}>
+                    {stay?.maxAdults && <span className={styles.includedLabel}>Included: {stay.maxAdults}</span>}
+                    {(stay?.maxExtraAdultsAllowed > 0 || parseFloat(stay?.extraAdultPrice) > 0) && (
+                      <span className={styles.extraLabel}>
+                        + {stay?.maxExtraAdultsAllowed || 0} Extra (₹{stay?.extraAdultPrice}/night)
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <div className={styles.counter}>
                   <button
-                    onClick={() => setRoomsCount(Math.max(minRoomsNeeded, roomsCount - 1))}
-                    disabled={roomsCount <= minRoomsNeeded}
-                    aria-label="Decrease room count"
+                    onClick={() => setGuests(g => ({ ...g, adults: Math.max(1, (g.adults || 0) - 1) }))}
+                    disabled={(guests?.adults || 0) <= 1}
                   >-</button>
-                  <span>{roomsCount}</span>
+                  <span>{guests?.adults || 0}</span>
                   <button
-                    onClick={() => setRoomsCount(Math.min(Number(selectedRoom.units || 99), roomsCount + 1))}
-                    disabled={roomsCount >= Number(selectedRoom.units || 99)}
-                    aria-label="Increase room count"
+                    onClick={() => setGuests(g => ({ ...g, adults: Math.min((stay?.maxAdults || 0) + (stay?.maxExtraAdultsAllowed || 0), (g.adults || 0) + 1) }))}
+                    disabled={(guests?.adults || 0) >= ((stay?.maxAdults || 0) + (stay?.maxExtraAdultsAllowed || 0))}
+                  >+</button>
+                </div>
+              </div>
+              <div className={styles.guestType}>
+                <div className={styles.guestTypeInfo}>
+                  <span className={styles.guestTypeName}>Children</span>
+                  <div className={styles.guestTypeDetails}>
+                    {stay?.maxChildren !== undefined && <span className={styles.includedLabel}>Included: {stay.maxChildren}</span>}
+                    {(stay?.maxExtraChildrenAllowed > 0 || parseFloat(stay?.extraChildPrice) > 0) && (
+                      <span className={styles.extraLabel}>
+                        + {stay?.maxExtraChildrenAllowed || 0} Extra (₹{stay?.extraChildPrice}/night)
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.counter}>
+                  <button
+                    onClick={() => setGuests(g => ({ ...g, children: Math.max(0, (g.children || 0) - 1) }))}
+                    disabled={(guests?.children || 0) <= 0}
+                  >-</button>
+                  <span>{guests?.children || 0}</span>
+                  <button
+                    onClick={() => setGuests(g => ({ ...g, children: Math.min((stay?.maxChildren || 0) + (stay?.maxExtraChildrenAllowed || 0), (g.children || 0) + 1) }))}
+                    disabled={(guests?.children || 0) >= ((stay?.maxChildren || 0) + (stay?.maxExtraChildrenAllowed || 0))}
                   >+</button>
                 </div>
               </div>
             </div>
-          </div>
-          <div className={styles.roomCounterNote}>
-             {minRoomsNeeded > 1 && `Min ${minRoomsNeeded} rooms required for your group · `}
-             {selectedRoom.units ? `Only ${selectedRoom.units} rooms available` : "Up to 99 rooms available"}
-          </div>
+          )}
         </div>
-      )}
 
-      {/* Room capacity message – add another room or no room available */}
-      {roomCapacityMessage && (
-        <div className={cn(
-          styles.roomCapacityMsg,
-          roomCapacityMessage.type === "warning" ? styles.roomCapacityWarn : styles.roomCapacityInfo
-        )}>
-          <Icon name={roomCapacityMessage.type === "warning" ? "alert-circle" : "info"} size="14" />
-          <span>{roomCapacityMessage.text}</span>
-        </div>
-      )}
-
-      {/* Total breakdown - shown only when selection is complete */}
-      {showTotal && numberOfNights > 0 && (
-        <div className={styles.totalBreakdown}>
-          <div className={styles.totalRow}>
-            <span>
-              {selectedRoom?.roomName || "Room"} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}
-              {roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""}
-            </span>
-            <span>{formatPrice(discountedBasePrice * numberOfNights * roomsNeeded)}</span>
+        {/* Room type selector - always visible for room-based stays; options from availability API (auto-called when dates set) */}
+        {isRoomBased && (
+          <div className={styles.roomTypeField}>
+            <div
+              className={cn(
+                styles.roomTypeSelector,
+                showRoomTypeDropdown && styles.roomTypeSelectorOpen,
+                (availabilityLoading || !(filteredRoomsByGuests?.length > 0)) && styles.roomTypeSelectorDisabled
+              )}
+              onClick={() => {
+                if (availabilityLoading || !(filteredRoomsByGuests?.length > 0)) return;
+                setShowRoomTypeDropdown(!showRoomTypeDropdown);
+              }}
+              role="button"
+              tabIndex={filteredRoomsByGuests?.length > 0 ? 0 : -1}
+              aria-expanded={showRoomTypeDropdown}
+              aria-haspopup="listbox"
+              aria-disabled={availabilityLoading || !(filteredRoomsByGuests?.length > 0)}
+              onKeyDown={(e) => {
+                if (availabilityLoading || !(filteredRoomsByGuests?.length > 0)) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setShowRoomTypeDropdown(!showRoomTypeDropdown);
+                }
+              }}
+            >
+              <div className={styles.guestLabel}>ROOM TYPE</div>
+              <div className={styles.guestValueRow}>
+                <div className={styles.guestValue}>
+                  {availabilityLoading
+                    ? "Checking availability..."
+                    : selectedRoom
+                      ? (selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || `Room ${selectedRoom.roomId || selectedRoom.id}`)
+                      : (filteredRoomsByGuests?.length > 0
+                        ? "Select room"
+                        : (checkInDate && checkOutDate ? "Loading rooms..." : "Select dates first"))}
+                </div>
+                <span className={cn(styles.guestChevron, showRoomTypeDropdown && styles.guestChevronOpen)}>
+                  <Icon name="arrow-down" size="14" />
+                </span>
+              </div>
+            </div>
+            {showRoomTypeDropdown && Array.isArray(filteredRoomsByGuests) && filteredRoomsByGuests.length > 0 && (
+              <div className={styles.roomTypeDropdown} role="listbox">
+                {filteredRoomsByGuests.map((room) => {
+                  const roomLabel = room.roomName || room.name || room.roomTypeName || `Room ${room.roomId || room.id}`;
+                  const maxG = room.maxGuests != null
+                    ? Number(room.maxGuests)
+                    : (Number(room.maxAdults) || 0) + (Number(room.maxChildren) || 0);
+                  const roomDisplayPrice = getMealPlanPriceForRoom(room);
+                  const isSelected = selectedRoom && (selectedRoom.roomId === room.roomId || selectedRoom.id === room.id);
+                  return (
+                    <div
+                      key={room.roomId || room.id}
+                      role="option"
+                      aria-selected={isSelected}
+                      className={cn(styles.roomTypeOption, isSelected && styles.roomTypeOptionSelected)}
+                      onClick={() => {
+                        onSelectRoom(room);
+                        setShowRoomTypeDropdown(false);
+                      }}
+                    >
+                      <span className={styles.roomTypeOptionName}>
+                        {roomLabel}{maxG > 0 ? ` (Max ${maxG})` : ""}
+                      </span>
+                      <span className={styles.roomTypeOptionPrice}>
+                        {roomDisplayPrice > 0 ? `${formatPrice(roomDisplayPrice)}/night` : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
+        )}
 
-          {extraAdults > 0 && (
+        {/* Redesigned Manual room count selector */}
+        {isRoomBased && selectedRoom && (
+          <div className={styles.roomSelectorField}>
+            <div className={styles.roomSelectorCard}>
+              <div className={styles.guestLabel}>NUMBER OF ROOMS</div>
+              <div className={styles.guestValueRow}>
+                <div className={styles.guestValue}>
+                  {roomsCount} {roomsCount === 1 ? "Room" : "Rooms"}
+                </div>
+                <div className={styles.counterRow}>
+                  <div className={styles.counter}>
+                    <button
+                      onClick={() => setRoomsCount(Math.max(minRoomsNeeded, roomsCount - 1))}
+                      disabled={roomsCount <= minRoomsNeeded}
+                      aria-label="Decrease room count"
+                    >-</button>
+                    <span>{roomsCount}</span>
+                    <button
+                      onClick={() => setRoomsCount(Math.min(Number(selectedRoom.units || 99), roomsCount + 1))}
+                      disabled={roomsCount >= Number(selectedRoom.units || 99)}
+                      aria-label="Increase room count"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.roomCounterNote}>
+              {minRoomsNeeded > 1 && `Min ${minRoomsNeeded} rooms required for your group · `}
+              {selectedRoom.units ? `Only ${selectedRoom.units} rooms available` : "Up to 99 rooms available"}
+            </div>
+          </div>
+        )}
+
+        {/* Room capacity message – add another room or no room available */}
+        {roomCapacityMessage && (
+          <div className={cn(
+            styles.roomCapacityMsg,
+            roomCapacityMessage.type === "warning" ? styles.roomCapacityWarn : styles.roomCapacityInfo
+          )}>
+            <Icon name={roomCapacityMessage.type === "warning" ? "alert-circle" : "info"} size="14" />
+            <span>{roomCapacityMessage.text}</span>
+          </div>
+        )}
+
+        {/* Total breakdown - shown only when selection is complete */}
+        {showTotal && numberOfNights > 0 && (
+          <div className={styles.totalBreakdown}>
             <div className={styles.totalRow}>
               <span>
-                Extra Adult{extraAdults > 1 ? "s" : ""} ({formatPrice(extraAdultPrice)}/night × {extraAdults} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""})
+                {selectedRoom?.roomName || "Room"} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}
+                {roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""}
               </span>
-              <span>{formatPrice(extraAdults * extraAdultPrice * numberOfNights * roomsNeeded)}</span>
+              <span>{formatPrice(discountedBasePrice * numberOfNights * roomsNeeded)}</span>
             </div>
-          )}
 
-          {extraChildren > 0 && (
-            <div className={styles.totalRow}>
-              <span>
-                Extra Child{extraChildren > 1 ? "ren" : ""} ({formatPrice(extraChildPrice)}/night × {extraChildren} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""})
-              </span>
-              <span>{formatPrice(extraChildren * extraChildPrice * numberOfNights * roomsNeeded)}</span>
+            {extraAdults > 0 && (
+              <div className={styles.totalRow}>
+                <span>
+                  Extra Adult{extraAdults > 1 ? "s" : ""} ({formatPrice(extraAdultPrice)}/night × {extraAdults} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""})
+                </span>
+                <span>{formatPrice(extraAdults * extraAdultPrice * numberOfNights * roomsNeeded)}</span>
+              </div>
+            )}
+
+            {extraChildren > 0 && (
+              <div className={styles.totalRow}>
+                <span>
+                  Extra Child{extraChildren > 1 ? "ren" : ""} ({formatPrice(extraChildPrice)}/night × {extraChildren} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}{roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""})
+                </span>
+                <span>{formatPrice(extraChildren * extraChildPrice * numberOfNights * roomsNeeded)}</span>
+              </div>
+            )}
+
+            <div className={cn(styles.totalRow, styles.totalRowFinal)}>
+              <span>Total</span>
+              <span>{formatPrice(totalPerStay)}</span>
             </div>
-          )}
-
-          <div className={cn(styles.totalRow, styles.totalRowFinal)}>
-            <span>Total</span>
-            <span>{formatPrice(totalPerStay)}</span>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* CTA button: 'Check Availability' only when dates set but rooms not yet fetched.
+        {/* CTA button: 'Check Availability' only when dates set but rooms not yet fetched.
             Once rooms are available (availableRooms.length > 0), always 'Book Now'.
             Guest count changes do NOT affect this button. */}
-      <button
-        className={styles.checkBtn}
-        onClick={() => {
-          if (isRoomBased && !availabilityChecked && availableRooms?.length === 0) {
-            onCheckAvailability();
-          } else {
-            onBooking({ pricePerNight: price, totalNights: numberOfNights });
+        <button
+          className={styles.checkBtn}
+          onClick={() => {
+            if (isRoomBased && !availabilityChecked && availableRooms?.length === 0) {
+              onCheckAvailability();
+            } else {
+              onBooking({ pricePerNight: price, totalNights: numberOfNights });
+            }
+          }}
+          disabled={
+            !checkInDate || !checkOutDate ||
+            availabilityLoading ||
+            (isRoomBased && availableRooms?.length > 0 && !selectedRoom)
           }
-        }}
-        disabled={
-          !checkInDate || !checkOutDate ||
-          availabilityLoading ||
-          (isRoomBased && availableRooms?.length > 0 && !selectedRoom)
-        }
-      >
-        {availabilityLoading
-          ? "Checking..."
-          : (isRoomBased && !availabilityChecked && availableRooms?.length === 0
-            ? "Check Availability"
-            : "Book Now")}
-      </button>
-
-      <p className={styles.noCharge}>You won&apos;t be charged yet</p>
-    </div>
-
-    <div className={styles.contactCard}>
-      <h4>Contact Property</h4>
-      <div className={styles.hostInfo}>
-        <div className={styles.hostAvatar}>
-          {stay?.host?.profilePhotoUrl ? (
-            <img src={formatImageUrl(stay.host.profilePhotoUrl)} alt="Host" />
-          ) : (
-            <span className={styles.avatarInitial}>
-              {(stay?.host?.name || stay?.host?.firstName || "Sarah")[0].toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className={styles.hostDetails}>
-          <span className={styles.hostLabel}>Managed by</span>
-          <span className={styles.hostName}>
-            {stay?.host?.displayName || stay?.host?.name || stay?.host?.firstName || "Sarah Jenkins"}
-          </span>
-        </div>
-      </div>
-
-      <div className={styles.contactDivider}></div>
-
-      <div className={styles.contactActions}>
-        <a href={`tel:${stay?.host?.phone || "+9601234567"}`} className={styles.contactBox}>
-          <Icon name="phone" size="16" />
-          <span>{stay?.host?.phone || "+960 123 4567"}</span>
-        </a>
-        <a href={`mailto:${stay?.host?.email || "reservations@azurehorizon.com"}`} className={styles.contactBox}>
-          <Icon name="email" size="16" />
-          <span>{stay?.host?.email || "reservations@azurehorizon.com"}</span>
-        </a>
-        <a
-          href={stay?.host?.website || stay?.propertyWebsite || "https://azurehorizon.com"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.contactBox}
         >
-          <Icon name="globe" size="16" />
-          <span>{stay?.host?.website || stay?.propertyWebsite ? "Visit Website" : "Visit Website"}</span>
-        </a>
+          {availabilityLoading
+            ? "Checking..."
+            : (isRoomBased && !availabilityChecked && availableRooms?.length === 0
+              ? "Check Availability"
+              : "Book Now")}
+        </button>
+
+        <p className={styles.noCharge}>You won&apos;t be charged yet</p>
+      </div>
+
+      <div className={styles.contactCard}>
+        <h4>Contact Property</h4>
+        <div className={styles.hostInfo}>
+          <div className={styles.hostAvatar}>
+            {stay?.host?.profilePhotoUrl ? (
+              <img src={formatImageUrl(stay.host.profilePhotoUrl)} alt="Host" />
+            ) : (
+              <span className={styles.avatarInitial}>
+                {(stay?.host?.name || stay?.host?.firstName || "Sarah")[0].toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className={styles.hostDetails}>
+            <span className={styles.hostLabel}>Managed by</span>
+            <span className={styles.hostName}>
+              {stay?.host?.displayName || stay?.host?.name || stay?.host?.firstName || "Sarah Jenkins"}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.contactDivider}></div>
+
+        <div className={styles.contactActions}>
+          <a href={`tel:${stay?.host?.phone || "+9601234567"}`} className={styles.contactBox}>
+            <Icon name="phone" size="16" />
+            <span>{stay?.host?.phone || "+960 123 4567"}</span>
+          </a>
+          <a href={`mailto:${stay?.host?.email || "reservations@azurehorizon.com"}`} className={styles.contactBox}>
+            <Icon name="email" size="16" />
+            <span>{stay?.host?.email || "reservations@azurehorizon.com"}</span>
+          </a>
+          <a
+            href={stay?.host?.website || stay?.propertyWebsite || "https://azurehorizon.com"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.contactBox}
+          >
+            <Icon name="globe" size="16" />
+            <span>{stay?.host?.website || stay?.propertyWebsite ? "Visit Website" : "Visit Website"}</span>
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 // Property Details Table
@@ -851,8 +855,8 @@ const RoomCard = ({
 
   const activeSeasonData = activeSeason ? (
     room?.seasonalPricing?.[activeSeason.tempId] ||
-    room?.[activeSeason.tempId] || 
-    stay?.propertySeasonalPricing?.[activeSeason.tempId] || 
+    room?.[activeSeason.tempId] ||
+    stay?.propertySeasonalPricing?.[activeSeason.tempId] ||
     stay?.[activeSeason.tempId]
   ) : null;
 
@@ -861,7 +865,7 @@ const RoomCard = ({
     activeSeasonData?.b2cPrice ||
     room.hikePrice || room.b2cPrice || room.price || 0
   );
-  
+
   const discountedBasePrice = discountPercentage > 0
     ? basePrice * (1 - discountPercentage / 100)
     : basePrice;
@@ -1275,7 +1279,7 @@ const StayProduct = () => {
 
     const minNeeded = Math.ceil(totalGuests / roomCapacity);
     const availableUnits = Number(selectedRoom.units || selectedRoom.availableRooms || selectedRoom.availableUnits || 99);
-    
+
     // Final rooms needed is the max of automatically required and user selection
     const finalRoomsNeeded = Math.max(minNeeded, roomsCount);
 
@@ -1471,9 +1475,9 @@ const StayProduct = () => {
         moment(checkInDate).isSameOrBefore(p.endDate, 'day')
       );
       const activeSeasonData = activeSeasonObj ? (
-        selectedRoom?.seasonalPricing?.[activeSeasonObj.tempId] || 
-        selectedRoom?.[activeSeasonObj.tempId] || 
-        stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || 
+        selectedRoom?.seasonalPricing?.[activeSeasonObj.tempId] ||
+        selectedRoom?.[activeSeasonObj.tempId] ||
+        stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] ||
         stay?.[activeSeasonObj.tempId]
       ) : null;
 
@@ -1483,8 +1487,8 @@ const StayProduct = () => {
 
       if (selectedRoom.mealPlanPricing && selectedRoom.mealPlanPricing[mealPlanCode]) {
         const mp = selectedRoom.mealPlanPricing[mealPlanCode];
-        basePrice = activeSeasonObj && parseFloat(mp.hikePrice || 0) > 0 
-          ? parseFloat(mp.hikePrice) 
+        basePrice = activeSeasonObj && parseFloat(mp.hikePrice || 0) > 0
+          ? parseFloat(mp.hikePrice)
           : parseFloat(mp.b2cPrice || mp.b2bPrice || mp.price || 0);
         if (mp.extraAdultPrice) extraAdultPrice = parseFloat(mp.extraAdultPrice);
         if (mp.extraChildPrice) extraChildPrice = parseFloat(mp.extraChildPrice);
