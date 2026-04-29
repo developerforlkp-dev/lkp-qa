@@ -605,13 +605,14 @@ export const getListingSlots = async (listingId, startDate, endDate) => {
     if (!listingId) {
       throw new Error("listingId is required");
     }
-    if (!startDate || !endDate) {
-      throw new Error("startDate and endDate are required");
+    if (!startDate || endDate === undefined) {
+      throw new Error("startDate is required and endDate must be provided");
     }
 
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+    const serializedEndDate = endDate === null ? "null" : endDate;
+    if (!dateRegex.test(startDate) || (endDate !== null && !dateRegex.test(endDate))) {
       throw new Error(`Invalid date format. Expected YYYY-MM-DD, got startDate=${startDate}, endDate=${endDate}`);
     }
 
@@ -628,13 +629,13 @@ export const getListingSlots = async (listingId, startDate, endDate) => {
     const response = await ListingsAPI.get(`/public/listings/${listingIdStr}/slots`, {
       params: {
         startDate: startDate, // Format: YYYY-MM-DD
-        endDate: endDate,     // Format: YYYY-MM-DD
+        endDate: serializedEndDate, // Format: YYYY-MM-DD or literal null
       },
     });
 
     console.log("✅ Slots API Response:", {
       url: `/public/listings/${listingIdStr}/slots`,
-      params: { startDate, endDate },
+      params: { startDate, endDate: serializedEndDate },
       data: response.data
     });
 

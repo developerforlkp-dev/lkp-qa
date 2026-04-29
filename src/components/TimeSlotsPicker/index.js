@@ -161,7 +161,7 @@ const TimeSlotsPicker = ({
   const handleTimeClick = (slot) => {
     setTime(slot.id || slot.slotName);
     // Pass the slotName or the formatted display string
-    onTimeSelect?.(slot.slotName || slot.display);
+    onTimeSelect?.(slot.slotName || slot.display, slot.slot || slot);
     // Close the picker immediately after selection
     onClose?.();
   };
