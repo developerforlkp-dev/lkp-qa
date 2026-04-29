@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Baby, Languages, ShieldCheck } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Baby, Languages, ShieldCheck, ChevronLeft } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
@@ -14,6 +14,7 @@ import {
 } from "../../utils/api";
 import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
 import Page from "../../components/Page";
+import ProductNavbar from "../../components/ProductNavbar";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -166,6 +167,7 @@ const ExperienceProduct = () => {
         <section ref={heroRef} style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
           <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
+            <ProductNavbar top={100} left={60} />
             <motion.div style={{ opacity: fade, y: textY }}>
               <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
               <Rev>
@@ -275,8 +277,8 @@ const ExperienceProduct = () => {
                 <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Languages size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 4 }}>
-                    {Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 
-                      ? listing.languagesOffered.join(", ") 
+                    {Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
+                      ? listing.languagesOffered.join(", ")
                       : (listing?.languages || "English")}
                   </p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Languages</p>

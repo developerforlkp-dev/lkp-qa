@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import ProductNavbar from "../../../components/ProductNavbar";
 import cn from "classnames";
 import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
@@ -450,6 +452,7 @@ const Main = ({
   completedCount = 0,
   setCompletedOrders = null
 }) => {
+  const history = useHistory();
   const [activeTab, setActiveTab] = useState(tabs[0].id);
   const [displayedTab, setDisplayedTab] = useState(tabs[0].id);
   const [transitionPhase, setTransitionPhase] = useState("idle");
@@ -878,13 +881,14 @@ const Main = ({
   }
 
   return (
-    <div className={cn("section", styles.section)}>
+    <div className={cn("section-pd", styles.main)}>
+      <ProductNavbar top={100} left={60} />
       <div className={cn("container", styles.container)}>
-        <header className={styles.head}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 40 }}>
           <div className={styles.heading}>
             <h1 className={cn("h2", styles.title)}>My bookings</h1>
           </div>
-        </header>
+        </div>
         <div className={styles.tabsWrapper}>
           <div className={styles.tabs}>
             {tabs.map((tab) => (

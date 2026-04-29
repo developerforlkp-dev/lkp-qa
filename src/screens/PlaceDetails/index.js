@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
-import { 
-  MapPin, Clock, Ticket, Star, Calendar, ArrowDown, ExternalLink, Map, Navigation, 
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight 
+import {
+  MapPin, Clock, Ticket, Star, Calendar, ArrowDown, ExternalLink, Map, Navigation,
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
+import ProductNavbar from "../../components/ProductNavbar";
 import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
 import { getPlaceDetails, getHost } from "../../utils/api";
@@ -198,7 +199,7 @@ function PlaceHero({ place, galleryItems }) {
   const { tokens: { A, FG, M, W, B } } = useTheme();
   const r = useRef(null);
   const { scrollYProgress } = useScroll({ target: r, offset: ["start start", "end start"] });
-  
+
   const baseX = useMotionValue(0);
   const [drag, setDrag] = useState(false);
 
@@ -212,7 +213,7 @@ function PlaceHero({ place, galleryItems }) {
   // Split gallery items into two rows
   const row1 = galleryItems.slice(0, Math.ceil(galleryItems.length / 2));
   const row2 = galleryItems.slice(Math.ceil(galleryItems.length / 2));
-  
+
   const itemWidth1 = 440, itemWidth2 = 520, gap = 40;
   // Ensure we have at least one item width for range
   const range1 = Math.max((row1.length || 1) * (itemWidth1 + gap), 1);
@@ -223,7 +224,7 @@ function PlaceHero({ place, galleryItems }) {
     const modX = ((v % range1) - range1) % range1;
     return `${modX}px`;
   });
-  
+
   const x2 = useTransform(baseX, (v) => {
     // Reverse or different speed for row 2
     const modX = ((-v * 0.8 % range2) - range2) % range2;
@@ -240,19 +241,19 @@ function PlaceHero({ place, galleryItems }) {
   return (
     <section ref={r} style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.03, overflow: "hidden" }}>
-         <motion.h1 
-           className="font-display"
-           style={{ 
-             scale: useTransform(scrollYProgress, [0, 0.5], [1, 1.5]), 
-             rotate: useTransform(scrollYProgress, [0, 0.5], [0, 5]),
-             fontSize: "45vw", 
-             fontWeight: 900, 
-             color: FG,
-             whiteSpace: "nowrap"
-           }}
-         >
-           {placeName.split(' ')[0].toUpperCase()}
-         </motion.h1>
+        <motion.h1
+          className="font-display"
+          style={{
+            scale: useTransform(scrollYProgress, [0, 0.5], [1, 1.5]),
+            rotate: useTransform(scrollYProgress, [0, 0.5], [0, 5]),
+            fontSize: "45vw",
+            fontWeight: 900,
+            color: FG,
+            whiteSpace: "nowrap"
+          }}
+        >
+          {placeName.split(' ')[0].toUpperCase()}
+        </motion.h1>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap, position: "relative", zIndex: 10 }}>
@@ -343,36 +344,36 @@ function DestAbout({ place, hostData, hostAvatar }) {
         <Soul y={100} s={0.05}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 100 }} className="about-grid">
             <Rev>
-               <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>About the Destination</p>
-               <h2 className="font-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 32 }}>
-                 {place?.placeName || "Experience the local heritage."}
-               </h2>
-               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                 {[toDisplayString(place?.category), place?.city, "Historical", "Vibrant"].filter(Boolean).map(tag => (
-                   <div key={tag} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: "#f8f8f8", borderRadius: 12, border: `1px solid ${B}` }}>
-                     <User size={12} color={A} />
-                     <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>{tag}</span>
-                   </div>
-                 ))}
-               </div>
+              <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>About the Destination</p>
+              <h2 className="font-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 32 }}>
+                {place?.placeName || "Experience the local heritage."}
+              </h2>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                {[toDisplayString(place?.category), place?.city, "Historical", "Vibrant"].filter(Boolean).map(tag => (
+                  <div key={tag} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: "#f8f8f8", borderRadius: 12, border: `1px solid ${B}` }}>
+                    <User size={12} color={A} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>{tag}</span>
+                  </div>
+                ))}
+              </div>
             </Rev>
             <Rev delay={0.2}>
-               <p style={{ fontSize: 17, lineHeight: 1.85, color: M, marginBottom: 32 }}>
-                 {place?.description || "Discover the hidden gems and vibrant culture of this unique location. From historical landmarks to modern attractions, there is something for everyone."}
-               </p>
-               <div style={{ marginTop: 48, borderTop: `1px solid ${B}`, paddingTop: 40, display: "flex", gap: 64 }}>
-                 <div>
-                   <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Location</p>
-                   <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{place?.city || "Discovery Town"}</p>
-                 </div>
-                 <div>
-                   <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Curator</p>
-                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                     <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
-                     <p style={{ fontSize: 15, fontWeight: 700, color: FG }}>{hostData?.displayName || "Lead Curator"}</p>
-                   </div>
-                 </div>
-               </div>
+              <p style={{ fontSize: 17, lineHeight: 1.85, color: M, marginBottom: 32 }}>
+                {place?.description || "Discover the hidden gems and vibrant culture of this unique location. From historical landmarks to modern attractions, there is something for everyone."}
+              </p>
+              <div style={{ marginTop: 48, borderTop: `1px solid ${B}`, paddingTop: 40, display: "flex", gap: 64 }}>
+                <div>
+                  <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Location</p>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{place?.city || "Discovery Town"}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Curator</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
+                    <p style={{ fontSize: 15, fontWeight: 700, color: FG }}>{hostData?.displayName || "Lead Curator"}</p>
+                  </div>
+                </div>
+              </div>
             </Rev>
           </div>
         </Soul>
@@ -387,59 +388,59 @@ function Logistics({ place, hostData }) {
     <section style={{ background: S, padding: "140px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 100 }} className="log-grid">
-           <Rev>
-             <SHdr idx="03" label="Location & Access" />
-             <div style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: 56 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 40 }}>
-                  <div>
-                    <h4 style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 12 }}>Address</h4>
-                    <p style={{ fontSize: 16, color: FG, fontWeight: 600, maxWidth: 350, lineHeight: 1.6 }}>{place?.address || "Explore the local maps for the exact navigation details."}</p>
-                  </div>
-                  <motion.a whileHover={{ scale: 1.1 }} href={`https://www.google.com/maps/search/?api=1&query=${place?.placeName}`} target="_blank" style={{ background: A, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                    <Navigation size={22} color={W} />
-                  </motion.a>
+          <Rev>
+            <SHdr idx="03" label="Location & Access" />
+            <div style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: 56 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 40 }}>
+                <div>
+                  <h4 style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 12 }}>Address</h4>
+                  <p style={{ fontSize: 16, color: FG, fontWeight: 600, maxWidth: 350, lineHeight: 1.6 }}>{place?.address || "Explore the local maps for the exact navigation details."}</p>
                 </div>
-                <div style={{ borderTop: `1px solid ${B}`, paddingTop: 40 }}>
-                  <h4 style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 24 }}>Getting There</h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                    {[
-                      { l: "Nearest Station", d: "3 km" },
-                      { l: "City Center", d: place?.distance || "5 km" },
-                      { l: "International Airport", d: "25 km" },
-                    ].map(loc => (
-                      <div key={loc.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 14, color: M }}>{loc.l}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: FG }}>{loc.d}</span>
-                      </div>
-                    ))}
-                  </div>
+                <motion.a whileHover={{ scale: 1.1 }} href={`https://www.google.com/maps/search/?api=1&query=${place?.placeName}`} target="_blank" style={{ background: A, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+                  <Navigation size={22} color={W} />
+                </motion.a>
+              </div>
+              <div style={{ borderTop: `1px solid ${B}`, paddingTop: 40 }}>
+                <h4 style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 24 }}>Getting There</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {[
+                    { l: "Nearest Station", d: "3 km" },
+                    { l: "City Center", d: place?.distance || "5 km" },
+                    { l: "International Airport", d: "25 km" },
+                  ].map(loc => (
+                    <div key={loc.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 14, color: M }}>{loc.l}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: FG }}>{loc.d}</span>
+                    </div>
+                  ))}
                 </div>
-             </div>
-           </Rev>
+              </div>
+            </div>
+          </Rev>
 
-           <Rev delay={0.2}>
-             <SHdr idx="04" label="Contact & Guide" />
-             <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                <div style={{ padding: 48, border: `1px solid ${B}`, borderRadius: 32, background: W }}>
-                   <p style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 24 }}>Official Inquiries</p>
-                   <h3 className="font-display" style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 32 }}>{hostData?.displayName || "Tourism Authority"}</h3>
-                   <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                      <a href={`tel:${hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
-                        <Phone size={18} color={A} /> {hostData?.phone || "Contact via App"}
-                      </a>
-                      <a href="#" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
-                        <Globe size={18} color={A} /> {place?.website || "Official Portal"}
-                      </a>
-                   </div>
+          <Rev delay={0.2}>
+            <SHdr idx="04" label="Contact & Guide" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+              <div style={{ padding: 48, border: `1px solid ${B}`, borderRadius: 32, background: W }}>
+                <p style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 24 }}>Official Inquiries</p>
+                <h3 className="font-display" style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 32 }}>{hostData?.displayName || "Tourism Authority"}</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <a href={`tel:${hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
+                    <Phone size={18} color={A} /> {hostData?.phone || "Contact via App"}
+                  </a>
+                  <a href="#" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
+                    <Globe size={18} color={A} /> {place?.website || "Official Portal"}
+                  </a>
                 </div>
+              </div>
 
-                <div style={{ padding: 48, border: `1px solid ${B}`, borderRadius: 32, background: A, color: W }}>
-                   <h4 style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 16 }}>Prime Visit</h4>
-                   <p style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Peak Season</p>
-                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.5 }}>October to March is ideal for exploring the open-air heritage and coastal views.</p>
-                </div>
-             </div>
-           </Rev>
+              <div style={{ padding: 48, border: `1px solid ${B}`, borderRadius: 32, background: A, color: W }}>
+                <h4 style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)", marginBottom: 16 }}>Prime Visit</h4>
+                <p style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Peak Season</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.5 }}>October to March is ideal for exploring the open-air heritage and coastal views.</p>
+              </div>
+            </div>
+          </Rev>
         </div>
       </div>
     </section>
@@ -463,8 +464,8 @@ function Itinerary({ place }) {
               <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.4 }} style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: "56px 48px", height: "100%", position: "relative", overflow: "hidden" }}>
                 <span className="font-display" style={{ position: "absolute", top: -10, right: 10, fontSize: "clamp(5rem, 8vw, 10rem)", fontWeight: 800, color: A, opacity: 0.04, pointerEvents: "none" }}>{i + 1}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                   <div style={{ width: 8, height: 8, background: A }} />
-                   <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
+                  <div style={{ width: 8, height: 8, background: A }} />
+                  <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
                 </div>
                 <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 20 }}>{s.title}</h3>
                 <p style={{ fontSize: 14, color: M, lineHeight: 1.85 }}>{s.desc}</p>
@@ -485,45 +486,45 @@ function GoodToKnow({ place }) {
         <Rev>
           <SHdr idx="02" label="Good To Know" />
           <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
-             <div>
-               <h4 style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 700, color: FG, marginBottom: 20 }}>
-                 <Briefcase size={16} color={A} /> What to Carry
-               </h4>
-               <ul style={{ listStyle: "none", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                 {["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"].map(item => (
-                   <li key={item} style={{ fontSize: 13, color: M, display: "flex", alignItems: "center", gap: 8 }}>
-                     <div style={{ width: 4, height: 4, borderRadius: "50%", background: A }} /> {item}
-                   </li>
-                 ))}
-               </ul>
-             </div>
-             <div style={{ background: "#fff5f5", border: "1px solid #fee2e2", padding: 32, borderRadius: 20 }}>
-               <h4 style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 700, color: "#991b1b", marginBottom: 16 }}>
-                 <XCircle size={16} color="#ef4444" /> Things to Avoid
-               </h4>
-               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
-                 {["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"].map(item => (
-                   <li key={item} style={{ fontSize: 12, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
-                     <XCircle size={10} /> {item}
-                   </li>
-                 ))}
-               </ul>
-             </div>
+            <div>
+              <h4 style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 700, color: FG, marginBottom: 20 }}>
+                <Briefcase size={16} color={A} /> What to Carry
+              </h4>
+              <ul style={{ listStyle: "none", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"].map(item => (
+                  <li key={item} style={{ fontSize: 13, color: M, display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: A }} /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={{ background: "#fff5f5", border: "1px solid #fee2e2", padding: 32, borderRadius: 20 }}>
+              <h4 style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 700, color: "#991b1b", marginBottom: 16 }}>
+                <XCircle size={16} color="#ef4444" /> Things to Avoid
+              </h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+                {["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"].map(item => (
+                  <li key={item} style={{ fontSize: 12, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
+                    <XCircle size={10} /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </Rev>
 
         <Rev delay={0.2}>
           <div style={{ background: "#f8f8f8", border: `1px solid ${B}`, borderRadius: 32, padding: 48 }}>
-             <h3 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: FG, marginBottom: 12 }}>Community Feedback</h3>
-             <p style={{ fontSize: 12, color: M, marginBottom: 24 }}>Share your recent experience or suggest updates for this location.</p>
-             <textarea 
-               placeholder="Share your thoughts..."
-               style={{ width: "100%", height: 120, background: W, border: `1px solid ${B}`, borderRadius: 12, padding: 16, fontSize: 13, marginBottom: 20, outline: "none" }}
-             />
-             <motion.button whileHover={{ scale: 1.02 }}
-               style={{ width: "100%", padding: 16, background: A, color: W, border: "none", borderRadius: 10, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-               Submit Updates
-             </motion.button>
+            <h3 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: FG, marginBottom: 12 }}>Community Feedback</h3>
+            <p style={{ fontSize: 12, color: M, marginBottom: 24 }}>Share your recent experience or suggest updates for this location.</p>
+            <textarea
+              placeholder="Share your thoughts..."
+              style={{ width: "100%", height: 120, background: W, border: `1px solid ${B}`, borderRadius: 12, padding: 16, fontSize: 13, marginBottom: 20, outline: "none" }}
+            />
+            <motion.button whileHover={{ scale: 1.02 }}
+              style={{ width: "100%", padding: 16, background: A, color: W, border: "none", borderRadius: 10, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Submit Updates
+            </motion.button>
           </div>
         </Rev>
       </div>
@@ -533,113 +534,115 @@ function GoodToKnow({ place }) {
 
 /* ─── MAIN COMPONENT ─────────── */
 const PlaceDetails = () => {
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const id = params.get("id");
+  const location = useLocation();
+  const history = useHistory();
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
 
-    const [place, setPlace] = useState(null);
-    const [hostData, setHostData] = useState(null);
-    const [galleryItems, setGalleryItems] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const [place, setPlace] = useState(null);
+  const [hostData, setHostData] = useState(null);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const formatImageUrl = (url) => {
-        if (!url) return null;
-        if (url.startsWith("http://") || url.startsWith("https://")) return url;
-        if (url.startsWith("leads/")) {
-            return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
-        }
-        if (url.startsWith("/")) return url;
-        return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
-    };
-
-    useEffect(() => {
-        let mounted = true;
-        const load = async () => {
-            try {
-                if (!id) return;
-                setLoading(true);
-                const data = await getPlaceDetails(id);
-                if (!mounted) return;
-
-                if (data) {
-                    const normalizedData = {
-                        ...data,
-                        description: data.placeDescription || data.description,
-                    };
-                    setPlace(normalizedData);
-
-                    const galleryImages = [];
-                    if (data.coverImageUrl) galleryImages.push(formatImageUrl(data.coverImageUrl));
-                    if (Array.isArray(data.media)) {
-                        data.media.forEach(m => {
-                            if (m.url && m.url !== data.coverImageUrl) galleryImages.push(formatImageUrl(m.url));
-                        });
-                    } else if (Array.isArray(data.images)) {
-                        data.images.forEach(img => {
-                            const url = typeof img === 'string' ? img : (img.url || img.imageUrl);
-                            if (url && url !== data.coverImageUrl) galleryImages.push(formatImageUrl(url));
-                        });
-                    }
-                    setGalleryItems(galleryImages.length ? galleryImages : ["https://picsum.photos/seed/place/800/600"]);
-
-                    const hostId = data.hostId || data.host?.hostId || data.leadUserId;
-                    if (hostId) {
-                        getHost(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
-                    }
-                }
-                setLoading(false);
-            } catch (e) {
-                console.error("Failed to load place details", e);
-                setLoading(false);
-            }
-        };
-        load();
-        return () => { mounted = false; };
-    }, [id]);
-
-    const hostAvatar = useMemo(() => {
-        const avatarUrl = hostData?.profilePhotoUrl || place?.host?.profilePhotoUrl;
-        return avatarUrl ? formatImageUrl(avatarUrl) : null;
-    }, [hostData, place]);
-
-    if (loading && !place) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-                <Loader />
-            </div>
-        );
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (url.startsWith("leads/")) {
+      return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
     }
+    if (url.startsWith("/")) return url;
+    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
+  };
 
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        if (!id) return;
+        setLoading(true);
+        const data = await getPlaceDetails(id);
+        if (!mounted) return;
+
+        if (data) {
+          const normalizedData = {
+            ...data,
+            description: data.placeDescription || data.description,
+          };
+          setPlace(normalizedData);
+
+          const galleryImages = [];
+          if (data.coverImageUrl) galleryImages.push(formatImageUrl(data.coverImageUrl));
+          if (Array.isArray(data.media)) {
+            data.media.forEach(m => {
+              if (m.url && m.url !== data.coverImageUrl) galleryImages.push(formatImageUrl(m.url));
+            });
+          } else if (Array.isArray(data.images)) {
+            data.images.forEach(img => {
+              const url = typeof img === 'string' ? img : (img.url || img.imageUrl);
+              if (url && url !== data.coverImageUrl) galleryImages.push(formatImageUrl(url));
+            });
+          }
+          setGalleryItems(galleryImages.length ? galleryImages : ["https://picsum.photos/seed/place/800/600"]);
+
+          const hostId = data.hostId || data.host?.hostId || data.leadUserId;
+          if (hostId) {
+            getHost(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
+          }
+        }
+        setLoading(false);
+      } catch (e) {
+        console.error("Failed to load place details", e);
+        setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [id]);
+
+  const hostAvatar = useMemo(() => {
+    const avatarUrl = hostData?.profilePhotoUrl || place?.host?.profilePhotoUrl;
+    return avatarUrl ? formatImageUrl(avatarUrl) : null;
+  }, [hostData, place]);
+
+  if (loading && !place) {
     return (
-        <ScopedThemeProvider>
-            <ScopedStyles />
-            <ProgressBar />
-            <Cursor />
-            
-            <PlaceHero place={place} galleryItems={galleryItems} />
-            
-            <Mq items={["Discovery", "Heritage", "Landscape", "Perspective"]} size="sm" bg={THEMES.light.S} accent />
-            
-            <QuickFacts place={place} />
-            
-            <Mq items={["Coastal Gem", "Urban Heart", "Historical Echo"]} bg={THEMES.light.S} />
-            
-            <DestAbout place={place} hostData={hostData} hostAvatar={hostAvatar} />
-            
-            <Mq items={["Journey Blueprint", "Daily Rhythm", "The Itinerary"]} size="sm" bg={THEMES.light.S} accent />
-            
-            <Itinerary place={place} />
-
-            <Mq items={["Community Pulse", "Visitor Wisdom", "Safety Net"]} bg={THEMES.light.S} />
-
-            <GoodToKnow place={place} />
-
-            <Mq items={["Location Access", "Arrival Logic", "Journey Blueprint"]} size="sm" bg={THEMES.light.S} accent />
-            
-            <Logistics place={place} hostData={hostData} />
-            
-        </ScopedThemeProvider>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <Loader />
+      </div>
     );
+  }
+
+  return (
+    <ScopedThemeProvider>
+      <ScopedStyles />
+      <ProgressBar />
+      <Cursor />
+      <ProductNavbar top={100} left={60} />
+
+      <PlaceHero place={place} galleryItems={galleryItems} />
+
+      <Mq items={["Discovery", "Heritage", "Landscape", "Perspective"]} size="sm" bg={THEMES.light.S} accent />
+
+      <QuickFacts place={place} />
+
+      <Mq items={["Coastal Gem", "Urban Heart", "Historical Echo"]} bg={THEMES.light.S} />
+
+      <DestAbout place={place} hostData={hostData} hostAvatar={hostAvatar} />
+
+      <Mq items={["Journey Blueprint", "Daily Rhythm", "The Itinerary"]} size="sm" bg={THEMES.light.S} accent />
+
+      <Itinerary place={place} />
+
+      <Mq items={["Community Pulse", "Visitor Wisdom", "Safety Net"]} bg={THEMES.light.S} />
+
+      <GoodToKnow place={place} />
+
+      <Mq items={["Location Access", "Arrival Logic", "Journey Blueprint"]} size="sm" bg={THEMES.light.S} accent />
+
+      <Logistics place={place} hostData={hostData} />
+
+    </ScopedThemeProvider>
+  );
 };
 
 export default PlaceDetails;
