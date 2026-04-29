@@ -21,6 +21,7 @@ const DateSingle = ({
   withPortal,
   openDirection,
   isDayHighlighted,
+  isOutsideRange,
 }) => {
   const [internalDate, setInternalDate] = useState(null);
   const [focused, setFocused] = useState(false);
@@ -53,14 +54,14 @@ const DateSingle = ({
           focused={focused}
           onFocusChange={({ focused }) => setFocused(focused)}
           id={id || "date-single"}
-          displayFormat={displayFormat}
+          displayFormat={displayFormat || "DD/MM/YYYY"}
           readOnly
           noBorder
           numberOfMonths={1}
           withPortal={withPortal}
           openDirection={openDirection}
           isDayHighlighted={isDayHighlighted}
-          isOutsideRange={(day) => day.isBefore(moment(), "day")}
+          isOutsideRange={isOutsideRange || ((day) => day.isBefore(moment(), "day"))}
         />
       </div>
     );
@@ -92,14 +93,14 @@ const DateSingle = ({
           focused={focused}
           onFocusChange={({ focused }) => setFocused(focused)}
           id={id || "date-single"}
-          displayFormat={displayFormat}
+          displayFormat={displayFormat || "DD/MM/YYYY"}
           readOnly
           noBorder
           numberOfMonths={1}
           withPortal={withPortal}
           openDirection={openDirection}
           isDayHighlighted={isDayHighlighted}
-          isOutsideRange={(day) => day.isBefore(moment(), "day")}
+          isOutsideRange={isOutsideRange || ((day) => day.isBefore(moment(), "day"))}
         />
       </div>
     </div>

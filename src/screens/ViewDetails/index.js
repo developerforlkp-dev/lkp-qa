@@ -1360,13 +1360,11 @@ const ViewDetails = () => {
       return actions;
     } else if (status === "cancelled" || status === "canceled") {
       return [
-        { label: "Explore Alternatives", variant: "primary", onClick: () => window.location.href = "/catalog" },
-        { label: "Contact Support", variant: "secondary", onClick: () => window.location.href = "/support" },
+        { label: "Explore Alternatives", variant: "primary", onClick: () => window.location.href = "/" },
       ];
     } else {
       return [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
-        { label: "Contact Support", variant: "secondary", onClick: () => window.location.href = "/support" },
       ];
     }
   };
