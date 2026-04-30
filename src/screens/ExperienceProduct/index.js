@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
@@ -811,12 +811,13 @@ const ExperienceProduct = () => {
         <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
         <ExperiencePolicies listing={listing} reviews={reviews} />
+        <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
         {/* HOST & REVIEWS SECTION */}
         <section style={{ background: BG, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
             <Rev delay={0.1} style={{ height: "100%" }}>
-              <SHdr idx="04" label="The Host" />
+              <SHdr idx="05" label="The Host" />
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
@@ -830,7 +831,7 @@ const ExperienceProduct = () => {
               </div>
             </Rev>
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <SHdr idx="05" label="Testimonials" />
+              <SHdr idx="06" label="Testimonials" />
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
                 {reviews.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
@@ -864,14 +865,90 @@ const ExperienceProduct = () => {
           .details-grid > div { grid-column: span 1 !important; }
           .prep-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
           .host-grid { grid-template-columns: 1fr !important; }
+          .quality-card { flex-direction: column !important; gap: 40px !important; padding: 40px 20px !important; }
+          .quality-score-unit { transform: scale(0.8) translateZ(80px) !important; }
         }
       `}</style>
     </Page>
   );
 };
 
+function RequirementField({ question, A, FG, M, B, AL, S }) {
+  const [value, setValue] = useState(""); 
+  const fieldType = question.fieldType || question.question?.fieldType;
+  const title = question.title || question.question?.title;
+
+  if (fieldType === 'boolean') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: `1px dashed ${B}` }}>
+        <span style={{ fontSize: 14, color: FG, fontWeight: 500 }}>{title}</span>
+        <div 
+          onClick={() => setValue(!value)}
+          style={{ 
+            width: 44, height: 24, borderRadius: 12, background: value ? A : B, 
+            position: 'relative', cursor: 'pointer', transition: '0.3s' 
+          }}
+        >
+          <motion.div 
+            animate={{ x: value ? 22 : 2 }}
+            style={{ 
+              width: 20, height: 20, borderRadius: '50%', background: '#FFF', 
+              position: 'absolute', top: 2 
+            }} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (fieldType === 'text_single') {
+    return (
+      <div style={{ padding: '20px 0', borderBottom: `1px dashed ${B}` }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>{title}</p>
+        <input 
+          type="text" 
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Type your answer..."
+          style={{ 
+            width: '100%', padding: '16px 24px', borderRadius: 16, 
+            border: `1px solid ${B}`, background: AL, color: FG, outline: 'none',
+            fontSize: 14, fontWeight: 500
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (fieldType === 'text_multi') {
+    return (
+      <div style={{ padding: '20px 0', borderBottom: `1px dashed ${B}` }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>{title}</p>
+        <textarea 
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Enter details..."
+          rows={3}
+          style={{ 
+            width: '100%', padding: '16px 24px', borderRadius: 16, 
+            border: `1px solid ${B}`, background: AL, color: FG, outline: 'none',
+            resize: 'vertical', fontSize: 14, fontWeight: 500, lineHeight: 1.6
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+      <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{title}</span>
+    </li>
+  );
+}
+
 function PolicyItem({ req }) {
-  const { tokens: { FG, A, M, AL, B } } = useTheme();
+  const { tokens: { FG, A, M, AL, B, S } } = useTheme();
   const [op, setOp] = useState(false);
 
   const title = req.setting?.title;
@@ -1013,6 +1090,296 @@ function ReviewsItem({ reviews }) {
     </motion.div>
   );
 }
+
+function QualityIndexSection({ qualityIndex }) {
+  const { tokens: { A, AL, FG, M, B, W, S, BG } } = useTheme();
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const sectionRef = useRef(null);
+
+  if (!qualityIndex || !qualityIndex.score) return null;
+
+  const score = qualityIndex.score;
+  const displayName = qualityIndex.displayName;
+  const description = qualityIndex.description;
+
+  const handleMouseMove = (e) => {
+    if (!sectionRef.current) return;
+    const rect = sectionRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setMousePos({ x, y });
+  };
+
+  return (
+    <section 
+      ref={sectionRef}
+      onMouseMove={handleMouseMove}
+      style={{ 
+        background: BG, 
+        padding: "100px 20px", 
+        position: "relative", 
+        overflow: "hidden", 
+        borderTop: `1px solid ${B}`, 
+        borderBottom: `1px solid ${B}`,
+        perspective: 2500,
+        isolation: "isolate"
+      }}
+    >
+      {/* ─── OPTIMIZED BACKGROUND ─── */}
+      <div style={{ 
+        position: "absolute", inset: 0, 
+        background: `
+          radial-gradient(circle at 20% 30%, ${A}08 0%, transparent 50%),
+          radial-gradient(circle at 80% 70%, ${A}05 0%, transparent 50%)
+        `,
+        zIndex: 0 
+      }} />
+
+      {/* Simplified Particles (No individual blurs) */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.4 }}>
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            animate={{ 
+              y: [0, -40, 0],
+              opacity: [0.2, 0.5, 0.2]
+            }}
+            transition={{ duration: 4 + Math.random() * 4, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
+            style={{ 
+              position: "absolute", 
+              top: `${Math.random() * 100}%`, 
+              left: `${Math.random() * 100}%`,
+              width: 3, height: 3,
+              background: A,
+              borderRadius: "50%"
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          
+          <motion.div
+            style={{
+              rotateX: mousePos.y * -20,
+              rotateY: mousePos.x * 20,
+              transformStyle: "preserve-3d",
+              width: "100%",
+              display: "flex",
+              justifyContent: "center"
+            }}
+          >
+            {/* ─── THE MASTER HOLOGRAPHIC CARD ─── */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, rotateX: 20 }}
+              whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+              viewport={{ once: true }}
+              className="quality-card"
+              style={{ 
+                width: "100%", maxWidth: 900, 
+                background: `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`, 
+                backdropFilter: "blur(25px) saturate(160%)",
+                borderRadius: 56,
+                padding: "100px 80px",
+                border: `1px solid rgba(255, 255, 255, 0.1)`,
+                boxShadow: `
+                  0 50px 120px rgba(0,0,0,0.2), 
+                  inset 0 0 60px rgba(255,255,255,0.05)
+                `,
+                display: "flex", 
+                flexDirection: "row",
+                alignItems: "center", 
+                gap: 100,
+                position: "relative",
+                transformStyle: "preserve-3d",
+                overflow: "hidden",
+                willChange: "transform",
+                WebkitFontSmoothing: "antialiased",
+                backfaceVisibility: "hidden",
+                transform: "translateZ(1px) rotate(0.0001deg)",
+                imageRendering: "-webkit-optimize-contrast"
+              }}
+            >
+              {/* Glass Sheen Effect */}
+              <motion.div 
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }}
+                style={{ 
+                  position: "absolute", inset: 0, 
+                  background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)`,
+                  transform: "skewX(-20deg)",
+                  zIndex: 1,
+                  pointerEvents: "none"
+                }}
+              />
+
+              {/* ─── LEFT: SCORE UNIT ─── */}
+              <div className="quality-score-unit" style={{ position: "relative", transform: "translateZ(120px) rotate(0.0001deg)", flexShrink: 0, willChange: "transform", backfaceVisibility: "hidden" }}>
+                {/* Holographic Rings */}
+                {[...Array(3)].map((_, i) => (
+                  <motion.div 
+                    key={i}
+                    animate={{ rotate: i % 2 === 0 ? 360 : -360, scale: [1, 1.05, 1] }}
+                    transition={{ 
+                      rotate: { duration: 20 + i * 10, repeat: Infinity, ease: "linear" },
+                      scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                    style={{ 
+                      position: "absolute", 
+                      inset: -(30 + i * 25), 
+                      border: `1px solid ${A}${i === 0 ? "44" : "11"}`, 
+                      borderRadius: "50%",
+                      opacity: 0.6 - (i * 0.2),
+                      willChange: "transform"
+                    }}
+                  />
+                ))}
+                
+                <div style={{ position: "relative", width: 260, height: 260, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="260" height="260" viewBox="0 0 260 260" style={{ transform: "rotate(-90deg)", filter: `drop-shadow(0 0 20px ${A}33)` }}>
+                    <circle cx="130" cy="130" r="120" fill="none" stroke={`${A}11`} strokeWidth="2" />
+                    <motion.circle 
+                      cx="130" cy="130" r="120" fill="none" stroke={A} strokeWidth="8" strokeLinecap="round"
+                      initial={{ strokeDasharray: "0 754" }}
+                      whileInView={{ strokeDasharray: `${(score / 10) * 754} 754` }}
+                      transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
+                    />
+                  </svg>
+                  
+                  <div style={{ position: "absolute", textAlign: "center" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+                      <motion.span 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.8 }}
+                        style={{ 
+                          fontSize: 110, fontWeight: 900, color: FG, lineHeight: 1,
+                          fontFamily: "var(--font-display)", letterSpacing: "-0.05em",
+                          background: `linear-gradient(to bottom, ${FG}, ${M})`,
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent"
+                        }}
+                      >
+                        {score}
+                      </motion.span>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: A, marginLeft: 4 }}>.0</span>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.3em", opacity: 0.8 }}>Benchmark Score</span>
+                  </div>
+                </div>
+
+                {/* Technical Micro-Metadata */}
+                <div style={{ position: "absolute", bottom: -40, left: "50%", transform: "translateX(-50%)", width: "max-content", textAlign: "center" }}>
+                   <p style={{ fontSize: 9, fontFamily: "monospace", color: M, opacity: 0.6, letterSpacing: "0.1em" }}>
+                     CALC_ID: 9x7742 // VAR_SIG: {Math.random().toString(16).slice(2, 8).toUpperCase()}
+                   </p>
+                </div>
+              </div>
+
+              {/* ─── RIGHT: CONTENT ─── */}
+              <div style={{ flex: 1, transform: "translateZ(60px)" }}>
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}
+                >
+                  <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, ${A}, transparent)` }} />
+                  <span style={{ fontSize: 11, letterSpacing: "0.5em", textTransform: "uppercase", color: A, fontWeight: 900 }}>Quality Narrative</span>
+                </motion.div>
+                
+                <h3 className="font-display" style={{ fontSize: 56, fontWeight: 900, color: FG, marginBottom: 24, lineHeight: 1, letterSpacing: "-0.03em" }}>
+                  {displayName}
+                </h3>
+                
+                <div style={{ position: "relative", padding: "0 0 0 32px", borderLeft: `3px solid ${A}` }}>
+                  <p style={{ fontSize: 20, color: M, fontWeight: 400, lineHeight: 1.6, margin: 0, fontStyle: "italic", opacity: 0.95 }}>
+                    &ldquo;{description}&rdquo;
+                  </p>
+                </div>
+
+                {/* Amazing Elements: Enhanced Badges */}
+                <div style={{ display: "flex", gap: 32, marginTop: 48 }}>
+                  {[
+                    { icon: ShieldCheck, label: "LKP Verified" },
+                    { icon: Zap, label: "High Fidelity" },
+                    { icon: Sparkles, label: "Curated" }
+                  ].map((item, i) => (
+                    <motion.div 
+                      key={i}
+                      whileHover={{ y: -5, color: A }}
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.2 + (i * 0.15) }}
+                      style={{ display: "flex", flexDirection: "column", gap: 8, cursor: "pointer" }}
+                    >
+                      <item.icon size={20} color={A} />
+                      <span style={{ fontSize: 10, fontWeight: 800, color: FG, textTransform: "uppercase", letterSpacing: "0.15em" }}>{item.label}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ─── FLOATING OBJECTS ─── */}
+              
+              {/* Premium Quality Seal */}
+              <motion.div 
+                animate={{ 
+                  y: [-20, 20, -20],
+                  rotate: [0, 5, 0]
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                style={{ 
+                  position: "absolute", top: 40, right: 40, transform: "translateZ(150px)",
+                  background: `rgba(255,255,255,0.05)`, border: `1px solid rgba(255,255,255,0.1)`, 
+                  padding: "16px 24px", borderRadius: 24,
+                  backdropFilter: "blur(20px)", boxShadow: `0 30px 60px rgba(0,0,0,0.2)`,
+                  willChange: "transform"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ADE80", boxShadow: "0 0 10px #4ADE80" }} />
+                  <span style={{ fontSize: 12, fontWeight: 900, color: FG, letterSpacing: "0.1em" }}>OPTIMAL STATUS</span>
+                </div>
+              </motion.div>
+              
+              {/* Glass Orb */}
+              <motion.div 
+                animate={{ 
+                  y: [20, -20, 20],
+                  x: [0, 15, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                style={{ 
+                  position: "absolute", bottom: 40, left: -40, transform: "translateZ(180px)",
+                  width: 80, height: 80, borderRadius: "50%", 
+                  background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, ${A}44 100%)`,
+                  backdropFilter: "blur(5px)",
+                  border: `1px solid rgba(255,255,255,0.2)`,
+                  boxShadow: `0 20px 40px rgba(0,0,0,0.3)`,
+                  willChange: "transform"
+                }}
+              />
+            </motion.div>
+          </motion.div>
+
+        </div>
+      </div>
+
+      {/* Background Decorative Grid */}
+      <div style={{ 
+        position: "absolute", inset: 0, 
+        backgroundImage: `radial-gradient(${A}15 1px, transparent 1px)`, 
+        backgroundSize: "60px 60px",
+        opacity: 0.3,
+        maskImage: `radial-gradient(circle at center, black, transparent 80%)`,
+        zIndex: 0
+      }} />
+    </section>
+  );
+}
+
 
 function ExperiencePolicies({ listing, reviews }) {
   const { tokens: { FG, W, B, A, M } } = useTheme();

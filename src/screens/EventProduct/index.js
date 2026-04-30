@@ -13,7 +13,9 @@ import Browse from "../../components/Browse";
 import GuestPicker from "../../components/GuestPicker";
 import { browse2 } from "../../mocks/browse";
 import { useLocation, useHistory } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronDown, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../components/JUI/Theme";
 import { createEventOrder, getEventDetails } from "../../utils/api";
 import Modal from "../../components/Modal";
 import Login from "../../components/Login";
@@ -240,6 +242,137 @@ const dummyEventData = {
     },
   ],
 };
+
+function RequirementField({ question, A, FG, M, B, AL, S }) {
+  const [value, setValue] = useState(""); 
+  const fieldType = question.fieldType || question.question?.fieldType;
+  const title = question.title || question.question?.title;
+
+  if (fieldType === 'boolean') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: `1px dashed ${B}` }}>
+        <span style={{ fontSize: 14, color: FG, fontWeight: 500 }}>{title}</span>
+        <div 
+          onClick={() => setValue(!value)}
+          style={{ 
+            width: 44, height: 24, borderRadius: 12, background: value ? A : B, 
+            position: 'relative', cursor: 'pointer', transition: '0.3s' 
+          }}
+        >
+          <motion.div 
+            animate={{ x: value ? 22 : 2 }}
+            style={{ 
+              width: 20, height: 20, borderRadius: '50%', background: '#FFF', 
+              position: 'absolute', top: 2 
+            }} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (fieldType === 'text_single') {
+    return (
+      <div style={{ padding: '20px 0', borderBottom: `1px dashed ${B}` }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>{title}</p>
+        <input 
+          type="text" 
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Type your answer..."
+          style={{ 
+            width: '100%', padding: '16px 24px', borderRadius: 16, 
+            border: `1px solid ${B}`, background: AL, color: FG, outline: 'none',
+            fontSize: 14, fontWeight: 500
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (fieldType === 'text_multi') {
+    return (
+      <div style={{ padding: '20px 0', borderBottom: `1px dashed ${B}` }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>{title}</p>
+        <textarea 
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Enter details..."
+          rows={3}
+          style={{ 
+            width: '100%', padding: '16px 24px', borderRadius: 16, 
+            border: `1px solid ${B}`, background: AL, color: FG, outline: 'none',
+            resize: 'vertical', fontSize: 14, fontWeight: 500, lineHeight: 1.6
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 0" }}>
+      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+      <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{title}</span>
+    </div>
+  );
+}
+
+function PolicyItem({ req }) {
+  const { tokens: { FG, A, M, AL, B, S } } = useTheme();
+  const [op, setOp] = useState(false);
+
+  const title = req.setting?.title || req.title;
+  const description = req.setting?.description || req.description;
+  const questions = req.questions || [];
+
+  return (
+    <motion.div style={{ borderBottom: `1px solid ${B}` }} whileHover={{ backgroundColor: AL }}>
+      <div
+        onClick={() => setOp(!op)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          padding: "24px 20px",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left"
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 8 }}>{title}</span>
+          {description && (
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.5, whiteSpace: "pre-line", margin: 0 }}>
+              {description}
+            </p>
+          )}
+        </div>
+        <ChevronDown size={20} color={M} style={{ transform: op ? 'rotate(180deg)' : 'none', transition: '0.3s', marginTop: 4, flexShrink: 0 }} />
+      </div>
+
+      <AnimatePresence>
+        {op && questions.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ padding: "0 20px 24px", overflow: "hidden" }}
+          >
+            <div style={{ padding: "20px", background: AL, borderRadius: 16, border: `1px solid ${B}` }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {questions.map((q, j) => (
+                  <RequirementField key={j} question={q} A={A} FG={FG} M={M} B={B} AL={AL} S={S} />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
 
 const EventProduct = () => {
   const location = useLocation();
@@ -1283,6 +1416,22 @@ const EventProduct = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Guest Requirements Section */}
+      {Array.isArray(event.guestRequirements) && event.guestRequirements.length > 0 && (
+        <section className={cn("section", styles.policySection)}>
+          <div className={cn("container", styles.policyContainer)}>
+            <div className={styles.policyInner}>
+              <h2 className={styles.sectionTitle}>Guest Requirements</h2>
+              <div style={{ background: "rgba(0,0,0,0.02)", borderRadius: 24, border: "1px solid rgba(0,0,0,0.05)", overflow: "hidden", marginTop: 32 }}>
+                {event.guestRequirements.map((req, i) => (
+                  <PolicyItem key={i} req={req} />
+                ))}
               </div>
             </div>
           </div>

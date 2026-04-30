@@ -460,8 +460,84 @@ function ImgParallax({ src, alt }) {
   );
 }
 
-function PolicyItem({ rule, A, FG, M, B }) {
+function RequirementField({ question, A, FG, M, B, S }) {
+  const [value, setValue] = useState(""); 
+  const fieldType = question.fieldType || question.question?.fieldType;
+  const title = question.title || question.question?.title;
+
+  if (fieldType === 'boolean') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px dashed ${B}` }}>
+        <span style={{ fontSize: 14, color: FG, fontWeight: 500 }}>{title}</span>
+        <div 
+          onClick={() => setValue(!value)}
+          style={{ 
+            width: 44, height: 24, borderRadius: 12, background: value ? A : B, 
+            position: 'relative', cursor: 'pointer', transition: '0.3s' 
+          }}
+        >
+          <motion.div 
+            animate={{ x: value ? 22 : 2 }}
+            style={{ 
+              width: 20, height: 20, borderRadius: '50%', background: '#FFF', 
+              position: 'absolute', top: 2 
+            }} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (fieldType === 'text_single') {
+    return (
+      <div style={{ padding: '16px 0', borderBottom: `1px dashed ${B}` }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>{title}</p>
+        <input 
+          type="text" 
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Type your answer here..."
+          style={{ 
+            width: '100%', padding: '14px 20px', borderRadius: 12, 
+            border: `1px solid ${B}`, background: S, color: FG, outline: 'none',
+            fontSize: 14, fontWeight: 500
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (fieldType === 'text_multi') {
+    return (
+      <div style={{ padding: '16px 0', borderBottom: `1px dashed ${B}` }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>{title}</p>
+        <textarea 
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Enter detailed information..."
+          rows={3}
+          style={{ 
+            width: '100%', padding: '14px 20px', borderRadius: 12, 
+            border: `1px solid ${B}`, background: S, color: FG, outline: 'none',
+            resize: 'vertical', fontSize: 14, fontWeight: 500, lineHeight: 1.6
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: '12px 0' }}>
+      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+      <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{title}</span>
+    </div>
+  );
+}
+
+function PolicyItem({ rule, A, FG, M, B, S }) {
   const [op, setOp] = useState(false);
+  const hasQuestions = Array.isArray(rule.questions) && rule.questions.length > 0;
+
   return (
     <motion.div key={rule.id} style={{ borderBottom: `1px solid ${B}` }}>
       <button onClick={() => setOp(!op)}
@@ -477,7 +553,17 @@ function PolicyItem({ rule, A, FG, M, B }) {
       <AnimatePresence>
         {op && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.4, ease: E }} style={{ overflow: "hidden" }}>
-            <p style={{ padding: "0 20px 40px 64px", fontSize: 14, color: M, lineHeight: 1.85, maxWidth: 640, whiteSpace: "pre-wrap" }}>{rule.body}</p>
+            <div style={{ padding: "0 20px 40px 64px", maxWidth: 640 }}>
+              {hasQuestions ? (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {rule.questions.map((q, i) => (
+                    <RequirementField key={i} question={q} A={A} FG={FG} M={M} B={B} S={S} />
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: 14, color: M, lineHeight: 1.85, whiteSpace: "pre-wrap" }}>{rule.body}</p>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -557,7 +643,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
         if (Array.isArray(req.questions)) {
           body = req.questions.map(q => `• ${q.title || q.question?.title}`).join("\n");
         }
-        guestItems.push({ id: `guest-${i}`, title, body: body || title });
+        guestItems.push({ id: `guest-${i}`, title, body: body || title, questions: req.questions });
       });
     }
     if (guestItems.length > 0) {
@@ -684,7 +770,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
                   <h3 style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 24, letterSpacing: "-0.01em" }}>{category.title}</h3>
                   <div style={{ borderTop: `1px solid ${B}` }}>
                     {category.items.map((rule) => (
-                      <PolicyItem key={rule.id} rule={rule} A={A} FG={FG} M={M} B={B} />
+                      <PolicyItem key={rule.id} rule={rule} A={A} FG={FG} M={M} B={B} S={S} />
                     ))}
                   </div>
                 </div>
