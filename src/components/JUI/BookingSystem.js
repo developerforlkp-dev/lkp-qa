@@ -881,6 +881,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState("");
   const [privateBooking, setPrivateBooking] = useState(false);
+  
+
   const isEventBooking = type === "event";
 
   useEffect(() => {
