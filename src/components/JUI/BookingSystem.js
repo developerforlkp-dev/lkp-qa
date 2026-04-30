@@ -17,7 +17,11 @@ const asNumber = (value) => {
 
 const asDate = (value) => {
   if (!value) return null;
-  const date = new Date(value);
+  // If the backend sends UTC strings but they are actually local times, strip the Z
+  const normalizedValue = typeof value === "string" && value.endsWith("Z") 
+    ? value.slice(0, -1) 
+    : value;
+  const date = new Date(normalizedValue);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
