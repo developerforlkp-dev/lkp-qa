@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Page from "../../components/Page";
 import Main from "./Main";
 import { getCustomerOrders, getCompleteExpiredOrders } from "../../utils/api";
 
@@ -96,31 +97,29 @@ const Bookings = ({ bookingData = null }) => {
     fetchOrders();
   }, [bookingData]);
 
-  if (loading) {
-    return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <p>Loading bookings...</p>
-      </div>
-    );
-  }
-
-  // Always render Main component, even if there are errors
-  // This ensures the page is not blocked by API failures
-  // Don't show error banner for empty bookings - let the empty state handle it
+  // Always render Page wrapper, but hide footer during loading
   return (
-    <>
-      {error && error !== "" && (
-        <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
-          <p>⚠️ {error}</p>
+    <Page separatorHeader fooferHide={loading}>
+      {loading ? (
+        <div style={{ padding: "8rem 2rem", textAlign: "center", minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <p style={{ fontSize: "1.2rem", fontWeight: "500" }}>Loading bookings...</p>
         </div>
+      ) : (
+        <>
+          {error && error !== "" && (
+            <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
+              <p>⚠️ {error}</p>
+            </div>
+          )}
+          <Main 
+            bookingData={orders || []} 
+            completedOrders={completedOrders || []} 
+            completedCount={completedCount}
+            setCompletedOrders={setCompletedOrders}
+          />
+        </>
       )}
-      <Main 
-        bookingData={orders || []} 
-        completedOrders={completedOrders || []} 
-        completedCount={completedCount}
-        setCompletedOrders={setCompletedOrders}
-      />
-    </>
+    </Page>
   );
 };
 

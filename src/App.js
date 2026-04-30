@@ -272,11 +272,7 @@ function App() {
           <Route
             exact
             path="/bookings"
-            render={() => (
-              <Page separatorHeader>
-                <Bookings />
-              </Page>
-            )}
+            component={Bookings}
           />
           <Route
             exact
