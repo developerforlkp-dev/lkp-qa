@@ -125,8 +125,8 @@ const StayBookingSystem = ({
     if (isPropertyBased) {
       totalBaseAdultsLimit = stay.maxAdults || stay.maxGuests || 1;
       totalBaseChildrenLimit = stay.maxChildren || 0;
-      totalExtraAdultsLimit = stay.maxExtraAdultsAllowed || stay.maxExtraBeds || 0;
-      totalExtraChildrenLimit = stay.maxExtraChildrenAllowed || 0;
+      totalExtraAdultsLimit = stay.maxExtraAdults || stay.maxExtraAdultsAllowed || stay.maxExtraBeds || 0;
+      totalExtraChildrenLimit = stay.maxExtraChildren || stay.maxExtraChildrenAllowed || 0;
       
       let basePrice = parseFloat(stay.fullPropertyB2cPrice || stay.b2cPrice || stay.price || 0);
       let extraAP = parseFloat(stay.fullPropertyExtraAdultPrice || stay.extraAdultPrice || 0);
@@ -168,8 +168,8 @@ const StayBookingSystem = ({
         totalOriginalPerNight += roomBasePrice * room.count;
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
         totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
-        totalExtraAdultsLimit += (room.maxExtraAdultsAllowed || room.maxExtraBeds || 0) * room.count;
-        totalExtraChildrenLimit += (room.maxExtraChildrenAllowed || 0) * room.count;
+        totalExtraAdultsLimit += (room.maxExtraAdults || room.maxExtraAdultsAllowed || room.maxExtraBeds || 0) * room.count;
+        totalExtraChildrenLimit += (room.maxExtraChildren || room.maxExtraChildrenAllowed || 0) * room.count;
 
         // Note: For multi-room, extra guest calculation is complex. 
         // We'll apply extra fees based on the TOTAL overflow across all selected rooms.
