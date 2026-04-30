@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSp
 import ProductNavbar from "../../../components/ProductNavbar";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
+import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getHost } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
@@ -1477,6 +1478,7 @@ export default function EventDetails() {
       <Rules event={event} />
       <HostDetails event={event} hostName={hostName} />
       <EventBookingPopup event={event} />
+      <Footer />
     </ScopedThemeProvider>
   );
 }
