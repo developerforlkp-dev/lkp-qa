@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSp
 import ProductNavbar from "../../../components/ProductNavbar";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
+import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getHost } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
@@ -356,7 +357,7 @@ function SHdr({ idx, label }) {
   const { tokens: { A, B } } = useTheme();
   return (
     <Rev style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 52 }}>
-      <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>{idx} — {label}</span>
+      <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>{idx ? `${idx} — ` : ""}{label}</span>
       <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.2 }} style={{ flex: 1, height: 1, background: B, transformOrigin: "left" }} />
     </Rev>
   );
@@ -489,7 +490,7 @@ function About({ event }) {
     <>
       <section id="about" style={{ background: BG, padding: "130px 36px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <SHdr idx="01" label="About The Event" />
+          <SHdr idx="01" label="Story" />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 72, alignItems: "start" }} className="grid-2">
             <div>
               <Chars text="Where the ancient" cls="font-display" style={{ fontSize: "clamp(2.2rem,4vw,3.6rem)", fontWeight: 700, lineHeight: 1.1, color: FG, overflow: "hidden" }} />
@@ -593,11 +594,11 @@ function Gallery({ event }) {
       <section id="gallery" style={{ backgroundColor: FG, padding: "120px 0", overflow: "hidden" }}>
         <div style={{ maxWidth: 1600, margin: "0 auto", padding: "0 36px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 48 }}>
-            <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: AH, whiteSpace: "nowrap" }}>01.5 — Gallery</span>
+            <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: AH, whiteSpace: "nowrap" }}>02 — Visuals</span>
             <div style={{ flex: 1, height: 1, backgroundColor: theme === 'light' ? "#333" : "#2a2a2a" }} />
           </div>
           
-          <Chars text="The Event" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: BG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: BG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
           
           <div className="gallery-grid" style={{ 
             display: "flex", 
@@ -641,7 +642,7 @@ function Artists({ event }) {
     <>
       <section id="artists" style={{ background: W, padding: "130px 36px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <SHdr idx="02" label="Lineup" />
+          <SHdr idx="03" label="Lineup" />
           <Chars text="The Artists" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
           <div style={{ borderTop: `1px solid ${B}` }}>
             {ARTISTS.map((a, i) => (
@@ -694,8 +695,8 @@ function Venue({ event, hostName }) {
       <Mq items={tags} dir="r" size="sm" bg={S} accent />
       <section id="venue" style={{ background: BG, padding: "130px 36px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <SHdr idx="03" label="Venue" />
-          <Chars text="Where It Happens" cls="font-display" style={{ fontSize: "clamp(1.8rem,4.5vw,4.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <SHdr idx="04" label="Landscape" />
+          <Chars text="Where It's Happening" cls="font-display" style={{ fontSize: "clamp(1.8rem,4.5vw,4.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
           <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
             <Rev delay={0.1}>
               <div style={{ background: W, padding: 52 }}>
@@ -868,16 +869,16 @@ function Rules({ event }) {
             transition: transform 0.25s ease;
           }
         `}</style>
-        <SHdr idx="04" label="Event Rules & Policies" />
+        <SHdr idx="05" label="Essentials" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "start" }} className="grid-2">
           <Rev delay={0.1}>
-            <Chars text="Rules &" cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: FG, overflow: "hidden", letterSpacing: "-0.02em" }} />
-            <Chars text="Policy." delay={0.08} cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: "transparent", WebkitTextStroke: `2px ${A}`, overflow: "hidden", letterSpacing: "-0.02em" }} />
+            <Chars text="Things To" cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: FG, overflow: "hidden", letterSpacing: "-0.02em" }} />
+            <Chars text="Keep in Mind" delay={0.08} cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: "transparent", WebkitTextStroke: `2px ${A}`, overflow: "hidden", letterSpacing: "-0.02em" }} />
           </Rev>
           <Rev delay={0.2}>
             <div>
               <h3 style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: A, fontWeight: 800, margin: "0 0 18px" }}>
-                Rules & Policy
+                Things To keep in Mind
               </h3>
               <div style={{ borderTop: `1px solid ${B}` }}>
                 {displayRules.map((rule, index) => dropdownRow(rule, index))}
@@ -920,11 +921,11 @@ function HostDetails({ event, hostName }) {
   return (
     <section id="host" style={{ background: BG, padding: "0 36px 130px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <SHdr idx="05" label="Host" />
+        <SHdr idx="06" label="People" />
         <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
           <Rev delay={0.1}>
             <div style={{ background: W, padding: 52, minHeight: 300 }}>
-              <p className="host-presented-label" style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#0097B2", WebkitTextFillColor: "#0097B2", marginBottom: 36, fontWeight: 700 }}>Presented By</p>
+              <p className="host-presented-label" style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#0097B2", WebkitTextFillColor: "#0097B2", marginBottom: 36, fontWeight: 700 }}>Meet Your Host</p>
               <h3 className="font-display" style={{ fontSize: "clamp(2.4rem,5vw,4.2rem)", fontWeight: 700, color: FG, lineHeight: 1, marginBottom: 22 }}>
                 {displayHostName || "Event Host"}
               </h3>
@@ -1477,6 +1478,7 @@ export default function EventDetails() {
       <Rules event={event} />
       <HostDetails event={event} hostName={hostName} />
       <EventBookingPopup event={event} />
+      <Footer />
     </ScopedThemeProvider>
   );
 }
