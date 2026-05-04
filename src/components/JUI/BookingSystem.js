@@ -1245,7 +1245,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : (experienceGuestPricing?.finalUnitPrice ?? parseFloat(effectiveRawPrice || 0));
 
   // Child pricing for experiences
-  const childrenAllowed = !isEventBooking && asBoolean(
+  const childrenAllowed = asBoolean(
     listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren,
     true
   );
@@ -1329,11 +1329,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [bookingGuestLimit, clampGuestsToSeatLimit]);
 
   useEffect(() => {
-    if (isEventBooking || childrenAllowed) return;
+    if (childrenAllowed) return;
     setGuests((current) => (
       current.children === 0 ? current : { ...current, children: 0 }
     ));
-  }, [childrenAllowed, isEventBooking]);
+  }, [childrenAllowed]);
 
   const updateGuestsWithinSeatLimit = useCallback((updater) => {
     setGuests((current) => {
@@ -2185,7 +2185,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           max={adultMax}
                         />
                       </div>
-                      {(isEventBooking || childrenAllowed) && (
+                      {childrenAllowed && (
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
                           <Counter
