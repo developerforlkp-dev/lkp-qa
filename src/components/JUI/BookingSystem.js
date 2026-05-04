@@ -396,6 +396,23 @@ const normalizeBookingTime = (value) => {
   return `${hours}:${minutes}:00`;
 };
 
+/**
+ * Robustly format a "HH:mm[:ss]" string into "h:mm AM/PM".
+ * Returns the original string if it doesn't match the time format.
+ */
+const formatTime12h = (timeStr) => {
+  if (!timeStr || typeof timeStr !== "string") return timeStr;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!match) return timeStr;
+  
+  const hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 || 12;
+  
+  return `${hour12}:${minutes} ${ampm}`;
+};
+
 const getRazorpayKeyFromCache = () => {
   try {
     const cachedKey = localStorage.getItem("lastRazorpayKeyId");
@@ -2089,8 +2106,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 transition: "0.2s"
                               }}
                             >
-                              {slot.slotName}
-                              {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{slot.endTime}</span>}
+                              {formatTime12h(slot.slotName)}
+                              {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{formatTime12h(slot.endTime)}</span>}
                             </button>
                           );
                         }) : <div style={{ gridColumn: "span 2", padding: "20px", textAlign: "center", color: M }}>No slots available</div>}
@@ -2101,7 +2118,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           onClick={() => setShowTimePicker(!showTimePicker)}
                           style={{ padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
                         >
-                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : M }}>{startTime || "Select Time"}</span>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : M }}>{formatTime12h(startTime) || "Select Time"}</span>
                           <ChevronDown size={18} color={M} />
                         </div>
                         {showTimePicker && (

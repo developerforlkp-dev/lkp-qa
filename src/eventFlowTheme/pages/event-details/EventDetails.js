@@ -160,6 +160,18 @@ const ScopedStyles = () => (
 );
 
 /* ─── UTILS ──────────────────────────────────────── */
+const formatTime12h = (timeStr) => {
+  if (!timeStr || typeof timeStr !== "string") return timeStr;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!match) return timeStr;
+  
+  const hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 || 12;
+  
+  return `${hour12}:${minutes} ${ampm}`;
+};
 function Cursor() {
   const { tokens: { A, AL } } = useTheme();
   const x = useMotionValue(-200), y = useMotionValue(-200);
@@ -1326,8 +1338,8 @@ function Tickets({ event }) {
                       }}
                     >
                       <div style={{ textAlign: "left" }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: isSelected ? A : FG }}>{s.slotName || s.startTime}</p>
-                        {s.endTime && <p style={{ fontSize: 10, color: M, marginTop: 2 }}>Ends {s.endTime}</p>}
+                        <p style={{ fontSize: 13, fontWeight: 700, color: isSelected ? A : FG }}>{formatTime12h(s.slotName || s.startTime)}</p>
+                        {s.endTime && <p style={{ fontSize: 10, color: M, marginTop: 2 }}>Ends {formatTime12h(s.endTime)}</p>}
                       </div>
                       <div style={{ 
                         width: 18, 

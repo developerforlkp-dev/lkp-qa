@@ -576,7 +576,16 @@ const EventProduct = () => {
 
   // Format time for display
   const formatTime = (timeStr) => {
-    return moment(timeStr, "HH:mm").format("h:mm A");
+    if (!timeStr || typeof timeStr !== "string") return timeStr;
+    const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+    if (!match) return moment(timeStr, "HH:mm").format("h:mm A");
+    
+    const hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    
+    return `${hour12}:${minutes} ${ampm}`;
   };
 
   // Format datetime for display

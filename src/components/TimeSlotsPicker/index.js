@@ -3,23 +3,29 @@ import cn from "classnames";
 import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./TimeSlotsPicker.module.sass";
 
-// Helper function to format time from "HH:mm" to "HH:mm AM/PM"
+// Helper function to format time from "HH:mm[:ss]" to "h:mm AM/PM"
 const formatTime = (timeString) => {
-  if (!timeString) return "";
-  const [hours, minutes] = timeString.split(":");
-  const hour = parseInt(hours, 10);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 || 12;
+  if (!timeString || typeof timeString !== "string") return timeString;
+  const match = timeString.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!match) return timeString;
+  
+  const hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 || 12;
+  
   return `${hour12}:${minutes} ${ampm}`;
 };
 
 // Helper function to format time range with cleaner display
 const formatTimeRange = (startTime, endTime) => {
   if (!startTime || !endTime) return "";
+  const start = formatTime(startTime);
+  const end = formatTime(endTime);
   return {
-    start: formatTime(startTime),
-    end: formatTime(endTime),
-    full: `${formatTime(startTime)} - ${formatTime(endTime)}`
+    start,
+    end,
+    full: `${start} - ${end}`
   };
 };
 
@@ -88,7 +94,7 @@ const TimeSlotsPicker = ({
           : null;
         return {
           id: slot.slotId || slot.slotName,
-          display: timeRange ? timeRange.full : slot.slotName,
+          display: timeRange ? timeRange.full : formatTime(slot.slotName),
           timeRange: timeRange,
           slotName: slot.slotName,
           startTime: slot.startTime,
@@ -101,7 +107,7 @@ const TimeSlotsPicker = ({
       // Fallback to simple time strings
       rawSlots = times.map((t) => ({
         id: t,
-        display: t,
+        display: formatTime(t),
         timeRange: null,
         slotName: t,
         startTime: null,
