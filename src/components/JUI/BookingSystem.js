@@ -2057,7 +2057,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         {eventSlots.length > 0 ? eventSlots.map((slot, index) => {
                           const slotId = String(slot.eventSlotId ?? slot.id);
-                          const isDisabled = !isEventSlotAccessible(slot, index);
+                          const slotKeys = new Set();
+                          addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
+                          const isDateValid = slotKeys.size === 0 || slotKeys.has(selectedDateKey);
+                          const isDisabled = !isEventSlotAccessible(slot, index) || !isDateValid;
                           const isSelected = selectedEventSlotIds.includes(slotId);
                           return (
                             <button
