@@ -21,6 +21,9 @@ const PriceDetails = ({
   currency = "INR",
   hostName,
   hostAvatar,
+  cancellationPolicy,
+  rating,
+  reviewsCount,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -49,6 +52,8 @@ const PriceDetails = ({
           title={title}
           hostName={hostName}
           hostAvatar={hostAvatar}
+          rating={rating}
+          reviewsCount={reviewsCount}
         />
       ) : (
         <HeadOptions
@@ -181,10 +186,12 @@ const PriceDetails = ({
         )}
       </div>
 
-      <div className={styles.note}>
-        <Icon name="coin" size="12" />
-        Free cancellation until 3:00 PM on May 15, 2021
-      </div>
+      {cancellationPolicy && (
+        <div className={styles.note}>
+          <Icon name="coin" size="12" />
+          <div style={{ whiteSpace: "pre-line" }}>{cancellationPolicy}</div>
+        </div>
+      )}
     </div>
   );
 };

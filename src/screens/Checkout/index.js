@@ -420,6 +420,7 @@ const Checkout = () => {
             currency={paymentData?.currency || "INR"}
             hostName={hostName}
             hostAvatar={hostAvatar}
+            cancellationPolicy={bookingData?.cancellationPolicySummary}
           />
         </div>
       </div>

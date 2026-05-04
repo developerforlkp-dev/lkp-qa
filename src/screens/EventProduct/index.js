@@ -16,7 +16,7 @@ import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft, ChevronDown, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
-import { createEventOrder, getEventDetails } from "../../utils/api";
+import { createEventOrder, getEventDetails, getListingReviews } from "../../utils/api";
 import Modal from "../../components/Modal";
 import Login from "../../components/Login";
 import PhotoView from "../../components/PhotoView";
@@ -330,6 +330,8 @@ const EventProduct = () => {
   const checkoutAfterGuestSelection = Boolean(location?.state?.checkoutAfterGuestSelection);
 
   const [event, setEvent] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -535,6 +537,14 @@ const EventProduct = () => {
 
         if (!mounted) return;
         setEvent(normalizedEvent);
+
+        // Fetch reviews for the event listing
+        getListingReviews(eventId).then(resp => {
+          if (mounted && resp) {
+            if (resp.reviews) setReviews(resp.reviews);
+            if (resp.summary) setReviewSummary(resp.summary);
+          }
+        }).catch(e => console.warn("Error fetching event reviews:", e));
       } catch (e) {
         if (!mounted) return;
         const status = e?.response?.status;

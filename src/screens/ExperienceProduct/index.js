@@ -11,6 +11,7 @@ import {
   getListing,
   getHost,
   getLeadDetails,
+  getListingReviews,
 } from "../../utils/api";
 import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
 import Page from "../../components/Page";
@@ -269,6 +270,7 @@ const ExperienceProduct = () => {
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -372,6 +374,15 @@ const ExperienceProduct = () => {
           if (leadId) {
             getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => console.warn(e));
           }
+
+          // Fetch reviews for the listing
+          getListingReviews(id).then(resp => {
+            if (mounted && resp) {
+              if (resp.reviews) setReviews(resp.reviews);
+              if (resp.summary) setReviewSummary(resp.summary);
+            }
+          }).catch(e => console.warn("Error fetching reviews:", e));
+
           setLoading(false);
         }
       } catch (e) {
@@ -865,7 +876,7 @@ const ExperienceProduct = () => {
 
         <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
-        <ExperiencePolicies listing={listing} reviews={reviews} />
+        <ExperiencePolicies listing={listing} reviews={reviews} reviewSummary={reviewSummary} />
         <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
         {/* HOST & REVIEWS SECTION */}
@@ -888,6 +899,16 @@ const ExperienceProduct = () => {
             <Rev delay={0.2} style={{ height: "100%" }}>
               <SHdr idx="06" label="Testimonials" />
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
+                  <div>
+                    <h3 style={{ fontSize: "2rem", fontWeight: 900, color: FG, lineHeight: 1 }}>{reviewSummary?.averageRating ? reviewSummary.averageRating.toFixed(1) : (reviews.length > 0 ? "5.0" : "0.0")}</h3>
+                    <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Avg Rating</p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <h3 style={{ fontSize: "2rem", fontWeight: 900, color: FG, lineHeight: 1 }}>{reviewSummary?.totalReviews || reviews.length}</h3>
+                    <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, fontWeight: 700 }}>Total Reviews</p>
+                  </div>
+                </div>
                 {reviews.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                     {reviews.slice(0, 2).map((rev, i) => (
@@ -1007,9 +1028,13 @@ function PolicyItem({ req }) {
   );
 }
 
-function ReviewsItem({ reviews }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+function ReviewsItem({ reviews, summary }) {
+  const { tokens: { FG, A, M, AL, B, W, AH } } = useTheme();
   const [op, setOp] = useState(false);
+
+  const avgRating = summary?.averageRating || 0;
+  const totalReviews = summary?.totalReviews || reviews.length;
+  const ratingDisplay = avgRating > 0 ? avgRating.toFixed(1) : (reviews.length > 0 ? "5.0" : "0.0");
 
   return (
     <motion.div 
@@ -1030,8 +1055,16 @@ function ReviewsItem({ reviews }) {
         }}
       >
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 4, transition: "color 0.3s" }}>Reviews</span>
-          <p style={{ fontSize: 13, color: M, margin: 0 }}>{reviews.length} guests shared their experience</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, transition: "color 0.3s" }}>Reviews</span>
+            {avgRating > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, background: AL, padding: "2px 8px", borderRadius: 100 }}>
+                <Star size={10} color={A} fill={A} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: A }}>{ratingDisplay}</span>
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: 13, color: M, margin: 0 }}>{totalReviews} {totalReviews === 1 ? 'guest' : 'guests'} shared their experience</p>
         </div>
         <motion.div
           animate={{ rotate: op ? 180 : 0 }}
@@ -1367,7 +1400,7 @@ function QualityIndexSection({ qualityIndex }) {
 }
 
 
-function ExperiencePolicies({ listing, reviews }) {
+function ExperiencePolicies({ listing, reviews, reviewSummary }) {
   const { tokens: { FG, W, B, A, M } } = useTheme();
 
   return (
@@ -1410,16 +1443,17 @@ function ExperiencePolicies({ listing, reviews }) {
               ) : (
                 <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific requirements listed for this experience.</p>
               )}
-              {(listing?.cancellationPolicyText || listing?.cancellationPolicy) && (
+              {(listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) && (
                 <PolicyItem
                   req={{
                     setting: {
                       title: "Cancellation Policy",
-                      description: listing.cancellationPolicyText || listing.cancellationPolicy
+                      description: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
                     }
                   }}
                 />
               )}
+              <ReviewsItem reviews={reviews} summary={reviewSummary} />
             </div>
           </Rev>
         </div>

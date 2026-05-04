@@ -5,7 +5,7 @@ import Icon from "../../Icon";
 
 const parameters = ["1 bedroom", "1 private bath"];
 
-const HeadMoreOptions = ({ className, image, title, hostName, hostAvatar }) => {
+const HeadMoreOptions = ({ className, image, title, hostName, hostAvatar, rating, reviewsCount }) => {
   return (
     <div className={cn(className, styles.head)}>
       <div className={styles.preview}>
@@ -29,8 +29,8 @@ const HeadMoreOptions = ({ className, image, title, hostName, hostAvatar }) => {
         </div> */}
         <div className={styles.rating}>
           <Icon name="star" size="20" />
-          <div className={styles.number}>4.8</div>
-          <div className={styles.reviews}>(256 reviews)</div>
+          <div className={styles.number}>{rating != null ? Number(rating).toFixed(1) : "0.0"}</div>
+          <div className={styles.reviews}>({reviewsCount || 0} reviews)</div>
         </div>
       </div>
     </div>

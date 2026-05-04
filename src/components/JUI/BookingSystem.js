@@ -1513,6 +1513,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           ticketTypeId,
           selectedSlot: selectedEventSlot,
           selectedSlots: selectedEventSlots,
+          cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
         };
 
         const paymentData = {
@@ -1648,7 +1649,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         time: startTime,
         guestCount: totalGuests,
         billableGuestCount: totalGuests
-      }
+      },
+      cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
     };
     if (privateBooking) bookingData.privateBooking = true;
 
