@@ -613,20 +613,37 @@ const Main = ({
       });
     }
 
-    // Sort by date descending to show latest bookings first
+    // Sort by booking time descending to show latest bookings first
     return [...result].sort((a, b) => {
-      const dateA = a.bookingData?.checkInDate || a.bookingData?.bookingDate || a.bookingData?.eventDate || "";
-      const dateB = b.bookingData?.checkInDate || b.bookingData?.bookingDate || b.bookingData?.eventDate || "";
-      
-      // If dates are different, sort by date descending
-      if (dateA !== dateB) {
-        return dateB.localeCompare(dateA);
+      // 1. For Cancelled tab, prioritize the cancellation time if available
+      if (displayedTab === "cancelled") {
+        const cancelA = a.bookingData?.cancelledAt || "";
+        const cancelB = b.bookingData?.cancelledAt || "";
+        if (cancelA !== cancelB) {
+          return cancelB.localeCompare(cancelA);
+        }
       }
+
+      // 2. Sort by the time the booking was actually MADE (createdAt or orderDate)
+      // This ensures "Latest Bookings" appear on top as requested.
+      const createdA = a.bookingData?.createdAt || a.bookingData?.orderDate || a.bookingData?.bookedAt || "";
+      const createdB = b.bookingData?.createdAt || b.bookingData?.orderDate || b.bookingData?.bookedAt || "";
       
-      // Fallback to orderId descending for same-day bookings
+      if (createdA !== createdB) {
+        return createdB.localeCompare(createdA);
+      }
+
+      // 3. Fallback to orderId descending (sequential IDs usually represent creation order)
       const idA = parseInt(a.orderId) || 0;
       const idB = parseInt(b.orderId) || 0;
-      return idB - idA;
+      if (idA !== idB) {
+        return idB - idA;
+      }
+
+      // 4. Last resort: Sort by the experience/service date
+      const dateA = a.bookingData?.checkInDate || a.bookingData?.bookingDate || a.bookingData?.eventDate || "";
+      const dateB = b.bookingData?.checkInDate || b.bookingData?.bookingDate || b.bookingData?.eventDate || "";
+      return dateB.localeCompare(dateA);
     });
   }, [transformedBookings, transformedCompletedBookings, displayedTab]);
 
@@ -787,6 +804,7 @@ const Main = ({
               bookingData: {
                 ...booking.bookingData,
                 orderStatus: "CANCELLED",
+                cancelledAt: new Date().toISOString(),
               },
             };
             return updatedBooking;
@@ -795,11 +813,9 @@ const Main = ({
         });
       });
 
-      // Switch to cancelled tab if not already there
+      // Switch to cancelled tab if not already there, using handleTabChange for proper animation
       if (activeTab !== "cancelled") {
-        setActiveTab("cancelled");
-        setPendingTab("cancelled");
-        setTransitionPhase("fadingOut");
+        handleTabChange("cancelled");
       }
 
       // Close modal and reset state

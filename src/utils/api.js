@@ -291,7 +291,7 @@ export const getCustomerOrders = async (limit = 20, page = 1) => {
   try {
     const offset = (page - 1) * limit;
     const response = await ListingsAPI.get("/orders/customer/my-orders", {
-      params: { limit, offset },
+      params: { limit, offset, _t: Date.now() },
     });
     const payload = response.data;
     console.log("✅ Customer orders fetched (raw):", payload);

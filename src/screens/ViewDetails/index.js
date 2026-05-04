@@ -679,7 +679,8 @@ const ViewDetails = () => {
         originalOrderStatus: "CANCELLED",
         originalData: {
           ...prev.originalData,
-          orderStatus: "CANCELLED"
+          orderStatus: "CANCELLED",
+          cancelledAt: new Date().toISOString()
         }
       }));
 
