@@ -443,8 +443,9 @@ const Checkout = () => {
         } else {
           const guests = pricing.guestCount || 1;
           const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
+          const basePpp = basePrice / guests;
           const label = ppp
-            ? `Base price (${fmt(ppp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
+            ? `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
             : "Base price";
           rows.push({ title: label, value: fmt(basePrice) });
         }
