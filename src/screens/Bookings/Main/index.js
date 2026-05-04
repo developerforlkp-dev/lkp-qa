@@ -1105,9 +1105,9 @@ const Main = ({
                 <p className={styles.emptyDescription}>
                   {emptyState.description}
                 </p>
-                <button type="button" className="button">
+                <Link to="/" className="button">
                   Explore experiences
-                </button>
+                </Link>
               </div>
             </div>
           )}
