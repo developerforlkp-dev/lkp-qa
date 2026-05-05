@@ -3,7 +3,8 @@ import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
 import ProductNavbar from "../../../components/ProductNavbar";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft } from "lucide-react";
-import PhotoView from "../../../components/PhotoView";
+import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
+import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getHost } from "../../../utils/api";
@@ -84,6 +85,206 @@ function ScopedThemeProvider({ children }) {
     </ThemeContext.Provider>
   );
 }
+
+/* ─── GRID GALLERY MODAL ────────────────────────── */
+const GridGallery = ({ items, onClose, onSelect, title, A }) => {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const target = modalRef.current;
+    if (target) disableBodyScroll(target);
+    return () => {
+      if (target) enableBodyScroll(target);
+      else enableBodyScroll(document.body);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      ref={modalRef}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: '#FFF',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch'
+      }}
+    >
+      <div style={{
+        padding: 'clamp(40px, 8vw, 80px) clamp(20px, 5vw, 60px)',
+        maxWidth: '1600px',
+        margin: '0 auto',
+        width: '100%'
+      }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 'clamp(40px, 8vw, 80px)'
+          }}
+        >
+          <div>
+            <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
+            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
+              {title}
+            </h2>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: '#F4F4F4',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'background 0.3s',
+              flexShrink: 0,
+              marginLeft: 20
+            }}
+          >
+            <X size={32} color="#000" />
+          </motion.button>
+        </motion.div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
+          gap: 'clamp(16px, 3vw, 32px)',
+          gridAutoRows: 'clamp(250px, 40vh, 400px)'
+        }}>
+          {items.map((img, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: (i % 3) * 0.1 }}
+              whileHover={{ y: -10, scale: 1.02 }}
+              onClick={() => onSelect(i)}
+              style={{
+                borderRadius: 24,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                background: '#F4F4F4',
+                border: '1px solid rgba(0,0,0,0.05)',
+                position: 'relative',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
+              }}
+            >
+              <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: '24px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: A, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <PlusIcon size={16} color="#FFF" />
+                  </div>
+                  <span style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700 }}>Expand View</span>
+                </div>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── MODAL IMAGE POPUP ────────────────────────── */
+const FullScreenImage = ({ src, onClose }) => {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const target = modalRef.current;
+    if (target) disableBodyScroll(target);
+    return () => {
+      if (target) enableBodyScroll(target);
+      else enableBodyScroll(document.body);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      ref={modalRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10000,
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '5vh 5vw'
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          height: '100%',
+          maxWidth: '1200px',
+          maxHeight: '80vh',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'zoom-out',
+          borderRadius: 32,
+          overflow: 'hidden',
+          boxShadow: '0 50px 100px rgba(0,0,0,0.6)',
+          background: '#000'
+        }}
+      >
+        <img
+          src={src}
+          onClick={onClose}
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            objectFit: 'cover'
+          }}
+          alt="Popup"
+        />
+        <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
+           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const E = [0.22, 1, 0.36, 1];
 
@@ -570,9 +771,10 @@ function GalleryColumn({ images, direction, speed = 28, onImageClick }) {
 }
 
 function Gallery({ event }) {
-  const { tokens: { BG, FG, AH, W, B }, theme } = useTheme();
+  const { tokens: { BG, FG, AH, W, B, A }, theme } = useTheme();
   const [photoViewVisible, setPhotoViewVisible] = useState(false);
   const [photoViewIndex, setPhotoViewIndex] = useState(0);
+  const [gridVisible, setGridVisible] = useState(false);
 
   const eventTitle = event?.title || "SOLSTICE Ed.01";
   const tags = Array.isArray(event?.tags) ? event.tags :
@@ -614,11 +816,7 @@ function Gallery({ event }) {
   }, [GALLERY_COLS]);
 
   const handleImageClick = (src) => {
-    const idx = allImageUrls.indexOf(src);
-    if (idx !== -1) {
-      setPhotoViewIndex(idx);
-      setPhotoViewVisible(true);
-    }
+    setGridVisible(true);
   };
 
   return (
@@ -647,12 +845,30 @@ function Gallery({ event }) {
             <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[4]} direction="up" speed={30} onImageClick={handleImageClick} /></div>
           </div>
         </div>
-        <PhotoView
-          visible={photoViewVisible}
-          items={allImageUrls}
-          initialSlide={photoViewIndex}
-          onClose={() => setPhotoViewVisible(false)}
-        />
+        
+        <AnimatePresence>
+          {gridVisible && !photoViewVisible && (
+            <GridGallery
+              items={allImageUrls}
+              onClose={() => setGridVisible(false)}
+              onSelect={(index) => {
+                setPhotoViewIndex(index);
+                setPhotoViewVisible(true);
+              }}
+              title={eventTitle}
+              A={A}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {photoViewVisible && (
+            <FullScreenImage
+              src={allImageUrls[photoViewIndex]}
+              onClose={() => setPhotoViewVisible(false)}
+            />
+          )}
+        </AnimatePresence>
       </section>
     </>
   );

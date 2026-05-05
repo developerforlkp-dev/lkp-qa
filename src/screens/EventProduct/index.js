@@ -13,13 +13,13 @@ import Browse from "../../components/Browse";
 import GuestPicker from "../../components/GuestPicker";
 import { browse2 } from "../../mocks/browse";
 import { useLocation, useHistory } from "react-router-dom";
-import { ChevronLeft, ChevronDown, FileText } from "lucide-react";
+import { ChevronLeft, ChevronDown, FileText, Plus, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
 import { createEventOrder, getEventDetails, getListingReviews } from "../../utils/api";
 import Modal from "../../components/Modal";
 import Login from "../../components/Login";
-import PhotoView from "../../components/PhotoView";
+import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 
 const asNonEmptyString = (value) => {
   if (typeof value !== "string") return null;
@@ -243,6 +243,197 @@ const dummyEventData = {
   ],
 };
 
+/* ─── GRID GALLERY MODAL ────────────────────────── */
+const GridGallery = ({ items, onClose, onSelect, title, A }) => {
+  const galleryRef = useRef(null);
+
+  useEffect(() => {
+    const target = galleryRef.current;
+    if (target) disableBodyScroll(target);
+    return () => {
+      if (target) enableBodyScroll(target);
+      else enableBodyScroll(document.body);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      ref={galleryRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9990,
+        background: '#FFFFFF',
+        overflowY: 'auto',
+        padding: 'clamp(40px, 8vw, 100px) clamp(20px, 5vw, 60px)'
+      }}
+    >
+      <div style={{ maxWidth: 1400, margin: '0 auto', position: 'relative' }}>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 60 }}
+        >
+          <div>
+            <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
+            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
+              {title}
+            </h2>
+          </div>
+          <motion.button
+            whileHover={{ rotate: 90, scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            style={{
+              background: 'rgba(0,0,0,0.03)',
+              border: `1px solid rgba(0,0,0,0.08)`,
+              color: '#000',
+              width: 'clamp(56px, 10vw, 80px)',
+              height: 'clamp(56px, 10vw, 80px)',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.3s',
+              flexShrink: 0,
+              marginLeft: 20
+            }}
+          >
+            <Plus size={32} style={{ transform: 'rotate(45deg)' }} color="#000" />
+          </motion.button>
+        </motion.div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
+          gap: 'clamp(16px, 3vw, 32px)',
+          gridAutoRows: 'clamp(250px, 40vh, 400px)'
+        }}>
+          {items.map((img, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: (i % 3) * 0.1 }}
+              whileHover={{ y: -10, scale: 1.02 }}
+              onClick={() => onSelect(i)}
+              style={{
+                borderRadius: 24,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                background: '#F4F4F4',
+                border: '1px solid rgba(0,0,0,0.05)',
+                position: 'relative',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
+              }}
+            >
+              <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: '24px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: A, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Plus size={16} color="#FFF" />
+                  </div>
+                  <span style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700 }}>Expand View</span>
+                </div>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── MODAL IMAGE POPUP ────────────────────────── */
+const FullScreenImage = ({ src, onClose }) => {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const target = modalRef.current;
+    if (target) disableBodyScroll(target);
+    return () => {
+      if (target) enableBodyScroll(target);
+      else enableBodyScroll(document.body);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      ref={modalRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10000,
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '5vh 5vw'
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          height: '100%',
+          maxWidth: '1200px',
+          maxHeight: '80vh',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'zoom-out',
+          borderRadius: 32,
+          overflow: 'hidden',
+          boxShadow: '0 50px 100px rgba(0,0,0,0.6)',
+          background: '#000'
+        }}
+      >
+        <img
+          src={src}
+          onClick={onClose}
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            objectFit: 'cover'
+          }}
+          alt="Popup"
+        />
+        <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
+           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+
 
 
 function PolicyItem({ req }) {
@@ -353,6 +544,9 @@ const EventProduct = () => {
   const autoCheckoutTriggeredRef = useRef(false);
   const handleBookNowRef = useRef(null);
   const [bookButtonArmed, setBookButtonArmed] = useState(Boolean(checkoutAfterGuestSelection));
+  const [gridVisible, setGridVisible] = useState(false);
+
+  const { tokens: { A, FG, M, AL, B, S } } = useTheme();
 
   const hasValidJwtToken = () => {
     if (typeof window === "undefined") return false;
@@ -1035,8 +1229,7 @@ const EventProduct = () => {
               <div
                 className={styles.heroMainImage}
                 onClick={() => {
-                  setPhotoIndex(0);
-                  setPhotoVisible(true);
+                  setGridVisible(true);
                 }}
               >
                 <img
@@ -1055,8 +1248,7 @@ const EventProduct = () => {
                       key={imgIdx}
                       className={styles.heroGridImage}
                       onClick={() => {
-                        setPhotoIndex(imgIdx);
-                        setPhotoVisible(true);
+                        setGridVisible(true);
                       }}
                     >
                       <img
@@ -1069,8 +1261,7 @@ const EventProduct = () => {
                           className={styles.showAllPhotos}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setPhotoIndex(3);
-                            setPhotoVisible(true);
+                            setGridVisible(true);
                           }}
                         >
                           <Icon name="image" size="20" />
@@ -1084,16 +1275,70 @@ const EventProduct = () => {
             </div>
           )}
         </div>
-        {photoVisible && (
-          <PhotoView
-            visible={photoVisible}
-            items={allImages}
-            initialSlide={photoIndex}
-            onClose={() => setPhotoVisible(false)}
-            title={event?.title}
-          />
-        )}
+        
+        <AnimatePresence>
+          {gridVisible && !photoVisible && (
+            <GridGallery
+              items={allImages}
+              onClose={() => setGridVisible(false)}
+              onSelect={(index) => {
+                setPhotoIndex(index);
+                setPhotoVisible(true);
+              }}
+              title={event?.title}
+              A={A}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {photoVisible && (
+            <FullScreenImage
+              src={allImages[photoIndex] || (allImages.length > 0 ? allImages[0] : "/images/content/placeholder.jpg")}
+              onClose={() => setPhotoVisible(false)}
+            />
+          )}
+        </AnimatePresence>
       </div>
+      
+      {/* EVENT VISUALS (Marquee Gallery) */}
+      <section style={{ background: '#FFFFFF', padding: "80px 0 100px", overflow: "hidden" }}>
+        <div className="container" style={{ marginBottom: 60 }}>
+           <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
+           <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: '#141414', lineHeight: 1, letterSpacing: '-0.04em' }}>Event Visuals</h2>
+        </div>
+        <div style={{ display: "flex" }}>
+          {(() => {
+            const baseItemsLocal = allImages.length > 0 ? allImages : ["/images/content/placeholder.jpg"];
+            let filledItems = [...baseItemsLocal];
+            while (filledItems.length < 8) {
+              filledItems = [...filledItems, ...baseItemsLocal];
+            }
+            const doubledItems = [...filledItems, ...filledItems];
+
+            return (
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+                style={{ display: "flex", gap: 16, width: "max-content", paddingLeft: 16 }}
+              >
+                {doubledItems.map((img, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 0.98 }}
+                    onClick={() => {
+                      setGridVisible(true);
+                    }}
+                    style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}`, cursor: "pointer" }}
+                  >
+                    <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Gallery" />
+                  </motion.div>
+                ))}
+              </motion.div>
+            );
+          })()}
+        </div>
+      </section>
 
       {/* Main Content */}
       <div className={cn("container", styles.container)}>
