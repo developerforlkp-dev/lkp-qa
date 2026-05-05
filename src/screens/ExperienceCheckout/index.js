@@ -428,6 +428,10 @@ const Checkout = () => {
       const commission = pricing.commission || pricing.platformCommission || pricing.platformFee || 0;
       const tax = pricing.tax || pricing.taxAmount || 0;
       const discount = pricing.discount || pricing.discountAmount || 0;
+      const taxRate = Number(pricing.taxRate || 0);
+      const taxableSubtotal = Math.max(0, Number(basePrice || 0) + Number(addonsTotal || 0) - Number(discount || 0));
+      const computedTaxFromSubtotal = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : null;
+      const displayTax = computedTaxFromSubtotal !== null ? computedTaxFromSubtotal : tax;
 
       // Base price
       if (basePrice > 0) {
@@ -468,9 +472,9 @@ const Checkout = () => {
       */
 
       // Tax
-      if (tax > 0) {
+      if (displayTax > 0) {
         const rate = pricing.taxRate ? ` (${pricing.taxRate}%)` : "";
-        rows.push({ title: `Taxes (paid by you)${rate}`, value: fmt(tax) });
+        rows.push({ title: `Taxes (paid by you)${rate}`, value: fmt(displayTax) });
       }
 
       // Discount
