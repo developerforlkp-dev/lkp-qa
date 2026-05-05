@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cn from "classnames";
-import { useGoogleLogin } from '@react-oauth/google';
 import styles from "./Login.module.sass";
 import Icon from "../Icon";
 import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
@@ -15,15 +14,31 @@ const Login = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const countryCode = "+91";
+  const isMountedRef = useRef(true);
+  const otpFocusTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (otpFocusTimeoutRef.current) {
+        clearTimeout(otpFocusTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Auto-focus first OTP input when OTP step is shown
   useEffect(() => {
     if (step === "otp") {
       const firstInput = document.getElementById(`otp-login-0`);
       if (firstInput) {
-        setTimeout(() => firstInput.focus(), 100);
+        otpFocusTimeoutRef.current = setTimeout(() => firstInput.focus(), 100);
       }
     }
+    return () => {
+      if (otpFocusTimeoutRef.current) {
+        clearTimeout(otpFocusTimeoutRef.current);
+      }
+    };
   }, [step]);
 
   // Handle OTP input change
@@ -72,23 +87,50 @@ const Login = ({ onClose }) => {
     }
   };
 
-  // Setup custom Google login
-  const login = useGoogleLogin({
-    onSuccess: handleGoogleSuccess,
-    onError: () => setError("Google login failed. Please try again."),
-    flow: 'implicit',
-  });
+  const googleClientId =
+    process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+    "876306099009-inkldmfdu3ilqufhr6v9te3jom3u4odh.apps.googleusercontent.com";
+
+  useEffect(() => {
+    const initGoogle = () => {
+      if (!window.google?.accounts?.id) return;
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleSuccess,
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      initGoogle();
+      return;
+    }
+
+    const scriptId = "google-identity-script-login";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initGoogle;
+      document.body.appendChild(script);
+    }
+  }, [googleClientId]);
 
   // Handle Google login success
   async function handleGoogleSuccess(tokenResponse) {
     try {
+      if (!isMountedRef.current) return;
       setLoading(true);
       setError("");
 
       console.log("🔵 Google OAuth token received");
       
       // Send access token to backend
-      const response = await loginWithGoogle(tokenResponse.access_token);
+      if (!tokenResponse?.credential) {
+        throw new Error("No Google ID token received");
+      }
+      const response = await loginWithGoogle(tokenResponse.credential);
 
       // Store JWT token from response
       const token = response?.token;
@@ -112,15 +154,28 @@ const Login = ({ onClose }) => {
       window.location.reload();
     } catch (err) {
       console.error("Google login error:", err);
-      setError(err.response?.data?.message || err.message || "Google login failed.");
+      if (isMountedRef.current) {
+        setError(err.response?.data?.message || err.message || "Google login failed.");
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }
+
+  const handleGoogleClick = () => {
+    if (!window.google?.accounts?.id) {
+      setError("Google login is not ready. Please try again.");
+      return;
+    }
+    window.google.accounts.id.prompt();
+  };
 
   // Send OTP when phone number is submitted
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
+    if (!isMountedRef.current) return;
     setError("");
 
     if (!phoneNumber || phoneNumber.trim() === "") {
@@ -131,20 +186,26 @@ const Login = ({ onClose }) => {
     setLoading(true);
     try {
       await sendPhoneOTP(phoneNumber.trim(), countryCode);
+      if (!isMountedRef.current) return;
       setStep("otp");
       setError("");
       setOtp(["", "", "", "", "", ""]);
       setActiveInput(0);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
+      if (isMountedRef.current) {
+        setError(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   // Verify OTP when OTP is submitted
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
+    if (!isMountedRef.current) return;
     setError("");
 
     const otpString = otp.join("");
@@ -198,9 +259,13 @@ const Login = ({ onClose }) => {
       }
       window.location.reload();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Invalid OTP. Please try again.");
+      if (isMountedRef.current) {
+        setError(err.response?.data?.message || err.message || "Invalid OTP. Please try again.");
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -222,7 +287,7 @@ const Login = ({ onClose }) => {
           <div className={styles.btns}>
             <button 
               className={cn("button-stroke", styles.googleBtn)} 
-              onClick={() => login()}
+              onClick={handleGoogleClick}
               type="button"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
