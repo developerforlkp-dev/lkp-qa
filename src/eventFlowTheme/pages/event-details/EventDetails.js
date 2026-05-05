@@ -1814,7 +1814,7 @@ export default function EventDetails() {
     return () => { mounted = false; };
   }, [eventId]);
 
-  if (loading) return <div className="p-5 text-center" style={{ minHeight: "100vh", background: "#f3f3f1", color: "#333", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading premium experience...</div>;
+  if (loading) return <div className="p-5 text-center" style={{ minHeight: "100vh", background: "#f3f3f1", color: "#333", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading event details...</div>;
   if (error) return <div className="p-5 text-center text-danger" style={{ minHeight: "100vh", background: "#f3f3f1", display: "flex", alignItems: "center", justifyContent: "center" }}>{error}</div>;
 
   return (
