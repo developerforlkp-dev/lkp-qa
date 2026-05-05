@@ -1208,12 +1208,22 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setStartTime(firstSlot ? firstSlot.slotName : null);
   }, [canSelectMultipleEventSlots, eventSlots, isEventBooking, selectedEventSlotIds, isEventSlotAccessible]);
 
+  const getAddonLineTotal = useCallback((item, guestCount) => {
+    const addon = item?.addon || item || {};
+    const addonPrice = parseFloat(addon?.price || addon?.addonPrice || 0) || 0;
+    const quantity = Number(item?.quantity || addon?.quantity || 1) || 1;
+    const pricingTypeRaw = String(addon?.pricingType || addon?.pricing_type || "").toLowerCase();
+    const isIndividualAddon = pricingTypeRaw === "individual";
+    const billableGuestCount = Math.max(1, Number(guestCount || 0));
+    return isIndividualAddon
+      ? addonPrice * quantity * billableGuestCount
+      : addonPrice;
+  }, []);
+
   // Calculate addon total
-  const addOnsTotal = selectedAddOns.reduce((sum, item) => {
-    const addon = item.addon || item;
-    const quantity = item.quantity || 1;
-    return sum + ((parseFloat(addon.price) || 0) * quantity);
-  }, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum, item) => (
+    sum + getAddonLineTotal(item, totalGuests)
+  ), 0);
 
   // Extract proper price depending on whether a time slot is selected
   const selectedSlotData = timeSlots.find(s => s.slotName === startTime || s.startTime === startTime) || null;
@@ -1298,7 +1308,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
     ? (baseAdultPricePerPerson * guests.adults) + (baseChildPricePerChild * guests.children)
-    : baseTotal;
+    : (eventGuestPricing.baseUnitPrice * totalGuests);
   const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
   const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
@@ -1629,11 +1639,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     selectedAddOns.forEach(item => {
       const addon = item.addon || item;
       const id = addon.addonId || addon.id;
-      const quantity = item.quantity || 1;
+      const quantity = Number(item.quantity || addon.quantity || 1) || 1;
+      const pricingTypeRaw = String(addon?.pricingType || addon?.pricing_type || "").toLowerCase();
+      const isIndividualAddon = pricingTypeRaw === "individual";
+      const addonLineTotal = getAddonLineTotal(item, totalGuests);
       addOnQuantities[id] = quantity;
       receipt.push({
-        title: `${addon.title || "Add-on"} × ${quantity}`,
-        content: `₹${((parseFloat(addon.price) || 0) * quantity).toFixed(2)}`,
+        title: isIndividualAddon
+          ? `${addon.title || "Add-on"} × ${quantity} × ${Math.max(1, totalGuests)} guest${Math.max(1, totalGuests) > 1 ? "s" : ""}`
+          : `${addon.title || "Add-on"} × ${quantity}`,
+        content: `₹${addonLineTotal.toFixed(2)}`,
         kind: "addon",
         showInCheckout: false
       });
