@@ -1595,52 +1595,13 @@ const ViewDetails = () => {
                   <span>{booking.pricing.taxAmount}</span>
                 </div>
               )}
-              {booking.pricing.platformFee && parseFloat(booking.originalData?.platformFee || 0) > 0 && !["confirmed", "pending", "cancelled", "canceled", "upcoming"].includes(String(booking.status || booking.statusTone || booking.originalData?.orderStatus).toLowerCase()) && (
-                <div className={styles.paymentRow}>
-                  <span>Platform Fee</span>
-                  <span>{booking.pricing.platformFee}</span>
-                </div>
-              )}
               <div className={cn(styles.paymentRow, styles.paymentTotal)}>
                 <span>Total Paid</span>
                 <span>{booking.pricing.total}</span>
               </div>
-              <div className={styles.paymentMethod}>
-                <Icon name="credit-card" size="16" />
-                <span>Payment Status: </span>
-                <span className={cn(styles.paymentStatusBadge, {
-                  [styles.paymentStatusFailed]: isPaymentFailed(booking.paymentStatus),
-                  [styles.paymentStatusPending]: getPaymentStatus(booking.paymentStatus) === "Pending",
-                  [styles.paymentStatusSuccess]: getPaymentStatus(booking.paymentStatus) === "Success",
-                })}>
-                  {getPaymentStatus(booking.paymentStatus)}
-                </span>
-              </div>
-              {isPaymentFailed(booking.paymentStatus) && (
-                <div className={styles.paymentFailedMessage}>
-                  <Icon name="alert-circle" size="16" />
-                  <span>Payment failed. Please retry to complete your booking.</span>
-                </div>
-              )}
               {booking.originalData?.razorpayOrderId && (
                 <div className={styles.paymentMethod} style={{ marginTop: '8px', fontSize: '12px', color: '#777E90' }}>
                   <span>Order ID: {booking.originalData.razorpayOrderId}</span>
-                </div>
-              )}
-              {isPaymentFailed(booking.paymentStatus) && (
-                <div className={styles.paymentActions}>
-                  <button
-                    type="button"
-                    className={cn("button", "button-small", styles.retryPaymentButton)}
-                    onClick={() => {
-                      // TODO: Implement retry payment functionality
-                      console.log("Retry payment for order:", booking.orderId);
-                      alert("Payment retry functionality will be implemented here");
-                    }}
-                  >
-                    <Icon name="refresh" size="16" />
-                    <span>Retry Payment</span>
-                  </button>
                 </div>
               )}
             </div>
