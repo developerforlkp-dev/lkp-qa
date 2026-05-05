@@ -3,6 +3,7 @@ import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
 import ProductNavbar from "../../../components/ProductNavbar";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft } from "lucide-react";
+import PhotoView from "../../../components/PhotoView";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getHost } from "../../../utils/api";
@@ -160,6 +161,18 @@ const ScopedStyles = () => (
 );
 
 /* ─── UTILS ──────────────────────────────────────── */
+const formatTime12h = (timeStr) => {
+  if (!timeStr || typeof timeStr !== "string") return timeStr;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!match) return timeStr;
+  
+  const hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 || 12;
+  
+  return `${hour12}:${minutes} ${ampm}`;
+};
 function Cursor() {
   const { tokens: { A, AL } } = useTheme();
   const x = useMotionValue(-200), y = useMotionValue(-200);
@@ -532,19 +545,24 @@ function About({ event }) {
   );
 }
 
-function GalleryColumn({ images, direction, speed = 28 }) {
+function GalleryColumn({ images, direction, speed = 28, onImageClick }) {
   const { tokens: { B } } = useTheme();
   const items = [...images, ...images, ...images];
   return (
     <div style={{ overflow: "hidden", height: "100%", position: "relative" }}>
       <motion.div animate={{ y: direction === "up" ? ["0%", "-33.33%"] : ["-33.33%", "0%"] }} transition={{ duration: speed, ease: "linear", repeat: Infinity }} style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", paddingBottom: 16 }}>
         {items.map((img, i) => (
-          <div key={i} style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${B}`, width: "100%", height: img.h, flexShrink: 0 }}>
+          <motion.div 
+            key={i} 
+            onClick={() => onImageClick && onImageClick(img.src)}
+            whileHover={{ scale: 1.02, filter: "brightness(1.1)" }}
+            style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${B}`, width: "100%", height: img.h, flexShrink: 0, cursor: "pointer", transition: "filter 0.3s ease" }}
+          >
             <img src={img.src} alt={img.label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: "saturate(0.9) contrast(1.1)" }} />
             <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)`, display: "flex", alignItems: "flex-end", padding: 24 }}>
               <span style={{ fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", color: "#FFF", fontWeight: 600 }}>{img.label}</span>
             </div>
-          </div>
+          </motion.div>
         ))}
       </motion.div>
     </div>
@@ -553,6 +571,9 @@ function GalleryColumn({ images, direction, speed = 28 }) {
 
 function Gallery({ event }) {
   const { tokens: { BG, FG, AH, W, B }, theme } = useTheme();
+  const [photoViewVisible, setPhotoViewVisible] = useState(false);
+  const [photoViewIndex, setPhotoViewIndex] = useState(0);
+
   const eventTitle = event?.title || "SOLSTICE Ed.01";
   const tags = Array.isArray(event?.tags) ? event.tags :
                typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) :
@@ -580,13 +601,25 @@ function Gallery({ event }) {
   const dynamicCols = chunkMedia(eventMedia, 5);
   
   // Fallback to reference images if no media is provided
-  const GALLERY_COLS = dynamicCols || [
+  const GALLERY_COLS = useMemo(() => dynamicCols || [
     [{ src: "https://picsum.photos/seed/a1/300/400", label: "Live", h: 420 }, { src: "https://picsum.photos/seed/a2/300/500", label: "Audience", h: 560 }, { src: "https://picsum.photos/seed/a3/300/300", label: "Art", h: 320 }],
     [{ src: "https://picsum.photos/seed/b1/300/500", label: "Painting", h: 520 }, { src: "https://picsum.photos/seed/b2/300/400", label: "Venue", h: 380 }, { src: "https://picsum.photos/seed/b3/300/400", label: "Movement", h: 400 }],
     [{ src: "https://picsum.photos/seed/c1/300/400", label: "Guests", h: 380 }, { src: "https://picsum.photos/seed/c2/300/600", label: "Sonic", h: 540 }, { src: "https://picsum.photos/seed/c3/300/400", label: "Canvas", h: 420 }],
     [{ src: "https://picsum.photos/seed/d1/300/500", label: "Heritage", h: 480 }, { src: "https://picsum.photos/seed/d2/300/400", label: "Expression", h: 420 }, { src: "https://picsum.photos/seed/d3/300/300", label: "Energy", h: 360 }],
     [{ src: "https://picsum.photos/seed/e1/300/400", label: "Exhibitions", h: 360 }, { src: "https://picsum.photos/seed/e2/300/500", label: "Visuals", h: 500 }, { src: "https://picsum.photos/seed/e3/300/400", label: "Sound", h: 460 }],
-  ];
+  ], [dynamicCols]);
+
+  const allImageUrls = useMemo(() => {
+    return GALLERY_COLS.flat().map(img => img.src);
+  }, [GALLERY_COLS]);
+
+  const handleImageClick = (src) => {
+    const idx = allImageUrls.indexOf(src);
+    if (idx !== -1) {
+      setPhotoViewIndex(idx);
+      setPhotoViewVisible(true);
+    }
+  };
 
   return (
     <>
@@ -607,13 +640,19 @@ function Gallery({ event }) {
             height: 850, 
             overflow: "hidden" 
           }}>
-            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[0]} direction="up" speed={28} /></div>
-            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[1]} direction="down" speed={36} /></div>
-            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[2]} direction="up" speed={32} /></div>
-            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[3]} direction="down" speed={40} /></div>
-            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[4]} direction="up" speed={30} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[0]} direction="up" speed={28} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[1]} direction="down" speed={36} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[2]} direction="up" speed={32} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[3]} direction="down" speed={40} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[4]} direction="up" speed={30} onImageClick={handleImageClick} /></div>
           </div>
         </div>
+        <PhotoView
+          visible={photoViewVisible}
+          items={allImageUrls}
+          initialSlide={photoViewIndex}
+          onClose={() => setPhotoViewVisible(false)}
+        />
       </section>
     </>
   );
@@ -1326,8 +1365,8 @@ function Tickets({ event }) {
                       }}
                     >
                       <div style={{ textAlign: "left" }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: isSelected ? A : FG }}>{s.slotName || s.startTime}</p>
-                        {s.endTime && <p style={{ fontSize: 10, color: M, marginTop: 2 }}>Ends {s.endTime}</p>}
+                        <p style={{ fontSize: 13, fontWeight: 700, color: isSelected ? A : FG }}>{formatTime12h(s.slotName || s.startTime)}</p>
+                        {s.endTime && <p style={{ fontSize: 10, color: M, marginTop: 2 }}>Ends {formatTime12h(s.endTime)}</p>}
                       </div>
                       <div style={{ 
                         width: 18, 

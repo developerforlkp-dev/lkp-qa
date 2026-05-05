@@ -290,7 +290,7 @@ export const getCustomerOrders = async (limit = 20, page = 1) => {
   try {
     const offset = (page - 1) * limit;
     const response = await ListingsAPI.get("/orders/customer/my-orders", {
-      params: { limit, offset },
+      params: { limit, offset, _t: Date.now() },
     });
     const payload = response.data;
     console.log("✅ Customer orders fetched (raw):", payload);
@@ -911,6 +911,25 @@ export const submitOrderReview = async (orderId, reviewData) => {
       status: error.response?.status,
       statusText: error.response?.statusText,
     });
+    throw error;
+  }
+};
+
+// Get reviews for a listing
+export const getListingReviews = async (listingId) => {
+  try {
+    if (!listingId) {
+      throw new Error("listingId is required");
+    }
+
+    const listingIdNum = Number(listingId);
+    const listingIdStr = (!isNaN(listingIdNum) && listingIdNum > 0) ? String(listingIdNum) : String(listingId);
+
+    const response = await ListingsAPI.get(`/reviews/listing/${listingIdStr}`);
+    console.log(`✅ Reviews fetched for listing ${listingIdStr}:`, response.data);
+    return response.data;
+  } catch (error) {
+    console.error(`❌ Error fetching reviews for listing ${listingId}:`, error.response?.data || error.message);
     throw error;
   }
 };

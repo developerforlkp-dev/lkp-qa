@@ -396,6 +396,23 @@ const normalizeBookingTime = (value) => {
   return `${hours}:${minutes}:00`;
 };
 
+/**
+ * Robustly format a "HH:mm[:ss]" string into "h:mm AM/PM".
+ * Returns the original string if it doesn't match the time format.
+ */
+const formatTime12h = (timeStr) => {
+  if (!timeStr || typeof timeStr !== "string") return timeStr;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!match) return timeStr;
+  
+  const hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const hour12 = hours % 12 || 12;
+  
+  return `${hour12}:${minutes} ${ampm}`;
+};
+
 const getRazorpayKeyFromCache = () => {
   try {
     const cachedKey = localStorage.getItem("lastRazorpayKeyId");
@@ -1245,7 +1262,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : (experienceGuestPricing?.finalUnitPrice ?? parseFloat(effectiveRawPrice || 0));
 
   // Child pricing for experiences
-  const childrenAllowed = !isEventBooking && asBoolean(
+  const childrenAllowed = asBoolean(
     listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren,
     true
   );
@@ -1329,11 +1346,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [bookingGuestLimit, clampGuestsToSeatLimit]);
 
   useEffect(() => {
-    if (isEventBooking || childrenAllowed) return;
+    if (childrenAllowed) return;
     setGuests((current) => (
       current.children === 0 ? current : { ...current, children: 0 }
     ));
-  }, [childrenAllowed, isEventBooking]);
+  }, [childrenAllowed]);
 
   const updateGuestsWithinSeatLimit = useCallback((updater) => {
     setGuests((current) => {
@@ -1513,6 +1530,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           ticketTypeId,
           selectedSlot: selectedEventSlot,
           selectedSlots: selectedEventSlots,
+          cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
         };
 
         const paymentData = {
@@ -1648,7 +1666,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         time: startTime,
         guestCount: totalGuests,
         billableGuestCount: totalGuests
-      }
+      },
+      cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
     };
     if (privateBooking) bookingData.privateBooking = true;
 
@@ -1870,7 +1889,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1887,11 +1906,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 position: "relative",
                 width: "95%",
                 maxWidth: 850,
+                maxHeight: "calc(100vh - 40px)",
                 background: BG,
                 borderRadius: 32,
                 boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
                 border: `1px solid ${B}`,
-                overflow: "hidden"
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column"
               }}
             >
               {/* Header */}
@@ -1931,6 +1953,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </button>
                 </div>
               </div>
+
+              <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
 
               {/* Closed state — all dates have passed */}
               {isExperienceClosed ? (
@@ -2057,7 +2081,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         {eventSlots.length > 0 ? eventSlots.map((slot, index) => {
                           const slotId = String(slot.eventSlotId ?? slot.id);
-                          const isDisabled = !isEventSlotAccessible(slot, index);
+                          const slotKeys = new Set();
+                          addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
+                          const isDateValid = slotKeys.size === 0 || slotKeys.has(selectedDateKey);
+                          const isDisabled = !isEventSlotAccessible(slot, index) || !isDateValid;
                           const isSelected = selectedEventSlotIds.includes(slotId);
                           return (
                             <button
@@ -2086,8 +2113,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 transition: "0.2s"
                               }}
                             >
-                              {slot.slotName}
-                              {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{slot.endTime}</span>}
+                              {formatTime12h(slot.slotName)}
+                              {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{formatTime12h(slot.endTime)}</span>}
                             </button>
                           );
                         }) : <div style={{ gridColumn: "span 2", padding: "20px", textAlign: "center", color: M }}>No slots available</div>}
@@ -2098,7 +2125,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           onClick={() => setShowTimePicker(!showTimePicker)}
                           style={{ padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
                         >
-                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : M }}>{startTime || "Select Time"}</span>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : M }}>{formatTime12h(startTime) || "Select Time"}</span>
                           <ChevronDown size={18} color={M} />
                         </div>
                         {showTimePicker && (
@@ -2182,7 +2209,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           max={adultMax}
                         />
                       </div>
-                      {(isEventBooking || childrenAllowed) && (
+                      {childrenAllowed && (
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
                           <Counter
@@ -2246,8 +2273,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 <ShieldCheck size={14} />
                 <span>Secure payment processed by Little Known Planet</span>
               </div>
-              </>
+               </>
               )}
+              </div>
             </motion.div>
           </div>
         )}

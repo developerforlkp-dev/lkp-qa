@@ -5,7 +5,7 @@ import styles from "./ExperienceCheckout.module.sass";
 import Control from "../../components/Control";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
-import { getOrderDetails, getStayDetails, getListingAddons } from "../../utils/api";
+import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
@@ -30,6 +30,7 @@ const Checkout = () => {
   const [checkingPayment, setCheckingPayment] = useState(location.state?.bookingData ? false : true);
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [addonDetails, setAddonDetails] = useState([]);
+  const [reviewsData, setReviewsData] = useState({ rating: null, count: 0 });
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -189,6 +190,8 @@ const Checkout = () => {
                 ...(prev || {}),
                 hostName: order?.hostName || orderDetails?.hostName || prev?.hostName,
                 hostAvatar: "/images/content/avatar.jpg",
+                cancellationAllowed: order?.cancellationAllowed ?? orderDetails?.cancellationAllowed ?? order?.listing?.cancellationAllowed ?? orderDetails?.listing?.cancellationAllowed ?? order?.event?.cancellationAllowed ?? orderDetails?.event?.cancellationAllowed ?? prev?.cancellationAllowed,
+                cancellationPolicySummary: order?.cancellationPolicySummary || order?.listing?.cancellationPolicySummary || orderDetails?.cancellationPolicySummary || orderDetails?.listing?.cancellationPolicySummary || order?.event?.cancellationPolicySummary || orderDetails?.event?.cancellationPolicySummary || prev?.cancellationPolicySummary,
                 pricing: {
                   ...prevPricing,
                   ...serverPricing,
@@ -443,8 +446,9 @@ const Checkout = () => {
         } else {
           const guests = pricing.guestCount || 1;
           const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
+          const basePpp = basePrice / guests;
           const label = ppp
-            ? `Base price (${fmt(ppp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
+            ? `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
             : "Base price";
           rows.push({ title: label, value: fmt(basePrice) });
         }
@@ -501,6 +505,79 @@ const Checkout = () => {
     };
   }, [bookingData, selectedAddOns, paymentData]);
 
+  const [cancellationPolicy, setCancellationPolicy] = useState(null);
+
+  // Sync cancellation policy from bookingData (order priority) or fetch fallback
+  useEffect(() => {
+    // Priority: If bookingData has an explicit allowed flag, use it
+    if (bookingData?.cancellationAllowed === true && bookingData?.cancellationPolicySummary) {
+      setCancellationPolicy(bookingData.cancellationPolicySummary);
+    } else if (bookingData?.cancellationAllowed === false) {
+      setCancellationPolicy(null);
+    } else {
+      // Fallback: Fetch listing configuration if order doesn't have it
+      const listingId = bookingData?.listingId;
+      const eventId = bookingData?.eventId;
+      
+      if (eventId) {
+        getEventDetails(eventId).then((data) => {
+          if (data?.cancellationAllowed === true) {
+            const policy = data?.cancellationPolicySummary || data?.cancellationPolicy || data?.cancellationPolicyText;
+            if (policy) setCancellationPolicy(policy);
+          } else if (data?.cancellationAllowed === false) {
+            setCancellationPolicy(null);
+          }
+        }).catch((err) => console.error("Error fetching event policy:", err));
+      } else if (listingId) {
+        getListing(listingId)
+          .then((data) => {
+            let isAllowed = data?.cancellationAllowed;
+            if (isAllowed === undefined && data?.billingConfiguration) {
+              isAllowed = data.billingConfiguration.cancellationAllowed;
+            }
+
+            if (isAllowed === true) {
+              const policy =
+                data?.cancellationPolicySummary ||
+                data?.cancellationPolicy ||
+                data?.cancellationPolicyText ||
+                data?.billingConfiguration?.cancellationPolicySummary;
+              if (policy) setCancellationPolicy(policy);
+            } else if (isAllowed === false) {
+              setCancellationPolicy(null);
+            } else {
+              getBillingConfiguration(listingId).then((config) => {
+                if (config?.cancellationAllowed === true) {
+                  const configPolicy = config?.cancellationPolicySummary || config?.cancellationPolicy || config?.cancellationPolicyText;
+                  if (configPolicy) setCancellationPolicy(configPolicy);
+                } else if (config?.cancellationAllowed === false) {
+                  setCancellationPolicy(null);
+                }
+              }).catch(() => {});
+            }
+          })
+          .catch((err) => console.error("Error fetching policy:", err));
+      }
+    }
+  }, [bookingData?.listingId, bookingData?.eventId, bookingData?.cancellationAllowed, bookingData?.cancellationPolicySummary]);
+  useEffect(() => {
+    const listingId = bookingData?.listingId;
+    if (listingId) {
+      // Fetch reviews
+      getListingReviews(listingId)
+        .then((res) => {
+          const data = res?.data || res;
+          if (data) {
+             setReviewsData({
+               rating: data.averageRating || null,
+               count: data.totalReviews || data.reviews?.length || 0,
+             });
+          }
+        })
+        .catch((err) => console.error("Error fetching reviews:", err));
+    }
+  }, [bookingData?.listingId]);
+
   // Show loading state while checking payment status
   if (checkingPayment) {
     return (
@@ -550,6 +627,7 @@ const Checkout = () => {
   const hostName = bookingData?.hostName || "Host";
   const hostAvatar = bookingData?.hostAvatar || "/images/content/avatar.jpg";
 
+
   return (
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
@@ -583,6 +661,9 @@ const Checkout = () => {
             currency={paymentData?.currency || "INR"}
             hostName={hostName}
             hostAvatar={hostAvatar}
+            cancellationPolicy={cancellationPolicy}
+            rating={reviewsData.rating}
+            reviewsCount={reviewsData.count}
           />
         </div>
       </div>

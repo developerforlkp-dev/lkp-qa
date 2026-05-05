@@ -543,7 +543,7 @@ const StayBookingSystem = ({
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -560,11 +560,14 @@ const StayBookingSystem = ({
                 position: "relative",
                 width: "100%",
                 maxWidth: 480,
+                maxHeight: "calc(100vh - 40px)",
                 background: BG,
                 borderRadius: 32,
                 boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
                 border: `1px solid ${B}`,
-                overflow: "hidden"
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column"
               }}
             >
               {/* Header */}
@@ -589,7 +592,7 @@ const StayBookingSystem = ({
               </div>
 
               {/* Body */}
-              <div style={{ padding: 40 }}>
+              <div style={{ padding: 40, flex: 1, overflowY: "auto", overflowX: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: B, border: `1px solid ${B}`, borderRadius: 20, overflow: "hidden" }}>
                   {/* Check In */}
                   <div style={{ background: S, padding: "20px 24px" }}>

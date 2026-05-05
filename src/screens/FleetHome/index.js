@@ -366,7 +366,9 @@ const FleetHome = () => {
                     onClick={() => setShowDatePicker(!showDatePicker)}
                     style={{ cursor: "pointer" }}
                   >
-                    <div className={styles.searchLabel}>Check-in</div>
+                    <div className={styles.searchLabel}>
+                      {activeFilter === "stays" ? "Check-in" : "Date"}
+                    </div>
                     <div className={styles.searchInput}>
                       {formattedDate}
                     </div>
@@ -381,29 +383,33 @@ const FleetHome = () => {
                 </div>
               </>
             )}
-            <div className={styles.searchDivider}></div>
-            <div
-              className={styles.searchField}
-              ref={guestItemRef}
-              style={{ position: "relative" }}
-            >
-              <Icon name="user" size="16" />
-              <div
-                className={styles.searchFieldContent}
-                onClick={() => setShowGuestPicker(!showGuestPicker)}
-                style={{ cursor: "pointer" }}
-              >
-                <div className={styles.searchLabel}>Guest Count</div>
-                <div className={styles.searchInput}>{guestCountText}</div>
-              </div>
-              <GuestPicker
-                visible={showGuestPicker}
-                onClose={() => setShowGuestPicker(false)}
-                onGuestChange={handleGuestChange}
-                initialGuests={guests}
-                className={styles.guestPicker}
-              />
-            </div>
+            {showCalendar && (
+              <>
+                <div className={styles.searchDivider}></div>
+                <div
+                  className={styles.searchField}
+                  ref={guestItemRef}
+                  style={{ position: "relative" }}
+                >
+                  <Icon name="user" size="16" />
+                  <div
+                    className={styles.searchFieldContent}
+                    onClick={() => setShowGuestPicker(!showGuestPicker)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className={styles.searchLabel}>Guest Count</div>
+                    <div className={styles.searchInput}>{guestCountText}</div>
+                  </div>
+                  <GuestPicker
+                    visible={showGuestPicker}
+                    onClose={() => setShowGuestPicker(false)}
+                    onGuestChange={handleGuestChange}
+                    initialGuests={guests}
+                    className={styles.guestPicker}
+                  />
+                </div>
+              </>
+            )}
             <button className={styles.searchButton} onClick={handleSearch}>Search</button>
           </div>
 
