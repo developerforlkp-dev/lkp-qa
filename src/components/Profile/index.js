@@ -14,7 +14,7 @@ const Profile = ({
   joinedDate,
 }) => {
   const displayJoinedDate = joinedDate || "Mar 15, 2021";
-  
+
   return (
     <div className={cn(className, styles.profile)}>
       <div className={styles.head}>{children}</div>

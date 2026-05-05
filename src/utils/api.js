@@ -429,7 +429,7 @@ export const uploadCustomerAvatar = async (file) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
-    
+
     const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -885,18 +885,18 @@ export const submitOrderReview = async (orderId, reviewData) => {
       comment: reviewData.comment || "",
     };
 
-    // Add optional fields if provided
+    // Add optional fields if provided - allow strings/UUIDs as well as numbers
     if (reviewData.listingId) {
-      const listingIdNum = Number(reviewData.listingId);
-      if (!isNaN(listingIdNum) && listingIdNum > 0) {
-        requestBody.listingId = listingIdNum;
-      }
+      requestBody.listingId = reviewData.listingId;
+    }
+    if (reviewData.eventId) {
+      requestBody.eventId = reviewData.eventId;
+    }
+    if (reviewData.stayId) {
+      requestBody.stayId = reviewData.stayId;
     }
     if (reviewData.customerId) {
-      const customerIdNum = Number(reviewData.customerId);
-      if (!isNaN(customerIdNum) && customerIdNum > 0) {
-        requestBody.customerId = customerIdNum;
-      }
+      requestBody.customerId = reviewData.customerId;
     }
 
     console.log("📤 Submitting review with request body:", requestBody);
@@ -1179,6 +1179,40 @@ export const getHost = async (hostId) => {
   }
 };
 
+// ✅ Get event reviews
+export const getEventReviews = async (eventId) => {
+  try {
+    if (!eventId) {
+      throw new Error("eventId is required");
+    }
+    const response = await ListingsAPI.get(`/reviews/event/${eventId}`);
+    const payload = response.data;
+    console.log("✅ Event reviews fetched:", payload);
+    return payload;
+  } catch (error) {
+    console.error(`❌ Error fetching reviews for event ${eventId}:`, error.response?.data || error.message);
+    // Fallback to listing reviews if event-specific endpoint fails or isn't appropriate
+    return getListingReviews(eventId);
+  }
+};
+
+// ✅ Get stay reviews
+export const getStayReviews = async (stayId) => {
+  try {
+    if (!stayId) {
+      throw new Error("stayId is required");
+    }
+    const response = await ListingsAPI.get(`/reviews/stay/${stayId}`);
+    const payload = response.data;
+    console.log("✅ Stay reviews fetched:", payload);
+    return payload;
+  } catch (error) {
+    console.error(`❌ Error fetching reviews for stay ${stayId}:`, error.response?.data || error.message);
+    // Fallback to listing reviews if stay-specific endpoint fails
+    return getListingReviews(stayId);
+  }
+};
+
 // ✅ Cancel an order
 export const cancelOrder = async (orderId, cancelData) => {
   try {
@@ -1359,7 +1393,7 @@ export const getLeadDetails = async (leadId) => {
     const payload = response.data;
     console.log("✅ Lead details fetched (raw):", payload);
 
-    return payload; 
+    return payload;
   } catch (error) {
     console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
     throw error;

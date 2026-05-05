@@ -7,7 +7,7 @@ import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getHost } from "../../../utils/api";
+import { getEventDetails, getHost, getListingReviews } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
@@ -1159,25 +1159,43 @@ function Rules({ event }) {
   );
 }
 
-function HostDetails({ event, hostName }) {
-  const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+function HostDetails({ event, hostName, reviews = [] }) {
+  const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
+  const history = useHistory();
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
   const hostProfile = event?.hostProfile;
   const host = hostProfile?.host || hostProfile || event?.host || {};
   const hostDescription = host?.description || host?.bio || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
   const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
-  const hostEmail = host?.email || host?.contactEmail || host?.businessEmail;
-  const hostPhone = host?.phone || host?.phoneNumber || host?.mobile || host?.contactPhone;
-  const hostWebsite = host?.website || host?.websiteUrl;
-  const hostInstagram = host?.instagram || host?.instagramHandle;
-  const hostLocation = host?.city || host?.location || host?.address || [host?.district, host?.state].filter(Boolean).join(", ");
-  const hostListings = Array.isArray(hostProfile?.listings) ? hostProfile.listings.slice(0, 3) : [];
+
+  // Normalise reviews – API may return { ratingSummary, reviews:[...] } or a plain array
+  const normalizedReviews = Array.isArray(reviews)
+    ? reviews
+    : Array.isArray(reviews?.reviews)
+    ? reviews.reviews
+    : [];
+  const ratingSummary = !Array.isArray(reviews) && reviews?.ratingSummary ? reviews.ratingSummary : null;
+  const displayReviews = normalizedReviews.slice(0, 2);
+  const hasMore = normalizedReviews.length > 2;
+
+  const formatReviewDate = (dateString) => {
+    if (!dateString) return "Recently";
+    try {
+      const date = new Date(dateString);
+      const diffDays = Math.floor((Date.now() - date) / 86400000);
+      if (diffDays < 1) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    } catch { return "Recently"; }
+  };
 
   return (
     <section id="host" style={{ background: BG, padding: "0 36px 130px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="06" label="People" />
         <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
+          {/* Left: Meet Your Host */}
           <Rev delay={0.1}>
             <div style={{ background: W, padding: 52, minHeight: 300 }}>
               <p className="host-presented-label" style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#0097B2", WebkitTextFillColor: "#0097B2", marginBottom: 36, fontWeight: 700 }}>Meet Your Host</p>
@@ -1188,26 +1206,97 @@ function HostDetails({ event, hostName }) {
               <p style={{ color: M, fontSize: 14, lineHeight: 1.85, maxWidth: 620 }}>{hostDescription}</p>
             </div>
           </Rev>
+          {/* Right: Reviews (replaces More From This Host) */}
           <Rev delay={0.18}>
             <div style={{ background: S, padding: 52, minHeight: 300 }}>
-              <p style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: M, marginBottom: 34, fontWeight: 500 }}>More From This Host</p>
-              {hostListings.length > 0 && (
-                <div style={{ marginBottom: 28 }}>
-                  {hostListings.map((listing, i) => (
-                    <Link key={listing.id || listing.listingId || i} to={getHostListingUrl(listing)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "12px 0", borderBottom: `1px solid ${B}`, textDecoration: "none" }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{getHostListingTitle(listing)}</span>
-                      <ArrowRight size={13} color={A} />
-                    </Link>
-                  ))}
+              {/* Section label */}
+              <p style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: M, marginBottom: 28, fontWeight: 500 }}>
+                Guest Reviews
+              </p>
+
+              {/* ── Rating summary – Matching brand teal ── */}
+              <div style={{ marginBottom: 28, padding: "16px 20px", border: `1.5px solid ${A}22`, background: AL, borderRadius: 6 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 8 }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: A, fontFamily: "Georgia, serif", lineHeight: 1 }}>
+                    {ratingSummary ? Number(ratingSummary.averageRating).toFixed(1) : "0.0"}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#FFC107", letterSpacing: 2 }}>
+                    {[...Array(5)].map((_, si) => (
+                      <span key={si} style={{ color: si < Math.round(ratingSummary?.averageRating || 0) ? "#FFC107" : `${A}30` }}>★</span>
+                    ))}
+                  </span>
+                </div>
+                <p style={{ fontSize: 12, color: A, fontWeight: 600, margin: 0 }}>
+                  {ratingSummary?.totalReviews ?? 0} {(ratingSummary?.totalReviews ?? 0) === 1 ? "review" : "reviews"} total
+                </p>
+                {/* Rating distribution */}
+                {Array.isArray(ratingSummary?.ratingDistribution) && ratingSummary.ratingDistribution.length > 0 && (
+                  <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {ratingSummary.ratingDistribution.map((item, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 10, color: "#FFC107", fontWeight: 600, width: 16 }}>{item.rating ?? item.stars ?? (5 - i)}★</span>
+                        <div style={{ flex: 1, height: 4, background: `${A}20`, borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", background: A, width: `${Math.min(100, ((item.count ?? 0) / Math.max(1, ratingSummary.totalReviews)) * 100)}%` }} />
+                        </div>
+                        <span style={{ fontSize: 10, color: A, minWidth: 18, textAlign: "right" }}>{item.count ?? 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Review list ── */}
+              {displayReviews.length === 0 ? (
+                <p style={{ fontSize: 13, color: M }}>No reviews yet.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {displayReviews.map((rev, i) => {
+                    const author = rev.customerName || rev.author || "Guest";
+                    const comment = rev.comment || rev.content || rev.reviewText || "";
+                    const reviewRating = Number(rev.rating || rev.ratingScore || 0);
+                    const time = formatReviewDate(rev.createdAt || rev.reviewDate || rev.time);
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          padding: "18px 0",
+                          borderBottom: i < displayReviews.length - 1 ? `1px solid ${B}` : "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: comment ? 10 : 0 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                            {author[0].toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: FG, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{author}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 11, letterSpacing: 1 }}>
+                                {[...Array(5)].map((_, si) => (
+                                  <span key={si} style={{ color: si < reviewRating ? "#FFC107" : "#D1D5DB" }}>★</span>
+                                ))}
+                              </span>
+                              <span style={{ fontSize: 11, color: M }}>{time}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {comment && (
+                          <p style={{ fontSize: 13, color: M, lineHeight: 1.65, margin: 0, paddingLeft: 46 }}>{comment}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {hostEmail && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Contact: </span>{hostEmail}</p>}
-                {hostPhone && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Phone: </span>{hostPhone}</p>}
-                {hostWebsite && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Website: </span>{hostWebsite}</p>}
-                {hostInstagram && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Instagram: </span>{hostInstagram}</p>}
-                {hostLocation && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Based in: </span>{hostLocation}</p>}
-              </div>
+              {hasMore && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => history.push("/reviews")}
+                  style={{ marginTop: 24, width: "100%", padding: "11px 0", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700, border: `1px solid ${B}`, backgroundColor: "transparent", color: FG, cursor: "pointer" }}
+                >
+                  See More Reviews
+                </motion.button>
+              )}
             </div>
           </Rev>
         </div>
@@ -1683,6 +1772,7 @@ export default function EventDetails() {
 
   const [event, setEvent] = useState(null);
   const [hostName, setHostName] = useState("");
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -1705,6 +1795,13 @@ export default function EventDetails() {
             console.error("Failed to load event host:", hostErr);
           }
         }
+
+        // Fetch listing reviews (non-blocking)
+        getListingReviews(eventId).then(rev => {
+          if (mounted) setReviews(rev ?? []);
+        }).catch(() => {
+          if (mounted) setReviews([]);
+        });
 
         if (mounted) { setEvent({ ...data, hostProfile }); setHostName(fetchedHostName); setError(null); }
       } catch (err) {
@@ -1731,7 +1828,7 @@ export default function EventDetails() {
       <Artists event={event} />
       <Venue event={event} hostName={hostName} />
       <Rules event={event} />
-      <HostDetails event={event} hostName={hostName} />
+      <HostDetails event={event} hostName={hostName} reviews={reviews} />
       <EventBookingPopup event={event} />
       <Footer />
     </ScopedThemeProvider>

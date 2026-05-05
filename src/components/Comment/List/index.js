@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useHistory } from "react-router-dom";
 import styles from "./List.module.sass";
 import Rating from "../../Rating";
 import Dropdown from "../../Dropdown";
@@ -49,6 +50,7 @@ const dateOptions = ["Newest", "Popular"];
 
 const List = ({ reviews = [] }) => {
   const [date, setDate] = useState(dateOptions[0]);
+  const history = useHistory();
 
   // Transform API reviews to component format
   const transformedReviews = useMemo(() => {
@@ -107,7 +109,7 @@ const List = ({ reviews = [] }) => {
         )}
       </div>
       <div className={styles.group}>
-        {sortedReviews.map((review, index) => (
+        {sortedReviews.slice(0, 2).map((review, index) => (
           <div className={styles.item} key={index}>
             <div className={styles.avatar}>
               <img src={review.avatar} alt={review.author} onError={(e) => {
@@ -137,6 +139,15 @@ const List = ({ reviews = [] }) => {
           </div>
         ))}
       </div>
+      {sortedReviews.length > 2 && (
+        <button 
+          className="button-stroke" 
+          style={{ marginTop: '32px', width: '100%', borderRadius: '100px', padding: '12px 24px', fontWeight: 700, transition: '0.2s', border: '2px solid #E6E8EC' }}
+          onClick={() => history.push("/reviews")}
+        >
+          See more
+        </button>
+      )}
     </div>
   );
 };

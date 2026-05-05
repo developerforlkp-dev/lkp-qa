@@ -16,7 +16,7 @@ import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft, ChevronDown, FileText, Plus, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
-import { createEventOrder, getEventDetails, getListingReviews } from "../../utils/api";
+import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews } from "../../utils/api";
 import Modal from "../../components/Modal";
 import Login from "../../components/Login";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
@@ -426,7 +426,7 @@ const FullScreenImage = ({ src, onClose }) => {
           alt="Popup"
         />
         <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
-           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+          <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
         </div>
       </motion.div>
     </motion.div>
@@ -499,6 +499,7 @@ function PolicyItem({ req }) {
 const EventProduct = () => {
   const location = useLocation();
   const history = useHistory();
+  const { tokens: { A, B } } = useTheme();
   const searchParams = new URLSearchParams(location.search);
   const eventIdFromQuery =
     searchParams.get("id") ||
@@ -522,12 +523,12 @@ const EventProduct = () => {
 
   const [event, setEvent] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [reviewSummary, setReviewSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [gridVisible, setGridVisible] = useState(false);
   const [guests, setGuests] = useState({
     adults: asNumber(preselectedGuestsFromState?.adults) ?? 1,
     children: asNumber(preselectedGuestsFromState?.children) ?? 0,
@@ -544,9 +545,7 @@ const EventProduct = () => {
   const autoCheckoutTriggeredRef = useRef(false);
   const handleBookNowRef = useRef(null);
   const [bookButtonArmed, setBookButtonArmed] = useState(Boolean(checkoutAfterGuestSelection));
-  const [gridVisible, setGridVisible] = useState(false);
-
-  const { tokens: { A, FG, M, AL, B, S } } = useTheme();
+  const [eligibleBookings, setEligibleBookings] = useState([]);
 
   const hasValidJwtToken = () => {
     if (typeof window === "undefined") return false;
@@ -568,6 +567,19 @@ const EventProduct = () => {
           setEvent(dummyEventData);
           return;
         }
+
+        // Pass the full raw response – CommentsProduct handles both shapes:
+        getEventReviews(eventId).then(data => {
+          if (mounted) setReviews(data ?? []);
+        }).catch(e => console.warn("❌ Error in EventProduct reviews:", e));
+        getEligibleBookings().then(data => {
+          if (mounted) {
+            const list = Array.isArray(data) ? data : [];
+            const filtered = list.filter(b => String(b.eventId) === String(eventId));
+            setEligibleBookings(filtered);
+            console.log(`✅ Event review eligibility: ${filtered.length} eligible bookings found`);
+          }
+        }).catch(e => console.warn("❌ Error fetching event eligibility:", e));
 
         const payload = await getEventDetails(eventId);
 
@@ -735,8 +747,7 @@ const EventProduct = () => {
         // Fetch reviews for the event listing
         getListingReviews(eventId).then(resp => {
           if (mounted && resp) {
-            if (resp.reviews) setReviews(resp.reviews);
-            if (resp.summary) setReviewSummary(resp.summary);
+            setReviews(resp);
           }
         }).catch(e => console.warn("Error fetching event reviews:", e));
       } catch (e) {
@@ -783,12 +794,12 @@ const EventProduct = () => {
     if (!timeStr || typeof timeStr !== "string") return timeStr;
     const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
     if (!match) return moment(timeStr, "HH:mm").format("h:mm A");
-    
+
     const hours = parseInt(match[1], 10);
     const minutes = match[2];
     const ampm = hours >= 12 ? "PM" : "AM";
     const hour12 = hours % 12 || 12;
-    
+
     return `${hour12}:${minutes} ${ampm}`;
   };
 
@@ -1275,7 +1286,7 @@ const EventProduct = () => {
             </div>
           )}
         </div>
-        
+
         <AnimatePresence>
           {gridVisible && !photoVisible && (
             <GridGallery
@@ -1300,12 +1311,12 @@ const EventProduct = () => {
           )}
         </AnimatePresence>
       </div>
-      
+
       {/* EVENT VISUALS (Marquee Gallery) */}
       <section style={{ background: '#FFFFFF', padding: "80px 0 100px", overflow: "hidden" }}>
         <div className="container" style={{ marginBottom: 60 }}>
-           <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
-           <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: '#141414', lineHeight: 1, letterSpacing: '-0.04em' }}>Event Visuals</h2>
+          <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
+          <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: '#141414', lineHeight: 1, letterSpacing: '-0.04em' }}>Event Visuals</h2>
         </div>
         <div style={{ display: "flex" }}>
           {(() => {
@@ -1696,6 +1707,18 @@ const EventProduct = () => {
               info={event.description}
               socials={socials}
               buttonText="Contact Organizer"
+              reviews={reviews}
+              listingId={eventId}
+              type="event"
+              eligibleBookings={eligibleBookings}
+              onReviewSubmitted={async () => {
+                const data = await getEventReviews(eventId);
+                setReviews(data ?? []);
+                // Refresh eligibility too
+                const eligible = await getEligibleBookings();
+                const list = Array.isArray(eligible) ? eligible : [];
+                setEligibleBookings(list.filter(b => String(b.eventId) === String(eventId)));
+              }}
             />
           </div>
         </div>

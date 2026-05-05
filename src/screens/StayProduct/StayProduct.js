@@ -8,7 +8,7 @@ import styles from "./StayProduct.module.sass";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
-import { getStayDetails, getStayRoomAvailability, createStayOrder } from "../../utils/api";
+import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
 
 // Helper to format image URLs
 const formatImageUrl = (url) => {
@@ -1282,6 +1282,18 @@ const StayProduct = () => {
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    if (stayId) {
+      getStayReviews(stayId).then(data => {
+        setReviews(data || []);
+      }).catch(err => {
+        console.error("Failed to fetch reviews:", err);
+        setReviews([]);
+      });
+    }
+  }, [stayId]);
   const [roomsCount, setRoomsCount] = useState(1);
 
   const numberOfNights = useMemo(() => {
@@ -1778,6 +1790,104 @@ const StayProduct = () => {
     );
   }
 
+  const ReviewsSection = ({ reviews, stayId }) => {
+    const { tokens: { A, FG, M, B, W, S, BG, AL } } = { tokens: { A: "#3772FF", FG: "#23262F", M: "#777E90", B: "#E6E8EC", W: "#FFFFFF", S: "#F4F5F6", BG: "#FCFCFD", AL: "#F4F5F6" } };
+    
+    const normalizedReviews = Array.isArray(reviews) ? reviews : (reviews?.reviews || []);
+    const ratingSummary = !Array.isArray(reviews) ? (reviews?.summary || reviews?.ratingSummary) : null;
+    
+    const avgRating = ratingSummary?.averageRating || 0;
+    const totalReviews = ratingSummary?.totalReviews || normalizedReviews.length;
+    const ratingDistribution = ratingSummary?.ratingDistribution || [];
+    const hasReviews = normalizedReviews.length > 0;
+    
+    const displayReviews = normalizedReviews.slice(0, 2);
+    const hasMore = normalizedReviews.length > 2;
+
+    return (
+      <section style={{ background: BG, padding: "80px 0", borderTop: `1px solid ${B}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+            <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 800, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>06 — GUEST REVIEWS</span>
+            <div style={{ flex: 1, height: 1, background: B }} />
+          </div>
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 60 }}>
+          {/* Left: Summary */}
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 64, fontWeight: 900, color: FG, lineHeight: 1 }}>
+                {avgRating > 0 ? avgRating.toFixed(1) : (hasReviews ? "4.9" : "0.0")}
+              </span>
+              <span style={{ fontSize: 24, fontWeight: 800, color: "#FFC107" }}>★</span>
+            </div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 32, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              {totalReviews} {totalReviews === 1 ? "Review" : "Reviews"}
+            </p>
+
+            {/* Rating Distribution */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 40 }}>
+              {[5, 4, 3, 2, 1].map((star) => {
+                const dist = ratingDistribution.find(d => d.rating === star) || { count: 0 };
+                const percent = totalReviews > 0 ? (dist.count / totalReviews) * 100 : 0;
+                return (
+                  <div key={star} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: M, width: 12 }}>{star}</span>
+                    <div style={{ flex: 1, height: 4, background: B, borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", background: A, width: `${percent}%`, transition: "width 1s ease-out" }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: M, width: 24, textAlign: "right" }}>{dist.count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right: Review List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+            {!hasReviews ? (
+              <p style={{ color: M, fontSize: 16, fontStyle: "italic" }}>No reviews shared yet for this stay.</p>
+            ) : (
+              displayReviews.map((rev, i) => (
+                <div key={i} style={{ padding: "24px", background: W, border: `1px solid ${B}`, borderRadius: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: S, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: A }}>
+                        {(rev.customerName || rev.author || "G")[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: FG }}>{rev.customerName || rev.author || "Guest"}</div>
+                        <div style={{ fontSize: 12, color: M }}>{rev.time || (rev.createdAt ? moment(rev.createdAt).fromNow() : "Recently")}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 2, color: "#FFC107", fontSize: 12 }}>
+                      {[...Array(5)].map((_, si) => (
+                        <span key={si}>{si < (rev.rating || 5) ? "★" : "☆"}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 14, color: FG, lineHeight: 1.6, margin: 0 }}>&ldquo;{rev.comment || rev.content || rev.reviewText || rev.text}&rdquo;</p>
+                </div>
+              ))
+            )}
+            
+            {hasMore && (
+              <button 
+                className="button-stroke"
+                onClick={() => history.push(`/reviews/stay/${stayId}`)}
+                style={{ alignSelf: "flex-start", borderRadius: 100, padding: "12px 32px", fontWeight: 700, fontSize: 12, border: `2px solid ${B}`, background: "none", cursor: "pointer" }}
+              >
+                View All Reviews
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+
   return (
     <div className={styles.outer}>
       <div className={styles.container}>
@@ -1814,6 +1924,8 @@ const StayProduct = () => {
               location={stay?.fullAddress || stay?.location || stay?.city || stay?.cityArea}
               address={stay?.fullAddress || stay?.address || stay?.meetingAddress}
             />
+
+            <ReviewsSection reviews={reviews} stayId={stayId} />
           </div>
 
           <div className={styles.sidebarWrapper}>
