@@ -16,7 +16,7 @@ import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft, ChevronDown, FileText, Plus, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
-import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings } from "../../utils/api";
+import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews } from "../../utils/api";
 import Modal from "../../components/Modal";
 import Login from "../../components/Login";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
@@ -499,6 +499,7 @@ function PolicyItem({ req }) {
 const EventProduct = () => {
   const location = useLocation();
   const history = useHistory();
+  const { tokens: { A, B } } = useTheme();
   const searchParams = new URLSearchParams(location.search);
   const eventIdFromQuery =
     searchParams.get("id") ||
@@ -522,12 +523,12 @@ const EventProduct = () => {
 
   const [event, setEvent] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [reviewSummary, setReviewSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [gridVisible, setGridVisible] = useState(false);
   const [guests, setGuests] = useState({
     adults: asNumber(preselectedGuestsFromState?.adults) ?? 1,
     children: asNumber(preselectedGuestsFromState?.children) ?? 0,
@@ -544,7 +545,6 @@ const EventProduct = () => {
   const autoCheckoutTriggeredRef = useRef(false);
   const handleBookNowRef = useRef(null);
   const [bookButtonArmed, setBookButtonArmed] = useState(Boolean(checkoutAfterGuestSelection));
-  const [reviews, setReviews] = useState([]);
   const [eligibleBookings, setEligibleBookings] = useState([]);
 
   const hasValidJwtToken = () => {
@@ -747,8 +747,7 @@ const EventProduct = () => {
         // Fetch reviews for the event listing
         getListingReviews(eventId).then(resp => {
           if (mounted && resp) {
-            if (resp.reviews) setReviews(resp.reviews);
-            if (resp.summary) setReviewSummary(resp.summary);
+            setReviews(resp);
           }
         }).catch(e => console.warn("Error fetching event reviews:", e));
       } catch (e) {

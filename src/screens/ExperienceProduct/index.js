@@ -320,6 +320,7 @@ const ExperienceProduct = () => {
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // Normalize reviews data for consistent usage
@@ -337,21 +338,7 @@ const ExperienceProduct = () => {
     return [];
   }, [reviews]);
 
-  const ratingSummary = useMemo(() => {
-    if (!reviews || Array.isArray(reviews)) return null;
-    const s = reviews.ratingSummary || reviews.summary || reviews.data?.ratingSummary || reviews.data?.summary || null;
-    if (!s) return null;
 
-    // Normalize ratingDistribution if it's an object { "1": 0, "2": 0, ... }
-    if (s.ratingDistribution && typeof s.ratingDistribution === "object" && !Array.isArray(s.ratingDistribution)) {
-      const distArray = Object.entries(s.ratingDistribution).map(([rating, count]) => ({
-        rating: Number(rating),
-        count: Number(count)
-      }));
-      return { ...s, ratingDistribution: distArray };
-    }
-    return s;
-  }, [reviews]);
 
   const [loading, setLoading] = useState(true);
   const [photoVisible, setPhotoVisible] = useState(false);
@@ -444,22 +431,19 @@ const ExperienceProduct = () => {
             }).catch(e => console.warn(e));
           }
 
-          // Fetch dynamic reviews using the specific reviews API
-          // Prefer the ID from the URL (which worked for getListing) as it's the public ID
-          const targetReviewId = id || data.listingId || data.id;
-          setReviewsLoading(true);
-          getListingReviews(targetReviewId).then(resp => {
-            if (mounted) {
-              console.log(`💬 Fetched reviews for ${targetReviewId}:`, resp);
-              setReviews(resp);
+          // Fetch dynamic reviews for the listing
+          getListingReviews(id).then(resp => {
+            if (mounted && resp) {
+              console.log(`💬 Fetched reviews for ${id}:`, resp);
+              if (resp.reviews) setReviews(resp.reviews);
+              else if (Array.isArray(resp)) setReviews(resp);
+              
+              if (resp.summary) setReviewSummary(resp.summary);
               setReviewsLoading(false);
             }
-          }).catch(err => {
-            console.error(`❌ Failed to fetch reviews for ${targetReviewId}:`, err);
-            if (mounted) {
-              setReviews([]);
-              setReviewsLoading(false);
-            }
+          }).catch(e => {
+            console.warn("Error fetching reviews:", e);
+            if (mounted) setReviewsLoading(false);
           });
 
           // Fetch eligible bookings for review
@@ -474,14 +458,6 @@ const ExperienceProduct = () => {
           if (leadId) {
             getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => console.warn(e));
           }
-
-          // Fetch reviews for the listing
-          getListingReviews(id).then(resp => {
-            if (mounted && resp) {
-              if (resp.reviews) setReviews(resp.reviews);
-              if (resp.summary) setReviewSummary(resp.summary);
-            }
-          }).catch(e => console.warn("Error fetching reviews:", e));
 
           setLoading(false);
         }
@@ -504,7 +480,7 @@ const ExperienceProduct = () => {
   }
 
   const description = listing?.description || listing?.aboutListing || "";
-  const summary = listing?.summary || listing?.listingSummary || "";
+
   const displayTags = listing?.tags || [];
 
   return (
@@ -969,7 +945,7 @@ const ExperienceProduct = () => {
 
         <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
-        <ExperiencePolicies listing={listing} reviews={normalizedReviews} />
+        <ExperiencePolicies listing={listing} reviews={normalizedReviews} reviewSummary={reviewSummary} />
         <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
 

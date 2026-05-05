@@ -1179,22 +1179,6 @@ export const getHost = async (hostId) => {
   }
 };
 
-// ✅ Get listing reviews
-export const getListingReviews = async (listingId) => {
-  try {
-    if (!listingId) {
-      throw new Error("listingId is required");
-    }
-    const response = await ListingsAPI.get(`/reviews/listing/${listingId}`);
-    const payload = response.data;
-    console.log("✅ Listing reviews fetched:", payload);
-    return payload;
-  } catch (error) {
-    console.error(`❌ Error fetching reviews for listing ${listingId}:`, error.response?.data || error.message);
-    return [];
-  }
-};
-
 // ✅ Get event reviews
 export const getEventReviews = async (eventId) => {
   try {
