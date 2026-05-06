@@ -1118,15 +1118,19 @@ const Main = ({
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
                                 backgroundColor: booking.status === "Completed" ? "#E3F2FD" :
-                                                 booking.bookingData.orderStatus === "CONFIRMED" ? "#E8F5E9" :
+                                                 (booking.bookingData.orderStatus === "CONFIRMED" || ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")) ? "#E8F5E9" :
                                                  booking.bookingData.orderStatus === "PENDING"   ? "#FFF3E0" :
                                                  booking.bookingData.orderStatus === "CANCELLED" ? "#FFEBEE" : "#F3F4F6",
                                 color: booking.status === "Completed" ? "#1565C0" :
-                                       booking.bookingData.orderStatus === "CONFIRMED" ? "#2E7D32" :
+                                       (booking.bookingData.orderStatus === "CONFIRMED" || ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")) ? "#2E7D32" :
                                        booking.bookingData.orderStatus === "PENDING"   ? "#E65100" :
                                        booking.bookingData.orderStatus === "CANCELLED" ? "#C62828" : "#6B7280",
                               }}>
-                                {booking.status === "Completed" ? "COMPLETED" : booking.bookingData.orderStatus}
+                                {booking.status === "Completed" ? "COMPLETED" : (
+                                  ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")
+                                  ? "CONFIRMED"
+                                  : booking.bookingData.orderStatus
+                                )}
                               </span>
                             </>
                           )}
