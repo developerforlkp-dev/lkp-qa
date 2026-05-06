@@ -2261,6 +2261,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           return validSlotsForDate.map((slot, index) => {
                             const slotId = String(slot.eventSlotId ?? slot.id);
                             const isSelected = selectedEventSlotIds.includes(slotId);
+                            const slotLabel = slot.slotName && slot.slotName !== slot.startTime ? slot.slotName : null;
+                            const slotStartTime = formatTime12h(slot.startTime || slot.slotName);
+                            const slotEndTime = formatTime12h(slot.endTime);
+                            const slotTimeDisplay = slotEndTime ? `${slotStartTime} - ${slotEndTime}` : slotStartTime;
                             return (
                               <button
                                 key={slotId}
@@ -2300,8 +2304,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   transition: "0.2s"
                                 }}
                               >
-                                {formatTime12h(slot.slotName)}
-                                {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{formatTime12h(slot.endTime)}</span>}
+                                {slotLabel && (
+                                  <span style={{ display: "block", marginBottom: 2 }}>{slotLabel}</span>
+                                )}
+                                <span style={{ display: "block", fontSize: 10, opacity: 0.85, marginTop: slotLabel ? 0 : 2 }}>
+                                  {slotTimeDisplay}
+                                </span>
                               </button>
                             );
                           });
