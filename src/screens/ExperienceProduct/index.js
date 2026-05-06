@@ -487,9 +487,9 @@ const ExperienceProduct = () => {
     <Page>
       <main style={{ background: BG }}>
         {/* HERO SECTION */}
-        <section ref={heroRef} style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
+        <section ref={heroRef} className="hero-section" style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
-          <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
+          <div className="hero-container" style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
             <ProductNavbar top={100} left={60} />
             <motion.div style={{ opacity: fade, y: textY }}>
               <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
@@ -544,7 +544,7 @@ const ExperienceProduct = () => {
 
 
         {/* GALLERY SECTION */}
-        <section style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
+        <section className="gallery-section" style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
           {(() => {
             const baseItemsLocal = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
             let filledItems = [...baseItemsLocal];
@@ -567,6 +567,7 @@ const ExperienceProduct = () => {
                       setGridVisible(true);
                     }}
                     style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}`, cursor: "pointer" }}
+                    className="gallery-item"
                   >
                     <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Gallery" />
                   </motion.div>
@@ -603,12 +604,12 @@ const ExperienceProduct = () => {
 
 
         {/* DETAILS SECTION */}
-        <section style={{ background: BG, padding: "48px 36px 80px" }}>
+        <section className="details-section" style={{ background: BG, padding: "48px 36px 80px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <SHdr idx="01" label="Overview" />
+            <div className="section-header-wrapper"><SHdr idx="01" label="Overview" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20 }} className="details-grid">
               <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div className="what-we-do-card" style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
                     <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 12, fontWeight: 600 }}>What We Do</p>
                     <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>A Guided Journey</h2>
@@ -617,7 +618,7 @@ const ExperienceProduct = () => {
                 </div>
               </Soul>
               <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Clock size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
                     {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
@@ -626,28 +627,28 @@ const ExperienceProduct = () => {
                 </div>
               </Soul>
               <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <User size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.minimumAge || "18+"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Min Age</p>
                 </div>
               </Soul>
               <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Zap size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.difficultyLevel || "Moderate"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Difficulty</p>
                 </div>
               </Soul>
               <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Baby size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Infants</p>
                 </div>
               </Soul>
               <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Languages size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 4 }}>
                     {Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
@@ -658,7 +659,7 @@ const ExperienceProduct = () => {
                 </div>
               </Soul>
               <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <ShieldCheck size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
                     {listing?.privateOptionAvailable ? "Available" : "Not Available"}
@@ -828,6 +829,7 @@ const ExperienceProduct = () => {
                       return (
                         <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
                           whileHover={{ x: 10 }}
+                          className="activity-item"
                           style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
                           <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
                           <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
@@ -875,9 +877,9 @@ const ExperienceProduct = () => {
 
 
         {/* PREPARATION SECTION */}
-        <section style={{ background: W, padding: "80px 36px" }}>
+        <section className="prep-section" style={{ background: W, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <SHdr idx="02" label="Preparation" />
+            <div className="section-header-wrapper"><SHdr idx="02" label="Preparation" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
               <Rev delay={0.1}>
                 <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
@@ -951,10 +953,10 @@ const ExperienceProduct = () => {
 
 
         {/* HOST SECTION */}
-        <section style={{ background: BG, padding: "80px 36px" }}>
+        <section className="host-section" style={{ background: BG, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
             <Rev delay={0.1} style={{ height: "100%" }}>
-              <SHdr idx="05" label="The Host" />
+              <div className="section-header-wrapper"><SHdr idx="05" label="The Host" /></div>
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
@@ -968,7 +970,7 @@ const ExperienceProduct = () => {
               </div>
             </Rev>
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <SHdr idx="06" label="TESTIMONIALS" />
+              <div className="section-header-wrapper"><SHdr idx="06" label="TESTIMONIALS" /></div>
               <div style={{ padding: "40px 32px", background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 <ReviewsSection
                   reviews={reviews}
@@ -991,15 +993,50 @@ const ExperienceProduct = () => {
         />
       </main>
       <style>{`
+        @media(max-width: 1024px) {
+          .hero-container { padding: 0 40px !important; }
+          .details-inner { grid-template-columns: 1fr !important; gap: 48px !important; padding: 40px !important; }
+          .pol-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+        }
+
         @media(max-width: 900px) { 
+          main { padding-bottom: 100px !important; }
           .hero-stats { grid-template-columns: 1fr !important; gap: 40px !important; } 
           .gal-grid { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 240px !important; gap: 8px !important; }
           .details-grid { grid-template-columns: 1fr !important; }
           .details-grid > div { grid-column: span 1 !important; }
           .prep-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
           .host-grid { grid-template-columns: 1fr !important; }
-          .quality-card { flex-direction: column !important; gap: 40px !important; padding: 40px 20px !important; }
+          .quality-card { flex-direction: column !important; gap: 40px !important; padding: 60px 32px !important; }
           .quality-score-unit { transform: scale(0.8) translateZ(80px) !important; }
+          .gallery-item { height: 300px !important; width: 260px !important; }
+        }
+
+        @media(max-width: 600px) {
+          .hero-section { min-height: 90vh !important; }
+          .hero-container { padding: 0 24px !important; }
+          .hero-section h1 { font-size: 3.5rem !important; }
+          .details-section, .prep-section, .host-section, .policies-section { padding: 40px 20px !important; }
+          .section-header-wrapper > div { margin-bottom: 20px !important; }
+          .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .details-grid > div:first-child { grid-column: span 2 !important; }
+          .what-we-do-card { padding: 32px 24px !important; }
+          .what-we-do-card h3 { font-size: 1.8rem !important; }
+          .overview-card { padding: 20px 12px !important; }
+          .overview-card p:first-of-type { font-size: 16px !important; }
+          .details-inner { padding: 32px 20px !important; margin: 24px -20px !important; }
+          .activity-item { gap: 16px !important; margin-bottom: 32px !important; }
+          .activity-item > div:first-child { display: none; }
+          .activity-item > div:last-child { flex-direction: column !important; gap: 12px !important; }
+          .activity-item img { width: 100% !important; height: 180px !important; }
+          .activity-item > div:last-child > div:first-child { width: 100% !important; height: 180px !important; }
+          .prep-grid { gap: 32px !important; }
+          .prep-grid h3 { font-size: 1.8rem !important; margin-bottom: 20px !important; }
+          .host-grid { gap: 32px !important; }
+          .quality-card { padding: 48px 20px !important; border-radius: 32px !important; }
+          .quality-score-unit { transform: scale(0.7) translateZ(50px) !important; }
+          .quality-card h3 { font-size: 32px !important; }
+          .gallery-item { height: 240px !important; width: 200px !important; }
         }
       `}</style>
     </Page>
@@ -1465,9 +1502,9 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
   const { tokens: { FG, W, B, A, M } } = useTheme();
 
   return (
-    <section style={{ background: W, padding: "80px 36px" }}>
+    <section className="policies-section" style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <SHdr idx="03" label="Rules & Policies" />
+        <div className="section-header-wrapper"><SHdr idx="03" label="Rules & Policies" /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
