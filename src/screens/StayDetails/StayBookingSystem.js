@@ -16,6 +16,47 @@ const formatPrice = (price) => {
   });
 };
 
+const getSeasonIdCandidates = (season) => (
+  [
+    season?.tempId,
+    season?.seasonalPeriodId,
+    season?.seasonId,
+    season?.id,
+  ]
+    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+    .map((v) => String(v))
+);
+
+const resolveSeasonalNode = (source, season) => {
+  if (!source || !season) return null;
+  const keys = getSeasonIdCandidates(season);
+  if (keys.length === 0) return null;
+
+  if (Array.isArray(source)) {
+    return source.find((item) =>
+      getSeasonIdCandidates(item).some((id) => keys.includes(id))
+    ) || null;
+  }
+
+  if (typeof source === "object") {
+    for (const key of keys) {
+      if (source[key] != null) return source[key];
+      if (source[String(key)] != null) return source[String(key)];
+    }
+  }
+
+  return null;
+};
+
+const isInSeasonRange = (dateValue, season) => {
+  if (!dateValue || !season) return false;
+  const check = moment(dateValue).startOf("day");
+  const start = moment(season?.startDate || season?.start_date).startOf("day");
+  const end = moment(season?.endDate || season?.end_date).startOf("day");
+  if (!check.isValid() || !start.isValid() || !end.isValid()) return false;
+  return check.isSameOrAfter(start, "day") && check.isSameOrBefore(end, "day");
+};
+
 const StayBookingSystem = ({
   stay,
   checkInDate,
@@ -33,6 +74,10 @@ const StayBookingSystem = ({
   const [loading, setLoading] = useState(false);
   const [availabilityData, setAvailabilityData] = useState(null);
   const [fetchingAvailability, setFetchingAvailability] = useState(false);
+  const stayRoomsCatalog = useMemo(
+    () => (stay?.rooms || stay?.roomTypes || stay?.room_types || []),
+    [stay]
+  );
 
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
@@ -64,7 +109,25 @@ const StayBookingSystem = ({
     if (!stay || !Array.isArray(selectedRooms)) return [];
     
     // Prioritize rooms from availabilityData as they have real-time pricing for the selected dates
-    const roomsSource = (availabilityData?.roomAvailability || availabilityData?.rooms || stay.rooms || stay.roomTypes || stay.room_types || []);
+    const rawRoomsSource = (availabilityData?.roomAvailability || availabilityData?.rooms || stay.rooms || stay.roomTypes || stay.room_types || []);
+    const catalogById = new Map(
+      stayRoomsCatalog.map((r) => [
+        String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
+        r,
+      ])
+    );
+    const roomsSource = rawRoomsSource.map((room) => {
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id);
+      const base = catalogById.get(key);
+      if (!base) return room;
+      return {
+        ...base,
+        ...room,
+        mealPlanSeasonalPricing: room?.mealPlanSeasonalPricing || base?.mealPlanSeasonalPricing,
+        seasonalPeriods: room?.seasonalPeriods || base?.seasonalPeriods,
+        mealPlanPricing: room?.mealPlanPricing || base?.mealPlanPricing,
+      };
+    });
 
     // Find active season based on check-in date (room.seasonalPeriods first, then stay.seasonalPeriods)
     const checkInStr = checkInDate ? (typeof checkInDate === 'string' ? checkInDate : checkInDate.format('YYYY-MM-DD')) : null;
@@ -77,19 +140,13 @@ const StayBookingSystem = ({
 
       // Find season that matches check-in date
       const activeSeasonObj = checkInStr ? (
-        (room.seasonalPeriods || []).find(p =>
-          moment(checkInStr).isSameOrAfter(p.startDate, 'day') &&
-          moment(checkInStr).isSameOrBefore(p.endDate, 'day')
-        ) || (stay.seasonalPeriods || []).find(p =>
-          moment(checkInStr).isSameOrAfter(p.startDate, 'day') &&
-          moment(checkInStr).isSameOrBefore(p.endDate, 'day')
-        )
+        (room.seasonalPeriods || []).find((p) => isInSeasonRange(checkInStr, p)) ||
+        (stay.seasonalPeriods || []).find((p) => isInSeasonRange(checkInStr, p))
       ) : null;
-      const seasonTempId = activeSeasonObj?.tempId;
 
       // ✅ Correct: seasonal meal plan price lives in mealPlanSeasonalPricing[mealPlan][tempId]
-      const mealSeasonData = seasonTempId
-        ? (room.mealPlanSeasonalPricing || {})[mealPlan]?.[seasonTempId]
+      const mealSeasonData = activeSeasonObj
+        ? resolveSeasonalNode((room.mealPlanSeasonalPricing || {})[mealPlan], activeSeasonObj)
         : null;
       
       let roomBasePrice = 0;
@@ -124,7 +181,7 @@ const StayBookingSystem = ({
 
       return { ...room, ...sel, calculatedPrice: roomBasePrice, seasonalExtraAdultPrice, seasonalExtraChildPrice };
     }).filter(Boolean);
-  }, [stay, selectedRooms, availabilityData, checkInDate]);
+  }, [stay, selectedRooms, availabilityData, checkInDate, stayRoomsCatalog]);
 
   const nightsCount = useMemo(() => {
     if (!checkInDate || !checkOutDate) return 0;
@@ -560,9 +617,8 @@ const StayBookingSystem = ({
         orderResponse?.finalPrice,
         backendTotalRupees
       );
-
       if (isPresent(basePrice)) receipt.push({ title: "Total Base Price", content: formatMoney(basePrice) });
-      if (isPresent(discount)) receipt.push({ title: "Total Guest Discount", content: `- ${formatMoney(Math.abs(discount))}` });
+      if (isPresent(discount)) receipt.push({ title: "Total Discount", content: `- ${formatMoney(Math.abs(discount))}` });
       if (isPresent(afterDiscount)) receipt.push({ title: "Price After Discounts", content: formatMoney(afterDiscount) });
       const combinedBackendTax = (tourismTax || 0) + (serviceTax || 0) + (gst || 0);
       if (combinedBackendTax > 0) receipt.push({ title: "Tax", content: `+ ${formatMoney(combinedBackendTax)}` });
@@ -588,12 +644,16 @@ const StayBookingSystem = ({
           content: `${currency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-      if (pricing.discount > 0) {
-        frontendReceipt.push({ title: `Discount (${pricing.discountPercent}%)`, content: `- ${currency} ${Number(pricing.discount).toFixed(2)}` });
+      const discountToShow = pricing.discount;
+      if (discountToShow > 0) {
+        frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
       }
-      const combinedFrontendTax = (pricing.gst || 0) + (pricing.serviceFee || 0);
+      const taxRate = Array.isArray(stay?.taxes)
+        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
+      const combinedFrontendTax = (pricing.subtotal || 0) * (taxRate / 100);
       if (combinedFrontendTax > 0) {
-        frontendReceipt.push({ title: "Tax", content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
+        frontendReceipt.push({ title: `Tax (${Number(taxRate).toFixed(2)}%)`, content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
       }
       frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder).toFixed(2)}` });
 
