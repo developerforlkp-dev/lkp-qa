@@ -5,6 +5,33 @@ import styles from "./LoginModal.module.sass";
 import Icon from "../Icon";
 import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
 
+const getFriendlyOtpError = (err) => {
+  const status = err?.response?.status;
+  const rawMessage =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "";
+  const msg = String(rawMessage).toLowerCase();
+
+  if (status === 400 || status === 401) {
+    if (msg.includes("expired")) {
+      return "Your OTP has expired. Please request a new code.";
+    }
+    if (msg.includes("invalid") || msg.includes("otp") || msg.includes("code")) {
+      return "The code you entered is invalid. Please check and try again.";
+    }
+    return "We couldn’t verify that code. Please check it and try again.";
+  }
+  if (status === 429) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  if (status >= 500) {
+    return "Our servers are busy right now. Please try again in a few minutes.";
+  }
+  return "We couldn’t verify your code right now. Please try again.";
+};
+
 const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]); // 6-digit OTP
@@ -275,7 +302,7 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
       onClose();
     } catch (err) {
       if (isMountedRef.current) {
-        setError(err.response?.data?.message || err.message || "Invalid OTP. Please try again.");
+        setError(getFriendlyOtpError(err));
       }
     } finally {
       if (isMountedRef.current) {
