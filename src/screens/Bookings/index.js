@@ -41,7 +41,7 @@ const Bookings = ({ bookingData = null }) => {
       // Fetch both APIs in parallel for better performance
       // Handle errors independently so one failure doesn't block the other
       const [ordersResult, completedCountResult] = await Promise.allSettled([
-        getCustomerOrders(20, 1),
+        getCustomerOrders(100, 1),
         getCompleteExpiredOrders()
       ]);
       

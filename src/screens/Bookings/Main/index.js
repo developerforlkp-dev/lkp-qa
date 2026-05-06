@@ -164,31 +164,43 @@ const transformMultipleBookings = async (bookingsArray) => {
   }
 
   // Step 3: Transform bookings using cached listing and review data
-  return bookingsArray.map((apiBooking) => {
-    const listingData = apiBooking.listingId ? listingCache.get(apiBooking.listingId) : null;
-    const eventData = apiBooking?.eventId ? eventCache.get(apiBooking.eventId) : null;
-    // Resolve stayId using same multi-path logic as uniqueStayIds extraction above
-    const resolvedStayId = (() => {
-      if (apiBooking?.stayId != null) return apiBooking.stayId;
-      const rooms = apiBooking?.stayOrderRooms || apiBooking?.rooms || apiBooking?.room || [];
-      if (Array.isArray(rooms) && rooms.length > 0) {
-        const id = rooms[0]?.stayId ?? rooms[0]?.stay_id ?? rooms[0]?.propertyId;
-        if (id != null) return id;
-      }
-      return apiBooking?.propertyId ?? apiBooking?.stay_id ?? null;
-    })();
-    const stayData = resolvedStayId != null ? stayCache.get(resolvedStayId) : null;
-    
-    // Resolve review data using category-specific keys
-    const reviewData = (() => {
-      if (apiBooking.listingId) return reviewCache.get(`experience_${apiBooking.listingId}`);
-      if (apiBooking.eventId) return reviewCache.get(`event_${apiBooking.eventId}`);
-      if (resolvedStayId) return reviewCache.get(`stay_${resolvedStayId}`);
-      return null;
-    })();
+  const transformed = bookingsArray.map((apiBooking) => {
+    try {
+      const listingId = apiBooking.listingId || apiBooking.experienceId || (apiBooking.listing && (apiBooking.listing.listingId || apiBooking.listing.id));
+      const listingData = listingId ? listingCache.get(listingId) : null;
+      
+      const eventId = apiBooking?.eventId || apiBooking?.eventDetails?.eventId || (apiBooking.listing && apiBooking.listing.eventId);
+      const eventData = eventId ? eventCache.get(eventId) : null;
+      
+      // Resolve stayId using same multi-path logic as uniqueStayIds extraction above
+      const resolvedStayId = (() => {
+        if (apiBooking?.stayId != null) return apiBooking.stayId;
+        const rooms = apiBooking?.stayOrderRooms || apiBooking?.rooms || apiBooking?.room || [];
+        if (Array.isArray(rooms) && rooms.length > 0) {
+          const id = rooms[0]?.stayId ?? rooms[0]?.stay_id ?? rooms[0]?.propertyId;
+          if (id != null) return id;
+        }
+        return apiBooking?.propertyId ?? apiBooking?.stay_id ?? null;
+      })();
+      const stayData = resolvedStayId != null ? stayCache.get(resolvedStayId) : null;
+      
+      // Resolve review data using category-specific keys
+      const reviewData = (() => {
+        if (listingId) return reviewCache.get(`experience_${listingId}`);
+        if (eventId) return reviewCache.get(`event_${eventId}`);
+        if (resolvedStayId) return reviewCache.get(`stay_${resolvedStayId}`);
+        return null;
+      })();
 
-    return transformBookingData(apiBooking, listingData, eventData, stayData, reviewData);
+      return transformBookingData(apiBooking, listingData, eventData, stayData, reviewData);
+    } catch (err) {
+      console.warn("⚠️ Failed to transform single booking:", apiBooking.orderId, err);
+      return null;
+    }
   });
+
+  // Filter out any that failed transformation
+  return transformed.filter(Boolean);
 };
 
 // Transform API booking data to component format
@@ -224,10 +236,12 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Determine status mapping
   const statusMap = {
-    // PENDING means reservation was initiated but not confirmed/paid.
-    // Show these in Cancelled tab instead of Upcoming.
-    PENDING: "Cancelled",
+    // PENDING should be "Upcoming" (Reserved) rather than "Cancelled"
+    PENDING: "Upcoming",
     CONFIRMED: "Upcoming",
+    SUCCESS: "Upcoming",
+    PAID: "Upcoming",
+    BOOKED: "Upcoming",
     COMPLETED: "Completed",
     CANCELLED: "Cancelled",
   };
@@ -269,7 +283,9 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Get title - for EVENTS orders, prefer eventTitle; for others, prefer listing data
   // Check if this is an EVENTS order by businessInterestCode
-  const isEventOrder = apiBooking?.businessInterestCode === "EVENTS" ||
+  const isEventOrder = 
+    apiBooking?.businessInterestCode === "EVENTS" || 
+    apiBooking?.businessInterestCode === "EVENT" ||
     apiBooking?.eventId != null;
 
   const title = isEventOrder
@@ -760,7 +776,7 @@ const Main = ({
       setLoadingCompleted(true);
       try {
         const [completedOrdersData, eligibleData] = await Promise.all([
-          getCompletedOrders(1, 20),
+          getCompletedOrders(1, 100),
           getEligibleBookings().catch(() => []),
         ]);
         console.log("✅ Fetched completed orders:", completedOrdersData);
@@ -1076,6 +1092,16 @@ const Main = ({
                           <span className={styles.category}>
                             {booking.category}
                           </span>
+                          {(booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && (
+                            <>
+                              <span className={styles.dot} aria-hidden="true">
+                                •
+                              </span>
+                              <span className={styles.category} style={{ color: "#4584FF" }}>
+                                Free Reservation
+                              </span>
+                            </>
+                          )}
                           {booking.bookingData?.orderStatus && (
                             <>
                               <span className={styles.dot} aria-hidden="true">
