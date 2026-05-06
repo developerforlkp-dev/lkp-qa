@@ -60,6 +60,68 @@ const formatTimeTo12hr = (timeStr) => {
   return m.isValid() ? m.format("h:mm A") : timeStr;
 };
 
+const getSeasonIdCandidates = (season) => (
+  [
+    season?.tempId,
+    season?.seasonalPeriodId,
+    season?.seasonId,
+    season?.id,
+  ]
+    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+    .map((v) => String(v))
+);
+
+const resolveSeasonalNode = (source, season) => {
+  if (!source || !season) return null;
+  const keys = getSeasonIdCandidates(season);
+  if (keys.length === 0) return null;
+
+  if (Array.isArray(source)) {
+    return source.find((item) =>
+      getSeasonIdCandidates(item).some((id) => keys.includes(id))
+    ) || null;
+  }
+
+  if (typeof source === "object") {
+    for (const key of keys) {
+      if (source[key] != null) return source[key];
+      if (source[String(key)] != null) return source[String(key)];
+    }
+  }
+  return null;
+};
+
+const isInSeasonRange = (dateValue, season) => {
+  if (!dateValue || !season) return false;
+  const check = moment(dateValue).startOf("day");
+  const start = moment(season?.startDate || season?.start_date).startOf("day");
+  const end = moment(season?.endDate || season?.end_date).startOf("day");
+  if (!check.isValid() || !start.isValid() || !end.isValid()) return false;
+  return check.isSameOrAfter(start, "day") && check.isSameOrBefore(end, "day");
+};
+
+const inferMealPlanCode = (room) => {
+  const normalize = (v) => String(v || "").trim().toUpperCase();
+  const direct =
+    normalize(room?.selectedMealPlan) ||
+    normalize(room?.mealPlanCode) ||
+    normalize(room?.mealPlan) ||
+    normalize(room?.planCode) ||
+    normalize(room?.code);
+  if (["EP", "CP", "BB", "MAP", "AP"].includes(direct)) return direct;
+
+  const seasonalCodes = Object.keys(room?.mealPlanSeasonalPricing || {}).map(normalize);
+  if (seasonalCodes.includes("EP")) return "EP";
+  if (seasonalCodes.length > 0) return seasonalCodes[0];
+
+  const planCodes = Object.keys(room?.mealPlanPricing || {}).map(normalize);
+  // Prefer EP when no explicit selection exists.
+  for (const code of ["EP", "CP", "BB", "MAP", "AP"]) {
+    if (planCodes.includes(code)) return code;
+  }
+  return planCodes[0] || "EP";
+};
+
 // Gallery Component
 const Gallery = ({ images }) => {
   if (!images || images.length === 0) {
@@ -256,31 +318,35 @@ const BookingSidebar = ({
   const getMealPlanPriceForRoom = (room) => {
     if (!room) return 0;
 
-    const activeSeasonObj = room?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    ) || stay?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    );
+    const activeSeasonObj = room?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p))
+      || stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
 
-    const mp = room.mealPlanPricing;
-    if (mp) {
-      // Try each plan in priority order
-      for (const code of ["MAP", "CP", "BB", "AP", "EP"]) {
-        const plan = mp[code];
-        if (plan) {
-          // ✅ Correct: seasonal price lives in mealPlanSeasonalPricing[code][tempId]
-          if (activeSeasonObj) {
-            const mealSeasonData = (room.mealPlanSeasonalPricing || {})[code]?.[activeSeasonObj.tempId];
-            if (mealSeasonData && parseFloat(mealSeasonData.b2cPrice || 0) > 0) {
-              return parseFloat(mealSeasonData.b2cPrice);
-            }
-          }
-          const p = parseFloat(plan.b2cPrice || plan.b2bPrice || plan.price || 0);
-          if (p > 0) return p;
-        }
+    const selectedMealPlanCode = inferMealPlanCode(room);
+    const orderedCodes = selectedMealPlanCode
+      ? [selectedMealPlanCode, "EP", "CP", "BB", "MAP", "AP"]
+      : ["EP", "CP", "BB", "MAP", "AP"];
+    const codes = Array.from(new Set(orderedCodes.filter(Boolean)));
+
+    const seasonalPlans = room.mealPlanSeasonalPricing || {};
+    const mp = room.mealPlanPricing || {};
+
+    // 1) Seasonal map should win whenever date is in a seasonal period,
+    // even if regular mealPlanPricing is missing in availability payload.
+    if (activeSeasonObj) {
+      for (const code of codes) {
+        const seasonPlanMap = seasonalPlans[code] || {};
+        const mealSeasonData = resolveSeasonalNode(seasonPlanMap, activeSeasonObj);
+        const seasonalPrice = parseFloat(mealSeasonData?.b2cPrice || 0);
+        if (seasonalPrice > 0) return seasonalPrice;
       }
+    }
+
+    // 2) Regular meal plan pricing fallback
+    for (const code of codes) {
+      const plan = mp[code];
+      if (!plan) continue;
+      const p = parseFloat(plan.b2cPrice || plan.b2bPrice || plan.price || 0);
+      if (p > 0) return p;
     }
 
     // Fallback for rooms without mealPlanPricing
@@ -292,15 +358,14 @@ const BookingSidebar = ({
       console.log('Season check skipped:', { checkInDate, hasSeasonalPeriods: !!stay?.seasonalPeriods });
       return null;
     }
-    const found = stay.seasonalPeriods.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    );
+    const found = stay.seasonalPeriods.find((p) => isInSeasonRange(checkInDate, p));
     console.log('Season found for checkInDate', checkInDate, ':', found);
     return found;
   }, [checkInDate, stay?.seasonalPeriods]);
 
-  const activeSeasonData = activeSeason ? (stay?.propertySeasonalPricing?.[activeSeason.tempId] || stay?.[activeSeason.tempId]) : null;
+  const activeSeasonData = activeSeason
+    ? (resolveSeasonalNode(stay?.propertySeasonalPricing, activeSeason) || resolveSeasonalNode(stay, activeSeason))
+    : null;
 
   if (checkInDate) {
     console.log('activeSeasonData resolved as:', activeSeasonData, 'for tempId:', activeSeason?.tempId);
@@ -377,14 +442,11 @@ const BookingSidebar = ({
 
   // ✅ For room-based seasonal: extra prices live in mealPlanSeasonalPricing[code][tempId]
   const sidebarMealPlanCode = (() => {
-    if (!isRoomBased || !selectedRoom?.mealPlanPricing) return null;
-    for (const code of ["MAP", "CP", "BB", "AP", "EP"]) {
-      if (selectedRoom.mealPlanPricing[code]) return code;
-    }
-    return null;
+    if (!isRoomBased) return null;
+    return inferMealPlanCode(selectedRoom);
   })();
   const sidebarMealSeasonData = (activeSeason && sidebarMealPlanCode)
-    ? (selectedRoom?.mealPlanSeasonalPricing || {})[sidebarMealPlanCode]?.[activeSeason.tempId]
+    ? resolveSeasonalNode((selectedRoom?.mealPlanSeasonalPricing || {})[sidebarMealPlanCode], activeSeason)
     : null;
 
   const extraAdultPrice = isRoomBased
@@ -912,27 +974,18 @@ const RoomCard = ({
 
   const activeSeason = useMemo(() => {
     if (!checkInDate) return null;
-    return room?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    ) || stay?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    );
+    return room?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p))
+      || stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
   }, [checkInDate, room?.seasonalPeriods, stay?.seasonalPeriods]);
 
   // ✅ Find the meal plan code for this room (first available plan)
   const roomCardMealPlanCode = (() => {
-    if (!room?.mealPlanPricing) return null;
-    for (const code of ["MAP", "CP", "BB", "AP", "EP"]) {
-      if (room.mealPlanPricing[code]) return code;
-    }
-    return null;
+    return inferMealPlanCode(room);
   })();
 
   // ✅ Seasonal price lives in mealPlanSeasonalPricing[code][tempId], NOT seasonalPricing
   const mealSeasonData = (activeSeason && roomCardMealPlanCode)
-    ? (room.mealPlanSeasonalPricing || {})[roomCardMealPlanCode]?.[activeSeason.tempId]
+    ? resolveSeasonalNode((room.mealPlanSeasonalPricing || {})[roomCardMealPlanCode], activeSeason)
     : null;
 
   // Base price: seasonal meal plan price → regular meal plan price → room-level fallback
@@ -1356,6 +1409,30 @@ const StayProduct = () => {
 
   const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
   const isRoomBased = !isPropertyBased && (stay?.rooms?.length > 0 || stay?.roomTypes?.length > 0);
+  const roomCatalog = useMemo(() => (stay?.rooms || stay?.roomTypes || stay?.room_types || []), [stay]);
+
+  const enrichRoomsWithCatalog = (rooms = []) => {
+    if (!Array.isArray(rooms) || rooms.length === 0) return [];
+    const byId = new Map(
+      (Array.isArray(roomCatalog) ? roomCatalog : []).map((r) => [
+        String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
+        r,
+      ])
+    );
+    return rooms.map((room) => {
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id);
+      const base = byId.get(key);
+      if (!base) return room;
+      // Keep availability fields from API room, but backfill pricing/seasonal fields from master room.
+      return {
+        ...base,
+        ...room,
+        mealPlanSeasonalPricing: room?.mealPlanSeasonalPricing || base?.mealPlanSeasonalPricing,
+        seasonalPeriods: room?.seasonalPeriods || base?.seasonalPeriods,
+        mealPlanPricing: room?.mealPlanPricing || base?.mealPlanPricing,
+      };
+    });
+  };
 
   // Don't filter rooms by capacity — show ALL rooms.
   // The roomCapacityMessage / extra-room logic will guide the user when
@@ -1454,7 +1531,7 @@ const StayProduct = () => {
         setStay(data);
         // Initialize rooms from stay data if available
         if (data?.rooms || data?.roomTypes) {
-          setAvailableRooms(data.rooms || data.roomTypes);
+          setAvailableRooms(enrichRoomsWithCatalog(data.rooms || data.roomTypes));
         }
       } catch (err) {
         console.error("Failed to load stay:", err);
@@ -1488,7 +1565,7 @@ const StayProduct = () => {
         const result = await getStayRoomAvailability(stayId, checkInDate, checkOutDate);
         if (cancelled) return;
         const fetchedRooms = result?.rooms || [];
-        setAvailableRooms(fetchedRooms);
+        setAvailableRooms(enrichRoomsWithCatalog(fetchedRooms));
         setAvailabilityChecked(true);
       } catch (err) {
         if (!cancelled) {
@@ -1512,7 +1589,7 @@ const StayProduct = () => {
       console.log("Stay availability result:", result);
 
       if (result?.rooms) {
-        setAvailableRooms(result.rooms);
+        setAvailableRooms(enrichRoomsWithCatalog(result.rooms));
       }
       setAvailabilityChecked(true);
     } catch (err) {
@@ -1559,19 +1636,14 @@ const StayProduct = () => {
         return "EP";
       };
 
-      const mealPlanCode = selectedRoom.selectedMealPlan || getMealPlanCode(selectedRoom);
+      const mealPlanCode = inferMealPlanCode(selectedRoom) || getMealPlanCode(selectedRoom);
 
       // Calculate B2C price for the selected room based on meal plan, as the room's base b2cPrice could be null in the API
-      const activeSeasonObj = selectedRoom.seasonalPeriods?.find(p =>
-        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-      ) || stay?.seasonalPeriods?.find(p =>
-        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-      );
+      const activeSeasonObj = selectedRoom.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p))
+        || stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
       // ✅ Seasonal price for room-based lives in mealPlanSeasonalPricing[mealPlanCode][tempId]
       const mealSeasonData = activeSeasonObj
-        ? (selectedRoom.mealPlanSeasonalPricing || {})[mealPlanCode]?.[activeSeasonObj.tempId]
+        ? resolveSeasonalNode((selectedRoom.mealPlanSeasonalPricing || {})[mealPlanCode], activeSeasonObj)
         : null;
 
       let basePrice = 0;
@@ -1616,14 +1688,16 @@ const StayProduct = () => {
       const amountPerNight = basePrice + totalExtraPrice;
       const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
       const calculatedAmount = amountPerNight * nightsCount;
+      const taxRate = Array.isArray(stay?.taxes)
+        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
       const baseStayTotal = basePrice * nightsCount * roomsNeeded;
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount * roomsNeeded;
       const extraChildTotal = extraChildren * extraChildPrice * nightsCount * roomsNeeded;
       const discountAmount = (basePrice * (discountPercentage / 100)) * nightsCount * roomsNeeded;
       const preTaxTotal = (calculatedAmount * roomsNeeded) - discountAmount;
-      const gstAmount = preTaxTotal * 0.18;
-      const serviceFeeAmount = preTaxTotal * 0.02;
-      const finalGuestPrice = preTaxTotal + gstAmount + serviceFeeAmount;
+      const taxAmount = preTaxTotal * (taxRate / 100);
+      const finalGuestPrice = preTaxTotal + taxAmount;
       frontendBreakdown = {
         nightsCount,
         basePrice,
@@ -1636,8 +1710,8 @@ const StayProduct = () => {
         extraChildTotal,
         discountPercent: discountPercentage || 0,
         discountAmount,
-        gstAmount,
-        serviceFeeAmount,
+        taxRate,
+        taxAmount,
         finalGuestPrice,
       };
 
@@ -1663,11 +1737,10 @@ const StayProduct = () => {
       };
     } else {
       // Property-based stay: no rooms array needed
-      const activeSeasonObj = stay?.seasonalPeriods?.find(p =>
-        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-      );
-      const activeSeasonData = activeSeasonObj ? (stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || stay?.[activeSeasonObj.tempId]) : null;
+      const activeSeasonObj = stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
+      const activeSeasonData = activeSeasonObj
+        ? (resolveSeasonalNode(stay?.propertySeasonalPricing, activeSeasonObj) || resolveSeasonalNode(stay, activeSeasonObj))
+        : null;
 
       const propertyBasePrice = parseFloat(
         (activeSeasonData && parseFloat(activeSeasonData.fullPropertyHikePrice) > 0 ? activeSeasonData.fullPropertyHikePrice : null) ||
@@ -1690,14 +1763,16 @@ const StayProduct = () => {
       const amountPerNight = propertyBasePrice + totalExtraPrice;
       const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
       const calculatedAmountProperty = amountPerNight * nightsCount;
+      const taxRate = Array.isArray(stay?.taxes)
+        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
       const baseStayTotal = propertyBasePrice * nightsCount;
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount;
       const extraChildTotal = extraChildren * extraChildPrice * nightsCount;
       const discountAmount = (propertyBasePrice * (discountPercentage / 100)) * nightsCount;
       const preTaxTotal = calculatedAmountProperty - discountAmount;
-      const gstAmount = preTaxTotal * 0.18;
-      const serviceFeeAmount = preTaxTotal * 0.02;
-      const finalGuestPrice = preTaxTotal + gstAmount + serviceFeeAmount;
+      const taxAmount = preTaxTotal * (taxRate / 100);
+      const finalGuestPrice = preTaxTotal + taxAmount;
       frontendBreakdown = {
         nightsCount,
         basePrice: propertyBasePrice,
@@ -1710,8 +1785,8 @@ const StayProduct = () => {
         extraChildTotal,
         discountPercent: discountPercentage || 0,
         discountAmount,
-        gstAmount,
-        serviceFeeAmount,
+        taxRate,
+        taxAmount,
         finalGuestPrice,
       };
 
@@ -1794,7 +1869,7 @@ const StayProduct = () => {
         : null;
 
       const mealCode = isRoomBased && selectedRoom
-        ? (selectedRoom.selectedMealPlan || (Number(selectedRoom.bbPrice) > 0 ? "BB" : Number(selectedRoom.cpPrice) > 0 ? "CP" : Number(selectedRoom.mapPrice) > 0 ? "MAP" : "EP"))
+        ? (inferMealPlanCode(selectedRoom) || (Number(selectedRoom.bbPrice) > 0 ? "BB" : Number(selectedRoom.cpPrice) > 0 ? "CP" : Number(selectedRoom.mapPrice) > 0 ? "MAP" : "EP"))
         : null;
 
       // Get cover image — formatImageUrl handles relative blob paths (e.g. "leads/...")
@@ -1845,9 +1920,8 @@ const StayProduct = () => {
         response?.order?.finalPrice,
         backendTotalRupees
       );
-
       if (isPresent(basePrice)) backendReceipt.push({ title: "Total Base Price", content: formatMoney(basePrice) });
-      if (isPresent(discount)) backendReceipt.push({ title: "Total Guest Discount", content: `- ${formatMoney(Math.abs(discount))}` });
+      if (isPresent(discount)) backendReceipt.push({ title: "Total Discount", content: `- ${formatMoney(Math.abs(discount))}` });
       if (isPresent(afterDiscount)) backendReceipt.push({ title: "Price After Discounts", content: formatMoney(afterDiscount) });
       const combinedBackendTax = (tourismTax || 0) + (serviceTax || 0) + (gst || 0);
       if (combinedBackendTax > 0) backendReceipt.push({ title: "Tax", content: `+ ${formatMoney(combinedBackendTax)}` });
@@ -1869,18 +1943,23 @@ const StayProduct = () => {
           content: formatMoney(frontendBreakdown.extraChildTotal),
         });
       }
-      if (frontendBreakdown && frontendBreakdown.discountAmount > 0) {
+      const discountToShow = frontendBreakdown?.discountAmount;
+      if (discountToShow > 0) {
         frontendReceipt.push({
-          title: `Discount (${frontendBreakdown.discountPercent}%)`,
-          content: `- ${formatMoney(frontendBreakdown.discountAmount)}`,
+          title: "Total Discount",
+          content: `- ${formatMoney(discountToShow)}`,
         });
       }
-      const combinedFrontendTax = (frontendBreakdown?.gstAmount || 0) + (frontendBreakdown?.serviceFeeAmount || 0);
+      const combinedFrontendTax = frontendBreakdown?.taxAmount || 0;
       if (combinedFrontendTax > 0) {
-        frontendReceipt.push({ title: "Tax", content: `+ ${formatMoney(combinedFrontendTax)}` });
+        frontendReceipt.push({
+          title: `Tax (${Number(frontendBreakdown?.taxRate || 0).toFixed(2)}%)`,
+          content: `+ ${formatMoney(combinedFrontendTax)}`,
+        });
       }
       if (frontendBreakdown) {
-        frontendReceipt.push({ title: "Final Guest Price", content: formatMoney(frontendBreakdown.finalGuestPrice) });
+        const finalFromOrder = backendTotalRupees ?? frontendBreakdown.finalGuestPrice;
+        frontendReceipt.push({ title: "Final Guest Price", content: formatMoney(finalFromOrder) });
       }
 
       const stayBookingData = {
@@ -1923,7 +2002,10 @@ const StayProduct = () => {
   };
 
   const handleSelectRoom = (room) => {
-    setSelectedRoom(room);
+    setSelectedRoom({
+      ...room,
+      selectedMealPlan: inferMealPlanCode(room),
+    });
   };
 
   const handleShare = () => {
