@@ -1546,6 +1546,7 @@ const StayProduct = () => {
       userInfo.phone || "+911234567890";
 
     let bookingPayload;
+    let frontendBreakdown = null;
 
     if (isRoomBased && selectedRoom) {
       // Room-based stay: include rooms array with roomId, roomsBooked, mealPlanCode
@@ -1615,6 +1616,30 @@ const StayProduct = () => {
       const amountPerNight = basePrice + totalExtraPrice;
       const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
       const calculatedAmount = amountPerNight * nightsCount;
+      const baseStayTotal = basePrice * nightsCount * roomsNeeded;
+      const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount * roomsNeeded;
+      const extraChildTotal = extraChildren * extraChildPrice * nightsCount * roomsNeeded;
+      const discountAmount = (basePrice * (discountPercentage / 100)) * nightsCount * roomsNeeded;
+      const preTaxTotal = (calculatedAmount * roomsNeeded) - discountAmount;
+      const gstAmount = preTaxTotal * 0.18;
+      const serviceFeeAmount = preTaxTotal * 0.02;
+      const finalGuestPrice = preTaxTotal + gstAmount + serviceFeeAmount;
+      frontendBreakdown = {
+        nightsCount,
+        basePrice,
+        baseStayTotal,
+        extraAdults,
+        extraChildren,
+        extraAdultPrice,
+        extraChildPrice,
+        extraAdultTotal,
+        extraChildTotal,
+        discountPercent: discountPercentage || 0,
+        discountAmount,
+        gstAmount,
+        serviceFeeAmount,
+        finalGuestPrice,
+      };
 
       bookingPayload = {
         stayId: Number(stayId),
@@ -1665,6 +1690,30 @@ const StayProduct = () => {
       const amountPerNight = propertyBasePrice + totalExtraPrice;
       const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
       const calculatedAmountProperty = amountPerNight * nightsCount;
+      const baseStayTotal = propertyBasePrice * nightsCount;
+      const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount;
+      const extraChildTotal = extraChildren * extraChildPrice * nightsCount;
+      const discountAmount = (propertyBasePrice * (discountPercentage / 100)) * nightsCount;
+      const preTaxTotal = calculatedAmountProperty - discountAmount;
+      const gstAmount = preTaxTotal * 0.18;
+      const serviceFeeAmount = preTaxTotal * 0.02;
+      const finalGuestPrice = preTaxTotal + gstAmount + serviceFeeAmount;
+      frontendBreakdown = {
+        nightsCount,
+        basePrice: propertyBasePrice,
+        baseStayTotal,
+        extraAdults,
+        extraChildren,
+        extraAdultPrice,
+        extraChildPrice,
+        extraAdultTotal,
+        extraChildTotal,
+        discountPercent: discountPercentage || 0,
+        discountAmount,
+        gstAmount,
+        serviceFeeAmount,
+        finalGuestPrice,
+      };
 
       bookingPayload = {
         stayId: Number(stayId),
@@ -1692,10 +1741,37 @@ const StayProduct = () => {
       const rzpOrderId = paymentResponse?.razorpayOrderId || response?.razorpayOrderId || response?.order?.razorpayOrderId;
       const rzpKeyId = paymentResponse?.razorpayKeyId || response?.razorpayKeyId || response?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
 
-      // Always use our frontend-calculated amount (b2cPrice × nights × rooms).
-      // The backend Razorpay order may include extra surcharges; we display our total
-      // so it stays consistent with the receipt breakdown shown to the user.
-      const amountInPaise = Math.round((bookingPayload.amount || 0) * 100);
+      const asNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const firstNumber = (...values) => {
+        for (const value of values) {
+          const parsed = asNumber(value);
+          if (parsed !== null) return parsed;
+        }
+        return null;
+      };
+
+      const backendTotalRupees = firstNumber(
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        response?.order?.totalPrice,
+        response?.order?.finalPrice,
+        response?.order?.amount,
+        response?.order?.totalAmount,
+        response?.finalGuestPrice,
+        response?.data?.finalGuestPrice,
+        response?.guestPricing?.finalGuestPrice,
+        response?.guestPricing?.totalGuestPrice,
+        paymentResponse?.amount ? Number(paymentResponse.amount) / 100 : null,
+      );
+      const amountInPaise = firstNumber(
+        paymentResponse?.amount,
+        response?.order?.amount,
+        backendTotalRupees != null ? Math.round(backendTotalRupees * 100) : null,
+        Math.round((bookingPayload.amount || 0) * 100),
+      );
 
       const currency = paymentResponse?.currency || response?.currency || response?.order?.currency || "INR";
 
@@ -1749,6 +1825,64 @@ const StayProduct = () => {
         : null;
       const roomImg = formatImageUrl(rawRoomImg) || coverImg;
 
+      const pricing = response?.guestPricing || response?.pricing || response?.priceBreakdown || response?.data?.guestPricing || {};
+      const isPresent = (v) => v !== null && v !== undefined && v !== "";
+      const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+      const backendReceipt = [];
+
+      const basePrice = firstNumber(pricing?.totalBasePrice, pricing?.basePrice, pricing?.totalBaseAmount);
+      const discount = firstNumber(pricing?.totalGuestDiscount, pricing?.guestDiscount, pricing?.discountAmount);
+      const afterDiscount = firstNumber(pricing?.priceAfterDiscounts, pricing?.priceAfterDiscount, pricing?.subtotalAfterDiscount);
+      const tourismTax = firstNumber(pricing?.tourismTax, pricing?.tourismTaxAmount);
+      const serviceTax = firstNumber(pricing?.serviceTax, pricing?.serviceTaxAmount, pricing?.serviceFee);
+      const gst = firstNumber(pricing?.gst, pricing?.gstAmount);
+      const finalGuestPrice = firstNumber(
+        pricing?.finalGuestPrice,
+        pricing?.totalGuestPrice,
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        response?.order?.totalPrice,
+        response?.order?.finalPrice,
+        backendTotalRupees
+      );
+
+      if (isPresent(basePrice)) backendReceipt.push({ title: "Total Base Price", content: formatMoney(basePrice) });
+      if (isPresent(discount)) backendReceipt.push({ title: "Total Guest Discount", content: `- ${formatMoney(Math.abs(discount))}` });
+      if (isPresent(afterDiscount)) backendReceipt.push({ title: "Price After Discounts", content: formatMoney(afterDiscount) });
+      const combinedBackendTax = (tourismTax || 0) + (serviceTax || 0) + (gst || 0);
+      if (combinedBackendTax > 0) backendReceipt.push({ title: "Tax", content: `+ ${formatMoney(combinedBackendTax)}` });
+      if (isPresent(finalGuestPrice)) backendReceipt.push({ title: "Final Guest Price", content: formatMoney(finalGuestPrice) });
+      const frontendReceipt = frontendBreakdown ? [
+        { title: `Base Stay (${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`, content: formatMoney(frontendBreakdown.baseStayTotal) },
+        { title: "Adults", content: `${guests?.adults || 0}` },
+        { title: "Children", content: `${guests?.children || 0}` },
+      ] : [];
+      if (frontendBreakdown && frontendBreakdown.extraAdults > 0) {
+        frontendReceipt.push({
+          title: `Extra Adult Charges (${frontendBreakdown.extraAdults} × ${formatMoney(frontendBreakdown.extraAdultPrice)} × ${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`,
+          content: formatMoney(frontendBreakdown.extraAdultTotal),
+        });
+      }
+      if (frontendBreakdown && frontendBreakdown.extraChildren > 0) {
+        frontendReceipt.push({
+          title: `Extra Child Charges (${frontendBreakdown.extraChildren} × ${formatMoney(frontendBreakdown.extraChildPrice)} × ${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`,
+          content: formatMoney(frontendBreakdown.extraChildTotal),
+        });
+      }
+      if (frontendBreakdown && frontendBreakdown.discountAmount > 0) {
+        frontendReceipt.push({
+          title: `Discount (${frontendBreakdown.discountPercent}%)`,
+          content: `- ${formatMoney(frontendBreakdown.discountAmount)}`,
+        });
+      }
+      const combinedFrontendTax = (frontendBreakdown?.gstAmount || 0) + (frontendBreakdown?.serviceFeeAmount || 0);
+      if (combinedFrontendTax > 0) {
+        frontendReceipt.push({ title: "Tax", content: `+ ${formatMoney(combinedFrontendTax)}` });
+      }
+      if (frontendBreakdown) {
+        frontendReceipt.push({ title: "Final Guest Price", content: formatMoney(frontendBreakdown.finalGuestPrice) });
+      }
+
       const stayBookingData = {
         stayId: Number(stayId),
         listingTitle: stay?.propertyName || stay?.title || stay?.name || "Stay",
@@ -1764,10 +1898,14 @@ const StayProduct = () => {
         bookingSummary: {
           guestCount: (guests?.adults || 0) + (guests?.children || 0),
         },
-        receipt: response?.totalAmount ? [
-          { title: "Stay total", content: `${response.currency || "INR"} ${Number(response.totalAmount).toFixed(2)}` },
-          { title: "Total", content: `${response.currency || "INR"} ${Number(response.totalAmount).toFixed(2)}` },
-        ] : [],
+        receipt: frontendReceipt.length > 0
+          ? frontendReceipt
+          : (backendReceipt.length > 0
+          ? backendReceipt
+          : (backendTotalRupees != null ? [
+            { title: "Stay total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
+            { title: "Total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
+          ] : [])),
         timestamp: new Date().toISOString(),
       };
       localStorage.setItem("pendingBooking", JSON.stringify(stayBookingData));

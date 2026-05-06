@@ -37,22 +37,26 @@ const StayBookingSystem = ({
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
     if (show && (stay?.stayId || stay?.id) && checkInDate && checkOutDate) {
+      let cancelled = false;
       const load = async () => {
-        setFetchingAvailability(true);
+        if (!cancelled) setFetchingAvailability(true);
         try {
           const data = await getStayRoomAvailability(
             stay.stayId || stay.id,
             checkInDate.format("YYYY-MM-DD"),
             checkOutDate.format("YYYY-MM-DD")
           );
-          if (data) setAvailabilityData(data);
+          if (!cancelled && data) setAvailabilityData(data);
         } catch (e) {
           console.error("❌ Failed to fetch real-time room pricing:", e);
         } finally {
-          setFetchingAvailability(false);
+          if (!cancelled) setFetchingAvailability(false);
         }
       };
       load();
+      return () => {
+        cancelled = true;
+      };
     }
   }, [show, stay?.stayId, stay?.id, checkInDate, checkOutDate]);
 
@@ -394,6 +398,7 @@ const StayBookingSystem = ({
       const response = await createStayOrder(payload);
       const paymentResponse = response?.payment || response?.data?.payment || response;
       const orderResponse = response?.order || response?.data?.order || response;
+      const pricingResponse = response?.guestPricing || response?.pricing || response?.priceBreakdown || response?.data?.guestPricing || {};
       
       const extractRazorpayCredentials = (res) => {
         let orderId = null;
@@ -491,11 +496,43 @@ const StayBookingSystem = ({
         return;
       }
 
+      const asNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const firstNumber = (...values) => {
+        for (const value of values) {
+          const parsed = asNumber(value);
+          if (parsed !== null) return parsed;
+        }
+        return null;
+      };
+
+      const backendTotalRupees = firstNumber(
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        orderResponse?.totalPrice,
+        orderResponse?.finalPrice,
+        orderResponse?.amount,
+        orderResponse?.totalAmount,
+        pricingResponse?.finalGuestPrice,
+        pricingResponse?.totalGuestPrice,
+        response?.finalGuestPrice,
+        response?.data?.finalGuestPrice
+      );
+      const amountInPaise = firstNumber(
+        paymentResponse?.amount,
+        orderResponse?.amount,
+        response?.amount,
+        backendTotalRupees != null ? Math.round(backendTotalRupees * 100) : null,
+        Math.round(pricing.finalTotal * 100)
+      );
+
       localStorage.setItem("pendingPayment", JSON.stringify({
         paymentMethod: "razorpay",
         razorpayOrderId,
         razorpayKeyId,
-        amount: Math.round(pricing.finalTotal * 100),
+        amount: amountInPaise,
         currency: paymentResponse.currency || response?.currency || "INR"
       }));
       
@@ -503,36 +540,66 @@ const StayBookingSystem = ({
         localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
       }
 
-      const receipt = [
-        { title: `Base Stay (${pricing.nightsCount} night${pricing.nightsCount !== 1 ? "s" : ""})`, content: `₹${formatPrice(pricing.originalPerNight * pricing.nightsCount)}` }
+      const currency = paymentResponse.currency || response?.currency || "INR";
+      const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+      const isPresent = (v) => v !== null && v !== undefined && v !== "";
+      const receipt = [];
+
+      const basePrice = firstNumber(pricingResponse?.totalBasePrice, pricingResponse?.basePrice, pricingResponse?.totalBaseAmount);
+      const discount = firstNumber(pricingResponse?.totalGuestDiscount, pricingResponse?.guestDiscount, pricingResponse?.discountAmount);
+      const afterDiscount = firstNumber(pricingResponse?.priceAfterDiscounts, pricingResponse?.priceAfterDiscount, pricingResponse?.subtotalAfterDiscount);
+      const tourismTax = firstNumber(pricingResponse?.tourismTax, pricingResponse?.tourismTaxAmount);
+      const serviceTax = firstNumber(pricingResponse?.serviceTax, pricingResponse?.serviceTaxAmount, pricingResponse?.serviceFee);
+      const gst = firstNumber(pricingResponse?.gst, pricingResponse?.gstAmount);
+      const finalGuestPrice = firstNumber(
+        pricingResponse?.finalGuestPrice,
+        pricingResponse?.totalGuestPrice,
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        orderResponse?.totalPrice,
+        orderResponse?.finalPrice,
+        backendTotalRupees
+      );
+
+      if (isPresent(basePrice)) receipt.push({ title: "Total Base Price", content: formatMoney(basePrice) });
+      if (isPresent(discount)) receipt.push({ title: "Total Guest Discount", content: `- ${formatMoney(Math.abs(discount))}` });
+      if (isPresent(afterDiscount)) receipt.push({ title: "Price After Discounts", content: formatMoney(afterDiscount) });
+      const combinedBackendTax = (tourismTax || 0) + (serviceTax || 0) + (gst || 0);
+      if (combinedBackendTax > 0) receipt.push({ title: "Tax", content: `+ ${formatMoney(combinedBackendTax)}` });
+      if (isPresent(finalGuestPrice)) receipt.push({ title: "Final Guest Price", content: formatMoney(finalGuestPrice) });
+
+      const nightsFromOrder = firstNumber(orderResponse?.numberOfNights, pricing.nightsCount) || 1;
+      const nightlyFromOrder = firstNumber(orderResponse?.pricePerNight, pricing.originalPerNight) || 0;
+      const totalFromOrder = firstNumber(orderResponse?.totalPrice, orderResponse?.finalPrice, backendTotalRupees, pricing.finalTotal) || 0;
+      const frontendReceipt = [
+        { title: `Base Stay (${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`, content: `${currency} ${Number(nightlyFromOrder * nightsFromOrder).toFixed(2)}` },
+        { title: "Adults", content: `${guests.adults || 0}` },
+        { title: "Children", content: `${guests.children || 0}` },
       ];
-
-      // Extra guest fees — shown only when there are extras
       if (extraAdultsCount > 0) {
-        // ✅ Use seasonal extra price if available (already resolved in pricing)
-        const extraAdultRate = pricing.activeExtraAdultPrice || 0;
-        receipt.push({
-          title: `Extra Adult${extraAdultsCount > 1 ? "s" : ""} (${extraAdultsCount} × ₹${formatPrice(extraAdultRate)} × ${pricing.nightsCount} nights)`,
-          content: `₹${formatPrice(extraAdultsCount * extraAdultRate * pricing.nightsCount)}`
+        frontendReceipt.push({
+          title: `Extra Adult Charges (${extraAdultsCount} × ${currency} ${Number(pricing.activeExtraAdultPrice || 0).toFixed(2)} × ${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`,
+          content: `${currency} ${Number(extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-
       if (extraChildrenCount > 0) {
-        // ✅ Use seasonal extra price if available (already resolved in pricing)
-        const extraChildRate = pricing.activeExtraChildPrice || 0;
-        receipt.push({
-          title: `Extra Child${extraChildrenCount > 1 ? "ren" : ""} (${extraChildrenCount} × ₹${formatPrice(extraChildRate)} × ${pricing.nightsCount} nights)`,
-          content: `₹${formatPrice(extraChildrenCount * extraChildRate * pricing.nightsCount)}`
+        frontendReceipt.push({
+          title: `Extra Child Charges (${extraChildrenCount} × ${currency} ${Number(pricing.activeExtraChildPrice || 0).toFixed(2)} × ${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`,
+          content: `${currency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-
       if (pricing.discount > 0) {
-        receipt.push({ title: `Discount (${pricing.discountPercent}%)`, content: `- ₹${formatPrice(pricing.discount)}` });
+        frontendReceipt.push({ title: `Discount (${pricing.discountPercent}%)`, content: `- ${currency} ${Number(pricing.discount).toFixed(2)}` });
       }
+      const combinedFrontendTax = (pricing.gst || 0) + (pricing.serviceFee || 0);
+      if (combinedFrontendTax > 0) {
+        frontendReceipt.push({ title: "Tax", content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
+      }
+      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder).toFixed(2)}` });
 
-      receipt.push({ title: "GST (18%)", content: `₹${formatPrice(pricing.gst)}` });
-      receipt.push({ title: "Service Fee (2%)", content: `₹${formatPrice(pricing.serviceFee)}` });
-      receipt.push({ title: "Total", content: `₹${formatPrice(pricing.finalTotal)}` });
+      // Frontend-calculated breakdown should be shown in Confirm & Pay.
+      // Keep backend breakdown only as a fallback.
+      const finalReceipt = frontendReceipt.length > 0 ? frontendReceipt : receipt;
 
       const roomSummary = isPropertyBased
         ? "Full Property"
@@ -540,6 +607,7 @@ const StayBookingSystem = ({
 
       const bookingData = {
         stayId: payload.stayId,
+        leadUserId: stay?.leadUserId,
         listingTitle: stay.propertyName || stay.title || "Stay",
         listingImage: stay.coverPhotoUrl || stay.coverImageUrl || "",
         isStay: true,
@@ -549,7 +617,8 @@ const StayBookingSystem = ({
         guests: guests,
         extraAdults: extraAdultsCount,
         extraChildren: extraChildrenCount,
-        receipt: receipt
+        receipt: finalReceipt,
+        totalAmount: backendTotalRupees ?? pricing.finalTotal,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
 
