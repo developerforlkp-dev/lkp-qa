@@ -1091,16 +1091,16 @@ const Main = ({
                                 lineHeight: "1",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
-                                backgroundColor: booking.bookingData.orderStatus === "CONFIRMED" ? "#E8F5E9" :
-                                                 booking.bookingData.orderStatus === "COMPLETED" ? "#E3F2FD" :
+                                backgroundColor: booking.status === "Completed" ? "#E3F2FD" :
+                                                 booking.bookingData.orderStatus === "CONFIRMED" ? "#E8F5E9" :
                                                  booking.bookingData.orderStatus === "PENDING"   ? "#FFF3E0" :
                                                  booking.bookingData.orderStatus === "CANCELLED" ? "#FFEBEE" : "#F3F4F6",
-                                color: booking.bookingData.orderStatus === "CONFIRMED" ? "#2E7D32" :
-                                       booking.bookingData.orderStatus === "COMPLETED" ? "#1565C0" :
+                                color: booking.status === "Completed" ? "#1565C0" :
+                                       booking.bookingData.orderStatus === "CONFIRMED" ? "#2E7D32" :
                                        booking.bookingData.orderStatus === "PENDING"   ? "#E65100" :
                                        booking.bookingData.orderStatus === "CANCELLED" ? "#C62828" : "#6B7280",
                               }}>
-                                {booking.bookingData.orderStatus}
+                                {booking.status === "Completed" ? "COMPLETED" : booking.bookingData.orderStatus}
                               </span>
                             </>
                           )}
