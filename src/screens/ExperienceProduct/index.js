@@ -694,7 +694,7 @@ const ExperienceProduct = () => {
                           style={{
                             display: "flex",
                             gap: 24,
-                            alignItems: "flex-start",
+                            alignItems: "center",
                             padding: "20px",
                             background: isSelected ? AL : "transparent",
                             borderRadius: 24,
@@ -718,12 +718,12 @@ const ExperienceProduct = () => {
                             )}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title}</p>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                                 {isSelected ? (
                                   pricingType === "Group" ? (
                                     <button
@@ -733,7 +733,10 @@ const ExperienceProduct = () => {
                                         color: A,
                                         border: `1px solid ${A}`,
                                         borderRadius: 100,
-                                        padding: "6px 20px",
+                                        padding: "0 20px",
+                                        height: "36px",
+                                        display: "flex",
+                                        alignItems: "center",
                                         fontSize: 11,
                                         fontWeight: 700,
                                         cursor: "pointer",
@@ -744,7 +747,7 @@ const ExperienceProduct = () => {
                                       Remove
                                     </button>
                                   ) : (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "4px 8px", border: `1px solid ${B}` }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
                                       <button
                                         onClick={() => handleUpdateAddonQuantity(addon, -1)}
                                         style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
@@ -770,7 +773,10 @@ const ExperienceProduct = () => {
                                       color: FG,
                                       border: `1px solid ${B}`,
                                       borderRadius: 100,
-                                      padding: "6px 20px",
+                                      padding: "0 20px",
+                                      height: "36px",
+                                      display: "flex",
+                                      alignItems: "center",
                                       fontSize: 11,
                                       fontWeight: 700,
                                       cursor: "pointer",
