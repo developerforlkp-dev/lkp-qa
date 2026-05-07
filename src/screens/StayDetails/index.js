@@ -740,9 +740,41 @@ const StayDetails = () => {
     if (!url) return null;
     if (typeof url !== "string") url = url?.url ?? url?.src ?? url?.imageUrl;
     if (!url) return null;
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    if (url.startsWith("/")) return url;
-    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodeURI(url.replaceAll("%2F", "/"))}`;
+    const raw = String(url).trim();
+    if (!raw) return null;
+
+    // 1. If it's already a public objects proxy URL, return as is
+    if (raw.startsWith("/public-objects/")) {
+      return raw;
+    }
+
+    // 2. If it's an absolute URL, check if it's an Azure Blob Storage URL from our lead-documents container
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      if (raw.includes("blob.core.windows.net/lead-documents/")) {
+        // Extract the relative path part after 'lead-documents/'
+        const relativePart = raw.split("blob.core.windows.net/lead-documents/")[1];
+        // Strip any query string like SAS tokens since public-objects backend handles retrieval directly
+        const pathOnly = relativePart.split("?")[0];
+        const decodedPath = decodeURIComponent(pathOnly);
+        const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
+        const encodedPath = encodeURI(normalizedPath);
+        return `/public-objects/${encodedPath}`;
+      }
+      // If it's some other external URL, return as is
+      return raw;
+    }
+
+    // 3. If it's a relative path starting with /, return as is
+    if (raw.startsWith("/")) {
+      return raw;
+    }
+
+    // 4. Otherwise, it's a relative blob path (e.g. "leads/...") or a path with backslashes
+    const [pathPart, queryPart] = raw.split("?");
+    const decodedPath = decodeURIComponent(pathPart);
+    const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
+    const encodedPath = encodeURI(normalizedPath);
+    return `/public-objects/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
   };
 
   const handleRoomSelect = useCallback((roomId, mealPlan) => {
