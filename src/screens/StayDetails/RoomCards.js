@@ -4,6 +4,31 @@ import styles from "./RoomCards.module.sass";
 import Icon from "../../components/Icon";
 import { useTheme } from "../../components/JUI/Theme";
 
+/* ---------- HOOKS ----------------------------------------------------- */
+function useWindowSize() {
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    isMobile: window.innerWidth <= 768,
+    isTablet: window.innerWidth > 768 && window.innerWidth <= 1024,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isMobile: window.innerWidth <= 768,
+        isTablet: window.innerWidth > 768 && window.innerWidth <= 1024,
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return size;
+}
+
 /* ---------- constants ------------------------------------------------- */
 const MEAL_PLAN_LABELS = {
   EP: "EP – Room Only",
@@ -146,6 +171,8 @@ const CustomDropdown = ({ options, value, onChange }) => {
 
 /* ---------- Room Modal ---------------------------------------------- */
 const RoomModal = ({ room, listing, onClose }) => {
+  const { isMobile } = useWindowSize();
+  const { tokens: { A, FG, M, B, W, S, BG, AL } } = useTheme();
   const name = room.roomName || room.roomTypeName || room.name || "Room Details";
   const desc = room.roomDescription || room.description || room.shortDescription;
   const capacity = room.maxGuests || (room.maxAdults ? room.maxAdults + (room.maxChildren || 0) : null);
@@ -212,7 +239,7 @@ const RoomModal = ({ room, listing, onClose }) => {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)" }} onClick={onClose} />
       
       {/* Scrollbar CSS Injection */}
@@ -222,19 +249,19 @@ const RoomModal = ({ room, listing, onClose }) => {
       `}</style>
 
       <div style={{ 
-        position: "relative", background: "#fff", width: "100%", maxWidth: 1100, maxHeight: "94vh", 
-        borderRadius: 32, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1, 
-        boxShadow: "0 40px 120px rgba(0,0,0,0.5)", border: "1px solid rgba(0,0,0,0.05)" 
+        position: "relative", background: W, width: "100%", maxWidth: 1100, maxHeight: isMobile ? "100vh" : "94vh", 
+        borderRadius: isMobile ? 0 : 32, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1, 
+        boxShadow: "0 40px 120px rgba(0,0,0,0.5)", border: `1px solid ${B}` 
       }}>
         
         {/* Close Button */}
         <button onClick={onClose} style={{ 
-          position: "absolute", top: 24, right: 24, width: 44, height: 44, borderRadius: "50%", 
-          background: "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", 
+          position: "absolute", top: isMobile ? 16 : 24, right: isMobile ? 16 : 24, width: 44, height: 44, borderRadius: "50%", 
+          background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", 
           justifyContent: "center", cursor: "pointer", zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", 
-          transition: "all 0.3s ease" 
+          transition: "all 0.3s ease", color: FG
         }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
 
         {/* Hero Gallery Section */}
@@ -253,8 +280,8 @@ const RoomModal = ({ room, listing, onClose }) => {
               {allImages.length > 1 && (
                 <>
                   <button onClick={() => scrollGallery('prev')} style={{ 
-                    position: "absolute", left: 32, top: "50%", transform: "translateY(-50%)", 
-                    width: 56, height: 56, borderRadius: "50%", background: "rgba(255,255,255,0.15)", 
+                    position: "absolute", left: isMobile ? 16 : 32, top: "50%", transform: "translateY(-50%)", 
+                    width: isMobile ? 44 : 56, height: isMobile ? 44 : 56, borderRadius: "50%", background: "rgba(255,255,255,0.15)", 
                     backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.2)", 
                     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", 
                     color: "#fff", zIndex: 15, transition: "all 0.3s" 
@@ -262,8 +289,8 @@ const RoomModal = ({ room, listing, onClose }) => {
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
                   <button onClick={() => scrollGallery('next')} style={{ 
-                    position: "absolute", right: 32, top: "50%", transform: "translateY(-50%)", 
-                    width: 56, height: 56, borderRadius: "50%", background: "rgba(255,255,255,0.15)", 
+                    position: "absolute", right: isMobile ? 16 : 32, top: "50%", transform: "translateY(-50%)", 
+                    width: isMobile ? 44 : 56, height: isMobile ? 44 : 56, borderRadius: "50%", background: "rgba(255,255,255,0.15)", 
                     backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.2)", 
                     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", 
                     color: "#fff", zIndex: 15, transition: "all 0.3s" 
@@ -290,44 +317,44 @@ const RoomModal = ({ room, listing, onClose }) => {
         </div>
 
         {/* Details Body */}
-        <div className="modal-body-content" style={{ padding: "60px 80px", overflowY: "auto", flex: 1, background: "#fff" }}>
+        <div className="modal-body-content" style={{ padding: isMobile ? "40px 24px" : "60px 80px", overflowY: "auto", flex: 1, background: W }}>
           
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 100 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: isMobile ? 48 : 100 }}>
             
             {/* Left Col: Core Details */}
             <div>
               <div style={{ marginBottom: 32 }}>
                 <h2 style={{ 
-                  fontSize: 52, fontWeight: 800, marginBottom: 24, 
-                  fontFamily: "var(--font-fraunces, Georgia, serif)", color: "#0F0F0F", 
-                  lineHeight: 1, letterSpacing: "-0.02em" 
+                  fontSize: isMobile ? 32 : 52, fontWeight: 800, marginBottom: 24, 
+                  fontFamily: "var(--font-fraunces, Georgia, serif)", color: FG, 
+                  lineHeight: 1.1, letterSpacing: "-0.02em" 
                 }}>{name}</h2>
                 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
-                  {capacity != null && <span style={{ fontSize: 11, fontWeight: 800, padding: "8px 16px", background: "#F3F3F1", borderRadius: 8, color: "#666", textTransform: "uppercase", letterSpacing: "0.1em" }}>Capacity: {capacity} Guests</span>}
-                  {totalRooms != null && <span style={{ fontSize: 11, fontWeight: 800, padding: "8px 16px", background: "#F3F3F1", borderRadius: 8, color: "#666", textTransform: "uppercase", letterSpacing: "0.1em" }}>{totalRooms} Rooms Available</span>}
-                  {room.extraBedAllowed && <span style={{ fontSize: 11, fontWeight: 800, padding: "8px 16px", background: "#E8F5E9", borderRadius: 8, color: "#2E7D32", textTransform: "uppercase", letterSpacing: "0.1em" }}>Extra Bed Policy Applied</span>}
+                  {capacity != null && <span style={{ fontSize: 11, fontWeight: 800, padding: "8px 16px", background: S, borderRadius: 8, color: M, textTransform: "uppercase", letterSpacing: "0.1em", border: `1px solid ${B}` }}>Capacity: {capacity} Guests</span>}
+                  {totalRooms != null && <span style={{ fontSize: 11, fontWeight: 800, padding: "8px 16px", background: S, borderRadius: 8, color: M, textTransform: "uppercase", letterSpacing: "0.1em", border: `1px solid ${B}` }}>{totalRooms} Rooms Available</span>}
+                  {room.extraBedAllowed && <span style={{ fontSize: 11, fontWeight: 800, padding: "8px 16px", background: AL, borderRadius: 8, color: A, textTransform: "uppercase", letterSpacing: "0.1em", border: `1px solid ${A}` }}>Extra Bed Policy Applied</span>}
                 </div>
 
-                <div style={{ borderTop: "1px solid #EEE", paddingTop: 24 }}>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#999", marginBottom: 16 }}>Room Narrative</h3>
-                  <p style={{ fontSize: 18, lineHeight: 1.8, color: "#444", fontWeight: 450 }}>{desc}</p>
+                <div style={{ borderTop: `1px solid ${B}`, paddingTop: 24 }}>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: M, marginBottom: 16 }}>Room Narrative</h3>
+                  <p style={{ fontSize: 18, lineHeight: 1.8, color: FG, fontWeight: 450, opacity: 0.9 }}>{desc}</p>
                 </div>
               </div>
 
               {/* Bed Details Section */}
               {(bedInfo || bedSize) && (
-                <div style={{ paddingTop: 32, borderTop: "1px solid #EEE" }}>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#999", marginBottom: 20 }}>Accommodation Specs</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+                <div style={{ paddingTop: 32, borderTop: `1px solid ${B}` }}>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: M, marginBottom: 20 }}>Accommodation Specs</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 24 : 40 }}>
                     <div>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 6 }}>Configuration</p>
-                      <p style={{ fontSize: 18, fontWeight: 700, color: "#0F0F0F" }}>{bedInfo || "Standard Configuration"}</p>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: M, textTransform: "uppercase", marginBottom: 6 }}>Configuration</p>
+                      <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{bedInfo || "Standard Configuration"}</p>
                     </div>
                     {bedSize && (
                       <div>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 6 }}>Dimension</p>
-                        <p style={{ fontSize: 18, fontWeight: 700, color: "#0F0F0F" }}>{bedSize}</p>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: M, textTransform: "uppercase", marginBottom: 6 }}>Dimension</p>
+                        <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{bedSize}</p>
                       </div>
                     )}
                   </div>
@@ -341,12 +368,12 @@ const RoomModal = ({ room, listing, onClose }) => {
               {/* Amenities */}
               {features.length > 0 && (
                 <div>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#999", marginBottom: 24 }}>Amenities & Features</h3>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: M, marginBottom: 24 }}>Amenities & Features</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 20px" }}>
                     {features.map((f, i) => (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0097B2", flexShrink: 0 }} />
-                        <span style={{ fontSize: 15, color: "#333", fontWeight: 600 }}>{f}</span>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: A, flexShrink: 0 }} />
+                        <span style={{ fontSize: 15, color: FG, fontWeight: 600 }}>{f}</span>
                       </div>
                     ))}
                   </div>
@@ -355,12 +382,12 @@ const RoomModal = ({ room, listing, onClose }) => {
 
               {/* Inclusions */}
               {Array.isArray(inclusions) && inclusions.length > 0 && (
-                <div style={{ padding: 28, background: "#FBFBF9", borderRadius: 24, border: "1px solid #EEE" }}>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#999", marginBottom: 20 }}>Stay Inclusions</h3>
+                <div style={{ padding: 28, background: S, borderRadius: 24, border: `1px solid ${B}` }}>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: M, marginBottom: 20 }}>Stay Inclusions</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     {inclusions.map((inc, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, color: "#444", fontWeight: 600 }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0097B2" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, color: FG, fontWeight: 600 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={A} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         {typeof inc === 'string' ? inc : (inc.name || inc.label || inc.title)}
                       </div>
                     ))}
@@ -370,11 +397,11 @@ const RoomModal = ({ room, listing, onClose }) => {
 
               {/* Seasonal Periods */}
               {seasonalPeriods.length > 0 && (
-                <div style={{ padding: 28, background: "#E0F7FA", borderRadius: 24, border: "1px solid #B2EBF2" }}>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#00838F", marginBottom: 20 }}>Seasonal Availability</h3>
+                <div style={{ padding: 28, background: AL, borderRadius: 24, border: `1px solid ${A}` }}>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 20 }}>Seasonal Availability</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     {seasonalPeriods.map((p, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, fontSize: 14, color: "#006064", fontWeight: 600 }}>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, fontSize: 14, color: FG, fontWeight: 600 }}>
                         <span style={{ flex: 1 }}>{p.seasonName || p.name || p.label || `Season ${i + 1}`}</span>
                         <span style={{ fontSize: 12, opacity: 0.8, whiteSpace: "nowrap" }}>{formatDate(p.startDate)} – {formatDate(p.endDate)}</span>
                       </div>
@@ -386,9 +413,9 @@ const RoomModal = ({ room, listing, onClose }) => {
               {/* Cancellation Policy */}
               {cancellationPolicy && (
                 <div>
-                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#999", marginBottom: 16 }}>Cancellation Guidelines</h3>
-                  <div style={{ padding: 24, background: "#FFF5F5", borderRadius: 24, border: "1px solid #FFEBEB" }}>
-                    <p style={{ fontSize: 14, lineHeight: 1.6, color: "#C53030", fontWeight: 500 }}>
+                  <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: M, marginBottom: 16 }}>Cancellation Guidelines</h3>
+                  <div style={{ padding: 24, background: S, borderRadius: 24, border: `1px solid ${B}` }}>
+                    <p style={{ fontSize: 14, lineHeight: 1.6, color: FG, fontWeight: 500, opacity: 0.85 }}>
                       {typeof cancellationPolicy === 'string' ? cancellationPolicy : "Standard cancellation terms apply."}
                     </p>
                   </div>

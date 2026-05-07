@@ -12,8 +12,8 @@
 .card
   display: flex
   flex-direction: row
-  background: $n8
-  border: 1px solid $n6
+  background: var(--W)
+  border: 1px solid var(--B)
   border-radius: 20px
   overflow: hidden
   position: relative
@@ -26,13 +26,10 @@
       transform: scale(1.04)
   +m
     flex-direction: column
-  +dark
-    background: $n2
-    border-color: $n3
 
 .cardSelected
-  border-color: $p1 !important
-  box-shadow: 0 0 0 2px rgba($p1, 0.3), 0 8px 32px rgba(0,0,0,0.08) !important
+  border-color: var(--A) !important
+  box-shadow: 0 0 0 2px rgba(var(--A), 0.3), 0 8px 32px rgba(0,0,0,0.08) !important
 
 // ─── Left Image Panel ────────────────────────────────────────────────────────
 .imgWrap
@@ -40,7 +37,7 @@
   width: 400px
   min-width: 400px
   flex-shrink: 0
-  background: $n6
+  background: var(--S)
   overflow: hidden
   +d
     width: 320px
@@ -49,8 +46,6 @@
     width: 100%
     min-width: 0
     height: 240px
-  +dark
-    background: $n3
 
 .img
   position: absolute
@@ -67,7 +62,7 @@
   display: flex
   align-items: center
   justify-content: center
-  color: $n5
+  color: var(--M)
 
 .badge
   position: absolute
@@ -90,7 +85,7 @@
   right: 16px
   padding: 5px 12px
   border-radius: 20px
-  background: $p1
+  background: var(--A)
   color: $white
   font-size: 11px
   font-weight: 700
@@ -102,6 +97,7 @@
   flex-direction: column
   flex-grow: 1
   padding: 36px 40px
+  background: var(--W)
   +m
     padding: 24px
 
@@ -120,12 +116,10 @@
   font-size: 26px
   font-weight: 800
   line-height: 1.15
-  color: $n1
+  color: var(--FG)
   max-width: 340px
   +m
     font-size: 22px
-  +dark
-    color: $n8
 
 // Price block (top-right)
 .priceBlock
@@ -140,42 +134,37 @@
   font-weight: 700
   letter-spacing: .12em
   text-transform: uppercase
-  color: $n4
+  color: var(--M)
   margin-bottom: 4px
-  +dark
-    color: rgba($n8, 0.45)
 
 .amount
   font-size: 24px
   font-weight: 800
-  color: $n1
+  color: var(--FG)
   white-space: nowrap
-  +dark
-    color: $white
 
 .perNight
   font-size: 13px
   font-weight: 400
-  color: $n4
-  +dark
-    color: rgba($n8, 0.5)
+  color: var(--M)
 
 .priceOnRequest
   font-size: 16px
   font-weight: 500
-  color: $n4
+  color: var(--M)
   opacity: 0.6
 
 // Guest capacity in accent color
 .capacity
   font-size: 13px
   font-weight: 600
-  color: $p1
+  color: var(--A)
   margin-bottom: 12px
 
 .desc
   font-size: 14px
-  color: $n4
+  color: var(--FG)
+  opacity: 0.8
   line-height: 1.7
   margin-bottom: 20px
   flex-grow: 1
@@ -183,8 +172,6 @@
   -webkit-line-clamp: 3
   -webkit-box-orient: vertical
   overflow: hidden
-  +dark
-    color: rgba($n8, 0.6)
 
 // Meal plan
 .planSection
@@ -199,9 +186,7 @@
   font-weight: 700
   letter-spacing: .08em
   text-transform: uppercase
-  color: $n4
-  +dark
-    color: rgba($n8, 0.45)
+  color: var(--M)
 
 .dropdown
   position: relative
@@ -214,19 +199,15 @@
   height: 42px
   padding: 0 14px
   border-radius: 10px
-  background: $n7
-  border: 1.5px solid $n6
-  color: $n2
+  background: var(--S)
+  border: 1.5px solid var(--B)
+  color: var(--FG)
   font-size: 14px
   font-weight: 500
   cursor: pointer
   transition: border-color .15s
-  +dark
-    background: rgba($white, 0.08)
-    border-color: rgba($white, 0.2)
-    color: $white
   &.open
-    border-color: $p1
+    border-color: var(--A)
 
 .dropdownArrow
   margin-left: 8px
@@ -242,46 +223,36 @@
   left: 0
   right: 0
   z-index: 1000
-  background: $white
-  border: 1.5px solid $n6
+  background: var(--W)
+  border: 1.5px solid var(--B)
   border-radius: 12px
   overflow: hidden
   box-shadow: 0 12px 32px rgba(0,0,0,0.1)
-  +dark
-    background: #1a2030
-    border-color: rgba($p1, 0.4)
 
 .dropdownOption
   padding: 11px 14px
   font-size: 14px
-  color: $n2
+  color: var(--FG)
   cursor: pointer
   transition: background .12s
-  border-bottom: 1px solid $n7
-  +dark
-    color: #e0e4f0
-    border-bottom-color: rgba($white, 0.07)
+  border-bottom: 1px solid var(--B)
   &:last-child
     border-bottom: none
   &:hover
-    background: $n7
+    background: var(--S)
   &.selected
     font-weight: 700
-    color: $p1
-    background: rgba($p1, 0.05)
+    color: var(--A)
+    background: var(--AL)
 
 .singlePlan
   padding: 10px 14px
   border-radius: 10px
-  background: $n7
-  border: 1.5px solid $n6
-  color: $n2
+  background: var(--S)
+  border: 1.5px solid var(--B)
+  color: var(--FG)
   font-size: 14px
   font-weight: 500
-  +dark
-    background: rgba($white, 0.05)
-    border-color: rgba($white, 0.12)
-    color: #e0e4f0
 
 // ─── Feature tags ────────────────────────────────────────────────────────────
 .tagsRow
@@ -293,29 +264,22 @@
 .tag
   padding: 6px 16px
   border-radius: 20px
-  background: $n7
-  border: 1px solid $n6
+  background: var(--S)
+  border: 1px solid var(--B)
   font-size: 13px
   font-weight: 500
-  color: $n2
+  color: var(--FG)
   white-space: nowrap
-  +dark
-    background: rgba($white, 0.07)
-    border-color: rgba($white, 0.12)
-    color: $n8
 
 .tagMore
   padding: 6px 16px
   border-radius: 20px
   background: transparent
-  border: 1px solid $n6
+  border: 1px solid var(--B)
   font-size: 13px
   font-weight: 500
-  color: $n4
+  color: var(--M)
   white-space: nowrap
-  +dark
-    border-color: rgba($white, 0.15)
-    color: rgba($n8, 0.5)
 
 // ─── Footer / CTA ────────────────────────────────────────────────────────────
 .foot
@@ -325,8 +289,8 @@
   width: 100%
   height: 52px
   border-radius: 10px
-  background: $p1
-  color: $white
+  background: var(--A)
+  color: #FFF
   font-size: 12px
   font-weight: 700
   letter-spacing: .15em
@@ -341,7 +305,8 @@
     transform: scale(.98)
 
 .selectedBtn
-  background: darken($p1, 8%)
+  background: var(--FG)
+  color: var(--BG)
   letter-spacing: .1em
 
 .counterRow
@@ -356,8 +321,8 @@
   gap: 20px
   height: 48px
   border-radius: 24px
-  background: rgba($p1, 0.07)
-  border: 1.5px solid rgba($p1, 0.25)
+  background: var(--AL)
+  border: 1.5px solid var(--AL)
 
 .counterBtn
   display: flex
@@ -366,7 +331,7 @@
   width: 32px
   height: 32px
   border-radius: 50%
-  background: $p1
+  background: var(--A)
   border: none
   color: $white
   cursor: pointer
@@ -376,7 +341,7 @@
   &:active:not(:disabled)
     transform: scale(0.9)
   &:disabled
-    background: $n5
+    background: var(--M)
     cursor: default
     opacity: 0.5
   svg
@@ -385,8 +350,7 @@
 .countValue
   font-size: 18px
   font-weight: 700
-  color: $n1
+  color: var(--FG)
   min-width: 20px
   text-align: center
-  +dark
-    color: $n8
+

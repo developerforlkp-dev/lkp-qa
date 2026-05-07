@@ -68,12 +68,23 @@ function App() {
           <Switch>
             <Route
               exact
-            path="/"
-            render={() => (
-              <Page>
-                <FleetHome />
-              </Page>
-            )}
+            path={["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"]}
+            render={(props) => {
+              // Check if it's the Stays product page (has id)
+              if (props.location.pathname === "/stays" && new URLSearchParams(props.location.search).get("id")) {
+                return (
+                  <Page separatorHeader>
+                    <StayProduct />
+                  </Page>
+                );
+              }
+              // Default to Homepage with appropriate section
+              return (
+                <Page>
+                  <FleetHome />
+                </Page>
+              );
+            }}
           />
           <Route
             exact
@@ -361,15 +372,7 @@ function App() {
             path="/event-details"
             render={() => <EventDetailsPage />}
           />
-          <Route
-            exact
-            path="/stays"
-            render={() => (
-              <Page separatorHeader>
-                <StayProduct />
-              </Page>
-            )}
-          />
+
           <Route
             exact
             path="/stay-details"

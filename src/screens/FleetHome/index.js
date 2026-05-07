@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
@@ -30,7 +30,7 @@ const getBusinessInterestId = (filterId) => {
 };
 
 const FleetHome = () => {
-  const [activeFilter, setActiveFilter] = useState("experience");
+
   const [sectionsData, setSectionsData] = useState([]); // Array of { section, listings }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,10 +47,46 @@ const FleetHome = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
   const history = useHistory();
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
 
+
+  // Map path to filter ID
+  const getFilterFromPath = (path) => {
+    const normalizedPath = path.toLowerCase().replace(/\/$/, "");
+    if (normalizedPath === "" || normalizedPath === "/experience" || normalizedPath === "/experiences") return "experience";
+    if (normalizedPath === "/events") return "events";
+    if (normalizedPath === "/stays") return "stays";
+    if (normalizedPath === "/food") return "food";
+    if (normalizedPath === "/places") return "places";
+    return "experience"; // Default
+  };
+
+  // Initialize activeFilter from URL on mount
+  const [activeFilter, setActiveFilter] = useState(() => getFilterFromPath(location.pathname));
+
+  // Sync activeFilter with URL path changes (e.g. back/forward button)
+  useEffect(() => {
+    const filterFromPath = getFilterFromPath(location.pathname);
+    if (filterFromPath !== activeFilter) {
+      setActiveFilter(filterFromPath);
+    }
+  }, [location.pathname]);
+
+  // Handle filter click by navigating to new URL
+  const handleFilterClick = (filterId) => {
+    if (activeFilter !== filterId) {
+      // For experience, we use the root path "/"
+      const targetPath = filterId === "experience" ? "/" : `/${filterId}`;
+      
+      // Only navigate if we are not already on that path
+      if (location.pathname !== targetPath) {
+        history.push(targetPath);
+      }
+    }
+  };
 
   // Determine if calendar should be shown (for Experience and Events)
   const showCalendar = activeFilter === "experience" || activeFilter === "events" || activeFilter === "stays";
@@ -422,7 +458,7 @@ const FleetHome = () => {
                   className={cn(styles.filterCard, {
                     [styles.filterCardActive]: activeFilter === filter.id,
                   })}
-                  onClick={() => setActiveFilter(filter.id)}
+                  onClick={() => handleFilterClick(filter.id)}
                 >
                   <div className={styles.filterCardContent}>
                     <Icon name={filter.icon} size="18" />

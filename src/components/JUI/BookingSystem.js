@@ -1160,7 +1160,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [eventIdForAvailability, isEventBooking, show]);
 
   useEffect(() => {
-    if (isEventBooking) return;
+    if (isEventBooking) {
+      // For events, also reset selected slots when date changes
+      setSelectedEventSlotIds([]);
+      setStartTime(null);
+      return;
+    }
 
     setStartTime(null);
     setPrivateBooking(false);
@@ -2310,7 +2315,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             return (
                               <button
                                 key={slotId}
-                                onClick={() => {
+                                onClick={startDate ? () => {
                                   if (canSelectMultipleEventSlots) {
                                     setSelectedEventSlotIds(cur => {
                                       const next = cur.includes(slotId) ? cur.filter(id => id !== slotId) : [...cur, slotId];
@@ -2332,7 +2337,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                       return next;
                                     });
                                   }
-                                }}
+                                } : undefined}
                                 style={{
                                   padding: "14px",
                                   borderRadius: 16,
@@ -2341,9 +2346,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   color: isSelected ? A : FG,
                                   fontSize: 13,
                                   fontWeight: 700,
-                                  cursor: "pointer",
+                                  cursor: startDate ? "pointer" : "not-allowed",
                                   textAlign: "center",
-                                  transition: "0.2s"
+                                  transition: "0.2s",
+                                  opacity: startDate ? 1 : 0.6,
                                 }}
                               >
                                 {slotLabel && (
@@ -2360,17 +2366,19 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     ) : (
                       <div style={{ position: "relative" }}>
                         <div 
-                          onClick={() => setShowTimePicker(!showTimePicker)}
+                          onClick={startDate ? () => setShowTimePicker(!showTimePicker) : undefined}
+                          title={startDate ? undefined : "Please select a date first"}
                           style={{
                             padding: "16px 20px",
                             background: validationErrors.slot ? EL : BG,
                             border: `1px solid ${validationErrors.slot ? `${E}44` : B}`,
                             borderRadius: 16,
-                            cursor: "pointer",
+                            cursor: startDate ? "pointer" : "not-allowed",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
-                            transition: "0.3s"
+                            transition: "0.3s",
+                            opacity: startDate ? 1 : 0.6,
                           }}
                         >
                           <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : (validationErrors.slot ? E : M) }}>{formatTime12h(startTime) || "Select Time"}</span>
@@ -2458,7 +2466,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       {isEventBooking ? "04. Guests" : "03. Guests"}
                       {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div 
+                      title={!(startDate && startTime) ? "Please select date and time first" : undefined}
+                      style={{ 
+                        display: "flex", 
+                        flexDirection: "column", 
+                        gap: 12,
+                        opacity: (startDate && startTime) ? 1 : 0.5,
+                        pointerEvents: (startDate && startTime) ? "auto" : "none",
+                        transition: "0.3s"
+                      }}
+                    >
                       <div style={{
                         display: "flex",
                         justifyContent: "space-between",
