@@ -1278,15 +1278,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     ? eventGuestPricing.finalUnitPrice
     : (experienceGuestPricing?.finalUnitPrice ?? parseFloat(effectiveRawPrice || 0));
 
-  // Child pricing for experiences
+  // Child pricing: for events prefer ticket.childPrice when configured
   const childrenAllowed = asBoolean(
     listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren,
     true
   );
-  const rawChildPrice = !isEventBooking
-    ? (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0)
-    : 0;
-  const childGuestPricing = !isEventBooking && childrenAllowed && rawChildPrice > 0
+  const rawChildPrice = isEventBooking
+    ? (selectedTicket?.childPrice ?? selectedTicket?.child_price ?? 0)
+    : (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0);
+  const childGuestPricing = childrenAllowed && rawChildPrice > 0
     ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
     : null;
   // Effective per-child price (after discount + tax), fallback to adult price if no child price set
@@ -1304,14 +1304,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   };
 
   // Compute totals with child pricing split
-  const adultSubtotal = parseFloat(extractedPrice || 0) * (isEventBooking ? totalGuests : guests.adults);
-  const childSubtotal = !isEventBooking ? (effectiveChildPrice * guests.children) : 0;
+  const adultSubtotal = parseFloat(extractedPrice || 0) * guests.adults;
+  const childSubtotal = effectiveChildPrice * guests.children;
   const baseTotal = isEventBooking
-    ? parseFloat(data.price || 0) * totalGuests
+    ? adultSubtotal + childSubtotal
     : adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
     ? (baseAdultPricePerPerson * guests.adults) + (baseChildPricePerChild * guests.children)
-    : (eventGuestPricing.baseUnitPrice * totalGuests);
+    : ((eventGuestPricing.baseUnitPrice * guests.adults) + (baseChildPricePerChild * guests.children));
   const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
   const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
@@ -1320,7 +1320,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const taxableSubtotal = Math.max(0, subtotalBeforeAdjustments - totalDiscountAmount);
   const totalTaxAmount = taxableSubtotal * (appliedTaxRate / 100);
   const finalTotal = taxableSubtotal + totalTaxAmount;
-  const eventBaseTotal = eventGuestPricing.baseUnitPrice * totalGuests;
+  const eventBaseTotal = rawBaseTotal;
   const eventDiscountTotal = totalDiscountAmount;
   const eventTaxTotal = totalTaxAmount;
 
