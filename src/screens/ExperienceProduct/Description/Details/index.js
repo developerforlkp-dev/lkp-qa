@@ -110,41 +110,30 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
   // Helper function to format image URLs (from Azure blob storage or full URLs)
   const formatImageUrl = (url) => {
     if (!url) return null;
-    const raw = String(url).trim();
-    if (!raw) return null;
 
-    // 1. If it's already a public objects proxy URL, return as is
-    if (raw.startsWith("/public-objects/")) {
-      return raw;
+    // Already a full URL with SAS token - use directly
+    if ((url.startsWith("http://") || url.startsWith("https://")) &&
+      (url.includes("sig=") || url.includes("sv="))) {
+      return url;
     }
 
-    // 2. If it's an absolute URL, check if it's an Azure Blob Storage URL from our lead-documents container
-    if (raw.startsWith("http://") || raw.startsWith("https://")) {
-      if (raw.includes("blob.core.windows.net/lead-documents/")) {
-        // Extract the relative path part after 'lead-documents/'
-        const relativePart = raw.split("blob.core.windows.net/lead-documents/")[1];
-        // Strip any query string like SAS tokens since public-objects backend handles retrieval directly
-        const pathOnly = relativePart.split("?")[0];
-        const decodedPath = decodeURIComponent(pathOnly);
-        const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
-        const encodedPath = encodeURI(normalizedPath);
-        return `/public-objects/${encodedPath}`;
-      }
-      // If it's some other external URL, return as is
-      return raw;
+    // Already a full URL without SAS token
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
     }
 
-    // 3. If it's a relative path starting with /, return as is
-    if (raw.startsWith("/")) {
-      return raw;
+    // Azure blob storage path (e.g., "leads/3/listings/6/cover-photo/image.jpg")
+    if (url.startsWith("leads/")) {
+      return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
     }
 
-    // 4. Otherwise, it's a relative blob path (e.g. "leads/...") or a path with backslashes
-    const [pathPart, queryPart] = raw.split("?");
-    const decodedPath = decodeURIComponent(pathPart);
-    const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
-    const encodedPath = encodeURI(normalizedPath);
-    return `/public-objects/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+    // Relative path - prepend base URL if needed
+    if (url.startsWith("/")) {
+      return url;
+    }
+
+    // Otherwise assume it's a blob storage path
+    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
   };
 
   // Helper function to get addon image URL

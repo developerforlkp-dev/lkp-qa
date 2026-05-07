@@ -123,30 +123,6 @@ module.exports = function (app) {
     })
   );
 
-  // Public objects proxy: /public-objects/* → BACKEND/public-objects/*
-  app.use(
-    '/public-objects',
-    createProxyMiddleware({
-      target: BACKEND,
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: (path) => `/public-objects${path}`,
-      logLevel: 'debug',
-      proxyTimeout: 60000,
-      timeout: 60000,
-      onProxyReq: (proxyReq, req, res) => {
-        console.log('[Proxy Public Objects]', req.method, req.url, '->', proxyReq.path);
-      },
-      onProxyRes: (proxyRes, req, res) => {
-        console.log('[Proxy Public Objects Response]', req.url, '->', proxyRes.statusCode);
-      },
-      onError: (err, req, res) => {
-        console.error('[Proxy Public Objects Error]', err.message);
-        res.status(500).send('Proxy error: ' + err.message);
-      }
-    })
-  );
-
   // All other /api → BACKEND
   app.use(
     '/api',
