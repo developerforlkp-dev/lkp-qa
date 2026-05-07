@@ -2,6 +2,33 @@ import axios from "axios";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 
+export const normalizePublicImageUrl = (url) => {
+  if (!url) return null;
+  const raw = String(url).trim();
+  if (!raw) return null;
+
+  if (raw.startsWith("/public-objects/")) return raw;
+  if (raw.startsWith("/images/")) return raw;
+
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    if (raw.includes("blob.core.windows.net/lead-documents/")) {
+      const relativePart = raw.split("blob.core.windows.net/lead-documents/")[1] || "";
+      const pathOnly = relativePart.split("?")[0];
+      const decodedPath = decodeURIComponent(pathOnly);
+      const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
+      return `/public-objects/${encodeURI(normalizedPath)}`;
+    }
+    return raw;
+  }
+
+  if (raw.startsWith("/")) return raw;
+
+  const [pathPart] = raw.split("?");
+  const decodedPath = decodeURIComponent(pathPart);
+  const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
+  return `/public-objects/${encodeURI(normalizedPath)}`;
+};
+
 
 
 const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) || "/api";
@@ -258,11 +285,22 @@ export const getListingMedia = async (listingId) => {
     const payload = response.data;
     console.log("✅ Listing media fetched (raw):", payload);
 
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload?.media)) return payload.media;
+    const mediaArray = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.media)
+          ? payload.media
+          : [];
 
-    return [];
+    return mediaArray.map((item) => {
+      if (typeof item === "string") return normalizePublicImageUrl(item);
+      if (item && typeof item === "object") {
+        const rawUrl = item.url || item.fileUrl || item.blobName || item.imageUrl;
+        return normalizePublicImageUrl(rawUrl);
+      }
+      return null;
+    }).filter(Boolean);
   } catch (error) {
     console.error("❌ Error fetching listing media:", error.response?.data || error.message);
     throw error;
