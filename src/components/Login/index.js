@@ -3,6 +3,34 @@ import cn from "classnames";
 import styles from "./Login.module.sass";
 import Icon from "../Icon";
 import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
+import { GoogleLogin } from '@react-oauth/google';
+
+const getFriendlyOtpError = (err) => {
+  const status = err?.response?.status;
+  const rawMessage =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "";
+  const msg = String(rawMessage).toLowerCase();
+
+  if (status === 400 || status === 401) {
+    if (msg.includes("expired")) {
+      return "Your OTP has expired. Please request a new code.";
+    }
+    if (msg.includes("invalid") || msg.includes("otp") || msg.includes("code")) {
+      return "The code you entered is invalid. Please check and try again.";
+    }
+    return "We couldn’t verify that code. Please check it and try again.";
+  }
+  if (status === 429) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  if (status >= 500) {
+    return "Our servers are busy right now. Please try again in a few minutes.";
+  }
+  return "We couldn’t verify your code right now. Please try again.";
+};
 
 const Login = ({ onClose }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -91,32 +119,6 @@ const Login = ({ onClose }) => {
     process.env.REACT_APP_GOOGLE_CLIENT_ID ||
     "876306099009-inkldmfdu3ilqufhr6v9te3jom3u4odh.apps.googleusercontent.com";
 
-  useEffect(() => {
-    const initGoogle = () => {
-      if (!window.google?.accounts?.id) return;
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleSuccess,
-      });
-    };
-
-    if (window.google?.accounts?.id) {
-      initGoogle();
-      return;
-    }
-
-    const scriptId = "google-identity-script-login";
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = initGoogle;
-      document.body.appendChild(script);
-    }
-  }, [googleClientId]);
-
   // Handle Google login success
   async function handleGoogleSuccess(tokenResponse) {
     try {
@@ -164,13 +166,6 @@ const Login = ({ onClose }) => {
     }
   }
 
-  const handleGoogleClick = () => {
-    if (!window.google?.accounts?.id) {
-      setError("Google login is not ready. Please try again.");
-      return;
-    }
-    window.google.accounts.id.prompt();
-  };
 
   // Send OTP when phone number is submitted
   const handlePhoneSubmit = async (e) => {
@@ -260,7 +255,7 @@ const Login = ({ onClose }) => {
       window.location.reload();
     } catch (err) {
       if (isMountedRef.current) {
-        setError(err.response?.data?.message || err.message || "Invalid OTP. Please try again.");
+        setError(getFriendlyOtpError(err));
       }
     } finally {
       if (isMountedRef.current) {
@@ -285,19 +280,17 @@ const Login = ({ onClose }) => {
           <div className={cn("h3", styles.title)}>Sign up on Little Known Planet</div>
           <div className={styles.info}>Use Your OpenID to Sign up</div>
           <div className={styles.btns}>
-            <button 
-              className={cn("button-stroke", styles.googleBtn)} 
-              onClick={handleGoogleClick}
-              type="button"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19.6429 10.2273C19.6429 9.53409 19.5804 8.86364 19.4643 8.21591H10V12.0227H15.4018C15.1696 13.2727 14.4643 14.3295 13.4018 15.0455V17.5114H16.6429C18.5357 15.7614 19.6429 13.2045 19.6429 10.2273Z" fill="#4285F4"/>
-                <path d="M10 20C12.7 20 14.9643 19.1023 16.6429 17.5114L13.4018 15.0455C12.5089 15.6477 11.3571 16.0114 10 16.0114C7.39286 16.0114 5.18304 14.25 4.39286 11.875H1.05357V14.4659C2.70536 17.75 6.08929 20 10 20Z" fill="#34A853"/>
-                <path d="M4.39286 11.875C4.19196 11.2727 4.07589 10.6364 4.07589 10C4.07589 9.36364 4.19196 8.72727 4.39286 8.125V5.53409H1.05357C0.383929 6.875 0 8.39773 0 10C0 11.6023 0.383929 13.125 1.05357 14.4659L4.39286 11.875Z" fill="#FBBC05"/>
-                <path d="M10 3.98864C11.4688 3.98864 12.7857 4.49432 13.8214 5.48295L16.7143 2.58523C14.9643 0.982955 12.7 0 10 0C6.08929 0 2.70536 2.25 1.05357 5.53409L4.39286 8.125C5.18304 5.75 7.39286 3.98864 10 3.98864Z" fill="#EA4335"/>
-              </svg>
-              <span>Continue with Google</span>
-            </button>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setError("Google login failed. Please try again.");
+              }}
+
+              theme="outline"
+              size="large"
+              width="310" // Approximate width to match button
+              shape="pill"
+            />
           </div>
           <div className={styles.note}>Or continue with phone number</div>
           <form onSubmit={handlePhoneSubmit} className={styles.form}>

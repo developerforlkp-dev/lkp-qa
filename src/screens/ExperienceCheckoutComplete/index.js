@@ -317,6 +317,12 @@ const ExperienceCheckoutComplete = () => {
       }
     }
 
+    const isFree = booking?.finalTotal === 0 || booking?.pricing?.total === 0 || String(paymentSuccess?.razorpay_payment_id).startsWith("FREE_");
+
+    if (isFree) {
+      amountPaid = "Free";
+    }
+
     console.log("💰 Final amount paid:", amountPaid);
 
     return [
@@ -343,7 +349,7 @@ const ExperienceCheckoutComplete = () => {
       },
       {
         title: "Payment method:",
-        content: paymentFailed ? "Payment Failed" : "Razorpay",
+        content: paymentFailed ? "Payment Failed" : (isFree ? "Free Reservation" : "Razorpay"),
         icon: paymentFailed ? "alert-circle" : "wallet",
       },
     ];

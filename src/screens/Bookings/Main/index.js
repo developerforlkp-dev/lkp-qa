@@ -7,7 +7,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews } from "../../../utils/api";
 import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
@@ -123,28 +123,94 @@ const transformMultipleBookings = async (bookingsArray) => {
     await Promise.all(stayPromises);
   }
 
-  // Step 3: Transform bookings using cached listing data
-  return bookingsArray.map((apiBooking) => {
-    const listingData = apiBooking.listingId ? listingCache.get(apiBooking.listingId) : null;
-    const eventData = apiBooking?.eventId ? eventCache.get(apiBooking.eventId) : null;
-    // Resolve stayId using same multi-path logic as uniqueStayIds extraction above
-    const resolvedStayId = (() => {
-      if (apiBooking?.stayId != null) return apiBooking.stayId;
-      const rooms = apiBooking?.stayOrderRooms || apiBooking?.rooms || apiBooking?.room || [];
-      if (Array.isArray(rooms) && rooms.length > 0) {
-        const id = rooms[0]?.stayId ?? rooms[0]?.stay_id ?? rooms[0]?.propertyId;
-        if (id != null) return id;
-      }
-      return apiBooking?.propertyId ?? apiBooking?.stay_id ?? null;
-    })();
-    const stayData = resolvedStayId != null ? stayCache.get(resolvedStayId) : null;
-    return transformBookingData(apiBooking, listingData, eventData, stayData);
+  // Step 2b: Fetch review summaries for all unique listings/events/stays
+  // We call the specific category-based API for each ID to ensure consistency
+  const reviewCache = new Map();
+
+  const reviewPromises = [];
+
+  // Fetch Experience reviews
+  if (uniqueListingIds.length > 0) {
+    uniqueListingIds.forEach(id => {
+      reviewPromises.push(
+        getListingReviews(id).then(data => reviewCache.set(`experience_${id}`, data))
+          .catch(() => reviewCache.set(`experience_${id}`, null))
+      );
+    });
+  }
+
+  // Fetch Event reviews
+  if (uniqueEventIds.length > 0) {
+    uniqueEventIds.forEach(id => {
+      reviewPromises.push(
+        getEventReviews(id).then(data => reviewCache.set(`event_${id}`, data))
+          .catch(() => reviewCache.set(`event_${id}`, null))
+      );
+    });
+  }
+
+  // Fetch Stay reviews
+  if (uniqueStayIds.length > 0) {
+    uniqueStayIds.forEach(id => {
+      reviewPromises.push(
+        getStayReviews(id).then(data => reviewCache.set(`stay_${id}`, data))
+          .catch(() => reviewCache.set(`stay_${id}`, null))
+      );
+    });
+  }
+
+  if (reviewPromises.length > 0) {
+    await Promise.all(reviewPromises);
+  }
+
+  // Step 3: Transform bookings using cached listing and review data
+  const transformed = bookingsArray.map((apiBooking) => {
+    try {
+      const listingId = apiBooking.listingId || apiBooking.experienceId || (apiBooking.listing && (apiBooking.listing.listingId || apiBooking.listing.id));
+      const listingData = listingId ? listingCache.get(listingId) : null;
+      
+      const eventId = apiBooking?.eventId || apiBooking?.eventDetails?.eventId || (apiBooking.listing && apiBooking.listing.eventId);
+      const eventData = eventId ? eventCache.get(eventId) : null;
+      
+      // Resolve stayId using same multi-path logic as uniqueStayIds extraction above
+      const resolvedStayId = (() => {
+        if (apiBooking?.stayId != null) return apiBooking.stayId;
+        const rooms = apiBooking?.stayOrderRooms || apiBooking?.rooms || apiBooking?.room || [];
+        if (Array.isArray(rooms) && rooms.length > 0) {
+          const id = rooms[0]?.stayId ?? rooms[0]?.stay_id ?? rooms[0]?.propertyId;
+          if (id != null) return id;
+        }
+        return apiBooking?.propertyId ?? apiBooking?.stay_id ?? null;
+      })();
+      const stayData = resolvedStayId != null ? stayCache.get(resolvedStayId) : null;
+      
+      // Resolve review data using category-specific keys
+      const reviewData = (() => {
+        if (listingId) return reviewCache.get(`experience_${listingId}`);
+        if (eventId) return reviewCache.get(`event_${eventId}`);
+        if (resolvedStayId) return reviewCache.get(`stay_${resolvedStayId}`);
+        return null;
+      })();
+
+      return transformBookingData(apiBooking, listingData, eventData, stayData, reviewData);
+    } catch (err) {
+      console.warn("⚠️ Failed to transform single booking:", apiBooking.orderId, err);
+      return null;
+    }
   });
+
+  // Filter out any that failed transformation
+  return transformed.filter(Boolean);
 };
 
 // Transform API booking data to component format
-const transformBookingData = (apiBooking, listingData = null, eventData = null, stayData = null) => {
+const transformBookingData = (apiBooking, listingData = null, eventData = null, stayData = null, reviewData = null) => {
   const eventDetails = eventData?.event || eventData?.data?.event || eventData?.data || eventData;
+
+  // Extract rating and review count (handles ratingSummary, summary, and direct properties)
+  const summary = reviewData?.ratingSummary || reviewData?.summary;
+  const rating = summary?.averageRating || 0;
+  const reviewCount = summary?.totalReviews || (Array.isArray(reviewData) ? reviewData.length : (Array.isArray(reviewData?.reviews) ? reviewData.reviews.length : 0));
 
   // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
   const formatDate = (dateString) => {
@@ -170,10 +236,12 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Determine status mapping
   const statusMap = {
-    // PENDING means reservation was initiated but not confirmed/paid.
-    // Show these in Cancelled tab instead of Upcoming.
-    PENDING: "Cancelled",
+    // PENDING should be "Upcoming" (Reserved) rather than "Cancelled"
+    PENDING: "Upcoming",
     CONFIRMED: "Upcoming",
+    SUCCESS: "Upcoming",
+    PAID: "Upcoming",
+    BOOKED: "Upcoming",
     COMPLETED: "Completed",
     CANCELLED: "Cancelled",
   };
@@ -215,7 +283,9 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Get title - for EVENTS orders, prefer eventTitle; for others, prefer listing data
   // Check if this is an EVENTS order by businessInterestCode
-  const isEventOrder = apiBooking?.businessInterestCode === "EVENTS" ||
+  const isEventOrder = 
+    apiBooking?.businessInterestCode === "EVENTS" || 
+    apiBooking?.businessInterestCode === "EVENT" ||
     apiBooking?.eventId != null;
 
   const title = isEventOrder
@@ -424,6 +494,9 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     },
     // Include original booking data for details
     bookingData: apiBooking,
+    // Include rating data
+    rating: rating,
+    reviewCount: reviewCount,
   };
 };
 
@@ -703,7 +776,7 @@ const Main = ({
       setLoadingCompleted(true);
       try {
         const [completedOrdersData, eligibleData] = await Promise.all([
-          getCompletedOrders(1, 20),
+          getCompletedOrders(1, 100),
           getEligibleBookings().catch(() => []),
         ]);
         console.log("✅ Fetched completed orders:", completedOrdersData);
@@ -870,12 +943,59 @@ const Main = ({
         rating: reviewRating,
         comment: reviewComment.trim() || undefined,
         listingId: bookingToReview.bookingData?.listingId,
+        eventId: bookingToReview.bookingData?.eventId,
+        stayId: bookingToReview.bookingData?.stayId ||
+                (bookingToReview.bookingData?.stayOrderRooms && bookingToReview.bookingData.stayOrderRooms[0]?.stayId),
       });
+
+      // Update eligibility immediately
       setOrderIdsEligibleForReview((prev) => {
         const next = new Set(prev);
         next.delete(bookingToReview.orderId);
         return next;
       });
+
+      // Refresh review data for the specific listing to update the card's rating/count
+      const listingIdToRefresh = bookingToReview.bookingData?.listingId || 
+                                 bookingToReview.bookingData?.experienceId || 
+                                 bookingToReview.listingId;
+      const eventIdToRefresh = bookingToReview.bookingData?.eventId || bookingToReview.eventId;
+      const stayIdToRefresh = bookingToReview.bookingData?.stayId || 
+                              (bookingToReview.bookingData?.stayOrderRooms && bookingToReview.bookingData.stayOrderRooms[0]?.stayId) ||
+                              bookingToReview.stayId;
+      
+      try {
+        let freshReviewData = null;
+        if (listingIdToRefresh) freshReviewData = await getListingReviews(listingIdToRefresh);
+        else if (eventIdToRefresh) freshReviewData = await getEventReviews(eventIdToRefresh);
+        else if (stayIdToRefresh) freshReviewData = await getStayReviews(stayIdToRefresh);
+
+        if (freshReviewData) {
+          // Robustly extract rating and count (handles both object and plain array responses)
+          const summary = freshReviewData?.ratingSummary || freshReviewData?.summary;
+          const rating = summary?.averageRating || 
+                        (Array.isArray(freshReviewData) && freshReviewData.length > 0 
+                         ? (freshReviewData.reduce((acc, r) => acc + (r.rating || 0), 0) / freshReviewData.length) 
+                         : 0);
+          const reviewCount = summary?.totalReviews || 
+                            (Array.isArray(freshReviewData) ? freshReviewData.length : 
+                            (Array.isArray(freshReviewData?.reviews) ? freshReviewData.reviews.length : 0));
+
+          const updateBooking = (prev) => prev.map(b => {
+            if (b.orderId === bookingToReview.orderId) {
+              return { ...b, rating, reviewCount };
+            }
+            return b;
+          });
+
+          setTransformedBookings(updateBooking);
+          setTransformedCompletedBookings(updateBooking);
+          console.log(`✅ UI updated for order ${bookingToReview.orderId}: ${rating} stars, ${reviewCount} reviews`);
+        }
+      } catch (refreshErr) {
+        console.warn("⚠️ Failed to refresh review summary after submission:", refreshErr);
+      }
+
       handleCloseReviewModal();
     } catch (err) {
       const status = err.response?.status;
@@ -972,6 +1092,16 @@ const Main = ({
                           <span className={styles.category}>
                             {booking.category}
                           </span>
+                          {(booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && (
+                            <>
+                              <span className={styles.dot} aria-hidden="true">
+                                •
+                              </span>
+                              <span className={styles.category} style={{ color: "#4584FF" }}>
+                                Free Reservation
+                              </span>
+                            </>
+                          )}
                           {booking.bookingData?.orderStatus && (
                             <>
                               <span className={styles.dot} aria-hidden="true">
@@ -987,21 +1117,31 @@ const Main = ({
                                 lineHeight: "1",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
-                                backgroundColor: booking.bookingData.orderStatus === "CONFIRMED" ? "#E8F5E9" :
-                                                 booking.bookingData.orderStatus === "COMPLETED" ? "#E3F2FD" :
+                                backgroundColor: (booking.status === "Completed" || displayedTab === "completed") ? "#E3F2FD" :
+                                                 (booking.bookingData.orderStatus === "CONFIRMED" || ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")) ? "#E8F5E9" :
                                                  booking.bookingData.orderStatus === "PENDING"   ? "#FFF3E0" :
                                                  booking.bookingData.orderStatus === "CANCELLED" ? "#FFEBEE" : "#F3F4F6",
-                                color: booking.bookingData.orderStatus === "CONFIRMED" ? "#2E7D32" :
-                                       booking.bookingData.orderStatus === "COMPLETED" ? "#1565C0" :
+                                color: (booking.status === "Completed" || displayedTab === "completed") ? "#1565C0" :
+                                       (booking.bookingData.orderStatus === "CONFIRMED" || ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")) ? "#2E7D32" :
                                        booking.bookingData.orderStatus === "PENDING"   ? "#E65100" :
                                        booking.bookingData.orderStatus === "CANCELLED" ? "#C62828" : "#6B7280",
                               }}>
-                                {booking.bookingData.orderStatus}
+                                {(booking.status === "Completed" || displayedTab === "completed") ? "COMPLETED" : (
+                                  ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")
+                                  ? "CONFIRMED"
+                                  : booking.bookingData.orderStatus
+                                )}
                               </span>
                             </>
                           )}
                         </div>
                         <h2 className={styles.cardTitle}>{booking.title}</h2>
+                        {booking.rating > 0 && (
+                          <div className={styles.ratingRow}>
+                            <Rating className={styles.rating} rating={booking.rating} readonly={true} />
+                            <span className={styles.reviewCount}>({booking.reviewCount})</span>
+                          </div>
+                        )}
                         <div className={styles.locationRow}>
                           <Icon name="marker" size="16" />
                           <span>{booking.location}</span>

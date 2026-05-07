@@ -16,6 +16,47 @@ const formatPrice = (price) => {
   });
 };
 
+const getSeasonIdCandidates = (season) => (
+  [
+    season?.tempId,
+    season?.seasonalPeriodId,
+    season?.seasonId,
+    season?.id,
+  ]
+    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+    .map((v) => String(v))
+);
+
+const resolveSeasonalNode = (source, season) => {
+  if (!source || !season) return null;
+  const keys = getSeasonIdCandidates(season);
+  if (keys.length === 0) return null;
+
+  if (Array.isArray(source)) {
+    return source.find((item) =>
+      getSeasonIdCandidates(item).some((id) => keys.includes(id))
+    ) || null;
+  }
+
+  if (typeof source === "object") {
+    for (const key of keys) {
+      if (source[key] != null) return source[key];
+      if (source[String(key)] != null) return source[String(key)];
+    }
+  }
+
+  return null;
+};
+
+const isInSeasonRange = (dateValue, season) => {
+  if (!dateValue || !season) return false;
+  const check = moment(dateValue).startOf("day");
+  const start = moment(season?.startDate || season?.start_date).startOf("day");
+  const end = moment(season?.endDate || season?.end_date).startOf("day");
+  if (!check.isValid() || !start.isValid() || !end.isValid()) return false;
+  return check.isSameOrAfter(start, "day") && check.isSameOrBefore(end, "day");
+};
+
 const StayBookingSystem = ({
   stay,
   checkInDate,
@@ -33,26 +74,34 @@ const StayBookingSystem = ({
   const [loading, setLoading] = useState(false);
   const [availabilityData, setAvailabilityData] = useState(null);
   const [fetchingAvailability, setFetchingAvailability] = useState(false);
+  const stayRoomsCatalog = useMemo(
+    () => (stay?.rooms || stay?.roomTypes || stay?.room_types || []),
+    [stay]
+  );
 
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
     if (show && (stay?.stayId || stay?.id) && checkInDate && checkOutDate) {
+      let cancelled = false;
       const load = async () => {
-        setFetchingAvailability(true);
+        if (!cancelled) setFetchingAvailability(true);
         try {
           const data = await getStayRoomAvailability(
             stay.stayId || stay.id,
             checkInDate.format("YYYY-MM-DD"),
             checkOutDate.format("YYYY-MM-DD")
           );
-          if (data) setAvailabilityData(data);
+          if (!cancelled && data) setAvailabilityData(data);
         } catch (e) {
           console.error("❌ Failed to fetch real-time room pricing:", e);
         } finally {
-          setFetchingAvailability(false);
+          if (!cancelled) setFetchingAvailability(false);
         }
       };
       load();
+      return () => {
+        cancelled = true;
+      };
     }
   }, [show, stay?.stayId, stay?.id, checkInDate, checkOutDate]);
 
@@ -60,44 +109,79 @@ const StayBookingSystem = ({
     if (!stay || !Array.isArray(selectedRooms)) return [];
     
     // Prioritize rooms from availabilityData as they have real-time pricing for the selected dates
-    const roomsSource = (availabilityData?.roomAvailability || availabilityData?.rooms || stay.rooms || stay.roomTypes || stay.room_types || []);
+    const rawRoomsSource = (availabilityData?.roomAvailability || availabilityData?.rooms || stay.rooms || stay.roomTypes || stay.room_types || []);
+    const catalogById = new Map(
+      stayRoomsCatalog.map((r) => [
+        String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
+        r,
+      ])
+    );
+    const roomsSource = rawRoomsSource.map((room) => {
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id);
+      const base = catalogById.get(key);
+      if (!base) return room;
+      return {
+        ...base,
+        ...room,
+        mealPlanSeasonalPricing: room?.mealPlanSeasonalPricing || base?.mealPlanSeasonalPricing,
+        seasonalPeriods: room?.seasonalPeriods || base?.seasonalPeriods,
+        mealPlanPricing: room?.mealPlanPricing || base?.mealPlanPricing,
+      };
+    });
+
+    // Find active season based on check-in date (room.seasonalPeriods first, then stay.seasonalPeriods)
+    const checkInStr = checkInDate ? (typeof checkInDate === 'string' ? checkInDate : checkInDate.format('YYYY-MM-DD')) : null;
     
     return selectedRooms.map(sel => {
       const room = roomsSource.find(r => String(r.roomId || r.id) === String(sel.roomId));
       if (!room) return null;
 
       const mealPlan = sel.mealPlan || "EP";
+
+      // Find season that matches check-in date
+      const activeSeasonObj = checkInStr ? (
+        (room.seasonalPeriods || []).find((p) => isInSeasonRange(checkInStr, p)) ||
+        (stay.seasonalPeriods || []).find((p) => isInSeasonRange(checkInStr, p))
+      ) : null;
+
+      // ✅ Correct: seasonal meal plan price lives in mealPlanSeasonalPricing[mealPlan][tempId]
+      const mealSeasonData = activeSeasonObj
+        ? resolveSeasonalNode((room.mealPlanSeasonalPricing || {})[mealPlan], activeSeasonObj)
+        : null;
       
       let roomBasePrice = 0;
-      
-      // Priority 1: Check mealPlanPricing object (as seen in RoomCards.js)
-      if (room.mealPlanPricing && room.mealPlanPricing[mealPlan]) {
+
+      // In-season: use mealPlanSeasonalPricing b2cPrice
+      if (mealSeasonData && parseFloat(mealSeasonData.b2cPrice || 0) > 0) {
+        roomBasePrice = parseFloat(mealSeasonData.b2cPrice);
+      } else if (room.mealPlanPricing && room.mealPlanPricing[mealPlan]) {
+        // Regular: use mealPlanPricing b2cPrice
         const mp = room.mealPlanPricing[mealPlan];
         roomBasePrice = parseFloat(mp.b2cPrice || mp.price || 0);
-      } 
-      
-      // Priority 2: Check b2cMealPlanPricing array
-      if (roomBasePrice === 0) {
-        const mealPricing = (Array.isArray(room.b2cMealPlanPricing) 
-          ? room.b2cMealPlanPricing.find(p => String(p.mealPlan).toUpperCase() === String(mealPlan).toUpperCase()) 
-          : null) || (Array.isArray(room.b2c_meal_plan_pricing)
-          ? room.b2c_meal_plan_pricing.find(p => (p.meal_plan || p.mealPlan) === mealPlan)
+      } else {
+        // Fallback: b2cMealPlanPricing array or flat meal key
+        const mealPricing = (Array.isArray(room.b2cMealPlanPricing)
+          ? room.b2cMealPlanPricing.find(p => String(p.mealPlan).toUpperCase() === String(mealPlan).toUpperCase())
           : null);
-        
         if (mealPricing) {
-          roomBasePrice = parseFloat(mealPricing.b2cPrice || mealPricing.price || mealPricing.b2c_price || 0);
+          roomBasePrice = parseFloat(mealPricing.b2cPrice || mealPricing.price || 0);
+        } else {
+          const mealKey = { EP: "epPrice", BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice" }[mealPlan];
+          roomBasePrice = parseFloat(room[mealKey] || room.b2cPrice || room.price || 0);
         }
       }
 
-      // Priority 3: Fallback to existing flat meal-key-based logic or generic b2cPrice
-      if (roomBasePrice === 0) {
-        const mealKey = { EP: "epPrice", BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice" }[mealPlan];
-        roomBasePrice = parseFloat(room[mealKey] || room.b2cPrice || room.price || 0);
-      }
+      // Store seasonal extra prices on the resolved room for use in pricing calc
+      const seasonalExtraAdultPrice = mealSeasonData?.extraAdultPrice
+        ? parseFloat(mealSeasonData.extraAdultPrice)
+        : null;
+      const seasonalExtraChildPrice = mealSeasonData?.extraChildPrice
+        ? parseFloat(mealSeasonData.extraChildPrice)
+        : null;
 
-      return { ...room, ...sel, calculatedPrice: roomBasePrice };
+      return { ...room, ...sel, calculatedPrice: roomBasePrice, seasonalExtraAdultPrice, seasonalExtraChildPrice };
     }).filter(Boolean);
-  }, [stay, selectedRooms, availabilityData]);
+  }, [stay, selectedRooms, availabilityData, checkInDate, stayRoomsCatalog]);
 
   const nightsCount = useMemo(() => {
     if (!checkInDate || !checkOutDate) return 0;
@@ -122,6 +206,9 @@ const StayBookingSystem = ({
 
     const isPropertyBased = stay?.bookingScope === "Property-Based";
 
+    let finalExtraAP = 0;
+    let finalExtraCP = 0;
+
     if (isPropertyBased) {
       totalBaseAdultsLimit = stay.maxAdults || stay.maxGuests || 1;
       totalBaseChildrenLimit = stay.maxChildren || 0;
@@ -135,35 +222,37 @@ const StayBookingSystem = ({
       if (seasonId) {
         const propSeasonData = (stay.propertySeasonalPricing || {})[seasonId] || stay[seasonId];
         if (propSeasonData) {
-          basePrice = parseFloat(propSeasonData.fullPropertyHikePrice || propSeasonData.hikePrice || propSeasonData.fullPropertyB2cPrice || basePrice);
+          basePrice = parseFloat(propSeasonData.fullPropertyHikePrice || propSeasonData.hikePrice || propSeasonData.fullPropertyB2cPrice || propSeasonData.b2cPrice || basePrice);
           extraAP = parseFloat(propSeasonData.fullPropertyExtraAdultPrice || propSeasonData.extraAdultPrice || extraAP);
           extraCP = parseFloat(propSeasonData.fullPropertyExtraChildPrice || propSeasonData.extraChildPrice || extraCP);
         }
       }
+
+      finalExtraAP = extraAP;
+      finalExtraCP = extraCP;
 
       const exA = Math.max(0, (guests?.adults || 1) - totalBaseAdultsLimit);
       const exC = Math.max(0, (guests?.children || 0) - totalBaseChildrenLimit);
       totalOriginalPerNight = basePrice + (exA * extraAP) + (exC * extraCP);
     } else {
       // Room-Based: Sum up for all selected rooms
+      // Note: calculatedPrice & seasonalExtraAdultPrice are pre-resolved in resolvedSelectedRooms
       resolvedSelectedRooms.forEach(room => {
-        let roomBasePrice = room.calculatedPrice || 0;
-        const mealPlan = room.mealPlan || "EP";
+        const roomBasePrice = room.calculatedPrice || 0;
 
-        let roomExtraAP = parseFloat(room.extraAdultPrice || stay.extraAdultPrice || 0);
-        let roomExtraCP = parseFloat(room.extraChildPrice || stay.extraChildPrice || 0);
-
-        if (seasonId) {
-          const roomSeasonData = (room.seasonalPricing || {})[seasonId] || room[seasonId];
-          const mealSeasonData = (room.mealPlanSeasonalPricing || {})[seasonId]?.[mealPlan];
-          if (mealSeasonData) roomBasePrice = parseFloat(mealSeasonData.hikePrice || mealSeasonData.price || roomBasePrice);
-          else if (roomSeasonData) roomBasePrice = parseFloat(roomSeasonData.hikePrice || roomSeasonData.price || roomBasePrice);
-          
-          if (roomSeasonData) {
-            if (roomSeasonData.extraAdultPrice) roomExtraAP = parseFloat(roomSeasonData.extraAdultPrice);
-            if (roomSeasonData.extraChildPrice) roomExtraCP = parseFloat(roomSeasonData.extraChildPrice);
-          }
-        }
+        // ✅ Extra prices: seasonal first (already resolved), then room-level, then stay-level
+        const roomExtraAP = parseFloat(
+          room.seasonalExtraAdultPrice ??
+          room.extraAdultPrice ??
+          (room.mealPlanPricing?.[room.mealPlan || 'EP']?.extraAdultPrice) ??
+          stay.extraAdultPrice ?? 0
+        );
+        const roomExtraCP = parseFloat(
+          room.seasonalExtraChildPrice ??
+          room.extraChildPrice ??
+          (room.mealPlanPricing?.[room.mealPlan || 'EP']?.extraChildPrice) ??
+          stay.extraChildPrice ?? 0
+        );
 
         totalOriginalPerNight += roomBasePrice * room.count;
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
@@ -171,21 +260,28 @@ const StayBookingSystem = ({
         totalExtraAdultsLimit += (room.maxExtraAdults || room.maxExtraAdultsAllowed || room.maxExtraBeds || 0) * room.count;
         totalExtraChildrenLimit += (room.maxExtraChildren || room.maxExtraChildrenAllowed || 0) * room.count;
 
-        // Note: For multi-room, extra guest calculation is complex. 
-        // We'll apply extra fees based on the TOTAL overflow across all selected rooms.
-        // This is a common simplification for unified guest pickers.
-      } );
+        // Accumulate extra rates for overflow guests across all rooms
+        // (weighted by room count for multi-room bookings)
+        totalOriginalPerNight += 0; // extra guest overflow added below after limits are summed
+
+        // Store per-room rates for extra guest calc below
+        room._resolvedExtraAP = roomExtraAP;
+        room._resolvedExtraCP = roomExtraCP;
+      });
 
       const exA = Math.max(0, (guests?.adults || 1) - totalBaseAdultsLimit);
       const exC = Math.max(0, (guests?.children || 0) - totalBaseChildrenLimit);
       
-      // Calculate average extra prices from selected rooms or stay fallbacks
-      const avgExtraAP = resolvedSelectedRooms.length > 0 
-        ? resolvedSelectedRooms.reduce((acc, r) => acc + parseFloat(r.extraAdultPrice || stay.extraAdultPrice || 0), 0) / resolvedSelectedRooms.length
+      // ✅ Use resolved extra prices (seasonal-aware) for overflow guests
+      const avgExtraAP = resolvedSelectedRooms.length > 0
+        ? resolvedSelectedRooms.reduce((acc, r) => acc + (r._resolvedExtraAP || 0), 0) / resolvedSelectedRooms.length
         : parseFloat(stay.extraAdultPrice || 0);
       const avgExtraCP = resolvedSelectedRooms.length > 0
-        ? resolvedSelectedRooms.reduce((acc, r) => acc + parseFloat(r.extraChildPrice || stay.extraChildPrice || 0), 0) / resolvedSelectedRooms.length
+        ? resolvedSelectedRooms.reduce((acc, r) => acc + (r._resolvedExtraCP || 0), 0) / resolvedSelectedRooms.length
         : parseFloat(stay.extraChildPrice || 0);
+
+      finalExtraAP = avgExtraAP;
+      finalExtraCP = avgExtraCP;
 
       totalOriginalPerNight += (exA * avgExtraAP) + (exC * avgExtraCP);
     }
@@ -248,9 +344,56 @@ const StayBookingSystem = ({
       baseAdultsLimit: totalBaseAdultsLimit,
       extraAdultsLimit: totalExtraAdultsLimit,
       baseChildrenLimit: totalBaseChildrenLimit,
-      extraChildrenLimit: totalExtraChildrenLimit
+      extraChildrenLimit: totalExtraChildrenLimit,
+      activeExtraAdultPrice: finalExtraAP,
+      activeExtraChildPrice: finalExtraCP
     };
   }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount]);
+
+  const blockedDateKeys = useMemo(() => {
+    const ranges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
+    if (!Array.isArray(ranges) || ranges.length === 0) return new Set();
+
+    const normalizeId = (value) => {
+      if (value === null || value === undefined) return "";
+      const raw = String(value).trim();
+      if (!raw) return "";
+      const numeric = Number(raw);
+      return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
+    };
+
+    const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
+    const selectedRoomIds = new Set(
+      (selectedRooms || [])
+        .map((r) => normalizeId(r?.roomId ?? r?.room_id ?? r?.roomTypeId ?? r?.room_type_id ?? r?.id))
+        .filter(Boolean)
+    );
+
+    const keys = new Set();
+    ranges.forEach((range) => {
+      const rangeRoomId = normalizeId(range?.roomId ?? range?.room_id ?? range?.roomTypeId ?? range?.room_type_id ?? range?.id);
+      if (!isPropertyBased) {
+        if (selectedRoomIds.size === 0) return;
+        if (!rangeRoomId || !selectedRoomIds.has(rangeRoomId)) return;
+      }
+
+      const start = moment(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
+      const end = moment(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
+      if (!start.isValid() || !end.isValid()) return;
+
+      // Block occupied nights: [check-in, checkout)
+      const cursor = start.clone().startOf("day");
+      const endDay = end.clone().startOf("day");
+      while (cursor.isBefore(endDay, "day")) {
+        keys.add(cursor.format("YYYY-MM-DD"));
+        cursor.add(1, "day");
+      }
+    });
+
+    return keys;
+  }, [stay, selectedRooms]);
+
+  const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
     if (!checkInDate || !checkOutDate) {
@@ -312,6 +455,7 @@ const StayBookingSystem = ({
       const response = await createStayOrder(payload);
       const paymentResponse = response?.payment || response?.data?.payment || response;
       const orderResponse = response?.order || response?.data?.order || response;
+      const pricingResponse = response?.guestPricing || response?.pricing || response?.priceBreakdown || response?.data?.guestPricing || {};
       
       const extractRazorpayCredentials = (res) => {
         let orderId = null;
@@ -409,11 +553,43 @@ const StayBookingSystem = ({
         return;
       }
 
+      const asNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const firstNumber = (...values) => {
+        for (const value of values) {
+          const parsed = asNumber(value);
+          if (parsed !== null) return parsed;
+        }
+        return null;
+      };
+
+      const backendTotalRupees = firstNumber(
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        orderResponse?.totalPrice,
+        orderResponse?.finalPrice,
+        orderResponse?.amount,
+        orderResponse?.totalAmount,
+        pricingResponse?.finalGuestPrice,
+        pricingResponse?.totalGuestPrice,
+        response?.finalGuestPrice,
+        response?.data?.finalGuestPrice
+      );
+      const amountInPaise = firstNumber(
+        paymentResponse?.amount,
+        orderResponse?.amount,
+        response?.amount,
+        backendTotalRupees != null ? Math.round(backendTotalRupees * 100) : null,
+        Math.round(pricing.finalTotal * 100)
+      );
+
       localStorage.setItem("pendingPayment", JSON.stringify({
         paymentMethod: "razorpay",
         razorpayOrderId,
         razorpayKeyId,
-        amount: Math.round(pricing.finalTotal * 100),
+        amount: amountInPaise,
         currency: paymentResponse.currency || response?.currency || "INR"
       }));
       
@@ -421,42 +597,79 @@ const StayBookingSystem = ({
         localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
       }
 
-      const receipt = [
-        { title: `Base Stay (${pricing.nightsCount} night${pricing.nightsCount !== 1 ? "s" : ""})`, content: `₹${formatPrice(pricing.originalPerNight * pricing.nightsCount)}` }
+      const currency = paymentResponse.currency || response?.currency || "INR";
+      const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+      const isPresent = (v) => v !== null && v !== undefined && v !== "";
+      const receipt = [];
+
+      const basePrice = firstNumber(pricingResponse?.totalBasePrice, pricingResponse?.basePrice, pricingResponse?.totalBaseAmount);
+      const discount = firstNumber(pricingResponse?.totalGuestDiscount, pricingResponse?.guestDiscount, pricingResponse?.discountAmount);
+      const afterDiscount = firstNumber(pricingResponse?.priceAfterDiscounts, pricingResponse?.priceAfterDiscount, pricingResponse?.subtotalAfterDiscount);
+      const tourismTax = firstNumber(pricingResponse?.tourismTax, pricingResponse?.tourismTaxAmount);
+      const serviceTax = firstNumber(pricingResponse?.serviceTax, pricingResponse?.serviceTaxAmount, pricingResponse?.serviceFee);
+      const gst = firstNumber(pricingResponse?.gst, pricingResponse?.gstAmount);
+      const finalGuestPrice = firstNumber(
+        pricingResponse?.finalGuestPrice,
+        pricingResponse?.totalGuestPrice,
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        orderResponse?.totalPrice,
+        orderResponse?.finalPrice,
+        backendTotalRupees
+      );
+      if (isPresent(basePrice)) receipt.push({ title: "Total Base Price", content: formatMoney(basePrice) });
+      if (isPresent(discount)) receipt.push({ title: "Total Discount", content: `- ${formatMoney(Math.abs(discount))}` });
+      if (isPresent(afterDiscount)) receipt.push({ title: "Price After Discounts", content: formatMoney(afterDiscount) });
+      const combinedBackendTax = (tourismTax || 0) + (serviceTax || 0) + (gst || 0);
+      if (combinedBackendTax > 0) receipt.push({ title: "Tax", content: `+ ${formatMoney(combinedBackendTax)}` });
+      if (isPresent(finalGuestPrice)) receipt.push({ title: "Final Guest Price", content: formatMoney(finalGuestPrice) });
+
+      const nightsFromOrder = firstNumber(orderResponse?.numberOfNights, pricing.nightsCount) || 1;
+      const nightlyFromOrder = firstNumber(orderResponse?.pricePerNight, pricing.originalPerNight) || 0;
+      const totalFromOrder = firstNumber(orderResponse?.totalPrice, orderResponse?.finalPrice, backendTotalRupees, pricing.finalTotal) || 0;
+      const frontendReceipt = [
+        { title: `Base Stay (${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`, content: `${currency} ${Number(nightlyFromOrder * nightsFromOrder).toFixed(2)}` },
+        { title: "Adults", content: `${guests.adults || 0}` },
+        { title: "Children", content: `${guests.children || 0}` },
       ];
-
-      // Extra guest fees — shown only when there are extras
       if (extraAdultsCount > 0) {
-        const extraAdultRate = isPropertyBased
-          ? parseFloat(stay.fullPropertyExtraAdultPrice || stay.extraAdultPrice || 0)
-          : resolvedSelectedRooms.length > 0
-            ? parseFloat(resolvedSelectedRooms[0].extraAdultPrice || stay.extraAdultPrice || 0)
-            : parseFloat(stay.extraAdultPrice || 0);
-        receipt.push({
-          title: `Extra Adult${extraAdultsCount > 1 ? "s" : ""} (${extraAdultsCount} × ₹${formatPrice(extraAdultRate)} × ${pricing.nightsCount} nights)`,
-          content: `₹${formatPrice(extraAdultsCount * extraAdultRate * pricing.nightsCount)}`
+        frontendReceipt.push({
+          title: `Extra Adult Charges (${extraAdultsCount} × ${currency} ${Number(pricing.activeExtraAdultPrice || 0).toFixed(2)} × ${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`,
+          content: `${currency} ${Number(extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-
       if (extraChildrenCount > 0) {
-        const extraChildRate = isPropertyBased
-          ? parseFloat(stay.fullPropertyExtraChildPrice || stay.extraChildPrice || 0)
-          : resolvedSelectedRooms.length > 0
-            ? parseFloat(resolvedSelectedRooms[0].extraChildPrice || stay.extraChildPrice || 0)
-            : parseFloat(stay.extraChildPrice || 0);
-        receipt.push({
-          title: `Extra Child${extraChildrenCount > 1 ? "ren" : ""} (${extraChildrenCount} × ₹${formatPrice(extraChildRate)} × ${pricing.nightsCount} nights)`,
-          content: `₹${formatPrice(extraChildrenCount * extraChildRate * pricing.nightsCount)}`
+        frontendReceipt.push({
+          title: `Extra Child Charges (${extraChildrenCount} × ${currency} ${Number(pricing.activeExtraChildPrice || 0).toFixed(2)} × ${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`,
+          content: `${currency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-
-      if (pricing.discount > 0) {
-        receipt.push({ title: `Discount (${pricing.discountPercent}%)`, content: `- ₹${formatPrice(pricing.discount)}` });
+      const taxRate = Array.isArray(stay?.taxes)
+        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
+      const combinedFrontendTax = (pricing.subtotal || 0) * (taxRate / 100);
+      const inferredDiscountFromTotals = Math.max(
+        0,
+        Number((nightlyFromOrder * nightsFromOrder) || 0) +
+          Number(combinedFrontendTax || 0) -
+          Number(totalFromOrder || 0)
+      );
+      const discountToShow = firstNumber(
+        pricing.discount,
+        discount,
+        inferredDiscountFromTotals
+      ) || 0;
+      if (discountToShow > 0) {
+        frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
       }
+      if (combinedFrontendTax > 0) {
+        frontendReceipt.push({ title: `Tax (${Number(taxRate).toFixed(2)}%)`, content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
+      }
+      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder).toFixed(2)}` });
 
-      receipt.push({ title: "GST (18%)", content: `₹${formatPrice(pricing.gst)}` });
-      receipt.push({ title: "Service Fee (2%)", content: `₹${formatPrice(pricing.serviceFee)}` });
-      receipt.push({ title: "Total", content: `₹${formatPrice(pricing.finalTotal)}` });
+      // Frontend-calculated breakdown should be shown in Confirm & Pay.
+      // Keep backend breakdown only as a fallback.
+      const finalReceipt = frontendReceipt.length > 0 ? frontendReceipt : receipt;
 
       const roomSummary = isPropertyBased
         ? "Full Property"
@@ -464,6 +677,7 @@ const StayBookingSystem = ({
 
       const bookingData = {
         stayId: payload.stayId,
+        leadUserId: stay?.leadUserId,
         listingTitle: stay.propertyName || stay.title || "Stay",
         listingImage: stay.coverPhotoUrl || stay.coverImageUrl || "",
         isStay: true,
@@ -473,7 +687,8 @@ const StayBookingSystem = ({
         guests: guests,
         extraAdults: extraAdultsCount,
         extraChildren: extraChildrenCount,
-        receipt: receipt
+        receipt: finalReceipt,
+        totalAmount: backendTotalRupees ?? pricing.finalTotal,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
 
@@ -610,6 +825,10 @@ const StayBookingSystem = ({
                       plain
                       withPortal
                       displayFormat="DD/MM/YYYY"
+                      isOutsideRange={(day) => {
+                        const today = moment().startOf('day');
+                        return day.isBefore(today, 'day') || isBlockedDay(day);
+                      }}
                     />
                   </div>
                   {/* Check Out */}
@@ -624,11 +843,13 @@ const StayBookingSystem = ({
                       displayFormat="DD/MM/YYYY"
                       isOutsideRange={(day) => {
                         const today = moment().startOf('day');
+                        if (day.isBefore(today, 'day')) return true;
+                        if (isBlockedDay(day)) return true;
                         if (checkInDate) {
                           // Disable check-in day and everything before it
                           return !day.isAfter(checkInDate, 'day');
                         }
-                        return day.isBefore(today, 'day');
+                        return false;
                       }}
                     />
                   </div>

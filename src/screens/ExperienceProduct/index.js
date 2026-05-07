@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useParams, useHistory } from "react-router-dom";
+import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star } from "lucide-react";
@@ -7,12 +8,16 @@ import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
 import Loader from "../../components/Loader";
+import Icon from "../../components/Icon";
 import {
   getListing,
   getHost,
   getLeadDetails,
   getListingReviews,
+  getEligibleBookings,
+  submitOrderReview,
 } from "../../utils/api";
+import Rating from "../../components/Rating";
 import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
 import Page from "../../components/Page";
 import ProductNavbar from "../../components/ProductNavbar";
@@ -23,12 +28,39 @@ const formatImageUrl = (url) => {
   if (!url) return null;
   const raw = String(url).trim();
   if (!raw) return null;
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  if (raw.startsWith("/")) return raw;
+
+  // 1. If it's already a public objects proxy URL, return as is
+  if (raw.startsWith("/public-objects/")) {
+    return raw;
+  }
+
+  // 2. If it's an absolute URL, check if it's an Azure Blob Storage URL from our lead-documents container
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    if (raw.includes("blob.core.windows.net/lead-documents/")) {
+      // Extract the relative path part after 'lead-documents/'
+      const relativePart = raw.split("blob.core.windows.net/lead-documents/")[1];
+      // Strip any query string like SAS tokens since public-objects backend handles retrieval directly
+      const pathOnly = relativePart.split("?")[0];
+      const decodedPath = decodeURIComponent(pathOnly);
+      const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
+      const encodedPath = encodeURI(normalizedPath);
+      return `/public-objects/${encodedPath}`;
+    }
+    // If it's some other external URL, return as is
+    return raw;
+  }
+
+  // 3. If it's a relative path starting with /, return as is
+  if (raw.startsWith("/")) {
+    return raw;
+  }
+
+  // 4. Otherwise, it's a relative blob path (e.g. "leads/...") or a path with backslashes
   const [pathPart, queryPart] = raw.split("?");
-  const normalizedPath = String(pathPart).replaceAll("%2F", "/").replace(/\\/g, "/");
+  const decodedPath = decodeURIComponent(pathPart);
+  const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
   const encodedPath = encodeURI(normalizedPath);
-  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+  return `/public-objects/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
 const getActivityImageUrl = (activity) => {
@@ -245,7 +277,7 @@ const FullScreenImage = ({ src, onClose }) => {
         />
         {/* Subtle indicator that it's a popup */}
         <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
-           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+          <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
         </div>
       </motion.div>
     </motion.div>
@@ -316,18 +348,38 @@ const ExperienceProduct = () => {
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  // Normalize reviews data for consistent usage
+  const normalizedReviews = useMemo(() => {
+    if (!reviews) return [];
+    if (Array.isArray(reviews)) return reviews;
+    // Handle { reviews: [...], summary: {...} }
+    if (Array.isArray(reviews?.reviews)) return reviews.reviews;
+    // Handle { data: { reviews: [...] } }
+    if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
+    // Handle { data: [...] }
+    if (Array.isArray(reviews?.data)) return reviews.data;
+    // Handle { items: [...] }
+    if (Array.isArray(reviews?.items)) return reviews.items;
+    return [];
+  }, [reviews]);
+
+
+
   const [loading, setLoading] = useState(true);
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [gridVisible, setGridVisible] = useState(false);
+  const [eligibleBookings, setEligibleBookings] = useState([]);
 
   const handleUpdateAddonQuantity = (addon, delta) => {
     const addonId = addon.addonId || addon.id;
     const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-    
+
     setSelectedAddOns((prev) => {
       const existing = prev.find((a) => (a.addonId || a.id) === addonId);
-      
+
       if (delta > 0) {
         // Enforcement: If it's a Group item, quantity is ALWAYS 1
         if (pricingType === "Group") {
@@ -335,7 +387,7 @@ const ExperienceProduct = () => {
           if (existing) return prev;
 
           // Only one Group item type allowed per booking
-          const otherGroupItem = prev.find(a => 
+          const otherGroupItem = prev.find(a =>
             (a.pricingType === "Group" || (a.priceType === "per_booking"))
           );
           if (otherGroupItem) {
@@ -402,31 +454,37 @@ const ExperienceProduct = () => {
             getHost(hostId).then(resp => {
               if (mounted) {
                 setHostData(resp.host || resp);
-                const allReviews = [
-                  ...(data.reviews || []),
-                  ...(data.recentReviews || []),
-                  ...(resp.recentReviews || []),
-                  ...(resp.reviews || [])
-                ];
-                // Remove duplicates if any (by id)
-                const uniqueReviews = Array.from(new Map(allReviews.map(r => [r.id || r.reviewId || r.comment, r])).values());
-                setReviews(uniqueReviews);
               }
             }).catch(e => console.warn(e));
           }
+
+          // Fetch dynamic reviews for the listing
+          getListingReviews(id).then(resp => {
+            if (mounted && resp) {
+              console.log(`💬 Fetched reviews for ${id}:`, resp);
+              if (resp.reviews) setReviews(resp.reviews);
+              else if (Array.isArray(resp)) setReviews(resp);
+              
+              if (resp.summary) setReviewSummary(resp.summary);
+              setReviewsLoading(false);
+            }
+          }).catch(e => {
+            console.warn("Error fetching reviews:", e);
+            if (mounted) setReviewsLoading(false);
+          });
+
+          // Fetch eligible bookings for review
+          getEligibleBookings().then(resp => {
+            if (mounted && Array.isArray(resp)) {
+              const forThisListing = resp.filter(b => String(b.listingId) === String(id));
+              setEligibleBookings(forThisListing);
+            }
+          }).catch(e => console.warn("Failed to fetch eligible bookings:", e));
 
           const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
           if (leadId) {
             getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => console.warn(e));
           }
-
-          // Fetch reviews for the listing
-          getListingReviews(id).then(resp => {
-            if (mounted && resp) {
-              if (resp.reviews) setReviews(resp.reviews);
-              if (resp.summary) setReviewSummary(resp.summary);
-            }
-          }).catch(e => console.warn("Error fetching reviews:", e));
 
           setLoading(false);
         }
@@ -449,16 +507,16 @@ const ExperienceProduct = () => {
   }
 
   const description = listing?.description || listing?.aboutListing || "";
-  const summary = listing?.summary || listing?.listingSummary || "";
+
   const displayTags = listing?.tags || [];
 
   return (
     <Page>
       <main style={{ background: BG }}>
         {/* HERO SECTION */}
-        <section ref={heroRef} style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
+        <section ref={heroRef} className="hero-section" style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
-          <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
+          <div className="hero-container" style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
             <ProductNavbar top={100} left={60} />
             <motion.div style={{ opacity: fade, y: textY }}>
               <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
@@ -482,22 +540,22 @@ const ExperienceProduct = () => {
             </motion.div>
           </div>
           {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
-            <motion.div 
+            <motion.div
               style={{ position: "absolute", bottom: 60, right: 60, opacity: fade }}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, -12, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 12, 
-                  background: "rgba(255, 255, 255, 0.03)", 
-                  backdropFilter: "blur(12px)", 
-                  padding: "12px 24px", 
-                  borderRadius: 100, 
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  background: "rgba(255, 255, 255, 0.03)",
+                  backdropFilter: "blur(12px)",
+                  padding: "12px 24px",
+                  borderRadius: 100,
                   border: `1px solid ${A}33`,
                   boxShadow: `0 10px 30px rgba(0,0,0,0.2), inset 0 0 20px ${A}11`,
                   whiteSpace: "nowrap"
@@ -513,7 +571,7 @@ const ExperienceProduct = () => {
 
 
         {/* GALLERY SECTION */}
-        <section style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
+        <section className="gallery-section" style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
           {(() => {
             const baseItemsLocal = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
             let filledItems = [...baseItemsLocal];
@@ -536,6 +594,7 @@ const ExperienceProduct = () => {
                       setGridVisible(true);
                     }}
                     style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}`, cursor: "pointer" }}
+                    className="gallery-item"
                   >
                     <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Gallery" />
                   </motion.div>
@@ -572,12 +631,12 @@ const ExperienceProduct = () => {
 
 
         {/* DETAILS SECTION */}
-        <section style={{ background: BG, padding: "48px 36px 80px" }}>
+        <section className="details-section" style={{ background: BG, padding: "48px 36px 80px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <SHdr idx="01" label="Overview" />
+            <div className="section-header-wrapper"><SHdr idx="01" label="Overview" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20 }} className="details-grid">
               <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div className="what-we-do-card" style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
                     <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 12, fontWeight: 600 }}>What We Do</p>
                     <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>A Guided Journey</h2>
@@ -586,7 +645,7 @@ const ExperienceProduct = () => {
                 </div>
               </Soul>
               <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Clock size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
                     {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
@@ -595,28 +654,28 @@ const ExperienceProduct = () => {
                 </div>
               </Soul>
               <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <User size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.minimumAge || "18+"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Min Age</p>
                 </div>
               </Soul>
               <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Zap size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.difficultyLevel || "Moderate"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Difficulty</p>
                 </div>
               </Soul>
               <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Baby size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
                   <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Infants</p>
                 </div>
               </Soul>
               <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <Languages size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 4 }}>
                     {Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
@@ -627,7 +686,7 @@ const ExperienceProduct = () => {
                 </div>
               </Soul>
               <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                   <ShieldCheck size={24} color={A} style={{ marginBottom: 12 }} />
                   <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
                     {listing?.privateOptionAvailable ? "Available" : "Not Available"}
@@ -770,7 +829,7 @@ const ExperienceProduct = () => {
                     )}
                   </div>
                   {selectedAddOns.length > 0 && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       style={{ marginTop: 40, padding: "24px 32px", background: AL, borderRadius: 24, border: `1px solid ${A}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
@@ -797,6 +856,7 @@ const ExperienceProduct = () => {
                       return (
                         <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
                           whileHover={{ x: 10 }}
+                          className="activity-item"
                           style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
                           <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
                           <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
@@ -844,9 +904,9 @@ const ExperienceProduct = () => {
 
 
         {/* PREPARATION SECTION */}
-        <section style={{ background: W, padding: "80px 36px" }}>
+        <section className="prep-section" style={{ background: W, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <SHdr idx="02" label="Preparation" />
+            <div className="section-header-wrapper"><SHdr idx="02" label="Preparation" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
               <Rev delay={0.1}>
                 <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
@@ -914,14 +974,16 @@ const ExperienceProduct = () => {
 
         <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
-        <ExperiencePolicies listing={listing} reviews={reviews} reviewSummary={reviewSummary} />
+        <ExperiencePolicies listing={listing} reviews={normalizedReviews} reviewSummary={reviewSummary} />
         <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
-        {/* HOST & REVIEWS SECTION */}
-        <section style={{ background: BG, padding: "80px 36px" }}>
+
+
+        {/* HOST SECTION */}
+        <section className="host-section" style={{ background: BG, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
             <Rev delay={0.1} style={{ height: "100%" }}>
-              <SHdr idx="05" label="The Host" />
+              <div className="section-header-wrapper"><SHdr idx="05" label="The Host" /></div>
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
@@ -935,55 +997,73 @@ const ExperienceProduct = () => {
               </div>
             </Rev>
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <SHdr idx="06" label="Testimonials" />
-              <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-                  <div>
-                    <h3 style={{ fontSize: "2rem", fontWeight: 900, color: FG, lineHeight: 1 }}>{reviewSummary?.averageRating ? reviewSummary.averageRating.toFixed(1) : (reviews.length > 0 ? "5.0" : "0.0")}</h3>
-                    <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Avg Rating</p>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <h3 style={{ fontSize: "2rem", fontWeight: 900, color: FG, lineHeight: 1 }}>{reviewSummary?.totalReviews || reviews.length}</h3>
-                    <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, fontWeight: 700 }}>Total Reviews</p>
-                  </div>
-                </div>
-                {reviews.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                    {reviews.slice(0, 2).map((rev, i) => (
-                      <div key={i} style={{ borderBottom: i === 0 && reviews.length > 1 ? `1px solid ${B}` : "none", paddingBottom: i === 0 && reviews.length > 1 ? 24 : 0 }}>
-                        <p style={{ fontSize: 13, fontStyle: "italic", color: FG, lineHeight: 1.6, marginBottom: 12 }}>
-                          &ldquo;{rev.comment || rev.content || rev.reviewText || rev.text || "Wonderful experience!"}&rdquo;
-                        </p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: A }}>{rev.customerName || rev.author || "Guest"}</span>
-                          {rev.rating && <span style={{ fontSize: 10, color: M }}>• {rev.rating} ★</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ fontSize: 13, color: M }}>No testimonials shared yet.</p>
-                )}
+              <div className="section-header-wrapper"><SHdr idx="06" label="TESTIMONIALS" /></div>
+              <div style={{ padding: "40px 32px", background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+                <ReviewsSection
+                  reviews={reviews}
+                  listingId={id}
+                  eligibleBookings={eligibleBookings}
+                  onReviewSubmitted={() => {
+                    getListingReviews(id).then(resp => setReviews(resp)).catch(e => console.warn(e));
+                  }}
+                />
               </div>
             </Rev>
+
           </div>
         </section>
 
-        <BookingSystem 
-          listing={listing} 
-          selectedAddOns={selectedAddOns} 
+
+        <BookingSystem
+          listing={listing}
+          selectedAddOns={selectedAddOns}
         />
       </main>
       <style>{`
+        @media(max-width: 1024px) {
+          .hero-container { padding: 0 40px !important; }
+          .details-inner { grid-template-columns: 1fr !important; gap: 48px !important; padding: 40px !important; }
+          .pol-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+        }
+
         @media(max-width: 900px) { 
+          main { padding-bottom: 100px !important; }
           .hero-stats { grid-template-columns: 1fr !important; gap: 40px !important; } 
           .gal-grid { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 240px !important; gap: 8px !important; }
           .details-grid { grid-template-columns: 1fr !important; }
           .details-grid > div { grid-column: span 1 !important; }
           .prep-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
           .host-grid { grid-template-columns: 1fr !important; }
-          .quality-card { flex-direction: column !important; gap: 40px !important; padding: 40px 20px !important; }
+          .quality-card { flex-direction: column !important; gap: 40px !important; padding: 60px 32px !important; }
           .quality-score-unit { transform: scale(0.8) translateZ(80px) !important; }
+          .gallery-item { height: 300px !important; width: 260px !important; }
+        }
+
+        @media(max-width: 600px) {
+          .hero-section { min-height: 90vh !important; }
+          .hero-container { padding: 0 24px !important; }
+          .hero-section h1 { font-size: 3.5rem !important; }
+          .details-section, .prep-section, .host-section, .policies-section { padding: 40px 20px !important; }
+          .section-header-wrapper > div { margin-bottom: 20px !important; }
+          .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+          .details-grid > div:first-child { grid-column: span 2 !important; }
+          .what-we-do-card { padding: 32px 24px !important; }
+          .what-we-do-card h3 { font-size: 1.8rem !important; }
+          .overview-card { padding: 20px 12px !important; }
+          .overview-card p:first-of-type { font-size: 16px !important; }
+          .details-inner { padding: 32px 20px !important; margin: 24px -20px !important; }
+          .activity-item { gap: 16px !important; margin-bottom: 32px !important; }
+          .activity-item > div:first-child { display: none; }
+          .activity-item > div:last-child { flex-direction: column !important; gap: 12px !important; }
+          .activity-item img { width: 100% !important; height: 180px !important; }
+          .activity-item > div:last-child > div:first-child { width: 100% !important; height: 180px !important; }
+          .prep-grid { gap: 32px !important; }
+          .prep-grid h3 { font-size: 1.8rem !important; margin-bottom: 20px !important; }
+          .host-grid { gap: 32px !important; }
+          .quality-card { padding: 48px 20px !important; border-radius: 32px !important; }
+          .quality-score-unit { transform: scale(0.7) translateZ(50px) !important; }
+          .quality-card h3 { font-size: 32px !important; }
+          .gallery-item { height: 240px !important; width: 200px !important; }
         }
       `}</style>
     </Page>
@@ -1001,9 +1081,9 @@ function PolicyItem({ req }) {
   const questions = req.questions || [];
 
   return (
-    <motion.div 
+    <motion.div
       layout
-      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }} 
+      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }}
       whileHover={{ backgroundColor: AL }}
     >
       <div
@@ -1070,14 +1150,21 @@ function ReviewsItem({ reviews, summary }) {
   const { tokens: { FG, A, M, AL, B, W, AH } } = useTheme();
   const [op, setOp] = useState(false);
 
+  const normalizedReviews = useMemo(() => {
+    if (Array.isArray(reviews)) return reviews;
+    if (Array.isArray(reviews?.reviews)) return reviews.reviews;
+    if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
+    if (Array.isArray(reviews?.data)) return reviews.data;
+    return [];
+  }, [reviews]);
   const avgRating = summary?.averageRating || 0;
   const totalReviews = summary?.totalReviews || reviews.length;
   const ratingDisplay = avgRating > 0 ? avgRating.toFixed(1) : (reviews.length > 0 ? "5.0" : "0.0");
 
   return (
-    <motion.div 
+    <motion.div
       layout
-      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }} 
+      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }}
       whileHover={{ backgroundColor: AL }}
     >
       <div
@@ -1124,9 +1211,9 @@ function ReviewsItem({ reviews, summary }) {
           >
             <div style={{ padding: "0 16px 24px" }}>
               <div style={{ padding: "24px", background: AL, borderRadius: 16, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 24 }}>
-                {reviews.length > 0 ? (
-                  reviews.slice(0, 3).map((rev, i) => (
-                    <div key={i} style={{ borderBottom: i === Math.min(reviews.length, 3) - 1 ? "none" : `1px solid ${B}`, paddingBottom: i === Math.min(reviews.length, 3) - 1 ? 0 : 24 }}>
+                {normalizedReviews.length > 0 ? (
+                  normalizedReviews.slice(0, 3).map((rev, i) => (
+                    <div key={i} style={{ borderBottom: i === Math.min(normalizedReviews.length, 3) - 1 ? "none" : `1px solid ${B}`, paddingBottom: i === Math.min(normalizedReviews.length, 3) - 1 ? 0 : 24 }}>
                       <p style={{ fontSize: 14, fontStyle: "italic", color: FG, lineHeight: 1.6, marginBottom: 16 }}>&ldquo;{rev.comment || rev.text}&rdquo;</p>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div style={{ width: 32, height: 32, background: A, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: W, fontWeight: 700 }}>
@@ -1168,28 +1255,28 @@ function QualityIndexSection({ qualityIndex }) {
   };
 
   return (
-    <section 
+    <section
       ref={sectionRef}
       onMouseMove={handleMouseMove}
-      style={{ 
-        background: BG, 
-        padding: "100px 20px", 
-        position: "relative", 
-        overflow: "hidden", 
-        borderTop: `1px solid ${B}`, 
+      style={{
+        background: BG,
+        padding: "100px 20px",
+        position: "relative",
+        overflow: "hidden",
+        borderTop: `1px solid ${B}`,
         borderBottom: `1px solid ${B}`,
         perspective: 2500,
         isolation: "isolate"
       }}
     >
       {/* ─── OPTIMIZED BACKGROUND ─── */}
-      <div style={{ 
-        position: "absolute", inset: 0, 
+      <div style={{
+        position: "absolute", inset: 0,
         background: `
           radial-gradient(circle at 20% 30%, ${A}08 0%, transparent 50%),
           radial-gradient(circle at 80% 70%, ${A}05 0%, transparent 50%)
         `,
-        zIndex: 0 
+        zIndex: 0
       }} />
 
       {/* Simplified Particles (No individual blurs) */}
@@ -1197,14 +1284,14 @@ function QualityIndexSection({ qualityIndex }) {
         {[...Array(12)].map((_, i) => (
           <motion.div
             key={i}
-            animate={{ 
+            animate={{
               y: [0, -40, 0],
               opacity: [0.2, 0.5, 0.2]
             }}
             transition={{ duration: 4 + Math.random() * 4, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
-            style={{ 
-              position: "absolute", 
-              top: `${Math.random() * 100}%`, 
+            style={{
+              position: "absolute",
+              top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
               width: 3, height: 3,
               background: A,
@@ -1216,7 +1303,7 @@ function QualityIndexSection({ qualityIndex }) {
 
       <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 10 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          
+
           <motion.div
             style={{
               rotateX: mousePos.y * -20,
@@ -1228,14 +1315,14 @@ function QualityIndexSection({ qualityIndex }) {
             }}
           >
             {/* ─── THE MASTER HOLOGRAPHIC CARD ─── */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, rotateX: 20 }}
               whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
               viewport={{ once: true }}
               className="quality-card"
-              style={{ 
-                width: "100%", maxWidth: 900, 
-                background: `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`, 
+              style={{
+                width: "100%", maxWidth: 900,
+                background: `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`,
                 backdropFilter: "blur(25px) saturate(160%)",
                 borderRadius: 56,
                 padding: "100px 80px",
@@ -1244,9 +1331,9 @@ function QualityIndexSection({ qualityIndex }) {
                   0 50px 120px rgba(0,0,0,0.2), 
                   inset 0 0 60px rgba(255,255,255,0.05)
                 `,
-                display: "flex", 
+                display: "flex",
                 flexDirection: "row",
-                alignItems: "center", 
+                alignItems: "center",
                 gap: 100,
                 position: "relative",
                 transformStyle: "preserve-3d",
@@ -1259,11 +1346,11 @@ function QualityIndexSection({ qualityIndex }) {
               }}
             >
               {/* Glass Sheen Effect */}
-              <motion.div 
+              <motion.div
                 animate={{ x: ["-100%", "200%"] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }}
-                style={{ 
-                  position: "absolute", inset: 0, 
+                style={{
+                  position: "absolute", inset: 0,
                   background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)`,
                   transform: "skewX(-20deg)",
                   zIndex: 1,
@@ -1275,42 +1362,42 @@ function QualityIndexSection({ qualityIndex }) {
               <div className="quality-score-unit" style={{ position: "relative", transform: "translateZ(120px) rotate(0.0001deg)", flexShrink: 0, willChange: "transform", backfaceVisibility: "hidden" }}>
                 {/* Holographic Rings */}
                 {[...Array(3)].map((_, i) => (
-                  <motion.div 
+                  <motion.div
                     key={i}
                     animate={{ rotate: i % 2 === 0 ? 360 : -360, scale: [1, 1.05, 1] }}
-                    transition={{ 
+                    transition={{
                       rotate: { duration: 20 + i * 10, repeat: Infinity, ease: "linear" },
                       scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
                     }}
-                    style={{ 
-                      position: "absolute", 
-                      inset: -(30 + i * 25), 
-                      border: `1px solid ${A}${i === 0 ? "44" : "11"}`, 
+                    style={{
+                      position: "absolute",
+                      inset: -(30 + i * 25),
+                      border: `1px solid ${A}${i === 0 ? "44" : "11"}`,
                       borderRadius: "50%",
                       opacity: 0.6 - (i * 0.2),
                       willChange: "transform"
                     }}
                   />
                 ))}
-                
+
                 <div style={{ position: "relative", width: 260, height: 260, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="260" height="260" viewBox="0 0 260 260" style={{ transform: "rotate(-90deg)", filter: `drop-shadow(0 0 20px ${A}33)` }}>
                     <circle cx="130" cy="130" r="120" fill="none" stroke={`${A}11`} strokeWidth="2" />
-                    <motion.circle 
+                    <motion.circle
                       cx="130" cy="130" r="120" fill="none" stroke={A} strokeWidth="8" strokeLinecap="round"
                       initial={{ strokeDasharray: "0 754" }}
                       whileInView={{ strokeDasharray: `${(score / 10) * 754} 754` }}
                       transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
                     />
                   </svg>
-                  
+
                   <div style={{ position: "absolute", textAlign: "center" }}>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                      <motion.span 
+                      <motion.span
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1, delay: 0.8 }}
-                        style={{ 
+                        style={{
                           fontSize: 110, fontWeight: 900, color: FG, lineHeight: 1,
                           fontFamily: "var(--font-display)", letterSpacing: "-0.05em",
                           background: `linear-gradient(to bottom, ${FG}, ${M})`,
@@ -1328,15 +1415,15 @@ function QualityIndexSection({ qualityIndex }) {
 
                 {/* Technical Micro-Metadata */}
                 <div style={{ position: "absolute", bottom: -40, left: "50%", transform: "translateX(-50%)", width: "max-content", textAlign: "center" }}>
-                   <p style={{ fontSize: 9, fontFamily: "monospace", color: M, opacity: 0.6, letterSpacing: "0.1em" }}>
-                     CALC_ID: 9x7742 // VAR_SIG: {Math.random().toString(16).slice(2, 8).toUpperCase()}
-                   </p>
+                  <p style={{ fontSize: 9, fontFamily: "monospace", color: M, opacity: 0.6, letterSpacing: "0.1em" }}>
+                    CALC_ID: 9x7742 // VAR_SIG: {Math.random().toString(16).slice(2, 8).toUpperCase()}
+                  </p>
                 </div>
               </div>
 
               {/* ─── RIGHT: CONTENT ─── */}
               <div style={{ flex: 1, transform: "translateZ(60px)" }}>
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}
@@ -1344,11 +1431,11 @@ function QualityIndexSection({ qualityIndex }) {
                   <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, ${A}, transparent)` }} />
                   <span style={{ fontSize: 11, letterSpacing: "0.5em", textTransform: "uppercase", color: A, fontWeight: 900 }}>Quality Narrative</span>
                 </motion.div>
-                
+
                 <h3 className="font-display" style={{ fontSize: 56, fontWeight: 900, color: FG, marginBottom: 24, lineHeight: 1, letterSpacing: "-0.03em" }}>
                   {displayName}
                 </h3>
-                
+
                 <div style={{ position: "relative", padding: "0 0 0 32px", borderLeft: `3px solid ${A}` }}>
                   <p style={{ fontSize: 20, color: M, fontWeight: 400, lineHeight: 1.6, margin: 0, fontStyle: "italic", opacity: 0.95 }}>
                     &ldquo;{description}&rdquo;
@@ -1362,7 +1449,7 @@ function QualityIndexSection({ qualityIndex }) {
                     { icon: Zap, label: "High Fidelity" },
                     { icon: Sparkles, label: "Curated" }
                   ].map((item, i) => (
-                    <motion.div 
+                    <motion.div
                       key={i}
                       whileHover={{ y: -5, color: A }}
                       initial={{ opacity: 0, y: 10 }}
@@ -1378,17 +1465,17 @@ function QualityIndexSection({ qualityIndex }) {
               </div>
 
               {/* ─── FLOATING OBJECTS ─── */}
-              
+
               {/* Premium Quality Seal */}
-              <motion.div 
-                animate={{ 
+              <motion.div
+                animate={{
                   y: [-20, 20, -20],
                   rotate: [0, 5, 0]
                 }}
                 transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                style={{ 
+                style={{
                   position: "absolute", top: 40, right: 40, transform: "translateZ(150px)",
-                  background: `rgba(255,255,255,0.05)`, border: `1px solid rgba(255,255,255,0.1)`, 
+                  background: `rgba(255,255,255,0.05)`, border: `1px solid rgba(255,255,255,0.1)`,
                   padding: "16px 24px", borderRadius: 24,
                   backdropFilter: "blur(20px)", boxShadow: `0 30px 60px rgba(0,0,0,0.2)`,
                   willChange: "transform"
@@ -1399,18 +1486,18 @@ function QualityIndexSection({ qualityIndex }) {
                   <span style={{ fontSize: 12, fontWeight: 900, color: FG, letterSpacing: "0.1em" }}>OPTIMAL STATUS</span>
                 </div>
               </motion.div>
-              
+
               {/* Glass Orb */}
-              <motion.div 
-                animate={{ 
+              <motion.div
+                animate={{
                   y: [20, -20, 20],
                   x: [0, 15, 0],
                   scale: [1, 1.1, 1]
                 }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                style={{ 
+                style={{
                   position: "absolute", bottom: 40, left: -40, transform: "translateZ(180px)",
-                  width: 80, height: 80, borderRadius: "50%", 
+                  width: 80, height: 80, borderRadius: "50%",
                   background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, ${A}44 100%)`,
                   backdropFilter: "blur(5px)",
                   border: `1px solid rgba(255,255,255,0.2)`,
@@ -1425,9 +1512,9 @@ function QualityIndexSection({ qualityIndex }) {
       </div>
 
       {/* Background Decorative Grid */}
-      <div style={{ 
-        position: "absolute", inset: 0, 
-        backgroundImage: `radial-gradient(${A}15 1px, transparent 1px)`, 
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: `radial-gradient(${A}15 1px, transparent 1px)`,
         backgroundSize: "60px 60px",
         opacity: 0.3,
         maskImage: `radial-gradient(circle at center, black, transparent 80%)`,
@@ -1442,9 +1529,9 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
   const { tokens: { FG, W, B, A, M } } = useTheme();
 
   return (
-    <section style={{ background: W, padding: "80px 36px" }}>
+    <section className="policies-section" style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <SHdr idx="03" label="Rules & Policies" />
+        <div className="section-header-wrapper"><SHdr idx="03" label="Rules & Policies" /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1497,6 +1584,161 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function ReviewsSection({ reviews = [], listingId, eligibleBookings = [], onReviewSubmitted }) {
+  const { tokens: { A, FG, M, B, W, S, BG } } = useTheme();
+  const routerHistory = useHistory();
+
+  const normalizedReviews = useMemo(() => {
+    if (Array.isArray(reviews)) return reviews;
+    if (Array.isArray(reviews?.reviews)) return reviews.reviews;
+    if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
+    if (Array.isArray(reviews?.data)) return reviews.data;
+    return [];
+  }, [reviews]);
+
+  const hasReviews = normalizedReviews.length > 0;
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (eligibleBookings.length === 0) return;
+
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const booking = eligibleBookings[0];
+      await submitOrderReview(booking.orderId, {
+        rating,
+        comment,
+        listingId
+      });
+      setComment("");
+      setRating(5);
+      setShowForm(false);
+      if (onReviewSubmitted) onReviewSubmitted();
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      {eligibleBookings.length > 0 && !showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          style={{
+            background: A, color: W, border: "none", padding: "12px 24px", borderRadius: 100,
+            fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer",
+            alignSelf: "flex-start"
+          }}
+        >
+          Write a Review
+        </button>
+      )}
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{ background: S, border: `1px solid ${B}`, padding: 24, borderRadius: 20 }}
+          >
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: FG, marginBottom: 8 }}>Share your experience</h3>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 700, color: FG, marginBottom: 8, textTransform: "uppercase" }}>Rating</p>
+                <Rating rating={rating} onChange={setRating} />
+              </div>
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 700, color: FG, marginBottom: 8, textTransform: "uppercase" }}>Review</p>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="What did you enjoy most?"
+                  required
+                  style={{
+                    width: "100%", height: 80, background: W, border: `1px solid ${B}`,
+                    borderRadius: 12, padding: 12, fontSize: 13, color: FG, resize: "none", outline: "none"
+                  }}
+                />
+              </div>
+              {error && <p style={{ color: "#FF4D4D", fontSize: 11 }}>{error}</p>}
+              <div style={{ display: "flex", gap: 12 }}>
+                <button type="submit" disabled={isSubmitting} style={{ background: A, color: W, border: "none", padding: "10px 20px", borderRadius: 100, fontSize: 11, fontWeight: 800, textTransform: "uppercase", cursor: "pointer" }}>
+                  {isSubmitting ? "..." : "Post"}
+                </button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: `1px solid ${B}`, padding: "10px 20px", borderRadius: 100, fontSize: 11, fontWeight: 700, color: FG, textTransform: "uppercase", cursor: "pointer" }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        {!hasReviews && !showForm ? (
+          <div style={{ padding: "40px 0", textAlign: "center", background: `${A}05`, borderRadius: 16, border: `1px dashed ${A}30` }}>
+            <Sparkles size={24} style={{ color: A, opacity: 0.5, marginBottom: 12 }} />
+            <p style={{ fontSize: 14, color: FG, fontWeight: 700, margin: 0 }}>No testimonials yet.</p>
+          </div>
+        ) : (
+          normalizedReviews.slice(0, 3).map((rev, i) => (
+            <Rev key={i} delay={i * 0.1}>
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 14, fontWeight: 700, color: A }}>
+                  {(rev.customerName || rev.author || "G")[0].toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 2 }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
+                      <div style={{ display: "flex", gap: 2, color: "#FFC107", fontSize: 10 }}>
+                        {[...Array(5)].map((_, si) => (
+                          <span key={si}>{si < (rev.rating || 5) ? "★" : "☆"}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10, color: M, fontWeight: 500 }}>
+                      {rev.createdAt ? moment(rev.createdAt).format("MMM YYYY") : "Recently"}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, fontStyle: "italic", opacity: 0.9 }}>
+                    &ldquo;{rev.comment || rev.text}&rdquo;
+                  </p>
+                </div>
+              </div>
+            </Rev>
+          ))
+        )}
+
+        {normalizedReviews.length > 3 && !showForm && (
+          <button
+            onClick={() => routerHistory.push(`/reviews/experience/${listingId}`)}
+            style={{
+              width: "100%", borderRadius: 12, padding: "12px", fontWeight: 700, fontSize: 12,
+              color: A, border: `1px solid ${B}`, background: "transparent", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+            }}
+          >
+            See More
+            <Icon name="arrow-next" size="14" />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

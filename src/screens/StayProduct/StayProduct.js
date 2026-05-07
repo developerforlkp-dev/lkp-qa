@@ -8,7 +8,7 @@ import styles from "./StayProduct.module.sass";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
-import { getStayDetails, getStayRoomAvailability, createStayOrder } from "../../utils/api";
+import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
 
 // Helper to format image URLs
 const formatImageUrl = (url) => {
@@ -16,22 +16,38 @@ const formatImageUrl = (url) => {
   const raw = String(url).trim();
   if (!raw) return null;
 
-  // If already a full URL, return as is
-  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+  // 1. If it's already a public objects proxy URL, return as is
+  if (raw.startsWith("/public-objects/")) {
     return raw;
   }
 
-  // Relative path - return as is
+  // 2. If it's an absolute URL, check if it's an Azure Blob Storage URL from our lead-documents container
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    if (raw.includes("blob.core.windows.net/lead-documents/")) {
+      // Extract the relative path part after 'lead-documents/'
+      const relativePart = raw.split("blob.core.windows.net/lead-documents/")[1];
+      // Strip any query string like SAS tokens since public-objects backend handles retrieval directly
+      const pathOnly = relativePart.split("?")[0];
+      const decodedPath = decodeURIComponent(pathOnly);
+      const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
+      const encodedPath = encodeURI(normalizedPath);
+      return `/public-objects/${encodedPath}`;
+    }
+    // If it's some other external URL, return as is
+    return raw;
+  }
+
+  // 3. If it's a relative path starting with /, return as is
   if (raw.startsWith("/")) {
     return raw;
   }
 
-  // Azure blob storage path (e.g., "leads/Events/10/CoverPhoto/..." or an already-encoded "leads%2FEvents%2F...")
-  // Keep any query string intact and ensure the path is safely encoded.
+  // 4. Otherwise, it's a relative blob path (e.g. "leads/...") or a path with backslashes
   const [pathPart, queryPart] = raw.split("?");
-  const normalizedPath = String(pathPart).replaceAll("%2F", "/");
+  const decodedPath = decodeURIComponent(pathPart);
+  const normalizedPath = decodedPath.replaceAll("%2F", "/").replace(/\\/g, "/");
   const encodedPath = encodeURI(normalizedPath);
-  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+  return `/public-objects/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
 const toDisplayString = (value) => {
@@ -58,6 +74,68 @@ const formatTimeTo12hr = (timeStr) => {
   if (!timeStr) return "";
   const m = moment(timeStr, ["HH:mm", "h:mm A", "HH:mm:ss"], true);
   return m.isValid() ? m.format("h:mm A") : timeStr;
+};
+
+const getSeasonIdCandidates = (season) => (
+  [
+    season?.tempId,
+    season?.seasonalPeriodId,
+    season?.seasonId,
+    season?.id,
+  ]
+    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+    .map((v) => String(v))
+);
+
+const resolveSeasonalNode = (source, season) => {
+  if (!source || !season) return null;
+  const keys = getSeasonIdCandidates(season);
+  if (keys.length === 0) return null;
+
+  if (Array.isArray(source)) {
+    return source.find((item) =>
+      getSeasonIdCandidates(item).some((id) => keys.includes(id))
+    ) || null;
+  }
+
+  if (typeof source === "object") {
+    for (const key of keys) {
+      if (source[key] != null) return source[key];
+      if (source[String(key)] != null) return source[String(key)];
+    }
+  }
+  return null;
+};
+
+const isInSeasonRange = (dateValue, season) => {
+  if (!dateValue || !season) return false;
+  const check = moment(dateValue).startOf("day");
+  const start = moment(season?.startDate || season?.start_date).startOf("day");
+  const end = moment(season?.endDate || season?.end_date).startOf("day");
+  if (!check.isValid() || !start.isValid() || !end.isValid()) return false;
+  return check.isSameOrAfter(start, "day") && check.isSameOrBefore(end, "day");
+};
+
+const inferMealPlanCode = (room) => {
+  const normalize = (v) => String(v || "").trim().toUpperCase();
+  const direct =
+    normalize(room?.selectedMealPlan) ||
+    normalize(room?.mealPlanCode) ||
+    normalize(room?.mealPlan) ||
+    normalize(room?.planCode) ||
+    normalize(room?.code);
+  if (["EP", "CP", "BB", "MAP", "AP"].includes(direct)) return direct;
+
+  const seasonalCodes = Object.keys(room?.mealPlanSeasonalPricing || {}).map(normalize);
+  if (seasonalCodes.includes("EP")) return "EP";
+  if (seasonalCodes.length > 0) return seasonalCodes[0];
+
+  const planCodes = Object.keys(room?.mealPlanPricing || {}).map(normalize);
+  // Prefer EP when no explicit selection exists.
+  for (const code of ["EP", "CP", "BB", "MAP", "AP"]) {
+    if (planCodes.includes(code)) return code;
+  }
+  return planCodes[0] || "EP";
 };
 
 // Gallery Component
@@ -198,6 +276,55 @@ const BookingSidebar = ({
     stay?.roomTypes?.length > 0 ||
     availableRooms?.length > 0
   );
+  const stayDisabledDateKeys = useMemo(() => {
+    if (!stay) return [];
+    const ranges = stay?.bookedDateRanges || [];
+    if (!Array.isArray(ranges) || ranges.length === 0) return [];
+
+    const normalizeId = (value) => {
+      if (value === null || value === undefined) return "";
+      const raw = String(value).trim();
+      if (!raw) return "";
+      const numeric = Number(raw);
+      return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
+    };
+    const selectedRoomId = normalizeId(
+      selectedRoom?.roomId ??
+      selectedRoom?.room_id ??
+      selectedRoom?.roomTypeId ??
+      selectedRoom?.room_type_id ??
+      selectedRoom?.id ??
+      selectedRoom?.code
+    );
+    const keys = new Set();
+
+    ranges.forEach((range) => {
+      const rangeRoomId = normalizeId(
+        range?.roomId ??
+        range?.room_id ??
+        range?.roomTypeId ??
+        range?.room_type_id ??
+        range?.id
+      );
+      if (!isPropertyBased) {
+        if (!selectedRoomId) return;
+        if (!rangeRoomId || rangeRoomId !== selectedRoomId) return;
+      }
+
+      const start = moment(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
+      const end = moment(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
+      if (!start.isValid() || !end.isValid()) return;
+
+      const cursor = start.clone().startOf("day");
+      const endDay = end.clone().startOf("day");
+      while (cursor.isBefore(endDay, "day")) {
+        keys.add(cursor.format("YYYY-MM-DD"));
+        cursor.add(1, "day");
+      }
+    });
+
+    return Array.from(keys);
+  }, [stay, isPropertyBased, selectedRoom]);
 
   // ─── Price resolution ────────────────────────────────────────────────────
   // For property-based: use fullPropertyB2cPrice.
@@ -207,39 +334,38 @@ const BookingSidebar = ({
   const getMealPlanPriceForRoom = (room) => {
     if (!room) return 0;
 
-    const activeSeasonObj = room?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    ) || stay?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    );
+    const activeSeasonObj = room?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p))
+      || stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
 
-    const roomActiveSeasonData = activeSeasonObj ? (
-      room?.seasonalPricing?.[activeSeasonObj.tempId] ||
-      room?.[activeSeasonObj.tempId] ||
-      stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] ||
-      stay?.[activeSeasonObj.tempId]
-    ) : null;
+    const selectedMealPlanCode = inferMealPlanCode(room);
+    const orderedCodes = selectedMealPlanCode
+      ? [selectedMealPlanCode, "EP", "CP", "BB", "MAP", "AP"]
+      : ["EP", "CP", "BB", "MAP", "AP"];
+    const codes = Array.from(new Set(orderedCodes.filter(Boolean)));
 
-    const mp = room.mealPlanPricing;
-    if (mp) {
-      // Try each plan in priority order
-      for (const code of ["MAP", "CP", "BB", "AP", "EP"]) {
-        const plan = mp[code];
-        if (plan) {
-          if (activeSeasonObj && parseFloat(plan.hikePrice || 0) > 0) return parseFloat(plan.hikePrice);
-          const p = parseFloat(plan.b2cPrice || plan.b2bPrice || plan.price || 0);
-          if (p > 0) return p;
-        }
+    const seasonalPlans = room.mealPlanSeasonalPricing || {};
+    const mp = room.mealPlanPricing || {};
+
+    // 1) Seasonal map should win whenever date is in a seasonal period,
+    // even if regular mealPlanPricing is missing in availability payload.
+    if (activeSeasonObj) {
+      for (const code of codes) {
+        const seasonPlanMap = seasonalPlans[code] || {};
+        const mealSeasonData = resolveSeasonalNode(seasonPlanMap, activeSeasonObj);
+        const seasonalPrice = parseFloat(mealSeasonData?.b2cPrice || 0);
+        if (seasonalPrice > 0) return seasonalPrice;
       }
     }
 
-    if (roomActiveSeasonData) {
-      if (parseFloat(roomActiveSeasonData.hikePrice || 0) > 0) return parseFloat(roomActiveSeasonData.hikePrice);
-      if (parseFloat(roomActiveSeasonData.b2cPrice || 0) > 0) return parseFloat(roomActiveSeasonData.b2cPrice);
+    // 2) Regular meal plan pricing fallback
+    for (const code of codes) {
+      const plan = mp[code];
+      if (!plan) continue;
+      const p = parseFloat(plan.b2cPrice || plan.b2bPrice || plan.price || 0);
+      if (p > 0) return p;
     }
 
+    // Fallback for rooms without mealPlanPricing
     return parseFloat(room.hikePrice || room.b2cPrice || room.mapPrice || room.cpPrice || room.bbPrice || room.apPrice || room.epPrice || room.price || 0);
   };
 
@@ -248,15 +374,14 @@ const BookingSidebar = ({
       console.log('Season check skipped:', { checkInDate, hasSeasonalPeriods: !!stay?.seasonalPeriods });
       return null;
     }
-    const found = stay.seasonalPeriods.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    );
+    const found = stay.seasonalPeriods.find((p) => isInSeasonRange(checkInDate, p));
     console.log('Season found for checkInDate', checkInDate, ':', found);
     return found;
   }, [checkInDate, stay?.seasonalPeriods]);
 
-  const activeSeasonData = activeSeason ? (stay?.propertySeasonalPricing?.[activeSeason.tempId] || stay?.[activeSeason.tempId]) : null;
+  const activeSeasonData = activeSeason
+    ? (resolveSeasonalNode(stay?.propertySeasonalPricing, activeSeason) || resolveSeasonalNode(stay, activeSeason))
+    : null;
 
   if (checkInDate) {
     console.log('activeSeasonData resolved as:', activeSeasonData, 'for tempId:', activeSeason?.tempId);
@@ -320,12 +445,32 @@ const BookingSidebar = ({
     ? basePrice * (1 - discountPercentage / 100)
     : basePrice;
 
-  const extraAdults = Math.max(0, (guests?.adults || 0) - (stay?.maxAdults || 0));
-  const extraChildren = Math.max(0, (guests?.children || 0) - (stay?.maxChildren || 0));
+  // ✅ For room-based: use selectedRoom.maxAdults (stay.maxAdults is null for room-based)
+  const maxAdultsForSidebar = isRoomBased
+    ? (selectedRoom?.maxAdults || stay?.maxAdults || 0)
+    : (stay?.maxAdults || 0);
+  const maxChildrenForSidebar = isRoomBased
+    ? (selectedRoom?.maxChildren || stay?.maxChildren || 0)
+    : (stay?.maxChildren || 0);
 
-  const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || activeSeasonData?.fullPropertyExtraAdultPrice || stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
-  const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || activeSeasonData?.fullPropertyExtraChildPrice || stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
+  const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdultsForSidebar);
+  const extraChildren = Math.max(0, (guests?.children || 0) - maxChildrenForSidebar);
 
+  // ✅ For room-based seasonal: extra prices live in mealPlanSeasonalPricing[code][tempId]
+  const sidebarMealPlanCode = (() => {
+    if (!isRoomBased) return null;
+    return inferMealPlanCode(selectedRoom);
+  })();
+  const sidebarMealSeasonData = (activeSeason && sidebarMealPlanCode)
+    ? resolveSeasonalNode((selectedRoom?.mealPlanSeasonalPricing || {})[sidebarMealPlanCode], activeSeason)
+    : null;
+
+  const extraAdultPrice = isRoomBased
+    ? parseFloat(sidebarMealSeasonData?.extraAdultPrice || selectedRoom?.extraAdultPrice || stay?.extraAdultPrice || 0)
+    : parseFloat(activeSeasonData?.extraAdultPrice || activeSeasonData?.fullPropertyExtraAdultPrice || stay?.fullPropertyExtraAdultPrice || stay?.extraAdultPrice || 0);
+  const extraChildPrice = isRoomBased
+    ? parseFloat(sidebarMealSeasonData?.extraChildPrice || selectedRoom?.extraChildPrice || stay?.extraChildPrice || 0)
+    : parseFloat(activeSeasonData?.extraChildPrice || activeSeasonData?.fullPropertyExtraChildPrice || stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
 
   const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
@@ -483,6 +628,7 @@ const BookingSidebar = ({
               selectedDate={activeDateField === "checkout" ? checkOutDate : checkInDate}
               timeSlots={[]}
               availabilityData={[]}
+              disabledDateKeys={stayDisabledDateKeys}
               className={styles.stayDatePicker}
             />
           </div>
@@ -693,7 +839,7 @@ const BookingSidebar = ({
           <div className={styles.totalBreakdown}>
             <div className={styles.totalRow}>
               <span>
-                {selectedRoom?.roomName || "Room"} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}
+                {isPropertyBased ? "Full Property" : selectedRoom?.roomName || "Room"} × {numberOfNights} night{numberOfNights !== 1 ? "s" : ""}
                 {roomsNeeded > 1 ? ` × ${roomsNeeded} rooms` : ""}
               </span>
               <span>{formatPrice(discountedBasePrice * numberOfNights * roomsNeeded)}</span>
@@ -844,42 +990,47 @@ const RoomCard = ({
 
   const activeSeason = useMemo(() => {
     if (!checkInDate) return null;
-    return room?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    ) || stay?.seasonalPeriods?.find(p =>
-      moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-      moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-    );
+    return room?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p))
+      || stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
   }, [checkInDate, room?.seasonalPeriods, stay?.seasonalPeriods]);
 
-  const activeSeasonData = activeSeason ? (
-    room?.seasonalPricing?.[activeSeason.tempId] ||
-    room?.[activeSeason.tempId] ||
-    stay?.propertySeasonalPricing?.[activeSeason.tempId] ||
-    stay?.[activeSeason.tempId]
-  ) : null;
+  // ✅ Find the meal plan code for this room (first available plan)
+  const roomCardMealPlanCode = (() => {
+    return inferMealPlanCode(room);
+  })();
 
-  const basePrice = parseFloat(
-    (activeSeasonData && parseFloat(activeSeasonData.hikePrice) > 0 ? activeSeasonData.hikePrice : null) ||
-    activeSeasonData?.b2cPrice ||
-    room.hikePrice || room.b2cPrice || room.price || 0
-  );
+  // ✅ Seasonal price lives in mealPlanSeasonalPricing[code][tempId], NOT seasonalPricing
+  const mealSeasonData = (activeSeason && roomCardMealPlanCode)
+    ? resolveSeasonalNode((room.mealPlanSeasonalPricing || {})[roomCardMealPlanCode], activeSeason)
+    : null;
+
+  // Base price: seasonal meal plan price → regular meal plan price → room-level fallback
+  const basePrice = (() => {
+    if (mealSeasonData && parseFloat(mealSeasonData.b2cPrice || 0) > 0) {
+      return parseFloat(mealSeasonData.b2cPrice);
+    }
+    if (roomCardMealPlanCode && room.mealPlanPricing?.[roomCardMealPlanCode]) {
+      const mp = room.mealPlanPricing[roomCardMealPlanCode];
+      return parseFloat(mp.b2cPrice || mp.b2bPrice || mp.price || 0);
+    }
+    return parseFloat(room.hikePrice || room.b2cPrice || room.price || 0);
+  })();
 
   const discountedBasePrice = discountPercentage > 0
     ? basePrice * (1 - discountPercentage / 100)
     : basePrice;
 
   // Calculate extra guest fees for this specific room
-  // Use room-specific max if available, otherwise fallback to stay-level max
+  // Use room-specific max; stay.maxAdults is null for room-based stays
   const maxAdults = room.maxAdults || stay?.maxAdults || 0;
   const maxChildren = room.maxChildren || stay?.maxChildren || 0;
 
   const extraAdults = Math.max(0, (guests?.adults || 0) - maxAdults);
   const extraChildren = Math.max(0, (guests?.children || 0) - maxChildren);
 
-  const extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || room.extraAdultPrice || stay?.extraAdultPrice || 0);
-  const extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || room.extraChildPrice || stay?.extraChildPrice || 0);
+  // ✅ Seasonal extra prices from mealPlanSeasonalPricing, fallback to room-level extra price
+  const extraAdultPrice = parseFloat(mealSeasonData?.extraAdultPrice || room.extraAdultPrice || stay?.extraAdultPrice || 0);
+  const extraChildPrice = parseFloat(mealSeasonData?.extraChildPrice || room.extraChildPrice || stay?.extraChildPrice || 0);
 
   const totalExtraPrice = (extraAdults * extraAdultPrice) + (extraChildren * extraChildPrice);
 
@@ -1250,6 +1401,18 @@ const StayProduct = () => {
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    if (stayId) {
+      getStayReviews(stayId).then(data => {
+        setReviews(data || []);
+      }).catch(err => {
+        console.error("Failed to fetch reviews:", err);
+        setReviews([]);
+      });
+    }
+  }, [stayId]);
   const [roomsCount, setRoomsCount] = useState(1);
 
   const numberOfNights = useMemo(() => {
@@ -1262,6 +1425,30 @@ const StayProduct = () => {
 
   const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
   const isRoomBased = !isPropertyBased && (stay?.rooms?.length > 0 || stay?.roomTypes?.length > 0);
+  const roomCatalog = useMemo(() => (stay?.rooms || stay?.roomTypes || stay?.room_types || []), [stay]);
+
+  const enrichRoomsWithCatalog = (rooms = []) => {
+    if (!Array.isArray(rooms) || rooms.length === 0) return [];
+    const byId = new Map(
+      (Array.isArray(roomCatalog) ? roomCatalog : []).map((r) => [
+        String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
+        r,
+      ])
+    );
+    return rooms.map((room) => {
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id);
+      const base = byId.get(key);
+      if (!base) return room;
+      // Keep availability fields from API room, but backfill pricing/seasonal fields from master room.
+      return {
+        ...base,
+        ...room,
+        mealPlanSeasonalPricing: room?.mealPlanSeasonalPricing || base?.mealPlanSeasonalPricing,
+        seasonalPeriods: room?.seasonalPeriods || base?.seasonalPeriods,
+        mealPlanPricing: room?.mealPlanPricing || base?.mealPlanPricing,
+      };
+    });
+  };
 
   // Don't filter rooms by capacity — show ALL rooms.
   // The roomCapacityMessage / extra-room logic will guide the user when
@@ -1360,7 +1547,7 @@ const StayProduct = () => {
         setStay(data);
         // Initialize rooms from stay data if available
         if (data?.rooms || data?.roomTypes) {
-          setAvailableRooms(data.rooms || data.roomTypes);
+          setAvailableRooms(enrichRoomsWithCatalog(data.rooms || data.roomTypes));
         }
       } catch (err) {
         console.error("Failed to load stay:", err);
@@ -1394,7 +1581,7 @@ const StayProduct = () => {
         const result = await getStayRoomAvailability(stayId, checkInDate, checkOutDate);
         if (cancelled) return;
         const fetchedRooms = result?.rooms || [];
-        setAvailableRooms(fetchedRooms);
+        setAvailableRooms(enrichRoomsWithCatalog(fetchedRooms));
         setAvailabilityChecked(true);
       } catch (err) {
         if (!cancelled) {
@@ -1418,7 +1605,7 @@ const StayProduct = () => {
       console.log("Stay availability result:", result);
 
       if (result?.rooms) {
-        setAvailableRooms(result.rooms);
+        setAvailableRooms(enrichRoomsWithCatalog(result.rooms));
       }
       setAvailabilityChecked(true);
     } catch (err) {
@@ -1452,6 +1639,7 @@ const StayProduct = () => {
       userInfo.phone || "+911234567890";
 
     let bookingPayload;
+    let frontendBreakdown = null;
 
     if (isRoomBased && selectedRoom) {
       // Room-based stay: include rooms array with roomId, roomsBooked, mealPlanCode
@@ -1464,45 +1652,48 @@ const StayProduct = () => {
         return "EP";
       };
 
-      const mealPlanCode = selectedRoom.selectedMealPlan || getMealPlanCode(selectedRoom);
+      const mealPlanCode = inferMealPlanCode(selectedRoom) || getMealPlanCode(selectedRoom);
 
       // Calculate B2C price for the selected room based on meal plan, as the room's base b2cPrice could be null in the API
-      const activeSeasonObj = selectedRoom.seasonalPeriods?.find(p =>
-        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-      ) || stay?.seasonalPeriods?.find(p =>
-        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-      );
-      const activeSeasonData = activeSeasonObj ? (
-        selectedRoom?.seasonalPricing?.[activeSeasonObj.tempId] ||
-        selectedRoom?.[activeSeasonObj.tempId] ||
-        stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] ||
-        stay?.[activeSeasonObj.tempId]
-      ) : null;
+      const activeSeasonObj = selectedRoom.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p))
+        || stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
+      // ✅ Seasonal price for room-based lives in mealPlanSeasonalPricing[mealPlanCode][tempId]
+      const mealSeasonData = activeSeasonObj
+        ? resolveSeasonalNode((selectedRoom.mealPlanSeasonalPricing || {})[mealPlanCode], activeSeasonObj)
+        : null;
 
       let basePrice = 0;
-      let extraAdultPrice = parseFloat(activeSeasonData?.extraAdultPrice || selectedRoom.extraAdultPrice || stay?.extraAdultPrice || 0);
-      let extraChildPrice = parseFloat(activeSeasonData?.extraChildPrice || selectedRoom.extraChildPrice || stay?.extraChildPrice || 0);
+      // Start with regular meal plan extra prices as default
+      let extraAdultPrice = parseFloat(selectedRoom.extraAdultPrice || stay?.extraAdultPrice || 0);
+      let extraChildPrice = parseFloat(selectedRoom.extraChildPrice || stay?.extraChildPrice || 0);
 
       if (selectedRoom.mealPlanPricing && selectedRoom.mealPlanPricing[mealPlanCode]) {
         const mp = selectedRoom.mealPlanPricing[mealPlanCode];
-        basePrice = activeSeasonObj && parseFloat(mp.hikePrice || 0) > 0
-          ? parseFloat(mp.hikePrice)
-          : parseFloat(mp.b2cPrice || mp.b2bPrice || mp.price || 0);
-        if (mp.extraAdultPrice) extraAdultPrice = parseFloat(mp.extraAdultPrice);
-        if (mp.extraChildPrice) extraChildPrice = parseFloat(mp.extraChildPrice);
+        if (mealSeasonData && parseFloat(mealSeasonData.b2cPrice || 0) > 0) {
+          // ✅ In season: use mealPlanSeasonalPricing prices
+          basePrice = parseFloat(mealSeasonData.b2cPrice);
+          extraAdultPrice = parseFloat(mealSeasonData.extraAdultPrice || mp.extraAdultPrice || extraAdultPrice);
+          extraChildPrice = parseFloat(mealSeasonData.extraChildPrice || mp.extraChildPrice || extraChildPrice);
+        } else {
+          // Not in season: use regular meal plan pricing
+          basePrice = parseFloat(mp.b2cPrice || mp.b2bPrice || mp.price || 0);
+          if (mp.extraAdultPrice) extraAdultPrice = parseFloat(mp.extraAdultPrice);
+          if (mp.extraChildPrice) extraChildPrice = parseFloat(mp.extraChildPrice);
+        }
       } else {
-        if (activeSeasonData && parseFloat(activeSeasonData.hikePrice || 0) > 0) basePrice = parseFloat(activeSeasonData.hikePrice);
-        else if (activeSeasonData && parseFloat(activeSeasonData.b2cPrice || 0) > 0) basePrice = parseFloat(activeSeasonData.b2cPrice);
+        // No mealPlanPricing — fallback to flat room prices
+        if (mealSeasonData && parseFloat(mealSeasonData.b2cPrice || 0) > 0) basePrice = parseFloat(mealSeasonData.b2cPrice);
         else if (mealPlanCode === "BB" && Number(selectedRoom.bbPrice) > 0) basePrice = parseFloat(selectedRoom.bbPrice);
         else if (mealPlanCode === "CP" && Number(selectedRoom.cpPrice) > 0) basePrice = parseFloat(selectedRoom.cpPrice);
         else if (mealPlanCode === "MAP" && Number(selectedRoom.mapPrice) > 0) basePrice = parseFloat(selectedRoom.mapPrice);
         else if (mealPlanCode === "AP" && Number(selectedRoom.apPrice) > 0) basePrice = parseFloat(selectedRoom.apPrice);
         else if (mealPlanCode === "EP" && Number(selectedRoom.epPrice) > 0) basePrice = parseFloat(selectedRoom.epPrice);
         else basePrice = parseFloat(selectedRoom.b2cPrice || selectedRoom.price || selectedRoom.b2bPrice || 0);
+        if (mealSeasonData?.extraAdultPrice) extraAdultPrice = parseFloat(mealSeasonData.extraAdultPrice);
+        if (mealSeasonData?.extraChildPrice) extraChildPrice = parseFloat(mealSeasonData.extraChildPrice);
       }
 
+      // stay.maxAdults is null for room-based; use room-level maxAdults
       const maxAdults = selectedRoom.maxAdults || stay?.maxAdults || 0;
       const maxChildren = selectedRoom.maxChildren || stay?.maxChildren || 0;
 
@@ -1513,6 +1704,32 @@ const StayProduct = () => {
       const amountPerNight = basePrice + totalExtraPrice;
       const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
       const calculatedAmount = amountPerNight * nightsCount;
+      const taxRate = Array.isArray(stay?.taxes)
+        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
+      const baseStayTotal = basePrice * nightsCount * roomsNeeded;
+      const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount * roomsNeeded;
+      const extraChildTotal = extraChildren * extraChildPrice * nightsCount * roomsNeeded;
+      const discountAmount = (basePrice * (discountPercentage / 100)) * nightsCount * roomsNeeded;
+      const preTaxTotal = (calculatedAmount * roomsNeeded) - discountAmount;
+      const taxAmount = preTaxTotal * (taxRate / 100);
+      const finalGuestPrice = preTaxTotal + taxAmount;
+      frontendBreakdown = {
+        nightsCount,
+        basePrice,
+        baseStayTotal,
+        extraAdults,
+        extraChildren,
+        extraAdultPrice,
+        extraChildPrice,
+        extraAdultTotal,
+        extraChildTotal,
+        discountPercent: discountPercentage || 0,
+        discountAmount,
+        taxRate,
+        taxAmount,
+        finalGuestPrice,
+      };
 
       bookingPayload = {
         stayId: Number(stayId),
@@ -1536,11 +1753,10 @@ const StayProduct = () => {
       };
     } else {
       // Property-based stay: no rooms array needed
-      const activeSeasonObj = stay?.seasonalPeriods?.find(p =>
-        moment(checkInDate).isSameOrAfter(p.startDate, 'day') &&
-        moment(checkInDate).isSameOrBefore(p.endDate, 'day')
-      );
-      const activeSeasonData = activeSeasonObj ? (stay?.propertySeasonalPricing?.[activeSeasonObj.tempId] || stay?.[activeSeasonObj.tempId]) : null;
+      const activeSeasonObj = stay?.seasonalPeriods?.find((p) => isInSeasonRange(checkInDate, p));
+      const activeSeasonData = activeSeasonObj
+        ? (resolveSeasonalNode(stay?.propertySeasonalPricing, activeSeasonObj) || resolveSeasonalNode(stay, activeSeasonObj))
+        : null;
 
       const propertyBasePrice = parseFloat(
         (activeSeasonData && parseFloat(activeSeasonData.fullPropertyHikePrice) > 0 ? activeSeasonData.fullPropertyHikePrice : null) ||
@@ -1563,6 +1779,32 @@ const StayProduct = () => {
       const amountPerNight = propertyBasePrice + totalExtraPrice;
       const nightsCount = checkInDate && checkOutDate ? Math.max(1, moment(checkOutDate).diff(moment(checkInDate), "days")) : 1;
       const calculatedAmountProperty = amountPerNight * nightsCount;
+      const taxRate = Array.isArray(stay?.taxes)
+        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
+      const baseStayTotal = propertyBasePrice * nightsCount;
+      const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount;
+      const extraChildTotal = extraChildren * extraChildPrice * nightsCount;
+      const discountAmount = (propertyBasePrice * (discountPercentage / 100)) * nightsCount;
+      const preTaxTotal = calculatedAmountProperty - discountAmount;
+      const taxAmount = preTaxTotal * (taxRate / 100);
+      const finalGuestPrice = preTaxTotal + taxAmount;
+      frontendBreakdown = {
+        nightsCount,
+        basePrice: propertyBasePrice,
+        baseStayTotal,
+        extraAdults,
+        extraChildren,
+        extraAdultPrice,
+        extraChildPrice,
+        extraAdultTotal,
+        extraChildTotal,
+        discountPercent: discountPercentage || 0,
+        discountAmount,
+        taxRate,
+        taxAmount,
+        finalGuestPrice,
+      };
 
       bookingPayload = {
         stayId: Number(stayId),
@@ -1590,10 +1832,37 @@ const StayProduct = () => {
       const rzpOrderId = paymentResponse?.razorpayOrderId || response?.razorpayOrderId || response?.order?.razorpayOrderId;
       const rzpKeyId = paymentResponse?.razorpayKeyId || response?.razorpayKeyId || response?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
 
-      // Always use our frontend-calculated amount (b2cPrice × nights × rooms).
-      // The backend Razorpay order may include extra surcharges; we display our total
-      // so it stays consistent with the receipt breakdown shown to the user.
-      const amountInPaise = Math.round((bookingPayload.amount || 0) * 100);
+      const asNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const firstNumber = (...values) => {
+        for (const value of values) {
+          const parsed = asNumber(value);
+          if (parsed !== null) return parsed;
+        }
+        return null;
+      };
+
+      const backendTotalRupees = firstNumber(
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        response?.order?.totalPrice,
+        response?.order?.finalPrice,
+        response?.order?.amount,
+        response?.order?.totalAmount,
+        response?.finalGuestPrice,
+        response?.data?.finalGuestPrice,
+        response?.guestPricing?.finalGuestPrice,
+        response?.guestPricing?.totalGuestPrice,
+        paymentResponse?.amount ? Number(paymentResponse.amount) / 100 : null,
+      );
+      const amountInPaise = firstNumber(
+        paymentResponse?.amount,
+        response?.order?.amount,
+        backendTotalRupees != null ? Math.round(backendTotalRupees * 100) : null,
+        Math.round((bookingPayload.amount || 0) * 100),
+      );
 
       const currency = paymentResponse?.currency || response?.currency || response?.order?.currency || "INR";
 
@@ -1616,7 +1885,7 @@ const StayProduct = () => {
         : null;
 
       const mealCode = isRoomBased && selectedRoom
-        ? (selectedRoom.selectedMealPlan || (Number(selectedRoom.bbPrice) > 0 ? "BB" : Number(selectedRoom.cpPrice) > 0 ? "CP" : Number(selectedRoom.mapPrice) > 0 ? "MAP" : "EP"))
+        ? (inferMealPlanCode(selectedRoom) || (Number(selectedRoom.bbPrice) > 0 ? "BB" : Number(selectedRoom.cpPrice) > 0 ? "CP" : Number(selectedRoom.mapPrice) > 0 ? "MAP" : "EP"))
         : null;
 
       // Get cover image — formatImageUrl handles relative blob paths (e.g. "leads/...")
@@ -1647,6 +1916,68 @@ const StayProduct = () => {
         : null;
       const roomImg = formatImageUrl(rawRoomImg) || coverImg;
 
+      const pricing = response?.guestPricing || response?.pricing || response?.priceBreakdown || response?.data?.guestPricing || {};
+      const isPresent = (v) => v !== null && v !== undefined && v !== "";
+      const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+      const backendReceipt = [];
+
+      const basePrice = firstNumber(pricing?.totalBasePrice, pricing?.basePrice, pricing?.totalBaseAmount);
+      const discount = firstNumber(pricing?.totalGuestDiscount, pricing?.guestDiscount, pricing?.discountAmount);
+      const afterDiscount = firstNumber(pricing?.priceAfterDiscounts, pricing?.priceAfterDiscount, pricing?.subtotalAfterDiscount);
+      const tourismTax = firstNumber(pricing?.tourismTax, pricing?.tourismTaxAmount);
+      const serviceTax = firstNumber(pricing?.serviceTax, pricing?.serviceTaxAmount, pricing?.serviceFee);
+      const gst = firstNumber(pricing?.gst, pricing?.gstAmount);
+      const finalGuestPrice = firstNumber(
+        pricing?.finalGuestPrice,
+        pricing?.totalGuestPrice,
+        response?.totalAmount,
+        response?.data?.totalAmount,
+        response?.order?.totalPrice,
+        response?.order?.finalPrice,
+        backendTotalRupees
+      );
+      if (isPresent(basePrice)) backendReceipt.push({ title: "Total Base Price", content: formatMoney(basePrice) });
+      if (isPresent(discount)) backendReceipt.push({ title: "Total Discount", content: `- ${formatMoney(Math.abs(discount))}` });
+      if (isPresent(afterDiscount)) backendReceipt.push({ title: "Price After Discounts", content: formatMoney(afterDiscount) });
+      const combinedBackendTax = (tourismTax || 0) + (serviceTax || 0) + (gst || 0);
+      if (combinedBackendTax > 0) backendReceipt.push({ title: "Tax", content: `+ ${formatMoney(combinedBackendTax)}` });
+      if (isPresent(finalGuestPrice)) backendReceipt.push({ title: "Final Guest Price", content: formatMoney(finalGuestPrice) });
+      const frontendReceipt = frontendBreakdown ? [
+        { title: `Base Stay (${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`, content: formatMoney(frontendBreakdown.baseStayTotal) },
+        { title: "Adults", content: `${guests?.adults || 0}` },
+        { title: "Children", content: `${guests?.children || 0}` },
+      ] : [];
+      if (frontendBreakdown && frontendBreakdown.extraAdults > 0) {
+        frontendReceipt.push({
+          title: `Extra Adult Charges (${frontendBreakdown.extraAdults} × ${formatMoney(frontendBreakdown.extraAdultPrice)} × ${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`,
+          content: formatMoney(frontendBreakdown.extraAdultTotal),
+        });
+      }
+      if (frontendBreakdown && frontendBreakdown.extraChildren > 0) {
+        frontendReceipt.push({
+          title: `Extra Child Charges (${frontendBreakdown.extraChildren} × ${formatMoney(frontendBreakdown.extraChildPrice)} × ${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`,
+          content: formatMoney(frontendBreakdown.extraChildTotal),
+        });
+      }
+      const discountToShow = frontendBreakdown?.discountAmount;
+      if (discountToShow > 0) {
+        frontendReceipt.push({
+          title: "Total Discount",
+          content: `- ${formatMoney(discountToShow)}`,
+        });
+      }
+      const combinedFrontendTax = frontendBreakdown?.taxAmount || 0;
+      if (combinedFrontendTax > 0) {
+        frontendReceipt.push({
+          title: `Tax (${Number(frontendBreakdown?.taxRate || 0).toFixed(2)}%)`,
+          content: `+ ${formatMoney(combinedFrontendTax)}`,
+        });
+      }
+      if (frontendBreakdown) {
+        const finalFromOrder = backendTotalRupees ?? frontendBreakdown.finalGuestPrice;
+        frontendReceipt.push({ title: "Final Guest Price", content: formatMoney(finalFromOrder) });
+      }
+
       const stayBookingData = {
         stayId: Number(stayId),
         listingTitle: stay?.propertyName || stay?.title || stay?.name || "Stay",
@@ -1662,10 +1993,14 @@ const StayProduct = () => {
         bookingSummary: {
           guestCount: (guests?.adults || 0) + (guests?.children || 0),
         },
-        receipt: response?.totalAmount ? [
-          { title: "Stay total", content: `${response.currency || "INR"} ${Number(response.totalAmount).toFixed(2)}` },
-          { title: "Total", content: `${response.currency || "INR"} ${Number(response.totalAmount).toFixed(2)}` },
-        ] : [],
+        receipt: frontendReceipt.length > 0
+          ? frontendReceipt
+          : (backendReceipt.length > 0
+          ? backendReceipt
+          : (backendTotalRupees != null ? [
+            { title: "Stay total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
+            { title: "Total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
+          ] : [])),
         timestamp: new Date().toISOString(),
       };
       localStorage.setItem("pendingBooking", JSON.stringify(stayBookingData));
@@ -1683,7 +2018,10 @@ const StayProduct = () => {
   };
 
   const handleSelectRoom = (room) => {
-    setSelectedRoom(room);
+    setSelectedRoom({
+      ...room,
+      selectedMealPlan: inferMealPlanCode(room),
+    });
   };
 
   const handleShare = () => {
@@ -1738,6 +2076,104 @@ const StayProduct = () => {
     );
   }
 
+  const ReviewsSection = ({ reviews, stayId }) => {
+    const { tokens: { A, FG, M, B, W, S, BG, AL } } = { tokens: { A: "#3772FF", FG: "#23262F", M: "#777E90", B: "#E6E8EC", W: "#FFFFFF", S: "#F4F5F6", BG: "#FCFCFD", AL: "#F4F5F6" } };
+    
+    const normalizedReviews = Array.isArray(reviews) ? reviews : (reviews?.reviews || []);
+    const ratingSummary = !Array.isArray(reviews) ? (reviews?.summary || reviews?.ratingSummary) : null;
+    
+    const avgRating = ratingSummary?.averageRating || 0;
+    const totalReviews = ratingSummary?.totalReviews || normalizedReviews.length;
+    const ratingDistribution = ratingSummary?.ratingDistribution || [];
+    const hasReviews = normalizedReviews.length > 0;
+    
+    const displayReviews = normalizedReviews.slice(0, 2);
+    const hasMore = normalizedReviews.length > 2;
+
+    return (
+      <section style={{ background: BG, padding: "80px 0", borderTop: `1px solid ${B}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+            <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 800, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>06 — GUEST REVIEWS</span>
+            <div style={{ flex: 1, height: 1, background: B }} />
+          </div>
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 60 }}>
+          {/* Left: Summary */}
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 64, fontWeight: 900, color: FG, lineHeight: 1 }}>
+                {avgRating > 0 ? avgRating.toFixed(1) : (hasReviews ? "4.9" : "0.0")}
+              </span>
+              <span style={{ fontSize: 24, fontWeight: 800, color: "#FFC107" }}>★</span>
+            </div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 32, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              {totalReviews} {totalReviews === 1 ? "Review" : "Reviews"}
+            </p>
+
+            {/* Rating Distribution */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 40 }}>
+              {[5, 4, 3, 2, 1].map((star) => {
+                const dist = ratingDistribution.find(d => d.rating === star) || { count: 0 };
+                const percent = totalReviews > 0 ? (dist.count / totalReviews) * 100 : 0;
+                return (
+                  <div key={star} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: M, width: 12 }}>{star}</span>
+                    <div style={{ flex: 1, height: 4, background: B, borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", background: A, width: `${percent}%`, transition: "width 1s ease-out" }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: M, width: 24, textAlign: "right" }}>{dist.count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right: Review List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+            {!hasReviews ? (
+              <p style={{ color: M, fontSize: 16, fontStyle: "italic" }}>No reviews shared yet for this stay.</p>
+            ) : (
+              displayReviews.map((rev, i) => (
+                <div key={i} style={{ padding: "24px", background: W, border: `1px solid ${B}`, borderRadius: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: S, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: A }}>
+                        {(rev.customerName || rev.author || "G")[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: FG }}>{rev.customerName || rev.author || "Guest"}</div>
+                        <div style={{ fontSize: 12, color: M }}>{rev.time || (rev.createdAt ? moment(rev.createdAt).fromNow() : "Recently")}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 2, color: "#FFC107", fontSize: 12 }}>
+                      {[...Array(5)].map((_, si) => (
+                        <span key={si}>{si < (rev.rating || 5) ? "★" : "☆"}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 14, color: FG, lineHeight: 1.6, margin: 0 }}>&ldquo;{rev.comment || rev.content || rev.reviewText || rev.text}&rdquo;</p>
+                </div>
+              ))
+            )}
+            
+            {hasMore && (
+              <button 
+                className="button-stroke"
+                onClick={() => history.push(`/reviews/stay/${stayId}`)}
+                style={{ alignSelf: "flex-start", borderRadius: 100, padding: "12px 32px", fontWeight: 700, fontSize: 12, border: `2px solid ${B}`, background: "none", cursor: "pointer" }}
+              >
+                View All Reviews
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+
   return (
     <div className={styles.outer}>
       <div className={styles.container}>
@@ -1774,6 +2210,8 @@ const StayProduct = () => {
               location={stay?.fullAddress || stay?.location || stay?.city || stay?.cityArea}
               address={stay?.fullAddress || stay?.address || stay?.meetingAddress}
             />
+
+            <ReviewsSection reviews={reviews} stayId={stayId} />
           </div>
 
           <div className={styles.sidebarWrapper}>
@@ -1809,3 +2247,4 @@ const StayProduct = () => {
 };
 
 export default StayProduct;
+

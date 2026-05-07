@@ -12,7 +12,9 @@ export const THEMES = {
     M: "#7A7A77",    // Slate Muted
     S: "#F3F3F1",    // Soft Bone
     B: "#E6E6E3",    // Subtle Stone
-    W: "#FFFFFF"
+    W: "#FFFFFF",
+    E: "#D32F2F",    // Error Red
+    EL: "rgba(211, 47, 47, 0.03)" // Subtle Error Tint
   },
   dark: {
     A: "#0097B2",    // Corporate Teal
@@ -23,7 +25,9 @@ export const THEMES = {
     M: "#8C8C88",    // Warm Charcoal
     S: "#111111",    // Shadow Depth
     B: "#1F1F1F",    // Graphite Border
-    W: "#000000"
+    W: "#000000",
+    E: "#FF5252",    // Error Red (Vibrant)
+    EL: "rgba(255, 82, 82, 0.08)" // Subtle Error Tint
   }
 };
 

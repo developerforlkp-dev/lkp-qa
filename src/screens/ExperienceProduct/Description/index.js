@@ -319,6 +319,38 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
     return `${total} guests`;
   }, [guests, hasSelectedGuests, isStay]);
 
+  const selectedStayNights = useMemo(() => {
+    if (!isStay || !selectedDate || !selectedEndDate) return 0;
+    return Math.max(0, selectedEndDate.diff(selectedDate, "days"));
+  }, [isStay, selectedDate, selectedEndDate]);
+
+  const stayNightsValidation = useMemo(() => {
+    if (!isStay || !selectedDate || !selectedEndDate) {
+      return { valid: true, message: "" };
+    }
+
+    const minStayNightsRaw = listing?.stay?.minimumStayNights ?? listing?.minimumStayNights;
+    const maxStayNightsRaw = listing?.stay?.maximumStayNights ?? listing?.maximumStayNights;
+    const minStayNights = Number.isFinite(Number(minStayNightsRaw)) ? Number(minStayNightsRaw) : null;
+    const maxStayNights = Number.isFinite(Number(maxStayNightsRaw)) ? Number(maxStayNightsRaw) : null;
+
+    if (minStayNights !== null && selectedStayNights < minStayNights) {
+      return {
+        valid: false,
+        message: `Minimum stay is ${minStayNights} night${minStayNights === 1 ? "" : "s"}. You selected ${selectedStayNights} night${selectedStayNights === 1 ? "" : "s"}.`
+      };
+    }
+
+    if (maxStayNights !== null && selectedStayNights > maxStayNights) {
+      return {
+        valid: false,
+        message: `Maximum stay is ${maxStayNights} night${maxStayNights === 1 ? "" : "s"}. You selected ${selectedStayNights} night${selectedStayNights === 1 ? "" : "s"}.`
+      };
+    }
+
+    return { valid: true, message: "" };
+  }, [isStay, listing, selectedDate, selectedEndDate, selectedStayNights]);
+
   // Validation helper functions
   const isPastDate = (date) => {
     if (!date) return false;
@@ -485,6 +517,56 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       slotId ? av.slot_id === slotId : av.slot_name === slotName
     );
   }, [availabilityData, selectedTimeSlotData, selectedTimeSlot]);
+
+  const stayDisabledDateKeys = useMemo(() => {
+    if (!isStay) return [];
+    const ranges = listing?.bookedDateRanges || listing?.stay?.bookedDateRanges || [];
+    if (!Array.isArray(ranges) || ranges.length === 0) return [];
+
+    const normalizeId = (value) => {
+      if (value === null || value === undefined) return "";
+      const raw = String(value).trim();
+      if (!raw) return "";
+      const numeric = Number(raw);
+      return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
+    };
+    const selectedRoomId = normalizeId(staySelectedRoomType);
+    const normalizeDateKey = (value) => {
+      if (!value) return null;
+      const d = moment(value);
+      return d.isValid() ? d.format("YYYY-MM-DD") : null;
+    };
+
+    const keys = new Set();
+    ranges.forEach((range) => {
+      const rangeRoomId = normalizeId(
+        range?.roomId ??
+        range?.room_id ??
+        range?.roomTypeId ??
+        range?.room_type_id ??
+        range?.id
+      );
+      // Room-based: only block dates for selected room.
+      if (!isPropertyBased) {
+        if (!selectedRoomId) return;
+        if (!rangeRoomId || rangeRoomId !== selectedRoomId) return;
+      }
+
+      const startKey = normalizeDateKey(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
+      const endKey = normalizeDateKey(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
+      if (!startKey || !endKey) return;
+
+      // Block occupied nights: [check-in, checkout)
+      let cursor = moment(startKey, "YYYY-MM-DD");
+      const end = moment(endKey, "YYYY-MM-DD");
+      while (cursor.isBefore(end, "day")) {
+        keys.add(cursor.format("YYYY-MM-DD"));
+        cursor = cursor.add(1, "day");
+      }
+    });
+
+    return Array.from(keys);
+  }, [isStay, isPropertyBased, listing, staySelectedRoomType]);
 
   // Get availability data for selected date and slot
   const selectedDateAvailability = useMemo(() => {
@@ -2226,6 +2308,9 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       setShowGuestPicker(false);
     }
     else if (index === 1) {
+      if (!isStay && !selectedDate) {
+        return;
+      }
       setShowTimeSlots(true);
       setShowDatePicker(false);
       setShowGuestPicker(false);
@@ -2259,24 +2344,19 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       } else {
         setSelectedEndDate(null);
       }
-    }
-    if (isStay) {
       if (startDateText) {
-        const next = moment(new Date(startDateText));
-        if (stayActiveDateField === "checkout") {
-          setSelectedEndDate(next);
-        } else {
-          setSelectedDate(next);
+        const nextDate = moment(new Date(startDateText));
+        const isDateChanged = !selectedDate || !selectedDate.isSame(nextDate, "day");
+        if (isDateChanged) {
+          // Date drives slot availability for experiences, so reset downstream choices.
+          setSelectedTimeSlot(null);
+          setGuests({
+            adults: 0,
+            children: 0,
+            infants: 0,
+            pets: 0,
+          });
         }
-      }
-    } else {
-      if (startDateText) {
-        setSelectedDate(moment(new Date(startDateText)));
-      }
-      if (endDateText) {
-        setSelectedEndDate(moment(new Date(endDateText)));
-      } else {
-        setSelectedEndDate(null);
       }
     }
     if (!isStay) {
@@ -2644,6 +2724,23 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
     if (!isStay) return;
 
+    const dateValidation = validateBookingDateTime();
+    if (!dateValidation.valid) {
+      alert(dateValidation.error);
+      return;
+    }
+
+    const guestValidation = validateGuestCount();
+    if (!guestValidation.valid) {
+      alert(guestValidation.error);
+      return;
+    }
+
+    if (!stayNightsValidation.valid) {
+      alert(stayNightsValidation.message);
+      return;
+    }
+
     // Save booking data first
     saveBookingData();
 
@@ -2895,6 +2992,7 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                           selectedDate={selectedDate ? selectedDate.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
                           timeSlots={transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || [])}
                           availabilityData={filteredAvailabilityData}
+                          disabledDateKeys={stayDisabledDateKeys}
                         />
                       </div>
                     );
@@ -2923,6 +3021,7 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                             selectedDate={selectedEndDate ? selectedEndDate.toDate().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null}
                             timeSlots={transformedTimeSlots.length > 0 ? transformedTimeSlots : (listing?.timeSlots || [])}
                             availabilityData={filteredAvailabilityData}
+                            disabledDateKeys={stayDisabledDateKeys}
                           />
                         </div>
                       );
@@ -2947,18 +3046,23 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                       });
                     })();
                     const hasTimeSlots = slotsForSelectedDay.length > 0;
+                    const canSelectTimeSlot = Boolean(selectedDate) && hasTimeSlots;
                     return (
                       <div ref={timeItemRef} style={{ position: 'relative' }}>
                         <div
                           className={receiptStyles.item}
-                          onClick={hasTimeSlots ? () => handleOpenDateTime(1) : undefined}
-                          role={hasTimeSlots ? "button" : undefined}
+                          onClick={canSelectTimeSlot ? () => handleOpenDateTime(1) : undefined}
+                          role={canSelectTimeSlot ? "button" : undefined}
                           style={{
-                            cursor: hasTimeSlots ? 'pointer' : 'not-allowed',
-                            opacity: hasTimeSlots ? 1 : 0.5,
-                            pointerEvents: hasTimeSlots ? 'auto' : 'none',
+                            cursor: canSelectTimeSlot ? 'pointer' : 'not-allowed',
+                            opacity: canSelectTimeSlot ? 1 : 0.5,
+                            pointerEvents: canSelectTimeSlot ? 'auto' : 'none',
                           }}
-                          title={hasTimeSlots ? undefined : "No time slots available for the selected date"}
+                          title={
+                            !selectedDate
+                              ? "Please select a date first"
+                              : (hasTimeSlots ? undefined : "No time slots available for the selected date")
+                          }
                         >
                           <div className={receiptStyles.icon}>
                             <Icon name={item.icon} size="24" />
@@ -2969,7 +3073,7 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                           </div>
                         </div>
                         <TimeSlotsPicker
-                          visible={showTimeSlots && hasTimeSlots}
+                          visible={showTimeSlots && canSelectTimeSlot}
                           onClose={() => setShowTimeSlots(false)}
                           onTimeSelect={handleTimeSelect}
                           selectedTime={selectedTimeSlot}
@@ -3062,11 +3166,12 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                       type="button"
                       className={cn("button", styles.button)}
                       onClick={handleBookStay}
-                      disabled={!selectedDate || !selectedEndDate || !hasSelectedGuests || (!isPropertyBased && !staySelectedRoomType) || stayAvailabilityLoading}
+                      disabled={!selectedDate || !selectedEndDate || !hasSelectedGuests || (!isPropertyBased && !staySelectedRoomType) || stayAvailabilityLoading || !stayNightsValidation.valid}
                       title={
                         !selectedDate || !selectedEndDate ? "Please select check-in and check-out dates" :
                           !hasSelectedGuests ? "Please confirm guest count" :
-                            (!isPropertyBased && !staySelectedRoomType) ? "Please select a room from the cards above" : ""
+                            (!isPropertyBased && !staySelectedRoomType) ? "Please select a room from the cards above" :
+                              (!stayNightsValidation.valid ? stayNightsValidation.message : "")
                       }
                     >
                       <span>
@@ -3111,6 +3216,11 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                 {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
                   <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
                     Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
+                  </div>
+                )}
+                {isStay && selectedDate && selectedEndDate && !stayNightsValidation.valid && (
+                  <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                    {stayNightsValidation.message}
                   </div>
                 )}
 

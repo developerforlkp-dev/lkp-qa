@@ -32,6 +32,7 @@ const Checkout = () => {
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(null);
   const [stayImageUrl, setStayImageUrl] = useState(null);
+  const [stayDetails, setStayDetails] = useState(null);
 
   // Edit functionality state
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -191,6 +192,7 @@ const Checkout = () => {
     if (bookingData?.stayId) {
       getStayDetails(bookingData.stayId)
         .then((data) => {
+          setStayDetails(data || null);
           const rawCoverImg =
             data?.coverImageUrl ||
             data?.coverPhotoUrl ||
@@ -212,6 +214,8 @@ const Checkout = () => {
           }
         })
         .catch(console.error);
+    } else {
+      setStayDetails(null);
     }
   }, [bookingData?.stayId]);
   const formatTime = (timeString) => {
@@ -307,6 +311,82 @@ const Checkout = () => {
 
   // Build price table from receipt if provided
   const { table } = useMemo(() => {
+    const parseAmount = (val) => {
+      if (val === null || val === undefined) return 0;
+      const raw = String(val).replace(/,/g, "");
+      const m = raw.match(/-?\d+(\.\d+)?/);
+      return m ? Number(m[0]) : 0;
+    };
+
+    const isStay = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
+
+    if (isStay && bookingData?.receipt && Array.isArray(bookingData.receipt) && stayDetails) {
+      const rows = bookingData.receipt.map((r) => ({ title: r.title, value: r.content }));
+
+      const baseRow = rows.find((r) => /base stay|base price|total base/i.test(String(r.title || "")));
+      const baseAmount = parseAmount(baseRow?.value);
+
+      let nights = 1;
+      if (bookingData?.checkInDate && bookingData?.checkOutDate) {
+        const inDate = new Date(bookingData.checkInDate);
+        const outDate = new Date(bookingData.checkOutDate);
+        const diff = Math.ceil((outDate - inDate) / (1000 * 60 * 60 * 24));
+        if (Number.isFinite(diff) && diff > 0) nights = diff;
+      }
+
+      const discountTiers = Array.isArray(stayDetails?.discountTiers) ? stayDetails.discountTiers : [];
+      const activeTier = discountTiers.find((t) => {
+        const min = Number(t?.minimumDays || 0);
+        const max = Number(t?.maximumDays || 99999);
+        return nights >= min && nights <= max;
+      });
+      const tierDiscountPercent = Number(activeTier?.discountPercentage || 0);
+
+      // Also include generic pricing-level discounts from stay API payload
+      // (customer/total can coexist with tier-based discounts).
+      const pricingDiscount = stayDetails?.pricing?.discount || {};
+      const pricingDiscountPercent = Number(
+        pricingDiscount?.customer ??
+        pricingDiscount?.total ??
+        pricingDiscount?.guest ??
+        pricingDiscount?.lkp ??
+        0
+      ) || 0;
+
+      const combinedDiscountPercent = tierDiscountPercent + pricingDiscountPercent;
+      const discountAmount = baseAmount > 0 && combinedDiscountPercent > 0
+        ? (baseAmount * combinedDiscountPercent) / 100
+        : 0;
+
+      const taxRate = Array.isArray(stayDetails?.taxes)
+        ? stayDetails.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        : 0;
+
+      const hasDiscountRow = rows.some((r) => /discount/i.test(String(r.title || "")));
+      if (discountAmount > 0 && !hasDiscountRow) {
+        const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
+        const newDiscountRow = {
+          title: `Discount (${combinedDiscountPercent.toFixed(2)}%)`,
+          value: `- INR ${discountAmount.toFixed(2)}`,
+        };
+        if (taxRowIndex >= 0) {
+          rows.splice(taxRowIndex, 0, newDiscountRow);
+        } else {
+          rows.push(newDiscountRow);
+        }
+      }
+
+      const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
+      if (taxRowIndex >= 0 && taxRate > 0) {
+        rows[taxRowIndex] = {
+          ...rows[taxRowIndex],
+          title: `Tax (${taxRate.toFixed(2)}%)`,
+        };
+      }
+
+      return { table: rows };
+    }
+
     if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
       const rows = bookingData.receipt.map((r) => ({
         title: r.title,
@@ -330,7 +410,7 @@ const Checkout = () => {
         },
       ],
     };
-  }, [bookingData, selectedAddOns]);
+  }, [bookingData, selectedAddOns, stayDetails]);
 
   const isStayBooking = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
   const tripTitle = isStayBooking ? "Your stay" : "Your trip";

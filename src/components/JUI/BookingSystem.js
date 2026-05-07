@@ -9,6 +9,8 @@ import { Rev, Chars } from "./UI";
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots } from "../../utils/api";
+import LoginPromptModal from "../LoginPromptModal";
+
 
 const asNumber = (value) => {
   const parsed = Number(value);
@@ -50,6 +52,16 @@ const asBoolean = (value, fallback = false) => {
     if (normalized === "false") return false;
   }
   return fallback;
+};
+
+const asOptionalBoolean = (value) => {
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return undefined;
 };
 
 const getSlotSeatLimit = (slot) => (
@@ -911,7 +923,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
 
 export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience" }) {
   const history = useHistory();
-  const { tokens: { A, AH, BG, FG, M, S, B, AL, W } } = useTheme();
+  const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
   const [show, setShow] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -927,6 +939,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState("");
   const [privateBooking, setPrivateBooking] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showValidation, setShowValidation] = useState(false);
+
+
   
 
   const isEventBooking = type === "event";
@@ -1204,21 +1221,59 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setStartTime(firstSlot ? firstSlot.slotName : null);
   }, [canSelectMultipleEventSlots, eventSlots, isEventBooking, selectedEventSlotIds, isEventSlotAccessible]);
 
+  const getAddonLineTotal = useCallback((item, guestCount) => {
+    const addon = item?.addon || item || {};
+    const addonPrice = parseFloat(addon?.price || addon?.addonPrice || 0) || 0;
+    const quantity = Number(item?.quantity || addon?.quantity || 1) || 1;
+    const pricingTypeRaw = String(addon?.pricingType || addon?.pricing_type || "").toLowerCase();
+    const isIndividualAddon = pricingTypeRaw === "individual";
+    const billableGuestCount = Math.max(1, Number(guestCount || 0));
+    return isIndividualAddon
+      ? addonPrice * quantity * billableGuestCount
+      : addonPrice;
+  }, []);
+
   // Calculate addon total
-  const addOnsTotal = selectedAddOns.reduce((sum, item) => {
-    const addon = item.addon || item;
-    const quantity = item.quantity || 1;
-    return sum + ((parseFloat(addon.price) || 0) * quantity);
-  }, 0);
+  const addOnsTotal = selectedAddOns.reduce((sum, item) => (
+    sum + getAddonLineTotal(item, totalGuests)
+  ), 0);
 
   // Extract proper price depending on whether a time slot is selected
   const selectedSlotData = timeSlots.find(s => s.slotName === startTime || s.startTime === startTime) || null;
   const staleSelectedSlotData = (dateFilteredSlotsLoaded ? dateFilteredSlots : baseTimeSlots).find(s => s.slotName === startTime || s.startTime === startTime) || null;
+  const experienceSupportsPrivateBooking = useMemo(() => {
+    if (isEventBooking) return false;
+
+    const listingPrivateSetting =
+      asOptionalBoolean(listing?.privateBookingEnabled) ??
+      asOptionalBoolean(listing?.private_booking_enabled) ??
+      asOptionalBoolean(listing?.privateOptionAvailable) ??
+      asOptionalBoolean(listing?.private_option_available) ??
+      asOptionalBoolean(listing?.privateOptionEnabled) ??
+      asOptionalBoolean(listing?.private_option_enabled) ??
+      asOptionalBoolean(listing?.privateOption) ??
+      asOptionalBoolean(listing?.private_option);
+
+    if (listingPrivateSetting === false) return false;
+    if (listingPrivateSetting === true) return true;
+
+    const sourceSlots = [
+      ...(Array.isArray(dateFilteredSlots) ? dateFilteredSlots : []),
+      ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
+    ];
+
+    return sourceSlots.some((slot) => (
+      asOptionalBoolean(slot?.privateBookingEnabled) === true ||
+      asOptionalBoolean(slot?.private_booking_enabled) === true ||
+      asOptionalBoolean(slot?.privateBookingAvailable) === true ||
+      asOptionalBoolean(slot?.private_booking_available) === true
+    ));
+  }, [isEventBooking, listing, dateFilteredSlots, baseTimeSlots]);
   const selectedSlotHasPrivateBooking = !isEventBooking && Boolean(startTime) && staleSelectedSlotData?.hasPrivateBooking === true;
   const dateHasPrivateBookingAvailable = !isEventBooking && Boolean(selectedDateKey) && dateFilteredSlotsLoaded && timeSlots.some((slot) => slot.privateBookingAvailable === true);
   const selectedSlotPrivateBookingAvailable = !isEventBooking && Boolean(startTime) && selectedSlotData?.privateBookingAvailable === true;
-  const showPrivateBookingToggle = selectedSlotPrivateBookingAvailable;
-  const privateBookingMessage = !isEventBooking && selectedDateKey && dateFilteredSlotsLoaded
+  const showPrivateBookingToggle = experienceSupportsPrivateBooking && selectedSlotPrivateBookingAvailable;
+  const privateBookingMessage = experienceSupportsPrivateBooking && !isEventBooking && selectedDateKey && dateFilteredSlotsLoaded
     ? (selectedSlotHasPrivateBooking
         ? "This slot already has a private booking. Choose another slot."
         : !dateHasPrivateBookingAvailable
@@ -1261,15 +1316,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     ? eventGuestPricing.finalUnitPrice
     : (experienceGuestPricing?.finalUnitPrice ?? parseFloat(effectiveRawPrice || 0));
 
-  // Child pricing for experiences
+  // Child pricing: for events prefer ticket.childPrice when configured
   const childrenAllowed = asBoolean(
     listing?.childrenAllowed ?? listing?.childAllowed ?? listing?.allowChildren,
     true
   );
-  const rawChildPrice = !isEventBooking
-    ? (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0)
-    : 0;
-  const childGuestPricing = !isEventBooking && childrenAllowed && rawChildPrice > 0
+  const rawChildPrice = isEventBooking
+    ? (selectedTicket?.childPrice ?? selectedTicket?.child_price ?? 0)
+    : (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0);
+  const childGuestPricing = childrenAllowed && rawChildPrice > 0
     ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
     : null;
   // Effective per-child price (after discount + tax), fallback to adult price if no child price set
@@ -1287,18 +1342,25 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   };
 
   // Compute totals with child pricing split
-  const adultSubtotal = parseFloat(extractedPrice || 0) * (isEventBooking ? totalGuests : guests.adults);
-  const childSubtotal = !isEventBooking ? (effectiveChildPrice * guests.children) : 0;
+  const adultSubtotal = parseFloat(extractedPrice || 0) * guests.adults;
+  const childSubtotal = effectiveChildPrice * guests.children;
   const baseTotal = isEventBooking
-    ? parseFloat(data.price || 0) * totalGuests
+    ? adultSubtotal + childSubtotal
     : adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
     ? (baseAdultPricePerPerson * guests.adults) + (baseChildPricePerChild * guests.children)
-    : baseTotal;
-  const finalTotal = baseTotal + addOnsTotal;
-  const eventBaseTotal = eventGuestPricing.baseUnitPrice * totalGuests;
-  const eventDiscountTotal = eventGuestPricing.discountAmount * totalGuests;
-  const eventTaxTotal = eventGuestPricing.taxAmount * totalGuests;
+    : ((eventGuestPricing.baseUnitPrice * guests.adults) + (baseChildPricePerChild * guests.children));
+  const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
+  const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
+  const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
+  const subtotalBeforeAdjustments = rawBaseTotal + addOnsTotal;
+  const totalDiscountAmount = subtotalBeforeAdjustments * (appliedDiscountRate / 100);
+  const taxableSubtotal = Math.max(0, subtotalBeforeAdjustments - totalDiscountAmount);
+  const totalTaxAmount = taxableSubtotal * (appliedTaxRate / 100);
+  const finalTotal = taxableSubtotal + totalTaxAmount;
+  const eventBaseTotal = rawBaseTotal;
+  const eventDiscountTotal = totalDiscountAmount;
+  const eventTaxTotal = totalTaxAmount;
 
   const clampGuestsToSeatLimit = useCallback((nextGuests) => {
     if (bookingGuestLimit === undefined) return nextGuests;
@@ -1367,27 +1429,54 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : undefined;
 
   const handleReserve = async () => {
-    if (!startDate) return;
+    // Check if user is logged in
+    const token = localStorage.getItem("jwtToken");
+    const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    const errors = {};
+    if (!startDate) {
+      errors.date = "Please select a date to continue.";
+    } else {
+      // Check if slots exist for this date
+      const availableSlots = isEventBooking ? eventSlots : timeSlots;
+      if (availableSlots.length === 0) {
+        errors.date = "No booking slots are available for the selected date.";
+      }
+    }
+
+    if (isEventBooking) {
+      if (!selectedTicketTypeId && eventTickets.length > 0) errors.ticketType = "Please select a ticket type.";
+      if (selectedEventSlotIds.length === 0) errors.slot = "Please select an available time slot to continue.";
+    } else {
+      if (!startTime) errors.slot = "Please select an available time slot to continue.";
+    }
+
+    if (guests.adults < 1) errors.adults = "Please add at least 1 adult.";
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setShowValidation(true);
+      // Scroll to the top of the modal content to see the errors
+      const modalContent = document.querySelector(".booking-modal-content");
+      if (modalContent) modalContent.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Clear validation on success
+    setValidationErrors({});
+    setShowValidation(false);
+
     if (!isEventBooking && guestSeatLimit !== undefined && totalGuests > guestSeatLimit) {
       alert(`Only ${guestSeatLimit} seat${guestSeatLimit === 1 ? "" : "s"} available for this slot.`);
       return;
     }
-    if (!isEventBooking && privateBooking && !selectedSlotPrivateBookingAvailable) {
-      alert("Private booking is not available for this slot. Choose another slot.");
-      return;
-    }
-    if (!isEventBooking && selectedSlotHasPrivateBooking) {
-      alert("This slot already has a private booking. Choose another slot.");
-      return;
-    }
-    localStorage.removeItem("pendingPayment");
-    localStorage.removeItem("pendingOrderId");
-    localStorage.removeItem("actualPaidAmount");
-    localStorage.removeItem("razorpayPaymentSuccess");
-    localStorage.removeItem("paymentFailed");
 
     if (isEventBooking) {
-      if (!selectedTicket || selectedEventSlots.length === 0 || totalGuests < 1 || bookingLoading) return;
+      if (selectedEventSlots.length === 0 || totalGuests < 1 || bookingLoading) return;
       if (!ticketSaleWindow.isOpen) {
         alert(ticketSaleWindow.message);
         return;
@@ -1424,7 +1513,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       })();
 
       if (!eventIdNum || !eventSlotIdNum || !ticketTypeId) {
-        alert("Unable to book: event ticket or slot information is missing.");
+        setValidationErrors({ slot: "Unable to book: event ticket or slot information is missing." });
+        setShowValidation(true);
         return;
       }
 
@@ -1474,7 +1564,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           getRazorpayKeyFromCache() ||
           "rzp_test_RaBjdu0Ed3p1gN";
 
-        if (!razorpayOrderId) {
+        const isFreeBooking = finalTotal === 0;
+
+        if (!razorpayOrderId && !isFreeBooking) {
           console.error("❌ Razorpay Order ID missing from response:", res);
           alert("Payment initialization failed. Please contact support.");
           if (isMountedRef.current) setBookingLoading(false);
@@ -1508,9 +1600,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             pricePerPerson: eventGuestPricing.finalUnitPrice,
             basePrice: eventBaseTotal,
             discount: eventDiscountTotal,
-            discountRate: eventGuestPricing.discountRate,
+            discountRate: appliedDiscountRate,
             tax: eventTaxTotal,
-            taxRate: eventGuestPricing.customerTaxRate,
+            taxRate: appliedTaxRate,
+            addonsTotal: addOnsTotal,
+            subtotal: subtotalBeforeAdjustments,
             total: finalTotal,
             guestCount: totalGuests,
           },
@@ -1553,10 +1647,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         localStorage.removeItem("razorpayPaymentSuccess");
         localStorage.removeItem("paymentFailed");
 
-        history.replace("/experience-checkout", {
-          bookingData,
-          paymentData,
-        });
+        if (isFreeBooking) {
+          // For free bookings, we can go straight to completion
+          const freePaymentSuccess = {
+            razorpay_payment_id: "FREE_" + (orderId || Date.now()),
+            razorpay_order_id: "FREE_ORDER_" + (orderId || Date.now()),
+            razorpay_signature: "FREE_SIG"
+          };
+          localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(freePaymentSuccess));
+          localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
+          
+          history.replace("/experience-checkout-complete", {
+            bookingData,
+            paymentSuccess: freePaymentSuccess
+          });
+        } else {
+          history.replace("/experience-checkout", {
+            bookingData,
+            paymentData,
+          });
+        }
       } catch (e) {
         console.error("Event booking failed:", e?.response?.data || e?.message || e);
         alert(e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.");
@@ -1576,7 +1686,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     );
 
     if (!listingId || !slotId || !bookingTime) {
-      alert("Unable to book: experience slot information is missing.");
+      setValidationErrors({ slot: "Unable to book: experience slot information is missing." });
+      setShowValidation(true);
       return;
     }
 
@@ -1608,11 +1719,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     selectedAddOns.forEach(item => {
       const addon = item.addon || item;
       const id = addon.addonId || addon.id;
-      const quantity = item.quantity || 1;
+      const quantity = Number(item.quantity || addon.quantity || 1) || 1;
+      const pricingTypeRaw = String(addon?.pricingType || addon?.pricing_type || "").toLowerCase();
+      const isIndividualAddon = pricingTypeRaw === "individual";
+      const addonLineTotal = getAddonLineTotal(item, totalGuests);
       addOnQuantities[id] = quantity;
       receipt.push({
-        title: `${addon.title || "Add-on"} × ${quantity}`,
-        content: `₹${((parseFloat(addon.price) || 0) * quantity).toFixed(2)}`,
+        title: isIndividualAddon
+          ? `${addon.title || "Add-on"} × ${quantity} × ${Math.max(1, totalGuests)} guest${Math.max(1, totalGuests) > 1 ? "s" : ""}`
+          : `${addon.title || "Add-on"} × ${quantity}`,
+        content: `₹${addonLineTotal.toFixed(2)}`,
         kind: "addon",
         showInCheckout: false
       });
@@ -1650,14 +1766,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         adultBasePricePerPerson: baseAdultPricePerPerson,
         childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
         baseChildPricePerChild,
-        discount: (experienceGuestPricing?.discountAmount ?? 0) * guests.adults
-          + (childGuestPricing ? (childGuestPricing.discountAmount * guests.children) : 0),
-        discountRate: experienceGuestPricing?.discountRate ?? 0,
-        tax: (experienceGuestPricing?.taxAmount ?? 0) * guests.adults
-          + (childGuestPricing ? (childGuestPricing.taxAmount * guests.children) : 0),
-        taxRate: experienceGuestPricing?.customerTaxRate ?? 0,
+        discount: totalDiscountAmount,
+        discountRate: appliedDiscountRate,
+        tax: totalTaxAmount,
+        taxRate: appliedTaxRate,
         addonsTotal: addOnsTotal,
-        subtotal: rawBaseTotal + addOnsTotal,
+        subtotal: subtotalBeforeAdjustments,
         total: finalTotal,
         guestCount: totalGuests,
       },
@@ -1747,7 +1861,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const currency = payment?.currency || order?.currency || res?.currency || "INR";
       const amountInPaise = payment?.amount || order?.amount || res?.amount || Math.round(finalTotal * 100);
 
-      if (!razorpayOrderId) {
+      const isFreeBooking = finalTotal === 0;
+
+      if (!razorpayOrderId && !isFreeBooking) {
         alert("Payment order was not created. Please try booking again.");
         return;
       }
@@ -1770,15 +1886,31 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
       if (razorpayKeyId) localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
 
-      history.push({
-        pathname: "/experience-checkout",
-        search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}`,
-        state: {
-          addOns: selectedAddOns.map(item => item.addon || item),
+      if (isFreeBooking) {
+        // For free bookings, we can go straight to completion
+        const freePaymentSuccess = {
+          razorpay_payment_id: "FREE_" + (orderId || Date.now()),
+          razorpay_order_id: "FREE_ORDER_" + (orderId || Date.now()),
+          razorpay_signature: "FREE_SIG"
+        };
+        localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(freePaymentSuccess));
+        localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
+        
+        history.replace("/experience-checkout-complete", {
           bookingData,
-          paymentData,
-        }
-      });
+          paymentSuccess: freePaymentSuccess
+        });
+      } else {
+        history.push({
+          pathname: "/experience-checkout",
+          search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}`,
+          state: {
+            addOns: selectedAddOns.map(item => item.addon || item),
+            bookingData,
+            paymentData,
+          }
+        });
+      }
     } catch (e) {
       console.error("Experience booking failed:", e?.response?.data || e?.message || e);
       alert(e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.");
@@ -1841,6 +1973,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         whileTap={triggerDisabled ? undefined : { scale: 0.95 }}
         disabled={triggerDisabled}
         title={triggerDisabled ? ticketSaleWindow.message : undefined}
+        className="booking-trigger"
         style={{
           position: "fixed",
           bottom: 30,
@@ -1866,6 +1999,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       </motion.button>
       {triggerDisabled && (
         <div
+          className="booking-trigger-message"
           style={{
             position: "fixed",
             bottom: 88,
@@ -1899,9 +2033,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             />
             
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.9, opacity: 0, y: 40 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              exit={{ scale: 0.9, opacity: 0, y: 40 }}
+              onClick={(e) => e.stopPropagation()}
+              className="booking-modal-container"
               style={{
                 position: "relative",
                 width: "95%",
@@ -1917,7 +2053,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               }}
             >
               {/* Header */}
-              <div style={{ padding: "32px 40px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "32px 40px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <h2 style={{ fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 8 }}>
                     {isEventBooking ? "Reserve Your Event" : "Reserve Your Experience"}
@@ -1954,11 +2090,47 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
               </div>
 
-              <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+                {/* Validation Alert */}
+                <AnimatePresence>
+                  {showValidation && Object.keys(validationErrors).length > 0 && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      style={{
+                        padding: "24px 40px 0",
+                        background: BG,
+                        overflow: "hidden"
+                      }}
+                    >
+                      <div style={{
+                        background: EL,
+                        border: `1px solid ${E}33`,
+                        borderRadius: 20,
+                        padding: "16px 20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, color: E, marginBottom: 4 }}>
+                          <X size={18} style={{ background: E, color: "#FFF", borderRadius: "50%", padding: 2 }} />
+                          <span style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Booking Requirements</span>
+                        </div>
+                        {Object.values(validationErrors).map((err, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, color: FG, opacity: 0.9, fontSize: 13, fontWeight: 600, paddingLeft: 4 }}>
+                            <div style={{ width: 4, height: 4, borderRadius: "50%", background: E }} />
+                            {err}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
               {/* Closed state — all dates have passed */}
               {isExperienceClosed ? (
-                <div style={{ padding: "60px 40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+                <div className="booking-modal-closed" style={{ padding: "60px 40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
                   <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${B}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                     <Clock size={32} color={M} />
                   </div>
@@ -1975,33 +2147,61 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
               ) : (
                 <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 1, background: B }}>
+              <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 1, background: B }}>
                 {/* Left Column: Date & Ticket */}
-                <div style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
+                <div className="booking-modal-column" style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>01. Select Date</div>
-                    {isEventBooking ? (
-                      <EventInlineCalendar
-                        selectedDate={startDate}
-                        onDateSelect={setStartDate}
-                        availableDateKeys={eventAvailableDateKeys}
-                        tokens={{ A, AL, BG, FG, M, B, S, W }}
-                        emptyMessage="No available dates for this event."
-                      />
-                    ) : (
-                      <EventInlineCalendar
-                        selectedDate={startDate}
-                        onDateSelect={setStartDate}
-                        availableDateKeys={experienceAvailableDateKeys}
-                        tokens={{ A, AL, BG, FG, M, B, S, W }}
-                        emptyMessage="No available dates for this experience."
-                      />
-                    )}
+                    <div style={{ fontSize: 11, color: validationErrors.date ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                      01. Select Date
+                      {validationErrors.date && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
+                    </div>
+                    <div style={{
+                      borderRadius: 20,
+                      padding: 4,
+                      border: `1px solid ${validationErrors.date ? `${E}44` : "transparent"}`,
+                      background: validationErrors.date ? EL : "transparent",
+                      transition: "0.3s"
+                    }}>
+                      {isEventBooking ? (
+                        <EventInlineCalendar
+                          selectedDate={startDate}
+                          onDateSelect={(date) => {
+                            setStartDate(date);
+                            setValidationErrors(prev => {
+                              const next = { ...prev };
+                              delete next.date;
+                              return next;
+                            });
+                          }}
+                          availableDateKeys={eventAvailableDateKeys}
+                          tokens={{ A, AL, BG, FG, M, B, S, W }}
+                          emptyMessage="No available dates for this event."
+                        />
+                      ) : (
+                        <EventInlineCalendar
+                          selectedDate={startDate}
+                          onDateSelect={(date) => {
+                            setStartDate(date);
+                            setValidationErrors(prev => {
+                              const next = { ...prev };
+                              delete next.date;
+                              return next;
+                            });
+                          }}
+                          availableDateKeys={experienceAvailableDateKeys}
+                          tokens={{ A, AL, BG, FG, M, B, S, W }}
+                          emptyMessage="No available dates for this experience."
+                        />
+                      )}
+                    </div>
                   </div>
 
                   {isEventBooking && (
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>02. Ticket Type</div>
+                      <div style={{ fontSize: 11, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                        02. Ticket Type
+                        {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
+                      </div>
                       {eventTickets.length > 0 ? (
                         <div style={{ position: "relative" }}>
                           <select
@@ -2010,21 +2210,28 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               setSelectedTicketTypeId(e.target.value);
                               setSelectedEventSlotIds([]);
                               setStartTime(null);
+                              setValidationErrors(prev => {
+                                const next = { ...prev };
+                                delete next.ticketType;
+                                return next;
+                              });
                             }}
                             style={{
                               width: "100%",
                               appearance: "none",
                               padding: "16px 20px",
                               borderRadius: 16,
-                              border: `1px solid ${B}`,
-                              background: S,
+                              border: `1px solid ${validationErrors.ticketType ? `${E}44` : B}`,
+                              background: validationErrors.ticketType ? EL : S,
                               color: FG,
                               cursor: "pointer",
                               fontSize: 14,
                               fontWeight: 600,
-                              outline: "none"
+                              outline: "none",
+                              transition: "0.3s"
                             }}
                           >
+                            <option value="">Select Ticket Type</option>
                             {eventTickets.map((ticket, index) => {
                               const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
                               const ticketBasePrice = getTicketPrice(ticket, 0);
@@ -2073,67 +2280,116 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
 
                 {/* Right Column: Slots & Guests */}
-                <div style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 32 }}>
+                <div className="booking-modal-column" style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 32 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>{isEventBooking ? "03. Choose Slot" : "02. Select Time"}</div>
+                    <div style={{ fontSize: 11, color: validationErrors.slot ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                      {isEventBooking ? "03. Choose Slot" : "02. Select Time"}
+                      {validationErrors.slot && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
+                    </div>
                     
                     {isEventBooking ? (
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        {eventSlots.length > 0 ? eventSlots.map((slot, index) => {
-                          const slotId = String(slot.eventSlotId ?? slot.id);
-                          const slotKeys = new Set();
-                          addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
-                          const isDateValid = slotKeys.size === 0 || slotKeys.has(selectedDateKey);
-                          const isDisabled = !isEventSlotAccessible(slot, index) || !isDateValid;
-                          const isSelected = selectedEventSlotIds.includes(slotId);
-                          return (
-                            <button
-                              key={slotId}
-                              disabled={isDisabled}
-                              onClick={() => {
-                                if (isDisabled) return;
-                                if (canSelectMultipleEventSlots) {
-                                  setSelectedEventSlotIds(cur => cur.includes(slotId) ? cur.filter(id => id !== slotId) : [...cur, slotId]);
-                                } else {
-                                  setSelectedEventSlotIds([slotId]);
-                                  setStartTime(slot.slotName);
-                                }
-                              }}
-                              style={{
-                                padding: "14px",
-                                borderRadius: 16,
-                                border: `1.5px solid ${isSelected ? A : B}`,
-                                background: isSelected ? AL : BG,
-                                color: isSelected ? A : FG,
-                                fontSize: 13,
-                                fontWeight: 700,
-                                cursor: isDisabled ? "not-allowed" : "pointer",
-                                opacity: isDisabled ? 0.4 : 1,
-                                textAlign: "center",
-                                transition: "0.2s"
-                              }}
-                            >
-                              {formatTime12h(slot.slotName)}
-                              {slot.endTime && <span style={{ display: "block", fontSize: 10, opacity: 0.7, marginTop: 2 }}>{formatTime12h(slot.endTime)}</span>}
-                            </button>
-                          );
-                        }) : <div style={{ gridColumn: "span 2", padding: "20px", textAlign: "center", color: M }}>No slots available</div>}
+                        {(() => {
+                          const validSlotsForDate = eventSlots.filter((slot, index) => {
+                            const slotKeys = new Set();
+                            addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
+                            return (slotKeys.size === 0 || slotKeys.has(selectedDateKey)) && isEventSlotAccessible(slot, index);
+                          });
+
+                          if (validSlotsForDate.length === 0) {
+                            return <div style={{ gridColumn: "span 2", padding: "24px 20px", textAlign: "center", color: E, fontWeight: 700, background: EL, borderRadius: 16, border: `1px solid ${E}22`, fontSize: 13 }}>No booking slots are available for this day</div>;
+                          }
+
+                          return validSlotsForDate.map((slot, index) => {
+                            const slotId = String(slot.eventSlotId ?? slot.id);
+                            const isSelected = selectedEventSlotIds.includes(slotId);
+                            const slotLabel = slot.slotName && slot.slotName !== slot.startTime ? slot.slotName : null;
+                            const slotStartTime = formatTime12h(slot.startTime || slot.slotName);
+                            const slotEndTime = formatTime12h(slot.endTime);
+                            const slotTimeDisplay = slotEndTime ? `${slotStartTime} - ${slotEndTime}` : slotStartTime;
+                            return (
+                              <button
+                                key={slotId}
+                                onClick={() => {
+                                  if (canSelectMultipleEventSlots) {
+                                    setSelectedEventSlotIds(cur => {
+                                      const next = cur.includes(slotId) ? cur.filter(id => id !== slotId) : [...cur, slotId];
+                                      if (next.length > 0) {
+                                        setValidationErrors(prev => {
+                                          const n = { ...prev };
+                                          delete n.slot;
+                                          return n;
+                                        });
+                                      }
+                                      return next;
+                                    });
+                                  } else {
+                                    setSelectedEventSlotIds([slotId]);
+                                    setStartTime(slot.slotName);
+                                    setValidationErrors(prev => {
+                                      const next = { ...prev };
+                                      delete next.slot;
+                                      return next;
+                                    });
+                                  }
+                                }}
+                                style={{
+                                  padding: "14px",
+                                  borderRadius: 16,
+                                  border: `1.5px solid ${isSelected ? A : B}`,
+                                  background: isSelected ? AL : BG,
+                                  color: isSelected ? A : FG,
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  textAlign: "center",
+                                  transition: "0.2s"
+                                }}
+                              >
+                                {slotLabel && (
+                                  <span style={{ display: "block", marginBottom: 2 }}>{slotLabel}</span>
+                                )}
+                                <span style={{ display: "block", fontSize: 10, opacity: 0.85, marginTop: slotLabel ? 0 : 2 }}>
+                                  {slotTimeDisplay}
+                                </span>
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
                     ) : (
                       <div style={{ position: "relative" }}>
                         <div 
                           onClick={() => setShowTimePicker(!showTimePicker)}
-                          style={{ padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                          style={{
+                            padding: "16px 20px",
+                            background: validationErrors.slot ? EL : BG,
+                            border: `1px solid ${validationErrors.slot ? `${E}44` : B}`,
+                            borderRadius: 16,
+                            cursor: "pointer",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            transition: "0.3s"
+                          }}
                         >
-                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : M }}>{formatTime12h(startTime) || "Select Time"}</span>
-                          <ChevronDown size={18} color={M} />
+                          <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : (validationErrors.slot ? E : M) }}>{formatTime12h(startTime) || "Select Time"}</span>
+                          <ChevronDown size={18} color={validationErrors.slot ? E : M} />
                         </div>
                         {showTimePicker && (
                           <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0, zIndex: 100, background: BG, border: `1px solid ${B}`, borderRadius: 16, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", padding: "8px" }}>
                             <TimeSlotsPicker 
                               visible={true}
                               onClose={() => setShowTimePicker(false)}
-                              onTimeSelect={(t) => { setStartTime(t); setShowTimePicker(false); }}
+                              onTimeSelect={(t) => { 
+                                setStartTime(t); 
+                                setShowTimePicker(false); 
+                                setValidationErrors(prev => {
+                                  const next = { ...prev };
+                                  delete next.slot;
+                                  return next;
+                                });
+                              }}
                               selectedTime={startTime}
                               timeSlots={timeSlots}
                               selectedDate={startDate}
@@ -2198,13 +2454,34 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>{isEventBooking ? "04. Guests" : "03. Guests"}</div>
+                    <div style={{ fontSize: 11, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                      {isEventBooking ? "04. Guests" : "03. Guests"}
+                      {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
+                    </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "16px 20px",
+                        background: validationErrors.adults ? EL : BG,
+                        border: `1px solid ${validationErrors.adults ? `${E}44` : B}`,
+                        borderRadius: 16,
+                        transition: "0.3s"
+                      }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Adults</span>
                         <Counter
                           value={guests.adults}
-                          setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, adults: v }))}
+                          setValue={(v) => {
+                            updateGuestsWithinSeatLimit(p => ({ ...p, adults: v }));
+                            if (v >= 1) {
+                              setValidationErrors(prev => {
+                                const next = { ...prev };
+                                delete next.adults;
+                                return next;
+                              });
+                            }
+                          }}
                           min={0}
                           max={adultMax}
                         />
@@ -2241,7 +2518,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               </div>
 
               {/* Footer Button */}
-              <div style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-footer" style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total amount</span>
                   <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
@@ -2250,18 +2527,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  disabled={!canReserve || bookingLoading}
+                  disabled={bookingLoading}
                   onClick={handleReserve}
                   style={{
                     padding: "18px 48px",
-                    background: canReserve ? A : B,
+                    background: (canReserve || showValidation) ? A : B,
                     color: "#FFF",
                     borderRadius: 16,
                     border: "none",
                     fontSize: 16,
                     fontWeight: 800,
-                    cursor: canReserve ? "pointer" : "not-allowed",
-                    boxShadow: canReserve ? `0 10px 30px ${A}44` : "none",
+                    cursor: "pointer",
+                    boxShadow: (canReserve || showValidation) ? `0 10px 30px ${A}44` : "none",
                     transition: "0.3s"
                   }}
                 >
@@ -2280,6 +2557,50 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           </div>
         )}
       </AnimatePresence>
+      <LoginPromptModal
+        visible={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+      />
+      <style>{`
+        @media(max-width: 900px) {
+          .booking-modal-container { 
+            width: 100% !important; 
+            height: 100% !important; 
+            max-height: 100vh !important; 
+            border-radius: 0 !important; 
+          }
+          .booking-grid { grid-template-columns: 1fr !important; }
+          .booking-modal-header { padding: 24px 20px !important; }
+          .booking-modal-column { padding: 32px 20px !important; }
+          .booking-modal-footer { 
+            flex-direction: column !important; 
+            gap: 24px !important; 
+            padding: 24px 20px !important; 
+            align-items: stretch !important;
+            text-align: center !important;
+          }
+          .booking-modal-footer button { width: 100% !important; }
+          .booking-modal-closed { padding: 40px 20px !important; }
+          
+          .booking-trigger {
+            bottom: 24px !important;
+            right: 20px !important;
+            left: 20px !important;
+            width: calc(100% - 40px) !important;
+            justify-content: center !important;
+            padding: 16px !important;
+            font-size: 16px !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+          }
+          
+          .booking-trigger-message {
+            bottom: 96px !important;
+            right: 20px !important;
+            left: 20px !important;
+            max-width: none !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

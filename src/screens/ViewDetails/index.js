@@ -4,7 +4,7 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews } from "../../utils/api";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import Receipt from "../../components/Receipt";
@@ -72,10 +72,14 @@ const isPaymentFailed = (paymentStatus) => {
 
 // Transform API booking data to component format
 // eventData is used for EVENTS orders to get event details (images, title, location, etc.)
-const transformBookingData = (apiBooking, listingData = null, eventData = null, stayData = null) => {
+const transformBookingData = (apiBooking, listingData = null, eventData = null, stayData = null, reviewData = null) => {
   // Determine if this is an event order
   const isEventOrder = apiBooking?.businessInterestCode === "EVENTS" ||
     apiBooking?.eventId != null;
+
+  // Extract rating and review count
+  const rating = reviewData?.ratingSummary?.averageRating || 0;
+  const reviewCount = reviewData?.ratingSummary?.totalReviews || 0;
 
   const asText = (value) => {
     if (value === null || value === undefined) return null;
@@ -1037,7 +1041,22 @@ const ViewDetails = () => {
               ? { ...orderResponse, ...orderResponse.order }
               : apiBookingData;
 
-          transformed = transformBookingData(mergedApiBookingData, listingData, eventData, stayData);
+          // Fetch review data using category-specific API
+          let reviewData = null;
+          try {
+            if (apiBookingData.listingId) {
+              reviewData = await getListingReviews(apiBookingData.listingId);
+            } else if (apiBookingData.eventId) {
+              reviewData = await getEventReviews(apiBookingData.eventId);
+            } else if (resolvedStayId) {
+              reviewData = await getStayReviews(resolvedStayId);
+            }
+            if (reviewData) console.log("✅ Review summary fetched for Details:", reviewData);
+          } catch (reviewErr) {
+            console.warn("⚠️ Failed to fetch review summary for Details:", reviewErr);
+          }
+
+          transformed = transformBookingData(mergedApiBookingData, listingData, eventData, stayData, reviewData);
           console.log("✅ Transformed booking data:", transformed);
           console.log("✅ Original API booking data paymentMethod:", apiBookingData.paymentMethod);
           console.log("✅ Transformed paymentMethod:", transformed.paymentMethod);
@@ -1356,6 +1375,12 @@ const ViewDetails = () => {
             <span>Back to Bookings</span>
           </Link>
           <h1 className={cn("h2", styles.title)} style={{ marginTop: "16px" }}>{booking.title}</h1>
+          {booking.rating > 0 && (
+            <div className={styles.ratingRow}>
+              <Rating className={styles.rating} rating={booking.rating} readonly={true} />
+              <span className={styles.reviewCount}>({booking.reviewCount} reviews)</span>
+            </div>
+          )}
         </header>
 
         <div className={styles.banner}>

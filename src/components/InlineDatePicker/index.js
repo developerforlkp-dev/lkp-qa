@@ -34,6 +34,7 @@ const InlineDatePicker = ({
   selectedDate,
   timeSlots = [],
   availabilityData = [],
+  disabledDateKeys = [],
   className,
 }) => {
   const now = new Date();
@@ -42,6 +43,7 @@ const InlineDatePicker = ({
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [hoveredDate, setHoveredDate] = useState(null);
+  const disabledDateSet = useMemo(() => new Set(disabledDateKeys || []), [disabledDateKeys]);
 
   const calendarGrid = useMemo(() => buildCalendarGrid(currentYear, currentMonth, availabilityData), [currentYear, currentMonth, availabilityData]);
   const monthLabel = getMonthLabel(new Date(currentYear, currentMonth));
@@ -142,6 +144,7 @@ const InlineDatePicker = ({
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`; // YYYY-MM-DD format in local timezone
+    if (disabledDateSet.has(dateStr)) return true;
 
     const now = new Date();
     const isToday =

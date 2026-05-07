@@ -26,14 +26,29 @@ const Modal = ({ outerClassName, visible, onClose, children }) => {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    visible ? disableBodyScroll(scrollRef) : enableBodyScroll(scrollRef);
+    const targetElement = scrollRef.current;
+    if (visible && targetElement) {
+      disableBodyScroll(targetElement);
+    }
+    return () => {
+      if (targetElement) {
+        enableBodyScroll(targetElement);
+      }
+    };
   }, [visible]);
 
   return createPortal(
     visible && (
       <div className={styles.modal} ref={scrollRef}>
         <div className={cn(styles.outer, outerClassName)}>
-          <OutsideClickHandler onOutsideClick={onClose}>
+          <OutsideClickHandler onOutsideClick={(e) => {
+            if (e && e.target && (
+              e.target.closest?.('#credential_picker_container') || 
+              e.target.closest?.('#google-one-tap-container') ||
+              e.target.closest?.('.S311be-ayS03d') // Common Google GSI class
+            )) return;
+            onClose();
+          }}>
             {children}
             <button className={styles.close} onClick={onClose}>
               <Icon name="close" size="24" />

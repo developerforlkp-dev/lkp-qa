@@ -3,10 +3,11 @@ import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
 import ProductNavbar from "../../../components/ProductNavbar";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft } from "lucide-react";
-import PhotoView from "../../../components/PhotoView";
+import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
+import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getHost } from "../../../utils/api";
+import { getEventDetails, getHost, getListingReviews } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
@@ -84,6 +85,206 @@ function ScopedThemeProvider({ children }) {
     </ThemeContext.Provider>
   );
 }
+
+/* ─── GRID GALLERY MODAL ────────────────────────── */
+const GridGallery = ({ items, onClose, onSelect, title, A }) => {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const target = modalRef.current;
+    if (target) disableBodyScroll(target);
+    return () => {
+      if (target) enableBodyScroll(target);
+      else enableBodyScroll(document.body);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      ref={modalRef}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: '#FFF',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch'
+      }}
+    >
+      <div style={{
+        padding: 'clamp(40px, 8vw, 80px) clamp(20px, 5vw, 60px)',
+        maxWidth: '1600px',
+        margin: '0 auto',
+        width: '100%'
+      }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 'clamp(40px, 8vw, 80px)'
+          }}
+        >
+          <div>
+            <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
+            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
+              {title}
+            </h2>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: '#F4F4F4',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'background 0.3s',
+              flexShrink: 0,
+              marginLeft: 20
+            }}
+          >
+            <X size={32} color="#000" />
+          </motion.button>
+        </motion.div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
+          gap: 'clamp(16px, 3vw, 32px)',
+          gridAutoRows: 'clamp(250px, 40vh, 400px)'
+        }}>
+          {items.map((img, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: (i % 3) * 0.1 }}
+              whileHover={{ y: -10, scale: 1.02 }}
+              onClick={() => onSelect(i)}
+              style={{
+                borderRadius: 24,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                background: '#F4F4F4',
+                border: '1px solid rgba(0,0,0,0.05)',
+                position: 'relative',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
+              }}
+            >
+              <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: '24px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: A, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <PlusIcon size={16} color="#FFF" />
+                  </div>
+                  <span style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700 }}>Expand View</span>
+                </div>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── MODAL IMAGE POPUP ────────────────────────── */
+const FullScreenImage = ({ src, onClose }) => {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const target = modalRef.current;
+    if (target) disableBodyScroll(target);
+    return () => {
+      if (target) enableBodyScroll(target);
+      else enableBodyScroll(document.body);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      ref={modalRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10000,
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '5vh 5vw'
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          height: '100%',
+          maxWidth: '1200px',
+          maxHeight: '80vh',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'zoom-out',
+          borderRadius: 32,
+          overflow: 'hidden',
+          boxShadow: '0 50px 100px rgba(0,0,0,0.6)',
+          background: '#000'
+        }}
+      >
+        <img
+          src={src}
+          onClick={onClose}
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            objectFit: 'cover'
+          }}
+          alt="Popup"
+        />
+        <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
+           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const E = [0.22, 1, 0.36, 1];
 
@@ -570,9 +771,10 @@ function GalleryColumn({ images, direction, speed = 28, onImageClick }) {
 }
 
 function Gallery({ event }) {
-  const { tokens: { BG, FG, AH, W, B }, theme } = useTheme();
+  const { tokens: { BG, FG, AH, W, B, A }, theme } = useTheme();
   const [photoViewVisible, setPhotoViewVisible] = useState(false);
   const [photoViewIndex, setPhotoViewIndex] = useState(0);
+  const [gridVisible, setGridVisible] = useState(false);
 
   const eventTitle = event?.title || "SOLSTICE Ed.01";
   const tags = Array.isArray(event?.tags) ? event.tags :
@@ -614,11 +816,7 @@ function Gallery({ event }) {
   }, [GALLERY_COLS]);
 
   const handleImageClick = (src) => {
-    const idx = allImageUrls.indexOf(src);
-    if (idx !== -1) {
-      setPhotoViewIndex(idx);
-      setPhotoViewVisible(true);
-    }
+    setGridVisible(true);
   };
 
   return (
@@ -647,12 +845,30 @@ function Gallery({ event }) {
             <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[4]} direction="up" speed={30} onImageClick={handleImageClick} /></div>
           </div>
         </div>
-        <PhotoView
-          visible={photoViewVisible}
-          items={allImageUrls}
-          initialSlide={photoViewIndex}
-          onClose={() => setPhotoViewVisible(false)}
-        />
+        
+        <AnimatePresence>
+          {gridVisible && !photoViewVisible && (
+            <GridGallery
+              items={allImageUrls}
+              onClose={() => setGridVisible(false)}
+              onSelect={(index) => {
+                setPhotoViewIndex(index);
+                setPhotoViewVisible(true);
+              }}
+              title={eventTitle}
+              A={A}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {photoViewVisible && (
+            <FullScreenImage
+              src={allImageUrls[photoViewIndex]}
+              onClose={() => setPhotoViewVisible(false)}
+            />
+          )}
+        </AnimatePresence>
       </section>
     </>
   );
@@ -943,25 +1159,43 @@ function Rules({ event }) {
   );
 }
 
-function HostDetails({ event, hostName }) {
-  const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+function HostDetails({ event, hostName, reviews = [] }) {
+  const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
+  const history = useHistory();
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
   const hostProfile = event?.hostProfile;
   const host = hostProfile?.host || hostProfile || event?.host || {};
   const hostDescription = host?.description || host?.bio || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
   const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
-  const hostEmail = host?.email || host?.contactEmail || host?.businessEmail;
-  const hostPhone = host?.phone || host?.phoneNumber || host?.mobile || host?.contactPhone;
-  const hostWebsite = host?.website || host?.websiteUrl;
-  const hostInstagram = host?.instagram || host?.instagramHandle;
-  const hostLocation = host?.city || host?.location || host?.address || [host?.district, host?.state].filter(Boolean).join(", ");
-  const hostListings = Array.isArray(hostProfile?.listings) ? hostProfile.listings.slice(0, 3) : [];
+
+  // Normalise reviews – API may return { ratingSummary, reviews:[...] } or a plain array
+  const normalizedReviews = Array.isArray(reviews)
+    ? reviews
+    : Array.isArray(reviews?.reviews)
+    ? reviews.reviews
+    : [];
+  const ratingSummary = !Array.isArray(reviews) && reviews?.ratingSummary ? reviews.ratingSummary : null;
+  const displayReviews = normalizedReviews.slice(0, 2);
+  const hasMore = normalizedReviews.length > 2;
+
+  const formatReviewDate = (dateString) => {
+    if (!dateString) return "Recently";
+    try {
+      const date = new Date(dateString);
+      const diffDays = Math.floor((Date.now() - date) / 86400000);
+      if (diffDays < 1) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    } catch { return "Recently"; }
+  };
 
   return (
     <section id="host" style={{ background: BG, padding: "0 36px 130px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="06" label="People" />
         <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
+          {/* Left: Meet Your Host */}
           <Rev delay={0.1}>
             <div style={{ background: W, padding: 52, minHeight: 300 }}>
               <p className="host-presented-label" style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#0097B2", WebkitTextFillColor: "#0097B2", marginBottom: 36, fontWeight: 700 }}>Meet Your Host</p>
@@ -972,26 +1206,97 @@ function HostDetails({ event, hostName }) {
               <p style={{ color: M, fontSize: 14, lineHeight: 1.85, maxWidth: 620 }}>{hostDescription}</p>
             </div>
           </Rev>
+          {/* Right: Reviews (replaces More From This Host) */}
           <Rev delay={0.18}>
             <div style={{ background: S, padding: 52, minHeight: 300 }}>
-              <p style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: M, marginBottom: 34, fontWeight: 500 }}>More From This Host</p>
-              {hostListings.length > 0 && (
-                <div style={{ marginBottom: 28 }}>
-                  {hostListings.map((listing, i) => (
-                    <Link key={listing.id || listing.listingId || i} to={getHostListingUrl(listing)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "12px 0", borderBottom: `1px solid ${B}`, textDecoration: "none" }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{getHostListingTitle(listing)}</span>
-                      <ArrowRight size={13} color={A} />
-                    </Link>
-                  ))}
+              {/* Section label */}
+              <p style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: M, marginBottom: 28, fontWeight: 500 }}>
+                Guest Reviews
+              </p>
+
+              {/* ── Rating summary – Matching brand teal ── */}
+              <div style={{ marginBottom: 28, padding: "16px 20px", border: `1.5px solid ${A}22`, background: AL, borderRadius: 6 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 8 }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: A, fontFamily: "Georgia, serif", lineHeight: 1 }}>
+                    {ratingSummary ? Number(ratingSummary.averageRating).toFixed(1) : "0.0"}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#FFC107", letterSpacing: 2 }}>
+                    {[...Array(5)].map((_, si) => (
+                      <span key={si} style={{ color: si < Math.round(ratingSummary?.averageRating || 0) ? "#FFC107" : `${A}30` }}>★</span>
+                    ))}
+                  </span>
+                </div>
+                <p style={{ fontSize: 12, color: A, fontWeight: 600, margin: 0 }}>
+                  {ratingSummary?.totalReviews ?? 0} {(ratingSummary?.totalReviews ?? 0) === 1 ? "review" : "reviews"} total
+                </p>
+                {/* Rating distribution */}
+                {Array.isArray(ratingSummary?.ratingDistribution) && ratingSummary.ratingDistribution.length > 0 && (
+                  <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {ratingSummary.ratingDistribution.map((item, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 10, color: "#FFC107", fontWeight: 600, width: 16 }}>{item.rating ?? item.stars ?? (5 - i)}★</span>
+                        <div style={{ flex: 1, height: 4, background: `${A}20`, borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", background: A, width: `${Math.min(100, ((item.count ?? 0) / Math.max(1, ratingSummary.totalReviews)) * 100)}%` }} />
+                        </div>
+                        <span style={{ fontSize: 10, color: A, minWidth: 18, textAlign: "right" }}>{item.count ?? 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Review list ── */}
+              {displayReviews.length === 0 ? (
+                <p style={{ fontSize: 13, color: M }}>No reviews yet.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {displayReviews.map((rev, i) => {
+                    const author = rev.customerName || rev.author || "Guest";
+                    const comment = rev.comment || rev.content || rev.reviewText || "";
+                    const reviewRating = Number(rev.rating || rev.ratingScore || 0);
+                    const time = formatReviewDate(rev.createdAt || rev.reviewDate || rev.time);
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          padding: "18px 0",
+                          borderBottom: i < displayReviews.length - 1 ? `1px solid ${B}` : "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: comment ? 10 : 0 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                            {author[0].toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: FG, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{author}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 11, letterSpacing: 1 }}>
+                                {[...Array(5)].map((_, si) => (
+                                  <span key={si} style={{ color: si < reviewRating ? "#FFC107" : "#D1D5DB" }}>★</span>
+                                ))}
+                              </span>
+                              <span style={{ fontSize: 11, color: M }}>{time}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {comment && (
+                          <p style={{ fontSize: 13, color: M, lineHeight: 1.65, margin: 0, paddingLeft: 46 }}>{comment}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {hostEmail && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Contact: </span>{hostEmail}</p>}
-                {hostPhone && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Phone: </span>{hostPhone}</p>}
-                {hostWebsite && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Website: </span>{hostWebsite}</p>}
-                {hostInstagram && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Instagram: </span>{hostInstagram}</p>}
-                {hostLocation && <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 700 }}>Based in: </span>{hostLocation}</p>}
-              </div>
+              {hasMore && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => history.push("/reviews")}
+                  style={{ marginTop: 24, width: "100%", padding: "11px 0", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700, border: `1px solid ${B}`, backgroundColor: "transparent", color: FG, cursor: "pointer" }}
+                >
+                  See More Reviews
+                </motion.button>
+              )}
             </div>
           </Rev>
         </div>
@@ -1467,6 +1772,7 @@ export default function EventDetails() {
 
   const [event, setEvent] = useState(null);
   const [hostName, setHostName] = useState("");
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -1490,6 +1796,13 @@ export default function EventDetails() {
           }
         }
 
+        // Fetch listing reviews (non-blocking)
+        getListingReviews(eventId).then(rev => {
+          if (mounted) setReviews(rev ?? []);
+        }).catch(() => {
+          if (mounted) setReviews([]);
+        });
+
         if (mounted) { setEvent({ ...data, hostProfile }); setHostName(fetchedHostName); setError(null); }
       } catch (err) {
         if (mounted) setError("Failed to load event details.");
@@ -1501,7 +1814,7 @@ export default function EventDetails() {
     return () => { mounted = false; };
   }, [eventId]);
 
-  if (loading) return <div className="p-5 text-center" style={{ minHeight: "100vh", background: "#f3f3f1", color: "#333", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading premium experience...</div>;
+  if (loading) return <div className="p-5 text-center" style={{ minHeight: "100vh", background: "#f3f3f1", color: "#333", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading event details...</div>;
   if (error) return <div className="p-5 text-center text-danger" style={{ minHeight: "100vh", background: "#f3f3f1", display: "flex", alignItems: "center", justifyContent: "center" }}>{error}</div>;
 
   return (
@@ -1515,7 +1828,7 @@ export default function EventDetails() {
       <Artists event={event} />
       <Venue event={event} hostName={hostName} />
       <Rules event={event} />
-      <HostDetails event={event} hostName={hostName} />
+      <HostDetails event={event} hostName={hostName} reviews={reviews} />
       <EventBookingPopup event={event} />
       <Footer />
     </ScopedThemeProvider>
