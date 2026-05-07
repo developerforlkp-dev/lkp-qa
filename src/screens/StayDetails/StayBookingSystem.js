@@ -644,14 +644,24 @@ const StayBookingSystem = ({
           content: `${currency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-      const discountToShow = pricing.discount;
-      if (discountToShow > 0) {
-        frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
-      }
       const taxRate = Array.isArray(stay?.taxes)
         ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
         : 0;
       const combinedFrontendTax = (pricing.subtotal || 0) * (taxRate / 100);
+      const inferredDiscountFromTotals = Math.max(
+        0,
+        Number((nightlyFromOrder * nightsFromOrder) || 0) +
+          Number(combinedFrontendTax || 0) -
+          Number(totalFromOrder || 0)
+      );
+      const discountToShow = firstNumber(
+        pricing.discount,
+        discount,
+        inferredDiscountFromTotals
+      ) || 0;
+      if (discountToShow > 0) {
+        frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
+      }
       if (combinedFrontendTax > 0) {
         frontendReceipt.push({ title: `Tax (${Number(taxRate).toFixed(2)}%)`, content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
       }
