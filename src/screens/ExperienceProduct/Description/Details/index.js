@@ -351,6 +351,7 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
                     </div>
                     <div className={styles.addOnFoot}>
                       <div className={styles.addOnControls}>
+                        <span className={styles.pricingTag}>{addOn.pricingType}</span>
                         {isIndividualPricing && isSelected ? (
                           <Counter
                             className={styles.addOnCounter}
