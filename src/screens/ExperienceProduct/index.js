@@ -606,7 +606,7 @@ const ExperienceProduct = () => {
         {/* DETAILS SECTION */}
         <section className="details-section" style={{ background: BG, padding: "48px 36px 80px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div className="section-header-wrapper"><SHdr idx="01" label="Overview" /></div>
+            <div className="section-header-wrapper"><SHdr idx="01" label="Story" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20 }} className="details-grid">
               <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
                 <div className="what-we-do-card" style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
