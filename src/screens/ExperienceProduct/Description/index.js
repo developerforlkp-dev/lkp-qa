@@ -2309,6 +2309,9 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       setShowGuestPicker(false);
     }
     else if (index === 1) {
+      if (!isStay && !selectedDate) {
+        return;
+      }
       setShowTimeSlots(true);
       setShowDatePicker(false);
       setShowGuestPicker(false);
@@ -2342,24 +2345,19 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       } else {
         setSelectedEndDate(null);
       }
-    }
-    if (isStay) {
       if (startDateText) {
-        const next = moment(new Date(startDateText));
-        if (stayActiveDateField === "checkout") {
-          setSelectedEndDate(next);
-        } else {
-          setSelectedDate(next);
+        const nextDate = moment(new Date(startDateText));
+        const isDateChanged = !selectedDate || !selectedDate.isSame(nextDate, "day");
+        if (isDateChanged) {
+          // Date drives slot availability for experiences, so reset downstream choices.
+          setSelectedTimeSlot(null);
+          setGuests({
+            adults: 0,
+            children: 0,
+            infants: 0,
+            pets: 0,
+          });
         }
-      }
-    } else {
-      if (startDateText) {
-        setSelectedDate(moment(new Date(startDateText)));
-      }
-      if (endDateText) {
-        setSelectedEndDate(moment(new Date(endDateText)));
-      } else {
-        setSelectedEndDate(null);
       }
     }
     if (!isStay) {
@@ -3049,18 +3047,23 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                       });
                     })();
                     const hasTimeSlots = slotsForSelectedDay.length > 0;
+                    const canSelectTimeSlot = Boolean(selectedDate) && hasTimeSlots;
                     return (
                       <div ref={timeItemRef} style={{ position: 'relative' }}>
                         <div
                           className={receiptStyles.item}
-                          onClick={hasTimeSlots ? () => handleOpenDateTime(1) : undefined}
-                          role={hasTimeSlots ? "button" : undefined}
+                          onClick={canSelectTimeSlot ? () => handleOpenDateTime(1) : undefined}
+                          role={canSelectTimeSlot ? "button" : undefined}
                           style={{
-                            cursor: hasTimeSlots ? 'pointer' : 'not-allowed',
-                            opacity: hasTimeSlots ? 1 : 0.5,
-                            pointerEvents: hasTimeSlots ? 'auto' : 'none',
+                            cursor: canSelectTimeSlot ? 'pointer' : 'not-allowed',
+                            opacity: canSelectTimeSlot ? 1 : 0.5,
+                            pointerEvents: canSelectTimeSlot ? 'auto' : 'none',
                           }}
-                          title={hasTimeSlots ? undefined : "No time slots available for the selected date"}
+                          title={
+                            !selectedDate
+                              ? "Please select a date first"
+                              : (hasTimeSlots ? undefined : "No time slots available for the selected date")
+                          }
                         >
                           <div className={receiptStyles.icon}>
                             <Icon name={item.icon} size="24" />
@@ -3071,7 +3074,7 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                           </div>
                         </div>
                         <TimeSlotsPicker
-                          visible={showTimeSlots && hasTimeSlots}
+                          visible={showTimeSlots && canSelectTimeSlot}
                           onClose={() => setShowTimeSlots(false)}
                           onTimeSelect={handleTimeSelect}
                           selectedTime={selectedTimeSlot}

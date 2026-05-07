@@ -54,6 +54,16 @@ const asBoolean = (value, fallback = false) => {
   return fallback;
 };
 
+const asOptionalBoolean = (value) => {
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return undefined;
+};
+
 const getSlotSeatLimit = (slot) => (
   asSeatLimit(slot?.maxSeats) ??
   asSeatLimit(slot?.max_seats) ??
@@ -1231,11 +1241,39 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   // Extract proper price depending on whether a time slot is selected
   const selectedSlotData = timeSlots.find(s => s.slotName === startTime || s.startTime === startTime) || null;
   const staleSelectedSlotData = (dateFilteredSlotsLoaded ? dateFilteredSlots : baseTimeSlots).find(s => s.slotName === startTime || s.startTime === startTime) || null;
+  const experienceSupportsPrivateBooking = useMemo(() => {
+    if (isEventBooking) return false;
+
+    const listingPrivateSetting =
+      asOptionalBoolean(listing?.privateBookingEnabled) ??
+      asOptionalBoolean(listing?.private_booking_enabled) ??
+      asOptionalBoolean(listing?.privateOptionAvailable) ??
+      asOptionalBoolean(listing?.private_option_available) ??
+      asOptionalBoolean(listing?.privateOptionEnabled) ??
+      asOptionalBoolean(listing?.private_option_enabled) ??
+      asOptionalBoolean(listing?.privateOption) ??
+      asOptionalBoolean(listing?.private_option);
+
+    if (listingPrivateSetting === false) return false;
+    if (listingPrivateSetting === true) return true;
+
+    const sourceSlots = [
+      ...(Array.isArray(dateFilteredSlots) ? dateFilteredSlots : []),
+      ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
+    ];
+
+    return sourceSlots.some((slot) => (
+      asOptionalBoolean(slot?.privateBookingEnabled) === true ||
+      asOptionalBoolean(slot?.private_booking_enabled) === true ||
+      asOptionalBoolean(slot?.privateBookingAvailable) === true ||
+      asOptionalBoolean(slot?.private_booking_available) === true
+    ));
+  }, [isEventBooking, listing, dateFilteredSlots, baseTimeSlots]);
   const selectedSlotHasPrivateBooking = !isEventBooking && Boolean(startTime) && staleSelectedSlotData?.hasPrivateBooking === true;
   const dateHasPrivateBookingAvailable = !isEventBooking && Boolean(selectedDateKey) && dateFilteredSlotsLoaded && timeSlots.some((slot) => slot.privateBookingAvailable === true);
   const selectedSlotPrivateBookingAvailable = !isEventBooking && Boolean(startTime) && selectedSlotData?.privateBookingAvailable === true;
-  const showPrivateBookingToggle = selectedSlotPrivateBookingAvailable;
-  const privateBookingMessage = !isEventBooking && selectedDateKey && dateFilteredSlotsLoaded
+  const showPrivateBookingToggle = experienceSupportsPrivateBooking && selectedSlotPrivateBookingAvailable;
+  const privateBookingMessage = experienceSupportsPrivateBooking && !isEventBooking && selectedDateKey && dateFilteredSlotsLoaded
     ? (selectedSlotHasPrivateBooking
         ? "This slot already has a private booking. Choose another slot."
         : !dateHasPrivateBookingAvailable
