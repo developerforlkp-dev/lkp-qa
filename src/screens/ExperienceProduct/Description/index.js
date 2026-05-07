@@ -319,6 +319,38 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
     return `${total} guests`;
   }, [guests, hasSelectedGuests, isStay]);
 
+  const selectedStayNights = useMemo(() => {
+    if (!isStay || !selectedDate || !selectedEndDate) return 0;
+    return Math.max(0, selectedEndDate.diff(selectedDate, "days"));
+  }, [isStay, selectedDate, selectedEndDate]);
+
+  const stayNightsValidation = useMemo(() => {
+    if (!isStay || !selectedDate || !selectedEndDate) {
+      return { valid: true, message: "" };
+    }
+
+    const minStayNightsRaw = listing?.stay?.minimumStayNights ?? listing?.minimumStayNights;
+    const maxStayNightsRaw = listing?.stay?.maximumStayNights ?? listing?.maximumStayNights;
+    const minStayNights = Number.isFinite(Number(minStayNightsRaw)) ? Number(minStayNightsRaw) : null;
+    const maxStayNights = Number.isFinite(Number(maxStayNightsRaw)) ? Number(maxStayNightsRaw) : null;
+
+    if (minStayNights !== null && selectedStayNights < minStayNights) {
+      return {
+        valid: false,
+        message: `Minimum stay is ${minStayNights} night${minStayNights === 1 ? "" : "s"}. You selected ${selectedStayNights} night${selectedStayNights === 1 ? "" : "s"}.`
+      };
+    }
+
+    if (maxStayNights !== null && selectedStayNights > maxStayNights) {
+      return {
+        valid: false,
+        message: `Maximum stay is ${maxStayNights} night${maxStayNights === 1 ? "" : "s"}. You selected ${selectedStayNights} night${selectedStayNights === 1 ? "" : "s"}.`
+      };
+    }
+
+    return { valid: true, message: "" };
+  }, [isStay, listing, selectedDate, selectedEndDate, selectedStayNights]);
+
   // Validation helper functions
   const isPastDate = (date) => {
     if (!date) return false;
@@ -2695,6 +2727,23 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
     if (!isStay) return;
 
+    const dateValidation = validateBookingDateTime();
+    if (!dateValidation.valid) {
+      alert(dateValidation.error);
+      return;
+    }
+
+    const guestValidation = validateGuestCount();
+    if (!guestValidation.valid) {
+      alert(guestValidation.error);
+      return;
+    }
+
+    if (!stayNightsValidation.valid) {
+      alert(stayNightsValidation.message);
+      return;
+    }
+
     // Save booking data first
     saveBookingData();
 
@@ -3115,11 +3164,12 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                       type="button"
                       className={cn("button", styles.button)}
                       onClick={handleBookStay}
-                      disabled={!selectedDate || !selectedEndDate || !hasSelectedGuests || (!isPropertyBased && !staySelectedRoomType) || stayAvailabilityLoading}
+                      disabled={!selectedDate || !selectedEndDate || !hasSelectedGuests || (!isPropertyBased && !staySelectedRoomType) || stayAvailabilityLoading || !stayNightsValidation.valid}
                       title={
                         !selectedDate || !selectedEndDate ? "Please select check-in and check-out dates" :
                           !hasSelectedGuests ? "Please confirm guest count" :
-                            (!isPropertyBased && !staySelectedRoomType) ? "Please select a room from the cards above" : ""
+                            (!isPropertyBased && !staySelectedRoomType) ? "Please select a room from the cards above" :
+                              (!stayNightsValidation.valid ? stayNightsValidation.message : "")
                       }
                     >
                       <span>
@@ -3164,6 +3214,11 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                 {!isFullyBooked && selectedDate && selectedTimeSlot && selectedDateAvailability && getGuestCount(guests) > (selectedDateAvailability.available_seats ?? 999) && (
                   <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "500", textAlign: "center" }}>
                     Only {selectedDateAvailability.available_seats} seat(s) available for this slot.
+                  </div>
+                )}
+                {isStay && selectedDate && selectedEndDate && !stayNightsValidation.valid && (
+                  <div style={{ color: "#FF6A55", marginTop: 12, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                    {stayNightsValidation.message}
                   </div>
                 )}
 
