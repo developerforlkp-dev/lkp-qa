@@ -734,31 +734,33 @@ const StayBookingSystem = ({
         whileTap={{ scale: 0.95 }}
         style={{
           position: "fixed",
-          bottom: 40,
-          right: 40,
+          bottom: window.innerWidth <= 768 ? 20 : 40,
+          right: window.innerWidth <= 768 ? 20 : 40,
+          left: window.innerWidth <= 768 ? 20 : "auto",
           background: A,
           color: "#FFF",
-          padding: "18px 36px",
+          padding: window.innerWidth <= 768 ? "14px 28px" : "18px 36px",
           borderRadius: 100,
           display: "flex",
           alignItems: "center",
+          justifyContent: "center",
           gap: 12,
           boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
           border: "none",
           cursor: "pointer",
           zIndex: 1000,
           fontWeight: 700,
-          fontSize: 16,
+          fontSize: window.innerWidth <= 768 ? 14 : 16,
           letterSpacing: "0.02em"
         }}
       >
-        <Bed size={20} />
+        <Bed size={window.innerWidth <= 768 ? 18 : 20} />
         Reserve
       </motion.button>
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: window.innerWidth <= 768 ? 0 : 20, overflow: "auto" }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -768,16 +770,18 @@ const StayBookingSystem = ({
             />
             
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 30 }}
+              initial={{ scale: window.innerWidth <= 768 ? 1 : 0.95, opacity: 0, y: window.innerWidth <= 768 ? "100%" : 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 30 }}
+              exit={{ scale: window.innerWidth <= 768 ? 1 : 0.95, opacity: 0, y: window.innerWidth <= 768 ? "100%" : 30 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
               style={{
                 position: "relative",
                 width: "100%",
                 maxWidth: 480,
-                maxHeight: "calc(100vh - 40px)",
+                maxHeight: window.innerWidth <= 768 ? "92vh" : "calc(100vh - 40px)",
+                marginTop: window.innerWidth <= 768 ? "auto" : 0,
                 background: BG,
-                borderRadius: 32,
+                borderRadius: window.innerWidth <= 768 ? "32px 32px 0 0" : 32,
                 boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
                 border: `1px solid ${B}`,
                 overflow: "hidden",
@@ -786,16 +790,16 @@ const StayBookingSystem = ({
               }}
             >
               {/* Header */}
-              <div style={{ padding: "40px 40px 24px", borderBottom: `1px solid ${B}` }}>
+              <div style={{ padding: window.innerWidth <= 768 ? "24px 24px 16px" : "40px 40px 24px", borderBottom: `1px solid ${B}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
-                    <h3 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: FG, marginBottom: 8 }}>Reserve Stay</h3>
+                    <h3 className="font-display" style={{ fontSize: window.innerWidth <= 768 ? 24 : 28, fontWeight: 700, color: FG, marginBottom: 8 }}>Reserve Stay</h3>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontSize: 24, fontWeight: 700, color: A }}>
+                      <span style={{ fontSize: window.innerWidth <= 768 ? 20 : 24, fontWeight: 700, color: A }}>
                         {fetchingAvailability ? "Calculating..." : `₹${formatPrice(pricing.perNight)}`}
                       </span>
                       {!fetchingAvailability && pricing.discount > 0 && (
-                        <span style={{ fontSize: 16, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
+                        <span style={{ fontSize: window.innerWidth <= 768 ? 14 : 16, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
                       )}
                       <span style={{ fontSize: 14, color: M }}>/ night</span>
                     </div>
@@ -807,7 +811,7 @@ const StayBookingSystem = ({
               </div>
 
               {/* Body */}
-              <div style={{ padding: 40, flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+              <div style={{ padding: window.innerWidth <= 768 ? 20 : 40, flex: 1, overflowY: "auto", overflowX: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: B, border: `1px solid ${B}`, borderRadius: 20, overflow: "hidden" }}>
                   {/* Check In */}
                   <div style={{ background: S, padding: "20px 24px" }}>
