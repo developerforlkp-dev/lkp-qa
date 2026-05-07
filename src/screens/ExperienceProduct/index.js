@@ -953,7 +953,7 @@ const ExperienceProduct = () => {
 
         <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
-        <ExperiencePolicies listing={listing} reviews={normalizedReviews} reviewSummary={reviewSummary} />
+        <ExperiencePolicies listing={listing} />
         <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
 
@@ -980,6 +980,7 @@ const ExperienceProduct = () => {
               <div style={{ padding: "40px 32px", background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 <ReviewsSection
                   reviews={reviews}
+                  summary={reviewSummary}
                   listingId={id}
                   eligibleBookings={eligibleBookings}
                   onReviewSubmitted={() => {
@@ -1504,7 +1505,7 @@ function QualityIndexSection({ qualityIndex }) {
 }
 
 
-function ExperiencePolicies({ listing, reviews, reviewSummary }) {
+function ExperiencePolicies({ listing }) {
   const { tokens: { FG, W, B, A, M } } = useTheme();
 
   return (
@@ -1557,7 +1558,6 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
                   }}
                 />
               )}
-              <ReviewsItem reviews={reviews} summary={reviewSummary} />
             </div>
           </Rev>
         </div>
@@ -1566,7 +1566,7 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
   );
 }
 
-function ReviewsSection({ reviews = [], listingId, eligibleBookings = [], onReviewSubmitted }) {
+function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [], onReviewSubmitted }) {
   const { tokens: { A, FG, M, B, W, S, BG } } = useTheme();
   const routerHistory = useHistory();
 
@@ -1668,6 +1668,19 @@ function ReviewsSection({ reviews = [], listingId, eligibleBookings = [], onRevi
       </AnimatePresence>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        {summary && summary.averageRating > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8, paddingBottom: 24, borderBottom: `1px solid ${B}` }}>
+            <div style={{ fontSize: 48, fontWeight: 900, color: FG, lineHeight: 1 }}>{summary.averageRating.toFixed(1)}</div>
+            <div>
+              <div style={{ display: "flex", color: "#FFC107", fontSize: 16, marginBottom: 4 }}>
+                {[...Array(5)].map((_, i) => (
+                  <span key={i}>{i < Math.round(summary.averageRating) ? "★" : "☆"}</span>
+                ))}
+              </div>
+              <p style={{ fontSize: 10, color: M, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Average Guest Rating</p>
+            </div>
+          </div>
+        )}
         {!hasReviews && !showForm ? (
           <div style={{ padding: "40px 0", textAlign: "center", background: `${A}05`, borderRadius: 16, border: `1px dashed ${A}30` }}>
             <Sparkles size={24} style={{ color: A, opacity: 0.5, marginBottom: 12 }} />
