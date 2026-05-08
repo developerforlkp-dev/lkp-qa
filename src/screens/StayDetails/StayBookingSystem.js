@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle } from "lucide-react";
@@ -168,13 +168,26 @@ const StayBookingSystem = ({
   onRoomsCountChange
 }) => {
   const history = useHistory();
-  const { tokens: { A, AH, BG, FG, M, S, B, AL, W } } = useTheme();
+  const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const [show, setShow] = useState(false);
+  const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
 
   useEffect(() => {
-    if (show) setSelectionMode("check-in");
+    if (show) {
+      setSelectionMode("check-in");
+      setValidationError("");
+    }
   }, [show]);
+
+  const lastDeps = useRef("");
+  useEffect(() => {
+    const currentDeps = `${checkInDate?.format("YYYY-MM-DD") || ""}-${checkOutDate?.format("YYYY-MM-DD") || ""}-${guests.adults}-${guests.children}`;
+    if (lastDeps.current && lastDeps.current !== currentDeps) {
+      setValidationError("");
+    }
+    lastDeps.current = currentDeps;
+  }, [checkInDate, checkOutDate, guests]);
 
   const handleDateSelect = (date) => {
     // If we have a complete range and click again, start a fresh selection
@@ -550,13 +563,24 @@ const StayBookingSystem = ({
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
-    if (!checkInDate || !checkOutDate) {
-      alert("Please select your stay dates.");
+    if (!checkInDate) {
+      setValidationError("Please select a check-in date.");
       return;
     }
-
+    if (!checkOutDate) {
+      setValidationError("Please select a check-out date.");
+      return;
+    }
     if (!checkOutDate.isAfter(checkInDate, 'day')) {
-      alert("Check-out date must be after Check-in date.");
+      setValidationError("Checkout date must be after check-in date.");
+      return;
+    }
+    if ((guests.adults || 0) + (guests.children || 0) === 0) {
+      setValidationError("Please add at least 1 guest.");
+      return;
+    }
+    if ((guests.adults || 0) === 0) {
+      setValidationError("At least 1 adult is required.");
       return;
     }
 
@@ -1011,6 +1035,7 @@ const StayBookingSystem = ({
                               setCheckInDate(null);
                               setCheckOutDate(null);
                               setSelectionMode("check-in");
+                              setValidationError("");
                             }}
                             style={{ 
                               background: AL, 
@@ -1041,6 +1066,7 @@ const StayBookingSystem = ({
                           </button>
                         )}
                       </div>
+
                       <div style={{ marginBottom: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <div style={{ padding: "12px 16px", background: S, borderRadius: 16, border: `1px solid ${selectionMode === 'check-in' ? A : B}` }}>
                           <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-in</p>
@@ -1166,41 +1192,71 @@ const StayBookingSystem = ({
               </div>
 
               {/* Footer */}
-              <div className="booking-modal-footer" style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 10 }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                  <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
-                  <span style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 500 }}>Including all taxes.</span>
-                </div>
-                {(() => {
-                  const isPropertyBased = stay?.bookingScope === "Property-Based";
-                  const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
-                  const isDisabled = loading || !checkInDate || !checkOutDate || !hasSelection || pricing.isOver;
-                  const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve Stay" : "Select Room"));
-
-                  return (
-                    <motion.button
-                      whileHover={{ scale: isDisabled ? 1 : 1.02 }}
-                      whileTap={{ scale: isDisabled ? 1 : 0.98 }}
-                      onClick={handleReserve}
-                      disabled={isDisabled}
-                      style={{
-                        padding: "18px 48px",
-                        background: isDisabled ? B : A,
-                        color: "#FFF",
-                        borderRadius: 16,
-                        border: "none",
-                        fontSize: 16,
-                        fontWeight: 800,
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                        boxShadow: isDisabled ? "none" : `0 10px 30px ${A}44`,
-                        transition: "0.3s"
-                      }}
+              <div className="booking-modal-footer" style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", flexDirection: "column", gap: 24, zIndex: 10 }}>
+                <AnimatePresence>
+                  {validationError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      style={{ width: "100%" }}
                     >
-                      {buttonText}
-                    </motion.button>
-                  );
-                })()}
+                      <div style={{
+                        padding: "14px 16px",
+                        background: EL,
+                        border: `1px solid ${E}33`,
+                        borderRadius: 16,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        color: E,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        boxShadow: `0 4px 20px ${E}14`
+                      }}>
+                        <AlertCircle size={18} />
+                        <span>{validationError}</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                    <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
+                    <span style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 500 }}>Including all taxes.</span>
+                  </div>
+                  {(() => {
+                    const isPropertyBased = stay?.bookingScope === "Property-Based";
+                    const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
+                    const isDisabled = loading || pricing.isOver; // We allow clicking even if dates are missing to show validation
+                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve Stay" : "Select Room"));
+
+                    return (
+                      <motion.button
+                        whileHover={{ scale: isDisabled ? 1 : 1.02 }}
+                        whileTap={{ scale: isDisabled ? 1 : 0.98 }}
+                        onClick={handleReserve}
+                        disabled={isDisabled}
+                        style={{
+                          padding: "18px 48px",
+                          background: isDisabled ? B : A,
+                          color: "#FFF",
+                          borderRadius: 16,
+                          border: "none",
+                          fontSize: 16,
+                          fontWeight: 800,
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                          boxShadow: isDisabled ? "none" : `0 10px 30px ${A}44`,
+                          transition: "0.3s"
+                        }}
+                      >
+                        {buttonText}
+                      </motion.button>
+                    );
+                  })()}
+                </div>
               </div>
               
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 40px 32px", color: M, fontSize: 12, background: BG }}>
