@@ -931,6 +931,9 @@ const EventProduct = () => {
     }
 
     const customerDetails = getCustomerDetailsForBooking();
+    const customerName = `${customerDetails?.firstName || ""} ${customerDetails?.lastName || ""}`.trim() || "Guest User";
+    const customerEmail = customerDetails?.email || "";
+    const customerPhone = customerDetails?.phone || "";
     const eventIdNum = asNumber(event?.eventId ?? event?.event_id ?? event?.id ?? eventId) ?? 0;
     const eventSlotIdNum = getEventSlotIdForBooking();
 
@@ -963,6 +966,9 @@ const EventProduct = () => {
       eventSlotId: eventSlotIdNum, // From event details API
       bookingDate: bookingDate, // Required: YYYY-MM-DD format
       numberOfGuests: numberOfGuests, // Required: must be a number > 0
+      customerName: customerName,
+      customerEmail: customerEmail,
+      customerPhone: customerPhone,
       customerDetails,
       tickets: [
         {
