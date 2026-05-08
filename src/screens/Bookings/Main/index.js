@@ -236,8 +236,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Determine status mapping
   const statusMap = {
-    // PENDING should be "Upcoming" (Reserved) rather than "Cancelled"
-    PENDING: "Upcoming",
+    // Treat pending bookings as cancelled for tab placement
+    PENDING: "Cancelled",
     CONFIRMED: "Upcoming",
     SUCCESS: "Upcoming",
     PAID: "Upcoming",
