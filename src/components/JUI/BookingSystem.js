@@ -1516,6 +1516,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           phone: userInfo?.customerPhone || userInfo?.phoneNumber || userInfo?.phone || localStorage.getItem("phone") || localStorage.getItem("phoneNumber") || "",
         };
       })();
+      const customerName = `${customerDetails.firstName || ""} ${customerDetails.lastName || ""}`.trim() || "Guest User";
+      const customerEmail = customerDetails.email || "";
+      const customerPhone = customerDetails.phone || "";
 
       if (!eventIdNum || !eventSlotIdNum || !ticketTypeId) {
         setValidationErrors({ slot: "Unable to book: event ticket or slot information is missing." });
@@ -1529,6 +1532,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         eventSlotIds,
         bookingDate: dateStr,
         numberOfGuests: totalGuests,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: customerPhone,
         customerDetails,
         tickets: [{
           ticketTypeId,
