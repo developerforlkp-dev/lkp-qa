@@ -177,6 +177,14 @@ const StayBookingSystem = ({
   }, [show]);
 
   const handleDateSelect = (date) => {
+    // If we have a complete range and click again, start a fresh selection
+    if (checkInDate && checkOutDate) {
+      setCheckInDate(date);
+      setCheckOutDate(null);
+      setSelectionMode("check-out");
+      return;
+    }
+
     if (selectionMode === "check-in") {
       setCheckInDate(date);
       setCheckOutDate(null);
@@ -989,11 +997,49 @@ const StayBookingSystem = ({
                   {/* Left Column: Calendar */}
                   <div className="booking-modal-column" style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
-                        01. Select Dates
-                        <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
-                          {selectionMode === "check-in" ? "Select Check-in" : "Select Check-out"}
-                        </span>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                        <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                          01. Select Dates
+                          <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
+                            {selectionMode === "check-in" ? "Select Check-in" : "Select Check-out"}
+                          </span>
+                        </div>
+                        {(checkInDate || checkOutDate) && (
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setCheckInDate(null);
+                              setCheckOutDate(null);
+                              setSelectionMode("check-in");
+                            }}
+                            style={{ 
+                              background: AL, 
+                              border: `1px solid ${A}33`, 
+                              color: A, 
+                              fontSize: 10, 
+                              fontWeight: 800, 
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              cursor: "pointer", 
+                              padding: "6px 14px", 
+                              borderRadius: 100,
+                              transition: "0.3s",
+                              boxShadow: `0 4px 12px ${A}11`
+                            }}
+                            onMouseOver={(e) => {
+                              e.target.style.background = A;
+                              e.target.style.color = "#FFF";
+                              e.target.style.boxShadow = `0 6px 16px ${A}33`;
+                            }}
+                            onMouseOut={(e) => {
+                              e.target.style.background = AL;
+                              e.target.style.color = A;
+                              e.target.style.boxShadow = `0 4px 12px ${A}11`;
+                            }}
+                          >
+                            Clear Dates
+                          </button>
+                        )}
                       </div>
                       <div style={{ marginBottom: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <div style={{ padding: "12px 16px", background: S, borderRadius: 16, border: `1px solid ${selectionMode === 'check-in' ? A : B}` }}>
