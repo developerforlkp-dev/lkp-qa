@@ -279,12 +279,12 @@ const EarlyBirdTicker = ({ discounts, A }) => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -15, opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          style={{ 
+          style={{
             gridArea: "1 / 1",
-            fontSize: 10, 
-            letterSpacing: "0.3em", 
-            textTransform: "uppercase", 
-            color: "#FFFFFF", 
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#FFFFFF",
             fontWeight: 800,
             whiteSpace: "nowrap",
             display: "block"
@@ -437,7 +437,7 @@ const ExperienceProduct = () => {
               console.log(`💬 Fetched reviews for ${id}:`, resp);
               if (resp.reviews) setReviews(resp.reviews);
               else if (Array.isArray(resp)) setReviews(resp);
-              
+
               if (resp.summary) setReviewSummary(resp.summary);
               setReviewsLoading(false);
             }
@@ -535,7 +535,7 @@ const ExperienceProduct = () => {
                 }}
               >
                 <Sparkles color={A} size={14} />
-                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a,b) => b.percentage - a.percentage)} A={A} />
+                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} />
               </motion.div>
             </motion.div>
           )}
@@ -611,8 +611,7 @@ const ExperienceProduct = () => {
               <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
                 <div className="what-we-do-card" style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
-                    <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 12, fontWeight: 600 }}>What We Do</p>
-                    <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>A Guided Journey</h2>
+                    <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>Your Journey Begins</h2>
                     <p style={{ color: M, fontSize: 14, lineHeight: 1.7 }}>{description}</p>
                   </div>
                 </div>
@@ -674,10 +673,11 @@ const ExperienceProduct = () => {
             </div>
 
 
+            <div className="section-header-wrapper" style={{ marginTop: 80 }}><SHdr idx="02" label="Flow" /></div>
             <Rev delay={0.4} style={{ marginTop: 16 }}>
               <div style={{ background: W, border: `1px solid ${B}`, padding: "64px", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80 }} className="details-inner">
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
-                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Included Add-ons</p>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Make it Yours</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                     {(listing?.addons || []).length > 0 ? (listing.addons.map((item, i) => {
                       const addon = item.addon || item;
@@ -826,7 +826,7 @@ const ExperienceProduct = () => {
                 </div>
 
                 <div>
-                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>The Narrative Flow</p>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>How it Unfolds</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
                     <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
 
@@ -885,10 +885,10 @@ const ExperienceProduct = () => {
         {/* PREPARATION SECTION */}
         <section className="prep-section" style={{ background: W, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div className="section-header-wrapper"><SHdr idx="02" label="Preparation" /></div>
+            <div className="section-header-wrapper"><SHdr idx="03" label="Landscape" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
               <Rev delay={0.1}>
-                <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
+                <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Where it All Happens</h3>
                 <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                     <MapPin size={20} color={A} />
@@ -922,7 +922,7 @@ const ExperienceProduct = () => {
               <Rev delay={0.2}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
                   <div>
-                    <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Location Details</h3>
+                    <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Where it is</h3>
                     <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
                       {[
                         { label: "Address", val: listing?.meetingAddress },
@@ -962,7 +962,7 @@ const ExperienceProduct = () => {
         <section className="host-section" style={{ background: BG, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
             <Rev delay={0.1} style={{ height: "100%" }}>
-              <div className="section-header-wrapper"><SHdr idx="05" label="The Host" /></div>
+              <div className="section-header-wrapper"><SHdr idx="05" label="Peoples" /></div>
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
@@ -976,7 +976,7 @@ const ExperienceProduct = () => {
               </div>
             </Rev>
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <div className="section-header-wrapper"><SHdr idx="06" label="TESTIMONIALS" /></div>
+              <div className="section-header-wrapper"><SHdr idx="06" label="What Others Are Saying" /></div>
               <div style={{ padding: "40px 32px", background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 <ReviewsSection
                   reviews={reviews}
@@ -1511,12 +1511,12 @@ function ExperiencePolicies({ listing }) {
   return (
     <section className="policies-section" style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div className="section-header-wrapper"><SHdr idx="03" label="Rules & Policies" /></div>
+        <div className="section-header-wrapper"><SHdr idx="04" label="Essentials" /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <Chars
-                text="Know Before"
+                text="Things To"
                 cls="font-display"
                 style={{
                   fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
@@ -1527,7 +1527,18 @@ function ExperiencePolicies({ listing }) {
                 }}
               />
               <Chars
-                text="You Go."
+                text="Keep In"
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
+                  letterSpacing: "-0.02em"
+                }}
+              />
+              <Chars
+                text="Mind"
                 cls="font-display"
                 style={{
                   fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
