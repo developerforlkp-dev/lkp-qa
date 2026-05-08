@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useHistory, useLocation } from "react-router-dom";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown } from "lucide-react";
+import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle } from "lucide-react";
 import { useTheme } from "./Theme";
 import { Rev, Chars } from "./UI";
 
@@ -961,6 +961,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [showValidation, setShowValidation] = useState(false);
+  const [showDateWarning, setShowDateWarning] = useState(false);
 
 
   
@@ -2130,42 +2131,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               </div>
 
               <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-                {/* Validation Alert */}
-                <AnimatePresence>
-                  {showValidation && Object.keys(validationErrors).length > 0 && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      style={{
-                        padding: "24px 40px 0",
-                        background: BG,
-                        overflow: "hidden"
-                      }}
-                    >
-                      <div style={{
-                        background: EL,
-                        border: `1px solid ${E}33`,
-                        borderRadius: 20,
-                        padding: "16px 20px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, color: E, marginBottom: 4 }}>
-                          <X size={18} style={{ background: E, color: "#FFF", borderRadius: "50%", padding: 2 }} />
-                          <span style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Booking Requirements</span>
-                        </div>
-                        {Object.values(validationErrors).map((err, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, color: FG, opacity: 0.9, fontSize: 13, fontWeight: 600, paddingLeft: 4 }}>
-                            <div style={{ width: 4, height: 4, borderRadius: "50%", background: E }} />
-                            {err}
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
 
               {/* Closed state — all dates have passed */}
               {isExperienceClosed ? (
@@ -2206,6 +2172,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           selectedDate={startDate}
                           onDateSelect={(date) => {
                             setStartDate(date);
+                            setShowDateWarning(false);
                             setValidationErrors(prev => {
                               const next = { ...prev };
                               delete next.date;
@@ -2221,6 +2188,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           selectedDate={startDate}
                           onDateSelect={(date) => {
                             setStartDate(date);
+                            setShowDateWarning(false);
                             setValidationErrors(prev => {
                               const next = { ...prev };
                               delete next.date;
@@ -2325,9 +2293,40 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       {isEventBooking ? "03. Choose Slot" : "02. Select Time"}
                       {validationErrors.slot && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                     </div>
+
+                    <AnimatePresence>
+                      {showDateWarning && !startDate && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: "auto" }}
+                          exit={{ opacity: 0, y: -10, height: 0 }}
+                          style={{
+                            overflow: "hidden"
+                          }}
+                        >
+                          <div style={{
+                            marginBottom: 16,
+                            padding: "14px 16px",
+                            background: EL,
+                            border: `1px solid ${E}33`,
+                            borderRadius: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            color: E,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            boxShadow: `0 4px 12px ${E}11`
+                          }}>
+                            <AlertCircle size={16} />
+                            <span>Select a date before choosing a time slot.</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     
                     {isEventBooking ? (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
                         {(() => {
                           const validSlotsForDate = eventSlots.filter((slot, index) => {
                             const slotKeys = new Set();
@@ -2371,7 +2370,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                       return next;
                                     });
                                   }
-                                } : undefined}
+                                } : () => setShowDateWarning(true)}
                                 style={{
                                   padding: "14px",
                                   borderRadius: 16,
@@ -2380,7 +2379,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   color: isSelected ? A : FG,
                                   fontSize: 13,
                                   fontWeight: 700,
-                                  cursor: startDate ? "pointer" : "not-allowed",
+                                  cursor: "pointer",
                                   textAlign: "center",
                                   transition: "0.2s",
                                   opacity: startDate ? 1 : 0.6,
@@ -2400,19 +2399,20 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     ) : (
                       <div style={{ position: "relative" }}>
                         <div 
-                          onClick={startDate ? () => setShowTimePicker(!showTimePicker) : undefined}
+                          onClick={startDate ? () => setShowTimePicker(!showTimePicker) : () => setShowDateWarning(true)}
                           title={startDate ? undefined : "Please select a date first"}
                           style={{
                             padding: "16px 20px",
-                            background: validationErrors.slot ? EL : BG,
-                            border: `1px solid ${validationErrors.slot ? `${E}44` : B}`,
+                            background: (validationErrors.slot || (showDateWarning && !startDate)) ? EL : BG,
+                            border: `1px solid ${(validationErrors.slot || (showDateWarning && !startDate)) ? `${E}44` : B}`,
                             borderRadius: 16,
-                            cursor: startDate ? "pointer" : "not-allowed",
+                            cursor: "pointer",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
                             transition: "0.3s",
                             opacity: startDate ? 1 : 0.6,
+                            boxShadow: (showDateWarning && !startDate) ? `0 0 15px ${E}22` : "none",
                           }}
                         >
                           <span style={{ fontSize: 14, fontWeight: 600, color: startTime ? FG : (validationErrors.slot ? E : M) }}>{formatTime12h(startTime) || "Select Time"}</span>
