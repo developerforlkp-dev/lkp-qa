@@ -429,10 +429,12 @@ const Checkout = () => {
     return "/images/content/photo-checkout.jpg";
   };
   const listingImage = getListingImage();
-  const hostName = bookingData?.listing?.host?.firstName
-    ? `${bookingData.listing.host.firstName} ${bookingData.listing.host.lastName || ''}`.trim()
-    : (bookingData?.listing?.host?.name || "Host");
-  const hostAvatar = bookingData?.listing?.host?.picture || bookingData?.listing?.host?.avatar;
+  const hostInfo = bookingData?.listing?.host || stayDetails?.host || stayDetails?.listing?.host;
+  const hostName = hostInfo?.displayName || 
+                   (hostInfo?.firstName ? `${hostInfo.firstName} ${hostInfo.lastName || ""}`.trim() : null) || 
+                   hostInfo?.name || 
+                   "Host";
+  const hostAvatar = hostInfo?.picture || hostInfo?.avatar || hostInfo?.profileImage || hostInfo?.image;
 
   const breadcrumbs = [
     {

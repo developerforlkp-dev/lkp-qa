@@ -20,11 +20,6 @@ const items = [
         icon: "home",
         url: "/bookings",
       },
-      {
-        title: "Host an experience",
-        icon: "flag",
-        url: "/your-trips",
-      },
     ],
   },
 ];
