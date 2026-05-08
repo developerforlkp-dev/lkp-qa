@@ -79,6 +79,32 @@ const StayBookingSystem = ({
     [stay]
   );
 
+  // Dynamic Guest Age Labels based on Child Age Policy
+  const guestAgeLabels = useMemo(() => {
+    const policies = stay?.childAgePolicy || stay?.child_age_policy;
+    const childRate = Array.isArray(policies) 
+      ? policies.find(p => p.policyType === "child_rate" || p.policy_type === "child_rate")
+      : null;
+
+    if (childRate) {
+      const fromAge = childRate.fromAge ?? childRate.from_age;
+      const toAge = childRate.toAge ?? childRate.to_age;
+      
+      if (fromAge !== undefined && toAge !== undefined) {
+        return {
+          adults: `Age ${Number(toAge) + 1}+`,
+          children: `Ages ${fromAge}–${toAge}`
+        };
+      }
+    }
+    
+    // Fallback defaults
+    return {
+      adults: "Age 13+",
+      children: "Ages 2–12"
+    };
+  }, [stay]);
+
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
     if (show && (stay?.stayId || stay?.id) && checkInDate && checkOutDate) {
@@ -862,7 +888,7 @@ const StayBookingSystem = ({
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>Adults</p>
-                        <p style={{ fontSize: 12, color: M }}>Age 13+</p>
+                        <p style={{ fontSize: 12, color: M }}>{guestAgeLabels.adults}</p>
                       </div>
                       <Counter 
                         value={guests.adults} 
@@ -874,7 +900,7 @@ const StayBookingSystem = ({
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>Children</p>
-                        <p style={{ fontSize: 12, color: M }}>Ages 2–12</p>
+                        <p style={{ fontSize: 12, color: M }}>{guestAgeLabels.children}</p>
                       </div>
                       <Counter 
                         value={guests.children} 
