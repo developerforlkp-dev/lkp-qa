@@ -1517,8 +1517,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         };
       })();
       const customerName = `${customerDetails.firstName || ""} ${customerDetails.lastName || ""}`.trim() || "Guest User";
-      const customerEmail = customerDetails.email || "";
-      const customerPhone = customerDetails.phone || "";
+      const customerEmail = customerDetails.email || "guest@example.com";
+      const customerPhone = customerDetails.phone || "+911234567890";
 
       if (!eventIdNum || !eventSlotIdNum || !ticketTypeId) {
         setValidationErrors({ slot: "Unable to book: event ticket or slot information is missing." });
