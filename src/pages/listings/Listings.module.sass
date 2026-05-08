@@ -49,6 +49,7 @@
     display: flex
     flex-direction: column
     gap: 4px
+    position: relative
 
 .searchLabel
     +caption-2
@@ -74,6 +75,50 @@
     &:not(input)
         cursor: pointer
         user-select: none
+
+.destinationSuggestions
+    position: absolute
+    top: calc(100% + 8px)
+    left: 0
+    right: 0
+    background: $n8
+    border: 1px solid $n6
+    border-radius: 12px
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12)
+    max-height: 240px
+    overflow-y: auto
+    z-index: 10001
+    +dark
+        background: $n1
+        border: 1px solid $n3
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35)
+
+.destinationSuggestionItem
+    width: 100%
+    text-align: left
+    background: transparent
+    border: none
+    border-bottom: 1px solid $n6
+    padding: 12px 14px
+    color: $n2
+    font-size: 13px
+    line-height: 1.4
+    cursor: pointer
+    transition: background 0.15s ease
+    +dark
+        color: $n8
+        border-bottom: 1px solid $n3
+    &:last-child
+        border-bottom: none
+    &:hover
+        background: $n7
+        +dark
+            background: $n2
+
+.destinationSuggestionItemActive
+    background: $n7
+    +dark
+        background: $n2
 
 .searchDivider
     width: 1px
