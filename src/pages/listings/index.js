@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
@@ -61,10 +61,12 @@ const Listings = () => {
   const debounceTimerRef = useRef(null);
 
   // Convert selectedDate to dateRange format for API
-  const dateRange = selectedDate ? {
-    startDate: moment(selectedDate).format("YYYY-MM-DD"),
-    endDate: moment(selectedDate).add(1, "days").format("YYYY-MM-DD"),
-  } : null;
+  const dateRange = useMemo(() => (
+    selectedDate ? {
+      startDate: moment(selectedDate).format("YYYY-MM-DD"),
+      endDate: moment(selectedDate).add(1, "days").format("YYYY-MM-DD"),
+    } : null
+  ), [selectedDate]);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -81,6 +83,10 @@ const Listings = () => {
   const [sortBy, setSortBy] = useState("Relevance");
 
   const sortOptions = ["Relevance", "Price: Low to High", "Price: High to Low", "Rating", "Newest"];
+  const isEventInterest = String(businessInterest || "").toUpperCase().includes("EVENT");
+  const emptyMessage = isEventInterest && selectedDate
+    ? "No events in this date."
+    : "No listings found. Try adjusting your filters.";
 
   // Use listings hook - only re-renders when activeSearch or other filters change
   const { data: listings, loading, error, hasMore, fetchMore } = useListings({
@@ -452,6 +458,7 @@ const Listings = () => {
                 error={error}
                 hasMore={hasMore}
                 onLoadMore={fetchMore}
+                emptyMessage={emptyMessage}
               />
             </main>
             
