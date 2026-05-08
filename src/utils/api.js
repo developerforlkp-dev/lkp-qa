@@ -1334,6 +1334,72 @@ export const getPlaces = async (limit = 20, offset = 0) => {
   }
 };
 
+// Search nearby listings by geocoded place
+// API: GET /api/public/search/nearby
+// Query: businessInterest, locationName, date (EVENTS only), limit, offset
+export const searchNearbyListings = async ({
+  businessInterest,
+  locationName,
+  date,
+  limit = 20,
+  offset = 0,
+} = {}) => {
+  try {
+    if (!businessInterest) {
+      throw new Error("businessInterest is required");
+    }
+    if (!locationName || !String(locationName).trim()) {
+      throw new Error("locationName is required");
+    }
+
+    const params = {
+      businessInterest: String(businessInterest).toUpperCase(),
+      locationName: String(locationName).trim(),
+      limit,
+      offset,
+    };
+
+    // date is used only for EVENTS in this API
+    if (params.businessInterest === "EVENTS" && date) {
+      params.date = date;
+    }
+
+    const response = await ListingsAPI.get("/public/search/nearby", { params });
+    const payload = response.data;
+    console.log("✅ Nearby search fetched (raw):", payload);
+
+    let listings = [];
+    let totalCount = null;
+    let hasMore = null;
+
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      if (Array.isArray(payload.data)) listings = payload.data;
+      else if (Array.isArray(payload.items)) listings = payload.items;
+      else if (Array.isArray(payload.listings)) listings = payload.listings;
+      else if (Array.isArray(payload.results)) listings = payload.results;
+
+      if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total !== undefined) totalCount = payload.total;
+      else if (payload.count !== undefined) totalCount = payload.count;
+
+      if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+      else if (payload.has_more !== undefined) hasMore = payload.has_more;
+    }
+
+    return {
+      listings: Array.isArray(listings) ? listings : [],
+      totalCount,
+      hasMore,
+      raw: payload,
+    };
+  } catch (error) {
+    console.error("❌ Error searching nearby listings:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getFoodDetails = async (foodMenuId) => {
   try {
     if (!foodMenuId) {

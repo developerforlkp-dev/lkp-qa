@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
@@ -10,6 +10,9 @@ import MobileFilterModal from "../../components/listings/MobileFilterModal";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
+
+const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const Listings = () => {
   const location = useLocation();
@@ -23,6 +26,14 @@ const Listings = () => {
   const [searchLocation, setSearchLocation] = useState(
     searchParams.get("location") || searchParams.get("search") || locationState.location || ""
   );
+  const [selectedDestination, setSelectedDestination] = useState(() => {
+    const placeId = searchParams.get("placeId") || "";
+    const description = searchParams.get("search") || searchParams.get("location") || locationState.location || "";
+    return placeId && description ? { description, placeId } : null;
+  });
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   
   // Track the actual search query that has been submitted
   const [activeSearch, setActiveSearch] = useState(searchLocation);
@@ -44,6 +55,10 @@ const Listings = () => {
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
+  const destinationRef = useRef(null);
+  const autocompleteServiceRef = useRef(null);
+  const autocompleteSessionTokenRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
   // Convert selectedDate to dateRange format for API
   const dateRange = selectedDate ? {
@@ -116,6 +131,17 @@ const Listings = () => {
     setGuests(newGuests);
   };
 
+  const selectDestinationSuggestion = (suggestion) => {
+    if (!suggestion) return;
+    const description = suggestion.description || "";
+    const placeId = suggestion.place_id || suggestion.placeId || "";
+    setSearchLocation(description);
+    setSelectedDestination({ description, placeId });
+    setDestinationSuggestions([]);
+    setShowDestinationSuggestions(false);
+    setActiveSuggestionIndex(-1);
+  };
+
   // Handle search button click or Enter key
   const handleSearch = () => {
     // Update the active search state to trigger a re-fetch
@@ -126,12 +152,120 @@ const Listings = () => {
       dateRange: dateRange,
       guests: guests,
     };
+    const params = new URLSearchParams();
+    if (searchLocation) params.set("search", searchLocation);
+    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
+    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
+    const guestTotal = guests.adults + guests.children;
+    if (guestTotal > 0) params.set("guests", String(guestTotal));
+    if (businessInterest) params.set("businessInterest", businessInterest);
+
     history.replace({
       pathname: "/listings",
-      search: searchLocation ? `?search=${encodeURIComponent(searchLocation)}` : "",
+      search: params.toString() ? `?${params.toString()}` : "",
       state: newState,
     });
   };
+
+  useEffect(() => {
+    if (window.google?.maps?.places?.AutocompleteService) {
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+      return;
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) return;
+
+    const initAutocompleteService = () => {
+      if (!window.google?.maps?.places?.AutocompleteService) return;
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+    };
+
+    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID);
+    if (existingScript) {
+      existingScript.addEventListener("load", initAutocompleteService);
+      return () => existingScript.removeEventListener("load", initAutocompleteService);
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_MAPS_SCRIPT_ID;
+    script.async = true;
+    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.addEventListener("load", initAutocompleteService);
+    document.head.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", initAutocompleteService);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    if (!searchLocation?.trim()) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    if (!autocompleteServiceRef.current) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input: searchLocation.trim(),
+          types: ["geocode"],
+          sessionToken: autocompleteSessionTokenRef.current || undefined,
+        },
+        (predictions, status) => {
+          if (status === "OK" && Array.isArray(predictions) && predictions.length > 0) {
+            setDestinationSuggestions(predictions);
+            setShowDestinationSuggestions(true);
+            setActiveSuggestionIndex(-1);
+          } else {
+            setDestinationSuggestions([]);
+            setShowDestinationSuggestions(false);
+            setActiveSuggestionIndex(-1);
+          }
+        }
+      );
+    }, 350);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [searchLocation]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!destinationRef.current) return;
+      if (!destinationRef.current.contains(event.target)) {
+        setShowDestinationSuggestions(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
 
 
@@ -150,7 +284,7 @@ const Listings = () => {
       <div className={cn("container", styles.container)}>
         {/* Search Bar Section */}
         <div className={styles.searchBar}>
-          <div className={styles.searchField}>
+          <div className={styles.searchField} ref={destinationRef}>
             <Icon name="arrow-right" size="20" />
             <div className={styles.searchFieldContent}>
               <div className={styles.searchLabel}>Where to?</div>
@@ -159,9 +293,69 @@ const Listings = () => {
                 placeholder="Search Destination" 
                 className={styles.searchInput}
                 value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchLocation(value);
+                  if (!selectedDestination || value !== selectedDestination.description) {
+                    setSelectedDestination(null);
+                  }
+                }}
+                onFocus={() => {
+                  if (destinationSuggestions.length > 0) {
+                    setShowDestinationSuggestions(true);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    if (destinationSuggestions.length === 0) return;
+                    e.preventDefault();
+                    setShowDestinationSuggestions(true);
+                    setActiveSuggestionIndex((prev) => (
+                      prev < destinationSuggestions.length - 1 ? prev + 1 : 0
+                    ));
+                    return;
+                  }
+                  if (e.key === "ArrowUp") {
+                    if (destinationSuggestions.length === 0) return;
+                    e.preventDefault();
+                    setShowDestinationSuggestions(true);
+                    setActiveSuggestionIndex((prev) => (
+                      prev > 0 ? prev - 1 : destinationSuggestions.length - 1
+                    ));
+                    return;
+                  }
+                  if (e.key === "Escape") {
+                    setShowDestinationSuggestions(false);
+                    setActiveSuggestionIndex(-1);
+                    return;
+                  }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (showDestinationSuggestions && activeSuggestionIndex >= 0 && destinationSuggestions[activeSuggestionIndex]) {
+                      selectDestinationSuggestion(destinationSuggestions[activeSuggestionIndex]);
+                    } else {
+                      handleSearch();
+                    }
+                  }
+                }}
               />
+              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                <div className={styles.destinationSuggestions}>
+                  {destinationSuggestions.map((suggestion, index) => (
+                    <button
+                      key={suggestion.place_id || suggestion.description || index}
+                      type="button"
+                      className={cn(styles.destinationSuggestionItem, {
+                        [styles.destinationSuggestionItemActive]: index === activeSuggestionIndex,
+                      })}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectDestinationSuggestion(suggestion)}
+                    >
+                      {suggestion.description}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className={styles.searchDivider}></div>
