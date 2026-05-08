@@ -43,7 +43,17 @@ const categories = [
   "Pet Friendly",
 ];
 
-const FilterSidebar = ({ filters, onFilterChange, onReset, sorting, setSorting, sortingOptions }) => {
+const FilterSidebar = ({
+  filters,
+  onFilterChange,
+  onReset,
+  sorting,
+  setSorting,
+  sortingOptions,
+  businessInterest,
+}) => {
+  const normalizedInterest = String(businessInterest || "").toUpperCase();
+  const isStayInterest = normalizedInterest === "STAY" || normalizedInterest === "STAYS";
   const [priceValues, setPriceValues] = useState([
     filters.priceRange?.min || 0,
     filters.priceRange?.max || 10000,
@@ -102,7 +112,7 @@ const FilterSidebar = ({ filters, onFilterChange, onReset, sorting, setSorting, 
 
       <div className={styles.content}>
         {/* Sort Dropdown */}
-        {sortingOptions && sortingOptions.length > 0 && (
+        {isStayInterest && sortingOptions && sortingOptions.length > 0 && (
           <div className={styles.section}>
             <div className={styles.label}>Sort by</div>
             <Dropdown
@@ -115,118 +125,124 @@ const FilterSidebar = ({ filters, onFilterChange, onReset, sorting, setSorting, 
         )}
 
         {/* Price Range */}
-        <div className={styles.section}>
-          <div className={styles.label}>Price range</div>
-          <div className={styles.priceRange}>
-            <Range
-              values={priceValues}
-              step={stepPrice}
-              min={minPrice}
-              max={maxPrice}
-              onChange={handlePriceChange}
-              renderTrack={({ props, children }) => (
-                <div
-                  onMouseDown={props.onMouseDown}
-                  onTouchStart={props.onTouchStart}
-                  style={{
-                    ...props.style,
-                    height: "36px",
-                    display: "flex",
-                    width: "100%",
-                  }}
-                >
+        {isStayInterest && (
+          <div className={styles.section}>
+            <div className={styles.label}>Price range</div>
+            <div className={styles.priceRange}>
+              <Range
+                values={priceValues}
+                step={stepPrice}
+                min={minPrice}
+                max={maxPrice}
+                onChange={handlePriceChange}
+                renderTrack={({ props, children }) => (
                   <div
-                    ref={props.ref}
+                    onMouseDown={props.onMouseDown}
+                    onTouchStart={props.onTouchStart}
                     style={{
-                      height: "8px",
+                      ...props.style,
+                      height: "36px",
+                      display: "flex",
                       width: "100%",
-                      borderRadius: "4px",
-                      background: getTrackBackground({
-                        values: priceValues,
-                        colors: ["#3772FF", "#B1B5C3"],
-                        min: minPrice,
-                        max: maxPrice,
-                      }),
-                      alignSelf: "center",
                     }}
                   >
-                    {children}
+                    <div
+                      ref={props.ref}
+                      style={{
+                        height: "8px",
+                        width: "100%",
+                        borderRadius: "4px",
+                        background: getTrackBackground({
+                          values: priceValues,
+                          colors: ["#3772FF", "#B1B5C3"],
+                          min: minPrice,
+                          max: maxPrice,
+                        }),
+                        alignSelf: "center",
+                      }}
+                    >
+                      {children}
+                    </div>
                   </div>
-                </div>
-              )}
-              renderThumb={({ index, props, isDragged }) => (
-                <div
-                  {...props}
-                  style={{
-                    ...props.style,
-                    height: "24px",
-                    width: "24px",
-                    borderRadius: "50%",
-                    backgroundColor: "#3772FF",
-                    border: "4px solid #FCFCFD",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                  }}
-                >
+                )}
+                renderThumb={({ index, props, isDragged }) => (
                   <div
+                    {...props}
                     style={{
-                      position: "absolute",
-                      top: "-33px",
-                      color: "#fff",
-                      fontWeight: "600",
-                      fontSize: "14px",
-                      padding: "4px 8px",
-                      borderRadius: "8px",
-                      backgroundColor: "#141416",
+                      ...props.style,
+                      height: "24px",
+                      width: "24px",
+                      borderRadius: "50%",
+                      backgroundColor: "#3772FF",
+                      border: "4px solid #FCFCFD",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                     }}
                   >
-                    ${priceValues[index].toFixed(0)}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "-33px",
+                        color: "#fff",
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        padding: "4px 8px",
+                        borderRadius: "8px",
+                        backgroundColor: "#141416",
+                      }}
+                    >
+                      ${priceValues[index].toFixed(0)}
+                    </div>
                   </div>
-                </div>
-              )}
-            />
-            <div className={styles.priceScale}>
-              <span>${minPrice}</span>
-              <span>${maxPrice}</span>
+                )}
+              />
+              <div className={styles.priceScale}>
+                <span>${minPrice}</span>
+                <span>${maxPrice}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Property Types */}
-        <div className={styles.section}>
-          <div className={styles.label}>Property type</div>
-          <div className={styles.checkboxList}>
-            {propertyTypes.map((type) => (
-              <Checkbox
-                key={type.id}
-                className={styles.checkbox}
-                content={type.label}
-                value={(filters.propertyTypes || []).includes(type.id)}
-                onChange={() => handlePropertyTypeChange(type.id)}
-              />
-            ))}
+        {isStayInterest && (
+          <div className={styles.section}>
+            <div className={styles.label}>Property type</div>
+            <div className={styles.checkboxList}>
+              {propertyTypes.map((type) => (
+                <Checkbox
+                  key={type.id}
+                  className={styles.checkbox}
+                  content={type.label}
+                  value={(filters.propertyTypes || []).includes(type.id)}
+                  onChange={() => handlePropertyTypeChange(type.id)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Amenities */}
-        <div className={styles.section}>
-          <div className={styles.label}>Amenities</div>
-          <div className={styles.amenitiesGrid}>
-            {amenities.map((amenity) => (
-              <button
-                key={amenity.id}
-                className={cn(styles.amenityChip, {
-                  [styles.active]: (filters.amenities || []).includes(amenity.id),
-                })}
-                onClick={() => handleAmenityChange(amenity.id)}
-              >
-                {amenity.label}
-              </button>
-            ))}
+        {isStayInterest && (
+          <div className={styles.section}>
+            <div className={styles.label}>Amenities</div>
+            <div className={styles.amenitiesGrid}>
+              {amenities.map((amenity) => (
+                <button
+                  key={amenity.id}
+                  className={cn(styles.amenityChip, {
+                    [styles.active]: (filters.amenities || []).includes(amenity.id),
+                  })}
+                  onClick={() => handleAmenityChange(amenity.id)}
+                >
+                  {amenity.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Ratings */}
         <div className={styles.section}>

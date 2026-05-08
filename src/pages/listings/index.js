@@ -428,6 +428,7 @@ const Listings = () => {
                 sorting={sortBy}
                 setSorting={setSortBy}
                 sortingOptions={sortOptions}
+                businessInterest={businessInterest}
               />
             </aside>
             
@@ -491,6 +492,7 @@ const Listings = () => {
         sorting={sortBy}
         setSorting={setSortBy}
         sortingOptions={sortOptions}
+        businessInterest={businessInterest}
       />
       
       {/* Mobile Map View */}
