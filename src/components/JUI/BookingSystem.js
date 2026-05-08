@@ -723,6 +723,25 @@ const getSlotAvailabilityForDate = (slot, dateKey) => {
   return records.find((item) => getDateKey(item?.date || item?.bookingDate || item?.booking_date) === dateKey) || null;
 };
 
+const collectFullyBookedSlotIdsForDate = (listing, dateKey) => {
+  if (!dateKey) return new Set();
+  const rows = Array.isArray(listing?.fullyBookedSlots) ? listing.fullyBookedSlots : [];
+  const blocked = new Set();
+
+  rows.forEach((row) => {
+    if (!row || typeof row !== "object") return;
+    const bookedDates = Array.isArray(row.bookedDates)
+      ? row.bookedDates
+      : (Array.isArray(row.booked_dates) ? row.booked_dates : []);
+    const isBlockedOnDate = bookedDates.some((d) => getDateKey(d) === dateKey);
+    if (!isBlockedOnDate) return;
+    const slotId = getSlotId(row);
+    if (slotId != null) blocked.add(String(slotId));
+  });
+
+  return blocked;
+};
+
 const normalizeExperienceSlots = (slots = [], dateKey = "") => (
   Array.isArray(slots) ? slots
     .map((slot, index) => {
@@ -1089,19 +1108,28 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const selectedDateKey = useMemo(() => getDateKey(startDate), [startDate]);
   const slotsLookupEndDate = useMemo(() => getLatestExperienceSlotEndDate(listing), [listing]);
   const privateBookedSlotIds = useMemo(() => collectPrivateBookedSlotIds(listing), [listing]);
+  const fullyBookedSlotIdsForDate = useMemo(
+    () => collectFullyBookedSlotIdsForDate(listing, selectedDateKey),
+    [listing, selectedDateKey]
+  );
   const timeSlots = useMemo(() => {
     const sourceSlots = selectedDateKey && dateFilteredSlotsLoaded ? dateFilteredSlots : baseTimeSlots;
     return sourceSlots.filter((slot) => {
       const slotId = getSlotId(slot);
       const isPrivatelyBooked = slot?.hasPrivateBooking === true || (slotId != null && privateBookedSlotIds.has(String(slotId)));
-      return !isPrivatelyBooked;
+      const isFullyBookedByConfig = slotId != null && fullyBookedSlotIdsForDate.has(String(slotId));
+      const availableSeats = asNumber(slot?.availableSeats ?? slot?.available_seats);
+      const isUnavailable = asOptionalBoolean(slot?.isAvailable ?? slot?.is_available) === false;
+      const isFullBySeats = availableSeats != null && availableSeats <= 0;
+      return !isPrivatelyBooked && !isFullyBookedByConfig && !isUnavailable && !isFullBySeats;
     });
-  }, [baseTimeSlots, dateFilteredSlots, dateFilteredSlotsLoaded, privateBookedSlotIds, selectedDateKey]);
+  }, [baseTimeSlots, dateFilteredSlots, dateFilteredSlotsLoaded, fullyBookedSlotIdsForDate, isEventBooking, privateBookedSlotIds, selectedDateKey]);
   const experienceAvailableDateKeys = useMemo(() => {
     if (isEventBooking) return new Set();
     const keys = new Set();
     const schedules = [
-      ...(Array.isArray(timeSlots) ? timeSlots : []),
+      ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
+      ...(Array.isArray(dateFilteredSlots) ? dateFilteredSlots : []),
       ...(Array.isArray(listing?.slots) ? listing.slots : []),
       ...(Array.isArray(listing?.availability) ? listing.availability : []),
       ...(Array.isArray(listing?.availableDates) ? listing.availableDates : []),
@@ -1122,7 +1150,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
 
     return keys;
-  }, [isEventBooking, listing, timeSlots]);
+  }, [baseTimeSlots, dateFilteredSlots, isEventBooking, listing]);
 
   useEffect(() => {
     if (!isEventBooking || selectedTicketTypeId || eventTickets.length === 0) return;
@@ -1245,7 +1273,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   // Extract proper price depending on whether a time slot is selected
   const selectedSlotData = timeSlots.find(s => s.slotName === startTime || s.startTime === startTime) || null;
-  const staleSelectedSlotData = (dateFilteredSlotsLoaded ? dateFilteredSlots : baseTimeSlots).find(s => s.slotName === startTime || s.startTime === startTime) || null;
+  const staleSelectedSlotData = (selectedDateKey ? (dateFilteredSlotsLoaded ? dateFilteredSlots : baseTimeSlots) : []).find(s => s.slotName === startTime || s.startTime === startTime) || null;
   const experienceSupportsPrivateBooking = useMemo(() => {
     if (isEventBooking) return false;
 
@@ -2396,6 +2424,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               visible={true}
                               onClose={() => setShowTimePicker(false)}
                               onTimeSelect={(t) => { 
+                                if (!startDate) return;
                                 setStartTime(t); 
                                 setShowTimePicker(false); 
                                 setValidationErrors(prev => {
