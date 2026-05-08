@@ -52,7 +52,68 @@ const formatImageUrl = (url) => {
 
 const getEntityId = (listing) => {
   if (!listing || typeof listing !== "object") return undefined;
-  return listing.listingId ?? listing.listing_id ?? listing.eventId ?? listing.event_id ?? listing.stayId ?? listing.stay_id ?? listing.foodMenuId ?? listing.placeId ?? listing.id ?? listing._id;
+  return (
+    listing.listingId ??
+    listing.listing_id ??
+    listing.experienceId ??
+    listing.experience_id ??
+    listing.eventId ??
+    listing.event_id ??
+    listing.stayId ??
+    listing.stay_id ??
+    listing.propertyId ??
+    listing.property_id ??
+    listing.foodMenuId ??
+    listing.food_menu_id ??
+    listing.placeId ??
+    listing.place_id ??
+    listing.id ??
+    listing._id
+  );
+};
+
+const getEntityType = (listing) => {
+  if (!listing || typeof listing !== "object") return "experience";
+
+  // Prefer explicit IDs first
+  if (listing.eventId != null || listing.event_id != null) return "event";
+  if (listing.stayId != null || listing.stay_id != null || listing.propertyId != null || listing.property_id != null) return "stay";
+  if (listing.foodMenuId != null || listing.food_menu_id != null) return "food";
+  if (listing.placeId != null || listing.place_id != null) return "place";
+
+  // Fallback to interest/category hints from search APIs
+  const hint = String(
+    listing.businessInterestCode ??
+    listing.businessInterest ??
+    listing.interestCode ??
+    listing.categoryCode ??
+    ""
+  ).toUpperCase();
+
+  if (hint.includes("EVENT")) return "event";
+  if (hint.includes("STAY")) return "stay";
+  if (hint.includes("FOOD")) return "food";
+  if (hint.includes("PLACE")) return "place";
+  return "experience";
+};
+
+const getEntityIdByType = (listing, entityType) => {
+  if (!listing || typeof listing !== "object") return undefined;
+
+  if (entityType === "event") {
+    return listing.eventId ?? listing.event_id ?? listing.id ?? listing._id;
+  }
+  if (entityType === "stay") {
+    return listing.stayId ?? listing.stay_id ?? listing.propertyId ?? listing.property_id ?? listing.id ?? listing._id;
+  }
+  if (entityType === "food") {
+    return listing.foodMenuId ?? listing.food_menu_id ?? listing.id ?? listing._id;
+  }
+  if (entityType === "place") {
+    return listing.placeId ?? listing.place_id ?? listing.id ?? listing._id;
+  }
+  // experience
+  return listing.listingId ?? listing.listing_id ?? listing.experienceId ?? listing.experience_id ?? listing.id ?? listing._id;
 };
 
 const getEntityImageUrl = (listing) => {
@@ -88,17 +149,15 @@ const getEntityImageUrl = (listing) => {
 
 const getEntityUrl = (listing, id) => {
   if (!listing || typeof listing !== "object") return buildExperienceUrl("experience", id);
-  const isEvent = listing.eventId !== undefined || listing.event_id !== undefined;
-  const isStay = listing.stayId !== undefined || listing.stay_id !== undefined;
-  const isFood = listing.foodMenuId !== undefined;
-  const isPlace = listing.placeId !== undefined;
+  const entityType = getEntityType(listing);
+  const resolvedId = getEntityIdByType(listing, entityType) ?? id;
 
-  if (isEvent) return `/event?id=${id}`;
-  if (isStay) return `/stay-details?id=${id}`;
-  if (isFood) return `/food-details?id=${id}`;
-  if (isPlace) return `/place-details?id=${id}`;
+  if (entityType === "event") return resolvedId != null ? `/event?id=${resolvedId}` : "/events";
+  if (entityType === "stay") return resolvedId != null ? `/stay-details?id=${resolvedId}` : "/stays";
+  if (entityType === "food") return resolvedId != null ? `/food-details?id=${resolvedId}` : "/food";
+  if (entityType === "place") return resolvedId != null ? `/place-details?id=${resolvedId}` : "/places";
 
-  return buildExperienceUrl(listing.title || "experience", id);
+  return buildExperienceUrl(listing.title || "experience", resolvedId);
 };
 
 // Transform API listing to Card component format
