@@ -278,7 +278,7 @@ const Login = ({ onClose }) => {
       {step === "phone" && (
         <div className={styles.item}>
           <div className={cn("h3", styles.title)}>Sign up on Little Known Planet</div>
-          <div className={styles.info}>Use Your OpenID to Sign up</div>
+          <div className={styles.info}>Login with your Google account</div>
           <div className={styles.btns}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
@@ -286,9 +286,9 @@ const Login = ({ onClose }) => {
                 setError("Google login failed. Please try again.");
               }}
 
-              theme="outline"
+              theme="filled_blue"
               size="large"
-              width="310" // Approximate width to match button
+              width="360" // Increased width for better visibility
               shape="pill"
             />
           </div>
@@ -350,12 +350,7 @@ const Login = ({ onClose }) => {
             </div>
             {error && <div className={styles.error}>{error}</div>}
           </form>
-          <div className={styles.foot}>
-            Already have an account?{" "}
-            <button type="button" className={styles.link} onClick={onClose}>
-              Login
-            </button>
-          </div>
+
         </div>
       )}
 

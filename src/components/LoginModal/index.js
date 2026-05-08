@@ -333,7 +333,7 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
           {step === "phone" && (
             <div className={styles.item}>
               <div className={cn("h3", styles.title)}>Sign up on Little Known Planet</div>
-              <div className={styles.info}>Use Your OpenID to Sign up</div>
+              <div className={styles.info}>Login with your Google account</div>
               <div className={styles.btns}>
                 <button 
                   className={cn("button-stroke", styles.googleBtn)} 
@@ -407,12 +407,7 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
                 </div>
                 {error && <div className={styles.error}>{error}</div>}
               </form>
-              <div className={styles.foot}>
-                Already have an account?{" "}
-                <button type="button" className={styles.link} onClick={onClose}>
-                  Login
-                </button>
-              </div>
+
             </div>
           )}
 
