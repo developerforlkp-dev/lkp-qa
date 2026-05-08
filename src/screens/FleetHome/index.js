@@ -10,6 +10,9 @@ import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import HeroSection from "./HeroSection";
 
+const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
 const filterOptions = [
   { id: "experience", label: "Experience", icon: "star" },
   { id: "events", label: "Events", icon: "calendar" },
@@ -47,10 +50,18 @@ const FleetHome = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState(null); // { description, placeId }
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const location = useLocation();
   const history = useHistory();
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
+  const destinationRef = useRef(null);
+  const autocompleteServiceRef = useRef(null);
+  const autocompleteSessionTokenRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
 
   // Map path to filter ID
@@ -121,10 +132,23 @@ const FleetHome = () => {
     setGuests(newGuests);
   };
 
+  const selectDestinationSuggestion = (suggestion) => {
+    if (!suggestion) return;
+    setSearchQuery(suggestion.description || "");
+    setSelectedDestination({
+      description: suggestion.description || "",
+      placeId: suggestion.place_id || suggestion.placeId || "",
+    });
+    setDestinationSuggestions([]);
+    setShowDestinationSuggestions(false);
+    setActiveSuggestionIndex(-1);
+  };
+
   // Handle Search
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchQuery) params.append("search", searchQuery);
+    if (selectedDestination?.placeId) params.append("placeId", selectedDestination.placeId);
     if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
     
     const guestTotal = guests.adults + guests.children;
@@ -150,6 +174,106 @@ const FleetHome = () => {
     setShowDatePicker(false);
     setShowGuestPicker(false);
   }, [activeFilter]);
+
+  useEffect(() => {
+    if (window.google?.maps?.places?.AutocompleteService) {
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+      return;
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) return;
+
+    const initAutocompleteService = () => {
+      if (!window.google?.maps?.places?.AutocompleteService) return;
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+    };
+
+    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID);
+    if (existingScript) {
+      existingScript.addEventListener("load", initAutocompleteService);
+      return () => existingScript.removeEventListener("load", initAutocompleteService);
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_MAPS_SCRIPT_ID;
+    script.async = true;
+    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.addEventListener("load", initAutocompleteService);
+    document.head.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", initAutocompleteService);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    if (!searchQuery?.trim()) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    if (!autocompleteServiceRef.current) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input: searchQuery.trim(),
+          types: ["geocode"],
+          sessionToken: autocompleteSessionTokenRef.current || undefined,
+        },
+        (predictions, status) => {
+          if (status === "OK" && Array.isArray(predictions) && predictions.length > 0) {
+            setDestinationSuggestions(predictions);
+            setShowDestinationSuggestions(true);
+            setActiveSuggestionIndex(-1);
+          } else {
+            setDestinationSuggestions([]);
+            setShowDestinationSuggestions(false);
+            setActiveSuggestionIndex(-1);
+          }
+        }
+      );
+    }, 350);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!destinationRef.current) return;
+      if (!destinationRef.current.contains(event.target)) {
+        setShowDestinationSuggestions(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   // Fetch homepage sections and their listings
   // Business interest IDs: 1=Experience, 2=Events, 3=Stays, 4=Places, 5=Food
@@ -374,7 +498,7 @@ const FleetHome = () => {
       <div className={cn("container", styles.container)}>
         <div className={styles.glassContainer}>
           <div className={styles.searchBar}>
-            <div className={styles.searchField}>
+            <div className={styles.searchField} ref={destinationRef}>
               <Icon name="arrow-right" size="16" />
               <div className={styles.searchFieldContent}>
                 <div className={styles.searchLabel}>Where to?</div>
@@ -383,9 +507,69 @@ const FleetHome = () => {
                   placeholder="Search Destination"
                   className={styles.searchInput}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchQuery(value);
+                    if (!selectedDestination || value !== selectedDestination.description) {
+                      setSelectedDestination(null);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (destinationSuggestions.length > 0) {
+                      setShowDestinationSuggestions(true);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      if (destinationSuggestions.length === 0) return;
+                      e.preventDefault();
+                      setShowDestinationSuggestions(true);
+                      setActiveSuggestionIndex((prev) => (
+                        prev < destinationSuggestions.length - 1 ? prev + 1 : 0
+                      ));
+                      return;
+                    }
+                    if (e.key === "ArrowUp") {
+                      if (destinationSuggestions.length === 0) return;
+                      e.preventDefault();
+                      setShowDestinationSuggestions(true);
+                      setActiveSuggestionIndex((prev) => (
+                        prev > 0 ? prev - 1 : destinationSuggestions.length - 1
+                      ));
+                      return;
+                    }
+                    if (e.key === "Escape") {
+                      setShowDestinationSuggestions(false);
+                      setActiveSuggestionIndex(-1);
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (showDestinationSuggestions && activeSuggestionIndex >= 0 && destinationSuggestions[activeSuggestionIndex]) {
+                        selectDestinationSuggestion(destinationSuggestions[activeSuggestionIndex]);
+                      } else {
+                        handleSearch();
+                      }
+                    }
+                  }}
                 />
+                {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                  <div className={styles.destinationSuggestions}>
+                    {destinationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={suggestion.place_id || suggestion.description || index}
+                        type="button"
+                        className={cn(styles.destinationSuggestionItem, {
+                          [styles.destinationSuggestionItemActive]: index === activeSuggestionIndex,
+                        })}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectDestinationSuggestion(suggestion)}
+                      >
+                        {suggestion.description}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             {showCalendar && (
