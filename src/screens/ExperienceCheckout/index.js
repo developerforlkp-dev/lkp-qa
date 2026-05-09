@@ -493,7 +493,7 @@ const Checkout = () => {
       }
 
       if (promoDiscount > 0) {
-        rows.push({ title: "Promotional Discount", value: `- ${fmt(promoDiscount)}` });
+        rows.push({ title: "Promotionals Discount", value: `- ${fmt(promoDiscount)}` });
       }
 
       if (couponDiscount > 0) {
