@@ -1050,60 +1050,12 @@ const StayBookingSystem = ({
                   {/* Left Column: Calendar */}
                   <div className="booking-modal-column" style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
                     <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                         <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                           01. Select Dates
                           <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
                             {selectionMode === "check-in" ? "Select Check-in" : "Select Check-out"}
                           </span>
-                        </div>
-                        {(checkInDate || checkOutDate) && (
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setCheckInDate(null);
-                              setCheckOutDate(null);
-                              setSelectionMode("check-in");
-                              setValidationError("");
-                            }}
-                            style={{ 
-                              background: AL, 
-                              border: `1px solid ${A}33`, 
-                              color: A, 
-                              fontSize: 10, 
-                              fontWeight: 800, 
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
-                              cursor: "pointer", 
-                              padding: "6px 14px", 
-                              borderRadius: 100,
-                              transition: "0.3s",
-                              boxShadow: `0 4px 12px ${A}11`
-                            }}
-                            onMouseOver={(e) => {
-                              e.target.style.background = A;
-                              e.target.style.color = "#FFF";
-                              e.target.style.boxShadow = `0 6px 16px ${A}33`;
-                            }}
-                            onMouseOut={(e) => {
-                              e.target.style.background = AL;
-                              e.target.style.color = A;
-                              e.target.style.boxShadow = `0 4px 12px ${A}11`;
-                            }}
-                          >
-                            Clear Dates
-                          </button>
-                        )}
-                      </div>
-
-                      <div style={{ marginBottom: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        <div style={{ padding: "12px 16px", background: S, borderRadius: 16, border: `1px solid ${selectionMode === 'check-in' ? A : B}` }}>
-                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-in</p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
-                        </div>
-                        <div style={{ padding: "12px 16px", background: S, borderRadius: 16, border: `1px solid ${selectionMode === 'check-out' ? A : B}` }}>
-                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-out</p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
                         </div>
                       </div>
 
@@ -1141,11 +1093,71 @@ const StayBookingSystem = ({
                     </div>
                   </div>
 
-                  {/* Right Column: Guests & Accommodations */}
-                  <div className="booking-modal-column" style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 32 }}>
+                  {/* Right Column: Booking Details & Guests */}
+                  <div className="booking-modal-column" style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 40 }}>
+                    {/* Section 02: Booking Details */}
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>
-                        02. Guests & Accommodations
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 24, letterSpacing: "0.1em" }}>
+                        02. Booking Details
+                      </div>
+                      
+                      {/* Check-in / Check-out Cards */}
+                      <div style={{ marginBottom: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div style={{ padding: "12px 16px", background: BG, borderRadius: 16, border: `1px solid ${selectionMode === 'check-in' ? A : B}` }}>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-in</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
+                        </div>
+                        <div style={{ padding: "12px 16px", background: BG, borderRadius: 16, border: `1px solid ${selectionMode === 'check-out' ? A : B}` }}>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-out</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
+                        </div>
+                      </div>
+
+                      {/* Clear Dates Button */}
+                      {(checkInDate || checkOutDate) && (
+                        <div style={{ marginBottom: 0 }}>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setCheckInDate(null);
+                              setCheckOutDate(null);
+                              setSelectionMode("check-in");
+                              setValidationError("");
+                            }}
+                            style={{ 
+                              width: "100%",
+                              background: AL, 
+                              border: `1px solid ${A}33`, 
+                              color: A, 
+                              fontSize: 10, 
+                              fontWeight: 800, 
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              cursor: "pointer", 
+                              padding: "10px 14px", 
+                              borderRadius: 100,
+                              transition: "0.3s",
+                              boxShadow: `0 4px 12px ${A}11`
+                            }}
+                            onMouseOver={(e) => {
+                              e.target.style.background = A;
+                              e.target.style.color = "#FFF";
+                            }}
+                            onMouseOut={(e) => {
+                              e.target.style.background = AL;
+                              e.target.style.color = A;
+                            }}
+                          >
+                            Clear Dates
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Section 03: Guests & Accommodations */}
+                    <div>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 24, letterSpacing: "0.1em" }}>
+                        03. Guests & Accommodations
                       </div>
                       
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
