@@ -887,28 +887,28 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   ];
 
   return (
-    <div style={{ background: S, borderRadius: 16, padding: 12, border: `1px solid ${B}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+    <div style={{ background: S, borderRadius: 16, padding: 8, border: `1px solid ${B}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <button
           type="button"
           onClick={() => setViewDate(new Date(year, month - 1, 1))}
           disabled={isViewingCurrentOrPastMonth}
-          style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: isViewingCurrentOrPastMonth ? `${M}44` : FG, cursor: isViewingCurrentOrPastMonth ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: isViewingCurrentOrPastMonth ? 0.4 : 1 }}
+          style={{ width: 28, height: 28, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: isViewingCurrentOrPastMonth ? `${M}44` : FG, cursor: isViewingCurrentOrPastMonth ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: isViewingCurrentOrPastMonth ? 0.4 : 1 }}
         >
           <ChevronDown size={15} style={{ transform: "rotate(90deg)" }} />
         </button>
-        <div style={{ fontSize: 14, fontWeight: 800, color: FG }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: FG }}>
           {viewDate.toLocaleString("en-IN", { month: "long", year: "numeric" })}
         </div>
         <button
           type="button"
           onClick={() => setViewDate(new Date(year, month + 1, 1))}
-          style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: FG, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{ width: 28, height: 28, borderRadius: 999, border: `1px solid ${B}`, background: BG, color: FG, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <ChevronDown size={15} style={{ transform: "rotate(-90deg)" }} />
         </button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 2 }}>
         {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
           <div key={`${day}-${index}`} style={{ textAlign: "center", fontSize: 10, fontWeight: 800, color: M, padding: "4px 0" }}>
             {day}
@@ -2112,13 +2112,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "16px 32px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "10px 24px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <h2 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 4 }}>
+                  <h2 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2 }}>
                     {isEventBooking ? "Reserve Your Event" : "Reserve Your Experience"}
                   </h2>
                   {isEventBooking && ticketSaleWindow.message && (
-                    <p style={{ fontSize: 12, color: ticketSaleWindow.isOpen ? M : "#d14343", fontWeight: 700, marginBottom: 8 }}>
+                    <p style={{ fontSize: 11, color: ticketSaleWindow.isOpen ? M : "#d14343", fontWeight: 700, marginBottom: 2, lineHeight: 1.2 }}>
                       {ticketSaleWindow.message}
                     </p>
                   )}
@@ -2135,16 +2135,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               ₹{Number(baseDisplayPrice).toFixed(2)}
                             </span>
                           )}
-                          <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(discountedDisplayPrice || 0).toFixed(2)}</span>
-                          <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>per {data.unit}</span>
+                          <span style={{ fontSize: 20, fontWeight: 800, color: FG }}>₹{Number(discountedDisplayPrice || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 10, color: M, fontWeight: 500 }}>per {data.unit}</span>
                         </>
                       );
                     })()}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                  <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 12, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
-                    <X size={20} />
+                  <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
+                    <X size={18} />
                   </button>
                 </div>
               </div>
@@ -2173,9 +2173,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 <>
               <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                 {/* Left Column: Date & Ticket */}
-                <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="booking-modal-column" style={{ padding: "14px 20px", background: BG, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div>
-                    <div style={{ fontSize: 10, color: validationErrors.date ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 10, color: validationErrors.date ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                       01. Select Date
                       {validationErrors.date && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                     </div>
@@ -2222,94 +2222,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     </div>
                   </div>
 
-                  {isEventBooking && (
-                    <div>
-                      <div style={{ fontSize: 10, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
-                        02. Ticket Type
-                        {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
-                      </div>
-                      {eventTickets.length > 0 ? (
-                        <div style={{ position: "relative" }}>
-                          <select
-                            value={selectedTicketTypeId}
-                            onChange={(e) => {
-                              setSelectedTicketTypeId(e.target.value);
-                              setSelectedEventSlotIds([]);
-                              setStartTime(null);
-                              setValidationErrors(prev => {
-                                const next = { ...prev };
-                                delete next.ticketType;
-                                return next;
-                              });
-                            }}
-                            style={{
-                              width: "100%",
-                              appearance: "none",
-                              padding: "16px 20px",
-                              borderRadius: 16,
-                              border: `1px solid ${validationErrors.ticketType ? `${E}44` : B}`,
-                              background: validationErrors.ticketType ? EL : S,
-                              color: FG,
-                              cursor: "pointer",
-                              fontSize: 14,
-                              fontWeight: 600,
-                              outline: "none",
-                              transition: "0.3s"
-                            }}
-                          >
-                            <option value="">Select Ticket Type</option>
-                            {eventTickets.map((ticket, index) => {
-                              const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
-                              const ticketBasePrice = getTicketPrice(ticket, 0);
-                              const ticketEffectivePrice = getEffectiveTicketPrice(ticket, totalGuests, ticketBasePrice).price;
-                              const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
-                              return (
-                                <option key={ticketId} value={ticketId}>
-                                  {getTicketName(ticket, index)} - ₹{Number(ticketGuestPrice || 0).toFixed(2)}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <ChevronDown size={18} color={M} style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-                          {eventAvailabilityLoading && (
-                            <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 700 }}>
-                              Checking ticket availability...
-                            </div>
-                          )}
-                          {!eventAvailabilityLoading && selectedTicketSoldOut && (
-                            <div style={{ marginTop: 10, fontSize: 12, color: "#d14343", fontWeight: 800 }}>
-                              Ticket sold out.
-                            </div>
-                          )}
-                          {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
-                            <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 700 }}>
-                              {selectedTicketRemainingTickets !== undefined ? `Remaining tickets: ${selectedTicketRemainingTickets}` : "Remaining tickets: --"}
-                              {selectedTicketAvailabilityTotal !== undefined ? ` / Total tickets: ${selectedTicketAvailabilityTotal}` : ""}
-                            </div>
-                          )}
-                          {eventAvailabilityError && (
-                            <div style={{ marginTop: 4, fontSize: 12, color: "#d14343", fontWeight: 600 }}>
-                              {eventAvailabilityError}
-                            </div>
-                          )}
-                          {selectedTicketMaxPerBooking !== undefined && (
-                            <div style={{ marginTop: 4, fontSize: 12, color: M, fontWeight: 600 }}>
-                              Maximum {selectedTicketMaxPerBooking} per booking.
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div style={{ padding: "16px", background: S, borderRadius: 16, fontSize: 13, color: M }}>No ticket types available.</div>
-                      )}
-                    </div>
-                  )}
+                  {/* Removed Ticket Type from Left Column */}
                 </div>
 
                 {/* Right Column: Slots & Guests */}
-                <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="booking-modal-column" style={{ padding: "14px 20px", background: S, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div>
-                    <div style={{ fontSize: 10, color: validationErrors.slot ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
-                      {isEventBooking ? "03. Choose Slot" : "02. Select Time"}
+                    <div style={{ fontSize: 10, color: validationErrors.slot ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                      02. {isEventBooking ? "Choose Slot" : "Select Time"}
                       {validationErrors.slot && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                     </div>
 
@@ -2516,8 +2436,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 10, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
-                      {isEventBooking ? "04. Guests" : "03. Guests"}
+                    <div style={{ fontSize: 10, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                      03. Guests
                       {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                     </div>
                     <div 
@@ -2535,7 +2455,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        padding: "10px 14px",
+                        padding: "8px 12px",
                         background: validationErrors.adults ? EL : BG,
                         border: `1px solid ${validationErrors.adults ? `${E}44` : B}`,
                         borderRadius: 16,
@@ -2559,7 +2479,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         />
                       </div>
                       {childrenAllowed && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
                           <Counter
                             value={guests.children}
@@ -2571,47 +2491,129 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       )}
                     </div>
                     {guestSeatLimit !== undefined && (
-                      <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 600 }}>
-                        Maximum {guestSeatLimit} seat{guestSeatLimit === 1 ? "" : "s"} for this slot.
+                      <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 600, lineHeight: 1.2 }}>
+                        Max {guestSeatLimit} seat{guestSeatLimit === 1 ? "" : "s"} for this slot.
                       </div>
                     )}
                     {isEventBooking && selectedTicketMaxPerBooking !== undefined && (
-                      <div style={{ marginTop: 10, fontSize: 12, color: M, fontWeight: 600 }}>
-                        Maximum {selectedTicketMaxPerBooking} ticket{selectedTicketMaxPerBooking === 1 ? "" : "s"} per booking.
+                      <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 600, lineHeight: 1.2 }}>
+                        Max {selectedTicketMaxPerBooking} ticket{selectedTicketMaxPerBooking === 1 ? "" : "s"} per booking.
                       </div>
                     )}
                     {isEventBooking && effectiveEventPrice.tier && (
-                      <div style={{ marginTop: 8, fontSize: 12, color: A, fontWeight: 800 }}>
-                        Group price applied: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} base per ticket.
+                      <div style={{ marginTop: 4, fontSize: 11, color: A, fontWeight: 800, lineHeight: 1.2 }}>
+                        Group price: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} / ticket.
+                      </div>
+                    )}
+
+                    {isEventBooking && (
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ fontSize: 10, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                          04. Ticket Type
+                          {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
+                        </div>
+                        {eventTickets.length > 0 ? (
+                          <div style={{ position: "relative" }}>
+                            <select
+                              value={selectedTicketTypeId}
+                              onChange={(e) => {
+                                setSelectedTicketTypeId(e.target.value);
+                                setSelectedEventSlotIds([]);
+                                setStartTime(null);
+                                setValidationErrors(prev => {
+                                  const next = { ...prev };
+                                  delete next.ticketType;
+                                  return next;
+                                });
+                              }}
+                              style={{
+                                width: "100%",
+                                appearance: "none",
+                                padding: "10px 16px",
+                                borderRadius: 16,
+                                border: `1px solid ${validationErrors.ticketType ? `${E}44` : B}`,
+                                background: validationErrors.ticketType ? EL : BG,
+                                color: FG,
+                                cursor: "pointer",
+                                fontSize: 13,
+                                fontWeight: 600,
+                                outline: "none",
+                                transition: "0.3s"
+                              }}
+                            >
+                              <option value="">Select Ticket Type</option>
+                              {eventTickets.map((ticket, index) => {
+                                const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
+                                const ticketBasePrice = getTicketPrice(ticket, 0);
+                                const ticketEffectivePrice = getEffectiveTicketPrice(ticket, totalGuests, ticketBasePrice).price;
+                                const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
+                                return (
+                                  <option key={ticketId} value={ticketId}>
+                                    {getTicketName(ticket, index)} - ₹{Number(ticketGuestPrice || 0).toFixed(2)}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <ChevronDown size={16} color={M} style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                             {eventAvailabilityLoading && (
+                              <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 700, lineHeight: 1.2 }}>
+                                Checking availability...
+                              </div>
+                            )}
+                            {!eventAvailabilityLoading && selectedTicketSoldOut && (
+                              <div style={{ marginTop: 4, fontSize: 11, color: "#d14343", fontWeight: 800, lineHeight: 1.2 }}>
+                                Ticket sold out.
+                              </div>
+                            )}
+                            {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
+                              <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 700, lineHeight: 1.2 }}>
+                                {selectedTicketRemainingTickets !== undefined ? `Remaining: ${selectedTicketRemainingTickets}` : "Remaining: --"}
+                                {selectedTicketAvailabilityTotal !== undefined ? ` / Total: ${selectedTicketAvailabilityTotal}` : ""}
+                              </div>
+                            )}
+                            {eventAvailabilityError && (
+                              <div style={{ marginTop: 2, fontSize: 11, color: "#d14343", fontWeight: 600, lineHeight: 1.2 }}>
+                                {eventAvailabilityError}
+                              </div>
+                            )}
+                            {selectedTicketMaxPerBooking !== undefined && (
+                              <div style={{ marginTop: 2, fontSize: 11, color: M, fontWeight: 600, lineHeight: 1.2 }}>
+                                Max {selectedTicketMaxPerBooking} per booking.
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ padding: "12px", background: BG, border: `1px solid ${B}`, borderRadius: 16, fontSize: 12, color: M }}>No ticket types available.</div>
+                        )}
                       </div>
                     )}
 
                     {/* Price Summary */}
-                    {totalGuests > 0 && (
-                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                        <div style={{ fontSize: 10, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 4, letterSpacing: "0.1em" }}>
-                          {isEventBooking ? "05." : "04."} Price Summary
+                    {!isEventBooking && totalGuests > 0 && (
+                      <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ fontSize: 10, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 2, letterSpacing: "0.1em" }}>
+                          04. Price Summary
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "6px 8px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 10, fontWeight: 500 }}>
                             <span>Base ({totalGuests} guest{totalGuests !== 1 ? 's' : ''})</span>
                             <span>₹{Number(rawBaseTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                           </div>
                           {addOnsTotal > 0 && (
-                            <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 10, fontWeight: 500 }}>
                               <span>Add-ons</span>
                               <span>₹{Number(addOnsTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                             </div>
                           )}
                           {totalDiscountAmount > 0 && (
-                            <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 11, fontWeight: 700 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 10, fontWeight: 700 }}>
                               <span>Discount</span>
                               <span>- ₹{Number(totalDiscountAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                             </div>
                           )}
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, paddingTop: 4, borderTop: `1px solid ${B}` }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Subtotal</span>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{Number(taxableSubtotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, paddingTop: 2, borderTop: `1px solid ${B}` }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>Subtotal</span>
+                            <span style={{ fontSize: 11, fontWeight: 800, color: A }}>₹{Number(taxableSubtotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                           </div>
                         </div>
                       </div>
@@ -2621,11 +2623,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               </div>
 
               {/* Footer Button */}
-              <div className="booking-modal-footer" style={{ padding: "12px 32px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-footer" style={{ padding: "8px 24px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total amount</span>
-                  <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
-                  <span style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 600 }}>Including all taxes.</span>
+                  <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total amount</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
+                  <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -2633,12 +2635,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   disabled={bookingLoading}
                   onClick={handleReserve}
                   style={{
-                    padding: "12px 32px",
+                    padding: "10px 24px",
                     background: (canReserve || showValidation) ? A : B,
                     color: "#FFF",
                     borderRadius: 16,
                     border: "none",
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: 800,
                     cursor: "pointer",
                     boxShadow: (canReserve || showValidation) ? `0 10px 30px ${A}44` : "none",
@@ -2649,7 +2651,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </motion.button>
               </div>
               
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 32px 12px", color: M, fontSize: 10, background: BG }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 24px 6px", color: M, fontSize: 9, background: BG }}>
                 <ShieldCheck size={14} />
                 <span>Secure payment processed by Little Known Planet</span>
               </div>
