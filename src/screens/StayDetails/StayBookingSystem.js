@@ -13,7 +13,8 @@ const StayInlineCalendar = ({
   onDateSelect, 
   isBlockedDay, 
   tokens, 
-  selectionMode 
+  selectionMode,
+  nextBlockedDate
 }) => {
   const { A, AL, BG, FG, M, B, S, W } = tokens;
   const [viewDate, setViewDate] = useState(() => (checkInDate ? checkInDate.toDate() : new Date()));
@@ -26,6 +27,7 @@ const StayInlineCalendar = ({
   const todayKey = moment().startOf('day').format("YYYY-MM-DD");
   const checkInKey = checkInDate ? checkInDate.format("YYYY-MM-DD") : null;
   const checkOutKey = checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null;
+  const nextBlockedKey = nextBlockedDate ? nextBlockedDate.format("YYYY-MM-DD") : null;
 
   const isRange = checkInDate && checkOutDate;
 
@@ -45,34 +47,46 @@ const StayInlineCalendar = ({
   ];
 
   return (
-    <div style={{ background: S, borderRadius: 24, padding: "24px", border: `1px solid ${B}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+    <div style={{ background: S, borderRadius: 24, padding: "16px", border: `1px solid ${B}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <button
           type="button"
           onClick={() => setViewDate(new Date(year, month - 1, 1))}
           disabled={year === new Date().getFullYear() && month <= new Date().getMonth()}
-          style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${B}`, background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: (year === new Date().getFullYear() && month <= new Date().getMonth()) ? 0.3 : 1 }}
+          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${B}`, background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: (year === new Date().getFullYear() && month <= new Date().getMonth()) ? 0.3 : 1 }}
         >
-          <ChevronDown size={18} style={{ transform: "rotate(90deg)" }} />
+          <ChevronDown size={16} style={{ transform: "rotate(90deg)" }} />
         </button>
-        <span style={{ fontSize: 16, fontWeight: 800, color: FG }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: FG }}>
           {viewDate.toLocaleString("en-IN", { month: "long", year: "numeric" })}
         </span>
         <button
           type="button"
           onClick={() => setViewDate(new Date(year, month + 1, 1))}
-          style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${B}`, background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${B}`, background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
         >
-          <ChevronDown size={18} style={{ transform: "rotate(-90deg)" }} />
+          <ChevronDown size={16} style={{ transform: "rotate(-90deg)" }} />
         </button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-          <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: M, marginBottom: 12 }}>{d}</div>
+          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: M, marginBottom: 8 }}>{d}</div>
         ))}
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} />;
-          const disabled = cell.isPast || cell.isBlocked || (selectionMode === "check-out" && checkInDate && !cell.mDate.isAfter(checkInDate, 'day'));
+          const isSelectingCheckOut = selectionMode === "check-out" && checkInDate && !checkOutDate;
+          const disabled = cell.isPast || (
+            isSelectingCheckOut
+              ? (
+                // Checkout Selection Mode:
+                // 1. Disable dates on or before check-in
+                (checkInKey && cell.key <= checkInKey) || 
+                // 2. Disable dates strictly after the next blocked date
+                // (nextBlockedKey itself is allowed as checkout morning)
+                (nextBlockedKey && cell.key > nextBlockedKey)
+              )
+              : cell.isBlocked
+          );
           
           return (
             <button
@@ -83,10 +97,10 @@ const StayInlineCalendar = ({
               style={{
                 aspectRatio: "1/1",
                 border: "none",
-                borderRadius: cell.isSelected ? 12 : 8,
+                borderRadius: cell.isSelected ? 10 : 6,
                 background: cell.isSelected ? A : cell.isInRange ? AL : "transparent",
                 color: cell.isSelected ? "#FFF" : disabled ? `${M}44` : FG,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 700,
                 cursor: disabled ? "not-allowed" : "pointer",
                 transition: "0.2s",
@@ -98,7 +112,7 @@ const StayInlineCalendar = ({
             >
               {cell.day}
               {cell.isBlocked && !cell.isPast && (
-                <div style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)", width: 4, height: 4, borderRadius: "50%", background: cell.isSelected ? "#FFF" : M }} />
+                <div style={{ position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: cell.isSelected ? "#FFF" : M }} />
               )}
             </button>
           );
@@ -190,25 +204,52 @@ const StayBookingSystem = ({
   }, [checkInDate, checkOutDate, guests]);
 
   const handleDateSelect = (date) => {
-    // If we have a complete range and click again, start a fresh selection
-    if (checkInDate && checkOutDate) {
-      setCheckInDate(date);
-      setCheckOutDate(null);
-      setSelectionMode("check-out");
-      return;
-    }
-
+    const isBlocked = isBlockedDay(date);
+    
     if (selectionMode === "check-in") {
-      setCheckInDate(date);
-      setCheckOutDate(null);
-      setSelectionMode("check-out");
-    } else {
-      if (date && checkInDate && date.isAfter(checkInDate, 'day')) {
-        setCheckOutDate(date);
+      // 1. Check-in Selection / Editing
+      if (isBlocked) return;
+      
+      const isSameAsCheckIn = checkInDate && date.isSame(checkInDate, "day");
+      if (isSameAsCheckIn) {
+        setCheckInDate(null);
+        setCheckOutDate(null);
       } else {
         setCheckInDate(date);
-        setCheckOutDate(null);
+        // Reset checkout if it becomes invalid
+        if (checkOutDate && date.isSameOrAfter(checkOutDate, 'day')) {
+          setCheckOutDate(null);
+        }
+        // STEP 2: Automatic switch to Check-out mode
         setSelectionMode("check-out");
+      }
+    } else {
+      // 2. Check-out Selection / Editing
+      const isSameAsCheckIn = checkInDate && date.isSame(checkInDate, "day");
+      const isSameAsCheckOut = checkOutDate && date.isSame(checkOutDate, "day");
+
+      if (isSameAsCheckIn) {
+        setCheckInDate(null);
+        setCheckOutDate(null);
+        setSelectionMode("check-in");
+        return;
+      }
+
+      if (isSameAsCheckOut) {
+        setCheckOutDate(null);
+      } else {
+        // Selection must be after Check-in
+        if (checkInDate && date.isAfter(checkInDate, 'day')) {
+          // Boundary check
+          if (nextBlockedDate && date.isAfter(nextBlockedDate, 'day')) return;
+          setCheckOutDate(date);
+        } else {
+          // If clicked date is before check-in, treat as new Check-in
+          if (isBlocked) return;
+          setCheckInDate(date);
+          setCheckOutDate(null);
+          setSelectionMode("check-out");
+        }
       }
     }
   };
@@ -559,6 +600,23 @@ const StayBookingSystem = ({
 
     return keys;
   }, [stay, selectedRooms]);
+
+  const nextBlockedDate = useMemo(() => {
+    if (!checkInDate || !blockedDateKeys || blockedDateKeys.size === 0) return null;
+    const checkInKey = checkInDate.format("YYYY-MM-DD");
+    const nextDateKey = Array.from(blockedDateKeys)
+      .filter(k => k > checkInKey)
+      .sort()[0];
+    return nextDateKey ? moment(nextDateKey) : null;
+  }, [checkInDate, blockedDateKeys]);
+
+  useEffect(() => {
+    if (checkInDate && checkOutDate && nextBlockedDate) {
+      if (checkOutDate.isAfter(nextBlockedDate, 'day')) {
+        setCheckOutDate(null);
+      }
+    }
+  }, [checkInDate, nextBlockedDate, checkOutDate]);
 
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
@@ -976,59 +1034,139 @@ const StayBookingSystem = ({
             />
             
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 40 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 40 }}
-              onClick={(e) => e.stopPropagation()}
-              className="booking-modal-container"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               style={{
-                position: "relative",
-                width: "95%",
-                maxWidth: 850,
-                maxHeight: "calc(100vh - 40px)",
                 background: BG,
                 borderRadius: 32,
-                boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
-                border: `1px solid ${B}`,
                 overflow: "hidden",
+                width: "95%",
+                maxWidth: 950,
+                maxHeight: "calc(100vh - 40px)",
+                border: `1px solid ${B}`,
+                boxShadow: `0 30px 60px rgba(0,0,0,0.5), 0 0 100px ${A}11`,
+                position: "relative",
                 display: "flex",
                 flexDirection: "column"
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "32px 40px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "16px 32px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <h2 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 8 }}>
+                  <h2 style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2 }}>
                     Reserve Your Stay
                   </h2>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>
                       {fetchingAvailability ? "..." : `₹${formatPrice(pricing.perNight)}`}
                     </span>
                     {!fetchingAvailability && pricing.discount > 0 && (
-                      <span style={{ fontSize: 18, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
+                      <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
                     )}
-                    <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>/ night</span>
+                    <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>/ night</span>
                   </div>
                 </div>
-                <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 12, borderRadius: 100, cursor: "pointer", color: FG }}>
-                  <X size={20} />
+                <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG }}>
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-                <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 1, background: B }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
+                <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                   {/* Left Column: Calendar */}
-                  <div className="booking-modal-column" style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
+                  <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
                     <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                         <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                           01. Select Dates
                           <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
                             {selectionMode === "check-in" ? "Select Check-in" : "Select Check-out"}
                           </span>
                         </div>
-                        {(checkInDate || checkOutDate) && (
+                      </div>
+
+                      {selectionMode === "check-out" && nextBlockedDate && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{ 
+                            marginBottom: 10, 
+                            padding: "6px 12px", 
+                            background: AL, 
+                            borderRadius: 12, 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: 8,
+                            border: `1px solid ${A}22`
+                          }}
+                        >
+                          <Info size={12} color={A} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>
+                            Checkout available only until {nextBlockedDate.format("DD MMM, YYYY")}
+                          </span>
+                        </motion.div>
+                      )}
+
+                      <StayInlineCalendar 
+                        checkInDate={checkInDate}
+                        checkOutDate={checkOutDate}
+                        onDateSelect={handleDateSelect}
+                        isBlockedDay={isBlockedDay}
+                        tokens={{ A, AL, BG, FG, M, B, S, W }}
+                        selectionMode={selectionMode}
+                        nextBlockedDate={nextBlockedDate}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Column: Booking Details & Guests */}
+                  <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
+                    {/* Section 02: Booking Details */}
+                    <div>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em" }}>
+                        02. Booking Details
+                      </div>
+                      
+                      {/* Check-in / Check-out Cards */}
+                      <div style={{ marginBottom: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <div 
+                          onClick={() => setSelectionMode("check-in")}
+                          style={{ 
+                            padding: "8px 12px", 
+                            background: BG, 
+                            borderRadius: 16, 
+                            border: `1px solid ${selectionMode === 'check-in' ? A : B}`,
+                            cursor: "pointer",
+                            transition: "0.2s",
+                            boxShadow: selectionMode === 'check-in' ? `0 0 15px ${A}22` : "none"
+                          }}
+                        >
+                          <p style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 2 }}>Check-in</p>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
+                        </div>
+                        <div 
+                          onClick={() => {
+                            if (checkInDate) setSelectionMode("check-out");
+                          }}
+                          style={{ 
+                            padding: "8px 12px", 
+                            background: BG, 
+                            borderRadius: 16, 
+                            border: `1px solid ${selectionMode === 'check-out' ? A : B}`,
+                            cursor: checkInDate ? "pointer" : "not-allowed",
+                            transition: "0.2s",
+                            opacity: checkInDate ? 1 : 0.6,
+                            boxShadow: selectionMode === 'check-out' ? `0 0 15px ${A}22` : "none"
+                          }}
+                        >
+                          <p style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 2 }}>Check-out</p>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
+                        </div>
+                      </div>
+
+                      {/* Clear Dates Button */}
+                      {(checkInDate || checkOutDate) && (
+                        <div>
                           <button 
                             type="button"
                             onClick={() => {
@@ -1038,69 +1176,37 @@ const StayBookingSystem = ({
                               setValidationError("");
                             }}
                             style={{ 
+                              width: "100%",
                               background: AL, 
                               border: `1px solid ${A}33`, 
                               color: A, 
-                              fontSize: 10, 
+                              fontSize: 9, 
                               fontWeight: 800, 
                               textTransform: "uppercase",
                               letterSpacing: "0.05em",
                               cursor: "pointer", 
-                              padding: "6px 14px", 
+                              padding: "6px 12px", 
                               borderRadius: 100,
-                              transition: "0.3s",
-                              boxShadow: `0 4px 12px ${A}11`
-                            }}
-                            onMouseOver={(e) => {
-                              e.target.style.background = A;
-                              e.target.style.color = "#FFF";
-                              e.target.style.boxShadow = `0 6px 16px ${A}33`;
-                            }}
-                            onMouseOut={(e) => {
-                              e.target.style.background = AL;
-                              e.target.style.color = A;
-                              e.target.style.boxShadow = `0 4px 12px ${A}11`;
+                              transition: "0.3s"
                             }}
                           >
                             Clear Dates
                           </button>
-                        )}
-                      </div>
-
-                      <div style={{ marginBottom: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                        <div style={{ padding: "12px 16px", background: S, borderRadius: 16, border: `1px solid ${selectionMode === 'check-in' ? A : B}` }}>
-                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-in</p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
                         </div>
-                        <div style={{ padding: "12px 16px", background: S, borderRadius: 16, border: `1px solid ${selectionMode === 'check-out' ? A : B}` }}>
-                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 4 }}>Check-out</p>
-                          <p style={{ fontSize: 14, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
-                        </div>
-                      </div>
-
-                      <StayInlineCalendar 
-                        checkInDate={checkInDate}
-                        checkOutDate={checkOutDate}
-                        onDateSelect={handleDateSelect}
-                        isBlockedDay={isBlockedDay}
-                        tokens={{ A, AL, BG, FG, M, B, S, W }}
-                        selectionMode={selectionMode}
-                      />
+                      )}
                     </div>
-                  </div>
 
-                  {/* Right Column: Guests & Accommodations */}
-                  <div className="booking-modal-column" style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 32 }}>
+                    {/* Section 03: Guests & Accommodations */}
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em" }}>
-                        02. Guests & Accommodations
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em" }}>
+                        03. Guests & Accommodations
                       </div>
                       
-                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <div>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: FG }}>Adults</p>
-                            <p style={{ fontSize: 11, color: M, fontWeight: 500 }}>{guestAgeLabels.adults}</p>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: FG }}>Adults</p>
+                            <p style={{ fontSize: 9, color: M, fontWeight: 500 }}>{guestAgeLabels.adults}</p>
                           </div>
                           <Counter 
                             value={guests.adults} 
@@ -1109,10 +1215,10 @@ const StayBookingSystem = ({
                             max={pricing.baseAdultsLimit + pricing.extraAdultsLimit}
                           />
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <div>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</p>
-                            <p style={{ fontSize: 11, color: M, fontWeight: 500 }}>{guestAgeLabels.children}</p>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: FG }}>Children</p>
+                            <p style={{ fontSize: 9, color: M, fontWeight: 500 }}>{guestAgeLabels.children}</p>
                           </div>
                           <Counter 
                             value={guests.children} 
@@ -1125,17 +1231,17 @@ const StayBookingSystem = ({
 
                       {/* Selected Rooms */}
                       {resolvedSelectedRooms.length > 0 && (
-                        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                           {resolvedSelectedRooms.map((room) => (
-                            <div key={room.roomId || room.id} style={{ padding: "16px 20px", background: BG, borderRadius: 16, border: `1px solid ${B}` }}>
+                            <div key={room.roomId || room.id} style={{ padding: "8px 12px", background: BG, borderRadius: 12, border: `1px solid ${B}` }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                                  <div style={{ width: 32, height: 32, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                                    <Bed size={16} />
+                                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                                  <div style={{ width: 26, height: 26, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
+                                    <Bed size={13} />
                                   </div>
                                   <div>
-                                    <p style={{ fontSize: 13, fontWeight: 700, color: FG }}>{room.roomName || room.name}</p>
-                                    <p style={{ fontSize: 11, color: M }}>{room.mealPlan || "EP"} Plan</p>
+                                    <p style={{ fontSize: 11, fontWeight: 700, color: FG }}>{room.roomName || room.name}</p>
+                                    <p style={{ fontSize: 9, color: M }}>{room.mealPlan || "EP"}</p>
                                   </div>
                                 </div>
                                 <Counter 
@@ -1154,13 +1260,13 @@ const StayBookingSystem = ({
                     {/* Warnings */}
                     {pricing.warning && (
                       <div style={{ 
-                        padding: "16px 20px", borderRadius: 16, 
+                        padding: "8px 12px", borderRadius: 12, 
                         background: pricing.isOver ? "#FFF5F5" : AL, 
                         border: `1px solid ${pricing.isOver ? "#FEB2B2" : A + '33'}`,
-                        display: "flex", gap: 12, alignItems: "flex-start"
+                        display: "flex", gap: 10, alignItems: "center"
                       }}>
-                        <AlertCircle size={18} color={pricing.isOver ? "#F56565" : A} style={{ marginTop: 2 }} />
-                        <p style={{ fontSize: 13, color: pricing.isOver ? "#C53030" : FG, lineHeight: 1.5, fontWeight: 600 }}>
+                        <AlertCircle size={14} color={pricing.isOver ? "#F56565" : A} />
+                        <p style={{ fontSize: 10, color: pricing.isOver ? "#C53030" : FG, lineHeight: 1.4, fontWeight: 600 }}>
                           {pricing.warning}
                         </p>
                       </div>
@@ -1168,22 +1274,20 @@ const StayBookingSystem = ({
                     
                     {/* Price Summary */}
                     {nightsCount > 0 && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "20px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 14, fontWeight: 500 }}>
-                          <span>Base Price ({nightsCount} night{nightsCount !== 1 ? 's' : ''})</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                          <span>Base ({nightsCount} night{nightsCount !== 1 ? 's' : ''})</span>
                           <span>₹{formatPrice(pricing.originalPerNight * nightsCount)}</span>
                         </div>
-
                         {pricing.discount > 0 && (
-                          <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 14, fontWeight: 700 }}>
-                            <span>Discount ({pricing.discountPercent}%)</span>
+                          <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 11, fontWeight: 700 }}>
+                            <span>Discount</span>
                             <span>- ₹{formatPrice(pricing.discount)}</span>
                           </div>
                         )}
-
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 12, borderTop: `1px solid ${B}` }}>
-                          <span style={{ fontSize: 16, fontWeight: 700, color: FG }}>Subtotal</span>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: A }}>₹{formatPrice(pricing.subtotal)}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, paddingTop: 4, borderTop: `1px solid ${B}` }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Subtotal</span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPrice(pricing.subtotal)}</span>
                         </div>
                       </div>
                     )}
@@ -1192,7 +1296,7 @@ const StayBookingSystem = ({
               </div>
 
               {/* Footer */}
-              <div className="booking-modal-footer" style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", flexDirection: "column", gap: 24, zIndex: 10 }}>
+              <div className="booking-modal-footer" style={{ padding: "12px 32px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", flexDirection: "column", gap: 8, zIndex: 10 }}>
                 <AnimatePresence>
                   {validationError && (
                     <motion.div
@@ -1202,19 +1306,18 @@ const StayBookingSystem = ({
                       style={{ width: "100%" }}
                     >
                       <div style={{
-                        padding: "14px 16px",
+                        padding: "8px 12px",
                         background: EL,
                         border: `1px solid ${E}33`,
-                        borderRadius: 16,
+                        borderRadius: 12,
                         display: "flex",
                         alignItems: "center",
-                        gap: 12,
+                        gap: 10,
                         color: E,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        boxShadow: `0 4px 20px ${E}14`
+                        fontSize: 11,
+                        fontWeight: 700
                       }}>
-                        <AlertCircle size={18} />
+                        <AlertCircle size={14} />
                         <span>{validationError}</span>
                       </div>
                     </motion.div>
@@ -1223,14 +1326,14 @@ const StayBookingSystem = ({
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
-                    <span style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 500 }}>Including all taxes.</span>
+                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
+                    <span style={{ marginTop: 1, fontSize: 9, color: M, fontWeight: 500 }}>Inc. all taxes</span>
                   </div>
                   {(() => {
                     const isPropertyBased = stay?.bookingScope === "Property-Based";
                     const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
-                    const isDisabled = loading || pricing.isOver; // We allow clicking even if dates are missing to show validation
+                    const isDisabled = loading || pricing.isOver;
                     const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve Stay" : "Select Room"));
 
                     return (
@@ -1240,15 +1343,15 @@ const StayBookingSystem = ({
                         onClick={handleReserve}
                         disabled={isDisabled}
                         style={{
-                          padding: "18px 48px",
+                          padding: "10px 32px",
                           background: isDisabled ? B : A,
                           color: "#FFF",
-                          borderRadius: 16,
+                          borderRadius: 12,
                           border: "none",
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: 800,
                           cursor: isDisabled ? "not-allowed" : "pointer",
-                          boxShadow: isDisabled ? "none" : `0 10px 30px ${A}44`,
+                          boxShadow: isDisabled ? "none" : `0 10px 20px ${A}33`,
                           transition: "0.3s"
                         }}
                       >
@@ -1259,9 +1362,9 @@ const StayBookingSystem = ({
                 </div>
               </div>
               
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 40px 32px", color: M, fontSize: 12, background: BG }}>
-                <ShieldCheck size={14} />
-                <span>Secure payment processed by Little Known Planet</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, paddingBottom: 10, color: M, fontSize: 9, background: BG }}>
+                <ShieldCheck size={11} />
+                <span>Secure payment by LKP</span>
               </div>
             </motion.div>
           </div>
