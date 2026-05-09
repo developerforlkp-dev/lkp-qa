@@ -4,7 +4,7 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails } from "../../utils/api";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import Receipt from "../../components/Receipt";
@@ -639,6 +639,7 @@ const ViewDetails = () => {
 
   // Receipt state
   const [receiptModalVisible, setReceiptModalVisible] = useState(false);
+  const [refundDetails, setRefundDetails] = useState(null);
   const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
@@ -1130,6 +1131,35 @@ const ViewDetails = () => {
 
     loadReviewEligibility();
   }, [booking?.orderId]);
+
+  useEffect(() => {
+    const loadRefundDetails = async () => {
+      if (!booking?.orderId) {
+        setRefundDetails(null);
+        return;
+      }
+
+      try {
+        const data = await getOrderRefundDetails(booking.orderId);
+        setRefundDetails(data && typeof data === "object" ? data : null);
+      } catch (err) {
+        console.warn("⚠️ Failed to fetch refund details:", err?.message || err);
+        setRefundDetails(null);
+      }
+    };
+
+    loadRefundDetails();
+  }, [booking?.orderId]);
+
+  const formatMoney = (amount, currency = "INR") => {
+    if (amount === null || amount === undefined || amount === "") return "N/A";
+    const numericAmount = Number(amount);
+    if (Number.isNaN(numericAmount)) return "N/A";
+    if (currency === "INR") {
+      return `₹${numericAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return `${currency} ${numericAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   const getInitialTab = () => {
     return "host";
@@ -1624,6 +1654,22 @@ const ViewDetails = () => {
                 <span>Total Paid</span>
                 <span>{booking.pricing.total}</span>
               </div>
+              {refundDetails && (
+                <>
+                  <div className={styles.paymentRow}>
+                    <span>Refund Status</span>
+                    <span>{refundDetails.refundStatus || "N/A"}</span>
+                  </div>
+                  <div className={styles.paymentRow}>
+                    <span>Refund Amount</span>
+                    <span>{formatMoney(refundDetails.refundAmount, refundDetails.currency || booking?.originalData?.currency || "INR")}</span>
+                  </div>
+                  <div className={styles.paymentRow}>
+                    <span>Total Amount</span>
+                    <span>{formatMoney(refundDetails.totalPaid, refundDetails.currency || booking?.originalData?.currency || "INR")}</span>
+                  </div>
+                </>
+              )}
               {booking.originalData?.razorpayOrderId && (
                 <div className={styles.paymentMethod} style={{ marginTop: '8px', fontSize: '12px', color: '#777E90' }}>
                   <span>Order ID: {booking.originalData.razorpayOrderId}</span>

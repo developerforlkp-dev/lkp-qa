@@ -300,6 +300,23 @@ export const getOrderCancelPreview = async (orderId) => {
   }
 };
 
+export const getOrderRefundDetails = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error("orderId is required");
+    }
+
+    const orderIdNum = Number(orderId);
+    const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
+
+    const response = await ListingsAPI.get(`/orders/${orderIdStr}/refund-details`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching refund details:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 
 // ✅ Create a stay order
 export const createStayOrder = async (orderData) => {
