@@ -148,6 +148,30 @@ const getEntityImageUrl = (listing) => {
 };
 
 const getEntityUrl = (listing, id) => {
+  if (listing?.isCategoryCard) {
+    const businessInterestId = listing?.businessInterestId ?? listing?.sectionBusinessInterestId;
+    const businessInterest = listing?.businessInterest || "EXPERIENCE";
+    const categoryType = listing?.categoryType || "Primary Category";
+    const normalizedCategoryType = String(categoryType).toUpperCase();
+    const shouldUseId =
+      normalizedCategoryType.includes("PRIMARY") || normalizedCategoryType.includes("SUB");
+
+    const categoryValue = shouldUseId
+      ? (listing?.categoryId ?? listing?.id ?? listing?.listingId ?? listing?.title)
+      : (listing?.title ?? listing?.categoryName ?? "");
+
+    const params = new URLSearchParams();
+    if (businessInterest) params.set("businessInterest", businessInterest);
+    if (businessInterestId != null) params.set("businessInterestId", String(businessInterestId));
+    if (categoryType) params.set("categoryType", categoryType);
+    if (categoryValue != null && String(categoryValue).trim()) {
+      params.set("categoryValues", String(categoryValue));
+    }
+    if (listing?.title) params.set("selectedCategoryLabel", listing.title);
+
+    return `/listings?${params.toString()}`;
+  }
+
   if (!listing || typeof listing !== "object") return buildExperienceUrl("experience", id);
   const entityType = getEntityType(listing);
   const resolvedId = getEntityIdByType(listing, entityType) ?? id;
@@ -161,7 +185,7 @@ const getEntityUrl = (listing, id) => {
 };
 
 // Transform API listing to Card component format
-const transformListingToCard = (listing) => {
+const transformListingToCard = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
@@ -175,7 +199,7 @@ const transformListingToCard = (listing) => {
     title: listing.title || listing.propertyName || listing.menuName || listing.placeName || "Listing",
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
-    url: getEntityUrl(listing, id),
+    url: getEntityUrl(listing, id, section),
     location: null, // Remove location/address from cards
     priceActual: priceDisplay, // Only show price if individualPrice exists
     hasPrice: hasPrice,
@@ -195,7 +219,7 @@ const transformListingToCard = (listing) => {
 };
 
 // Transform API listing to Browse component format (for carousel)
-const transformListingToBrowse = (listing) => {
+const transformListingToBrowse = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
@@ -205,7 +229,7 @@ const transformListingToBrowse = (listing) => {
     title: listing.title || listing.propertyName || listing.menuName || listing.placeName || "Listing",
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
-    url: getEntityUrl(listing, id),
+    url: getEntityUrl(listing, id, section),
     categoryText: null, // Remove location/address from carousel cards
     category: null,
     counter: listing.totalReviews || 0,
@@ -213,7 +237,7 @@ const transformListingToBrowse = (listing) => {
 };
 
 // Transform API listing to DestinationCard format
-const transformListingToDestination = (listing) => {
+const transformListingToDestination = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
@@ -224,12 +248,12 @@ const transformListingToDestination = (listing) => {
     location: null, // Remove location/address from destination cards
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
-    url: getEntityUrl(listing, id),
+    url: getEntityUrl(listing, id, section),
   };
 };
 
 // Transform API listing to Destination component format (for horizontal rectangular cards)
-const transformListingToDestinationHorizontal = (listing) => {
+const transformListingToDestinationHorizontal = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
@@ -240,17 +264,60 @@ const transformListingToDestinationHorizontal = (listing) => {
     content: "", // Not displayed - matches other card styles
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
-    url: getEntityUrl(listing, id),
+    url: getEntityUrl(listing, id, section),
     categoryText: null, // Optional category badge
     category: null,
   };
+};
+
+const isShowCategoriesOnly = (section) =>
+  section?.displayMode === "SHOW_CATEGORIES_ONLY";
+
+const transformCategoryToListing = (category, section) => {
+  const businessInterestId =
+    section?.businessInterestId ??
+    section?.business_interest_id;
+
+  const businessInterest =
+    section?.businessInterestCode ??
+    section?.businessInterest ??
+    "EXPERIENCE";
+
+  return {
+    id: category?.id,
+    listingId: category?.id,
+    title: category?.name || "Category",
+    imageUrl: category?.imageUrl,
+    coverImageUrl: category?.imageUrl,
+    coverPhotoUrl: category?.imageUrl,
+    categoryText: category?.name || "Category",
+    categoryId: category?.id,
+    categoryName: category?.name,
+    categoryType: section?.categoryType,
+    sectionBusinessInterestId: businessInterestId,
+    businessInterestId,
+    businessInterest,
+    isCategoryCard: true,
+  };
+};
+
+const getRenderListings = (section, listings) => {
+  if (!isShowCategoriesOnly(section)) {
+    return Array.isArray(listings) ? listings : [];
+  }
+
+  const selectedCategories = Array.isArray(section?.selectedCategories)
+    ? section.selectedCategories
+    : [];
+
+  return selectedCategories.map((category) => transformCategoryToListing(category, section));
 };
 
 /**
  * CARD_SQUARE_HORIZONTAL_NODETAIL - Square image cards with horizontal scrolling, no detailed info
  */
 export const CardCarousel = ({ section, listings, className }) => {
-  const browseItems = listings.map(transformListingToBrowse);
+  const browseItems = listings.map((listing) => transformListingToBrowse(listing, section));
 
   return (
     <section className={cn(styles.categorySection, className)}>
@@ -288,7 +355,7 @@ export const CardCarousel = ({ section, listings, className }) => {
  * CARD_RECT_VERTICAL_DETAIL - Rectangular vertical cards with detailed information
  */
 export const CardGrid = ({ section, listings, className }) => {
-  const cardItems = listings.map(transformListingToCard);
+  const cardItems = listings.map((listing) => transformListingToCard(listing, section));
 
   return (
     <section className={cn(styles.categorySection, className)}>
@@ -322,7 +389,7 @@ export const CardGrid = ({ section, listings, className }) => {
  * CARD_OVAL_VERTICAL_NODETAIL - Oval/circular image cards with vertical layout, minimal details
  */
 export const CardDestination = ({ section, listings, className }) => {
-  const destinationItems = listings.map(transformListingToDestination);
+  const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
 
   return (
     <section className={cn(styles.categorySection, className)}>
@@ -360,7 +427,7 @@ export const CardDestination = ({ section, listings, className }) => {
  * CARD_RECT_HORIZONTAL_NODETAIL - Rectangular horizontal cards with image, title, and content, no detailed info
  */
 export const CardDestinationHorizontal = ({ section, listings, className }) => {
-  const destinationItems = listings.map(transformListingToDestinationHorizontal);
+  const destinationItems = listings.map((listing) => transformListingToDestinationHorizontal(listing, section));
 
   return (
     <section className={cn(styles.categorySection, className)}>
@@ -408,7 +475,9 @@ export const CardDestinationHorizontal = ({ section, listings, className }) => {
  * - "CARD_LIST" → CARD_OVAL_VERTICAL_NODETAIL
  */
 export const HomepageSectionCard = ({ section, listings, className }) => {
-  if (!section || !listings || listings.length === 0) {
+  const renderListings = getRenderListings(section, listings);
+
+  if (!section || renderListings.length === 0) {
     return null;
   }
 
@@ -426,37 +495,37 @@ export const HomepageSectionCard = ({ section, listings, className }) => {
   switch (cardStyle) {
     // New descriptive names
     case "CARD_RECT_VERTICAL_DETAIL":
-      return <CardGrid section={section} listings={listings} className={className} />;
+      return <CardGrid section={section} listings={renderListings} className={className} />;
 
 
     case "CARD_SQUARE_HORIZONTAL_NODETAIL":
-      return <CardCarousel section={section} listings={listings} className={className} />;
+      return <CardCarousel section={section} listings={renderListings} className={className} />;
 
 
     case "CARD_OVAL_VERTICAL_NODETAIL":
-      return <CardDestination section={section} listings={listings} className={className} />;
+      return <CardDestination section={section} listings={renderListings} className={className} />;
 
 
     case "CARD_RECT_HORIZONTAL_NODETAIL":
-      return <CardDestinationHorizontal section={section} listings={listings} className={className} />;
+      return <CardDestinationHorizontal section={section} listings={renderListings} className={className} />;
 
 
     // Backward compatibility: Old names
     case "CARD_GRID":
-      return <CardGrid section={section} listings={listings} className={className} />;
+      return <CardGrid section={section} listings={renderListings} className={className} />;
 
 
     case "CARD_CAROUSEL":
-      return <CardCarousel section={section} listings={listings} className={className} />;
+      return <CardCarousel section={section} listings={renderListings} className={className} />;
 
 
     case "CARD_LIST":
-      return <CardDestination section={section} listings={listings} className={className} />;
+      return <CardDestination section={section} listings={renderListings} className={className} />;
 
 
     default:
       // Default to rectangular vertical detail layout
-      return <CardGrid section={section} listings={listings} className={className} />;
+      return <CardGrid section={section} listings={renderListings} className={className} />;
   }
 };
 

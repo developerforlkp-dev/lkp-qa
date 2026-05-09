@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ListingsAPI, searchNearbyListings } from "../utils/api";
+import { ListingsAPI, getFilteredListings, searchNearbyListings } from "../utils/api";
 
 /**
  * Custom hook for fetching listings with filters and pagination
@@ -20,6 +20,7 @@ export const useListings = ({
   limit = 20,
   offset = 0,
   businessInterest = "EXPERIENCE",
+  categoryFilter = null,
 } = {}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,15 @@ export const useListings = ({
     return "EXPERIENCE";
   }, []);
 
+  const mapBusinessInterestId = useCallback((value) => {
+    const normalized = String(value || "").toUpperCase();
+    if (normalized.includes("EVENT")) return 2;
+    if (normalized.includes("STAY")) return 3;
+    if (normalized.includes("PLACE")) return 4;
+    if (normalized.includes("FOOD")) return 5;
+    return 1;
+  }, []);
+
   const fetchListings = useCallback(async (currentOffset = 0, reset = false) => {
     try {
       setLoading(true);
@@ -48,7 +58,30 @@ export const useListings = ({
       let totalCount = null;
       let hasMoreFromAPI = null;
 
-      if (hasLocationSearch) {
+      const hasCategoryFilter = Boolean(
+        categoryFilter &&
+        categoryFilter.categoryType &&
+        Array.isArray(categoryFilter.categoryValues) &&
+        categoryFilter.categoryValues.length > 0
+      );
+
+      if (hasCategoryFilter) {
+        const mappedBusinessInterestId =
+          categoryFilter.businessInterestId || mapBusinessInterestId(businessInterest);
+
+        const filteredResponse = await getFilteredListings({
+          businessInterestId: mappedBusinessInterestId,
+          categoryType: categoryFilter.categoryType,
+          categoryValues: categoryFilter.categoryValues,
+          limit,
+          offset: nextOffset,
+          sortBy: categoryFilter.sortBy || "newest",
+        });
+
+        listings = filteredResponse.listings || [];
+        totalCount = filteredResponse.totalCount ?? null;
+        hasMoreFromAPI = filteredResponse.hasMore ?? null;
+      } else if (hasLocationSearch) {
         // Nearby search flow
         const nearbyResponse = await searchNearbyListings({
           businessInterest: mappedNearbyInterest,
@@ -121,6 +154,21 @@ export const useListings = ({
 
         if (filters.categories && filters.categories.length > 0) {
           params.categories = filters.categories.join(",");
+        }
+
+        if (filters.tags && filters.tags.length > 0) {
+          params.tags = filters.tags.join(",");
+        }
+
+        if (filters.specialLabels && filters.specialLabels.length > 0) {
+          params.specialLabels = filters.specialLabels.join(",");
+        }
+
+        if (filters.dateRange?.startDate) {
+          params.startDate = filters.dateRange.startDate;
+        }
+        if (filters.dateRange?.endDate) {
+          params.endDate = filters.dateRange.endDate;
         }
 
         const endpoint = businessInterest === "EVENT" ? "/public/events" : "/public/listings";
@@ -237,11 +285,11 @@ export const useListings = ({
     } finally {
       setLoading(false);
     }
-  }, [location, dateRange, guests, filters, limit, businessInterest, mapToNearbyBusinessInterest]);
+  }, [location, dateRange, guests, filters, limit, businessInterest, categoryFilter, mapBusinessInterestId, mapToNearbyBusinessInterest]);
 
   useEffect(() => {
     fetchListings(0, true);
-  }, [location, dateRange, guests, filters, businessInterest, fetchListings]);
+  }, [location, dateRange, guests, filters, businessInterest, categoryFilter, fetchListings]);
 
   const fetchMore = useCallback(() => {
     if (!loading && hasMore) {

@@ -391,7 +391,7 @@ const Checkout = () => {
       if (discountAmount > 0 && !hasDiscountRow) {
         const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
         const newDiscountRow = {
-          title: `Discount (${combinedDiscountPercent.toFixed(2)}%)`,
+          title: `Discounts (${combinedDiscountPercent.toFixed(2)}%)`,
           value: `- INR ${discountAmount.toFixed(2)}`,
         };
         if (taxRowIndex >= 0) {
