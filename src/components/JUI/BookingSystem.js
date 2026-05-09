@@ -887,8 +887,8 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   ];
 
   return (
-    <div style={{ background: S, borderRadius: 16, padding: 18, border: `1px solid ${B}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+    <div style={{ background: S, borderRadius: 16, padding: 12, border: `1px solid ${B}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <button
           type="button"
           onClick={() => setViewDate(new Date(year, month - 1, 1))}
@@ -908,7 +908,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
           <ChevronDown size={15} style={{ transform: "rotate(-90deg)" }} />
         </button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 6 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 4 }}>
         {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
           <div key={`${day}-${index}`} style={{ textAlign: "center", fontSize: 10, fontWeight: 800, color: M, padding: "4px 0" }}>
             {day}
@@ -2100,11 +2100,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               style={{
                 position: "relative",
                 width: "95%",
-                maxWidth: 850,
+                maxWidth: 950,
                 maxHeight: "calc(100vh - 40px)",
                 background: BG,
                 borderRadius: 32,
-                boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
+                boxShadow: `0 30px 60px rgba(0,0,0,0.5), 0 0 100px ${A}11`,
                 border: `1px solid ${B}`,
                 overflow: "hidden",
                 display: "flex",
@@ -2112,9 +2112,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "32px 40px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "16px 32px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <h2 style={{ fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 8 }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 4 }}>
                     {isEventBooking ? "Reserve Your Event" : "Reserve Your Experience"}
                   </h2>
                   {isEventBooking && ticketSaleWindow.message && (
@@ -2131,12 +2131,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       return (
                         <>
                           {hasDiscount && baseDisplayPrice != null && (
-                            <span style={{ fontSize: 20, fontWeight: 600, color: M, textDecoration: "line-through" }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: M, textDecoration: "line-through" }}>
                               ₹{Number(baseDisplayPrice).toFixed(2)}
                             </span>
                           )}
-                          <span style={{ fontSize: 32, fontWeight: 800, color: FG }}>₹{Number(discountedDisplayPrice || 0).toFixed(2)}</span>
-                          <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>per {data.unit}</span>
+                          <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(discountedDisplayPrice || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>per {data.unit}</span>
                         </>
                       );
                     })()}
@@ -2149,7 +2149,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
               </div>
 
-              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
 
 
               {/* Closed state — all dates have passed */}
@@ -2171,11 +2171,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
               ) : (
                 <>
-              <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 1, background: B }}>
+              <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                 {/* Left Column: Date & Ticket */}
-                <div className="booking-modal-column" style={{ padding: "40px", background: BG, display: "flex", flexDirection: "column", gap: 32 }}>
+                <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: validationErrors.date ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 10, color: validationErrors.date ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                       01. Select Date
                       {validationErrors.date && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                     </div>
@@ -2224,7 +2224,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
                   {isEventBooking && (
                     <div>
-                      <div style={{ fontSize: 11, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontSize: 10, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                         02. Ticket Type
                         {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                       </div>
@@ -2306,9 +2306,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
 
                 {/* Right Column: Slots & Guests */}
-                <div className="booking-modal-column" style={{ padding: "40px", background: S, display: "flex", flexDirection: "column", gap: 32 }}>
+                <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: validationErrors.slot ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 10, color: validationErrors.slot ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                       {isEventBooking ? "03. Choose Slot" : "02. Select Time"}
                       {validationErrors.slot && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                     </div>
@@ -2345,7 +2345,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     </AnimatePresence>
                     
                     {isEventBooking ? (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
                         {(() => {
                           const validSlotsForDate = eventSlots.filter((slot, index) => {
                             const slotKeys = new Set();
@@ -2391,7 +2391,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   }
                                 } : () => setShowDateWarning(true)}
                                 style={{
-                                  padding: "14px",
+                                  padding: "10px 12px",
                                   borderRadius: 16,
                                   border: `1.5px solid ${isSelected ? A : B}`,
                                   background: isSelected ? AL : BG,
@@ -2421,7 +2421,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           onClick={startDate ? () => setShowTimePicker(!showTimePicker) : () => setShowDateWarning(true)}
                           title={startDate ? undefined : "Please select a date first"}
                           style={{
-                            padding: "16px 20px",
+                            padding: "10px 14px",
                             background: (validationErrors.slot || (showDateWarning && !startDate)) ? EL : BG,
                             border: `1px solid ${(validationErrors.slot || (showDateWarning && !startDate)) ? `${E}44` : B}`,
                             borderRadius: 16,
@@ -2516,7 +2516,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 11, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 10, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
                       {isEventBooking ? "04. Guests" : "03. Guests"}
                       {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                     </div>
@@ -2535,7 +2535,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        padding: "16px 20px",
+                        padding: "10px 14px",
                         background: validationErrors.adults ? EL : BG,
                         border: `1px solid ${validationErrors.adults ? `${E}44` : B}`,
                         borderRadius: 16,
@@ -2559,7 +2559,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         />
                       </div>
                       {childrenAllowed && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
                           <Counter
                             value={guests.children}
@@ -2585,12 +2585,43 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         Group price applied: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} base per ticket.
                       </div>
                     )}
+
+                    {/* Price Summary */}
+                    {totalGuests > 0 && (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ fontSize: 10, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 4, letterSpacing: "0.1em" }}>
+                          {isEventBooking ? "05." : "04."} Price Summary
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                            <span>Base ({totalGuests} guest{totalGuests !== 1 ? 's' : ''})</span>
+                            <span>₹{Number(rawBaseTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                          </div>
+                          {addOnsTotal > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                              <span>Add-ons</span>
+                              <span>₹{Number(addOnsTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                            </div>
+                          )}
+                          {totalDiscountAmount > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 11, fontWeight: 700 }}>
+                              <span>Discount</span>
+                              <span>- ₹{Number(totalDiscountAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                            </div>
+                          )}
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, paddingTop: 4, borderTop: `1px solid ${B}` }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Subtotal</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{Number(taxableSubtotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Footer Button */}
-              <div className="booking-modal-footer" style={{ padding: "32px 40px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-footer" style={{ padding: "12px 32px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontSize: 11, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Total amount</span>
                   <span style={{ fontSize: 24, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
@@ -2602,7 +2633,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   disabled={bookingLoading}
                   onClick={handleReserve}
                   style={{
-                    padding: "18px 48px",
+                    padding: "12px 32px",
                     background: (canReserve || showValidation) ? A : B,
                     color: "#FFF",
                     borderRadius: 16,
@@ -2618,7 +2649,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </motion.button>
               </div>
               
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 40px 32px", color: M, fontSize: 12, background: BG }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 32px 12px", color: M, fontSize: 10, background: BG }}>
                 <ShieldCheck size={14} />
                 <span>Secure payment processed by Little Known Planet</span>
               </div>
@@ -2634,12 +2665,29 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         onClose={() => setShowLoginPrompt(false)}
       />
       <style>{`
+        .SingleDatePicker_picker,
+        .SingleDatePickerPortal,
+        .DateRangePicker_picker,
+        .DateRangePickerPortal,
+        .ReactDatesPortal {
+          z-index: 99999 !important;
+        }
+
+        .booking-modal-container::-webkit-scrollbar {
+          width: 6px;
+        }
+        .booking-modal-container::-webkit-scrollbar-thumb {
+          background: ${B};
+          border-radius: 10px;
+        }
+
         @media(max-width: 900px) {
           .booking-modal-container { 
             width: 100% !important; 
             height: 100% !important; 
             max-height: 100vh !important; 
             border-radius: 0 !important; 
+            margin: 0 !important;
           }
           .booking-grid { grid-template-columns: 1fr !important; }
           .booking-modal-header { padding: 24px 20px !important; }
@@ -2650,6 +2698,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             padding: 24px 20px !important; 
             align-items: stretch !important;
             text-align: center !important;
+            position: sticky !important;
+            bottom: 0 !important;
+            background: ${BG} !important;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
           }
           .booking-modal-footer button { width: 100% !important; }
           .booking-modal-closed { padding: 40px 20px !important; }
