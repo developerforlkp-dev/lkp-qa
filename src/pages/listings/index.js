@@ -10,6 +10,7 @@ import MobileFilterModal from "../../components/listings/MobileFilterModal";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
+import { getBusinessInterestFilters } from "../../utils/api";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -51,6 +52,38 @@ const Listings = () => {
   const [guests, setGuests] = useState(initialGuests);
   
   const businessInterest = searchParams.get("businessInterest") || locationState.businessInterest || "EXPERIENCE";
+  const businessInterestIdParam = searchParams.get("businessInterestId");
+  const categoryTypeParam = searchParams.get("categoryType") || "";
+  const categoryValuesParam = searchParams.getAll("categoryValues");
+  const fallbackCategoryValues = searchParams.get("categoryValues");
+  const selectedCategoryLabel = searchParams.get("selectedCategoryLabel") || "";
+
+  const categoryValues = useMemo(() => {
+    return categoryValuesParam.length > 0
+      ? categoryValuesParam
+      : (fallbackCategoryValues ? fallbackCategoryValues.split(",").map((v) => v.trim()).filter(Boolean) : []);
+  }, [fallbackCategoryValues, location.search]);
+
+  const categoryFilter = useMemo(() => {
+    if (!categoryTypeParam || categoryValues.length === 0) return null;
+    return {
+      businessInterestId: businessInterestIdParam ? Number(businessInterestIdParam) : null,
+      categoryType: categoryTypeParam,
+      categoryValues,
+      sortBy: "newest",
+    };
+  }, [businessInterestIdParam, categoryTypeParam, categoryValues]);
+
+  const resolvedBusinessInterestId = useMemo(() => {
+    if (businessInterestIdParam) return Number(businessInterestIdParam);
+    const normalized = String(businessInterest || "").toUpperCase();
+    if (normalized.includes("EVENT")) return 2;
+    if (normalized.includes("STAY")) return 3;
+    if (normalized.includes("PLACE")) return 4;
+    if (normalized.includes("FOOD")) return 5;
+    return 1;
+  }, [businessInterest, businessInterestIdParam]);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const dateItemRef = useRef(null);
@@ -59,6 +92,33 @@ const Listings = () => {
   const autocompleteServiceRef = useRef(null);
   const autocompleteSessionTokenRef = useRef(null);
   const debounceTimerRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadBusinessInterestFilters = async () => {
+      try {
+        if (!resolvedBusinessInterestId) return;
+        const response = await getBusinessInterestFilters(resolvedBusinessInterestId);
+        if (!mounted) return;
+        setBusinessInterestFilters(response || null);
+        console.log(
+          `[Listings] business-interest-filters response (businessInterestId=${resolvedBusinessInterestId}):`,
+          response
+        );
+      } catch (error) {
+        console.warn(
+          `[Listings] Failed to fetch business-interest-filters for businessInterestId=${resolvedBusinessInterestId}:`,
+          error?.message || error
+        );
+      }
+    };
+
+    loadBusinessInterestFilters();
+    return () => {
+      mounted = false;
+    };
+  }, [resolvedBusinessInterestId]);
 
   // Convert selectedDate to dateRange format for API
   const dateRange = useMemo(() => (
@@ -75,18 +135,48 @@ const Listings = () => {
     amenities: [],
     ratings: [],
     categories: [],
+    tags: [],
+    specialLabels: [],
+    apiCategoryFilter: null,
+    dateRange: { startDate: "", endDate: "" },
   });
 
   // UI state
   const [showMap, setShowMap] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [sortBy, setSortBy] = useState("Relevance");
+  const [sortBy, setSortBy] = useState("newest");
+  const [businessInterestFilters, setBusinessInterestFilters] = useState(null);
 
-  const sortOptions = ["Relevance", "Price: Low to High", "Price: High to Low", "Rating", "Newest"];
+  const sortOptions = ["newest", "rating", "price_low", "price_high"];
   const isEventInterest = String(businessInterest || "").toUpperCase().includes("EVENT");
   const emptyMessage = isEventInterest && selectedDate
     ? "No events in this date."
     : "No listings found. Try adjusting your filters.";
+
+  const effectiveCategoryFilter = useMemo(() => {
+    if (
+      filters.apiCategoryFilter?.categoryType &&
+      Array.isArray(filters.apiCategoryFilter?.categoryValues) &&
+      filters.apiCategoryFilter.categoryValues.length > 0
+    ) {
+      return {
+        businessInterestId: resolvedBusinessInterestId,
+        categoryType: filters.apiCategoryFilter.categoryType,
+        categoryValues: filters.apiCategoryFilter.categoryValues,
+        sortBy,
+      };
+    }
+
+    if (categoryFilter) {
+      return {
+        ...categoryFilter,
+        businessInterestId: categoryFilter.businessInterestId || resolvedBusinessInterestId,
+        sortBy,
+      };
+    }
+
+    return null;
+  }, [categoryFilter, filters.apiCategoryFilter, resolvedBusinessInterestId, sortBy]);
 
   // Use listings hook - only re-renders when activeSearch or other filters change
   const { data: listings, loading, error, hasMore, fetchMore } = useListings({
@@ -96,6 +186,7 @@ const Listings = () => {
     filters,
     limit: 20,
     businessInterest: businessInterest,
+    categoryFilter: effectiveCategoryFilter,
   });
   
   // eslint-disable-next-line no-unused-vars
@@ -165,6 +256,10 @@ const Listings = () => {
     const guestTotal = guests.adults + guests.children;
     if (guestTotal > 0) params.set("guests", String(guestTotal));
     if (businessInterest) params.set("businessInterest", businessInterest);
+    if (businessInterestIdParam) params.set("businessInterestId", businessInterestIdParam);
+    if (categoryTypeParam) params.set("categoryType", categoryTypeParam);
+    categoryValues.forEach((value) => params.append("categoryValues", value));
+    if (selectedCategoryLabel) params.set("selectedCategoryLabel", selectedCategoryLabel);
 
     history.replace({
       pathname: "/listings",
@@ -282,6 +377,10 @@ const Listings = () => {
       amenities: [],
       ratings: [],
       categories: [],
+      tags: [],
+      specialLabels: [],
+      apiCategoryFilter: null,
+      dateRange: { startDate: "", endDate: "" },
     });
   };
 
@@ -429,11 +528,17 @@ const Listings = () => {
                 setSorting={setSortBy}
                 sortingOptions={sortOptions}
                 businessInterest={businessInterest}
+                businessInterestFilters={businessInterestFilters}
               />
             </aside>
             
             {/* Main Content Area */}
             <main className={styles.main}>
+              {(filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel) && (
+                <div className={styles.categoryFilterTitle}>
+                  Filtered by category: {filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel}
+                </div>
+              )}
               {/* Mobile Filter Button */}
               <button
                 className={cn("button-stroke", styles.mobileFilterButton, "mobile-show")}
@@ -493,6 +598,7 @@ const Listings = () => {
         setSorting={setSortBy}
         sortingOptions={sortOptions}
         businessInterest={businessInterest}
+        businessInterestFilters={businessInterestFilters}
       />
       
       {/* Mobile Map View */}

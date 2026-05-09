@@ -28,8 +28,17 @@ const getBusinessInterestId = (filterId) => {
   if (filterId === "experience") return 1;
   if (filterId === "events") return 2;
   if (filterId === "stays") return 3;
+  if (filterId === "places") return 4;
   if (filterId === "food") return 5;
   return null;
+};
+
+const getBusinessInterestCode = (filterId) => {
+  if (filterId === "events") return "EVENT";
+  if (filterId === "stays") return "STAY";
+  if (filterId === "places") return "PLACE";
+  if (filterId === "food") return "FOOD";
+  return "EXPERIENCE";
 };
 
 const FleetHome = () => {
@@ -295,6 +304,9 @@ const FleetHome = () => {
               section: {
                 sectionId: backendSection?.sectionId || backendSection?.id || "places",
                 sectionTitle: backendSection?.sectionTitle || backendSection?.title || backendSection?.name || "Places Nearby",
+                businessInterestId: backendSection?.businessInterestId || 4,
+                businessInterest: backendSection?.businessInterest || "PLACE",
+                businessInterestCode: backendSection?.businessInterestCode || "PLACE",
               },
               listings,
             },
@@ -356,7 +368,24 @@ const FleetHome = () => {
 
             // Handle different response structures
             let listings = sectionData?.listings || sectionData?.data?.listings || [];
-            const sectionInfo = sectionData?.section || section;
+            const sectionInfoRaw = sectionData?.section || section;
+            const fallbackBusinessInterestId = getBusinessInterestId(activeFilter) || businessInterestId || 1;
+            const fallbackBusinessInterestCode = getBusinessInterestCode(activeFilter);
+            const sectionInfo = {
+              ...sectionInfoRaw,
+              businessInterestId:
+                sectionInfoRaw?.businessInterestId ??
+                sectionInfoRaw?.business_interest_id ??
+                fallbackBusinessInterestId,
+              businessInterest:
+                sectionInfoRaw?.businessInterest ??
+                sectionInfoRaw?.businessInterestCode ??
+                fallbackBusinessInterestCode,
+              businessInterestCode:
+                sectionInfoRaw?.businessInterestCode ??
+                sectionInfoRaw?.businessInterest ??
+                fallbackBusinessInterestCode,
+            };
 
             // Fallback: if the section listings endpoint returns empty, try the dedicated public endpoints.
             const sectionTitle = sectionInfo?.sectionTitle || section?.sectionTitle || "";
@@ -700,7 +729,10 @@ const FleetHome = () => {
             }
 
 
-            if (!sectionData.listings || sectionData.listings.length === 0) {
+            const isShowCategoriesOnly =
+              sectionData.section.displayMode === "SHOW_CATEGORIES_ONLY";
+
+            if ((!sectionData.listings || sectionData.listings.length === 0) && !isShowCategoriesOnly) {
               console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
               return null; // Skip sections with no listings
             }
