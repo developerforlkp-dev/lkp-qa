@@ -378,9 +378,20 @@ const Checkout = () => {
 
       const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
       if (taxRowIndex >= 0 && taxRate > 0) {
+        // Recalculate tax based on discounted subtotal
+        const discountRow = rows.find((r) => /discount/i.test(String(r.title || "")));
+        const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
+        
+        const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
+        const currentDiscountAmount = discountRow ? Math.abs(parseAmount(discountRow.value)) : discountAmount;
+        
+        const subtotalForTax = baseAmount + extraAmount - currentDiscountAmount;
+        const correctedTax = Math.max(0, subtotalForTax * (taxRate / 100));
+
         rows[taxRowIndex] = {
           ...rows[taxRowIndex],
           title: `Tax (${taxRate.toFixed(2)}%)`,
+          value: `+ INR ${correctedTax.toFixed(2)}`,
         };
       }
 
