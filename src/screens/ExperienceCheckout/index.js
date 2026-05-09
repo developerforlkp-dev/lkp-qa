@@ -168,6 +168,9 @@ const Checkout = () => {
             commissionRate: order?.commissionRate,
             tax: order?.taxAmount || order?.tax,
             discount: order?.discountAmount || order?.discount,
+            earlyBirdDiscount: order?.earlyBirdDiscountAmount || order?.earlyBirdDiscount || orderDetails?.earlyBirdDiscount || order?.pricing?.earlyBirdDiscount || orderDetails?.pricing?.earlyBirdDiscount,
+            promoDiscount: order?.promoDiscountAmount || order?.promoDiscount || orderDetails?.promoDiscount || order?.pricing?.promoDiscount || orderDetails?.pricing?.promoDiscount,
+            couponDiscount: order?.couponDiscountAmount || order?.couponDiscount || orderDetails?.couponDiscount || order?.pricing?.couponDiscount || orderDetails?.pricing?.couponDiscount,
             total: order?.totalPrice || order?.finalAmount || order?.total,
             guestCount: order?.numberOfGuests,
             pricePerPerson: order?.pricePerPerson,
@@ -209,6 +212,9 @@ const Checkout = () => {
                     : (serverPricing.baseChildPricePerChild || 0),
                   discount: finalDiscount,
                   discountAmount: finalDiscount,
+                  earlyBirdDiscount: prevPricing.earlyBirdDiscount || serverPricing.earlyBirdDiscount || 0,
+                  promoDiscount: prevPricing.promoDiscount || serverPricing.promoDiscount || 0,
+                  couponDiscount: prevPricing.couponDiscount || serverPricing.couponDiscount || 0,
                   // Prioritize local calculation (prevPricing) to ensure consistency with details page
                   // only fall back to server if local is missing.
                   tax: (Number(prevPricing.tax || 0) > 0)
@@ -478,8 +484,27 @@ const Checkout = () => {
       }
 
       // Discount
-      if (discount > 0) {
-        rows.push({ title: "Discount", value: `- ${fmt(discount)}` });
+      const earlyBirdDiscount = pricing.earlyBirdDiscount || 0;
+      const promoDiscount = pricing.promoDiscount || 0;
+      const couponDiscount = pricing.couponDiscount || 0;
+
+      if (earlyBirdDiscount > 0) {
+        rows.push({ title: "Early Bird Discount", value: `- ${fmt(earlyBirdDiscount)}` });
+      }
+
+      if (promoDiscount > 0) {
+        rows.push({ title: "Promotional Discount", value: `- ${fmt(promoDiscount)}` });
+      }
+
+      if (couponDiscount > 0) {
+        rows.push({ title: "Coupon Discount", value: `- ${fmt(couponDiscount)}` });
+      }
+
+      // Fallback: If we have a generic discount but no specific breakdown or there's a remainder
+      const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
+      if (discount > totalSpecificDiscount + 0.01) {
+        const remainingDiscount = discount - totalSpecificDiscount;
+        rows.push({ title: "Discount", value: `- ${fmt(remainingDiscount)}` });
       }
 
       return {
