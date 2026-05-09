@@ -677,7 +677,11 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   const phone = getPhone();
   const email = getEmail();
 
-  const primaryName = stay?.contactInformation?.primaryContactName || stay?.primaryContactName || stay?.primaryContact?.name || (hostData?.firstName ? `${hostData.firstName} ${hostData.lastName || ""}`.trim() : hostData?.name || hostData?.businessName || hostData?.host?.displayName || stay?.host?.name || stay?.host?.firstName || "Adithyan");
+  const hostFirstName = hostData?.firstName || hostData?.host?.firstName || stay?.host?.firstName || "";
+  const hostLastName = hostData?.lastName || hostData?.host?.lastName || stay?.host?.lastName || "";
+  const combinedHostName = (hostFirstName || hostLastName) ? `${hostFirstName} ${hostLastName}`.trim() : "";
+
+  const primaryName = stay?.contactInformation?.primaryContactName || stay?.primaryContactName || stay?.primaryContact?.name || combinedHostName || hostData?.name || hostData?.businessName || hostData?.host?.displayName || stay?.host?.name || "Adithyan";
   const primaryPhoneNum = stay?.contactInformation?.primaryPhone || stay?.primaryPhone || stay?.primaryContactNumber || stay?.primaryContact?.phone || phone;
   const primaryEmailAddress = stay?.contactInformation?.primaryEmail || stay?.primaryEmail || stay?.primaryContactEmail || stay?.primaryContact?.email || email;
 
@@ -710,8 +714,8 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
                       </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: FG, marginBottom: 4 }}>{primaryName}</h3>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: FG, marginBottom: 4, wordBreak: "break-word", lineHeight: 1.2 }}>{primaryName}</h3>
                     <p style={{ fontSize: 14, color: M }}>Property Representative</p>
                   </div>
                 </div>
