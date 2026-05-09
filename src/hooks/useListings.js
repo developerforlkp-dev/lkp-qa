@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ListingsAPI } from "../utils/api";
+import { ListingsAPI, getFilteredListings, searchNearbyListings } from "../utils/api";
 
 /**
  * Custom hook for fetching listings with filters and pagination
@@ -20,113 +20,189 @@ export const useListings = ({
   limit = 20,
   offset = 0,
   businessInterest = "EXPERIENCE",
+  categoryFilter = null,
 } = {}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
 
+  const mapToNearbyBusinessInterest = useCallback((value) => {
+    const normalized = String(value || "").toUpperCase();
+    if (normalized === "EVENT" || normalized === "EVENTS") return "EVENTS";
+    if (normalized === "STAY" || normalized === "STAYS") return "STAYS";
+    if (normalized === "PLACE" || normalized === "PLACES") return "PLACES";
+    if (normalized === "FOOD") return "FOOD";
+    return "EXPERIENCE";
+  }, []);
+
+  const mapBusinessInterestId = useCallback((value) => {
+    const normalized = String(value || "").toUpperCase();
+    if (normalized.includes("EVENT")) return 2;
+    if (normalized.includes("STAY")) return 3;
+    if (normalized.includes("PLACE")) return 4;
+    if (normalized.includes("FOOD")) return 5;
+    return 1;
+  }, []);
+
   const fetchListings = useCallback(async (currentOffset = 0, reset = false) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Build query parameters
-      const params = {
-        businessInterest,
-        limit,
-        offset: reset ? 0 : currentOffset,
-      };
+      const nextOffset = reset ? 0 : currentOffset;
+      const hasLocationSearch = Boolean(location && String(location).trim());
+      const mappedNearbyInterest = mapToNearbyBusinessInterest(businessInterest);
 
-      // Add search/keyword if provided
-      if (location) {
-        params.search = location;
-        params.location = location;
-      }
-
-      // Add date range if provided
-      if (dateRange?.startDate) {
-        params.startDate = dateRange.startDate;
-      }
-      if (dateRange?.endDate) {
-        params.endDate = dateRange.endDate;
-      }
-
-      // Add guest count
-      if (guests.adults) {
-        params.adults = guests.adults;
-      }
-      if (guests.children) {
-        params.children = guests.children;
-      }
-      if (guests.infants) {
-        params.infants = guests.infants;
-      }
-      if (guests.pets) {
-        params.pets = guests.pets;
-      }
-
-      // Add filters
-      if (filters.priceRange) {
-        if (filters.priceRange.min !== undefined) {
-          params.minPrice = filters.priceRange.min;
-        }
-        if (filters.priceRange.max !== undefined) {
-          params.maxPrice = filters.priceRange.max;
-        }
-      }
-
-      if (filters.propertyTypes && filters.propertyTypes.length > 0) {
-        params.propertyTypes = filters.propertyTypes.join(",");
-      }
-
-      if (filters.amenities && filters.amenities.length > 0) {
-        params.amenities = filters.amenities.join(",");
-      }
-
-      if (filters.ratings && filters.ratings.length > 0) {
-        params.minRating = Math.min(...filters.ratings);
-      }
-
-      if (filters.categories && filters.categories.length > 0) {
-        params.categories = filters.categories.join(",");
-      }
-
-      const endpoint = businessInterest === "EVENT" ? "/public/events" : "/public/listings";
-      const response = await ListingsAPI.get(endpoint, { params });
-      
-      // Normalize response to always return an array
       let listings = [];
       let totalCount = null;
       let hasMoreFromAPI = null;
-      const payload = response.data;
-      
-      if (Array.isArray(payload)) {
-        listings = payload;
-      } else if (payload && typeof payload === "object") {
-        // Extract listings array
-        if (Array.isArray(payload.data)) {
-          listings = payload.data;
-        } else if (Array.isArray(payload.items)) {
-          listings = payload.items;
-        } else if (Array.isArray(payload.listings)) {
-          listings = payload.listings;
+
+      const hasCategoryFilter = Boolean(
+        categoryFilter &&
+        categoryFilter.categoryType &&
+        Array.isArray(categoryFilter.categoryValues) &&
+        categoryFilter.categoryValues.length > 0
+      );
+
+      if (hasCategoryFilter) {
+        const mappedBusinessInterestId =
+          categoryFilter.businessInterestId || mapBusinessInterestId(businessInterest);
+
+        const filteredResponse = await getFilteredListings({
+          businessInterestId: mappedBusinessInterestId,
+          categoryType: categoryFilter.categoryType,
+          categoryValues: categoryFilter.categoryValues,
+          limit,
+          offset: nextOffset,
+          sortBy: categoryFilter.sortBy || "newest",
+        });
+
+        listings = filteredResponse.listings || [];
+        totalCount = filteredResponse.totalCount ?? null;
+        hasMoreFromAPI = filteredResponse.hasMore ?? null;
+      } else if (hasLocationSearch) {
+        // Nearby search flow
+        const nearbyResponse = await searchNearbyListings({
+          businessInterest: mappedNearbyInterest,
+          locationName: location,
+          date: mappedNearbyInterest === "EVENTS" ? dateRange?.startDate : undefined,
+          limit,
+          offset: nextOffset,
+        });
+
+        listings = nearbyResponse.listings || [];
+        totalCount = nearbyResponse.totalCount ?? null;
+        hasMoreFromAPI = nearbyResponse.hasMore ?? null;
+      } else {
+        // Existing non-nearby flow
+        const params = {
+          businessInterest,
+          limit,
+          offset: nextOffset,
+        };
+
+        // Add search/keyword if provided
+        if (location) {
+          params.search = location;
+          params.location = location;
         }
-        
-        // Extract pagination metadata if available
-        if (payload.totalCount !== undefined) {
-          totalCount = payload.totalCount;
-        } else if (payload.total !== undefined) {
-          totalCount = payload.total;
-        } else if (payload.count !== undefined) {
-          totalCount = payload.count;
+
+        // Add date range if provided
+        if (dateRange?.startDate) {
+          params.startDate = dateRange.startDate;
         }
-        
-        // Check for explicit hasMore flag
-        if (payload.hasMore !== undefined) {
-          hasMoreFromAPI = payload.hasMore;
-        } else if (payload.has_more !== undefined) {
-          hasMoreFromAPI = payload.has_more;
+        if (dateRange?.endDate) {
+          params.endDate = dateRange.endDate;
+        }
+
+        // Add guest count
+        if (guests.adults) {
+          params.adults = guests.adults;
+        }
+        if (guests.children) {
+          params.children = guests.children;
+        }
+        if (guests.infants) {
+          params.infants = guests.infants;
+        }
+        if (guests.pets) {
+          params.pets = guests.pets;
+        }
+
+        // Add filters
+        if (filters.priceRange) {
+          if (filters.priceRange.min !== undefined) {
+            params.minPrice = filters.priceRange.min;
+          }
+          if (filters.priceRange.max !== undefined) {
+            params.maxPrice = filters.priceRange.max;
+          }
+        }
+
+        if (filters.propertyTypes && filters.propertyTypes.length > 0) {
+          params.propertyTypes = filters.propertyTypes.join(",");
+        }
+
+        if (filters.amenities && filters.amenities.length > 0) {
+          params.amenities = filters.amenities.join(",");
+        }
+
+        if (filters.ratings && filters.ratings.length > 0) {
+          params.minRating = Math.min(...filters.ratings);
+        }
+
+        if (filters.categories && filters.categories.length > 0) {
+          params.categories = filters.categories.join(",");
+        }
+
+        if (filters.tags && filters.tags.length > 0) {
+          params.tags = filters.tags.join(",");
+        }
+
+        if (filters.specialLabels && filters.specialLabels.length > 0) {
+          params.specialLabels = filters.specialLabels.join(",");
+        }
+
+        if (filters.dateRange?.startDate) {
+          params.startDate = filters.dateRange.startDate;
+        }
+        if (filters.dateRange?.endDate) {
+          params.endDate = filters.dateRange.endDate;
+        }
+
+        const endpoint = businessInterest === "EVENT" ? "/public/events" : "/public/listings";
+        const response = await ListingsAPI.get(endpoint, { params });
+        const payload = response.data;
+
+        // Normalize response to always return an array
+        if (Array.isArray(payload)) {
+          listings = payload;
+        } else if (payload && typeof payload === "object") {
+          // Extract listings array
+          if (Array.isArray(payload.data)) {
+            listings = payload.data;
+          } else if (Array.isArray(payload.items)) {
+            listings = payload.items;
+          } else if (Array.isArray(payload.listings)) {
+            listings = payload.listings;
+          }
+
+          // Extract pagination metadata if available
+          if (payload.totalCount !== undefined) {
+            totalCount = payload.totalCount;
+          } else if (payload.total !== undefined) {
+            totalCount = payload.total;
+          } else if (payload.count !== undefined) {
+            totalCount = payload.count;
+          }
+
+          // Check for explicit hasMore flag
+          if (payload.hasMore !== undefined) {
+            hasMoreFromAPI = payload.hasMore;
+          } else if (payload.has_more !== undefined) {
+            hasMoreFromAPI = payload.has_more;
+          }
         }
       }
 
@@ -165,16 +241,17 @@ export const useListings = ({
       console.log("📄 Pagination info:", {
         requested: limit,
         received: listings.length,
-        offset: reset ? 0 : currentOffset,
+        offset: nextOffset,
         totalCount,
         hasMoreFromAPI,
         shouldHaveMore,
         reset,
       });
 
-      // Client-side filtering as an extra layer to ensure name/title matches
+      // Client-side filtering as an extra layer for non-nearby flow.
+      // Nearby endpoint is already location-specific and sorted by distance.
       let processedListings = listings;
-      if (location) {
+      if (location && !hasLocationSearch) {
         const query = location.toLowerCase();
         processedListings = listings.filter(l => 
           (l.title && l.title.toLowerCase().includes(query)) ||
@@ -208,11 +285,11 @@ export const useListings = ({
     } finally {
       setLoading(false);
     }
-  }, [location, dateRange, guests, filters, limit, businessInterest]);
+  }, [location, dateRange, guests, filters, limit, businessInterest, categoryFilter, mapBusinessInterestId, mapToNearbyBusinessInterest]);
 
   useEffect(() => {
     fetchListings(0, true);
-  }, [location, dateRange, guests, filters, businessInterest, fetchListings]);
+  }, [location, dateRange, guests, filters, businessInterest, categoryFilter, fetchListings]);
 
   const fetchMore = useCallback(() => {
     if (!loading && hasMore) {

@@ -20,7 +20,7 @@ const SkeletonCard = () => {
   );
 };
 
-const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore }) => {
+const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMessage = "No listings found. Try adjusting your filters." }) => {
   if (error) {
     return (
       <div className={styles.error}>
@@ -47,7 +47,7 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore }) => {
     return (
       <div className={styles.empty}>
         <Icon name="search" size="48" />
-        <p>No listings found. Try adjusting your filters.</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }

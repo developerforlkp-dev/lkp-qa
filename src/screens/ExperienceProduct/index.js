@@ -279,12 +279,12 @@ const EarlyBirdTicker = ({ discounts, A }) => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -15, opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          style={{ 
+          style={{
             gridArea: "1 / 1",
-            fontSize: 10, 
-            letterSpacing: "0.3em", 
-            textTransform: "uppercase", 
-            color: "#FFFFFF", 
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "#FFFFFF",
             fontWeight: 800,
             whiteSpace: "nowrap",
             display: "block"
@@ -437,7 +437,7 @@ const ExperienceProduct = () => {
               console.log(`💬 Fetched reviews for ${id}:`, resp);
               if (resp.reviews) setReviews(resp.reviews);
               else if (Array.isArray(resp)) setReviews(resp);
-              
+
               if (resp.summary) setReviewSummary(resp.summary);
               setReviewsLoading(false);
             }
@@ -535,7 +535,7 @@ const ExperienceProduct = () => {
                 }}
               >
                 <Sparkles color={A} size={14} />
-                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a,b) => b.percentage - a.percentage)} A={A} />
+                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} />
               </motion.div>
             </motion.div>
           )}
@@ -606,13 +606,12 @@ const ExperienceProduct = () => {
         {/* DETAILS SECTION */}
         <section className="details-section" style={{ background: BG, padding: "48px 36px 80px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div className="section-header-wrapper"><SHdr idx="01" label="Overview" /></div>
+            <div className="section-header-wrapper"><SHdr idx="01" label="Story" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20 }} className="details-grid">
               <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
                 <div className="what-we-do-card" style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
-                    <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 12, fontWeight: 600 }}>What We Do</p>
-                    <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>A Guided Journey</h2>
+                    <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>Your Journey Begins</h2>
                     <p style={{ color: M, fontSize: 14, lineHeight: 1.7 }}>{description}</p>
                   </div>
                 </div>
@@ -674,10 +673,11 @@ const ExperienceProduct = () => {
             </div>
 
 
+            <div className="section-header-wrapper" style={{ marginTop: 80 }}><SHdr idx="02" label="Flow" /></div>
             <Rev delay={0.4} style={{ marginTop: 16 }}>
               <div style={{ background: W, border: `1px solid ${B}`, padding: "64px", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80 }} className="details-inner">
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
-                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Included Add-ons</p>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Make it Yours</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                     {(listing?.addons || []).length > 0 ? (listing.addons.map((item, i) => {
                       const addon = item.addon || item;
@@ -694,7 +694,7 @@ const ExperienceProduct = () => {
                           style={{
                             display: "flex",
                             gap: 24,
-                            alignItems: "flex-start",
+                            alignItems: "center",
                             padding: "20px",
                             background: isSelected ? AL : "transparent",
                             borderRadius: 24,
@@ -718,12 +718,12 @@ const ExperienceProduct = () => {
                             )}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title}</p>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                                 {isSelected ? (
                                   pricingType === "Group" ? (
                                     <button
@@ -733,7 +733,10 @@ const ExperienceProduct = () => {
                                         color: A,
                                         border: `1px solid ${A}`,
                                         borderRadius: 100,
-                                        padding: "6px 20px",
+                                        padding: "0 20px",
+                                        height: "36px",
+                                        display: "flex",
+                                        alignItems: "center",
                                         fontSize: 11,
                                         fontWeight: 700,
                                         cursor: "pointer",
@@ -744,7 +747,7 @@ const ExperienceProduct = () => {
                                       Remove
                                     </button>
                                   ) : (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "4px 8px", border: `1px solid ${B}` }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
                                       <button
                                         onClick={() => handleUpdateAddonQuantity(addon, -1)}
                                         style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
@@ -770,7 +773,10 @@ const ExperienceProduct = () => {
                                       color: FG,
                                       border: `1px solid ${B}`,
                                       borderRadius: 100,
-                                      padding: "6px 20px",
+                                      padding: "0 20px",
+                                      height: "36px",
+                                      display: "flex",
+                                      alignItems: "center",
                                       fontSize: 11,
                                       fontWeight: 700,
                                       cursor: "pointer",
@@ -820,7 +826,7 @@ const ExperienceProduct = () => {
                 </div>
 
                 <div>
-                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>The Narrative Flow</p>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>How it Unfolds</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
                     <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
 
@@ -879,10 +885,10 @@ const ExperienceProduct = () => {
         {/* PREPARATION SECTION */}
         <section className="prep-section" style={{ background: W, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div className="section-header-wrapper"><SHdr idx="02" label="Preparation" /></div>
+            <div className="section-header-wrapper"><SHdr idx="03" label="Landscape" /></div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
               <Rev delay={0.1}>
-                <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Meeting Point</h3>
+                <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Where it All Happens</h3>
                 <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                     <MapPin size={20} color={A} />
@@ -916,7 +922,7 @@ const ExperienceProduct = () => {
               <Rev delay={0.2}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
                   <div>
-                    <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Location Details</h3>
+                    <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Where it is</h3>
                     <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
                       {[
                         { label: "Address", val: listing?.meetingAddress },
@@ -947,7 +953,7 @@ const ExperienceProduct = () => {
 
         <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
-        <ExperiencePolicies listing={listing} reviews={normalizedReviews} reviewSummary={reviewSummary} />
+        <ExperiencePolicies listing={listing} />
         <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
 
@@ -956,7 +962,7 @@ const ExperienceProduct = () => {
         <section className="host-section" style={{ background: BG, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
             <Rev delay={0.1} style={{ height: "100%" }}>
-              <div className="section-header-wrapper"><SHdr idx="05" label="The Host" /></div>
+              <div className="section-header-wrapper"><SHdr idx="05" label="Peoples" /></div>
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
                 <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
@@ -970,10 +976,11 @@ const ExperienceProduct = () => {
               </div>
             </Rev>
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <div className="section-header-wrapper"><SHdr idx="06" label="TESTIMONIALS" /></div>
+              <div className="section-header-wrapper"><SHdr idx="06" label="What Others Are Saying" /></div>
               <div style={{ padding: "40px 32px", background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 <ReviewsSection
                   reviews={reviews}
+                  summary={reviewSummary}
                   listingId={id}
                   eligibleBookings={eligibleBookings}
                   onReviewSubmitted={() => {
@@ -1498,18 +1505,18 @@ function QualityIndexSection({ qualityIndex }) {
 }
 
 
-function ExperiencePolicies({ listing, reviews, reviewSummary }) {
+function ExperiencePolicies({ listing }) {
   const { tokens: { FG, W, B, A, M } } = useTheme();
 
   return (
     <section className="policies-section" style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div className="section-header-wrapper"><SHdr idx="03" label="Rules & Policies" /></div>
+        <div className="section-header-wrapper"><SHdr idx="04" label="Essentials" /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <Chars
-                text="Know Before"
+                text="Things To"
                 cls="font-display"
                 style={{
                   fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
@@ -1520,7 +1527,18 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
                 }}
               />
               <Chars
-                text="You Go."
+                text="Keep In"
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
+                  letterSpacing: "-0.02em"
+                }}
+              />
+              <Chars
+                text="Mind"
                 cls="font-display"
                 style={{
                   fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
@@ -1551,7 +1569,6 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
                   }}
                 />
               )}
-              <ReviewsItem reviews={reviews} summary={reviewSummary} />
             </div>
           </Rev>
         </div>
@@ -1560,7 +1577,7 @@ function ExperiencePolicies({ listing, reviews, reviewSummary }) {
   );
 }
 
-function ReviewsSection({ reviews = [], listingId, eligibleBookings = [], onReviewSubmitted }) {
+function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [], onReviewSubmitted }) {
   const { tokens: { A, FG, M, B, W, S, BG } } = useTheme();
   const routerHistory = useHistory();
 
@@ -1662,6 +1679,19 @@ function ReviewsSection({ reviews = [], listingId, eligibleBookings = [], onRevi
       </AnimatePresence>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        {summary && summary.averageRating > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8, paddingBottom: 24, borderBottom: `1px solid ${B}` }}>
+            <div style={{ fontSize: 48, fontWeight: 900, color: FG, lineHeight: 1 }}>{summary.averageRating.toFixed(1)}</div>
+            <div>
+              <div style={{ display: "flex", color: "#FFC107", fontSize: 16, marginBottom: 4 }}>
+                {[...Array(5)].map((_, i) => (
+                  <span key={i}>{i < Math.round(summary.averageRating) ? "★" : "☆"}</span>
+                ))}
+              </div>
+              <p style={{ fontSize: 10, color: M, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Average Guest Rating</p>
+            </div>
+          </div>
+        )}
         {!hasReviews && !showForm ? (
           <div style={{ padding: "40px 0", textAlign: "center", background: `${A}05`, borderRadius: 16, border: `1px dashed ${A}30` }}>
             <Sparkles size={24} style={{ color: A, opacity: 0.5, marginBottom: 12 }} />

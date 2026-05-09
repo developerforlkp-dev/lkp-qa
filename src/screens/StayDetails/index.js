@@ -29,6 +29,31 @@ const fixImageUrl = (url) => {
 
 const E = [0.22, 1, 0.36, 1];
 
+/* ─── HOOKS ─────────── */
+function useWindowSize() {
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    isMobile: window.innerWidth <= 768,
+    isTablet: window.innerWidth > 768 && window.innerWidth <= 1024,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isMobile: window.innerWidth <= 768,
+        isTablet: window.innerWidth > 768 && window.innerWidth <= 1024,
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return size;
+}
+
 const ScopedStyles = () => (
   <style>{`
     .stay-details-premium {
@@ -74,7 +99,14 @@ const ScopedStyles = () => (
 
     @media(max-width:768px){
       .stay-details-premium .desk-only { display: none !important; }
-      .pol-contact-grid, .amenities-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+      .pol-contact-grid, .amenities-grid, .location-grid, .reviews-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+      .stay-details-premium #cur-dot, .stay-details-premium #cur-ring { display: none !important; }
+      .stay-details-premium { cursor: auto !important; }
+      .stay-details-premium a, .stay-details-premium button { cursor: pointer !important; }
+    }
+    
+    @media(max-width:480px){
+      .stay-details-premium .section-padding { padding: 60px 20px !important; }
     }
   `}</style>
 );
@@ -256,13 +288,14 @@ function SHdr({ idx, label }) {
 
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
-  const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+  const { width, isMobile } = useWindowSize();
+  const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
   const items = galleryItems.slice(0, 5);
 
   // Infinite Loop Logic for images only
   const x = useMotionValue(0);
-  const speed = 0.03;
+  const speed = isMobile ? 0.015 : 0.03;
 
   useAnimationFrame((t, delta) => {
     const moveBy = (delta || 16) * speed;
@@ -272,37 +305,39 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
   const BentoGridImages = () => (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "minmax(500px, 1.2fr) minmax(300px, 0.8fr) minmax(400px, 1fr)",
+      gridTemplateColumns: isMobile 
+        ? "repeat(3, 300px)" 
+        : "minmax(500px, 1.2fr) minmax(300px, 0.8fr) minmax(400px, 1fr)",
       gridTemplateRows: "1fr 1fr",
-      gap: 24,
+      gap: isMobile ? 12 : 24,
       height: "100%",
-      width: "100vw",
+      width: isMobile ? "fit-content" : "100vw",
       padding: "0 12px",
       flexShrink: 0
     }}>
-      <div style={{ gridArea: "1 / 1 / 3 / 2", borderRadius: 24, overflow: "hidden", border: `1px solid ${B}` }}>
+      <div style={{ gridArea: isMobile ? "1 / 1 / 3 / 2" : "1 / 1 / 3 / 2", borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}`, position: "relative" }}>
         <img src={fixImageUrl(items[0] || stay?.coverPhotoUrl)} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.2)" }} />
+        <div style={{ position: "absolute", inset: 0, background: theme === 'dark' ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.05)" }} />
       </div>
-      <div style={{ borderRadius: 24, overflow: "hidden", border: `1px solid ${B}` }}>
+      <div style={{ borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
         <img src={fixImageUrl(items[1])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
       </div>
-      <div style={{ borderRadius: 24, overflow: "hidden", border: `1px solid ${B}` }}>
+      <div style={{ borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
         <img src={fixImageUrl(items[2])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
       </div>
-      <div style={{ gridArea: "1 / 3 / 3 / 4", borderRadius: 24, overflow: "hidden", border: `1px solid ${B}` }}>
+      <div style={{ gridArea: isMobile ? "1 / 3 / 3 / 4" : "1 / 3 / 3 / 4", borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
         <img src={fixImageUrl(items[3] || items[0])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
       </div>
     </div>
   );
 
   const wrappedX = useTransform(x, (v) => {
-    const W = window.innerWidth;
+    const W = isMobile ? 900 : window.innerWidth;
     return `${v % W}px`;
   });
 
   return (
-    <section style={{ position: "relative", height: "85vh", background: BG, overflow: "hidden", padding: "0", zIndex: 50 }}>
+    <section style={{ position: "relative", height: isMobile ? "70vh" : "85vh", background: BG, overflow: "hidden", padding: "0", zIndex: 50 }}>
       {/* Looping Image Track */}
       <motion.div style={{ x: wrappedX, display: "flex", height: "100%", width: "fit-content" }}>
         <BentoGridImages />
@@ -311,38 +346,55 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
       </motion.div>
 
       {/* Static Fixed Text Overlay */}
-      <div style={{ position: "absolute", bottom: 80, left: 80, zIndex: 40, pointerEvents: "none" }}>
+      <div style={{ 
+        position: "absolute", 
+        bottom: isMobile ? 20 : 80, 
+        left: isMobile ? 20 : 80, 
+        right: isMobile ? 20 : "auto",
+        zIndex: 40, 
+        pointerEvents: "none" 
+      }}>
         <Rev delay={0.2}>
-          <div style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(20px)", padding: "40px 60px", borderRadius: 32, border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div style={{ width: 40, height: 1, background: A }} />
-              <span style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: A, fontWeight: 800 }}>{toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}</span>
+          <div style={{ 
+            background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.95)", 
+            backdropFilter: "blur(20px)", 
+            padding: isMobile ? "24px 30px" : "40px 60px", 
+            borderRadius: isMobile ? 20 : 32, 
+            border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`, 
+            boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 8 : 16 }}>
+              <div style={{ width: isMobile ? 24 : 40, height: 1, background: A }} />
+              <span style={{ fontSize: isMobile ? 8 : 10, letterSpacing: "0.4em", textTransform: "uppercase", color: A, fontWeight: 800 }}>{toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}</span>
             </div>
-            <h1 className="font-display" style={{ fontSize: "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: "#FFF", lineHeight: 0.9, letterSpacing: "-0.03em" }}>{title.toUpperCase()}</h1>
-            <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 12, color: "#FFF" }}>
-              <MapPin size={18} />
-              <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.1em" }}>{stay?.city}, {stay?.state}</span>
+            <h1 className="font-display" style={{ fontSize: isMobile ? "2rem" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em" }}>{title.toUpperCase()}</h1>
+            <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: theme === 'dark' ? "#FFF" : FG }}>
+              <MapPin size={isMobile ? 14 : 18} />
+              <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{stay?.city}, {stay?.state}</span>
             </div>
           </div>
         </Rev>
       </div>
 
       {/* Static Overlays: Luxury Badge */}
-      <div style={{ position: "absolute", top: 60, left: 60, zIndex: 30, pointerEvents: "none" }}>
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ width: 90, height: 90 }}>
-          <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%" }}>
-            <path id="badgePath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" fill="transparent" />
-            <text style={{ fontSize: 7.5, fontWeight: 800, fill: A, textTransform: "uppercase", letterSpacing: "2.5px" }}>
-              <textPath xlinkHref="#badgePath">Luxury Retreat — Premium Stay —</textPath>
-            </text>
-          </svg>
-        </motion.div>
-      </div>
+      {!isMobile && (
+        <div style={{ position: "absolute", top: 60, left: 60, zIndex: 30, pointerEvents: "none" }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ width: 90, height: 90 }}>
+            <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%" }}>
+              <path id="badgePath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" fill="transparent" />
+              <text style={{ fontSize: 7.5, fontWeight: 800, fill: A, textTransform: "uppercase", letterSpacing: "2.5px" }}>
+                <textPath xlinkHref="#badgePath">Luxury Retreat — Premium Stay —</textPath>
+              </text>
+            </svg>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 }
 
 function StayAmenities({ stay }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, FG, M, S, B, W } } = useTheme();
 
   const iconMap = {
@@ -388,19 +440,22 @@ function StayAmenities({ stay }) {
   }, [stay]);
 
   return (
-    <section style={{ background: W, padding: "140px 36px" }}>
+    <section style={{ background: W, padding: isMobile ? "80px 24px" : "140px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="02" label="Facilities & Services" />
-        <Soul y={100} s={0.08}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80 }}>
+        <Soul y={isMobile ? 40 : 100} s={0.08}>
+          <div className="amenities-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 40 : 80 }}>
             {/* Left Column: Descriptions */}
             <Rev>
               {(() => {
                 const short = stay?.shortDescription || "";
+                const baseTitleCls = "font-display";
+                const baseTitleStyle = { fontSize: isMobile ? "2.2rem" : "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden" };
+                
                 if (!short) return (
                   <>
-                    <Chars text="A sanctuary redefined" cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden" }} />
-                    <Chars text="at the water's edge." delay={0.12} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: A, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 32, display: "block", overflow: "hidden" }} />
+                    <Chars text="A sanctuary redefined" cls={baseTitleCls} style={baseTitleStyle} />
+                    <Chars text="at the water's edge." delay={0.12} cls={baseTitleCls} style={{ ...baseTitleStyle, color: A }} />
                   </>
                 );
                 const words = short.trim().split(" ");
@@ -409,12 +464,12 @@ function StayAmenities({ stay }) {
                 const line2 = words.slice(mid).join(" ");
                 return (
                   <>
-                    <Chars text={line1} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden" }} />
-                    {line2 && <Chars text={line2} delay={0.12} cls="font-display" style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: A, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 32, display: "block", overflow: "hidden" }} />}
+                    <Chars text={line1} cls={baseTitleCls} style={baseTitleStyle} />
+                    {line2 && <Chars text={line2} delay={0.12} cls={baseTitleCls} style={{ ...baseTitleStyle, color: A }} />}
                   </>
                 );
               })()}
-              <p style={{ fontSize: 16, color: M, lineHeight: 1.85 }}>
+              <p style={{ fontSize: 16, color: M, lineHeight: 1.85, marginTop: 24 }}>
                 {stay?.detailedDescription || stay?.description || "Experience the pinnacle of hospitality where architecture meets the raw beauty of nature."}
               </p>
             </Rev>
@@ -427,7 +482,7 @@ function StayAmenities({ stay }) {
                     <Building size={18} color={A} />
                     <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: FG, fontWeight: 700 }}>Facilities & Services</p>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px 32px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "24px 32px" }}>
                     {dynamicFacilities.map((label, i) => {
                       const IconComp = getIcon(label);
                       return (
@@ -502,6 +557,7 @@ function PolicyItem({ rule, A, FG, M, B, S }) {
 }
 
 function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
   const policies = useMemo(() => {
     const categories = [];
@@ -621,7 +677,11 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   const phone = getPhone();
   const email = getEmail();
 
-  const primaryName = stay?.contactInformation?.primaryContactName || stay?.primaryContactName || stay?.primaryContact?.name || (hostData?.firstName ? `${hostData.firstName} ${hostData.lastName || ""}`.trim() : hostData?.name || hostData?.businessName || hostData?.host?.displayName || stay?.host?.name || stay?.host?.firstName || "Adithyan");
+  const hostFirstName = hostData?.firstName || hostData?.host?.firstName || stay?.host?.firstName || "";
+  const hostLastName = hostData?.lastName || hostData?.host?.lastName || stay?.host?.lastName || "";
+  const combinedHostName = (hostFirstName || hostLastName) ? `${hostFirstName} ${hostLastName}`.trim() : "";
+
+  const primaryName = stay?.contactInformation?.primaryContactName || stay?.primaryContactName || stay?.primaryContact?.name || combinedHostName || hostData?.name || hostData?.businessName || hostData?.host?.displayName || stay?.host?.name || "Adithyan";
   const primaryPhoneNum = stay?.contactInformation?.primaryPhone || stay?.primaryPhone || stay?.primaryContactNumber || stay?.primaryContact?.phone || phone;
   const primaryEmailAddress = stay?.contactInformation?.primaryEmail || stay?.primaryEmail || stay?.primaryContactEmail || stay?.primaryContact?.email || email;
 
@@ -632,35 +692,35 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   const frontOffice = stay?.contactInformation?.frontOfficePhone || stay?.frontOfficePhone || stay?.frontOfficeContact;
 
   return (
-    <section style={{ background: BG, padding: "140px 36px" }}>
+    <section style={{ background: BG, padding: isMobile ? "80px 24px" : "140px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
 
         <SHdr idx="05" label="Guidelines & Contact" />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 100, alignItems: "start", marginTop: 40 }}>
+        <div className="pol-contact-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.5fr", gap: isMobile ? 60 : 100, alignItems: "start", marginTop: 40 }}>
 
           {/* Left Column: Host Details */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 40 }}>
             <div>
               <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>Property Host</p>
               <Rev>
-                <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 32 }}>
-                  <div style={{ width: 80, height: 80, borderRadius: "50%", overflow: "hidden", border: `1px solid ${B}`, background: S }}>
+                <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 16 : 24, marginBottom: 32 }}>
+                  <div style={{ width: isMobile ? 60 : 80, height: isMobile ? 60 : 80, borderRadius: "50%", overflow: "hidden", border: `1px solid ${B}`, background: S }}>
                     {hostAvatar ? (
                       <img src={hostAvatar} alt={primaryName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, color: M }}>
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? 20 : 24, fontWeight: 700, color: M }}>
                         {primaryName.charAt(0)}
                       </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-display" style={{ fontSize: 32, fontWeight: 700, color: FG, marginBottom: 4 }}>{primaryName}</h3>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: FG, marginBottom: 4, wordBreak: "break-word", lineHeight: 1.2 }}>{primaryName}</h3>
                     <p style={{ fontSize: 14, color: M }}>Property Representative</p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "32px", background: W, border: `1px solid ${B}`, borderRadius: 2 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: isMobile ? "24px" : "32px", background: W, border: `1px solid ${B}`, borderRadius: 2 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>Phone</span>
                     <a href={`tel:${primaryPhoneNum}`} style={{ fontSize: 16, fontWeight: 600, color: FG, textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
@@ -681,7 +741,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
 
             {frontOffice && (
               <Rev delay={0.1}>
-                <div style={{ padding: "32px", background: S, border: `1px solid ${B}`, borderRadius: 2 }}>
+                <div style={{ padding: isMobile ? "24px" : "32px", background: S, border: `1px solid ${B}`, borderRadius: 2 }}>
                   <p style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Front Office</p>
                   <a href={`tel:${frontOffice}`} style={{ fontSize: 16, fontWeight: 600, color: FG, textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
                     <Building size={16} color={A} />
@@ -716,6 +776,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
 
 /* ─── MAIN COMPONENT ─────────── */
 const StayDetails = () => {
+  const { width, isMobile } = useWindowSize();
   const { tokens: { BG, FG, W, B, S, M } } = useTheme();
   const history = useHistory();
   const location = useLocation();
@@ -839,7 +900,7 @@ const StayDetails = () => {
     <div className="stay-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
       <ScopedStyles />
 
-      <ProductNavbar top={100} left={60} />
+      <ProductNavbar top={isMobile ? 20 : 100} left={isMobile ? 20 : 60} />
 
       <StayHeroCarousel stay={stay} galleryItems={galleryItems} />
 
@@ -908,6 +969,7 @@ const StayDetails = () => {
 };
 
 function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubmitted }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, FG, M, B, W, S, BG } } = useTheme();
   const routerHistory = useHistory();
   const [showForm, setShowForm] = useState(false);
@@ -970,9 +1032,9 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
   const hasReviews = normalizedReviews.length > 0;
 
   return (
-    <section style={{ background: W, padding: "120px 36px", borderTop: `1px solid ${B}` }}>
+    <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 52 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-end", gap: 24, marginBottom: 52 }}>
           <SHdr idx="06" label="GUEST REVIEWS" />
           {eligibleBookings.length > 0 && (
             <button
@@ -991,12 +1053,12 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
           )}
         </div>
         
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 100, marginTop: 40 }}>
+        <div className="reviews-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: isMobile ? 60 : 100, marginTop: 40 }}>
           {/* Left: Summary */}
           <div>
             <Rev>
               <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
-                <span style={{ fontSize: 80, fontWeight: 900, color: FG, lineHeight: 1, letterSpacing: "-0.05em" }}>
+                <span style={{ fontSize: isMobile ? 60 : 80, fontWeight: 900, color: FG, lineHeight: 1, letterSpacing: "-0.05em" }}>
                   {avgRating > 0 ? avgRating.toFixed(1) : (hasReviews ? "4.8" : "0.0")}
                 </span>
                 <span style={{ fontSize: 24, fontWeight: 800, color: A }}>★</span>
@@ -1011,7 +1073,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
           </div>
 
           {/* Right: Review List */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 48 }}>
             <div id="review-form-anchor" />
             <AnimatePresence>
               {showForm && (
@@ -1019,9 +1081,9 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  style={{ background: S, border: `1px solid ${B}`, padding: 40, borderRadius: 4, marginBottom: 40 }}
+                  style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? 24 : 40, borderRadius: 4, marginBottom: 40 }}
                 >
-                  <h3 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: FG, marginBottom: 8 }}>Share your stay</h3>
+                  <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 28, fontWeight: 700, color: FG, marginBottom: 8 }}>Share your stay</h3>
                   <p style={{ fontSize: 14, color: M, marginBottom: 32 }}>How was your time at the property? Your feedback is valuable.</p>
 
                   <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -1046,7 +1108,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
 
                     {error && <p style={{ color: "#FF4D4D", fontSize: 13, fontWeight: 600 }}>{error}</p>}
 
-                    <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, marginTop: 12 }}>
                       <button
                         type="submit"
                         disabled={isSubmitting}
@@ -1080,7 +1142,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
             ) : (
               normalizedReviews.slice(0, 2).map((rev, i) => (
                 <Rev key={i} delay={i * 0.1}>
-                  <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 32, alignItems: "flex-start" }}>
                     <div style={{ width: 56, height: 56, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18, fontWeight: 700, color: A }}>
                       {(rev.customerName || rev.author || "G")[0].toUpperCase()}
                     </div>
@@ -1122,7 +1184,8 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                     textTransform: "uppercase", 
                     letterSpacing: "0.2em",
                     cursor: "pointer",
-                    transition: "0.3s"
+                    transition: "0.3s",
+                    width: isMobile ? "100%" : "auto"
                   }}
                 >
                   See More
@@ -1137,6 +1200,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
 }
 
 function StayLocation({ stay }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
 
   // Robustly extract coordinates
@@ -1164,17 +1228,17 @@ function StayLocation({ stay }) {
   ];
 
   return (
-    <section style={{ background: W, padding: "120px 36px", borderTop: `1px solid ${B}` }}>
+    <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="02" label="PREPARATION" />
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 100, marginTop: 40 }}>
+        <div className="location-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(400px, 1fr))", gap: isMobile ? 60 : 100, marginTop: 40 }}>
           {/* Left Column: Location Card */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-            <h2 className="font-display" style={{ fontSize: 48, fontWeight: 700, color: FG }}>Location</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 32 }}>
+            <h2 className="font-display" style={{ fontSize: isMobile ? 32 : 48, fontWeight: 700, color: FG }}>Location</h2>
             <div style={{ background: S, borderRadius: 2, overflow: "hidden", border: `1px solid ${B}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
               {/* Card Header Area */}
-              <div style={{ padding: "24px 32px", background: BG, borderBottom: `1px solid ${B}` }}>
+              <div style={{ padding: isMobile ? "20px" : "24px 32px", background: BG, borderBottom: `1px solid ${B}` }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                   <MapPin size={20} color={A} style={{ marginTop: 4 }} />
                   <div>
@@ -1184,7 +1248,7 @@ function StayLocation({ stay }) {
                 </div>
               </div>
               {/* Map Area */}
-              <div style={{ height: 400, position: "relative" }}>
+              <div style={{ height: isMobile ? 300 : 400, position: "relative" }}>
                 <iframe
                   title="Property Location Map"
                   width="100%"
@@ -1199,13 +1263,13 @@ function StayLocation({ stay }) {
           </div>
 
           {/* Right Column: Location Details Table */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-            <h2 className="font-display" style={{ fontSize: 48, fontWeight: 700, color: FG }}>Location Details</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 32 }}>
+            <h2 className="font-display" style={{ fontSize: isMobile ? 32 : 48, fontWeight: 700, color: FG }}>Location Details</h2>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {detailRows.map((row, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: 32, padding: "28px 0", borderBottom: `1px solid ${B}` }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: A, textTransform: "uppercase" }}>{row.label}</span>
-                  <span style={{ fontSize: 16, fontWeight: 600, color: FG, lineHeight: 1.5 }}>{row.value}</span>
+                <div key={i} style={{ display: "grid", gridTemplateColumns: isMobile ? "100px 1fr" : "140px 1fr", gap: isMobile ? 16 : 32, padding: isMobile ? "20px 0" : "28px 0", borderBottom: `1px solid ${B}` }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: A, textTransform: "uppercase" }}>{row.label}</span>
+                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, color: FG, lineHeight: 1.5 }}>{row.value}</span>
                 </div>
               ))}
             </div>

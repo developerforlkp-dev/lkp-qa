@@ -12,6 +12,8 @@ const MobileFilterModal = ({
   sorting,
   setSorting,
   sortingOptions,
+  businessInterest,
+  businessInterestFilters,
 }) => {
   return (
     <Modal visible={visible} onClose={onClose} outerClassName={styles.modal}>
@@ -23,6 +25,8 @@ const MobileFilterModal = ({
           sorting={sorting}
           setSorting={setSorting}
           sortingOptions={sortingOptions}
+          businessInterest={businessInterest}
+          businessInterestFilters={businessInterestFilters}
         />
       </div>
     </Modal>

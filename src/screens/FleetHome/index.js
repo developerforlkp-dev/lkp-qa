@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
@@ -9,6 +9,9 @@ import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import HeroSection from "./HeroSection";
+
+const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const filterOptions = [
   { id: "experience", label: "Experience", icon: "star" },
@@ -25,12 +28,21 @@ const getBusinessInterestId = (filterId) => {
   if (filterId === "experience") return 1;
   if (filterId === "events") return 2;
   if (filterId === "stays") return 3;
+  if (filterId === "places") return 4;
   if (filterId === "food") return 5;
   return null;
 };
 
+const getBusinessInterestCode = (filterId) => {
+  if (filterId === "events") return "EVENT";
+  if (filterId === "stays") return "STAY";
+  if (filterId === "places") return "PLACE";
+  if (filterId === "food") return "FOOD";
+  return "EXPERIENCE";
+};
+
 const FleetHome = () => {
-  const [activeFilter, setActiveFilter] = useState("experience");
+
   const [sectionsData, setSectionsData] = useState([]); // Array of { section, listings }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,10 +59,54 @@ const FleetHome = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState(null); // { description, placeId }
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const location = useLocation();
   const history = useHistory();
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
+  const destinationRef = useRef(null);
+  const autocompleteServiceRef = useRef(null);
+  const autocompleteSessionTokenRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
+
+  // Map path to filter ID
+  const getFilterFromPath = (path) => {
+    const normalizedPath = path.toLowerCase().replace(/\/$/, "");
+    if (normalizedPath === "" || normalizedPath === "/experience" || normalizedPath === "/experiences") return "experience";
+    if (normalizedPath === "/events") return "events";
+    if (normalizedPath === "/stays") return "stays";
+    if (normalizedPath === "/food") return "food";
+    if (normalizedPath === "/places") return "places";
+    return "experience"; // Default
+  };
+
+  // Initialize activeFilter from URL on mount
+  const [activeFilter, setActiveFilter] = useState(() => getFilterFromPath(location.pathname));
+
+  // Sync activeFilter with URL path changes (e.g. back/forward button)
+  useEffect(() => {
+    const filterFromPath = getFilterFromPath(location.pathname);
+    if (filterFromPath !== activeFilter) {
+      setActiveFilter(filterFromPath);
+    }
+  }, [location.pathname]);
+
+  // Handle filter click by navigating to new URL
+  const handleFilterClick = (filterId) => {
+    if (activeFilter !== filterId) {
+      // For experience, we use the root path "/"
+      const targetPath = filterId === "experience" ? "/" : `/${filterId}`;
+      
+      // Only navigate if we are not already on that path
+      if (location.pathname !== targetPath) {
+        history.push(targetPath);
+      }
+    }
+  };
 
   // Determine if calendar should be shown (for Experience and Events)
   const showCalendar = activeFilter === "experience" || activeFilter === "events" || activeFilter === "stays";
@@ -85,10 +141,23 @@ const FleetHome = () => {
     setGuests(newGuests);
   };
 
+  const selectDestinationSuggestion = (suggestion) => {
+    if (!suggestion) return;
+    setSearchQuery(suggestion.description || "");
+    setSelectedDestination({
+      description: suggestion.description || "",
+      placeId: suggestion.place_id || suggestion.placeId || "",
+    });
+    setDestinationSuggestions([]);
+    setShowDestinationSuggestions(false);
+    setActiveSuggestionIndex(-1);
+  };
+
   // Handle Search
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchQuery) params.append("search", searchQuery);
+    if (selectedDestination?.placeId) params.append("placeId", selectedDestination.placeId);
     if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
     
     const guestTotal = guests.adults + guests.children;
@@ -115,6 +184,106 @@ const FleetHome = () => {
     setShowGuestPicker(false);
   }, [activeFilter]);
 
+  useEffect(() => {
+    if (window.google?.maps?.places?.AutocompleteService) {
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+      return;
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) return;
+
+    const initAutocompleteService = () => {
+      if (!window.google?.maps?.places?.AutocompleteService) return;
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+    };
+
+    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID);
+    if (existingScript) {
+      existingScript.addEventListener("load", initAutocompleteService);
+      return () => existingScript.removeEventListener("load", initAutocompleteService);
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_MAPS_SCRIPT_ID;
+    script.async = true;
+    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.addEventListener("load", initAutocompleteService);
+    document.head.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", initAutocompleteService);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    if (!searchQuery?.trim()) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    if (!autocompleteServiceRef.current) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input: searchQuery.trim(),
+          types: ["geocode"],
+          sessionToken: autocompleteSessionTokenRef.current || undefined,
+        },
+        (predictions, status) => {
+          if (status === "OK" && Array.isArray(predictions) && predictions.length > 0) {
+            setDestinationSuggestions(predictions);
+            setShowDestinationSuggestions(true);
+            setActiveSuggestionIndex(-1);
+          } else {
+            setDestinationSuggestions([]);
+            setShowDestinationSuggestions(false);
+            setActiveSuggestionIndex(-1);
+          }
+        }
+      );
+    }, 350);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!destinationRef.current) return;
+      if (!destinationRef.current.contains(event.target)) {
+        setShowDestinationSuggestions(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   // Fetch homepage sections and their listings
   // Business interest IDs: 1=Experience, 2=Events, 3=Stays, 4=Places, 5=Food
   useEffect(() => {
@@ -135,6 +304,9 @@ const FleetHome = () => {
               section: {
                 sectionId: backendSection?.sectionId || backendSection?.id || "places",
                 sectionTitle: backendSection?.sectionTitle || backendSection?.title || backendSection?.name || "Places Nearby",
+                businessInterestId: backendSection?.businessInterestId || 4,
+                businessInterest: backendSection?.businessInterest || "PLACE",
+                businessInterestCode: backendSection?.businessInterestCode || "PLACE",
               },
               listings,
             },
@@ -196,7 +368,24 @@ const FleetHome = () => {
 
             // Handle different response structures
             let listings = sectionData?.listings || sectionData?.data?.listings || [];
-            const sectionInfo = sectionData?.section || section;
+            const sectionInfoRaw = sectionData?.section || section;
+            const fallbackBusinessInterestId = getBusinessInterestId(activeFilter) || businessInterestId || 1;
+            const fallbackBusinessInterestCode = getBusinessInterestCode(activeFilter);
+            const sectionInfo = {
+              ...sectionInfoRaw,
+              businessInterestId:
+                sectionInfoRaw?.businessInterestId ??
+                sectionInfoRaw?.business_interest_id ??
+                fallbackBusinessInterestId,
+              businessInterest:
+                sectionInfoRaw?.businessInterest ??
+                sectionInfoRaw?.businessInterestCode ??
+                fallbackBusinessInterestCode,
+              businessInterestCode:
+                sectionInfoRaw?.businessInterestCode ??
+                sectionInfoRaw?.businessInterest ??
+                fallbackBusinessInterestCode,
+            };
 
             // Fallback: if the section listings endpoint returns empty, try the dedicated public endpoints.
             const sectionTitle = sectionInfo?.sectionTitle || section?.sectionTitle || "";
@@ -338,7 +527,7 @@ const FleetHome = () => {
       <div className={cn("container", styles.container)}>
         <div className={styles.glassContainer}>
           <div className={styles.searchBar}>
-            <div className={styles.searchField}>
+            <div className={styles.searchField} ref={destinationRef}>
               <Icon name="arrow-right" size="16" />
               <div className={styles.searchFieldContent}>
                 <div className={styles.searchLabel}>Where to?</div>
@@ -347,9 +536,69 @@ const FleetHome = () => {
                   placeholder="Search Destination"
                   className={styles.searchInput}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchQuery(value);
+                    if (!selectedDestination || value !== selectedDestination.description) {
+                      setSelectedDestination(null);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (destinationSuggestions.length > 0) {
+                      setShowDestinationSuggestions(true);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      if (destinationSuggestions.length === 0) return;
+                      e.preventDefault();
+                      setShowDestinationSuggestions(true);
+                      setActiveSuggestionIndex((prev) => (
+                        prev < destinationSuggestions.length - 1 ? prev + 1 : 0
+                      ));
+                      return;
+                    }
+                    if (e.key === "ArrowUp") {
+                      if (destinationSuggestions.length === 0) return;
+                      e.preventDefault();
+                      setShowDestinationSuggestions(true);
+                      setActiveSuggestionIndex((prev) => (
+                        prev > 0 ? prev - 1 : destinationSuggestions.length - 1
+                      ));
+                      return;
+                    }
+                    if (e.key === "Escape") {
+                      setShowDestinationSuggestions(false);
+                      setActiveSuggestionIndex(-1);
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (showDestinationSuggestions && activeSuggestionIndex >= 0 && destinationSuggestions[activeSuggestionIndex]) {
+                        selectDestinationSuggestion(destinationSuggestions[activeSuggestionIndex]);
+                      } else {
+                        handleSearch();
+                      }
+                    }
+                  }}
                 />
+                {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                  <div className={styles.destinationSuggestions}>
+                    {destinationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={suggestion.place_id || suggestion.description || index}
+                        type="button"
+                        className={cn(styles.destinationSuggestionItem, {
+                          [styles.destinationSuggestionItemActive]: index === activeSuggestionIndex,
+                        })}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectDestinationSuggestion(suggestion)}
+                      >
+                        {suggestion.description}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             {showCalendar && (
@@ -422,7 +671,7 @@ const FleetHome = () => {
                   className={cn(styles.filterCard, {
                     [styles.filterCardActive]: activeFilter === filter.id,
                   })}
-                  onClick={() => setActiveFilter(filter.id)}
+                  onClick={() => handleFilterClick(filter.id)}
                 >
                   <div className={styles.filterCardContent}>
                     <Icon name={filter.icon} size="18" />
@@ -480,7 +729,10 @@ const FleetHome = () => {
             }
 
 
-            if (!sectionData.listings || sectionData.listings.length === 0) {
+            const isShowCategoriesOnly =
+              sectionData.section.displayMode === "SHOW_CATEGORIES_ONLY";
+
+            if ((!sectionData.listings || sectionData.listings.length === 0) && !isShowCategoriesOnly) {
               console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
               return null; // Skip sections with no listings
             }

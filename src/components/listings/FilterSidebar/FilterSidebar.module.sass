@@ -167,3 +167,28 @@
         +dark
             color: $n8
 
+.dateGrid
+    display: grid
+    grid-template-columns: 1fr 1fr
+    gap: 8px
+
+.dateField
+    display: flex
+    flex-direction: column
+    gap: 6px
+    span
+        +caption-2
+        color: $n4
+    input
+        width: 100%
+        padding: 10px 12px
+        border-radius: 8px
+        border: 1px solid $n6
+        background: $n8
+        color: $n2
+        +caption-2
+        +dark
+            border-color: $n3
+            background: $n1
+            color: $n8
+

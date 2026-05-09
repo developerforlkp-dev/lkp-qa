@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
@@ -10,6 +10,10 @@ import MobileFilterModal from "../../components/listings/MobileFilterModal";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
+import { getBusinessInterestFilters } from "../../utils/api";
+
+const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const Listings = () => {
   const location = useLocation();
@@ -23,6 +27,14 @@ const Listings = () => {
   const [searchLocation, setSearchLocation] = useState(
     searchParams.get("location") || searchParams.get("search") || locationState.location || ""
   );
+  const [selectedDestination, setSelectedDestination] = useState(() => {
+    const placeId = searchParams.get("placeId") || "";
+    const description = searchParams.get("search") || searchParams.get("location") || locationState.location || "";
+    return placeId && description ? { description, placeId } : null;
+  });
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   
   // Track the actual search query that has been submitted
   const [activeSearch, setActiveSearch] = useState(searchLocation);
@@ -40,16 +52,81 @@ const Listings = () => {
   const [guests, setGuests] = useState(initialGuests);
   
   const businessInterest = searchParams.get("businessInterest") || locationState.businessInterest || "EXPERIENCE";
+  const businessInterestIdParam = searchParams.get("businessInterestId");
+  const categoryTypeParam = searchParams.get("categoryType") || "";
+  const categoryValuesParam = searchParams.getAll("categoryValues");
+  const fallbackCategoryValues = searchParams.get("categoryValues");
+  const selectedCategoryLabel = searchParams.get("selectedCategoryLabel") || "";
+
+  const categoryValues = useMemo(() => {
+    return categoryValuesParam.length > 0
+      ? categoryValuesParam
+      : (fallbackCategoryValues ? fallbackCategoryValues.split(",").map((v) => v.trim()).filter(Boolean) : []);
+  }, [fallbackCategoryValues, location.search]);
+
+  const categoryFilter = useMemo(() => {
+    if (!categoryTypeParam || categoryValues.length === 0) return null;
+    return {
+      businessInterestId: businessInterestIdParam ? Number(businessInterestIdParam) : null,
+      categoryType: categoryTypeParam,
+      categoryValues,
+      sortBy: "newest",
+    };
+  }, [businessInterestIdParam, categoryTypeParam, categoryValues]);
+
+  const resolvedBusinessInterestId = useMemo(() => {
+    if (businessInterestIdParam) return Number(businessInterestIdParam);
+    const normalized = String(businessInterest || "").toUpperCase();
+    if (normalized.includes("EVENT")) return 2;
+    if (normalized.includes("STAY")) return 3;
+    if (normalized.includes("PLACE")) return 4;
+    if (normalized.includes("FOOD")) return 5;
+    return 1;
+  }, [businessInterest, businessInterestIdParam]);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const dateItemRef = useRef(null);
   const guestItemRef = useRef(null);
+  const destinationRef = useRef(null);
+  const autocompleteServiceRef = useRef(null);
+  const autocompleteSessionTokenRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadBusinessInterestFilters = async () => {
+      try {
+        if (!resolvedBusinessInterestId) return;
+        const response = await getBusinessInterestFilters(resolvedBusinessInterestId);
+        if (!mounted) return;
+        setBusinessInterestFilters(response || null);
+        console.log(
+          `[Listings] business-interest-filters response (businessInterestId=${resolvedBusinessInterestId}):`,
+          response
+        );
+      } catch (error) {
+        console.warn(
+          `[Listings] Failed to fetch business-interest-filters for businessInterestId=${resolvedBusinessInterestId}:`,
+          error?.message || error
+        );
+      }
+    };
+
+    loadBusinessInterestFilters();
+    return () => {
+      mounted = false;
+    };
+  }, [resolvedBusinessInterestId]);
 
   // Convert selectedDate to dateRange format for API
-  const dateRange = selectedDate ? {
-    startDate: moment(selectedDate).format("YYYY-MM-DD"),
-    endDate: moment(selectedDate).add(1, "days").format("YYYY-MM-DD"),
-  } : null;
+  const dateRange = useMemo(() => (
+    selectedDate ? {
+      startDate: moment(selectedDate).format("YYYY-MM-DD"),
+      endDate: moment(selectedDate).add(1, "days").format("YYYY-MM-DD"),
+    } : null
+  ), [selectedDate]);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -58,14 +135,48 @@ const Listings = () => {
     amenities: [],
     ratings: [],
     categories: [],
+    tags: [],
+    specialLabels: [],
+    apiCategoryFilter: null,
+    dateRange: { startDate: "", endDate: "" },
   });
 
   // UI state
   const [showMap, setShowMap] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [sortBy, setSortBy] = useState("Relevance");
+  const [sortBy, setSortBy] = useState("newest");
+  const [businessInterestFilters, setBusinessInterestFilters] = useState(null);
 
-  const sortOptions = ["Relevance", "Price: Low to High", "Price: High to Low", "Rating", "Newest"];
+  const sortOptions = ["newest", "rating", "price_low", "price_high"];
+  const isEventInterest = String(businessInterest || "").toUpperCase().includes("EVENT");
+  const emptyMessage = isEventInterest && selectedDate
+    ? "No events in this date."
+    : "No listings found. Try adjusting your filters.";
+
+  const effectiveCategoryFilter = useMemo(() => {
+    if (
+      filters.apiCategoryFilter?.categoryType &&
+      Array.isArray(filters.apiCategoryFilter?.categoryValues) &&
+      filters.apiCategoryFilter.categoryValues.length > 0
+    ) {
+      return {
+        businessInterestId: resolvedBusinessInterestId,
+        categoryType: filters.apiCategoryFilter.categoryType,
+        categoryValues: filters.apiCategoryFilter.categoryValues,
+        sortBy,
+      };
+    }
+
+    if (categoryFilter) {
+      return {
+        ...categoryFilter,
+        businessInterestId: categoryFilter.businessInterestId || resolvedBusinessInterestId,
+        sortBy,
+      };
+    }
+
+    return null;
+  }, [categoryFilter, filters.apiCategoryFilter, resolvedBusinessInterestId, sortBy]);
 
   // Use listings hook - only re-renders when activeSearch or other filters change
   const { data: listings, loading, error, hasMore, fetchMore } = useListings({
@@ -75,6 +186,7 @@ const Listings = () => {
     filters,
     limit: 20,
     businessInterest: businessInterest,
+    categoryFilter: effectiveCategoryFilter,
   });
   
   // eslint-disable-next-line no-unused-vars
@@ -116,6 +228,17 @@ const Listings = () => {
     setGuests(newGuests);
   };
 
+  const selectDestinationSuggestion = (suggestion) => {
+    if (!suggestion) return;
+    const description = suggestion.description || "";
+    const placeId = suggestion.place_id || suggestion.placeId || "";
+    setSearchLocation(description);
+    setSelectedDestination({ description, placeId });
+    setDestinationSuggestions([]);
+    setShowDestinationSuggestions(false);
+    setActiveSuggestionIndex(-1);
+  };
+
   // Handle search button click or Enter key
   const handleSearch = () => {
     // Update the active search state to trigger a re-fetch
@@ -126,12 +249,124 @@ const Listings = () => {
       dateRange: dateRange,
       guests: guests,
     };
+    const params = new URLSearchParams();
+    if (searchLocation) params.set("search", searchLocation);
+    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
+    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
+    const guestTotal = guests.adults + guests.children;
+    if (guestTotal > 0) params.set("guests", String(guestTotal));
+    if (businessInterest) params.set("businessInterest", businessInterest);
+    if (businessInterestIdParam) params.set("businessInterestId", businessInterestIdParam);
+    if (categoryTypeParam) params.set("categoryType", categoryTypeParam);
+    categoryValues.forEach((value) => params.append("categoryValues", value));
+    if (selectedCategoryLabel) params.set("selectedCategoryLabel", selectedCategoryLabel);
+
     history.replace({
       pathname: "/listings",
-      search: searchLocation ? `?search=${encodeURIComponent(searchLocation)}` : "",
+      search: params.toString() ? `?${params.toString()}` : "",
       state: newState,
     });
   };
+
+  useEffect(() => {
+    if (window.google?.maps?.places?.AutocompleteService) {
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+      return;
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) return;
+
+    const initAutocompleteService = () => {
+      if (!window.google?.maps?.places?.AutocompleteService) return;
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
+        ? new window.google.maps.places.AutocompleteSessionToken()
+        : null;
+    };
+
+    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID);
+    if (existingScript) {
+      existingScript.addEventListener("load", initAutocompleteService);
+      return () => existingScript.removeEventListener("load", initAutocompleteService);
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_MAPS_SCRIPT_ID;
+    script.async = true;
+    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.addEventListener("load", initAutocompleteService);
+    document.head.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", initAutocompleteService);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    if (!searchLocation?.trim()) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    if (!autocompleteServiceRef.current) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input: searchLocation.trim(),
+          types: ["geocode"],
+          sessionToken: autocompleteSessionTokenRef.current || undefined,
+        },
+        (predictions, status) => {
+          if (status === "OK" && Array.isArray(predictions) && predictions.length > 0) {
+            setDestinationSuggestions(predictions);
+            setShowDestinationSuggestions(true);
+            setActiveSuggestionIndex(-1);
+          } else {
+            setDestinationSuggestions([]);
+            setShowDestinationSuggestions(false);
+            setActiveSuggestionIndex(-1);
+          }
+        }
+      );
+    }, 350);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [searchLocation]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!destinationRef.current) return;
+      if (!destinationRef.current.contains(event.target)) {
+        setShowDestinationSuggestions(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
 
 
@@ -142,6 +377,10 @@ const Listings = () => {
       amenities: [],
       ratings: [],
       categories: [],
+      tags: [],
+      specialLabels: [],
+      apiCategoryFilter: null,
+      dateRange: { startDate: "", endDate: "" },
     });
   };
 
@@ -150,7 +389,7 @@ const Listings = () => {
       <div className={cn("container", styles.container)}>
         {/* Search Bar Section */}
         <div className={styles.searchBar}>
-          <div className={styles.searchField}>
+          <div className={styles.searchField} ref={destinationRef}>
             <Icon name="arrow-right" size="20" />
             <div className={styles.searchFieldContent}>
               <div className={styles.searchLabel}>Where to?</div>
@@ -159,9 +398,69 @@ const Listings = () => {
                 placeholder="Search Destination" 
                 className={styles.searchInput}
                 value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchLocation(value);
+                  if (!selectedDestination || value !== selectedDestination.description) {
+                    setSelectedDestination(null);
+                  }
+                }}
+                onFocus={() => {
+                  if (destinationSuggestions.length > 0) {
+                    setShowDestinationSuggestions(true);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    if (destinationSuggestions.length === 0) return;
+                    e.preventDefault();
+                    setShowDestinationSuggestions(true);
+                    setActiveSuggestionIndex((prev) => (
+                      prev < destinationSuggestions.length - 1 ? prev + 1 : 0
+                    ));
+                    return;
+                  }
+                  if (e.key === "ArrowUp") {
+                    if (destinationSuggestions.length === 0) return;
+                    e.preventDefault();
+                    setShowDestinationSuggestions(true);
+                    setActiveSuggestionIndex((prev) => (
+                      prev > 0 ? prev - 1 : destinationSuggestions.length - 1
+                    ));
+                    return;
+                  }
+                  if (e.key === "Escape") {
+                    setShowDestinationSuggestions(false);
+                    setActiveSuggestionIndex(-1);
+                    return;
+                  }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (showDestinationSuggestions && activeSuggestionIndex >= 0 && destinationSuggestions[activeSuggestionIndex]) {
+                      selectDestinationSuggestion(destinationSuggestions[activeSuggestionIndex]);
+                    } else {
+                      handleSearch();
+                    }
+                  }
+                }}
               />
+              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                <div className={styles.destinationSuggestions}>
+                  {destinationSuggestions.map((suggestion, index) => (
+                    <button
+                      key={suggestion.place_id || suggestion.description || index}
+                      type="button"
+                      className={cn(styles.destinationSuggestionItem, {
+                        [styles.destinationSuggestionItemActive]: index === activeSuggestionIndex,
+                      })}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectDestinationSuggestion(suggestion)}
+                    >
+                      {suggestion.description}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className={styles.searchDivider}></div>
@@ -228,11 +527,18 @@ const Listings = () => {
                 sorting={sortBy}
                 setSorting={setSortBy}
                 sortingOptions={sortOptions}
+                businessInterest={businessInterest}
+                businessInterestFilters={businessInterestFilters}
               />
             </aside>
             
             {/* Main Content Area */}
             <main className={styles.main}>
+              {(filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel) && (
+                <div className={styles.categoryFilterTitle}>
+                  Filtered by category: {filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel}
+                </div>
+              )}
               {/* Mobile Filter Button */}
               <button
                 className={cn("button-stroke", styles.mobileFilterButton, "mobile-show")}
@@ -258,6 +564,7 @@ const Listings = () => {
                 error={error}
                 hasMore={hasMore}
                 onLoadMore={fetchMore}
+                emptyMessage={emptyMessage}
               />
             </main>
             
@@ -290,6 +597,8 @@ const Listings = () => {
         sorting={sortBy}
         setSorting={setSortBy}
         sortingOptions={sortOptions}
+        businessInterest={businessInterest}
+        businessInterestFilters={businessInterestFilters}
       />
       
       {/* Mobile Map View */}

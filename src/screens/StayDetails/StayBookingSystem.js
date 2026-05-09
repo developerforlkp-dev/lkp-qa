@@ -1,13 +1,126 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info } from "lucide-react";
+import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
 import Counter from "../../components/Counter";
-// We'll use a simple date range picker or just two DateSingles for premium look
-import DateSingle from "../../components/DateSingle";
+
+const StayInlineCalendar = ({ 
+  checkInDate, 
+  checkOutDate, 
+  onDateSelect, 
+  isBlockedDay, 
+  tokens, 
+  selectionMode,
+  nextBlockedDate
+}) => {
+  const { A, AL, BG, FG, M, B, S, W } = tokens;
+  const [viewDate, setViewDate] = useState(() => (checkInDate ? checkInDate.toDate() : new Date()));
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const todayKey = moment().startOf('day').format("YYYY-MM-DD");
+  const checkInKey = checkInDate ? checkInDate.format("YYYY-MM-DD") : null;
+  const checkOutKey = checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null;
+  const nextBlockedKey = nextBlockedDate ? nextBlockedDate.format("YYYY-MM-DD") : null;
+
+  const isRange = checkInDate && checkOutDate;
+
+  const cells = [
+    ...Array.from({ length: firstDay }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => {
+      const day = index + 1;
+      const mDate = moment([year, month, day]);
+      const key = mDate.format("YYYY-MM-DD");
+      const isPast = key < todayKey;
+      const isBlocked = isBlockedDay(mDate);
+      const isSelected = key === checkInKey || key === checkOutKey;
+      const isInRange = isRange && key > checkInKey && key < checkOutKey;
+      
+      return { day, key, mDate, isPast, isBlocked, isSelected, isInRange };
+    }),
+  ];
+
+  return (
+    <div style={{ background: S, borderRadius: 24, padding: "16px", border: `1px solid ${B}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={() => setViewDate(new Date(year, month - 1, 1))}
+          disabled={year === new Date().getFullYear() && month <= new Date().getMonth()}
+          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${B}`, background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: (year === new Date().getFullYear() && month <= new Date().getMonth()) ? 0.3 : 1 }}
+        >
+          <ChevronDown size={16} style={{ transform: "rotate(90deg)" }} />
+        </button>
+        <span style={{ fontSize: 14, fontWeight: 800, color: FG }}>
+          {viewDate.toLocaleString("en-IN", { month: "long", year: "numeric" })}
+        </span>
+        <button
+          type="button"
+          onClick={() => setViewDate(new Date(year, month + 1, 1))}
+          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${B}`, background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+        >
+          <ChevronDown size={16} style={{ transform: "rotate(-90deg)" }} />
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: M, marginBottom: 8 }}>{d}</div>
+        ))}
+        {cells.map((cell, i) => {
+          if (!cell) return <div key={`empty-${i}`} />;
+          const isSelectingCheckOut = selectionMode === "check-out" && checkInDate && !checkOutDate;
+          const disabled = cell.isPast || (
+            isSelectingCheckOut
+              ? (
+                // Checkout Selection Mode:
+                // 1. Disable dates on or before check-in
+                (checkInKey && cell.key <= checkInKey) || 
+                // 2. Disable dates strictly after the next blocked date
+                // (nextBlockedKey itself is allowed as checkout morning)
+                (nextBlockedKey && cell.key > nextBlockedKey)
+              )
+              : cell.isBlocked
+          );
+          
+          return (
+            <button
+              key={cell.key}
+              type="button"
+              onClick={() => !disabled && onDateSelect(cell.mDate)}
+              disabled={disabled}
+              style={{
+                aspectRatio: "1/1",
+                border: "none",
+                borderRadius: cell.isSelected ? 10 : 6,
+                background: cell.isSelected ? A : cell.isInRange ? AL : "transparent",
+                color: cell.isSelected ? "#FFF" : disabled ? `${M}44` : FG,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: disabled ? "not-allowed" : "pointer",
+                transition: "0.2s",
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              {cell.day}
+              {cell.isBlocked && !cell.isPast && (
+                <div style={{ position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: cell.isSelected ? "#FFF" : M }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const formatPrice = (price) => {
   return Number(price).toLocaleString("en-IN", {
@@ -69,8 +182,77 @@ const StayBookingSystem = ({
   onRoomsCountChange
 }) => {
   const history = useHistory();
-  const { tokens: { A, AH, BG, FG, M, S, B, AL, W } } = useTheme();
+  const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const [show, setShow] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [selectionMode, setSelectionMode] = useState("check-in");
+
+  useEffect(() => {
+    if (show) {
+      setSelectionMode("check-in");
+      setValidationError("");
+    }
+  }, [show]);
+
+  const lastDeps = useRef("");
+  useEffect(() => {
+    const currentDeps = `${checkInDate?.format("YYYY-MM-DD") || ""}-${checkOutDate?.format("YYYY-MM-DD") || ""}-${guests.adults}-${guests.children}`;
+    if (lastDeps.current && lastDeps.current !== currentDeps) {
+      setValidationError("");
+    }
+    lastDeps.current = currentDeps;
+  }, [checkInDate, checkOutDate, guests]);
+
+  const handleDateSelect = (date) => {
+    const isBlocked = isBlockedDay(date);
+    
+    if (selectionMode === "check-in") {
+      // 1. Check-in Selection / Editing
+      if (isBlocked) return;
+      
+      const isSameAsCheckIn = checkInDate && date.isSame(checkInDate, "day");
+      if (isSameAsCheckIn) {
+        setCheckInDate(null);
+        setCheckOutDate(null);
+      } else {
+        setCheckInDate(date);
+        // Reset checkout if it becomes invalid
+        if (checkOutDate && date.isSameOrAfter(checkOutDate, 'day')) {
+          setCheckOutDate(null);
+        }
+        // STEP 2: Automatic switch to Check-out mode
+        setSelectionMode("check-out");
+      }
+    } else {
+      // 2. Check-out Selection / Editing
+      const isSameAsCheckIn = checkInDate && date.isSame(checkInDate, "day");
+      const isSameAsCheckOut = checkOutDate && date.isSame(checkOutDate, "day");
+
+      if (isSameAsCheckIn) {
+        setCheckInDate(null);
+        setCheckOutDate(null);
+        setSelectionMode("check-in");
+        return;
+      }
+
+      if (isSameAsCheckOut) {
+        setCheckOutDate(null);
+      } else {
+        // Selection must be after Check-in
+        if (checkInDate && date.isAfter(checkInDate, 'day')) {
+          // Boundary check
+          if (nextBlockedDate && date.isAfter(nextBlockedDate, 'day')) return;
+          setCheckOutDate(date);
+        } else {
+          // If clicked date is before check-in, treat as new Check-in
+          if (isBlocked) return;
+          setCheckInDate(date);
+          setCheckOutDate(null);
+          setSelectionMode("check-out");
+        }
+      }
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [availabilityData, setAvailabilityData] = useState(null);
   const [fetchingAvailability, setFetchingAvailability] = useState(false);
@@ -78,6 +260,32 @@ const StayBookingSystem = ({
     () => (stay?.rooms || stay?.roomTypes || stay?.room_types || []),
     [stay]
   );
+
+  // Dynamic Guest Age Labels based on Child Age Policy
+  const guestAgeLabels = useMemo(() => {
+    const policies = stay?.childAgePolicy || stay?.child_age_policy;
+    const childRate = Array.isArray(policies) 
+      ? policies.find(p => p.policyType === "child_rate" || p.policy_type === "child_rate")
+      : null;
+
+    if (childRate) {
+      const fromAge = childRate.fromAge ?? childRate.from_age;
+      const toAge = childRate.toAge ?? childRate.to_age;
+      
+      if (fromAge !== undefined && toAge !== undefined) {
+        return {
+          adults: `Age ${Number(toAge) + 1}+`,
+          children: `Ages ${fromAge}–${toAge}`
+        };
+      }
+    }
+    
+    // Fallback defaults
+    return {
+      adults: "Age 13+",
+      children: "Ages 2–12"
+    };
+  }, [stay]);
 
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
@@ -393,16 +601,44 @@ const StayBookingSystem = ({
     return keys;
   }, [stay, selectedRooms]);
 
+  const nextBlockedDate = useMemo(() => {
+    if (!checkInDate || !blockedDateKeys || blockedDateKeys.size === 0) return null;
+    const checkInKey = checkInDate.format("YYYY-MM-DD");
+    const nextDateKey = Array.from(blockedDateKeys)
+      .filter(k => k > checkInKey)
+      .sort()[0];
+    return nextDateKey ? moment(nextDateKey) : null;
+  }, [checkInDate, blockedDateKeys]);
+
+  useEffect(() => {
+    if (checkInDate && checkOutDate && nextBlockedDate) {
+      if (checkOutDate.isAfter(nextBlockedDate, 'day')) {
+        setCheckOutDate(null);
+      }
+    }
+  }, [checkInDate, nextBlockedDate, checkOutDate]);
+
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
-    if (!checkInDate || !checkOutDate) {
-      alert("Please select your stay dates.");
+    if (!checkInDate) {
+      setValidationError("Please select a check-in date.");
       return;
     }
-
+    if (!checkOutDate) {
+      setValidationError("Please select a check-out date.");
+      return;
+    }
     if (!checkOutDate.isAfter(checkInDate, 'day')) {
-      alert("Check-out date must be after Check-in date.");
+      setValidationError("Checkout date must be after check-in date.");
+      return;
+    }
+    if ((guests.adults || 0) + (guests.children || 0) === 0) {
+      setValidationError("Please add at least 1 guest.");
+      return;
+    }
+    if ((guests.adults || 0) === 0) {
+      setValidationError("At least 1 adult is required.");
       return;
     }
 
@@ -647,11 +883,13 @@ const StayBookingSystem = ({
       const taxRate = Array.isArray(stay?.taxes)
         ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
         : 0;
-      const combinedFrontendTax = (pricing.subtotal || 0) * (taxRate / 100);
+      
       const inferredDiscountFromTotals = Math.max(
         0,
         Number((nightlyFromOrder * nightsFromOrder) || 0) +
-          Number(combinedFrontendTax || 0) -
+          (extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder) +
+          (extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder) +
+          (pricing.subtotal * (taxRate / 100)) - // This is just a guestimate, but we have better info
           Number(totalFromOrder || 0)
       );
       const discountToShow = firstNumber(
@@ -659,6 +897,14 @@ const StayBookingSystem = ({
         discount,
         inferredDiscountFromTotals
       ) || 0;
+
+      const baseStayTotal = (nightlyFromOrder * nightsFromOrder) + 
+                            (extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder) + 
+                            (extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder);
+      
+      const subtotalBeforeTax = baseStayTotal - discountToShow;
+      const combinedFrontendTax = Math.max(0, subtotalBeforeTax * (taxRate / 100));
+
       if (discountToShow > 0) {
         frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
       }
@@ -711,20 +957,48 @@ const StayBookingSystem = ({
         .ReactDatesPortal {
           z-index: 99999 !important;
         }
-        .DateInput_input {
-          font-size: 14px !important;
-          padding: 0 !important;
-          height: auto !important;
-          line-height: 1 !important;
-          font-weight: 700 !important;
-          background: transparent !important;
-          color: ${FG} !important;
+        
+        .booking-modal-container::-webkit-scrollbar {
+          width: 6px;
         }
-        .DateInput {
-          width: 100% !important;
-          background: transparent !important;
+        .booking-modal-container::-webkit-scrollbar-thumb {
+          background: ${B};
+          border-radius: 10px;
+        }
+
+        @media(max-width: 900px) {
+          .booking-modal-container { 
+            width: 100% !important; 
+            height: 100% !important; 
+            max-height: 100vh !important; 
+            border-radius: 0 !important; 
+            margin: 0 !important;
+          }
+          .booking-grid { grid-template-columns: 1fr !important; }
+          .booking-modal-header { padding: 24px 20px !important; }
+          .booking-modal-column { padding: 32px 20px !important; }
+          .booking-modal-footer { 
+            flex-direction: column !important; 
+            gap: 24px !important; 
+            padding: 24px 20px !important; 
+            align-items: stretch !important;
+            text-align: center !important;
+            position: sticky !important;
+            bottom: 0 !important;
+            background: ${BG} !important;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
+          }
+          .booking-modal-footer button { width: 100% !important; }
+          
+          .stay-booking-trigger {
+            bottom: 20px !important;
+            right: 20px !important;
+            left: 20px !important;
+            width: calc(100% - 40px) !important;
+          }
         }
       `}</style>
+
       {/* Floating Trigger */}
       <motion.button
         onClick={() => setShow(true)}
@@ -732,6 +1006,7 @@ const StayBookingSystem = ({
         animate={{ y: 0, opacity: 1 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        className="stay-booking-trigger"
         style={{
           position: "fixed",
           bottom: 40,
@@ -742,6 +1017,7 @@ const StayBookingSystem = ({
           borderRadius: 100,
           display: "flex",
           alignItems: "center",
+          justifyContent: "center",
           gap: 12,
           boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
           border: "none",
@@ -758,233 +1034,347 @@ const StayBookingSystem = ({
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: window.innerWidth <= 768 ? 0 : 20, overflow: "auto" }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShow(false)}
-              style={{ position: "absolute", inset: 0, background: "rgba(8,8,8,0.7)", backdropFilter: "blur(12px)" }} 
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }} 
             />
             
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 30 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: 480,
-                maxHeight: "calc(100vh - 40px)",
                 background: BG,
                 borderRadius: 32,
-                boxShadow: "0 40px 120px rgba(0,0,0,0.5)",
-                border: `1px solid ${B}`,
                 overflow: "hidden",
+                width: "95%",
+                maxWidth: 950,
+                maxHeight: "calc(100vh - 40px)",
+                border: `1px solid ${B}`,
+                boxShadow: `0 30px 60px rgba(0,0,0,0.5), 0 0 100px ${A}11`,
+                position: "relative",
                 display: "flex",
                 flexDirection: "column"
               }}
             >
               {/* Header */}
-              <div style={{ padding: "40px 40px 24px", borderBottom: `1px solid ${B}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div>
-                    <h3 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: FG, marginBottom: 8 }}>Reserve Stay</h3>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontSize: 24, fontWeight: 700, color: A }}>
-                        {fetchingAvailability ? "Calculating..." : `₹${formatPrice(pricing.perNight)}`}
-                      </span>
-                      {!fetchingAvailability && pricing.discount > 0 && (
-                        <span style={{ fontSize: 16, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
+              <div className="booking-modal-header" style={{ padding: "16px 32px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h2 style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2 }}>
+                    Reserve Your Stay
+                  </h2>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>
+                      {fetchingAvailability ? "..." : `₹${formatPrice(pricing.perNight)}`}
+                    </span>
+                    {!fetchingAvailability && pricing.discount > 0 && (
+                      <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
+                    )}
+                    <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>/ night</span>
+                  </div>
+                </div>
+                <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
+                <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
+                  {/* Left Column: Calendar */}
+                  <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                          01. Select Dates
+                          <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
+                            {selectionMode === "check-in" ? "Select Check-in" : "Select Check-out"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {selectionMode === "check-out" && nextBlockedDate && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{ 
+                            marginBottom: 10, 
+                            padding: "6px 12px", 
+                            background: AL, 
+                            borderRadius: 12, 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: 8,
+                            border: `1px solid ${A}22`
+                          }}
+                        >
+                          <Info size={12} color={A} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>
+                            Checkout available only until {nextBlockedDate.format("DD MMM, YYYY")}
+                          </span>
+                        </motion.div>
                       )}
-                      <span style={{ fontSize: 14, color: M }}>/ night</span>
+
+                      <StayInlineCalendar 
+                        checkInDate={checkInDate}
+                        checkOutDate={checkOutDate}
+                        onDateSelect={handleDateSelect}
+                        isBlockedDay={isBlockedDay}
+                        tokens={{ A, AL, BG, FG, M, B, S, W }}
+                        selectionMode={selectionMode}
+                        nextBlockedDate={nextBlockedDate}
+                      />
                     </div>
                   </div>
-                  <button onClick={() => setShow(false)} style={{ background: S, border: "none", padding: 10, borderRadius: "50%", cursor: "pointer", color: FG }}>
-                    <X size={20} />
-                  </button>
+
+                  {/* Right Column: Booking Details & Guests */}
+                  <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
+                    {/* Section 02: Booking Details */}
+                    <div>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em" }}>
+                        02. Booking Details
+                      </div>
+                      
+                      {/* Check-in / Check-out Cards */}
+                      <div style={{ marginBottom: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <div 
+                          onClick={() => setSelectionMode("check-in")}
+                          style={{ 
+                            padding: "8px 12px", 
+                            background: BG, 
+                            borderRadius: 16, 
+                            border: `1px solid ${selectionMode === 'check-in' ? A : B}`,
+                            cursor: "pointer",
+                            transition: "0.2s",
+                            boxShadow: selectionMode === 'check-in' ? `0 0 15px ${A}22` : "none"
+                          }}
+                        >
+                          <p style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 2 }}>Check-in</p>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
+                        </div>
+                        <div 
+                          onClick={() => {
+                            if (checkInDate) setSelectionMode("check-out");
+                          }}
+                          style={{ 
+                            padding: "8px 12px", 
+                            background: BG, 
+                            borderRadius: 16, 
+                            border: `1px solid ${selectionMode === 'check-out' ? A : B}`,
+                            cursor: checkInDate ? "pointer" : "not-allowed",
+                            transition: "0.2s",
+                            opacity: checkInDate ? 1 : 0.6,
+                            boxShadow: selectionMode === 'check-out' ? `0 0 15px ${A}22` : "none"
+                          }}
+                        >
+                          <p style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 2 }}>Check-out</p>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
+                        </div>
+                      </div>
+
+                      {/* Clear Dates Button */}
+                      {(checkInDate || checkOutDate) && (
+                        <div>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setCheckInDate(null);
+                              setCheckOutDate(null);
+                              setSelectionMode("check-in");
+                              setValidationError("");
+                            }}
+                            style={{ 
+                              width: "100%",
+                              background: AL, 
+                              border: `1px solid ${A}33`, 
+                              color: A, 
+                              fontSize: 9, 
+                              fontWeight: 800, 
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              cursor: "pointer", 
+                              padding: "6px 12px", 
+                              borderRadius: 100,
+                              transition: "0.3s"
+                            }}
+                          >
+                            Clear Dates
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Section 03: Guests & Accommodations */}
+                    <div>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em" }}>
+                        03. Guests & Accommodations
+                      </div>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                          <div>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: FG }}>Adults</p>
+                            <p style={{ fontSize: 9, color: M, fontWeight: 500 }}>{guestAgeLabels.adults}</p>
+                          </div>
+                          <Counter 
+                            value={guests.adults} 
+                            setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
+                            min={1} 
+                            max={pricing.baseAdultsLimit + pricing.extraAdultsLimit}
+                          />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                          <div>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: FG }}>Children</p>
+                            <p style={{ fontSize: 9, color: M, fontWeight: 500 }}>{guestAgeLabels.children}</p>
+                          </div>
+                          <Counter 
+                            value={guests.children} 
+                            setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
+                            min={0} 
+                            max={pricing.baseChildrenLimit + pricing.extraChildrenLimit}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Selected Rooms */}
+                      {resolvedSelectedRooms.length > 0 && (
+                        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                          {resolvedSelectedRooms.map((room) => (
+                            <div key={room.roomId || room.id} style={{ padding: "8px 12px", background: BG, borderRadius: 12, border: `1px solid ${B}` }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                                  <div style={{ width: 26, height: 26, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
+                                    <Bed size={13} />
+                                  </div>
+                                  <div>
+                                    <p style={{ fontSize: 11, fontWeight: 700, color: FG }}>{room.roomName || room.name}</p>
+                                    <p style={{ fontSize: 9, color: M }}>{room.mealPlan || "EP"}</p>
+                                  </div>
+                                </div>
+                                <Counter 
+                                  value={room.count} 
+                                  setValue={(v) => onRoomsCountChange(room.roomId || room.id, v)} 
+                                  min={1} 
+                                  max={Number(room.units || room.totalRooms || room.availableRooms || 99)} 
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Warnings */}
+                    {pricing.warning && (
+                      <div style={{ 
+                        padding: "8px 12px", borderRadius: 12, 
+                        background: pricing.isOver ? "#FFF5F5" : AL, 
+                        border: `1px solid ${pricing.isOver ? "#FEB2B2" : A + '33'}`,
+                        display: "flex", gap: 10, alignItems: "center"
+                      }}>
+                        <AlertCircle size={14} color={pricing.isOver ? "#F56565" : A} />
+                        <p style={{ fontSize: 10, color: pricing.isOver ? "#C53030" : FG, lineHeight: 1.4, fontWeight: 600 }}>
+                          {pricing.warning}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Price Summary */}
+                    {nightsCount > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                          <span>Base ({nightsCount} night{nightsCount !== 1 ? 's' : ''})</span>
+                          <span>₹{formatPrice(pricing.originalPerNight * nightsCount)}</span>
+                        </div>
+                        {pricing.discount > 0 && (
+                          <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 11, fontWeight: 700 }}>
+                            <span>Discounts</span>
+                            <span>- ₹{formatPrice(pricing.discount)}</span>
+                          </div>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, paddingTop: 4, borderTop: `1px solid ${B}` }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Subtotal</span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPrice(pricing.subtotal)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Body */}
-              <div style={{ padding: 40, flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: B, border: `1px solid ${B}`, borderRadius: 20, overflow: "hidden" }}>
-                  {/* Check In */}
-                  <div style={{ background: S, padding: "20px 24px" }}>
-                    <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Check-in</p>
-                    <DateSingle 
-                      date={checkInDate}
-                      onDateChange={(date) => {
-                        setCheckInDate(date);
-                        // If new check-in is same or after current check-out, clear check-out
-                        if (checkOutDate && date && !checkOutDate.isAfter(date, 'day')) {
-                          setCheckOutDate(null);
-                        }
-                      }}
-                      placeholder="Add date"
-                      plain
-                      withPortal
-                      displayFormat="DD/MM/YYYY"
-                      isOutsideRange={(day) => {
-                        const today = moment().startOf('day');
-                        return day.isBefore(today, 'day') || isBlockedDay(day);
-                      }}
-                    />
-                  </div>
-                  {/* Check Out */}
-                  <div style={{ background: S, padding: "20px 24px" }}>
-                    <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Check-out</p>
-                    <DateSingle 
-                      date={checkOutDate}
-                      onDateChange={setCheckOutDate}
-                      placeholder="Add date"
-                      plain
-                      withPortal
-                      displayFormat="DD/MM/YYYY"
-                      isOutsideRange={(day) => {
-                        const today = moment().startOf('day');
-                        if (day.isBefore(today, 'day')) return true;
-                        if (isBlockedDay(day)) return true;
-                        if (checkInDate) {
-                          // Disable check-in day and everything before it
-                          return !day.isAfter(checkInDate, 'day');
-                        }
-                        return false;
-                      }}
-                    />
-                  </div>
-                  {/* Guests */}
-                  <div style={{ gridColumn: "span 2", background: S, padding: "24px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>Adults</p>
-                        <p style={{ fontSize: 12, color: M }}>Age 13+</p>
-                      </div>
-                      <Counter 
-                        value={guests.adults} 
-                        setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
-                        min={1} 
-                        max={pricing.baseAdultsLimit + pricing.extraAdultsLimit}
-                      />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>Children</p>
-                        <p style={{ fontSize: 12, color: M }}>Ages 2–12</p>
-                      </div>
-                      <Counter 
-                        value={guests.children} 
-                        setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
-                        min={0} 
-                        max={pricing.baseChildrenLimit + pricing.extraChildrenLimit}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Selected Rooms List */}
-                {resolvedSelectedRooms.length > 0 && (
-                  <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 16 }}>
-                    <p style={{ fontSize: 11, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>Selected Accommodations</p>
-                    {resolvedSelectedRooms.map((room) => (
-                      <div key={room.roomId || room.id} style={{ padding: "20px 24px", background: AL, borderRadius: 20, border: `1px solid ${A}33` }}>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                            <div style={{ width: 40, height: 40, borderRadius: 12, background: A, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF" }}>
-                              <Bed size={20} />
-                            </div>
-                            <div>
-                              <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{room.roomName || room.name}</p>
-                              <p style={{ fontSize: 12, color: M }}>{room.mealPlan || "EP"} Plan · ₹{formatPrice(room.calculatedPrice)} / night</p>
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                            <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>Rooms</p>
-                            <Counter 
-                              value={room.count} 
-                              setValue={(v) => onRoomsCountChange(room.roomId || room.id, v)} 
-                              min={1} 
-                              max={Number(room.units || room.totalRooms || room.availableRooms || 99)} 
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Warnings & Messages */}
-                {pricing.warning && (
-                  <div style={{ 
-                    marginTop: 24, padding: "16px 20px", borderRadius: 16, 
-                    background: pricing.isOver ? "#FFF5F5" : AL, 
-                    border: `1px solid ${pricing.isOver ? "#FEB2B2" : A + '33'}`,
-                    display: "flex", gap: 12, alignItems: "flex-start"
-                  }}>
-                    <Info size={18} color={pricing.isOver ? "#F56565" : A} style={{ marginTop: 2 }} />
-                    <p style={{ fontSize: 13, color: pricing.isOver ? "#C53030" : FG, lineHeight: 1.5, fontWeight: 500 }}>
-                      {pricing.warning}
-                    </p>
-                  </div>
-                )}
-
-                {/* Price Summary */}
-                {nightsCount > 0 && (
-                  <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 15 }}>
-                      <span>Base Price × {nightsCount} nights</span>
-                      <span>₹{formatPrice(pricing.originalPerNight * nightsCount)}</span>
-                    </div>
-
-                    {pricing.discount > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 15, fontWeight: 600 }}>
-                        <span>Discount ({pricing.discountPercent}%)</span>
-                        <span>- ₹{formatPrice(pricing.discount)}</span>
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, paddingTop: 20, borderTop: `1px dashed ${B}` }}>
-                      <span style={{ fontSize: 18, fontWeight: 700, color: FG }}>Total</span>
-                      <span style={{ fontSize: 20, fontWeight: 800, color: A }}>₹{formatPrice(pricing.subtotal)}</span>
-                    </div>
-                  </div>
-                )}
-
-                {(() => {
-                  const isPropertyBased = stay?.bookingScope === "Property-Based";
-                  const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
-                  const isDisabled = loading || !checkInDate || !checkOutDate || !hasSelection || pricing.isOver;
-                  const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve" : "Select Accommodation First"));
-
-                  return (
-                    <motion.button
-                      whileHover={{ scale: isDisabled ? 1 : 1.02 }}
-                      whileTap={{ scale: isDisabled ? 1 : 0.98 }}
-                      onClick={handleReserve}
-                      disabled={isDisabled}
-                      style={{
-                        width: "100%",
-                        background: isDisabled ? M : A,
-                        color: "#FFF",
-                        padding: "20px",
-                        borderRadius: 16,
-                        border: "none",
-                        fontSize: 16,
-                        fontWeight: 700,
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                        marginTop: 32,
-                        boxShadow: isDisabled ? "none" : `0 12px 24px ${A}33`
-                      }}
+              {/* Footer */}
+              <div className="booking-modal-footer" style={{ padding: "12px 32px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", flexDirection: "column", gap: 8, zIndex: 10 }}>
+                <AnimatePresence>
+                  {validationError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      style={{ width: "100%" }}
                     >
-                      {buttonText}
-                    </motion.button>
-                  );
-                })()}
+                      <div style={{
+                        padding: "8px 12px",
+                        background: EL,
+                        border: `1px solid ${E}33`,
+                        borderRadius: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        color: E,
+                        fontSize: 11,
+                        fontWeight: 700
+                      }}>
+                        <AlertCircle size={14} />
+                        <span>{validationError}</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24, color: M, fontSize: 13 }}>
-                  <ShieldCheck size={16} />
-                  <span>Secure & Private Booking</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
+                    <span style={{ marginTop: 1, fontSize: 9, color: M, fontWeight: 500 }}>Inc. all taxes</span>
+                  </div>
+                  {(() => {
+                    const isPropertyBased = stay?.bookingScope === "Property-Based";
+                    const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
+                    const isDisabled = loading || pricing.isOver;
+                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve Stay" : "Select Room"));
+
+                    return (
+                      <motion.button
+                        whileHover={{ scale: isDisabled ? 1 : 1.02 }}
+                        whileTap={{ scale: isDisabled ? 1 : 0.98 }}
+                        onClick={handleReserve}
+                        disabled={isDisabled}
+                        style={{
+                          padding: "10px 32px",
+                          background: isDisabled ? B : A,
+                          color: "#FFF",
+                          borderRadius: 12,
+                          border: "none",
+                          fontSize: 14,
+                          fontWeight: 800,
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                          boxShadow: isDisabled ? "none" : `0 10px 20px ${A}33`,
+                          transition: "0.3s"
+                        }}
+                      >
+                        {buttonText}
+                      </motion.button>
+                    );
+                  })()}
                 </div>
+              </div>
+              
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, paddingBottom: 10, color: M, fontSize: 9, background: BG }}>
+                <ShieldCheck size={11} />
+                <span>Secure payment by LKP</span>
               </div>
             </motion.div>
           </div>
