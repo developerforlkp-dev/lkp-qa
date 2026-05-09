@@ -137,8 +137,6 @@ const ExperienceCheckoutComplete = () => {
 
     return [
       { src: img, srcSet: img },
-      { src: img, srcSet: img },
-      { src: img, srcSet: img },
     ];
   }, [booking, stayImageUrl]);
 
