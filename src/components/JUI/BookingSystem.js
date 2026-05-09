@@ -266,13 +266,15 @@ const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts 
   const discount = pricing?.discount || {};
   const tax = pricing?.tax || {};
   
-  let discountRate = getRateFromPricing(
+  const promoDiscountRate = getRateFromPricing(
     discount.customer,
     discount.guest,
     discount.total,
     pricing?.discountRate,
     pricing?.discount
   );
+
+  let earlyBirdDiscountRate = 0;
 
   // Apply Early Bird Discount if applicable
   if (bookingDate && Array.isArray(earlyBirdDiscounts) && earlyBirdDiscounts.length > 0) {
@@ -289,10 +291,11 @@ const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts 
       const bestDiscount = applicableDiscounts.reduce((prev, current) => 
         ((asNumber(current.percentage) ?? 0) > (asNumber(prev.percentage) ?? 0)) ? current : prev
       );
-      discountRate += (asNumber(bestDiscount.percentage) ?? 0);
+      earlyBirdDiscountRate = (asNumber(bestDiscount.percentage) ?? 0);
     }
   }
 
+  const discountRate = promoDiscountRate + earlyBirdDiscountRate;
   const customerTaxRate = getRateFromPricing(
     tax.customer,
     tax.guest,
@@ -301,7 +304,11 @@ const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts 
     pricing?.taxRate,
     tax.total
   );
+  
   const discountAmount = baseUnitPrice * (discountRate / 100);
+  const promoDiscountAmount = baseUnitPrice * (promoDiscountRate / 100);
+  const earlyBirdDiscountAmount = baseUnitPrice * (earlyBirdDiscountRate / 100);
+
   const priceAfterDiscount = Math.max(0, baseUnitPrice - discountAmount);
   const taxAmount = priceAfterDiscount * (customerTaxRate / 100);
   const finalUnitPrice = priceAfterDiscount + taxAmount;
@@ -310,6 +317,10 @@ const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts 
     baseUnitPrice,
     discountRate,
     discountAmount,
+    promoDiscountRate,
+    promoDiscountAmount,
+    earlyBirdDiscountRate,
+    earlyBirdDiscountAmount,
     priceAfterDiscount,
     customerTaxRate,
     taxAmount,
@@ -1389,11 +1400,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
   const subtotalBeforeAdjustments = rawBaseTotal + addOnsTotal;
   const totalDiscountAmount = subtotalBeforeAdjustments * (appliedDiscountRate / 100);
+  const totalPromoDiscountAmount = subtotalBeforeAdjustments * ((activeGuestPricing?.promoDiscountRate || 0) / 100);
+  const totalEarlyBirdDiscountAmount = subtotalBeforeAdjustments * ((activeGuestPricing?.earlyBirdDiscountRate || 0) / 100);
   const taxableSubtotal = Math.max(0, subtotalBeforeAdjustments - totalDiscountAmount);
   const totalTaxAmount = taxableSubtotal * (appliedTaxRate / 100);
   const finalTotal = taxableSubtotal + totalTaxAmount;
   const eventBaseTotal = rawBaseTotal;
   const eventDiscountTotal = totalDiscountAmount;
+  const eventPromoDiscountTotal = totalPromoDiscountAmount;
+  const eventEarlyBirdDiscountTotal = totalEarlyBirdDiscountAmount;
   const eventTaxTotal = totalTaxAmount;
 
   const clampGuestsToSeatLimit = useCallback((nextGuests) => {
@@ -1640,6 +1655,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             pricePerPerson: eventGuestPricing.finalUnitPrice,
             basePrice: eventBaseTotal,
             discount: eventDiscountTotal,
+            promoDiscount: eventPromoDiscountTotal,
+            earlyBirdDiscount: eventEarlyBirdDiscountTotal,
             discountRate: appliedDiscountRate,
             tax: eventTaxTotal,
             taxRate: appliedTaxRate,
@@ -1807,6 +1824,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
         baseChildPricePerChild,
         discount: totalDiscountAmount,
+        promoDiscount: totalPromoDiscountAmount,
+        earlyBirdDiscount: totalEarlyBirdDiscountAmount,
         discountRate: appliedDiscountRate,
         tax: totalTaxAmount,
         taxRate: appliedTaxRate,
