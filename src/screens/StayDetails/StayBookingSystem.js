@@ -13,7 +13,8 @@ const StayInlineCalendar = ({
   onDateSelect, 
   isBlockedDay, 
   tokens, 
-  selectionMode 
+  selectionMode,
+  nextBlockedDate
 }) => {
   const { A, AL, BG, FG, M, B, S, W } = tokens;
   const [viewDate, setViewDate] = useState(() => (checkInDate ? checkInDate.toDate() : new Date()));
@@ -72,7 +73,12 @@ const StayInlineCalendar = ({
         ))}
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} />;
-          const disabled = cell.isPast || cell.isBlocked || (selectionMode === "check-out" && checkInDate && !cell.mDate.isAfter(checkInDate, 'day'));
+          const disabled = cell.isPast || 
+                           (selectionMode === "check-in" && cell.isBlocked) || 
+                           (selectionMode === "check-out" && (
+                             !cell.mDate.isAfter(checkInDate, 'day') || 
+                             (nextBlockedDate && cell.mDate.isAfter(nextBlockedDate, 'day'))
+                           ));
           
           return (
             <button
@@ -559,6 +565,15 @@ const StayBookingSystem = ({
 
     return keys;
   }, [stay, selectedRooms]);
+
+  const nextBlockedDate = useMemo(() => {
+    if (!checkInDate || blockedDateKeys.size === 0) return null;
+    const checkInKey = checkInDate.format("YYYY-MM-DD");
+    const nextDateKey = Array.from(blockedDateKeys)
+      .filter(k => k > checkInKey)
+      .sort()[0];
+    return nextDateKey ? moment(nextDateKey) : null;
+  }, [checkInDate, blockedDateKeys]);
 
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
@@ -1078,6 +1093,28 @@ const StayBookingSystem = ({
                         </div>
                       </div>
 
+                      {selectionMode === "check-out" && nextBlockedDate && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{ 
+                            marginBottom: 20, 
+                            padding: "10px 14px", 
+                            background: AL, 
+                            borderRadius: 12, 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: 8,
+                            border: `1px solid ${A}22`
+                          }}
+                        >
+                          <Info size={14} color={A} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: FG }}>
+                            Checkout available only until {nextBlockedDate.format("DD MMM, YYYY")}
+                          </span>
+                        </motion.div>
+                      )}
+
                       <StayInlineCalendar 
                         checkInDate={checkInDate}
                         checkOutDate={checkOutDate}
@@ -1085,6 +1122,7 @@ const StayBookingSystem = ({
                         isBlockedDay={isBlockedDay}
                         tokens={{ A, AL, BG, FG, M, B, S, W }}
                         selectionMode={selectionMode}
+                        nextBlockedDate={nextBlockedDate}
                       />
                     </div>
                   </div>
