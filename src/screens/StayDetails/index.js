@@ -289,7 +289,7 @@ function SHdr({ idx, label }) {
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
   const { width, isMobile } = useWindowSize();
-  const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+  const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
   const items = galleryItems.slice(0, 5);
 
@@ -317,7 +317,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
     }}>
       <div style={{ gridArea: isMobile ? "1 / 1 / 3 / 2" : "1 / 1 / 3 / 2", borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}`, position: "relative" }}>
         <img src={fixImageUrl(items[0] || stay?.coverPhotoUrl)} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.2)" }} />
+        <div style={{ position: "absolute", inset: 0, background: theme === 'dark' ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.05)" }} />
       </div>
       <div style={{ borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
         <img src={fixImageUrl(items[1])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
@@ -356,19 +356,19 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
       }}>
         <Rev delay={0.2}>
           <div style={{ 
-            background: "rgba(0,0,0,0.4)", 
+            background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.95)", 
             backdropFilter: "blur(20px)", 
             padding: isMobile ? "24px 30px" : "40px 60px", 
             borderRadius: isMobile ? 20 : 32, 
-            border: "1px solid rgba(255,255,255,0.1)", 
-            boxShadow: "0 20px 50px rgba(0,0,0,0.3)" 
+            border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`, 
+            boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 8 : 16 }}>
               <div style={{ width: isMobile ? 24 : 40, height: 1, background: A }} />
               <span style={{ fontSize: isMobile ? 8 : 10, letterSpacing: "0.4em", textTransform: "uppercase", color: A, fontWeight: 800 }}>{toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}</span>
             </div>
-            <h1 className="font-display" style={{ fontSize: isMobile ? "2rem" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: "#FFF", lineHeight: 0.9, letterSpacing: "-0.03em" }}>{title.toUpperCase()}</h1>
-            <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: "#FFF" }}>
+            <h1 className="font-display" style={{ fontSize: isMobile ? "2rem" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em" }}>{title.toUpperCase()}</h1>
+            <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: theme === 'dark' ? "#FFF" : FG }}>
               <MapPin size={isMobile ? 14 : 18} />
               <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{stay?.city}, {stay?.state}</span>
             </div>
@@ -677,7 +677,11 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   const phone = getPhone();
   const email = getEmail();
 
-  const primaryName = stay?.contactInformation?.primaryContactName || stay?.primaryContactName || stay?.primaryContact?.name || (hostData?.firstName ? `${hostData.firstName} ${hostData.lastName || ""}`.trim() : hostData?.name || hostData?.businessName || hostData?.host?.displayName || stay?.host?.name || stay?.host?.firstName || "Adithyan");
+  const hostFirstName = hostData?.firstName || hostData?.host?.firstName || stay?.host?.firstName || "";
+  const hostLastName = hostData?.lastName || hostData?.host?.lastName || stay?.host?.lastName || "";
+  const combinedHostName = (hostFirstName || hostLastName) ? `${hostFirstName} ${hostLastName}`.trim() : "";
+
+  const primaryName = stay?.contactInformation?.primaryContactName || stay?.primaryContactName || stay?.primaryContact?.name || combinedHostName || hostData?.name || hostData?.businessName || hostData?.host?.displayName || stay?.host?.name || "Adithyan";
   const primaryPhoneNum = stay?.contactInformation?.primaryPhone || stay?.primaryPhone || stay?.primaryContactNumber || stay?.primaryContact?.phone || phone;
   const primaryEmailAddress = stay?.contactInformation?.primaryEmail || stay?.primaryEmail || stay?.primaryContactEmail || stay?.primaryContact?.email || email;
 
@@ -710,8 +714,8 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
                       </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: FG, marginBottom: 4 }}>{primaryName}</h3>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: FG, marginBottom: 4, wordBreak: "break-word", lineHeight: 1.2 }}>{primaryName}</h3>
                     <p style={{ fontSize: 14, color: M }}>Property Representative</p>
                   </div>
                 </div>
