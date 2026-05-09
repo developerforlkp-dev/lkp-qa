@@ -392,13 +392,38 @@ const Checkout = () => {
     }
 
     // Get guest count - check multiple possible formats
-    const guestsCount =
-      bookingData?.bookingSummary?.guestCount ||
-      bookingData?.guests?.guests ||
-      (bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0);
-    const guestsTitle = guestsCount > 0
-      ? `${guestsCount} ${guestsCount === 1 ? 'guest' : 'guests'}`
-      : "Add guests";
+    const adults =
+      bookingData?.guests?.adults ||
+      bookingData?.pricing?.adultsCount ||
+      bookingData?.adultsCount ||
+      bookingData?.adultCount ||
+      0;
+    const children =
+      bookingData?.guests?.children ||
+      bookingData?.pricing?.childrenCount ||
+      bookingData?.childrenCount ||
+      bookingData?.childCount ||
+      0;
+
+    let guestsTitle = "Add guests";
+    if (adults > 0 || children > 0) {
+      const parts = [];
+      if (adults > 0) {
+        parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+      }
+      if (children > 0) {
+        parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+      }
+      guestsTitle = parts.join(", ");
+    } else {
+      const guestsCount =
+        bookingData?.bookingSummary?.guestCount ||
+        bookingData?.guests?.guests ||
+        0;
+      if (guestsCount > 0) {
+        guestsTitle = `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}`;
+      }
+    }
 
     return [
       {
@@ -493,7 +518,7 @@ const Checkout = () => {
       }
 
       if (promoDiscount > 0) {
-        rows.push({ title: "Promotional Discount", value: `- ${fmt(promoDiscount)}` });
+        rows.push({ title: "Promotional Discounts", value: `- ${fmt(promoDiscount)}` });
       }
 
       if (couponDiscount > 0) {
