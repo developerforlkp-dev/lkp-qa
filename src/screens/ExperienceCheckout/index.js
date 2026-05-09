@@ -192,7 +192,13 @@ const Checkout = () => {
               return {
                 ...(prev || {}),
                 hostName: order?.hostName || orderDetails?.hostName || prev?.hostName,
-                hostAvatar: "/images/content/avatar.jpg",
+                hostAvatar:
+                  order?.hostAvatar ||
+                  orderDetails?.hostAvatar ||
+                  order?.hostProfilePhotoUrl ||
+                  orderDetails?.hostProfilePhotoUrl ||
+                  prev?.hostAvatar ||
+                  null,
                 cancellationAllowed: order?.cancellationAllowed ?? orderDetails?.cancellationAllowed ?? order?.listing?.cancellationAllowed ?? orderDetails?.listing?.cancellationAllowed ?? order?.event?.cancellationAllowed ?? orderDetails?.event?.cancellationAllowed ?? prev?.cancellationAllowed,
                 cancellationPolicySummary: order?.cancellationPolicySummary || order?.listing?.cancellationPolicySummary || orderDetails?.cancellationPolicySummary || orderDetails?.listing?.cancellationPolicySummary || order?.event?.cancellationPolicySummary || orderDetails?.event?.cancellationPolicySummary || prev?.cancellationPolicySummary,
                 pricing: {

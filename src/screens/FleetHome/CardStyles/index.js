@@ -273,6 +273,48 @@ const transformListingToDestinationHorizontal = (listing, section) => {
 const isShowCategoriesOnly = (section) =>
   section?.displayMode === "SHOW_CATEGORIES_ONLY";
 
+const getSectionListingsUrl = (section) => {
+  const params = new URLSearchParams();
+
+  const businessInterestId =
+    section?.businessInterestId ??
+    section?.business_interest_id;
+  const businessInterest =
+    section?.businessInterestCode ??
+    section?.businessInterest ??
+    "EXPERIENCE";
+
+  if (businessInterest) params.set("businessInterest", String(businessInterest));
+  if (businessInterestId != null) params.set("businessInterestId", String(businessInterestId));
+
+  const categoryType = section?.categoryType;
+  if (categoryType) {
+    params.set("categoryType", String(categoryType));
+
+    const normalizedCategoryType = String(categoryType).toUpperCase();
+    const shouldUseId =
+      normalizedCategoryType.includes("PRIMARY") || normalizedCategoryType.includes("SUB");
+
+    const selectedCategories = Array.isArray(section?.selectedCategories)
+      ? section.selectedCategories
+      : [];
+
+    const categoryValues = selectedCategories
+      .map((category) => {
+        if (!category) return null;
+        if (shouldUseId) return category?.id;
+        return category?.name;
+      })
+      .filter((value) => value != null && String(value).trim().length > 0);
+
+    categoryValues.forEach((value) => {
+      params.append("categoryValues", String(value));
+    });
+  }
+
+  return `/listings?${params.toString()}`;
+};
+
 const transformCategoryToListing = (category, section) => {
   const businessInterestId =
     section?.businessInterestId ??
@@ -318,12 +360,13 @@ const getRenderListings = (section, listings) => {
  */
 export const CardCarousel = ({ section, listings, className }) => {
   const browseItems = listings.map((listing) => transformListingToBrowse(listing, section));
+  const sectionListingsUrl = getSectionListingsUrl(section);
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionTitleWrapper}>
-          <Link to="/listings" className={styles.sectionTitleLink}>
+          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
             <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
           </Link>
           {section.priceStartingFrom && (
@@ -356,12 +399,13 @@ export const CardCarousel = ({ section, listings, className }) => {
  */
 export const CardGrid = ({ section, listings, className }) => {
   const cardItems = listings.map((listing) => transformListingToCard(listing, section));
+  const sectionListingsUrl = getSectionListingsUrl(section);
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionTitleWrapper}>
-          <Link to="/listings" className={styles.sectionTitleLink}>
+          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
             <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
           </Link>
           {section.priceStartingFrom && (
@@ -390,12 +434,13 @@ export const CardGrid = ({ section, listings, className }) => {
  */
 export const CardDestination = ({ section, listings, className }) => {
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
+  const sectionListingsUrl = getSectionListingsUrl(section);
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionTitleWrapper}>
-          <Link to="/listings" className={styles.sectionTitleLink}>
+          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
             <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
           </Link>
           {section.priceStartingFrom && (
@@ -428,12 +473,13 @@ export const CardDestination = ({ section, listings, className }) => {
  */
 export const CardDestinationHorizontal = ({ section, listings, className }) => {
   const destinationItems = listings.map((listing) => transformListingToDestinationHorizontal(listing, section));
+  const sectionListingsUrl = getSectionListingsUrl(section);
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionTitleWrapper}>
-          <Link to="/listings" className={styles.sectionTitleLink}>
+          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
             <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
           </Link>
           {section.priceStartingFrom && (
