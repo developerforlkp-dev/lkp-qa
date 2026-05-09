@@ -27,6 +27,7 @@ const StayInlineCalendar = ({
   const todayKey = moment().startOf('day').format("YYYY-MM-DD");
   const checkInKey = checkInDate ? checkInDate.format("YYYY-MM-DD") : null;
   const checkOutKey = checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null;
+  const nextBlockedKey = nextBlockedDate ? nextBlockedDate.format("YYYY-MM-DD") : null;
 
   const isRange = checkInDate && checkOutDate;
 
@@ -73,12 +74,19 @@ const StayInlineCalendar = ({
         ))}
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} />;
-          const disabled = cell.isPast || 
-                           (selectionMode === "check-in" && cell.isBlocked) || 
-                           (selectionMode === "check-out" && (
-                             !cell.mDate.isAfter(checkInDate, 'day') || 
-                             (nextBlockedDate && cell.mDate.isAfter(nextBlockedDate, 'day'))
-                           ));
+          const isSelectingCheckOut = selectionMode === "check-out" && checkInDate && !checkOutDate;
+          const disabled = cell.isPast || (
+            isSelectingCheckOut
+              ? (
+                // Checkout Selection Mode:
+                // 1. Disable dates on or before check-in
+                (checkInKey && cell.key <= checkInKey) || 
+                // 2. Disable dates strictly after the next blocked date
+                // (nextBlockedKey itself is allowed as checkout morning)
+                (nextBlockedKey && cell.key > nextBlockedKey)
+              )
+              : cell.isBlocked
+          );
           
           return (
             <button
@@ -196,8 +204,12 @@ const StayBookingSystem = ({
   }, [checkInDate, checkOutDate, guests]);
 
   const handleDateSelect = (date) => {
+    // If the date is blocked, it can ONLY be selected as a check-out date
+    const isBlocked = isBlockedDay(date);
+
     // If we have a complete range and click again, start a fresh selection
     if (checkInDate && checkOutDate) {
+      if (isBlocked) return;
       setCheckInDate(date);
       setCheckOutDate(null);
       setSelectionMode("check-out");
@@ -205,6 +217,7 @@ const StayBookingSystem = ({
     }
 
     if (selectionMode === "check-in") {
+      if (isBlocked) return;
       setCheckInDate(date);
       setCheckOutDate(null);
       setSelectionMode("check-out");
@@ -212,6 +225,7 @@ const StayBookingSystem = ({
       if (date && checkInDate && date.isAfter(checkInDate, 'day')) {
         setCheckOutDate(date);
       } else {
+        if (isBlocked) return;
         setCheckInDate(date);
         setCheckOutDate(null);
         setSelectionMode("check-out");
