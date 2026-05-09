@@ -883,11 +883,13 @@ const StayBookingSystem = ({
       const taxRate = Array.isArray(stay?.taxes)
         ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
         : 0;
-      const combinedFrontendTax = (pricing.subtotal || 0) * (taxRate / 100);
+      
       const inferredDiscountFromTotals = Math.max(
         0,
         Number((nightlyFromOrder * nightsFromOrder) || 0) +
-          Number(combinedFrontendTax || 0) -
+          (extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder) +
+          (extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder) +
+          (pricing.subtotal * (taxRate / 100)) - // This is just a guestimate, but we have better info
           Number(totalFromOrder || 0)
       );
       const discountToShow = firstNumber(
@@ -895,6 +897,14 @@ const StayBookingSystem = ({
         discount,
         inferredDiscountFromTotals
       ) || 0;
+
+      const baseStayTotal = (nightlyFromOrder * nightsFromOrder) + 
+                            (extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder) + 
+                            (extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder);
+      
+      const subtotalBeforeTax = baseStayTotal - discountToShow;
+      const combinedFrontendTax = Math.max(0, subtotalBeforeTax * (taxRate / 100));
+
       if (discountToShow > 0) {
         frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
       }

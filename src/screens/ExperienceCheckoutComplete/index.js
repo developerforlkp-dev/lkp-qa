@@ -166,12 +166,41 @@ const ExperienceCheckoutComplete = () => {
 
   const parameters = useMemo(() => {
     // Get guest count - check multiple possible formats
-    const guestsCount =
-      booking?.bookingSummary?.guestCount ||
-      booking?.guests?.guests ||
-      (booking?.guests?.adults || 0) + (booking?.guests?.children || 0);
+    const adults =
+      booking?.guests?.adults ||
+      booking?.pricing?.adultsCount ||
+      booking?.adultsCount ||
+      booking?.adultCount ||
+      0;
+    const children =
+      booking?.guests?.children ||
+      booking?.pricing?.childrenCount ||
+      booking?.childrenCount ||
+      booking?.childCount ||
+      0;
+
+    let guestsTitle = "—";
+    if (adults > 0 || children > 0) {
+      const parts = [];
+      if (adults > 0) {
+        parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+      }
+      if (children > 0) {
+        parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+      }
+      guestsTitle = parts.join(", ");
+    } else {
+      const guestsCount =
+        booking?.bookingSummary?.guestCount ||
+        booking?.guests?.guests ||
+        0;
+      if (guestsCount > 0) {
+        guestsTitle = `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}`;
+      }
+    }
+
     return [
-      { title: `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}` },
+      { title: guestsTitle },
     ];
   }, [booking]);
 
@@ -374,14 +403,38 @@ const ExperienceCheckoutComplete = () => {
     }
 
     // Get guest count - check multiple possible formats
-    const guestsCount =
-      booking?.bookingSummary?.guestCount ||
-      booking?.guests?.guests ||
-      (booking?.guests?.adults || 0) + (booking?.guests?.children || 0);
+    const adults =
+      booking?.guests?.adults ||
+      booking?.pricing?.adultsCount ||
+      booking?.adultsCount ||
+      booking?.adultCount ||
+      0;
+    const children =
+      booking?.guests?.children ||
+      booking?.pricing?.childrenCount ||
+      booking?.childrenCount ||
+      booking?.childCount ||
+      0;
 
-    const guestsContent = guestsCount > 0
-      ? `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}`
-      : "—";
+    let guestsContent = "—";
+    if (adults > 0 || children > 0) {
+      const parts = [];
+      if (adults > 0) {
+        parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+      }
+      if (children > 0) {
+        parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+      }
+      guestsContent = parts.join(", ");
+    } else {
+      const guestsCount =
+        booking?.bookingSummary?.guestCount ||
+        booking?.guests?.guests ||
+        0;
+      if (guestsCount > 0) {
+        guestsContent = `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}`;
+      }
+    }
 
     return [
       {

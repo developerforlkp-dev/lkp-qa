@@ -179,10 +179,10 @@ const Checkout = () => {
           if (serverPricing) {
             setBookingData((prev) => {
               const prevPricing = prev?.pricing || {};
-              
+
               // Get local discount calculate from Experience Details pg
               const localDiscount = prevPricing.discountAmount || prevPricing.discount || 0;
-              
+
               // Prefer server discount unless it's falsely 0 while local had one
               let finalDiscount = serverPricing.discount || serverPricing.discountAmount || 0;
               if (Number(finalDiscount) === 0 && Number(localDiscount) > 0) {
@@ -392,13 +392,38 @@ const Checkout = () => {
     }
 
     // Get guest count - check multiple possible formats
-    const guestsCount =
-      bookingData?.bookingSummary?.guestCount ||
-      bookingData?.guests?.guests ||
-      (bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0);
-    const guestsTitle = guestsCount > 0
-      ? `${guestsCount} ${guestsCount === 1 ? 'guest' : 'guests'}`
-      : "Add guests";
+    const adults =
+      bookingData?.guests?.adults ||
+      bookingData?.pricing?.adultsCount ||
+      bookingData?.adultsCount ||
+      bookingData?.adultCount ||
+      0;
+    const children =
+      bookingData?.guests?.children ||
+      bookingData?.pricing?.childrenCount ||
+      bookingData?.childrenCount ||
+      bookingData?.childCount ||
+      0;
+
+    let guestsTitle = "Add guests";
+    if (adults > 0 || children > 0) {
+      const parts = [];
+      if (adults > 0) {
+        parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+      }
+      if (children > 0) {
+        parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+      }
+      guestsTitle = parts.join(", ");
+    } else {
+      const guestsCount =
+        bookingData?.bookingSummary?.guestCount ||
+        bookingData?.guests?.guests ||
+        0;
+      if (guestsCount > 0) {
+        guestsTitle = `${guestsCount} ${guestsCount === 1 ? "guest" : "guests"}`;
+      }
+    }
 
     return [
       {
@@ -448,10 +473,10 @@ const Checkout = () => {
           const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || 0;
 
           if (adults > 0) {
-             rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
+            rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
           }
           if (children > 0) {
-             rows.push({ title: `Children (${fmt(cpp)} × ${children})`, value: fmt(cpp * children) });
+            rows.push({ title: `Children (${fmt(cpp)} × ${children})`, value: fmt(cpp * children) });
           }
         } else {
           const guests = pricing.guestCount || 1;
@@ -547,7 +572,7 @@ const Checkout = () => {
       // Fallback: Fetch listing configuration if order doesn't have it
       const listingId = bookingData?.listingId;
       const eventId = bookingData?.eventId;
-      
+
       if (eventId) {
         getEventDetails(eventId).then((data) => {
           if (data?.cancellationAllowed === true) {
@@ -582,7 +607,7 @@ const Checkout = () => {
                 } else if (config?.cancellationAllowed === false) {
                   setCancellationPolicy(null);
                 }
-              }).catch(() => {});
+              }).catch(() => { });
             }
           })
           .catch((err) => console.error("Error fetching policy:", err));
@@ -597,10 +622,10 @@ const Checkout = () => {
         .then((res) => {
           const data = res?.data || res;
           if (data) {
-             setReviewsData({
-               rating: data.averageRating || null,
-               count: data.totalReviews || data.reviews?.length || 0,
-             });
+            setReviewsData({
+              rating: data.averageRating || null,
+              count: data.totalReviews || data.reviews?.length || 0,
+            });
           }
         })
         .catch((err) => console.error("Error fetching reviews:", err));
