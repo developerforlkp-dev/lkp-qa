@@ -1281,7 +1281,7 @@ const StayBookingSystem = ({
                         </div>
                         {pricing.discount > 0 && (
                           <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 11, fontWeight: 700 }}>
-                            <span>Discount</span>
+                            <span>Discounts</span>
                             <span>- ₹{formatPrice(pricing.discount)}</span>
                           </div>
                         )}

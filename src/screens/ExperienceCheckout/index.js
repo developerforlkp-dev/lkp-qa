@@ -504,7 +504,7 @@ const Checkout = () => {
       const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
       if (discount > totalSpecificDiscount + 0.01) {
         const remainingDiscount = discount - totalSpecificDiscount;
-        rows.push({ title: "Discount", value: `- ${fmt(remainingDiscount)}` });
+        rows.push({ title: "Discounts", value: `- ${fmt(remainingDiscount)}` });
       }
 
       return {
