@@ -2588,36 +2588,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       </div>
                     )}
 
-                    {/* Price Summary */}
-                    {!isEventBooking && totalGuests > 0 && (
-                      <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
-                        <div style={{ fontSize: 10, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 2, letterSpacing: "0.1em" }}>
-                          04. Price Summary
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "6px 8px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 10, fontWeight: 500 }}>
-                            <span>Base ({totalGuests} guest{totalGuests !== 1 ? 's' : ''})</span>
-                            <span>₹{Number(rawBaseTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-                          </div>
-                          {addOnsTotal > 0 && (
-                            <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 10, fontWeight: 500 }}>
-                              <span>Add-ons</span>
-                              <span>₹{Number(addOnsTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-                            </div>
-                          )}
-                          {totalDiscountAmount > 0 && (
-                            <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 10, fontWeight: 700 }}>
-                              <span>Discount</span>
-                              <span>- ₹{Number(totalDiscountAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-                            </div>
-                          )}
-                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, paddingTop: 2, borderTop: `1px solid ${B}` }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>Subtotal</span>
-                            <span style={{ fontSize: 11, fontWeight: 800, color: A }}>₹{Number(taxableSubtotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* Price Summary removed to align with Event popup behavior */}
                   </div>
                 </div>
               </div>
