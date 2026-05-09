@@ -196,6 +196,93 @@ export const getListings = async (
   }
 };
 
+// Get listings filtered by category type/values and business interest id
+// API: GET /api/public/listings/filter
+export const getFilteredListings = async ({
+  businessInterestId,
+  categoryType,
+  categoryValues = [],
+  limit = 20,
+  offset = 0,
+  sortBy = "newest",
+} = {}) => {
+  try {
+    if (!businessInterestId) {
+      throw new Error("businessInterestId is required");
+    }
+
+    const normalizedCategoryValues = Array.isArray(categoryValues)
+      ? categoryValues.filter((value) => value != null && String(value).trim() !== "")
+      : [];
+
+    const params = {
+      businessInterestId,
+      limit,
+      offset,
+      sortBy,
+    };
+
+    if (categoryType) {
+      params.categoryType = categoryType;
+    }
+    if (normalizedCategoryValues.length > 0) {
+      params.categoryValues = normalizedCategoryValues;
+    }
+
+    const response = await ListingsAPI.get("/public/listings/filter", { params });
+    const payload = response.data;
+    console.log("✅ Filtered listings fetched (raw):", payload);
+
+    let listings = [];
+    let totalCount = null;
+    let hasMore = null;
+
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      if (Array.isArray(payload.data)) listings = payload.data;
+      else if (Array.isArray(payload.items)) listings = payload.items;
+      else if (Array.isArray(payload.listings)) listings = payload.listings;
+      else if (Array.isArray(payload.results)) listings = payload.results;
+
+      if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total !== undefined) totalCount = payload.total;
+      else if (payload.count !== undefined) totalCount = payload.count;
+
+      if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+      else if (payload.has_more !== undefined) hasMore = payload.has_more;
+    }
+
+    return {
+      listings: Array.isArray(listings) ? listings : [],
+      totalCount,
+      hasMore,
+      raw: payload,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching filtered listings:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Get available filters for a business interest
+// API: GET /api/public/business-interest-filters/:businessInterestId
+export const getBusinessInterestFilters = async (businessInterestId) => {
+  try {
+    if (!businessInterestId) {
+      throw new Error("businessInterestId is required");
+    }
+
+    const response = await ListingsAPI.get(`/public/business-interest-filters/${businessInterestId}`);
+    const payload = response.data;
+    console.log(`✅ Business interest filters fetched (${businessInterestId}):`, payload);
+    return payload;
+  } catch (error) {
+    console.error("❌ Error fetching business interest filters:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getOrderCancelPreview = async (orderId) => {
   try {
     if (!orderId) {

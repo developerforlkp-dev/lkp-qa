@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import cn from "classnames";
 import styles from "./FilterSidebar.module.sass";
 import { Range, getTrackBackground } from "react-range";
@@ -32,16 +32,27 @@ const ratings = [
   { id: 3, label: "3+ stars" },
 ];
 
-const categories = [
-  "Adventure",
-  "Offbeat",
-  "Nature",
-  "Camps",
-  "Family",
-  "Luxury",
-  "Eco",
-  "Pet Friendly",
+const defaultPrimaryCategories = [
+  { key: "primary-1", label: "Adventure", value: 1, categoryType: "Primary Category" },
 ];
+
+const defaultSecondaryCategories = [
+  { key: "sub-1", label: "Offbeat", value: 1, categoryType: "Sub Category" },
+];
+
+const defaultTags = ["Trending", "Weekend", "Family"];
+const defaultSpecialLabels = ["Featured"];
+
+const toText = (value) => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (value && typeof value === "object") {
+    if (typeof value.label === "string") return value.label;
+    if (typeof value.name === "string") return value.name;
+    if (typeof value.value === "string" || typeof value.value === "number") return String(value.value);
+  }
+  return "";
+};
 
 const FilterSidebar = ({
   filters,
@@ -51,9 +62,112 @@ const FilterSidebar = ({
   setSorting,
   sortingOptions,
   businessInterest,
+  businessInterestFilters,
 }) => {
   const normalizedInterest = String(businessInterest || "").toUpperCase();
   const isStayInterest = normalizedInterest === "STAY" || normalizedInterest === "STAYS";
+  const isEventInterest = normalizedInterest === "EVENT" || normalizedInterest === "EVENTS";
+  const isExperienceInterest = normalizedInterest === "EXPERIENCE" || normalizedInterest === "EXPERIENCES";
+  const isExpEventOrStay = isStayInterest || isEventInterest || isExperienceInterest;
+
+  const primaryCategoryOptions = useMemo(() => {
+    const primary = Array.isArray(businessInterestFilters?.primaryCategories)
+      ? businessInterestFilters.primaryCategories.map((item) => ({
+          key: `primary-${item.id}`,
+          label: item.name,
+          value: item.id,
+          categoryType: "Primary Category",
+        }))
+      : [];
+    const normalized = primary
+      .map((item) => ({
+        ...item,
+        label: toText(item.label),
+      }))
+      .filter((item) => item.label);
+    return normalized.length > 0 ? normalized : defaultPrimaryCategories;
+  }, [businessInterestFilters]);
+
+  const secondaryCategoryOptions = useMemo(() => {
+    const secondary = Array.isArray(businessInterestFilters?.secondaryCategories)
+      ? businessInterestFilters.secondaryCategories.map((item) => ({
+          key: `secondary-${item.id}`,
+          label: item.name,
+          value: item.id,
+          categoryType: "Sub Category",
+        }))
+      : [];
+    const normalized = secondary
+      .map((item) => ({
+        ...item,
+        label: toText(item.label),
+      }))
+      .filter((item) => item.label);
+    return normalized.length > 0 ? normalized : defaultSecondaryCategories;
+  }, [businessInterestFilters]);
+
+  const tagOptions = useMemo(() => {
+    const dynamicTags = Array.isArray(businessInterestFilters?.tags)
+      ? businessInterestFilters.tags
+          .map((tag) => {
+            const name = typeof tag === "string" ? tag : tag?.name;
+            return name
+              ? {
+                  key: `tag-${name}`,
+                  label: name,
+                  value: name,
+                  categoryType: "Tag",
+                }
+              : null;
+          })
+          .filter(Boolean)
+      : [];
+    return (dynamicTags.length > 0
+      ? dynamicTags
+      : defaultTags.map((tag) => ({
+          key: `tag-${tag}`,
+          label: tag,
+          value: tag,
+          categoryType: "Tag",
+        })))
+      .map((item) => ({
+        ...item,
+        label: toText(item.label),
+      }))
+      .filter((item) => item.label);
+  }, [businessInterestFilters]);
+
+  const specialLabelOptions = useMemo(() => {
+    const dynamicLabels = Array.isArray(businessInterestFilters?.specialLabels)
+      ? businessInterestFilters.specialLabels
+          .map((label) => {
+            const id = typeof label === "object" ? label?.id : null;
+            const name = typeof label === "string" ? label : label?.name;
+            return name
+              ? {
+                  key: `special-${id ?? name}`,
+                  label: name,
+                  value: id ?? name,
+                  categoryType: "Special Label",
+                }
+              : null;
+          })
+          .filter(Boolean)
+      : [];
+    return (dynamicLabels.length > 0
+      ? dynamicLabels
+      : defaultSpecialLabels.map((label) => ({
+          key: `special-${label}`,
+          label,
+          value: label,
+          categoryType: "Special Label",
+        })))
+      .map((item) => ({
+        ...item,
+        label: toText(item.label),
+      }))
+      .filter((item) => item.label);
+  }, [businessInterestFilters]);
   const [priceValues, setPriceValues] = useState([
     filters.priceRange?.min || 0,
     filters.priceRange?.max || 10000,
@@ -88,12 +202,27 @@ const FilterSidebar = ({
     onFilterChange("ratings", updated);
   };
 
-  const handleCategoryChange = (category) => {
-    const current = filters.categories || [];
-    const updated = current.includes(category)
-      ? current.filter((x) => x !== category)
-      : [...current, category];
-    onFilterChange("categories", updated);
+  const handleApiFilterChange = (option) => {
+    const currentKey = filters.apiCategoryFilter?.activeKey;
+    if (currentKey === option.key) {
+      onFilterChange("apiCategoryFilter", null);
+      return;
+    }
+
+    onFilterChange("apiCategoryFilter", {
+      activeKey: option.key,
+      selectedCategoryLabel: option.label,
+      categoryType: option.categoryType,
+      categoryValues: [option.value],
+    });
+  };
+
+  const handleDateFieldChange = (key, value) => {
+    const current = filters.dateRange || { startDate: "", endDate: "" };
+    onFilterChange("dateRange", {
+      ...current,
+      [key]: value,
+    });
   };
 
   const minPrice = 0;
@@ -112,7 +241,7 @@ const FilterSidebar = ({
 
       <div className={styles.content}>
         {/* Sort Dropdown */}
-        {isStayInterest && sortingOptions && sortingOptions.length > 0 && (
+        {sortingOptions && sortingOptions.length > 0 && (
           <div className={styles.section}>
             <div className={styles.label}>Sort by</div>
             <Dropdown
@@ -125,7 +254,7 @@ const FilterSidebar = ({
         )}
 
         {/* Price Range */}
-        {isStayInterest && (
+        {isExpEventOrStay && (
           <div className={styles.section}>
             <div className={styles.label}>Price range</div>
             <div className={styles.priceRange}>
@@ -206,24 +335,6 @@ const FilterSidebar = ({
           </div>
         )}
 
-        {/* Property Types */}
-        {isStayInterest && (
-          <div className={styles.section}>
-            <div className={styles.label}>Property type</div>
-            <div className={styles.checkboxList}>
-              {propertyTypes.map((type) => (
-                <Checkbox
-                  key={type.id}
-                  className={styles.checkbox}
-                  content={type.label}
-                  value={(filters.propertyTypes || []).includes(type.id)}
-                  onChange={() => handlePropertyTypeChange(type.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Amenities */}
         {isStayInterest && (
           <div className={styles.section}>
@@ -263,23 +374,120 @@ const FilterSidebar = ({
           </div>
         </div>
 
-        {/* Categories */}
+        {/* Main Category */}
         <div className={styles.section}>
-          <div className={styles.label}>Categories</div>
+          <div className={styles.label}>Main category</div>
           <div className={styles.categoriesScroll}>
-            {categories.map((category) => (
+            {primaryCategoryOptions.map((category) => (
               <button
-                key={category}
+                key={category.key}
                 className={cn(styles.categoryChip, {
-                  [styles.active]: (filters.categories || []).includes(category),
+                  [styles.active]: filters.apiCategoryFilter?.activeKey === category.key,
                 })}
-                onClick={() => handleCategoryChange(category)}
+                onClick={() => handleApiFilterChange(category)}
               >
-                {category}
+                {category.label}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Sub Category */}
+        <div className={styles.section}>
+          <div className={styles.label}>Sub category</div>
+          <div className={styles.categoriesScroll}>
+            {secondaryCategoryOptions.map((category) => (
+              <button
+                key={category.key}
+                className={cn(styles.categoryChip, {
+                  [styles.active]: filters.apiCategoryFilter?.activeKey === category.key,
+                })}
+                onClick={() => handleApiFilterChange(category)}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className={styles.section}>
+          <div className={styles.label}>Tags</div>
+          <div className={styles.categoriesScroll}>
+            {tagOptions.map((tag) => (
+              <button
+                key={tag.key}
+                className={cn(styles.categoryChip, {
+                  [styles.active]: filters.apiCategoryFilter?.activeKey === tag.key,
+                })}
+                onClick={() => handleApiFilterChange(tag)}
+              >
+                {tag.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Special Labels */}
+        <div className={styles.section}>
+          <div className={styles.label}>Special labels</div>
+          <div className={styles.categoriesScroll}>
+            {specialLabelOptions.map((label) => (
+              <button
+                key={label.key}
+                className={cn(styles.categoryChip, {
+                  [styles.active]: filters.apiCategoryFilter?.activeKey === label.key,
+                })}
+                onClick={() => handleApiFilterChange(label)}
+              >
+                {label.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date Range for Experience/Events */}
+        {(isExperienceInterest || isEventInterest) && (
+          <div className={styles.section}>
+            <div className={styles.label}>Date range</div>
+            <div className={styles.dateGrid}>
+              <label className={styles.dateField}>
+                <span>Start</span>
+                <input
+                  type="date"
+                  value={filters.dateRange?.startDate || ""}
+                  onChange={(e) => handleDateFieldChange("startDate", e.target.value)}
+                />
+              </label>
+              <label className={styles.dateField}>
+                <span>End</span>
+                <input
+                  type="date"
+                  value={filters.dateRange?.endDate || ""}
+                  onChange={(e) => handleDateFieldChange("endDate", e.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Property Types (stays only) */}
+        {isStayInterest && (
+          <div className={styles.section}>
+            <div className={styles.label}>Property type</div>
+            <div className={styles.checkboxList}>
+              {propertyTypes.map((type) => (
+                <Checkbox
+                  key={type.id}
+                  className={styles.checkbox}
+                  content={type.label}
+                  value={(filters.propertyTypes || []).includes(type.id)}
+                  onChange={() => handlePropertyTypeChange(type.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
