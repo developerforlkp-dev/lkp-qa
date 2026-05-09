@@ -640,6 +640,7 @@ const ViewDetails = () => {
   // Receipt state
   const [receiptModalVisible, setReceiptModalVisible] = useState(false);
   const [refundDetails, setRefundDetails] = useState(null);
+  const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
   const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
@@ -719,6 +720,117 @@ const ViewDetails = () => {
     };
 
     html2pdf().from(element).set(opt).save();
+  };
+
+  const ensureRazorpayScript = () =>
+    new Promise((resolve, reject) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => reject(new Error("Failed to load Razorpay"));
+      document.body.appendChild(script);
+    });
+
+  const handleConfirmBooking = async () => {
+    if (!booking?.orderId || isConfirmingBooking) return;
+    setIsConfirmingBooking(true);
+
+    try {
+      const orderResponse = booking.isEventOrder
+        ? await getEventOrderDetails(booking.orderId)
+        : await getOrderDetails(booking.orderId);
+      const order = orderResponse?.order || orderResponse || {};
+      const payment = orderResponse?.payment || order?.payment || {};
+
+      const amountInPaise =
+        Number(payment?.amount) > 0
+          ? Number(payment.amount)
+          : Math.round(Number(order?.totalPrice || order?.finalAmount || booking?.originalData?.totalPrice || 0) * 100);
+
+      const razorpayOrderId =
+        payment?.razorpayOrderId ||
+        payment?.razorpay_order_id ||
+        order?.razorpayOrderId ||
+        order?.razorpay_order_id ||
+        booking?.originalData?.razorpayOrderId ||
+        booking?.originalData?.razorpay_order_id;
+
+      const razorpayKeyId =
+        payment?.razorpayKeyId ||
+        payment?.razorpay_key_id ||
+        payment?.keyId ||
+        order?.razorpayKeyId ||
+        order?.razorpay_key_id ||
+        order?.keyId ||
+        localStorage.getItem("lastRazorpayKeyId") ||
+        process.env.REACT_APP_RAZORPAY_KEY_ID;
+
+      if (!razorpayOrderId) {
+        alert("Unable to confirm booking: payment order is missing.");
+        return;
+      }
+      if (!razorpayKeyId) {
+        alert("Unable to confirm booking: Razorpay key is missing.");
+        return;
+      }
+      if (!amountInPaise || amountInPaise <= 0) {
+        alert("Unable to confirm booking: amount is invalid.");
+        return;
+      }
+
+      const paymentData = {
+        orderId: booking.orderId,
+        razorpayOrderId,
+        razorpayKeyId,
+        amount: amountInPaise,
+        currency: payment?.currency || order?.currency || booking?.originalData?.currency || "INR",
+        paymentMethod: "razorpay",
+      };
+
+      localStorage.setItem("pendingOrderId", String(booking.orderId));
+      localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
+      localStorage.removeItem("razorpayPaymentSuccess");
+      localStorage.removeItem("paymentFailed");
+      localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
+
+      await ensureRazorpayScript();
+
+      const options = {
+        key: razorpayKeyId,
+        amount: amountInPaise,
+        currency: paymentData.currency,
+        order_id: razorpayOrderId,
+        name: "Little Known Planet",
+        description: booking.title || "Booking Confirmation",
+        handler: (response) => {
+          localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(response));
+          window.location.reload();
+        },
+        modal: {
+          ondismiss: () => {
+            setIsConfirmingBooking(false);
+          },
+        },
+        prefill: {
+          name: booking?.guest?.name || "",
+          email: booking?.guest?.email || "",
+          contact: booking?.guest?.phone || "",
+        },
+        theme: {
+          color: "#0097B2",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Error confirming booking:", err);
+      alert(err?.message || "Failed to open payment gateway.");
+    } finally {
+      setIsConfirmingBooking(false);
+    }
   };
 
   useEffect(() => {
@@ -1338,8 +1450,23 @@ const ViewDetails = () => {
     const status = booking.status?.toLowerCase() ||
       booking.statusTone ||
       (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
+    const originalStatus = booking.originalData?.orderStatus
+      ? String(booking.originalData.orderStatus).toUpperCase().trim()
+      : "";
 
-    if (status === "upcoming" || status === "pending" || status === "confirmed") {
+    if (originalStatus === "PENDING" || status === "pending") {
+      const actions = [
+        {
+          label: isConfirmingBooking ? "Opening Payment..." : "Confirm Booking",
+          variant: "primary",
+          onClick: handleConfirmBooking,
+        },
+        { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
+      ];
+      return actions;
+    }
+
+    if (status === "upcoming" || status === "confirmed") {
       const actions = [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
         { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
