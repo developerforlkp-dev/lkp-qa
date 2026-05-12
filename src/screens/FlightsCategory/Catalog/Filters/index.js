@@ -29,17 +29,17 @@ const filters = [
   {
     id: 0,
     content: "Nonstop",
-    note: "$2,568",
+    note: "₹2,568",
   },
   {
     id: 1,
     content: "1 stop",
-    note: "$2,568",
+    note: "₹2,568",
   },
   {
     id: 2,
     content: "2+ stops",
-    note: "$2,568",
+    note: "₹2,568",
   },
 ];
 
@@ -129,14 +129,14 @@ const Filters = ({ className }) => {
                     backgroundColor: "#141416",
                   }}
                 >
-                  ${values[0].toFixed(0)}
+                  ₹{values[0].toLocaleString('en-IN')}
                 </div>
               </div>
             )}
           />
           <div className={styles.scale}>
-            <div className={styles.number}>$1000</div>
-            <div className={styles.number}>$5000</div>
+            <div className={styles.number}>₹1,000</div>
+            <div className={styles.number}>₹5,000</div>
           </div>
         </div>
         <div className={styles.item}>

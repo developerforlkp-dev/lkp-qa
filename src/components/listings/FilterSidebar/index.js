@@ -322,14 +322,14 @@ const FilterSidebar = ({
                         backgroundColor: "#141416",
                       }}
                     >
-                      ${priceValues[index].toFixed(0)}
+                      ₹{priceValues[index].toLocaleString('en-IN')}
                     </div>
                   </div>
                 )}
               />
               <div className={styles.priceScale}>
-                <span>${minPrice}</span>
-                <span>${maxPrice}</span>
+                <span>₹{minPrice.toLocaleString('en-IN')}</span>
+                <span>₹{maxPrice.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
