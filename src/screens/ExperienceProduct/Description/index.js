@@ -149,6 +149,21 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
     return `Ages 6-12`;
   }, [listing?.childAgeFrom, listing?.childAgeTo]);
 
+  const showExperienceChildAgeNote = useMemo(() => (
+    !isStay &&
+    Boolean(listing?.allowChildPricing || listing?.childPricingAllowed) &&
+    listing?.childrenAllowed !== false &&
+    listing?.childAgeFrom !== undefined &&
+    listing?.childAgeTo !== undefined
+  ), [
+    isStay,
+    listing?.allowChildPricing,
+    listing?.childPricingAllowed,
+    listing?.childrenAllowed,
+    listing?.childAgeFrom,
+    listing?.childAgeTo,
+  ]);
+
   const getBillableGuestCount = (guestsObj) => {
     if (!guestsObj) return 0;
     // For both stays and experiences, billable count should be the total number of guests (adults + children)
@@ -2984,6 +2999,14 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                           <div className={receiptStyles.box}>
                             <div className={receiptStyles.category}>{item.category}</div>
                             <div className={receiptStyles.subtitle}>{item.title}</div>
+                            {showExperienceChildAgeNote && (
+                              <div
+                                className={receiptStyles.category}
+                                style={{ marginTop: 2, fontSize: 11, opacity: 0.8 }}
+                              >
+                                Children: {childrenGuestLabel}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <InlineDatePicker
