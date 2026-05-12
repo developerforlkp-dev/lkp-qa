@@ -191,7 +191,13 @@ const StayBookingSystem = ({
     if (show) {
       setSelectionMode("check-in");
       setValidationError("");
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [show]);
 
   const lastDeps = useRef("");
@@ -958,10 +964,12 @@ const StayBookingSystem = ({
           z-index: 99999 !important;
         }
         
-        .booking-modal-container::-webkit-scrollbar {
+        .booking-modal-container::-webkit-scrollbar,
+        .booking-modal-content::-webkit-scrollbar {
           width: 6px;
         }
-        .booking-modal-container::-webkit-scrollbar-thumb {
+        .booking-modal-container::-webkit-scrollbar-thumb,
+        .booking-modal-content::-webkit-scrollbar-thumb {
           background: ${B};
           border-radius: 10px;
         }
@@ -1081,7 +1089,7 @@ const StayBookingSystem = ({
                 </button>
               </div>
 
-              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
                 <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                   {/* Left Column: Calendar */}
                   <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
