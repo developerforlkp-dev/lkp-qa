@@ -178,7 +178,7 @@ const Header = ({ stay, onShare }) => {
 
   return (
     <div className={styles.header}>
-      <ProductNavbar top={100} left={60} />
+      <ProductNavbar top={window.innerWidth <= 768 ? 90 : 100} left={window.innerWidth <= 768 ? 16 : 60} />
       <div className={styles.tags}>
         {tags.map((tag, idx) => (
           <span key={idx} className={styles.tag}>{tag}</span>

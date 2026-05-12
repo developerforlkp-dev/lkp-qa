@@ -902,7 +902,7 @@ const StayDetails = () => {
     <div className="stay-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
       <ScopedStyles />
 
-      <ProductNavbar top={isMobile ? 20 : 100} left={isMobile ? 20 : 60} />
+      <ProductNavbar top={isMobile ? 90 : 100} left={isMobile ? 16 : 60} />
 
       <StayHeroCarousel stay={stay} galleryItems={galleryItems} />
 
