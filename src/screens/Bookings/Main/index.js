@@ -1181,6 +1181,7 @@ const Main = ({
                             );
                           }
                           if (action.label === "Cancel Booking") {
+                            if (displayedTab === "cancelled") return null;
                             return (
                               <button
                                 type="button"
