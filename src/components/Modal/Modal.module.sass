@@ -16,6 +16,8 @@
 
   +m
     padding: 32px 16px
+  @media (max-width: 375px)
+    padding: 24px 12px
   +dark
     background: rgba($n2,.8)
 
@@ -29,6 +31,7 @@
   position: relative
   width: 100%
   max-width: 544px
+  box-sizing: border-box
   margin: auto
   background: $n8
   border-radius: 16px
@@ -38,8 +41,11 @@
     background: $n1
   & > div
     padding: 72px 96px
+    box-sizing: border-box
     +m
       padding: 32px 24px
+    @media (max-width: 375px)
+      padding: 24px 16px
 
 .close
   position: absolute
