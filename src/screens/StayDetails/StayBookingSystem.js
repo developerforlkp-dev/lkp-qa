@@ -1052,6 +1052,7 @@ const StayBookingSystem = ({
             />
             
             <motion.div
+              className="booking-modal-container"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               style={{
@@ -1342,7 +1343,7 @@ const StayBookingSystem = ({
                   )}
                 </AnimatePresence>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
                     <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>

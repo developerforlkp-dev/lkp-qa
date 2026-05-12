@@ -2083,7 +2083,7 @@ const StayProduct = () => {
           </div>
         </div>
         
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 60 }}>
+        <div className={styles.reviewsGrid}>
           {/* Left: Summary */}
           <div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
