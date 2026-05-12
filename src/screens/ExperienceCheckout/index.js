@@ -467,8 +467,10 @@ const Checkout = () => {
       const discount = pricing.discount || pricing.discountAmount || 0;
       const taxRate = Number(pricing.taxRate || 0);
       const taxableSubtotal = Math.max(0, Number(basePrice || 0) + Number(addonsTotal || 0) - Number(discount || 0));
-      const computedTaxFromSubtotal = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : null;
-      const displayTax = computedTaxFromSubtotal !== null ? computedTaxFromSubtotal : tax;
+      const computedTaxFromSubtotal = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
+      // Keep checkout breakdown aligned with payable total:
+      // use provided tax first (server/local computed), only derive from rate as fallback.
+      const displayTax = Number(tax || 0) > 0 ? Number(tax) : computedTaxFromSubtotal;
 
       // Base price
       if (basePrice > 0) {
