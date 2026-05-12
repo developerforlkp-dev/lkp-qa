@@ -1382,6 +1382,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const rawChildPrice = isEventBooking
     ? (selectedTicket?.childPrice ?? selectedTicket?.child_price ?? 0)
     : (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0);
+  const allowChildPricing = asBoolean(
+    listing?.allowChildPricing ?? listing?.childPricingAllowed,
+    false
+  );
   const childGuestPricing = childrenAllowed && rawChildPrice > 0
     ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
     : null;
@@ -1389,6 +1393,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const effectiveChildPrice = childGuestPricing
     ? childGuestPricing.finalUnitPrice
     : extractedPrice;
+  const childAgeFrom = asNumber(listing?.childAgeFrom ?? listing?.pricing?.childAgeFrom);
+  const childAgeTo = asNumber(listing?.childAgeTo ?? listing?.pricing?.childAgeTo);
+  const hasChildAgeRange = childAgeFrom != null && childAgeTo != null && childAgeTo >= childAgeFrom;
+  const showExperienceChildAgeHint = !isEventBooking && allowChildPricing && childrenAllowed && hasChildAgeRange;
   const hasChildPricing = childrenAllowed && rawChildPrice > 0 && guests.children > 0;
   const baseAdultPricePerPerson = parseFloat(effectiveRawPrice || 0);
   const baseChildPricePerChild = hasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
@@ -2492,14 +2500,21 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         />
                       </div>
                       {childrenAllowed && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
-                          <Counter
-                            value={guests.children}
-                            setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
-                            min={0}
-                            max={childMax}
-                          />
+                        <div style={{ padding: "8px 12px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
+                            <Counter
+                              value={guests.children}
+                              setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                              min={0}
+                              max={childMax}
+                            />
+                          </div>
+                          {showExperienceChildAgeHint && (
+                            <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: M, lineHeight: 1.2 }}>
+                              Child age: {childAgeFrom}-{childAgeTo} years
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
