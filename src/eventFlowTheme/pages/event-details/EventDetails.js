@@ -359,14 +359,89 @@ const ScopedStyles = () => (
       .gallery-grid{flex-wrap: wrap; justify-content: center !important;}
     }
     @media(max-width:768px){
+      /* Base Mobile Viewport Enforcement */
+      .event-details-premium {
+        width: 100vw !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+      .event-details-premium *, .event-details-premium *::before, .event-details-premium *::after {
+        box-sizing: border-box !important;
+      }
+      .event-details-premium section:not(.hero-section-wrapper) {
+        padding: clamp(50px, 12vw, 100px) clamp(16px, 4vw, 36px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+      }
+
+      /* Layout & Grid Overrides */
       .event-details-premium .desk-only{display:none!important}
-      .event-details-premium .grid-2, .event-details-premium .grid-3{grid-template-columns:1fr!important}
-      .event-details-premium .grid-3-2{grid-template-columns:1fr!important}
-      .gallery-grid{height:600px!important}
+      .event-details-premium .grid-2, .event-details-premium .grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 32px !important;
+      }
+      .event-details-premium .grid-3-2 {
+        grid-template-columns: 1fr !important;
+        gap: 32px !important;
+      }
+      .event-details-premium .grid-3-2 > div > div {
+        padding: clamp(20px, 5vw, 52px) !important;
+        min-height: auto !important;
+      }
+
+      /* Fluid Typography */
+      .event-details-premium .font-display, .event-details-premium h1, .event-details-premium h3 {
+        max-width: 100% !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+      }
+
+      /* Gallery Section Optimization */
+      .gallery-grid {
+        height: 500px !important;
+        gap: 12px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .gallery-grid > div {
+        width: calc(50% - 6px) !important;
+        flex-shrink: 1 !important;
+      }
+      .gallery-grid > div:nth-child(n+3) {
+        display: none !important;
+      }
+
+      /* Artists Row Optimization */
       .artist-row{grid-template-columns:60px 1fr!important}
       .artist-row>:nth-child(3),.artist-row>:nth-child(4){display:none!important}
 
-      /* Premium Event Hero Mobile Optimizations */
+      /* Tickets / Booking Card Mobile Spacing */
+      #tickets > div > div:first-of-type {
+        padding: clamp(16px, 5vw, 40px) !important;
+        gap: 24px !important;
+      }
+      #tickets > div > div:first-of-type > div {
+        gap: 20px !important;
+      }
+      #tickets .grid-2 > div {
+        padding: clamp(20px, 5vw, 44px) !important;
+      }
+      #tickets div[style*="gap: 64"] {
+        gap: 16px !important;
+        flex-wrap: wrap !important;
+      }
+      #tickets div[style*="gap: 64"] > div {
+        min-width: 120px !important;
+        flex: 1 1 auto !important;
+      }
+
+      /* Premium Event Hero Mobile Optimizations (Strictly Unmodified) */
       .hero-section-wrapper {
         min-height: auto !important;
         height: auto !important;
