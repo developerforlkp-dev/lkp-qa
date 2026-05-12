@@ -347,6 +347,14 @@ const ScopedStyles = () => (
     .artist-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1); transition: filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
     .artist-row:hover .artist-image-tile img { filter: grayscale(0); transform: scale(1.04); }
     
+    .hero-ring-wrapper {
+      position: absolute;
+      top: 45%;
+      right: -80px;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+
     @media(max-width:1024px){
       .gallery-grid{flex-wrap: wrap; justify-content: center !important;}
     }
@@ -357,6 +365,23 @@ const ScopedStyles = () => (
       .gallery-grid{height:600px!important}
       .artist-row{grid-template-columns:60px 1fr!important}
       .artist-row>:nth-child(3),.artist-row>:nth-child(4){display:none!important}
+
+      /* Premium Event Hero Mobile Optimizations */
+      .hero-section-wrapper {
+        min-height: auto !important;
+        height: auto !important;
+        padding-bottom: 280px !important;
+      }
+      .hero-ring-wrapper {
+        position: absolute !important;
+        bottom: -10px !important;
+        right: -30px !important;
+        top: auto !important;
+        transform: scale(clamp(0.45, 55vw / 100, 0.65)) !important;
+        transform-origin: bottom right !important;
+        display: block !important;
+        z-index: 1 !important;
+      }
     }
   `}</style>
 );
@@ -608,14 +633,14 @@ function Hero({ event }) {
   ].map((tag) => String(tag || "").trim()).filter(Boolean);
 
   return (
-    <section style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+    <section className="hero-section-wrapper" style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
       <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 800, height: 800, borderRadius: "50%", background: `radial-gradient(circle, ${A}12 0%, transparent 60%)` }} />
         <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}08 1px, transparent 1px), linear-gradient(90deg, ${A}08 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 40%, ${W} 100%)` }} />
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.6, ease: E }} style={{ position: "absolute", top: "45%", right: "-80px", transform: "translateY(-50%)", zIndex: 2 }} className="desk-only">
+      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.6, ease: E }} className="hero-ring-wrapper">
         <div className="float-anim"><ImageRing event={event} /></div>
       </motion.div>
 
