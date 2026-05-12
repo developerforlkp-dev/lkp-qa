@@ -10,10 +10,11 @@ const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
 
 const CheckoutSlider = ({ className, gallery }) => {
   const settings = {
-    infinite: true,
+    infinite: gallery.length > 1,
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
+    arrows: gallery.length > 1,
     nextArrow: (
       <SlickArrow>
         <Icon name="arrow-next" size="14" />

@@ -25,6 +25,7 @@ const ExperienceCheckoutComplete = () => {
   const [paymentData, setPaymentData] = useState(null);
   const [paymentFailed, setPaymentFailed] = useState(false);
   const [stayImageUrl, setStayImageUrl] = useState(null);
+  const [allStayImages, setAllStayImages] = useState([]);
 
   const breadcrumbs = useMemo(() => [
     {
@@ -120,6 +121,16 @@ const ExperienceCheckoutComplete = () => {
           if (rawCoverImg) {
             setStayImageUrl(formatImageUrl(rawCoverImg));
           }
+
+          // Fetch all images for the gallery
+          const galleryMedia = data?.listingMedia || data?.media || data?.images || data?.propertyImages || [];
+          if (Array.isArray(galleryMedia) && galleryMedia.length > 0) {
+            const processedImages = galleryMedia.map(item => {
+              const url = typeof item === 'string' ? item : (item.url || item.blobName || item.fileUrl);
+              return formatImageUrl(url);
+            }).filter(url => !!url);
+            setAllStayImages(processedImages);
+          }
         })
         .catch(console.error);
     }
@@ -129,6 +140,11 @@ const ExperienceCheckoutComplete = () => {
   const isEventBooking = Boolean(booking?.eventId);
 
   const gallery = useMemo(() => {
+    // If we have a full gallery from the API, use it
+    if (allStayImages && allStayImages.length > 0) {
+      return allStayImages.map(img => ({ src: img, srcSet: img }));
+    }
+
     // Prefer stay image fetched from API if we have stayId, else fallback to booking stored images
     const rawImg = stayImageUrl || booking?.roomImage || booking?.listingImage;
     const img = rawImg && typeof rawImg === 'string' && !rawImg.startsWith('http') && !rawImg.startsWith('/')
@@ -138,7 +154,7 @@ const ExperienceCheckoutComplete = () => {
     return [
       { src: img, srcSet: img },
     ];
-  }, [booking, stayImageUrl]);
+  }, [booking, stayImageUrl, allStayImages]);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
   const formatTime = (timeString) => {
