@@ -184,14 +184,15 @@ const PriceDetails = ({
             icon="arrow-next"
           />
         )}
+
+        {cancellationPolicy && (
+          <div className={styles.cancellation}>
+            <Icon name="coin" size="16" />
+            <div style={{ whiteSpace: "pre-line" }}>{cancellationPolicy}</div>
+          </div>
+        )}
       </div>
 
-      {cancellationPolicy && (
-        <div className={styles.note}>
-          <Icon name="coin" size="12" />
-          <div style={{ whiteSpace: "pre-line" }}>{cancellationPolicy}</div>
-        </div>
-      )}
     </div>
   );
 };
