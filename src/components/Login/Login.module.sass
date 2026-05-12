@@ -1,7 +1,17 @@
 @import ../../styles/helpers
 
+.login
+    width: 100%
+    max-width: 100%
+    min-width: 0
+    box-sizing: border-box
+
 .item
     display: block
+    width: 100%
+    max-width: 100%
+    min-width: 0
+    box-sizing: border-box
 
 .title
     text-align: center
@@ -14,6 +24,21 @@
 
 .btns
     margin-top: 32px
+    display: flex
+    justify-content: center
+    width: 100%
+    max-width: 100%
+    min-width: 0
+    box-sizing: border-box
+    // Override injected Google SDK wrapper/iframe fixed widths safely
+    & > div,
+    & iframe,
+    & [id^="credential_picker_container"],
+    & [id^="google"]
+        width: 100% !important
+        max-width: 100% !important
+        min-width: 0 !important
+        box-sizing: border-box !important
 
 .googleBtn
     display: flex

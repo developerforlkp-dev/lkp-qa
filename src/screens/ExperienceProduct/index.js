@@ -514,6 +514,7 @@ const ExperienceProduct = () => {
           </div>
           {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
             <motion.div
+              className="early-bird-wrapper"
               style={{ position: "absolute", bottom: 60, right: 60, opacity: fade }}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -691,6 +692,7 @@ const ExperienceProduct = () => {
                           key={i}
                           whileHover={{ x: 10 }}
                           transition={{ duration: 0.3 }}
+                          className="addon-item"
                           style={{
                             display: "flex",
                             gap: 24,
@@ -718,11 +720,11 @@ const ExperienceProduct = () => {
                             )}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }} className="addon-header">
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title}</p>
                               </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="addon-actions">
                                 <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                                 {isSelected ? (
                                   pricingType === "Group" ? (
@@ -1002,16 +1004,18 @@ const ExperienceProduct = () => {
       <style>{`
         @media(max-width: 1024px) {
           .hero-container { padding: 0 40px !important; }
+          .details-section, .prep-section, .host-section, .policies-section { padding: 60px 24px !important; }
           .details-inner { grid-template-columns: 1fr !important; gap: 48px !important; padding: 40px !important; }
           .pol-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .early-bird-wrapper { bottom: 40px !important; right: 40px !important; }
         }
 
         @media(max-width: 900px) { 
           main { padding-bottom: 100px !important; }
           .hero-stats { grid-template-columns: 1fr !important; gap: 40px !important; } 
           .gal-grid { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 240px !important; gap: 8px !important; }
-          .details-grid { grid-template-columns: 1fr !important; }
-          .details-grid > div { grid-column: span 1 !important; }
+          .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+          .details-grid > div:first-child { grid-column: span 2 !important; }
           .prep-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
           .host-grid { grid-template-columns: 1fr !important; }
           .quality-card { flex-direction: column !important; gap: 40px !important; padding: 60px 32px !important; }
@@ -1023,15 +1027,15 @@ const ExperienceProduct = () => {
           .hero-section { min-height: 90vh !important; }
           .hero-container { padding: 0 24px !important; }
           .hero-section h1 { font-size: 3.5rem !important; }
-          .details-section, .prep-section, .host-section, .policies-section { padding: 40px 20px !important; }
+          .details-section, .prep-section, .host-section, .policies-section { padding: 40px 16px !important; }
           .section-header-wrapper > div { margin-bottom: 20px !important; }
           .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
           .details-grid > div:first-child { grid-column: span 2 !important; }
-          .what-we-do-card { padding: 32px 24px !important; }
-          .what-we-do-card h3 { font-size: 1.8rem !important; }
+          .what-we-do-card { padding: 24px 20px !important; }
+          .what-we-do-card h2 { font-size: 1.8rem !important; }
           .overview-card { padding: 20px 12px !important; }
           .overview-card p:first-of-type { font-size: 16px !important; }
-          .details-inner { padding: 32px 20px !important; margin: 24px -20px !important; }
+          .details-inner { padding: 24px 16px !important; margin: 24px -16px !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
           .activity-item { gap: 16px !important; margin-bottom: 32px !important; }
           .activity-item > div:first-child { display: none; }
           .activity-item > div:last-child { flex-direction: column !important; gap: 12px !important; }
@@ -1044,6 +1048,12 @@ const ExperienceProduct = () => {
           .quality-score-unit { transform: scale(0.7) translateZ(50px) !important; }
           .quality-card h3 { font-size: 32px !important; }
           .gallery-item { height: 240px !important; width: 200px !important; }
+          .early-bird-wrapper { bottom: 20px !important; right: 20px !important; }
+          
+          /* Addons mobile */
+          .addon-item { align-items: flex-start !important; padding: 16px !important; gap: 16px !important; }
+          .addon-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .addon-actions { width: 100%; justify-content: flex-start !important; }
         }
       `}</style>
     </Page>

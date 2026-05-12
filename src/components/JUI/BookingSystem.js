@@ -2095,7 +2095,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
+          <div className="booking-modal-wrapper" style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2670,11 +2670,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         }
 
         @media(max-width: 900px) {
+          .booking-modal-wrapper { padding: 0 !important; align-items: flex-end !important; }
           .booking-modal-container { 
             width: 100% !important; 
-            height: 100% !important; 
+            height: 95vh !important; 
             max-height: 100vh !important; 
-            border-radius: 0 !important; 
+            border-radius: 24px 24px 0 0 !important; 
             margin: 0 !important;
           }
           .booking-grid { grid-template-columns: 1fr !important; }
