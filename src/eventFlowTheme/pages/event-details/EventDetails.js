@@ -279,7 +279,7 @@ const FullScreenImage = ({ src, onClose }) => {
           alt="Popup"
         />
         <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
-           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+          <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
         </div>
       </motion.div>
     </motion.div>
@@ -347,16 +347,117 @@ const ScopedStyles = () => (
     .artist-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1); transition: filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
     .artist-row:hover .artist-image-tile img { filter: grayscale(0); transform: scale(1.04); }
     
+    .hero-ring-wrapper {
+      position: absolute;
+      top: 45%;
+      right: -80px;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+
     @media(max-width:1024px){
       .gallery-grid{flex-wrap: wrap; justify-content: center !important;}
     }
     @media(max-width:768px){
+      /* Base Mobile Viewport Enforcement */
+      .event-details-premium {
+        width: 100vw !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+      .event-details-premium *, .event-details-premium *::before, .event-details-premium *::after {
+        box-sizing: border-box !important;
+      }
+      .event-details-premium section:not(.hero-section-wrapper) {
+        padding: clamp(50px, 12vw, 100px) clamp(16px, 4vw, 36px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+      }
+
+      /* Layout & Grid Overrides */
       .event-details-premium .desk-only{display:none!important}
-      .event-details-premium .grid-2, .event-details-premium .grid-3{grid-template-columns:1fr!important}
-      .event-details-premium .grid-3-2{grid-template-columns:1fr!important}
-      .gallery-grid{height:600px!important}
+      .event-details-premium .grid-2, .event-details-premium .grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 32px !important;
+      }
+      .event-details-premium .grid-3-2 {
+        grid-template-columns: 1fr !important;
+        gap: 32px !important;
+      }
+      .event-details-premium .grid-3-2 > div > div {
+        padding: clamp(20px, 5vw, 52px) !important;
+        min-height: auto !important;
+      }
+
+      /* Fluid Typography */
+      .event-details-premium .font-display, .event-details-premium h1, .event-details-premium h3 {
+        max-width: 100% !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+      }
+
+      /* Gallery Section Optimization */
+      .gallery-grid {
+        height: 500px !important;
+        gap: 12px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .gallery-grid > div {
+        width: calc(50% - 6px) !important;
+        flex-shrink: 1 !important;
+      }
+      .gallery-grid > div:nth-child(n+3) {
+        display: none !important;
+      }
+
+      /* Artists Row Optimization */
       .artist-row{grid-template-columns:60px 1fr!important}
       .artist-row>:nth-child(3),.artist-row>:nth-child(4){display:none!important}
+
+      /* Tickets / Booking Card Mobile Spacing */
+      #tickets > div > div:first-of-type {
+        padding: clamp(16px, 5vw, 40px) !important;
+        gap: 24px !important;
+      }
+      #tickets > div > div:first-of-type > div {
+        gap: 20px !important;
+      }
+      #tickets .grid-2 > div {
+        padding: clamp(20px, 5vw, 44px) !important;
+      }
+      #tickets div[style*="gap: 64"] {
+        gap: 16px !important;
+        flex-wrap: wrap !important;
+      }
+      #tickets div[style*="gap: 64"] > div {
+        min-width: 120px !important;
+        flex: 1 1 auto !important;
+      }
+
+      /* Premium Event Hero Mobile Optimizations (Strictly Unmodified) */
+      .hero-section-wrapper {
+        min-height: auto !important;
+        height: auto !important;
+        padding-bottom: 280px !important;
+      }
+      .hero-ring-wrapper {
+        position: absolute !important;
+        bottom: -100px !important;
+        right: -130px !important;
+        top: auto !important;
+        transform: scale(clamp(0.45, 55vw / 100, 0.65)) !important;
+        transform-origin: bottom right !important;
+        display: block !important;
+        z-index: 1 !important;
+        pointer-events: none !important;
+      }
     }
   `}</style>
 );
@@ -366,12 +467,12 @@ const formatTime12h = (timeStr) => {
   if (!timeStr || typeof timeStr !== "string") return timeStr;
   const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
   if (!match) return timeStr;
-  
+
   const hours = parseInt(match[1], 10);
   const minutes = match[2];
   const ampm = hours >= 12 ? "PM" : "AM";
   const hour12 = hours % 12 || 12;
-  
+
   return `${hour12}:${minutes} ${ampm}`;
 };
 function Cursor() {
@@ -508,11 +609,11 @@ function SpinBadge({ event }) {
 
 function ImageRing({ event }) {
   const { tokens: { B } } = useTheme();
-  
+
   // Use actual event media for the ring
   const media = Array.isArray(event?.media) ? event.media : [];
-  const ringImages = media.length > 0 
-    ? [...media].slice(0, 6).map(m => m.url) 
+  const ringImages = media.length > 0
+    ? [...media].slice(0, 6).map(m => m.url)
     : ["abstract", "art", "concert", "crowd", "dancer", "venue"];
 
   const R = 150;
@@ -523,10 +624,10 @@ function ImageRing({ event }) {
           const ang = (i / ringImages.length) * Math.PI * 2;
           const x = (Math.cos(ang) * R).toFixed(3);
           const y = (Math.sin(ang) * R).toFixed(3);
-          
+
           // If we are using placeholders, construct the URL
           const finalSrc = src.startsWith('http') ? src : `https://picsum.photos/seed/${src}/200/300`;
-          
+
           return (
             <div key={i} style={{ position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}>
               <motion.div animate={{ rotate: -360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} style={{ width: 84, height: 110, borderRadius: 16, border: `1px solid ${B}`, overflow: "hidden", backgroundColor: "#000", boxShadow: "0 12px 40px -10px rgba(0,0,0,0.3)" }}>
@@ -608,21 +709,21 @@ function Hero({ event }) {
   ].map((tag) => String(tag || "").trim()).filter(Boolean);
 
   return (
-    <section style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+    <section className="hero-section-wrapper" style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
       <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 800, height: 800, borderRadius: "50%", background: `radial-gradient(circle, ${A}12 0%, transparent 60%)` }} />
         <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}08 1px, transparent 1px), linear-gradient(90deg, ${A}08 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 40%, ${W} 100%)` }} />
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.6, ease: E }} style={{ position: "absolute", top: "45%", right: "-80px", transform: "translateY(-50%)", zIndex: 2 }} className="desk-only">
+      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.6, ease: E }} className="hero-ring-wrapper">
         <div className="float-anim"><ImageRing event={event} /></div>
       </motion.div>
 
       <ProductNavbar top={100} left={60} />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }} style={{ position: "relative", zIndex: 2, maxWidth: 1320, margin: "0 auto", padding: "64px 36px 0", width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 20 }}>
-          
+
           {heroTags.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {heroTags.map((t, i) => (
@@ -665,14 +766,14 @@ function Hero({ event }) {
 
 function About({ event }) {
   const { tokens: { A, BG, FG, M, W, B, S } } = useTheme();
-  
+
   const desc = event?.description || "SOLSTICE is not merely an event — it is a threshold. A gathering of the most luminous minds in music, art, and culture, converging for a single evening at the intersection of the timeless and the radically new.";
-  
+
   // Dynamic stats using labels and sub-labels from the reference design
   // Tags section - prioritize backend tags or use reference defaults
-  const tags = Array.isArray(event?.tags) ? event.tags : 
-               typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) : 
-               ["Experience", "Premium", "Event"];
+  const tags = Array.isArray(event?.tags) ? event.tags :
+    typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) :
+      ["Experience", "Premium", "Event"];
   const mqItems = tags.map(tag => String(tag || "").trim()).filter(Boolean);
 
   const ticketTypes = Array.isArray(event?.ticketTypes) ? event.ticketTypes : [];
@@ -711,7 +812,7 @@ function About({ event }) {
               <Chars text="meets the avant-garde." cls="font-display" delay={0.12} style={{ fontSize: "clamp(2.2rem,4vw,3.6rem)", fontWeight: 700, lineHeight: 1.1, color: A, fontStyle: "italic", overflow: "hidden" }} />
               <Rev delay={0.25}>
                 <p style={{ color: M, fontSize: 14, lineHeight: 1.85, maxWidth: 480, marginTop: 28, marginBottom: 36 }}>{desc}</p>
-                
+
                 {/* Tags Section */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {tags.map((t, i) => (
@@ -753,8 +854,8 @@ function GalleryColumn({ images, direction, speed = 28, onImageClick }) {
     <div style={{ overflow: "hidden", height: "100%", position: "relative" }}>
       <motion.div animate={{ y: direction === "up" ? ["0%", "-33.33%"] : ["-33.33%", "0%"] }} transition={{ duration: speed, ease: "linear", repeat: Infinity }} style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", paddingBottom: 16 }}>
         {items.map((img, i) => (
-          <motion.div 
-            key={i} 
+          <motion.div
+            key={i}
             onClick={() => onImageClick && onImageClick(img.src)}
             whileHover={{ scale: 1.02, filter: "brightness(1.1)" }}
             style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${B}`, width: "100%", height: img.h, flexShrink: 0, cursor: "pointer", transition: "filter 0.3s ease" }}
@@ -778,18 +879,18 @@ function Gallery({ event }) {
 
   const eventTitle = event?.title || "SOLSTICE Ed.01";
   const tags = Array.isArray(event?.tags) ? event.tags :
-               typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) :
-               [];
+    typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) :
+      [];
   const galleryMqItems = [eventTitle, ...tags].map(item => String(item || "").trim()).filter(Boolean);
-  
+
   // Use actual event media from backend if available
   const eventMedia = Array.isArray(event?.media) ? event.media : [];
-  
+
   // Distribute media into 5 columns
   const chunkMedia = (media, columnsCount) => {
     const cols = Array.from({ length: columnsCount }, () => []);
     if (media.length === 0) return null;
-    
+
     media.forEach((item, index) => {
       cols[index % columnsCount].push({
         src: item.url || item.mediaUrl || item.src,
@@ -801,7 +902,7 @@ function Gallery({ event }) {
   };
 
   const dynamicCols = chunkMedia(eventMedia, 5);
-  
+
   // Fallback to reference images if no media is provided
   const GALLERY_COLS = useMemo(() => dynamicCols || [
     [{ src: "https://picsum.photos/seed/a1/300/400", label: "Live", h: 420 }, { src: "https://picsum.photos/seed/a2/300/500", label: "Audience", h: 560 }, { src: "https://picsum.photos/seed/a3/300/300", label: "Art", h: 320 }],
@@ -828,15 +929,15 @@ function Gallery({ event }) {
             <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: AH, whiteSpace: "nowrap" }}>02 — Visuals</span>
             <div style={{ flex: 1, height: 1, backgroundColor: theme === 'light' ? "#333" : "#2a2a2a" }} />
           </div>
-          
+
           <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: BG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
-          
-          <div className="gallery-grid" style={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            gap: 16, 
-            height: 850, 
-            overflow: "hidden" 
+
+          <div className="gallery-grid" style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 16,
+            height: 850,
+            overflow: "hidden"
           }}>
             <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[0]} direction="up" speed={28} onImageClick={handleImageClick} /></div>
             <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[1]} direction="down" speed={36} onImageClick={handleImageClick} /></div>
@@ -845,7 +946,7 @@ function Gallery({ event }) {
             <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[4]} direction="up" speed={30} onImageClick={handleImageClick} /></div>
           </div>
         </div>
-        
+
         <AnimatePresence>
           {gridVisible && !photoViewVisible && (
             <GridGallery
@@ -879,9 +980,9 @@ function Artists({ event }) {
   const [hov, setHov] = useState(null);
 
   // Use actual artists from backend if available
-  const eventArtists = Array.isArray(event?.artists) ? event.artists : 
-                      Array.isArray(event?.lineup) ? event.lineup : [];
-  
+  const eventArtists = Array.isArray(event?.artists) ? event.artists :
+    Array.isArray(event?.lineup) ? event.lineup : [];
+
   const ARTISTS = eventArtists.length > 0 ? eventArtists.map((a, i) => ({
     id: a.id || i,
     name: a.name || a.artistName || "Guest Artist",
@@ -936,9 +1037,9 @@ function Artists({ event }) {
 function Venue({ event, hostName }) {
   const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
-  const tags = Array.isArray(event?.tags) ? event.tags : 
-               typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) : 
-               ["Experience", "Premium", "Event"];
+  const tags = Array.isArray(event?.tags) ? event.tags :
+    typeof event?.tags === 'string' ? event.tags.split(',').map(t => t.trim()) :
+      ["Experience", "Premium", "Event"];
   const venueLat = Number(event?.venueLatitude);
   const venueLng = Number(event?.venueLongitude);
   const hasVenueCoords = Number.isFinite(venueLat) && Number.isFinite(venueLng);
@@ -968,7 +1069,7 @@ function Venue({ event, hostName }) {
                 <p style={{ fontSize: 14, color: M, lineHeight: 1.85, marginBottom: 32, maxWidth: 540 }}>
                   {event?.venueDescription || event?.description?.slice(0, 200) || "Join us at this premier location for an unforgettable experience."}
                 </p>
-                
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {event?.venueName && (
                     <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 600 }}>Venue Name: </span>{event?.venueName}</p>
@@ -986,7 +1087,7 @@ function Venue({ event, hostName }) {
                 </div>
 
                 <div style={{ marginTop: 40 }}>
-                  <motion.a 
+                  <motion.a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.venueFullAddress || "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1034,21 +1135,21 @@ function Venue({ event, hostName }) {
 
 function Rules({ event }) {
   const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
-  
+
   const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions || event?.checkInInstruction || "Check-in instructions will be shared before the event.";
   const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText || "Cancellation policy will be shared before booking.";
   const guestRequirementQuestions = useMemo(() => {
     const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
     return guestRequirements.flatMap((requirement, requirementIndex) => {
-    const questions = Array.isArray(requirement?.questions) ? requirement.questions : [];
-    return questions.map((question, questionIndex) => ({
-      id: question?.questionId || `${requirement?.settingId || requirementIndex}-${questionIndex}`,
-      title: question?.title || question?.question || `Question ${questionIndex + 1}`,
-      body: question?.helpText || question?.description || requirement?.description || "Please provide this information during booking.",
-      required: Boolean(question?.required),
-      fieldType: question?.fieldType || question?.type || "",
-      defaultValueBool: Boolean(question?.defaultValueBool ?? question?.default_value_bool ?? question?.defaultValue ?? question?.default_value),
-    }));
+      const questions = Array.isArray(requirement?.questions) ? requirement.questions : [];
+      return questions.map((question, questionIndex) => ({
+        id: question?.questionId || `${requirement?.settingId || requirementIndex}-${questionIndex}`,
+        title: question?.title || question?.question || `Question ${questionIndex + 1}`,
+        body: question?.helpText || question?.description || requirement?.description || "Please provide this information during booking.",
+        required: Boolean(question?.required),
+        fieldType: question?.fieldType || question?.type || "",
+        defaultValueBool: Boolean(question?.defaultValueBool ?? question?.default_value_bool ?? question?.defaultValue ?? question?.default_value),
+      }));
     });
   }, [event?.guestRequirements]);
   const [booleanValues, setBooleanValues] = useState({});
@@ -1062,7 +1163,7 @@ function Rules({ event }) {
     });
     setBooleanValues(nextValues);
   }, [guestRequirementQuestions]);
-  
+
   const displayRules = [
     { id: 1, title: "Check-in Instructions", body: checkInInstructions },
     { id: 2, title: "Cancellation Policy", body: cancellationPolicy },
@@ -1072,41 +1173,41 @@ function Rules({ event }) {
     const toggleValue = Boolean(booleanValues[item.id]);
 
     return (
-    <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
-      <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(index + 1).padStart(2, "0")}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{item.title}</span>
-        </span>
-        <ChevronDown size={16} color={M} />
-      </summary>
-      <div style={{ padding: "0 0 20px 48px" }}>
-        <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: 0 }}>{item.body}</p>
-        {isBooleanField && (
-          <button
-            type="button"
-            onClick={() => setBooleanValues((current) => ({ ...current, [item.id]: !toggleValue }))}
-            aria-pressed={toggleValue}
-            style={{
-              marginTop: 16,
-              width: 52,
-              height: 28,
-              borderRadius: 999,
-              border: `1px solid ${toggleValue ? A : B}`,
-              background: toggleValue ? A : S,
-              cursor: "pointer",
-              padding: 3,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: toggleValue ? "flex-end" : "flex-start",
-              transition: "0.2s ease",
-            }}
-          >
-            <span style={{ width: 20, height: 20, borderRadius: "50%", background: W, boxShadow: "0 2px 8px rgba(0,0,0,0.18)", display: "block" }} />
-          </button>
-        )}
-      </div>
-    </details>
+      <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
+        <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(index + 1).padStart(2, "0")}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{item.title}</span>
+          </span>
+          <ChevronDown size={16} color={M} />
+        </summary>
+        <div style={{ padding: "0 0 20px 48px" }}>
+          <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: 0 }}>{item.body}</p>
+          {isBooleanField && (
+            <button
+              type="button"
+              onClick={() => setBooleanValues((current) => ({ ...current, [item.id]: !toggleValue }))}
+              aria-pressed={toggleValue}
+              style={{
+                marginTop: 16,
+                width: 52,
+                height: 28,
+                borderRadius: 999,
+                border: `1px solid ${toggleValue ? A : B}`,
+                background: toggleValue ? A : S,
+                cursor: "pointer",
+                padding: 3,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: toggleValue ? "flex-end" : "flex-start",
+                transition: "0.2s ease",
+              }}
+            >
+              <span style={{ width: 20, height: 20, borderRadius: "50%", background: W, boxShadow: "0 2px 8px rgba(0,0,0,0.18)", display: "block" }} />
+            </button>
+          )}
+        </div>
+      </details>
     );
   };
 
@@ -1172,8 +1273,8 @@ function HostDetails({ event, hostName, reviews = [] }) {
   const normalizedReviews = Array.isArray(reviews)
     ? reviews
     : Array.isArray(reviews?.reviews)
-    ? reviews.reviews
-    : [];
+      ? reviews.reviews
+      : [];
   const ratingSummary = !Array.isArray(reviews) && reviews?.ratingSummary ? reviews.ratingSummary : null;
   const displayReviews = normalizedReviews.slice(0, 2);
   const hasMore = normalizedReviews.length > 2;
@@ -1307,30 +1408,30 @@ function HostDetails({ event, hostName, reviews = [] }) {
 
 function EventBookingPopup({ event }) {
   const ticketTypes = (Array.isArray(event?.ticketTypes) ? event.ticketTypes :
-                      Array.isArray(event?.ticketTiers) ? event.ticketTiers :
-                      Array.isArray(event?.tickets) ? event.tickets : []).map((ticket, index) => ({
-    ...ticket,
-    id: ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`,
-    name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
-    price: ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0,
-    totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
-    maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
-    groupPricingTiers: Array.isArray(ticket.groupPricingTiers) ? ticket.groupPricingTiers :
-                       Array.isArray(ticket.group_pricing_tiers) ? ticket.group_pricing_tiers :
-                       Array.isArray(ticket.groupBookingPricing) ? ticket.groupBookingPricing :
-                       Array.isArray(ticket.group_booking_pricing) ? ticket.group_booking_pricing : [],
-    ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
-    ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
-    applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
-                     Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
-                     Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
-                     Array.isArray(ticket.event_slots) ? ticket.event_slots :
-                     Array.isArray(ticket.allowedSlots) ? ticket.allowedSlots :
-                     Array.isArray(ticket.allowed_slots) ? ticket.allowed_slots :
-                     Array.isArray(ticket.slotIds) ? ticket.slotIds :
-                     Array.isArray(ticket.slot_ids) ? ticket.slot_ids :
-                     Array.isArray(ticket.slots) ? ticket.slots : []
-  }));
+    Array.isArray(event?.ticketTiers) ? event.ticketTiers :
+      Array.isArray(event?.tickets) ? event.tickets : []).map((ticket, index) => ({
+        ...ticket,
+        id: ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`,
+        name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
+        price: ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0,
+        totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
+        maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
+        groupPricingTiers: Array.isArray(ticket.groupPricingTiers) ? ticket.groupPricingTiers :
+          Array.isArray(ticket.group_pricing_tiers) ? ticket.group_pricing_tiers :
+            Array.isArray(ticket.groupBookingPricing) ? ticket.groupBookingPricing :
+              Array.isArray(ticket.group_booking_pricing) ? ticket.group_booking_pricing : [],
+        ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
+        ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
+        applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
+          Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
+            Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
+              Array.isArray(ticket.event_slots) ? ticket.event_slots :
+                Array.isArray(ticket.allowedSlots) ? ticket.allowedSlots :
+                  Array.isArray(ticket.allowed_slots) ? ticket.allowed_slots :
+                    Array.isArray(ticket.slotIds) ? ticket.slotIds :
+                      Array.isArray(ticket.slot_ids) ? ticket.slot_ids :
+                        Array.isArray(ticket.slots) ? ticket.slots : []
+      }));
   const firstTicket = ticketTypes[0] || {};
   const ticketPrice = firstTicket.price ?? firstTicket.amount ?? firstTicket.basePrice ?? firstTicket.b2cPrice ?? event?.ticketPrice ?? event?.price ?? 0;
   const rawSlots = event?.eventSlots || event?.slots || event?.timeSlots || ticketTypes.flatMap(ticket => ticket.applicableSlots || []);
@@ -1378,7 +1479,7 @@ function EventBookingPopup({ event }) {
 function Tickets({ event }) {
   const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
   const history = useHistory();
-  
+
   // Selection State
   const [bookingDate, setBookingDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
@@ -1389,7 +1490,7 @@ function Tickets({ event }) {
     const dates = new Set();
     // Normalize dates to YYYY-MM-DD
     const norm = (d) => {
-      try { return new Date(d).toISOString().split('T')[0]; } catch(e) { return null; }
+      try { return new Date(d).toISOString().split('T')[0]; } catch (e) { return null; }
     };
 
     // If there is a range (startDate to endDate), include all dates in between
@@ -1408,33 +1509,33 @@ function Tickets({ event }) {
       const d = norm(event.startDate);
       if (d) dates.add(d);
     }
-    
+
     if (Array.isArray(event?.availability)) {
-      event.availability.forEach(a => { 
+      event.availability.forEach(a => {
         const d = norm(a.date);
-        if (d) dates.add(d); 
+        if (d) dates.add(d);
       });
     }
-    
+
     const eventSlots = event?.timeSlots || event?.slots || [];
     eventSlots.forEach(s => {
       const d1 = norm(s.startDate || s.date);
       if (d1) dates.add(d1);
     });
-    
+
     return Array.from(dates).sort();
   }, [event?.startDate, event?.endDate, event?.availability, event?.timeSlots, event?.slots]);
 
   // Calendar logic
   const [showCalendar, setShowCalendar] = useState(false);
   const [viewDate, setViewDate] = useState(new Date(availableDates[0] || Date.now()));
-  
+
   const calendarDays = React.useMemo(() => {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
+
     const days = [];
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) {
@@ -1452,8 +1553,8 @@ function Tickets({ event }) {
   }, [availableDates, bookingDate]);
 
   // Use actual ticket tiers from backend if available
-  const eventTiers = Array.isArray(event?.ticketTiers) ? event.ticketTiers : 
-                    Array.isArray(event?.tickets) ? event.tickets : [];
+  const eventTiers = Array.isArray(event?.ticketTiers) ? event.ticketTiers :
+    Array.isArray(event?.tickets) ? event.tickets : [];
 
   const slots = event?.timeSlots || event?.slots || [];
 
@@ -1509,10 +1610,10 @@ function Tickets({ event }) {
       selectedTier: tier,
       selectedSlot: selectedSlot
     };
-    
+
     // Save to localStorage as a fallback for the checkout component
     localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-    
+
     history.push({
       pathname: "/experience-checkout",
       state: { bookingData }
@@ -1523,7 +1624,7 @@ function Tickets({ event }) {
     <div style={{ flex: 1, minWidth: 140 }}>
       <p style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 700, color: M, marginBottom: 12, textTransform: "uppercase" }}>{label}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <motion.button 
+        <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={onDec}
           disabled={value <= min}
@@ -1532,7 +1633,7 @@ function Tickets({ event }) {
           <Minus size={14} color={FG} />
         </motion.button>
         <span style={{ fontSize: 18, fontWeight: 700, color: FG, minWidth: 20, textAlign: "center" }}>{value}</span>
-        <motion.button 
+        <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={onInc}
           style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: W }}
@@ -1548,9 +1649,9 @@ function Tickets({ event }) {
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="05" label="Booking" />
 
-        
+
         {/* Booking Selection Area */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -1563,15 +1664,15 @@ function Tickets({ event }) {
                 <Calendar size={14} color={A} />
                 <p style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 700, color: M, textTransform: "uppercase" }}>Pick-up Date</p>
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setShowCalendar(!showCalendar)}
-                style={{ 
-                  padding: "16px 20px", 
-                  border: `1px solid ${B}`, 
-                  cursor: "pointer", 
-                  display: "flex", 
-                  justifyContent: "space-between", 
+                style={{
+                  padding: "16px 20px",
+                  border: `1px solid ${B}`,
+                  cursor: "pointer",
+                  display: "flex",
+                  justifyContent: "space-between",
                   alignItems: "center",
                   backgroundColor: W
                 }}
@@ -1585,17 +1686,17 @@ function Tickets({ event }) {
               {/* Calendar Popup */}
               <AnimatePresence>
                 {showCalendar && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 5, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                    style={{ 
-                      position: "absolute", 
-                      top: "100%", 
-                      left: 0, 
-                      zIndex: 100, 
-                      backgroundColor: W, 
-                      border: `1px solid ${B}`, 
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      zIndex: 100,
+                      backgroundColor: W,
+                      border: `1px solid ${B}`,
                       boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
                       padding: 24,
                       width: 320,
@@ -1610,21 +1711,21 @@ function Tickets({ event }) {
                       </div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-                      {['S','M','T','W','T','F','S'].map((d, i) => (
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
                         <div key={`${d}-${i}`} style={{ fontSize: 10, fontWeight: 700, color: M, textAlign: "center", paddingBottom: 8 }}>{d}</div>
                       ))}
                       {calendarDays.map((d, i) => (
                         <div key={i} style={{ textAlign: "center" }}>
                           {d ? (
-                            <button 
+                            <button
                               disabled={!d.isAvailable}
                               onClick={(e) => { e.stopPropagation(); setBookingDate(d.dateStr); setShowCalendar(false); }}
-                              style={{ 
-                                width: "100%", 
-                                aspectRatio: "1/1", 
-                                border: "none", 
+                              style={{
+                                width: "100%",
+                                aspectRatio: "1/1",
+                                border: "none",
                                 borderRadius: "50%",
-                                fontSize: 12, 
+                                fontSize: 12,
                                 fontWeight: 600,
                                 backgroundColor: bookingDate === d.dateStr ? A : "transparent",
                                 color: bookingDate === d.dateStr ? W : (d.isAvailable ? FG : `${M}30`),
@@ -1653,14 +1754,14 @@ function Tickets({ event }) {
                 {slots.length > 0 ? slots.map(s => {
                   const isSelected = String(selectedSlot) === String(s.id || s.slotId);
                   return (
-                    <motion.button 
+                    <motion.button
                       key={s.id || s.slotId}
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setSelectedSlot(s.id || s.slotId)}
-                      style={{ 
-                        padding: "16px", 
-                        border: `1px solid ${isSelected ? A : B}`, 
+                      style={{
+                        padding: "16px",
+                        border: `1px solid ${isSelected ? A : B}`,
                         backgroundColor: isSelected ? `${A}08` : W,
                         display: "flex",
                         alignItems: "center",
@@ -1673,10 +1774,10 @@ function Tickets({ event }) {
                         <p style={{ fontSize: 13, fontWeight: 700, color: isSelected ? A : FG }}>{formatTime12h(s.slotName || s.startTime)}</p>
                         {s.endTime && <p style={{ fontSize: 10, color: M, marginTop: 2 }}>Ends {formatTime12h(s.endTime)}</p>}
                       </div>
-                      <div style={{ 
-                        width: 18, 
-                        height: 18, 
-                        borderRadius: "50%", 
+                      <div style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: "50%",
                         border: `1.5px solid ${isSelected ? A : B}`,
                         display: "flex",
                         alignItems: "center",
@@ -1704,16 +1805,16 @@ function Tickets({ event }) {
                 <p style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 700, color: M, textTransform: "uppercase" }}>Guests</p>
               </div>
               <div style={{ display: "flex", gap: 64 }}>
-                <Counter 
-                  label="Adults" 
-                  value={guests.adults} 
+                <Counter
+                  label="Adults"
+                  value={guests.adults}
                   onInc={() => setGuests(p => ({ ...p, adults: p.adults + 1 }))}
                   onDec={() => setGuests(p => ({ ...p, adults: Math.max(1, p.adults - 1) }))}
                   min={1}
                 />
-                <Counter 
-                  label="Children" 
-                  value={guests.children} 
+                <Counter
+                  label="Children"
+                  value={guests.children}
                   onInc={() => setGuests(p => ({ ...p, children: p.children + 1 }))}
                   onDec={() => setGuests(p => ({ ...p, children: Math.max(0, p.children - 1) }))}
                 />
@@ -1722,16 +1823,16 @@ function Tickets({ event }) {
           </div>
         </motion.div>
 
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: `repeat(${Math.min(TIERS.length, 3)}, 1fr)`, 
-          gap: 1, 
-          backgroundColor: B 
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${Math.min(TIERS.length, 3)}, 1fr)`,
+          gap: 1,
+          backgroundColor: B
         }} className="grid-2">
           {TIERS.map((t, i) => (
             <motion.div key={t.id} initial={{ opacity: 0, y: 60 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.85, delay: 0.1 + i * 0.12, ease: E }} whileHover={{ y: -8 }} style={{ position: "relative", backgroundColor: t.featured ? AL : W, padding: 44, display: "flex", flexDirection: "column" }}>
               <p style={{ fontSize: 9, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 14 }}>{t.name}</p>
-              
+
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
                   <p className="font-display" style={{ fontSize: "clamp(2.2rem,4vw,3rem)", fontWeight: 700, color: A, lineHeight: 1 }}>{t.price}</p>
@@ -1752,7 +1853,7 @@ function Tickets({ event }) {
               </div>
 
               <p style={{ fontSize: 13, color: M, lineHeight: 1.75, marginBottom: 28, flex: 1 }}>{t.desc}</p>
-              
+
               <motion.button onClick={() => handlePurchase(t)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className={t.featured ? "shimmer-cta" : ""} style={{ width: "100%", padding: "14px 0", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700, border: t.featured ? "none" : `1px solid ${B}`, backgroundColor: t.featured ? A : "transparent", color: t.featured ? W : FG }}>
                 Purchase — {t.name}
               </motion.button>
