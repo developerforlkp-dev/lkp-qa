@@ -985,6 +985,19 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       isMountedRef.current = false;
     };
   }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (show) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [show]);
+
   const eventTickets = useMemo(() => {
     if (!isEventBooking) return [];
     if (Array.isArray(listing?.ticketTypes)) return listing.ticketTypes;
@@ -2149,7 +2162,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
               </div>
 
-              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
 
 
               {/* Closed state — all dates have passed */}
@@ -2646,10 +2659,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           z-index: 99999 !important;
         }
 
-        .booking-modal-container::-webkit-scrollbar {
+        .booking-modal-container::-webkit-scrollbar,
+        .booking-modal-content::-webkit-scrollbar {
           width: 6px;
         }
-        .booking-modal-container::-webkit-scrollbar-thumb {
+        .booking-modal-container::-webkit-scrollbar-thumb,
+        .booking-modal-content::-webkit-scrollbar-thumb {
           background: ${B};
           border-radius: 10px;
         }
