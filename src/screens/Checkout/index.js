@@ -538,7 +538,7 @@ const Checkout = () => {
             currency={paymentData?.currency || "INR"}
             hostName={hostName}
             hostAvatar={hostAvatar}
-            cancellationPolicy={bookingData?.cancellationPolicySummary}
+            cancellationPolicy={bookingData?.cancellationPolicySummary || stayDetails?.cancellationPolicySummary}
           />
         </div>
       </div>
