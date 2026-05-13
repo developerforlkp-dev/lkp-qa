@@ -1433,7 +1433,7 @@ const StayBookingSystem = ({
       </AnimatePresence>
 
       <LoginPromptModal
-        isOpen={showLoginPrompt}
+        visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
       />
     </>
