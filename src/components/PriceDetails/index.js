@@ -90,14 +90,33 @@ const PriceDetails = ({
         {/* ── Pricing breakdown rows (base price, add-ons, commission, tax, discount) ── */}
         {table && table.length > 0 && (
           <div className={styles.table}>
-            {table.map((x, index) => (
-              <div className={styles.row} key={index}>
-                <div className={styles.cell} style={{ whiteSpace: "nowrap" }}>
-                  {x.title}
+            {table.map((x, index) => {
+              const renderTitle = (title) => {
+                if (typeof title === "string" && /Extra (Adult|Child) Charges/i.test(title) && title.includes("(") && title.includes(")")) {
+                  const parts = title.split("(");
+                  if (parts.length > 1) {
+                    const mainLabel = parts[0].trim();
+                    const calculation = "(" + parts.slice(1).join("(").trim();
+                    return (
+                      <div className={styles.priceDetailsStack}>
+                        <span className={styles.mainLabel}>{mainLabel}</span>
+                        <span className={styles.calculationLabel}>{calculation}</span>
+                      </div>
+                    );
+                  }
+                }
+                return title;
+              };
+
+              return (
+                <div className={styles.row} key={index}>
+                  <div className={styles.cell}>
+                    {renderTitle(x.title)}
+                  </div>
+                  <div className={styles.cell}>{x.value}</div>
                 </div>
-                <div className={styles.cell}>{x.value}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
