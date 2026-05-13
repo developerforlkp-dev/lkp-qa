@@ -508,6 +508,9 @@ const Listings = () => {
               onClose={() => setShowGuestPicker(false)}
               onGuestChange={handleGuestChange}
               initialGuests={guests}
+              adultsSubtitle={null}
+              childrenSubtitle={null}
+              infantsSubtitle={null}
               className={styles.guestPicker}
             />
           </div>

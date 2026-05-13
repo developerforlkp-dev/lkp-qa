@@ -23,6 +23,7 @@ const GuestPicker = ({
   adultsLabel = "Adults",
   adultsSubtitle = "Age 13+",
   childrenSubtitle = "Ages 2-12",
+  infantsSubtitle = "Under 2",
   requireAdultForChildren = true,
   className,
 }) => {
@@ -118,7 +119,7 @@ const GuestPicker = ({
     {
       type: "infants",
       label: "Infants",
-      subtitle: "Under 2",
+      subtitle: infantsSubtitle,
       value: guests.infants,
       show: infantsAllowed,
     },
