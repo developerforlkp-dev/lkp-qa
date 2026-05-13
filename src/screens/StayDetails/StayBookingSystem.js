@@ -188,6 +188,7 @@ const StayBookingSystem = ({
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "" });
 
   // Automatically reopen the modal if state was hydrated after auth redirect
   useEffect(() => {
@@ -587,29 +588,13 @@ const StayBookingSystem = ({
     const ranges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
     if (!Array.isArray(ranges) || ranges.length === 0) return new Set();
 
-    const normalizeId = (value) => {
-      if (value === null || value === undefined) return "";
-      const raw = String(value).trim();
-      if (!raw) return "";
-      const numeric = Number(raw);
-      return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
-    };
-
     const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
-    const selectedRoomIds = new Set(
-      (selectedRooms || [])
-        .map((r) => normalizeId(r?.roomId ?? r?.room_id ?? r?.roomTypeId ?? r?.room_type_id ?? r?.id))
-        .filter(Boolean)
-    );
+    // Room-based stays should not use historical booked ranges as hard blockers.
+    // Real-time room inventory is handled by the availability API + backend validation.
+    if (!isPropertyBased) return new Set();
 
     const keys = new Set();
     ranges.forEach((range) => {
-      const rangeRoomId = normalizeId(range?.roomId ?? range?.room_id ?? range?.roomTypeId ?? range?.room_type_id ?? range?.id);
-      if (!isPropertyBased) {
-        if (selectedRoomIds.size === 0) return;
-        if (!rangeRoomId || !selectedRoomIds.has(rangeRoomId)) return;
-      }
-
       const start = moment(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
       const end = moment(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
       if (!start.isValid() || !end.isValid()) return;
@@ -624,7 +609,7 @@ const StayBookingSystem = ({
     });
 
     return keys;
-  }, [stay, selectedRooms]);
+  }, [stay]);
 
   const nextBlockedDate = useMemo(() => {
     if (!checkInDate || !blockedDateKeys || blockedDateKeys.size === 0) return null;
@@ -690,6 +675,7 @@ const StayBookingSystem = ({
     }
 
     setLoading(true);
+    setBookingErrorPopup({ visible: false, title: "", message: "" });
     try {
       const isPropertyBased = stay?.bookingScope === "Property-Based";
       const extraAdultsCount = Math.max(0, (guests.adults || 1) - pricing.baseAdultsLimit);
@@ -989,7 +975,23 @@ const StayBookingSystem = ({
       history.push("/checkout");
     } catch (err) {
       console.error(err);
-      alert("Booking failed. Please try again.");
+      const backendPayload = err?.response?.data || {};
+      const title =
+        backendPayload?.error ||
+        backendPayload?.message ||
+        "Booking failed";
+      const detailMessage =
+        backendPayload?.details ||
+        (Array.isArray(backendPayload?.unavailableRooms) && backendPayload.unavailableRooms.length > 0
+          ? backendPayload.unavailableRooms.join(", ")
+          : null) ||
+        "Please try different dates or room selections.";
+
+      setBookingErrorPopup({
+        visible: true,
+        title: String(title),
+        message: String(detailMessage),
+      });
     } finally {
       setLoading(false);
     }
@@ -1426,6 +1428,67 @@ const StayBookingSystem = ({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, paddingBottom: 10, color: M, fontSize: 9, background: BG }}>
                 <ShieldCheck size={11} />
                 <span>Secure payment by LKP</span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {bookingErrorPopup.visible && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "" })}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: 520,
+                background: BG,
+                color: FG,
+                borderRadius: 22,
+                border: `1px solid ${E}44`,
+                boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
+                padding: "22px 22px 18px",
+                zIndex: 1
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: EL, border: `1px solid ${E}33`, display: "flex", alignItems: "center", justifyContent: "center", color: E, flexShrink: 0 }}>
+                  <AlertCircle size={18} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: FG }}>{bookingErrorPopup.title}</h3>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.6, color: M }}>{bookingErrorPopup.message}</p>
+                </div>
+              </div>
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "" })}
+                  style={{
+                    background: A,
+                    color: "#FFF",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "10px 18px",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase"
+                  }}
+                >
+                  Okay
+                </button>
               </div>
             </motion.div>
           </div>
