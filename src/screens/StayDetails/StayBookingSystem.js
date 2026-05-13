@@ -6,6 +6,7 @@ import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
 import Counter from "../../components/Counter";
+import LoginPromptModal from "../../components/LoginPromptModal";
 
 const StayInlineCalendar = ({ 
   checkInDate, 
@@ -186,6 +187,24 @@ const StayBookingSystem = ({
   const [show, setShow] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  // Automatically reopen the modal if state was hydrated after auth redirect
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("frontendPendingBookingState");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const token = localStorage.getItem("jwtToken");
+        const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+
+        if (stored?.listingId === String(stay?.stayId || stay?.id) && stored?.type === "stay" && isLoggedIn) {
+          setShow(true);
+          localStorage.removeItem("frontendPendingBookingState");
+        }
+      }
+    } catch (e) {}
+  }, [stay?.stayId, stay?.id]);
 
   useEffect(() => {
     if (show) {
@@ -627,6 +646,28 @@ const StayBookingSystem = ({
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
+    const token = localStorage.getItem("jwtToken");
+    const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+    if (!isLoggedIn) {
+      const listingIdToSave = stay?.stayId || stay?.id;
+      if (listingIdToSave) {
+        const stateToStore = {
+          listingId: String(listingIdToSave),
+          type: "stay",
+          checkInDate: checkInDate ? checkInDate.format("YYYY-MM-DD") : null,
+          checkOutDate: checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null,
+          guests,
+          selectedRooms,
+        };
+        try {
+          localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+        } catch (e) {}
+      }
+
+      setShowLoginPrompt(true);
+      return;
+    }
+
     if (!checkInDate) {
       setValidationError("Please select a check-in date.");
       return;
@@ -943,6 +984,7 @@ const StayBookingSystem = ({
         totalAmount: backendTotalRupees ?? pricing.finalTotal,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+      localStorage.removeItem("frontendPendingBookingState");
 
       history.push("/checkout");
     } catch (err) {
@@ -1389,6 +1431,11 @@ const StayBookingSystem = ({
           </div>
         )}
       </AnimatePresence>
+
+      <LoginPromptModal
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+      />
     </>
   );
 };
