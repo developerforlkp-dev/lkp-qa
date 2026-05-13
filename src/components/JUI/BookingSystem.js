@@ -64,14 +64,52 @@ const asOptionalBoolean = (value) => {
   return undefined;
 };
 
-const getSlotSeatLimit = (slot) => (
-  asSeatLimit(slot?.maxSeats) ??
-  asSeatLimit(slot?.max_seats) ??
-  asSeatLimit(slot?.capacity?.maxSeats) ??
-  asSeatLimit(slot?.capacity?.max_seats) ??
-  asSeatLimit(slot?.availableSeats) ??
-  asSeatLimit(slot?.available_seats)
-);
+const getSlotSeatLimit = (slot) => {
+  if (!slot) return undefined;
+  const total = asSeatLimit(slot?.maxSeats) ??
+    asSeatLimit(slot?.max_seats) ??
+    asSeatLimit(slot?.capacity?.maxSeats) ??
+    asSeatLimit(slot?.capacity?.max_seats) ??
+    asSeatLimit(slot?.totalSeats) ??
+    asSeatLimit(slot?.total_seats);
+
+  const avail = slot?.selectedDateAvailability || {};
+  const cap = slot?.capacity || {};
+
+  const booked = asNumber(slot?.bookedSeats) ??
+    asNumber(slot?.booked_seats) ??
+    asNumber(slot?.soldSeats) ??
+    asNumber(slot?.sold_seats) ??
+    asNumber(slot?.booked) ??
+    asNumber(slot?.sold) ??
+    asNumber(cap?.bookedSeats) ??
+    asNumber(cap?.booked_seats) ??
+    asNumber(cap?.booked) ??
+    asNumber(avail?.booked_seats) ??
+    asNumber(avail?.bookedSeats) ??
+    asNumber(avail?.sold_seats) ??
+    asNumber(avail?.soldSeats) ??
+    asNumber(avail?.booked);
+
+  const explicitRemaining = asSeatLimit(slot?.availableSeats) ??
+    asSeatLimit(slot?.available_seats) ??
+    asSeatLimit(slot?.remainingSeats) ??
+    asSeatLimit(slot?.remaining_seats) ??
+    asSeatLimit(avail?.available_seats) ??
+    asSeatLimit(avail?.availableSeats) ??
+    asSeatLimit(avail?.remaining_seats) ??
+    asSeatLimit(avail?.remainingSeats);
+
+  if (total != null && booked != null) {
+    return Math.max(0, total - booked);
+  }
+
+  if (explicitRemaining != null) {
+    return Math.max(0, explicitRemaining);
+  }
+
+  return total;
+};
 
 const getSlotId = (slot) => (
   asNumber(slot) ??
@@ -1140,9 +1178,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       isSoldOut: unavailable,
     };
   }, [eventAvailabilityRecords, isEventBooking, selectedEventSlots, selectedTicket]);
-  const selectedTicketRemainingTickets = selectedTicketAvailability?.remaining;
+  const selectedTicketRemainingTickets = selectedTicketAvailability?.remaining ?? (() => {
+    if (!selectedTicket) return undefined;
+    const total = getTicketAvailabilityTotal(selectedTicket) ?? getTicketTotalTickets(selectedTicket);
+    const booked = getTicketAvailabilityBooked(selectedTicket);
+    const explicitRemaining = getTicketAvailabilityRemaining(selectedTicket);
+    if (explicitRemaining != null) return Math.max(0, explicitRemaining);
+    if (total != null && booked != null) return Math.max(0, total - booked);
+    return undefined;
+  })();
   const selectedTicketAvailabilityTotal = selectedTicketAvailability?.total ?? selectedTicketTotalTickets;
-  const selectedTicketSoldOut = Boolean(selectedTicketAvailability?.isSoldOut);
+  const selectedTicketSoldOut = Boolean(selectedTicketAvailability?.isSoldOut) || selectedTicketRemainingTickets === 0;
   const eventAvailableDateKeys = useMemo(() => {
     if (!isEventBooking) return new Set();
     const keys = new Set();
@@ -2574,8 +2620,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       )}
                     </div>
                     {guestSeatLimit !== undefined && (
-                      <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 600, lineHeight: 1.2 }}>
-                        Max {guestSeatLimit} seat{guestSeatLimit === 1 ? "" : "s"} for this slot.
+                      <div style={{ marginTop: 8, padding: "6px 12px", background: AL, borderRadius: 8, border: `1px solid ${A}33`, display: "inline-block" }}>
+                        <span style={{ fontSize: 11, color: A, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                          <Sparkles size={12} />
+                          {guestSeatLimit > 0 ? `Only ${guestSeatLimit} seat${guestSeatLimit === 1 ? "" : "s"} left (${guestSeatLimit} spot${guestSeatLimit === 1 ? "" : "s"} remaining)` : "No seats remaining"}
+                        </span>
                       </div>
                     )}
                     {isEventBooking && selectedTicketMaxPerBooking !== undefined && (
@@ -2649,9 +2698,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               </div>
                             )}
                             {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
-                              <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 700, lineHeight: 1.2 }}>
-                                {selectedTicketRemainingTickets !== undefined ? `Remaining: ${selectedTicketRemainingTickets}` : "Remaining: --"}
-                                {selectedTicketAvailabilityTotal !== undefined ? ` / Total: ${selectedTicketAvailabilityTotal}` : ""}
+                              <div style={{ marginTop: 8, padding: "6px 12px", background: AL, borderRadius: 8, border: `1px solid ${A}33`, display: "inline-block" }}>
+                                <span style={{ fontSize: 11, color: A, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                                  <Sparkles size={12} />
+                                  {selectedTicketRemainingTickets !== undefined ? `Only ${selectedTicketRemainingTickets} seat${selectedTicketRemainingTickets === 1 ? "" : "s"} left (${selectedTicketRemainingTickets} spot${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining)` : "Available"}
+                                  {selectedTicketAvailabilityTotal !== undefined ? ` out of ${selectedTicketAvailabilityTotal} total` : ""}
+                                </span>
                               </div>
                             )}
                             {eventAvailabilityError && (
