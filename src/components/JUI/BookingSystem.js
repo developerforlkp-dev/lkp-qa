@@ -1008,6 +1008,41 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
   const [selectedEventSlotIds, setSelectedEventSlotIds] = useState([]);
   const selectedEventSlotId = selectedEventSlotIds[0] || "";
+
+  // Rehydrate booking selection state if returning from successful authentication redirect
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("frontendPendingBookingState");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const currentListingId = String(listing?.listingId || listing?.id || listing?.eventId || listing?.stayId);
+        const token = localStorage.getItem("jwtToken");
+        const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+
+        if (stored?.listingId === currentListingId && isLoggedIn) {
+          console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
+          if (stored.startDate) {
+            const parsedDate = moment(stored.startDate);
+            if (parsedDate.isValid()) setStartDate(parsedDate);
+          }
+          if (stored.startTime !== undefined) setStartTime(stored.startTime);
+          if (stored.guests) setGuests(stored.guests);
+          if (stored.selectedTicketTypeId !== undefined) setSelectedTicketTypeId(stored.selectedTicketTypeId);
+          if (stored.selectedEventSlotIds) setSelectedEventSlotIds(stored.selectedEventSlotIds);
+          if (stored.privateBooking !== undefined) setPrivateBooking(stored.privateBooking);
+
+          // Clear so it does not persist across future completely independent user visits
+          localStorage.removeItem("frontendPendingBookingState");
+
+          // Open the booking form automatically to deliver a flawless, continuous UX
+          setShow(true);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore booking state:", e);
+    }
+  }, [listing?.listingId, listing?.id, listing?.eventId, listing?.stayId]);
+
   const selectedTicket = useMemo(() => (
     eventTickets.find(ticket => String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId) === String(selectedTicketTypeId)) || eventTickets[0] || null
   ), [eventTickets, selectedTicketTypeId]);
@@ -1503,6 +1538,24 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     const token = localStorage.getItem("jwtToken");
     const isLoggedIn = !!token && token !== "undefined" && token !== "null";
     if (!isLoggedIn) {
+      const listingIdToSave = listing?.listingId || listing?.id || listing?.eventId || listing?.stayId;
+      if (listingIdToSave) {
+        const stateToStore = {
+          listingId: String(listingIdToSave),
+          type,
+          startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
+          startTime,
+          guests,
+          selectedTicketTypeId,
+          selectedEventSlotIds,
+          privateBooking,
+          selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
+        };
+        try {
+          localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+        } catch (e) {}
+      }
+
       setShowLoginPrompt(true);
       return;
     }
@@ -1722,6 +1775,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
         localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
         if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+        localStorage.removeItem("frontendPendingBookingState");
         localStorage.removeItem("razorpayPaymentSuccess");
         localStorage.removeItem("paymentFailed");
 
@@ -1964,6 +2018,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
       localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
       if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+      localStorage.removeItem("frontendPendingBookingState");
       if (razorpayKeyId) localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
 
       if (isFreeBooking) {

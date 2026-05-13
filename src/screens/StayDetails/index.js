@@ -824,6 +824,36 @@ const StayDetails = () => {
     ));
   }, []);
 
+  // Rehydrate booking selection state if returning from successful authentication redirect
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("frontendPendingBookingState");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const token = localStorage.getItem("jwtToken");
+        const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+
+        if (stored?.listingId === String(id) && stored?.type === "stay" && isLoggedIn) {
+          console.log("🔄 Restoring stay persistent booking state after auth redirect:", stored);
+          if (stored.checkInDate) {
+            const pCheckIn = moment(stored.checkInDate);
+            if (pCheckIn.isValid()) setCheckInDate(pCheckIn);
+          }
+          if (stored.checkOutDate) {
+            const pCheckOut = moment(stored.checkOutDate);
+            if (pCheckOut.isValid()) setCheckOutDate(pCheckOut);
+          }
+          if (stored.guests) setGuests(stored.guests);
+          if (Array.isArray(stored.selectedRooms)) {
+            setSelectedRooms(stored.selectedRooms);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore stay state:", e);
+    }
+  }, [id]);
+
   useEffect(() => {
     let mounted = true;
     const load = async () => {
