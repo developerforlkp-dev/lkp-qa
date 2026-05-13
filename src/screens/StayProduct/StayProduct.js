@@ -1946,7 +1946,7 @@ const StayProduct = () => {
       const discountToShow = frontendBreakdown?.discountAmount;
       if (discountToShow > 0) {
         frontendReceipt.push({
-          title: "Total Discount",
+          title: "Discounts",
           content: `- ${formatMoney(discountToShow)}`,
         });
       }
