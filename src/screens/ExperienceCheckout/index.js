@@ -474,11 +474,13 @@ const Checkout = () => {
 
       // Base price
       if (basePrice > 0) {
-        if (pricing.allowChildPricing && pricing.childrenCount > 0) {
-          const adults = pricing.adultsCount || 0;
-          const children = pricing.childrenCount || 0;
-          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || 0;
-          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || 0;
+        const adults = Number(pricing.adultsCount ?? bookingData?.guests?.adults ?? bookingData?.adultsCount ?? 0);
+        const children = Number(pricing.childrenCount ?? bookingData?.guests?.children ?? bookingData?.childrenCount ?? 0);
+        const totalG = (adults + children) || Number(pricing.guestCount || 1);
+
+        if (children > 0) {
+          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || (basePrice / totalG);
+          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || ppp;
 
           if (adults > 0) {
             rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
@@ -487,12 +489,10 @@ const Checkout = () => {
             rows.push({ title: `Children (${fmt(cpp)} × ${children})`, value: fmt(cpp * children) });
           }
         } else {
-          const guests = pricing.guestCount || 1;
+          const guests = totalG;
           const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
-          const basePpp = basePrice / guests;
-          const label = ppp
-            ? `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
-            : "Base price";
+          const basePpp = ppp || (basePrice / guests);
+          const label = `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`;
           rows.push({ title: label, value: fmt(basePrice) });
         }
       }
