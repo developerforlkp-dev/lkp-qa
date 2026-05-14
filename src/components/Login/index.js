@@ -288,7 +288,6 @@ const Login = ({ onClose }) => {
 
               theme="filled_blue"
               size="large"
-              width="360" // Increased width for better visibility
               shape="pill"
             />
           </div>

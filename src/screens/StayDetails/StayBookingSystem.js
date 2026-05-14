@@ -6,6 +6,7 @@ import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
 import Counter from "../../components/Counter";
+import LoginPromptModal from "../../components/LoginPromptModal";
 
 const StayInlineCalendar = ({ 
   checkInDate, 
@@ -186,12 +187,37 @@ const StayBookingSystem = ({
   const [show, setShow] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "" });
+
+  // Automatically reopen the modal if state was hydrated after auth redirect
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("frontendPendingBookingState");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const token = localStorage.getItem("jwtToken");
+        const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+
+        if (stored?.listingId === String(stay?.stayId || stay?.id) && stored?.type === "stay" && isLoggedIn) {
+          setShow(true);
+          localStorage.removeItem("frontendPendingBookingState");
+        }
+      }
+    } catch (e) {}
+  }, [stay?.stayId, stay?.id]);
 
   useEffect(() => {
     if (show) {
       setSelectionMode("check-in");
       setValidationError("");
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [show]);
 
   const lastDeps = useRef("");
@@ -562,29 +588,13 @@ const StayBookingSystem = ({
     const ranges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
     if (!Array.isArray(ranges) || ranges.length === 0) return new Set();
 
-    const normalizeId = (value) => {
-      if (value === null || value === undefined) return "";
-      const raw = String(value).trim();
-      if (!raw) return "";
-      const numeric = Number(raw);
-      return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
-    };
-
     const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
-    const selectedRoomIds = new Set(
-      (selectedRooms || [])
-        .map((r) => normalizeId(r?.roomId ?? r?.room_id ?? r?.roomTypeId ?? r?.room_type_id ?? r?.id))
-        .filter(Boolean)
-    );
+    // Room-based stays should not use historical booked ranges as hard blockers.
+    // Real-time room inventory is handled by the availability API + backend validation.
+    if (!isPropertyBased) return new Set();
 
     const keys = new Set();
     ranges.forEach((range) => {
-      const rangeRoomId = normalizeId(range?.roomId ?? range?.room_id ?? range?.roomTypeId ?? range?.room_type_id ?? range?.id);
-      if (!isPropertyBased) {
-        if (selectedRoomIds.size === 0) return;
-        if (!rangeRoomId || !selectedRoomIds.has(rangeRoomId)) return;
-      }
-
       const start = moment(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
       const end = moment(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
       if (!start.isValid() || !end.isValid()) return;
@@ -599,7 +609,7 @@ const StayBookingSystem = ({
     });
 
     return keys;
-  }, [stay, selectedRooms]);
+  }, [stay]);
 
   const nextBlockedDate = useMemo(() => {
     if (!checkInDate || !blockedDateKeys || blockedDateKeys.size === 0) return null;
@@ -621,6 +631,28 @@ const StayBookingSystem = ({
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
+    const token = localStorage.getItem("jwtToken");
+    const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+    if (!isLoggedIn) {
+      const listingIdToSave = stay?.stayId || stay?.id;
+      if (listingIdToSave) {
+        const stateToStore = {
+          listingId: String(listingIdToSave),
+          type: "stay",
+          checkInDate: checkInDate ? checkInDate.format("YYYY-MM-DD") : null,
+          checkOutDate: checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null,
+          guests,
+          selectedRooms,
+        };
+        try {
+          localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+        } catch (e) {}
+      }
+
+      setShowLoginPrompt(true);
+      return;
+    }
+
     if (!checkInDate) {
       setValidationError("Please select a check-in date.");
       return;
@@ -643,6 +675,7 @@ const StayBookingSystem = ({
     }
 
     setLoading(true);
+    setBookingErrorPopup({ visible: false, title: "", message: "" });
     try {
       const isPropertyBased = stay?.bookingScope === "Property-Based";
       const extraAdultsCount = Math.max(0, (guests.adults || 1) - pricing.baseAdultsLimit);
@@ -937,11 +970,28 @@ const StayBookingSystem = ({
         totalAmount: backendTotalRupees ?? pricing.finalTotal,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+      localStorage.removeItem("frontendPendingBookingState");
 
       history.push("/checkout");
     } catch (err) {
       console.error(err);
-      alert("Booking failed. Please try again.");
+      const backendPayload = err?.response?.data || {};
+      const title =
+        backendPayload?.error ||
+        backendPayload?.message ||
+        "Booking failed";
+      const detailMessage =
+        backendPayload?.details ||
+        (Array.isArray(backendPayload?.unavailableRooms) && backendPayload.unavailableRooms.length > 0
+          ? backendPayload.unavailableRooms.join(", ")
+          : null) ||
+        "Please try different dates or room selections.";
+
+      setBookingErrorPopup({
+        visible: true,
+        title: String(title),
+        message: String(detailMessage),
+      });
     } finally {
       setLoading(false);
     }
@@ -958,10 +1008,12 @@ const StayBookingSystem = ({
           z-index: 99999 !important;
         }
         
-        .booking-modal-container::-webkit-scrollbar {
+        .booking-modal-container::-webkit-scrollbar,
+        .booking-modal-content::-webkit-scrollbar {
           width: 6px;
         }
-        .booking-modal-container::-webkit-scrollbar-thumb {
+        .booking-modal-container::-webkit-scrollbar-thumb,
+        .booking-modal-content::-webkit-scrollbar-thumb {
           background: ${B};
           border-radius: 10px;
         }
@@ -1044,6 +1096,7 @@ const StayBookingSystem = ({
             />
             
             <motion.div
+              className="booking-modal-container"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               style={{
@@ -1081,7 +1134,7 @@ const StayBookingSystem = ({
                 </button>
               </div>
 
-              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
                 <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                   {/* Left Column: Calendar */}
                   <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1334,7 +1387,7 @@ const StayBookingSystem = ({
                   )}
                 </AnimatePresence>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
                     <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
@@ -1380,6 +1433,72 @@ const StayBookingSystem = ({
           </div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {bookingErrorPopup.visible && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "" })}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: 520,
+                background: BG,
+                color: FG,
+                borderRadius: 22,
+                border: `1px solid ${E}44`,
+                boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
+                padding: "22px 22px 18px",
+                zIndex: 1
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: EL, border: `1px solid ${E}33`, display: "flex", alignItems: "center", justifyContent: "center", color: E, flexShrink: 0 }}>
+                  <AlertCircle size={18} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: FG }}>{bookingErrorPopup.title}</h3>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.6, color: M }}>{bookingErrorPopup.message}</p>
+                </div>
+              </div>
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "" })}
+                  style={{
+                    background: A,
+                    color: "#FFF",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "10px 18px",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase"
+                  }}
+                >
+                  Okay
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <LoginPromptModal
+        visible={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+      />
     </>
   );
 };

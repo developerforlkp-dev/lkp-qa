@@ -4,7 +4,7 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, validateExperienceOrEventOrder, validateStayOrder } from "../../utils/api";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import Receipt from "../../components/Receipt";
@@ -641,6 +641,14 @@ const ViewDetails = () => {
   const [receiptModalVisible, setReceiptModalVisible] = useState(false);
   const [refundDetails, setRefundDetails] = useState(null);
   const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [validationModalVisible, setValidationModalVisible] = useState(false);
+  const [validationModalData, setValidationModalData] = useState({
+    title: "",
+    message: "",
+    code: "",
+    details: "",
+  });
   const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
@@ -733,7 +741,90 @@ const ViewDetails = () => {
       document.body.appendChild(script);
     });
 
-  const handleConfirmBooking = async () => {
+  const showValidationModal = ({ title, message, code = "", details = "" }) => {
+    setValidationModalData({ title, message, code, details });
+    setValidationModalVisible(true);
+  };
+
+  const mapValidationFailureToFriendlyMessage = (failure) => {
+    const code = String(failure?.code || "UNKNOWN").toUpperCase();
+    const details = failure?.details || {};
+
+    switch (code) {
+      case "ORDER_NOT_FOUND":
+        return {
+          title: "Booking not found",
+          message: "We could not find this booking. Please refresh and try again.",
+          code,
+          details: "",
+        };
+      case "ORDER_NOT_PENDING":
+        return {
+          title: "Booking is no longer pending",
+          message: "This booking cannot be confirmed now because its status has changed.",
+          code,
+          details: "",
+        };
+      case "WRONG_ORDER_TYPE":
+        return {
+          title: "Booking type mismatch",
+          message: "We could not validate this booking due to a booking type mismatch.",
+          code,
+          details: "",
+        };
+      case "DATE_UNAVAILABLE":
+        return {
+          title: "Selected date unavailable",
+          message: "The selected date is no longer available. Please choose another date.",
+          code,
+          details: "",
+        };
+      case "SLOT_UNAVAILABLE":
+        return {
+          title: "Selected slot unavailable",
+          message: "The selected time slot is no longer available. Please choose another slot.",
+          code,
+          details: "",
+        };
+      case "CAPACITY_EXCEEDED": {
+        const requested = details.requested != null ? String(details.requested) : "";
+        const available = details.available != null ? String(details.available) : "";
+        const ticketName = failure?.message?.match(/"([^"]+)"/)?.[1] || "";
+        const summary = requested || available
+          ? `${ticketName ? `${ticketName}: ` : ""}${available || "0"} left, requested ${requested || "N/A"}.`
+          : "Requested quantity exceeds current availability.";
+        return {
+          title: "Not enough capacity",
+          message: "Some selected tickets are no longer available in the requested quantity.",
+          code,
+          details: summary,
+        };
+      }
+      case "ROOM_UNAVAILABLE":
+        return {
+          title: "Room unavailable",
+          message: "The selected room is not available for the chosen dates.",
+          code,
+          details: "",
+        };
+      case "PROPERTY_UNAVAILABLE":
+        return {
+          title: "Property unavailable",
+          message: "This property is not available for the selected dates.",
+          code,
+          details: "",
+        };
+      default:
+        return {
+          title: "Availability check failed",
+          message: "We could not validate this booking right now. Please try again.",
+          code,
+          details: "",
+        };
+    }
+  };
+
+  const openRazorpayForBooking = async () => {
     if (!booking?.orderId || isConfirmingBooking) return;
     setIsConfirmingBooking(true);
 
@@ -830,6 +921,75 @@ const ViewDetails = () => {
       alert(err?.message || "Failed to open payment gateway.");
     } finally {
       setIsConfirmingBooking(false);
+    }
+  };
+
+  const handleCheckAvailabilityAndProceed = async () => {
+    if (!booking?.orderId || isCheckingAvailability || isConfirmingBooking) return;
+
+    setIsCheckingAvailability(true);
+    try {
+      const businessInterestCode = String(booking?.originalData?.businessInterestCode || "").toUpperCase();
+      const isStayOrder = businessInterestCode === "STAYS" ||
+        booking?.originalData?.stayId != null ||
+        Array.isArray(booking?.originalData?.stayOrderRooms);
+
+      const response = isStayOrder
+        ? await validateStayOrder(booking.orderId)
+        : await validateExperienceOrEventOrder(booking.orderId);
+
+      if (response?.canProceed === true) {
+        await openRazorpayForBooking();
+        return;
+      }
+
+      const firstFailure = Array.isArray(response?.failures) && response.failures.length > 0
+        ? response.failures[0]
+        : null;
+
+      if (firstFailure) {
+        showValidationModal(mapValidationFailureToFriendlyMessage(firstFailure));
+      } else {
+        showValidationModal({
+          title: "Availability check failed",
+          message: "This booking cannot be confirmed right now. Please try again later.",
+          code: "",
+          details: "",
+        });
+      }
+    } catch (error) {
+      console.error("Error validating booking:", error);
+
+      // Validation APIs may return business validation failures as HTTP 409.
+      // In that case, use the payload and show the same user-friendly popup.
+      const responseData = error?.response?.data;
+      if (error?.response?.status === 409 && responseData) {
+        const firstFailure = Array.isArray(responseData?.failures) && responseData.failures.length > 0
+          ? responseData.failures[0]
+          : null;
+
+        if (firstFailure) {
+          showValidationModal(mapValidationFailureToFriendlyMessage(firstFailure));
+          return;
+        }
+
+        showValidationModal({
+          title: "Availability check failed",
+          message: "This booking cannot be confirmed right now. Please try again later.",
+          code: "",
+          details: "",
+        });
+        return;
+      }
+
+      showValidationModal({
+        title: "Unable to check availability",
+        message: "Couldn’t verify availability right now. Please try again.",
+        code: "",
+        details: "",
+      });
+    } finally {
+      setIsCheckingAvailability(false);
     }
   };
 
@@ -1457,9 +1617,12 @@ const ViewDetails = () => {
     if (originalStatus === "PENDING" || status === "pending") {
       const actions = [
         {
-          label: isConfirmingBooking ? "Opening Payment..." : "Confirm Booking",
+          label: isCheckingAvailability
+            ? "Checking..."
+            : (isConfirmingBooking ? "Opening Payment..." : "Check Availability"),
           variant: "primary",
-          onClick: handleConfirmBooking,
+          onClick: handleCheckAvailabilityAndProceed,
+          disabled: isCheckingAvailability || isConfirmingBooking,
         },
         { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
       ];
@@ -1941,6 +2104,7 @@ const ViewDetails = () => {
                 type="button"
                 className={getButtonClassName(action.variant)}
                 onClick={action.onClick}
+                disabled={Boolean(action.disabled)}
               >
                 {action.label}
               </button>
@@ -1948,6 +2112,36 @@ const ViewDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Cancellation Modal */}
+      <Modal
+        visible={validationModalVisible}
+        onClose={() => setValidationModalVisible(false)}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>{validationModalData.title}</h2>
+            <p className={styles.cancelModalDescription}>{validationModalData.message}</p>
+          </div>
+          <div className={styles.cancelModalBody}>
+            {validationModalData.details ? (
+              <p className={styles.cancelModalDescription} style={{ marginBottom: "8px" }}>
+                {validationModalData.details}
+              </p>
+            ) : null}
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={() => setValidationModalVisible(false)}
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Cancellation Modal */}
       <Modal

@@ -467,16 +467,20 @@ const Checkout = () => {
       const discount = pricing.discount || pricing.discountAmount || 0;
       const taxRate = Number(pricing.taxRate || 0);
       const taxableSubtotal = Math.max(0, Number(basePrice || 0) + Number(addonsTotal || 0) - Number(discount || 0));
-      const computedTaxFromSubtotal = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : null;
-      const displayTax = computedTaxFromSubtotal !== null ? computedTaxFromSubtotal : tax;
+      const computedTaxFromSubtotal = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
+      // Keep checkout breakdown aligned with payable total:
+      // use provided tax first (server/local computed), only derive from rate as fallback.
+      const displayTax = Number(tax || 0) > 0 ? Number(tax) : computedTaxFromSubtotal;
 
       // Base price
       if (basePrice > 0) {
-        if (pricing.allowChildPricing && pricing.childrenCount > 0) {
-          const adults = pricing.adultsCount || 0;
-          const children = pricing.childrenCount || 0;
-          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || 0;
-          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || 0;
+        const adults = Number(pricing.adultsCount ?? bookingData?.guests?.adults ?? bookingData?.adultsCount ?? 0);
+        const children = Number(pricing.childrenCount ?? bookingData?.guests?.children ?? bookingData?.childrenCount ?? 0);
+        const totalG = (adults + children) || Number(pricing.guestCount || 1);
+
+        if (children > 0) {
+          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || (basePrice / totalG);
+          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || ppp;
 
           if (adults > 0) {
             rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
@@ -485,12 +489,10 @@ const Checkout = () => {
             rows.push({ title: `Children (${fmt(cpp)} × ${children})`, value: fmt(cpp * children) });
           }
         } else {
-          const guests = pricing.guestCount || 1;
+          const guests = totalG;
           const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
-          const basePpp = basePrice / guests;
-          const label = ppp
-            ? `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`
-            : "Base price";
+          const basePpp = ppp || (basePrice / guests);
+          const label = `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`;
           rows.push({ title: label, value: fmt(basePrice) });
         }
       }
@@ -523,19 +525,34 @@ const Checkout = () => {
         rows.push({ title: "Early Bird Discount", value: `- ${fmt(earlyBirdDiscount)}` });
       }
 
-      if (promoDiscount > 0) {
-        rows.push({ title: "Discounts", value: `- ${fmt(promoDiscount)}` });
-      }
-
-      if (couponDiscount > 0) {
-        rows.push({ title: "Coupon Discount", value: `- ${fmt(couponDiscount)}` });
-      }
-
-      // Fallback: If we have a generic discount but no specific breakdown or there's a remainder
+      // Show all discounts together as one line item.
       const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
-      if (discount > totalSpecificDiscount + 0.01) {
-        const remainingDiscount = discount - totalSpecificDiscount;
-        rows.push({ title: "Discounts", value: `- ${fmt(remainingDiscount)}` });
+      const rawPayableAmount = Number(
+        paymentData?.amount ??
+        pricing.total ??
+        pricing.finalAmount ??
+        0
+      );
+      const lineItemsGross = Number(basePrice || 0) + Number(addonsTotal || 0) + Number(displayTax || 0);
+      // Some flows provide payable in paise. Normalize to rupees when amount is clearly out of range.
+      const payableAmount =
+        rawPayableAmount > 0 &&
+        lineItemsGross > 0 &&
+        rawPayableAmount > lineItemsGross * 5
+          ? rawPayableAmount / 100
+          : rawPayableAmount;
+      const computedDiscountFromPayable = Math.max(
+        0,
+        Number(basePrice || 0) +
+        Number(addonsTotal || 0) +
+        Number(displayTax || 0) -
+        Number(payableAmount || 0)
+      );
+      const totalDiscount = payableAmount > 0
+        ? computedDiscountFromPayable
+        : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
+      if (totalDiscount > 0) {
+        rows.push({ title: "Discounts", value: `- ${fmt(totalDiscount)}` });
       }
 
       return {

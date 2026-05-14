@@ -378,37 +378,70 @@ const Checkout = () => {
         0
       ) || 0;
 
-      const combinedDiscountPercent = tierDiscountPercent + pricingDiscountPercent;
-      const discountAmount = baseAmount > 0 && combinedDiscountPercent > 0
-        ? (baseAmount * combinedDiscountPercent) / 100
+      const longStayDiscountAmount = baseAmount > 0 && tierDiscountPercent > 0
+        ? (baseAmount * tierDiscountPercent) / 100
+        : 0;
+      const additionalDiscountAmount = baseAmount > 0 && pricingDiscountPercent > 0
+        ? (baseAmount * pricingDiscountPercent) / 100
         : 0;
 
       const taxRate = Array.isArray(stayDetails?.taxes)
         ? stayDetails.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
         : 0;
 
-      const hasDiscountRow = rows.some((r) => /discount/i.test(String(r.title || "")));
-      if (discountAmount > 0 && !hasDiscountRow) {
-        const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
-        const newDiscountRow = {
-          title: `Discounts (${combinedDiscountPercent.toFixed(2)}%)`,
-          value: `- INR ${discountAmount.toFixed(2)}`,
-        };
-        if (taxRowIndex >= 0) {
-          rows.splice(taxRowIndex, 0, newDiscountRow);
-        } else {
-          rows.push(newDiscountRow);
+      // Keep base stay as pure room charge (no discount/tax mixed in)
+      if (baseRow && baseAmount > 0) {
+        baseRow.value = `INR ${baseAmount.toFixed(2)}`;
+      }
+
+      // Remove generic discount rows; we'll reinsert a single authoritative one
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        const title = String(rows[i]?.title || "");
+        if (/discount/i.test(title) && !/long[\s-]?stay/i.test(title)) {
+          rows.splice(i, 1);
         }
+      }
+
+      // Remove existing long-stay rows too (to avoid duplicates), then reinsert once
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        const title = String(rows[i]?.title || "");
+        if (/long[\s-]?stay/i.test(title)) {
+          rows.splice(i, 1);
+        }
+      }
+
+      let taxRowIndexForInsert = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
+      if (taxRowIndexForInsert < 0) taxRowIndexForInsert = rows.length;
+      let nextInsertIndex = taxRowIndexForInsert;
+
+      // Total Discount should represent only additional pricing discount (not long-stay)
+      if (additionalDiscountAmount > 0) {
+        rows.splice(nextInsertIndex, 0, {
+          title: `Total Discount (${pricingDiscountPercent.toFixed(2)}%)`,
+          value: `- INR ${additionalDiscountAmount.toFixed(2)}`,
+        });
+        nextInsertIndex += 1;
+      }
+
+      // Show long-stay discount as a separate line item
+      if (longStayDiscountAmount > 0) {
+        rows.splice(nextInsertIndex, 0, {
+          title: `Long-stay Discount (${tierDiscountPercent.toFixed(2)}%)`,
+          value: `- INR ${longStayDiscountAmount.toFixed(2)}`,
+        });
       }
 
       const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
       if (taxRowIndex >= 0 && taxRate > 0) {
         // Recalculate tax based on discounted subtotal
-        const discountRow = rows.find((r) => /discount/i.test(String(r.title || "")));
+        const discountRows = rows.filter((r) => /discount/i.test(String(r.title || "")));
         const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
         
         const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
-        const currentDiscountAmount = discountRow ? Math.abs(parseAmount(discountRow.value)) : discountAmount;
+        const currentDiscountAmount = discountRows.reduce(
+          (sum, r) => sum + Math.abs(parseAmount(r.value)),
+          0
+        );
         
         const subtotalForTax = baseAmount + extraAmount - currentDiscountAmount;
         const correctedTax = Math.max(0, subtotalForTax * (taxRate / 100));
@@ -538,7 +571,7 @@ const Checkout = () => {
             currency={paymentData?.currency || "INR"}
             hostName={hostName}
             hostAvatar={hostAvatar}
-            cancellationPolicy={bookingData?.cancellationPolicySummary}
+            cancellationPolicy={bookingData?.cancellationPolicySummary || stayDetails?.cancellationPolicySummary}
           />
         </div>
       </div>

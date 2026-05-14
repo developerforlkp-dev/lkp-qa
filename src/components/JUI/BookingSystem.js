@@ -64,14 +64,52 @@ const asOptionalBoolean = (value) => {
   return undefined;
 };
 
-const getSlotSeatLimit = (slot) => (
-  asSeatLimit(slot?.maxSeats) ??
-  asSeatLimit(slot?.max_seats) ??
-  asSeatLimit(slot?.capacity?.maxSeats) ??
-  asSeatLimit(slot?.capacity?.max_seats) ??
-  asSeatLimit(slot?.availableSeats) ??
-  asSeatLimit(slot?.available_seats)
-);
+const getSlotSeatLimit = (slot) => {
+  if (!slot) return undefined;
+  const total = asSeatLimit(slot?.maxSeats) ??
+    asSeatLimit(slot?.max_seats) ??
+    asSeatLimit(slot?.capacity?.maxSeats) ??
+    asSeatLimit(slot?.capacity?.max_seats) ??
+    asSeatLimit(slot?.totalSeats) ??
+    asSeatLimit(slot?.total_seats);
+
+  const avail = slot?.selectedDateAvailability || {};
+  const cap = slot?.capacity || {};
+
+  const booked = asNumber(slot?.bookedSeats) ??
+    asNumber(slot?.booked_seats) ??
+    asNumber(slot?.soldSeats) ??
+    asNumber(slot?.sold_seats) ??
+    asNumber(slot?.booked) ??
+    asNumber(slot?.sold) ??
+    asNumber(cap?.bookedSeats) ??
+    asNumber(cap?.booked_seats) ??
+    asNumber(cap?.booked) ??
+    asNumber(avail?.booked_seats) ??
+    asNumber(avail?.bookedSeats) ??
+    asNumber(avail?.sold_seats) ??
+    asNumber(avail?.soldSeats) ??
+    asNumber(avail?.booked);
+
+  const explicitRemaining = asSeatLimit(slot?.availableSeats) ??
+    asSeatLimit(slot?.available_seats) ??
+    asSeatLimit(slot?.remainingSeats) ??
+    asSeatLimit(slot?.remaining_seats) ??
+    asSeatLimit(avail?.available_seats) ??
+    asSeatLimit(avail?.availableSeats) ??
+    asSeatLimit(avail?.remaining_seats) ??
+    asSeatLimit(avail?.remainingSeats);
+
+  if (total != null && booked != null) {
+    return Math.max(0, total - booked);
+  }
+
+  if (explicitRemaining != null) {
+    return Math.max(0, explicitRemaining);
+  }
+
+  return total;
+};
 
 const getSlotId = (slot) => (
   asNumber(slot) ??
@@ -985,6 +1023,19 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       isMountedRef.current = false;
     };
   }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (show) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [show]);
+
   const eventTickets = useMemo(() => {
     if (!isEventBooking) return [];
     if (Array.isArray(listing?.ticketTypes)) return listing.ticketTypes;
@@ -995,6 +1046,41 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
   const [selectedEventSlotIds, setSelectedEventSlotIds] = useState([]);
   const selectedEventSlotId = selectedEventSlotIds[0] || "";
+
+  // Rehydrate booking selection state if returning from successful authentication redirect
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("frontendPendingBookingState");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const currentListingId = String(listing?.listingId || listing?.id || listing?.eventId || listing?.stayId);
+        const token = localStorage.getItem("jwtToken");
+        const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+
+        if (stored?.listingId === currentListingId && isLoggedIn) {
+          console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
+          if (stored.startDate) {
+            const parsedDate = moment(stored.startDate);
+            if (parsedDate.isValid()) setStartDate(parsedDate);
+          }
+          if (stored.startTime !== undefined) setStartTime(stored.startTime);
+          if (stored.guests) setGuests(stored.guests);
+          if (stored.selectedTicketTypeId !== undefined) setSelectedTicketTypeId(stored.selectedTicketTypeId);
+          if (stored.selectedEventSlotIds) setSelectedEventSlotIds(stored.selectedEventSlotIds);
+          if (stored.privateBooking !== undefined) setPrivateBooking(stored.privateBooking);
+
+          // Clear so it does not persist across future completely independent user visits
+          localStorage.removeItem("frontendPendingBookingState");
+
+          // Open the booking form automatically to deliver a flawless, continuous UX
+          setShow(true);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore booking state:", e);
+    }
+  }, [listing?.listingId, listing?.id, listing?.eventId, listing?.stayId]);
+
   const selectedTicket = useMemo(() => (
     eventTickets.find(ticket => String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId) === String(selectedTicketTypeId)) || eventTickets[0] || null
   ), [eventTickets, selectedTicketTypeId]);
@@ -1092,9 +1178,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       isSoldOut: unavailable,
     };
   }, [eventAvailabilityRecords, isEventBooking, selectedEventSlots, selectedTicket]);
-  const selectedTicketRemainingTickets = selectedTicketAvailability?.remaining;
+  const selectedTicketRemainingTickets = selectedTicketAvailability?.remaining ?? (() => {
+    if (!selectedTicket) return undefined;
+    const total = getTicketAvailabilityTotal(selectedTicket) ?? getTicketTotalTickets(selectedTicket);
+    const booked = getTicketAvailabilityBooked(selectedTicket);
+    const explicitRemaining = getTicketAvailabilityRemaining(selectedTicket);
+    if (explicitRemaining != null) return Math.max(0, explicitRemaining);
+    if (total != null && booked != null) return Math.max(0, total - booked);
+    return undefined;
+  })();
   const selectedTicketAvailabilityTotal = selectedTicketAvailability?.total ?? selectedTicketTotalTickets;
-  const selectedTicketSoldOut = Boolean(selectedTicketAvailability?.isSoldOut);
+  const selectedTicketSoldOut = Boolean(selectedTicketAvailability?.isSoldOut) || selectedTicketRemainingTickets === 0;
   const eventAvailableDateKeys = useMemo(() => {
     if (!isEventBooking) return new Set();
     const keys = new Set();
@@ -1369,6 +1463,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const rawChildPrice = isEventBooking
     ? (selectedTicket?.childPrice ?? selectedTicket?.child_price ?? 0)
     : (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0);
+  const allowChildPricing = asBoolean(
+    listing?.allowChildPricing ?? listing?.childPricingAllowed,
+    false
+  );
   const childGuestPricing = childrenAllowed && rawChildPrice > 0
     ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
     : null;
@@ -1376,6 +1474,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const effectiveChildPrice = childGuestPricing
     ? childGuestPricing.finalUnitPrice
     : extractedPrice;
+  const childAgeFrom = asNumber(listing?.childAgeFrom ?? listing?.pricing?.childAgeFrom);
+  const childAgeTo = asNumber(listing?.childAgeTo ?? listing?.pricing?.childAgeTo);
+  const hasChildAgeRange = childAgeFrom != null && childAgeTo != null && childAgeTo >= childAgeFrom;
+  const showExperienceChildAgeHint = !isEventBooking && allowChildPricing && childrenAllowed && hasChildAgeRange;
   const hasChildPricing = childrenAllowed && rawChildPrice > 0 && guests.children > 0;
   const baseAdultPricePerPerson = parseFloat(effectiveRawPrice || 0);
   const baseChildPricePerChild = hasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
@@ -1482,6 +1584,24 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     const token = localStorage.getItem("jwtToken");
     const isLoggedIn = !!token && token !== "undefined" && token !== "null";
     if (!isLoggedIn) {
+      const listingIdToSave = listing?.listingId || listing?.id || listing?.eventId || listing?.stayId;
+      if (listingIdToSave) {
+        const stateToStore = {
+          listingId: String(listingIdToSave),
+          type,
+          startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
+          startTime,
+          guests,
+          selectedTicketTypeId,
+          selectedEventSlotIds,
+          privateBooking,
+          selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
+        };
+        try {
+          localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+        } catch (e) {}
+      }
+
       setShowLoginPrompt(true);
       return;
     }
@@ -1654,6 +1774,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             currency,
             pricePerPerson: eventGuestPricing.finalUnitPrice,
             basePrice: eventBaseTotal,
+            // Adult/child split for checkout page
+            allowChildPricing: hasChildPricing,
+            adultsCount: guests.adults,
+            childrenCount: guests.children,
+            basePricePerPerson: eventGuestPricing.baseUnitPrice,
+            adultBasePricePerPerson: eventGuestPricing.baseUnitPrice,
+            childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+            baseChildPricePerChild: baseChildPricePerChild,
             discount: eventDiscountTotal,
             promoDiscount: eventPromoDiscountTotal,
             earlyBirdDiscount: eventEarlyBirdDiscountTotal,
@@ -1701,6 +1829,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
         localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
         if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+        localStorage.removeItem("frontendPendingBookingState");
         localStorage.removeItem("razorpayPaymentSuccess");
         localStorage.removeItem("paymentFailed");
 
@@ -1943,6 +2072,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
       localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
       if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+      localStorage.removeItem("frontendPendingBookingState");
       if (razorpayKeyId) localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
 
       if (isFreeBooking) {
@@ -2082,7 +2212,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
+          <div className="booking-modal-wrapper" style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2149,7 +2279,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </div>
               </div>
 
-              <div className="booking-modal-content" style={{ flex: 1, overflow: "hidden" }}>
+              <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
 
 
               {/* Closed state — all dates have passed */}
@@ -2273,7 +2403,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             return (slotKeys.size === 0 || slotKeys.has(selectedDateKey)) && isEventSlotAccessible(slot, index);
                           });
 
-                          if (validSlotsForDate.length === 0) {
+                          if (startDate && validSlotsForDate.length === 0) {
                             return <div style={{ gridColumn: "span 2", padding: "24px 20px", textAlign: "center", color: E, fontWeight: 700, background: EL, borderRadius: 16, border: `1px solid ${E}22`, fontSize: 13 }}>No booking slots are available for this day</div>;
                           }
 
@@ -2479,20 +2609,30 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         />
                       </div>
                       {childrenAllowed && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
-                          <Counter
-                            value={guests.children}
-                            setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
-                            min={0}
-                            max={childMax}
-                          />
+                        <div style={{ padding: "8px 12px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>Children</span>
+                            <Counter
+                              value={guests.children}
+                              setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                              min={0}
+                              max={childMax}
+                            />
+                          </div>
+                          {showExperienceChildAgeHint && (
+                            <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: M, lineHeight: 1.2 }}>
+                              Child age: {childAgeFrom}-{childAgeTo} years
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                     {guestSeatLimit !== undefined && (
-                      <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 600, lineHeight: 1.2 }}>
-                        Max {guestSeatLimit} seat{guestSeatLimit === 1 ? "" : "s"} for this slot.
+                      <div style={{ marginTop: 8, padding: "6px 12px", background: AL, borderRadius: 8, border: `1px solid ${A}33`, display: "inline-block" }}>
+                        <span style={{ fontSize: 11, color: A, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                          <Sparkles size={12} />
+                          {guestSeatLimit > 0 ? `Only ${guestSeatLimit} seat${guestSeatLimit === 1 ? "" : "s"} left (${guestSeatLimit} spot${guestSeatLimit === 1 ? "" : "s"} remaining)` : "No seats remaining"}
+                        </span>
                       </div>
                     )}
                     {isEventBooking && selectedTicketMaxPerBooking !== undefined && (
@@ -2566,9 +2706,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               </div>
                             )}
                             {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
-                              <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 700, lineHeight: 1.2 }}>
-                                {selectedTicketRemainingTickets !== undefined ? `Remaining: ${selectedTicketRemainingTickets}` : "Remaining: --"}
-                                {selectedTicketAvailabilityTotal !== undefined ? ` / Total: ${selectedTicketAvailabilityTotal}` : ""}
+                              <div style={{ marginTop: 8, padding: "6px 12px", background: AL, borderRadius: 8, border: `1px solid ${A}33`, display: "inline-block" }}>
+                                <span style={{ fontSize: 11, color: A, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                                  <Sparkles size={12} />
+                                  {selectedTicketRemainingTickets !== undefined ? `Only ${selectedTicketRemainingTickets} seat${selectedTicketRemainingTickets === 1 ? "" : "s"} left (${selectedTicketRemainingTickets} spot${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining)` : "Available"}
+                                  {selectedTicketAvailabilityTotal !== undefined ? ` out of ${selectedTicketAvailabilityTotal} total` : ""}
+                                </span>
                               </div>
                             )}
                             {eventAvailabilityError && (
@@ -2646,20 +2789,23 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           z-index: 99999 !important;
         }
 
-        .booking-modal-container::-webkit-scrollbar {
+        .booking-modal-container::-webkit-scrollbar,
+        .booking-modal-content::-webkit-scrollbar {
           width: 6px;
         }
-        .booking-modal-container::-webkit-scrollbar-thumb {
+        .booking-modal-container::-webkit-scrollbar-thumb,
+        .booking-modal-content::-webkit-scrollbar-thumb {
           background: ${B};
           border-radius: 10px;
         }
 
         @media(max-width: 900px) {
+          .booking-modal-wrapper { padding: 0 !important; align-items: flex-end !important; }
           .booking-modal-container { 
             width: 100% !important; 
-            height: 100% !important; 
+            height: 95vh !important; 
             max-height: 100vh !important; 
-            border-radius: 0 !important; 
+            border-radius: 24px 24px 0 0 !important; 
             margin: 0 !important;
           }
           .booking-grid { grid-template-columns: 1fr !important; }

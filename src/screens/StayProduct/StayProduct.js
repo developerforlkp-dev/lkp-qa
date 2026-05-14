@@ -178,7 +178,7 @@ const Header = ({ stay, onShare }) => {
 
   return (
     <div className={styles.header}>
-      <ProductNavbar top={100} left={60} />
+      <ProductNavbar top={window.innerWidth <= 768 ? 90 : 100} left={window.innerWidth <= 768 ? 16 : 60} />
       <div className={styles.tags}>
         {tags.map((tag, idx) => (
           <span key={idx} className={styles.tag}>{tag}</span>
@@ -1946,7 +1946,7 @@ const StayProduct = () => {
       const discountToShow = frontendBreakdown?.discountAmount;
       if (discountToShow > 0) {
         frontendReceipt.push({
-          title: "Total Discount",
+          title: "Discounts",
           content: `- ${formatMoney(discountToShow)}`,
         });
       }
@@ -2075,7 +2075,7 @@ const StayProduct = () => {
     const hasMore = normalizedReviews.length > 2;
 
     return (
-      <section style={{ background: BG, padding: "80px 0", borderTop: `1px solid ${B}` }}>
+      <section style={{ background: BG, padding: "80px 0 160px", borderTop: `1px solid ${B}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
             <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 800, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>06 — GUEST REVIEWS</span>
@@ -2083,7 +2083,7 @@ const StayProduct = () => {
           </div>
         </div>
         
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 60 }}>
+        <div className={styles.reviewsGrid}>
           {/* Left: Summary */}
           <div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>

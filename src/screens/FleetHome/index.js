@@ -4,7 +4,7 @@ import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
-import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces } from "../../utils/api";
+import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces, getBusinessInterests } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -41,11 +41,22 @@ const getBusinessInterestCode = (filterId) => {
   return "EXPERIENCE";
 };
 
+const mapBusinessInterestCodeToFilterId = (code) => {
+  const normalized = String(code || "").toUpperCase().trim();
+  if (normalized === "EVENT" || normalized === "EVENTS") return "events";
+  if (normalized === "STAY" || normalized === "STAYS") return "stays";
+  if (normalized === "FOOD") return "food";
+  if (normalized === "PLACE" || normalized === "PLACES") return "places";
+  return "experience";
+};
+
 const FleetHome = () => {
 
   const [sectionsData, setSectionsData] = useState([]); // Array of { section, listings }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [businessInterestAvailability, setBusinessInterestAvailability] = useState({});
+  const [businessInterestActiveMap, setBusinessInterestActiveMap] = useState({});
 
 
   // Search state
@@ -97,6 +108,8 @@ const FleetHome = () => {
 
   // Handle filter click by navigating to new URL
   const handleFilterClick = (filterId) => {
+    if (businessInterestActiveMap[filterId] === false) return;
+    if (businessInterestAvailability[filterId] === false) return;
     if (activeFilter !== filterId) {
       // For experience, we use the root path "/"
       const targetPath = filterId === "experience" ? "/" : `/${filterId}`;
@@ -183,6 +196,43 @@ const FleetHome = () => {
     setShowDatePicker(false);
     setShowGuestPicker(false);
   }, [activeFilter]);
+
+  useEffect(() => {
+    const loadBusinessInterests = async () => {
+      try {
+        const interests = await getBusinessInterests();
+        const availabilityMap = {};
+        const activeMap = {};
+        interests.forEach((interest) => {
+          const filterId = mapBusinessInterestCodeToFilterId(interest?.code);
+          availabilityMap[filterId] = Boolean(interest?.isEnabledForListings);
+          activeMap[filterId] = Boolean(interest?.isActive);
+        });
+        setBusinessInterestAvailability(availabilityMap);
+        setBusinessInterestActiveMap(activeMap);
+      } catch (err) {
+        console.warn("Failed to load business interests for homepage filters:", err?.message || err);
+      }
+    };
+
+    loadBusinessInterests();
+  }, []);
+
+  const visibleFilterOptions = filterOptions.filter((filter) => businessInterestActiveMap[filter.id] !== false);
+
+  useEffect(() => {
+    if (visibleFilterOptions.length === 0) return;
+    const isCurrentVisible = visibleFilterOptions.some((filter) => filter.id === activeFilter);
+    if (isCurrentVisible) return;
+
+    const fallbackFilter = visibleFilterOptions[0].id;
+    const targetPath = fallbackFilter === "experience" ? "/" : `/${fallbackFilter}`;
+    if (location.pathname !== targetPath) {
+      history.push(targetPath);
+    } else {
+      setActiveFilter(fallbackFilter);
+    }
+  }, [visibleFilterOptions, activeFilter, location.pathname, history]);
 
   useEffect(() => {
     if (window.google?.maps?.places?.AutocompleteService) {
@@ -664,23 +714,30 @@ const FleetHome = () => {
 
           <div className={styles.filtersContainer}>
             <div className={styles.filtersGrid}>
-              {filterOptions.map((filter) => (
+              {visibleFilterOptions.map((filter) => (
+                (() => {
+                  const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
+                  return (
                 <button
                   key={filter.id}
                   type="button"
                   className={cn(styles.filterCard, {
                     [styles.filterCardActive]: activeFilter === filter.id,
+                    [styles.filterCardDisabled]: !isEnabledForListings,
                   })}
                   onClick={() => handleFilterClick(filter.id)}
+                  disabled={!isEnabledForListings}
                 >
                   <div className={styles.filterCardContent}>
                     <Icon name={filter.icon} size="18" />
                     <span>{filter.label}</span>
                   </div>
-                  {!["experience", "events", "stays", "food", "places"].includes(filter.id) && (
+                  {!isEnabledForListings && (
                     <div className={styles.comingSoonBadge}>Coming Soon</div>
                   )}
                 </button>
+                  );
+                })()
               ))}
             </div>
           </div>

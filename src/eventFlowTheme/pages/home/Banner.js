@@ -58,28 +58,103 @@ export default function Banner() {
 
   return (
     <>
+      <style>{`
+        /* Responsive optimization for Event Hero Section Graphics/Ring */
+        @media (min-width: 1200px) {
+          .main-slider__graphics-wrapper {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+          }
+          .main-slider__graphics-wrapper > * {
+            pointer-events: auto;
+          }
+        }
+
+        @media (max-width: 1199px) {
+          .main-slider {
+            overflow: hidden !important;
+          }
+          .main-slider .container {
+            position: relative;
+            z-index: 10 !important;
+          }
+          .main-slider__graphics-wrapper {
+            position: absolute !important;
+            bottom: 0 !important;
+            right: 0 !important;
+            width: 1400px !important;
+            height: 800px !important;
+            transform-origin: bottom right !important;
+            z-index: 1 !important;
+            pointer-events: none !important;
+            transform: scale(clamp(0.22, 33vw / 100, 0.55)) !important;
+          }
+          
+          /* Force display of ring/gallery elements to prevent cutoff/hiding on mobile */
+          .main-slider__graphics-wrapper .main-slider__img,
+          .main-slider__graphics-wrapper .main-slider__shpae-1,
+          .main-slider__graphics-wrapper .main-slider__shpae-2,
+          .main-slider__graphics-wrapper .main-slider__start-1,
+          .main-slider__graphics-wrapper .main-slider__start-2,
+          .main-slider__graphics-wrapper .main-slider__start-3 {
+            display: block !important;
+            visibility: visible !important;
+          }
+
+          /* Ensure smooth entrance animation completion overrides any hidden opacities */
+          .main-slider .swiper-slide-active .main-slider__graphics-wrapper .main-slider__img {
+            opacity: 1 !important;
+          }
+          .main-slider .swiper-slide-active .main-slider__graphics-wrapper .main-slider__shpae-1,
+          .main-slider .swiper-slide-active .main-slider__graphics-wrapper .main-slider__shpae-2 {
+            opacity: 1 !important;
+          }
+          .main-slider__graphics-wrapper .main-slider__shpae-2 {
+            opacity: 0.15 !important;
+          }
+        }
+
+        /* Specific extra tuning for small mobile sizes to ensure content readability and layout balance */
+        @media (max-width: 767px) {
+          .main-slider__content {
+            background: rgba(4, 0, 10, 0.4);
+            backdrop-filter: blur(2px);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+          }
+          .main-slider__title {
+            font-size: clamp(24px, 7vw, 32px) !important;
+            line-height: 1.2 !important;
+          }
+        }
+      `}</style>
       {/* banner-one */}
       <section id='th-home' className="main-slider mb-5">
         <Swiper {...swiperOptions} className="swiper-container thm-swiper__slider">
           <div className="swiper-wrapper">
             <SwiperSlide className="swiper-slide">
-              <div className="main-slider__img">
-                <img src={formatImageUrl(event?.coverImageUrl)} alt="" />
-              </div>
-              <div className="main-slider__shpae-1">
-                <img src={BannerShape1} alt="" />
-              </div>
-              <div className="main-slider__shpae-2">
-                <img src={BannerShape2} alt="" />
-              </div>
-              <div className="main-slider__start-1">
-                <img src={BannerShape3} alt="" />
-              </div>
-              <div className="main-slider__start-2 zoominout">
-                <img src={BannerShape4} alt="" />
-              </div>
-              <div className="main-slider__start-3">
-                <img src={BannerShape5} alt="" />
+              <div className="main-slider__graphics-wrapper">
+                <div className="main-slider__img">
+                  <img src={formatImageUrl(event?.coverImageUrl)} alt="" />
+                </div>
+                <div className="main-slider__shpae-1">
+                  <img src={BannerShape1} alt="" />
+                </div>
+                <div className="main-slider__shpae-2">
+                  <img src={BannerShape2} alt="" />
+                </div>
+                <div className="main-slider__start-1">
+                  <img src={BannerShape3} alt="" />
+                </div>
+                <div className="main-slider__start-2 zoominout">
+                  <img src={BannerShape4} alt="" />
+                </div>
+                <div className="main-slider__start-3">
+                  <img src={BannerShape5} alt="" />
+                </div>
               </div>
               <div className="container">
                 <div className="row">

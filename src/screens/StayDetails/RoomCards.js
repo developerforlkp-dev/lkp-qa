@@ -3,6 +3,7 @@ import cn from "classnames";
 import styles from "./RoomCards.module.sass";
 import Icon from "../../components/Icon";
 import { useTheme } from "../../components/JUI/Theme";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ---------- HOOKS ----------------------------------------------------- */
 function useWindowSize() {
@@ -240,7 +241,14 @@ const RoomModal = ({ room, listing, onClose }) => {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)" }} onClick={onClose} />
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }} 
+        onClick={onClose} 
+      />
       
       {/* Scrollbar CSS Injection */}
       <style>{`
@@ -248,11 +256,23 @@ const RoomModal = ({ room, listing, onClose }) => {
         .modal-body-content { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
-      <div style={{ 
-        position: "relative", background: W, width: "100%", maxWidth: 1100, maxHeight: isMobile ? "100vh" : "94vh", 
-        borderRadius: isMobile ? 0 : 32, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1, 
-        boxShadow: "0 40px 120px rgba(0,0,0,0.5)", border: `1px solid ${B}` 
-      }}>
+      <motion.div 
+        initial={{ opacity: 0, y: isMobile ? "100%" : 40, scale: isMobile ? 1 : 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: isMobile ? "100%" : 40, scale: isMobile ? 1 : 0.95 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        style={{ 
+          position: "relative", background: W, width: "100%", maxWidth: 1100, 
+          maxHeight: isMobile ? "calc(100vh - 16px)" : "94vh", 
+          marginTop: isMobile ? "auto" : 0,
+          borderRadius: isMobile ? "24px 24px 0 0" : 32, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1, 
+          boxShadow: "0 40px 120px rgba(0,0,0,0.5)", border: `1px solid ${B}` 
+        }}
+      >
+        {/* iOS style top handle indicator for mobile sheets */}
+        {isMobile && (
+          <div style={{ position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)", width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.3)", zIndex: 30 }} />
+        )}
         
         {/* Close Button */}
         <button onClick={onClose} style={{ 
@@ -265,7 +285,7 @@ const RoomModal = ({ room, listing, onClose }) => {
         </button>
 
         {/* Hero Gallery Section */}
-        <div style={{ height: 520, overflow: "hidden", background: "#0F0F0F", position: "relative", display: "flex" }}>
+        <div style={{ height: isMobile ? 320 : 520, overflow: "hidden", background: "#0F0F0F", position: "relative", display: "flex", flexShrink: 0 }}>
           {allImages.length > 0 ? (
             <>
               <div ref={galleryRef} style={{ display: "flex", width: "100%", height: "100%", overflowX: "hidden", scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -317,7 +337,7 @@ const RoomModal = ({ room, listing, onClose }) => {
         </div>
 
         {/* Details Body */}
-        <div className="modal-body-content" style={{ padding: isMobile ? "40px 24px" : "60px 80px", overflowY: "auto", flex: 1, background: W }}>
+        <div className="modal-body-content" style={{ padding: isMobile ? "32px 16px" : "60px 80px", overflowY: "auto", flex: 1, background: W, boxSizing: "border-box" }}>
           
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: isMobile ? 48 : 100 }}>
             
@@ -325,9 +345,9 @@ const RoomModal = ({ room, listing, onClose }) => {
             <div>
               <div style={{ marginBottom: 32 }}>
                 <h2 style={{ 
-                  fontSize: isMobile ? 32 : 52, fontWeight: 800, marginBottom: 24, 
+                  fontSize: isMobile ? "clamp(1.6rem, 7vw, 2.2rem)" : 52, fontWeight: 800, marginBottom: 24, 
                   fontFamily: "var(--font-fraunces, Georgia, serif)", color: FG, 
-                  lineHeight: 1.1, letterSpacing: "-0.02em" 
+                  lineHeight: 1.1, letterSpacing: "-0.02em", wordBreak: "break-word" 
                 }}>{name}</h2>
                 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
@@ -424,7 +444,7 @@ const RoomModal = ({ room, listing, onClose }) => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -562,7 +582,9 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         </div>
       </div>
       
-      {showModal && <RoomModal room={room} listing={{ ...listing, scrollToAmenities: showModal?.scrollToAmenities }} onClose={() => setShowModal(false)} />}
+      <AnimatePresence>
+        {showModal && <RoomModal room={room} listing={{ ...listing, scrollToAmenities: showModal?.scrollToAmenities }} onClose={() => setShowModal(false)} />}
+      </AnimatePresence>
     </div>
   );
 };

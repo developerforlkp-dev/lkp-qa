@@ -309,6 +309,20 @@ export const getBusinessInterestFilters = async (businessInterestId) => {
   }
 };
 
+export const getBusinessInterests = async () => {
+  try {
+    const response = await ListingsAPI.get("/business-interests");
+    const payload = response.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  } catch (error) {
+    console.error("Error fetching business interests:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getOrderCancelPreview = async (orderId) => {
   try {
     if (!orderId) {
@@ -878,6 +892,40 @@ export const getEventOrderDetails = async (orderId) => {
   }
 };
 
+export const validateExperienceOrEventOrder = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error("orderId is required");
+    }
+
+    const orderIdNum = Number(orderId);
+    const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
+
+    const response = await OrdersAPI.post(`/orders/${orderIdStr}/validate-experience-event`);
+    return response.data;
+  } catch (error) {
+    console.error("Error validating experience/event order:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const validateStayOrder = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error("orderId is required");
+    }
+
+    const orderIdNum = Number(orderId);
+    const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
+
+    const response = await OrdersAPI.post(`/orders/${orderIdStr}/validate-stay`);
+    return response.data;
+  } catch (error) {
+    console.error("Error validating stay order:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getEventDetails = async (eventId) => {
   try {
     // Validate parameter
@@ -994,8 +1042,25 @@ export const getCompletedOrders = async (page = 1, limit = 20) => {
   }
 };
 
+const REVIEW_SUBMIT_TIMEOUT_MS = 15000;
+
+const isTransientReviewSubmitError = (error) => {
+  if (!error) return false;
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  const hasNoHttpResponse = !error?.response;
+
+  if (code === "ECONNABORTED" || code === "ERR_NETWORK" || code === "ERR_CANCELED") return true;
+  if (hasNoHttpResponse) return true;
+  if (message.includes("network error")) return true;
+  if (message.includes("failed to fetch")) return true;
+  if (message.includes("timeout")) return true;
+  if (message.includes("aborted")) return true;
+  return false;
+};
+
 // Submit a review for an order
-export const submitOrderReview = async (orderId, reviewData) => {
+export const submitOrderReview = async (orderId, reviewData, requestConfig = {}) => {
   try {
     // Validate parameters
     if (!orderId) {
@@ -1039,15 +1104,36 @@ export const submitOrderReview = async (orderId, reviewData) => {
       requestBody.customerId = reviewData.customerId;
     }
 
-    console.log("📤 Submitting review with request body:", requestBody);
+    console.log("Submitting review with request body:", requestBody);
 
-    const response = await ListingsAPI.post(`/reviews`, requestBody);
+    const submitOnce = () => ListingsAPI.post(
+      `/reviews`,
+      requestBody,
+      { timeout: REVIEW_SUBMIT_TIMEOUT_MS, ...requestConfig }
+    );
 
-    console.log("✅ Review submitted successfully:", response.data);
+    let response;
+    try {
+      response = await submitOnce();
+    } catch (firstError) {
+      if (!isTransientReviewSubmitError(firstError)) {
+        throw firstError;
+      }
+      response = await submitOnce();
+    }
+
+    console.log("Review submitted successfully:", response.data);
     return response.data;
   } catch (error) {
-    console.error("❌ Error submitting review:", error.response?.data || error.message);
-    console.error("❌ Full error object:", {
+    if (isTransientReviewSubmitError(error)) {
+      const connectionError = new Error("Connection lost while submitting. Please retry.");
+      connectionError.code = error?.code;
+      connectionError.isTransient = true;
+      connectionError.originalError = error;
+      throw connectionError;
+    }
+    console.error("Error submitting review:", error.response?.data || error.message);
+    console.error("Full error object:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
@@ -1605,3 +1691,4 @@ export const getLeadDetails = async (leadId) => {
     throw error;
   }
 };
+

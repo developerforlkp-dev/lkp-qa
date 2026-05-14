@@ -358,16 +358,18 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
           <div style={{ 
             background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.95)", 
             backdropFilter: "blur(20px)", 
-            padding: isMobile ? "24px 30px" : "40px 60px", 
+            padding: isMobile ? "20px 20px" : "40px 60px", 
             borderRadius: isMobile ? 20 : 32, 
             border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`, 
-            boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`
+            boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`,
+            boxSizing: "border-box",
+            width: "100%"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 8 : 16 }}>
               <div style={{ width: isMobile ? 24 : 40, height: 1, background: A }} />
               <span style={{ fontSize: isMobile ? 8 : 10, letterSpacing: "0.4em", textTransform: "uppercase", color: A, fontWeight: 800 }}>{toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}</span>
             </div>
-            <h1 className="font-display" style={{ fontSize: isMobile ? "2rem" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em" }}>{title.toUpperCase()}</h1>
+            <h1 className="font-display" style={{ fontSize: isMobile ? "clamp(1.5rem, 6.5vw, 2rem)" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em", wordBreak: "break-word" }}>{title.toUpperCase()}</h1>
             <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: theme === 'dark' ? "#FFF" : FG }}>
               <MapPin size={isMobile ? 14 : 18} />
               <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{stay?.city}, {stay?.state}</span>
@@ -440,7 +442,7 @@ function StayAmenities({ stay }) {
   }, [stay]);
 
   return (
-    <section style={{ background: W, padding: isMobile ? "80px 24px" : "140px 36px" }}>
+    <section style={{ background: W, padding: isMobile ? "80px 16px" : "140px 36px", boxSizing: "border-box", overflow: "hidden" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="02" label="Facilities & Services" />
         <Soul y={isMobile ? 40 : 100} s={0.08}>
@@ -450,7 +452,7 @@ function StayAmenities({ stay }) {
               {(() => {
                 const short = stay?.shortDescription || "";
                 const baseTitleCls = "font-display";
-                const baseTitleStyle = { fontSize: isMobile ? "2.2rem" : "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden" };
+                const baseTitleStyle = { fontSize: isMobile ? "clamp(1.6rem, 7vw, 2.2rem)" : "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden", wordBreak: "break-word" };
                 
                 if (!short) return (
                   <>
@@ -692,7 +694,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   const frontOffice = stay?.contactInformation?.frontOfficePhone || stay?.frontOfficePhone || stay?.frontOfficeContact;
 
   return (
-    <section style={{ background: BG, padding: isMobile ? "80px 24px" : "140px 36px" }}>
+    <section style={{ background: BG, padding: isMobile ? "80px 16px" : "140px 36px", boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
 
         <SHdr idx="05" label="Guidelines & Contact" />
@@ -822,6 +824,36 @@ const StayDetails = () => {
     ));
   }, []);
 
+  // Rehydrate booking selection state if returning from successful authentication redirect
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("frontendPendingBookingState");
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const token = localStorage.getItem("jwtToken");
+        const isLoggedIn = !!token && token !== "undefined" && token !== "null";
+
+        if (stored?.listingId === String(id) && stored?.type === "stay" && isLoggedIn) {
+          console.log("🔄 Restoring stay persistent booking state after auth redirect:", stored);
+          if (stored.checkInDate) {
+            const pCheckIn = moment(stored.checkInDate);
+            if (pCheckIn.isValid()) setCheckInDate(pCheckIn);
+          }
+          if (stored.checkOutDate) {
+            const pCheckOut = moment(stored.checkOutDate);
+            if (pCheckOut.isValid()) setCheckOutDate(pCheckOut);
+          }
+          if (stored.guests) setGuests(stored.guests);
+          if (Array.isArray(stored.selectedRooms)) {
+            setSelectedRooms(stored.selectedRooms);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore stay state:", e);
+    }
+  }, [id]);
+
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -900,7 +932,7 @@ const StayDetails = () => {
     <div className="stay-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
       <ScopedStyles />
 
-      <ProductNavbar top={isMobile ? 20 : 100} left={isMobile ? 20 : 60} />
+      <ProductNavbar top={isMobile ? 90 : 100} left={isMobile ? 16 : 60} />
 
       <StayHeroCarousel stay={stay} galleryItems={galleryItems} />
 

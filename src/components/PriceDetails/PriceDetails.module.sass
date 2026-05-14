@@ -264,12 +264,38 @@
         margin-right: 8px
         fill: $n4
 
+.cancellation
+    margin-top: 16px
+    padding: 12px
+    border-radius: 12px
+    background: rgba($p1, 0.05)
+    color: $p1
+    +caption-2
+    display: flex
+    align-items: flex-start
+    font-weight: 500
+    line-height: 1.4
+    svg
+        flex-shrink: 0
+        margin-top: 2px
+        margin-right: 8px
+        fill: $p1
+
 .priceDetailsStack
     display: flex
     flex-direction: column
     gap: 2px
-    span
-        display: block
-        line-height: 1.4
-        font-size: 13px
-        white-space: normal
+
+.mainLabel
+    font-size: 14px
+    font-weight: 500
+    color: $n4
+    +dark
+        color: $n5
+
+.calculationLabel
+    font-size: 12px
+    font-weight: 400
+    color: $n5
+    +dark
+        color: $n4
