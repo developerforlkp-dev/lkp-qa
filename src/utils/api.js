@@ -283,6 +283,20 @@ export const getBusinessInterestFilters = async (businessInterestId) => {
   }
 };
 
+export const getBusinessInterests = async () => {
+  try {
+    const response = await ListingsAPI.get("/business-interests");
+    const payload = response.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  } catch (error) {
+    console.error("Error fetching business interests:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getOrderCancelPreview = async (orderId) => {
   try {
     if (!orderId) {

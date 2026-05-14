@@ -316,7 +316,6 @@
             border-top: 1px solid $n3
             box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3)
 
-
 .filterCard
     display: flex
     flex-direction: column
@@ -386,6 +385,15 @@
         +m
             transform: scale(0.95)
             opacity: 0.8
+
+.filterCardDisabled
+    opacity: 0.55
+    cursor: not-allowed
+    pointer-events: none
+    transform: none !important
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06)
+    +m
+        opacity: 0.6
 
 .filterCardContent
     display: flex
