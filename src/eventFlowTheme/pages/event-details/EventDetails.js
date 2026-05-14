@@ -1259,7 +1259,7 @@ function HostDetails({ event, hostName, reviews = [] }) {
   };
 
   return (
-    <section id="host" style={{ background: BG, padding: "0 36px 130px" }}>
+    <section id="host" style={{ background: BG, padding: "0 36px 160px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="06" label="People" />
         <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">

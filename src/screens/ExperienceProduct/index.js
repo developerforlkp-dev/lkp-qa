@@ -961,7 +961,7 @@ const ExperienceProduct = () => {
 
 
         {/* HOST SECTION */}
-        <section className="host-section" style={{ background: BG, padding: "80px 36px" }}>
+        <section className="host-section" style={{ background: BG, padding: "80px 36px 160px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
             <Rev delay={0.1} style={{ height: "100%" }}>
               <div className="section-header-wrapper"><SHdr idx="05" label="Peoples" /></div>
@@ -1004,7 +1004,8 @@ const ExperienceProduct = () => {
       <style>{`
         @media(max-width: 1024px) {
           .hero-container { padding: 0 40px !important; }
-          .details-section, .prep-section, .host-section, .policies-section { padding: 60px 24px !important; }
+          .details-section, .prep-section, .policies-section { padding: 60px 24px !important; }
+          .host-section { padding: 60px 24px 140px !important; }
           .details-inner { grid-template-columns: 1fr !important; gap: 48px !important; padding: 40px !important; }
           .pol-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
           .early-bird-wrapper { bottom: 40px !important; right: 40px !important; }
@@ -1027,7 +1028,8 @@ const ExperienceProduct = () => {
           .hero-section { min-height: 90vh !important; }
           .hero-container { padding: 0 24px !important; }
           .hero-section h1 { font-size: 3.5rem !important; }
-          .details-section, .prep-section, .host-section, .policies-section { padding: 40px 16px !important; }
+          .details-section, .prep-section, .policies-section { padding: 40px 16px !important; }
+          .host-section { padding: 40px 16px 120px !important; }
           .section-header-wrapper > div { margin-bottom: 20px !important; }
           .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
           .details-grid > div:first-child { grid-column: span 2 !important; }
