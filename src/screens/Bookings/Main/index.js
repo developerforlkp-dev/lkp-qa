@@ -1196,6 +1196,7 @@ const Main = ({
                             );
                           }
                           if (action.label === "Leave review") {
+                            if (displayedTab !== "completed") return null;
                             if (!orderIdsEligibleForReview.has(booking.orderId)) return null;
                             return (
                               <button

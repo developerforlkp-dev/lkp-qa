@@ -2403,7 +2403,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             return (slotKeys.size === 0 || slotKeys.has(selectedDateKey)) && isEventSlotAccessible(slot, index);
                           });
 
-                          if (validSlotsForDate.length === 0) {
+                          if (startDate && validSlotsForDate.length === 0) {
                             return <div style={{ gridColumn: "span 2", padding: "24px 20px", textAlign: "center", color: E, fontWeight: 700, background: EL, borderRadius: 16, border: `1px solid ${E}22`, fontSize: 13 }}>No booking slots are available for this day</div>;
                           }
 
