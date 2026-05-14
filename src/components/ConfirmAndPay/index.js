@@ -75,7 +75,9 @@ const ConfirmAndPay = ({
               ) : (
                 <>
                   <div className={styles.option}>
-                    <div className={styles.info}>Dates</div>
+                    <div className={styles.info}>
+                      {dateValue && (dateValue.includes(" - ") || dateValue.includes(" – ") || dateValue.includes(" to ")) ? "Dates" : "Date"}
+                    </div>
                     <input className={styles.input} type="text" />
                     <div className={styles.value}>{dateValue || "Select date"}</div>
                     {onEditDate && (
