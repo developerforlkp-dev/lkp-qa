@@ -525,19 +525,34 @@ const Checkout = () => {
         rows.push({ title: "Early Bird Discount", value: `- ${fmt(earlyBirdDiscount)}` });
       }
 
-      if (promoDiscount > 0) {
-        rows.push({ title: "Discounts", value: `- ${fmt(promoDiscount)}` });
-      }
-
-      if (couponDiscount > 0) {
-        rows.push({ title: "Coupon Discount", value: `- ${fmt(couponDiscount)}` });
-      }
-
-      // Fallback: If we have a generic discount but no specific breakdown or there's a remainder
+      // Show all discounts together as one line item.
       const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
-      if (discount > totalSpecificDiscount + 0.01) {
-        const remainingDiscount = discount - totalSpecificDiscount;
-        rows.push({ title: "Discounts", value: `- ${fmt(remainingDiscount)}` });
+      const rawPayableAmount = Number(
+        paymentData?.amount ??
+        pricing.total ??
+        pricing.finalAmount ??
+        0
+      );
+      const lineItemsGross = Number(basePrice || 0) + Number(addonsTotal || 0) + Number(displayTax || 0);
+      // Some flows provide payable in paise. Normalize to rupees when amount is clearly out of range.
+      const payableAmount =
+        rawPayableAmount > 0 &&
+        lineItemsGross > 0 &&
+        rawPayableAmount > lineItemsGross * 5
+          ? rawPayableAmount / 100
+          : rawPayableAmount;
+      const computedDiscountFromPayable = Math.max(
+        0,
+        Number(basePrice || 0) +
+        Number(addonsTotal || 0) +
+        Number(displayTax || 0) -
+        Number(payableAmount || 0)
+      );
+      const totalDiscount = payableAmount > 0
+        ? computedDiscountFromPayable
+        : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
+      if (totalDiscount > 0) {
+        rows.push({ title: "Discounts", value: `- ${fmt(totalDiscount)}` });
       }
 
       return {
