@@ -893,14 +893,14 @@ function Gallery({ event }) {
   return (
     <>
       <Mq items={galleryMqItems.length > 0 ? galleryMqItems : ["SOLSTICE Ed.01", "Moments", "Curated Visuals"]} dir="l" size="sm" bg={BG} accent />
-      <section id="gallery" style={{ backgroundColor: theme === 'dark' ? "#0A0A0A" : FG, padding: "120px 0", overflow: "hidden" }}>
+      <section id="gallery" style={{ backgroundColor: BG, padding: "120px 0", overflow: "hidden" }}>
         <div style={{ maxWidth: 1600, margin: "0 auto", padding: "0 36px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 48 }}>
             <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: AH, whiteSpace: "nowrap" }}>02 — Visuals</span>
-            <div style={{ flex: 1, height: 1, backgroundColor: theme === 'light' ? "#333" : "#2a2a2a" }} />
+            <div style={{ flex: 1, height: 1, backgroundColor: B }} />
           </div>
 
-          <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: theme === 'dark' ? "#FFF" : BG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
 
           <div className="gallery-grid" style={{
             display: "flex",
