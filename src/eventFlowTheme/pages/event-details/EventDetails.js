@@ -9,6 +9,8 @@ import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getHost, getListingReviews } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
+import { useTheme } from "../../../components/JUI/Theme";
+import Loader from "../../../components/Loader";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -43,52 +45,20 @@ const getHostListingUrl = (listing) => {
   return buildExperienceUrl(getHostListingTitle(listing), listingId);
 };
 
-/* ─── TOKENS & THEME ─────────── */
-const THEMES = {
-  light: {
-    A: "#0097B2", AH: "#008CA5", AL: "rgba(0, 151, 178, 0.08)",
-    BG: "#FBFBF9", FG: "#0F0F0F", M: "#7A7A77",
-    S: "#F3F3F1", B: "#E6E6E3", W: "#FFFFFF"
-  },
-  dark: {
-    A: "#0097B2", AH: "#0AADCA", AL: "rgba(0, 151, 178, 0.15)",
-    BG: "#080808", FG: "#EBEBE6", M: "#8C8C88",
-    S: "#111111", B: "#1F1F1F", W: "#000000"
-  }
-};
-
-const ThemeContext = createContext({ theme: "light", toggleTheme: () => { }, tokens: THEMES.light });
-function useTheme() { return useContext(ThemeContext); }
-
+/* ─── THEME WRAPPER ─────────── */
 function ScopedThemeProvider({ children }) {
-  const [theme, setTheme] = useState("light");
-  const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    if (wrapperRef.current) {
-      const tokens = THEMES[theme];
-      Object.entries(tokens).forEach(([key, value]) => {
-        wrapperRef.current.style.setProperty(`--${key}`, value);
-      });
-      wrapperRef.current.style.background = tokens.BG;
-      wrapperRef.current.style.color = tokens.FG;
-    }
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(prev => prev === "light" ? "dark" : "light");
-
+  const { tokens: { BG, FG } } = useTheme();
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, tokens: THEMES[theme] }}>
-      <div ref={wrapperRef} className="event-details-premium" style={{ minHeight: "100vh" }}>
-        {children}
-      </div>
-    </ThemeContext.Provider>
+    <div className="event-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
+      {children}
+    </div>
   );
 }
 
 /* ─── GRID GALLERY MODAL ────────────────────────── */
 const GridGallery = ({ items, onClose, onSelect, title, A }) => {
   const modalRef = useRef(null);
+  const { tokens: { BG, FG, B, W }, theme } = useTheme();
 
   useEffect(() => {
     const target = modalRef.current;
@@ -109,7 +79,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: '#FFF',
+        background: BG,
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
@@ -134,7 +104,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
         >
           <div>
             <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
-            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
+            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: FG, lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
               {title}
             </h2>
           </div>
@@ -146,7 +116,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
               width: 64,
               height: 64,
               borderRadius: '50%',
-              background: '#F4F4F4',
+              background: B,
               border: 'none',
               display: 'flex',
               alignItems: 'center',
@@ -157,7 +127,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
               marginLeft: 20
             }}
           >
-            <X size={32} color="#000" />
+            <X size={32} color={FG} />
           </motion.button>
         </motion.div>
 
@@ -180,8 +150,8 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
                 borderRadius: 24,
                 overflow: 'hidden',
                 cursor: 'pointer',
-                background: '#F4F4F4',
-                border: '1px solid rgba(0,0,0,0.05)',
+                background: B,
+                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
                 position: 'relative',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
               }}
@@ -817,7 +787,7 @@ function About({ event }) {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {tags.map((t, i) => (
                     <motion.span key={t} initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
-                      whileHover={{ color: W, backgroundColor: A, borderColor: A, scale: 1.05 }}
+                      whileHover={{ color: "#FFF", backgroundColor: A, borderColor: A, scale: 1.05 }}
                       style={{ fontSize: 10, fontWeight: 500, color: M, backgroundColor: W, border: `1px solid ${B}`, padding: "6px 12px", cursor: "default" }}>
                       {t}
                     </motion.span>
@@ -923,14 +893,14 @@ function Gallery({ event }) {
   return (
     <>
       <Mq items={galleryMqItems.length > 0 ? galleryMqItems : ["SOLSTICE Ed.01", "Moments", "Curated Visuals"]} dir="l" size="sm" bg={BG} accent />
-      <section id="gallery" style={{ backgroundColor: FG, padding: "120px 0", overflow: "hidden" }}>
+      <section id="gallery" style={{ backgroundColor: BG, padding: "120px 0", overflow: "hidden" }}>
         <div style={{ maxWidth: 1600, margin: "0 auto", padding: "0 36px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 48 }}>
             <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: AH, whiteSpace: "nowrap" }}>02 — Visuals</span>
-            <div style={{ flex: 1, height: 1, backgroundColor: theme === 'light' ? "#333" : "#2a2a2a" }} />
+            <div style={{ flex: 1, height: 1, backgroundColor: B }} />
           </div>
 
-          <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: BG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
 
           <div className="gallery-grid" style={{
             display: "flex",
@@ -1259,7 +1229,7 @@ function HostDetails({ event, hostName, reviews = [] }) {
   };
 
   return (
-    <section id="host" style={{ background: BG, padding: "0 36px 130px" }}>
+    <section id="host" style={{ background: BG, padding: "0 36px 160px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="06" label="People" />
         <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
@@ -1332,7 +1302,7 @@ function HostDetails({ event, hostName, reviews = [] }) {
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: comment ? 10 : 0 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: A, color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
                             {author[0].toUpperCase()}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1340,7 +1310,7 @@ function HostDetails({ event, hostName, reviews = [] }) {
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <span style={{ fontSize: 11, letterSpacing: 1 }}>
                                 {[...Array(5)].map((_, si) => (
-                                  <span key={si} style={{ color: si < reviewRating ? "#FFC107" : "#D1D5DB" }}>★</span>
+                                  <span key={si} style={{ color: si < reviewRating ? "#FFC107" : `${A}30` }}>★</span>
                                 ))}
                               </span>
                               <span style={{ fontSize: 11, color: M }}>{time}</span>
@@ -1837,6 +1807,7 @@ export default function EventDetails() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const eventId = queryParams.get('id') || '3';
+  const { tokens: { BG, FG } } = useTheme();
 
   const [event, setEvent] = useState(null);
   const [hostName, setHostName] = useState("");
@@ -1882,8 +1853,21 @@ export default function EventDetails() {
     return () => { mounted = false; };
   }, [eventId]);
 
-  if (loading) return <div className="p-5 text-center" style={{ minHeight: "100vh", background: "#f3f3f1", color: "#333", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading event details...</div>;
-  if (error) return <div className="p-5 text-center text-danger" style={{ minHeight: "100vh", background: "#f3f3f1", display: "flex", alignItems: "center", justifyContent: "center" }}>{error}</div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}>
+        <Loader />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-5 text-center text-danger" style={{ minHeight: "100vh", background: BG, color: FG, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {error}
+      </div>
+    );
+  }
 
   return (
     <ScopedThemeProvider>

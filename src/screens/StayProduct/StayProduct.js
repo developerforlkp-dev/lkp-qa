@@ -2075,7 +2075,7 @@ const StayProduct = () => {
     const hasMore = normalizedReviews.length > 2;
 
     return (
-      <section style={{ background: BG, padding: "80px 0", borderTop: `1px solid ${B}` }}>
+      <section style={{ background: BG, padding: "80px 0 160px", borderTop: `1px solid ${B}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
             <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 800, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>06 — GUEST REVIEWS</span>
