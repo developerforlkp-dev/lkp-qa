@@ -842,6 +842,40 @@ export const getEventOrderDetails = async (orderId) => {
   }
 };
 
+export const validateExperienceOrEventOrder = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error("orderId is required");
+    }
+
+    const orderIdNum = Number(orderId);
+    const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
+
+    const response = await OrdersAPI.post(`/orders/${orderIdStr}/validate-experience-event`);
+    return response.data;
+  } catch (error) {
+    console.error("Error validating experience/event order:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const validateStayOrder = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error("orderId is required");
+    }
+
+    const orderIdNum = Number(orderId);
+    const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
+
+    const response = await OrdersAPI.post(`/orders/${orderIdStr}/validate-stay`);
+    return response.data;
+  } catch (error) {
+    console.error("Error validating stay order:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getEventDetails = async (eventId) => {
   try {
     // Validate parameter
