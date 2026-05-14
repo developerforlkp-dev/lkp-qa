@@ -1152,25 +1152,14 @@ function Rules({ event }) {
       }));
     });
   }, [event?.guestRequirements]);
-  const [booleanValues, setBooleanValues] = useState({});
 
-  useEffect(() => {
-    const nextValues = {};
-    guestRequirementQuestions.forEach((question) => {
-      if (String(question.fieldType || "").toLowerCase() === "boolean") {
-        nextValues[question.id] = question.defaultValueBool;
-      }
-    });
-    setBooleanValues(nextValues);
-  }, [guestRequirementQuestions]);
 
   const displayRules = [
     { id: 1, title: "Check-in Instructions", body: checkInInstructions },
     { id: 2, title: "Cancellation Policy", body: cancellationPolicy },
   ];
   const dropdownRow = (item, index) => {
-    const isBooleanField = String(item.fieldType || "").toLowerCase() === "boolean";
-    const toggleValue = Boolean(booleanValues[item.id]);
+
 
     return (
       <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
@@ -1183,29 +1172,8 @@ function Rules({ event }) {
         </summary>
         <div style={{ padding: "0 0 20px 48px" }}>
           <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: 0 }}>{item.body}</p>
-          {isBooleanField && (
-            <button
-              type="button"
-              onClick={() => setBooleanValues((current) => ({ ...current, [item.id]: !toggleValue }))}
-              aria-pressed={toggleValue}
-              style={{
-                marginTop: 16,
-                width: 52,
-                height: 28,
-                borderRadius: 999,
-                border: `1px solid ${toggleValue ? A : B}`,
-                background: toggleValue ? A : S,
-                cursor: "pointer",
-                padding: 3,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: toggleValue ? "flex-end" : "flex-start",
-                transition: "0.2s ease",
-              }}
-            >
-              <span style={{ width: 20, height: 20, borderRadius: "50%", background: W, boxShadow: "0 2px 8px rgba(0,0,0,0.18)", display: "block" }} />
-            </button>
-          )}
+
+
         </div>
       </details>
     );
