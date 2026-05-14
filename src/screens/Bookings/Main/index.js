@@ -246,7 +246,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     CANCELLED: "Cancelled",
   };
 
-  let status = statusMap[apiBooking.orderStatus] || "Upcoming";
+  const normalizedOrderStatus = String(apiBooking?.orderStatus || "").toUpperCase().trim();
+  let status = statusMap[normalizedOrderStatus] || "Upcoming";
 
   // Override status based on date to ensure correct tab categorization (Upcoming vs Completed).
   // This ensures stays and experiences only move to Completed after their end date has passed.
@@ -1092,7 +1093,10 @@ const Main = ({
                           <span className={styles.category}>
                             {booking.category}
                           </span>
-                          {(booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && (
+                          {((Number(booking.bookingData?.totalAmount) === 0) ||
+                            (Number(booking.bookingData?.totalPrice) === 0) ||
+                            (Number(booking.bookingData?.finalAmount) === 0) ||
+                            (Number(booking.bookingData?.amount) === 0)) && (
                             <>
                               <span className={styles.dot} aria-hidden="true">
                                 •
@@ -1118,18 +1122,16 @@ const Main = ({
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
                                 backgroundColor: (booking.status === "Completed" || displayedTab === "completed") ? "#E3F2FD" :
-                                                 (booking.bookingData.orderStatus === "CONFIRMED" || ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")) ? "#E8F5E9" :
-                                                 booking.bookingData.orderStatus === "PENDING"   ? "#FFF3E0" :
-                                                 booking.bookingData.orderStatus === "CANCELLED" ? "#FFEBEE" : "#F3F4F6",
+                                                 (String(booking.bookingData.orderStatus || "").toUpperCase() === "CONFIRMED") ? "#E8F5E9" :
+                                                 (String(booking.bookingData.orderStatus || "").toUpperCase() === "PENDING")   ? "#FFF3E0" :
+                                                 (String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELLED" || String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELED") ? "#FFEBEE" : "#F3F4F6",
                                 color: (booking.status === "Completed" || displayedTab === "completed") ? "#1565C0" :
-                                       (booking.bookingData.orderStatus === "CONFIRMED" || ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")) ? "#2E7D32" :
-                                       booking.bookingData.orderStatus === "PENDING"   ? "#E65100" :
-                                       booking.bookingData.orderStatus === "CANCELLED" ? "#C62828" : "#6B7280",
+                                       (String(booking.bookingData.orderStatus || "").toUpperCase() === "CONFIRMED") ? "#2E7D32" :
+                                       (String(booking.bookingData.orderStatus || "").toUpperCase() === "PENDING")   ? "#E65100" :
+                                       (String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELLED" || String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELED") ? "#C62828" : "#6B7280",
                               }}>
                                 {(booking.status === "Completed" || displayedTab === "completed") ? "COMPLETED" : (
-                                  ((booking.bookingData?.totalAmount === 0 || booking.bookingData?.totalPrice === 0 || !booking.bookingData?.paymentMethod) && booking.bookingData.orderStatus === "PENDING")
-                                  ? "CONFIRMED"
-                                  : booking.bookingData.orderStatus
+                                  String(booking.bookingData?.orderStatus || "").toUpperCase()
                                 )}
                               </span>
                             </>
