@@ -1009,7 +1009,6 @@ function Artists({ event }) {
                 <div>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
                     <motion.h3 animate={{ color: hov === a.id ? A : FG }} className="font-display" style={{ fontSize: "clamp(1.5rem,2.8vw,2.5rem)", fontWeight: 700, lineHeight: 1 }}>{a.name}</motion.h3>
-                    <span className="font-mono" style={{ fontSize: 9, color: M, letterSpacing: "0.2em" }}>{a.origin}</span>
                   </div>
                   <p style={{ fontSize: 12, color: M, lineHeight: 1.65, maxWidth: 480 }}>{a.bio}</p>
                 </div>
