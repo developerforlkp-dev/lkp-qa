@@ -98,7 +98,7 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
         {paymentFailed ? (
           <>
             <Link className={cn("button-stroke", styles.button)} to="/bookings">
-              Your trips
+              Your bookings
             </Link>
             {onRetryPayment && (
               <button
@@ -113,7 +113,7 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
         ) : (
           <>
             <Link className={cn("button-stroke", styles.button)} to="/bookings">
-              Your trips
+              Your bookings
             </Link>
           </>
         )}

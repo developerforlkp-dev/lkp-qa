@@ -13,7 +13,7 @@ const breadcrumbs = [
     url: "/",
   },
   {
-    title: "Your tríps",
+    title: "Your bookings",
   },
 ];
 
@@ -26,7 +26,7 @@ const Main = () => {
           urlHome="/"
           breadcrumbs={breadcrumbs}
         />
-        <h1 className={cn("h2", styles.title)}>Your trips</h1>
+        <h1 className={cn("h2", styles.title)}>Your bookings</h1>
         <div className={styles.list}>
           {experience.map((x, index) => (
             <Card className={styles.card} item={x} key={index} />

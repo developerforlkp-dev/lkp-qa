@@ -83,7 +83,7 @@ const PageList = () => {
           <Link to="/wishlists">Wishlists</Link>
         </p>
         <p>
-          <Link to="/your-trips">Your Trips</Link>
+          <Link to="/your-trips">Your Bookings</Link>
         </p>
         <p>
           <Link to="/bookings">Bookings</Link>
