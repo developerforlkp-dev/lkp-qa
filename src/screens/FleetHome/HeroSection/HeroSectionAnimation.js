@@ -19,7 +19,7 @@ const EASE_TYPE = "sine.inOut";
 const getCard = (index) => `#hero-card-${index}`;
 const getCardContent = (index) => `#hero-card-content-${index}`;
 
-const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
+const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
   const history = useHistory();
   const demoRef = useRef(null);
   const detailsEvenRef = useRef(null);
@@ -300,15 +300,21 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
         setTimeout(() => {
           if (orderRef.current && containerRef?.current && isMountedRef.current) {
             init(orderRef.current, detailsEvenRef_state.current);
+            if (typeof onReady === "function") {
+              requestAnimationFrame(() => onReady());
+            }
           }
-        }, 300);
+        }, 80);
       } catch (error) {
         console.error("Hero section: Error loading images", error);
         setTimeout(() => {
           if (orderRef.current && containerRef?.current && isMountedRef.current) {
             init(orderRef.current, detailsEvenRef_state.current);
+            if (typeof onReady === "function") {
+              requestAnimationFrame(() => onReady());
+            }
           }
-        }, 500);
+        }, 120);
       }
     }
 
@@ -345,7 +351,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [] }) => {
       detailsEvenRef_state.current = true;
       if (demoRefCurrent) demoRefCurrent.innerHTML = '';
     };
-  }, [containerRef, destinations]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [containerRef, destinations, onReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Button click navigation ───────────────────────────────────────────────
 

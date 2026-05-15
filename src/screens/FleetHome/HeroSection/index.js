@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
 import HeroSectionAnimation from "./HeroSectionAnimation";
-import Loader from "../../../components/Loader";
 import { getHomepageHero } from "../../../utils/api";
 import styles from "./HeroSection.module.sass";
 
@@ -30,6 +29,7 @@ const HeroSection = () => {
   const containerRef = useRef(null);
   const [heroData, setHeroData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [heroReady, setHeroReady] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -53,6 +53,7 @@ const HeroSection = () => {
           .sort((a, b) => a.sortOrder - b.sortOrder); // Sort by sortOrder
         
         setHeroData(mappedData);
+        setHeroReady(false);
       } catch (err) {
         console.error("Error loading hero data:", err);
         setError(err.message || "Failed to load hero content");
@@ -67,9 +68,7 @@ const HeroSection = () => {
   if (loading) {
     return (
       <div ref={containerRef} className={styles.container}>
-        <div className={styles.loaderContainer}>
-          <Loader />
-        </div>
+        <div className={styles.loadingOverlay} />
       </div>
     );
   }
@@ -96,7 +95,18 @@ const HeroSection = () => {
 
   return (
     <div ref={containerRef} className={styles.container}>
-      <HeroSectionAnimation containerRef={containerRef} destinations={heroData} />
+      <div className={styles.heroStage}>
+        <HeroSectionAnimation
+          containerRef={containerRef}
+          destinations={heroData}
+          onReady={() => setHeroReady(true)}
+        />
+      </div>
+      <div
+        className={`${styles.loadingOverlay} ${
+          heroReady ? styles.loadingOverlayHidden : ""
+        }`}
+      />
     </div>
   );
 };

@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./Card.module.sass";
 import Icon from "../Icon";
 
 const Item = ({ className, item, row, car }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
   // Use default image if item.src is an Azure blob URL without SAS token
   // SAS token URLs (with sig= and sv= query params) should work
   const defaultImage = "/images/content/card-pic-13.jpg";
@@ -25,11 +26,12 @@ const Item = ({ className, item, row, car }) => {
       )}
       to={item.url}
     >
-      <div className={styles.preview}>
+      <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 
           srcSet={imageSrcSet !== defaultImage ? `${imageSrcSet} 2x` : defaultImage}
           src={imageSrc} 
           alt={item.title || "Nature"}
+          onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             // Silently fallback to default image if original fails to load
             // Prevent infinite loop by checking if already on fallback
@@ -38,6 +40,7 @@ const Item = ({ className, item, row, car }) => {
               e.target.srcSet = defaultImage;
               e.target.onerror = null; // Prevent further error handling
             }
+            setImageLoaded(true);
           }}
         />
         {item.categoryText && (

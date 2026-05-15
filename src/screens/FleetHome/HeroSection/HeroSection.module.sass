@@ -15,6 +15,12 @@
         min-height: 245px
         border-radius: 0
 
+.heroStage
+    width: 100%
+    height: 100%
+    opacity: 1
+    transition: opacity .45s ease
+
 .loaderContainer
     display: flex
     align-items: center
@@ -25,6 +31,33 @@
 
     +m
         min-height: 245px
+
+.loadingOverlay
+    position: absolute
+    inset: 0
+    z-index: 120
+    border-radius: inherit
+    overflow: hidden
+    background: linear-gradient(120deg, #e8edf5 0%, #dfe6f1 42%, #eef3fa 100%)
+    backdrop-filter: blur(8px)
+    -webkit-backdrop-filter: blur(8px)
+    opacity: 1
+    transition: opacity .45s ease
+    &:before
+        content: ""
+        position: absolute
+        inset: 0
+        background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 80%)
+        transform: translateX(-120%)
+        animation: heroShimmer 1.4s infinite
+
+.loadingOverlayHidden
+    opacity: 0
+    pointer-events: none
+
+@keyframes heroShimmer
+    100%
+        transform: translateX(120%)
 
 .errorContainer,
 .emptyContainer
