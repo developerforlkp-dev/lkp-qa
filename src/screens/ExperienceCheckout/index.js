@@ -646,9 +646,43 @@ const Checkout = () => {
         .then((res) => {
           const data = res?.data || res;
           if (data) {
+            const parseNum = (value) => {
+              const n = Number(value);
+              return Number.isFinite(n) ? n : null;
+            };
+            const reviewsArray = Array.isArray(data.reviews)
+              ? data.reviews
+              : (Array.isArray(data.data?.reviews) ? data.data.reviews : []);
+            const derivedAverageFromReviews = (() => {
+              if (!reviewsArray.length) return null;
+              const ratings = reviewsArray
+                .map((r) => parseNum(r?.rating ?? r?.reviewRating ?? r?.stars))
+                .filter((v) => v != null);
+              if (!ratings.length) return null;
+              const sum = ratings.reduce((a, b) => a + b, 0);
+              return sum / ratings.length;
+            })();
+            const resolvedAverageRating =
+              parseNum(data.averageRating) ??
+              parseNum(data.average_rating) ??
+              parseNum(data.avgRating) ??
+              parseNum(data.avg_rating) ??
+              parseNum(data.rating) ??
+              parseNum(data.summary?.averageRating) ??
+              parseNum(data.summary?.average_rating) ??
+              parseNum(data.statistics?.averageRating) ??
+              parseNum(data.statistics?.average_rating) ??
+              derivedAverageFromReviews;
+            const resolvedReviewCount =
+              Number(data.totalReviews) ||
+              Number(data.total_reviews) ||
+              Number(data.reviewCount) ||
+              Number(data.review_count) ||
+              reviewsArray.length ||
+              0;
             setReviewsData({
-              rating: data.averageRating || null,
-              count: data.totalReviews || data.reviews?.length || 0,
+              rating: resolvedAverageRating,
+              count: resolvedReviewCount,
             });
           }
         })
