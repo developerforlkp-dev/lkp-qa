@@ -8,7 +8,7 @@
     &:hover
         .preview
             img
-                transform: scale(1.1)
+                transform: scale(1.03) translateZ(0)
 
 .preview
     position: relative
@@ -31,6 +31,7 @@
         background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 80%)
         transform: translateX(-120%)
         animation: imageShimmer 1.4s infinite
+        border-radius: inherit
     img
         position: absolute
         top: 0
@@ -40,8 +41,12 @@
         object-fit: cover
         opacity: 0
         filter: blur(8px)
-        transform: scale(1.03)
+        transform: scale(1.03) translateZ(0)
         transition: transform .9s ease, opacity .45s ease, filter .45s ease
+        border-radius: inherit
+        will-change: transform
+        backface-visibility: hidden
+        -webkit-backface-visibility: hidden
 
 .preview.loaded
     &:after
@@ -50,7 +55,7 @@
     img
         opacity: 1
         filter: blur(0)
-        transform: scale(1)
+        transform: scale(1) translateZ(0)
 
 .category
     position: absolute
