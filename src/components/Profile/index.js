@@ -12,6 +12,9 @@ const Profile = ({
   buttonText,
   children,
   joinedDate,
+  siteUrl = "https://ui8.net",
+  phoneNumber,
+  email,
 }) => {
   const displayJoinedDate = joinedDate || "Mar 15, 2021";
 
@@ -28,15 +31,29 @@ const Profile = ({
           ))}
         </div>
         {info && <div className={styles.info}>{info}</div>}
-        <a
-          className={styles.site}
-          href="https://ui8.net"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Icon name="globe" size="16" />
-          <span>https://ui8.net</span>
-        </a>
+        {siteUrl ? (
+          <a
+            className={styles.site}
+            href={siteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="globe" size="16" />
+            <span>{siteUrl}</span>
+          </a>
+        ) : null}
+        {phoneNumber ? (
+          <div className={styles.site}>
+            <Icon name="phone" size="16" />
+            <span>{phoneNumber}</span>
+          </div>
+        ) : null}
+        {email ? (
+          <div className={styles.site}>
+            <Icon name="email" size="16" />
+            <span>{email}</span>
+          </div>
+        ) : null}
         <div className={styles.control}>
           <div className={styles.btns}>
             <button className={cn("button-stroke button-small", styles.button)}>
@@ -51,7 +68,7 @@ const Profile = ({
           </div>
         </div>
         <div className={styles.socials}>
-          {socials.map((x, index) => (
+          {(socials || []).map((x, index) => (
             <a
               className={styles.social}
               href={x.url}

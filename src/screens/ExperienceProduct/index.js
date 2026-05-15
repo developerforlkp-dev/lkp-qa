@@ -345,6 +345,7 @@ const ExperienceProduct = () => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [gridVisible, setGridVisible] = useState(false);
   const [eligibleBookings, setEligibleBookings] = useState([]);
+  const hostLeadUserId = hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
 
   const handleUpdateAddonQuantity = (addon, delta) => {
     const addonId = addon.addonId || addon.id;
@@ -482,6 +483,10 @@ const ExperienceProduct = () => {
   const description = listing?.description || listing?.aboutListing || "";
 
   const displayTags = listing?.tags || [];
+  const navigateToHostProfile = () => {
+    if (!hostLeadUserId) return;
+    history.push(`/host-profile?id=${hostLeadUserId}`);
+  };
 
   return (
     <Page>
@@ -966,7 +971,22 @@ const ExperienceProduct = () => {
             <Rev delay={0.1} style={{ height: "100%" }}>
               <div className="section-header-wrapper"><SHdr idx="05" label="Peoples" /></div>
               <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
-                <h3 style={{ fontSize: "2rem", fontWeight: 700, color: FG, marginBottom: 8 }}>{hostData?.firstName} {hostData?.lastName || ""}</h3>
+                <h3
+                  onClick={navigateToHostProfile}
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    color: FG,
+                    marginBottom: 8,
+                    cursor: hostLeadUserId ? "pointer" : "default",
+                    textDecoration: hostLeadUserId ? "underline" : "none",
+                    textDecorationThickness: "2px",
+                    textUnderlineOffset: "5px"
+                  }}
+                  title={hostLeadUserId ? "View all listings by this host" : undefined}
+                >
+                  {hostData?.firstName} {hostData?.lastName || ""}
+                </h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
                 <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.about || "An expert guide who will personally lead the Experience group through the unseen veins of the venue, offering context and narrative to every installation."}</p>
                 {leadData && (

@@ -100,6 +100,20 @@ const Main = ({ hostId }) => {
   const joinedDate = host?.joinedDate
     ? formatJoinedDate(host.joinedDate)
     : "Mar 15, 2021";
+  const hostPhone =
+    host?.phoneNumber ||
+    hostData?.phoneNumber ||
+    host?.phone ||
+    host?.mobile ||
+    host?.contactNumber ||
+    hostData?.contactNumber ||
+    "";
+  const hostEmail =
+    host?.email ||
+    hostData?.email ||
+    host?.emailAddress ||
+    hostData?.emailAddress ||
+    "";
 
   // Build parametersUser from host data
   const parametersUser = hostData
@@ -163,8 +177,11 @@ const Main = ({ hostId }) => {
             buttonText="Contact"
             info={host?.bio || ""}
             joinedDate={joinedDate}
+            siteUrl={null}
+            phoneNumber={hostPhone}
+            email={hostEmail}
           >
-            <div className={styles.line}>
+            <div className={styles.headStack}>
               <div className={styles.avatar}>
                 <div className={styles.avatarPlaceholder}>
                   <Icon name="user" size="40" />
@@ -173,7 +190,7 @@ const Main = ({ hostId }) => {
                   <Icon name="tick" size="24" />
                 </div>
               </div>
-              <div className={styles.description}>
+              <div className={styles.descriptionRow}>
                 <div className={styles.man}>{hostName}</div>
                 <div className={styles.rating}>
                   <Icon name="star" size="20" />
