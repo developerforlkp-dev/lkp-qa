@@ -1200,6 +1200,12 @@ function HostDetails({ event, hostName, reviews = [] }) {
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
   const hostProfile = event?.hostProfile;
   const host = hostProfile?.host || hostProfile || event?.host || {};
+  const hostLeadUserId =
+    host?.leadUserId ||
+    hostProfile?.leadUserId ||
+    event?.leadUserId ||
+    event?.host?.leadUserId ||
+    event?.hostId;
   const hostDescription = host?.description || host?.bio || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
   const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
 
@@ -1265,7 +1271,25 @@ function HostDetails({ event, hostName, reviews = [] }) {
           <Rev delay={0.1}>
             <div style={{ background: W, padding: 52, minHeight: 300 }}>
               <p className="host-presented-label" style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#0097B2", WebkitTextFillColor: "#0097B2", marginBottom: 36, fontWeight: 700 }}>Meet Your Host</p>
-              <h3 className="font-display" style={{ fontSize: "clamp(2.4rem,5vw,4.2rem)", fontWeight: 700, color: FG, lineHeight: 1, marginBottom: 22 }}>
+              <h3
+                className="font-display"
+                style={{
+                  fontSize: "clamp(2.4rem,5vw,4.2rem)",
+                  fontWeight: 700,
+                  color: FG,
+                  lineHeight: 1,
+                  marginBottom: 22,
+                  cursor: hostLeadUserId ? "pointer" : "default",
+                  textDecoration: hostLeadUserId ? "underline" : "none",
+                  textUnderlineOffset: hostLeadUserId ? "8px" : undefined,
+                  textDecorationThickness: hostLeadUserId ? "1px" : undefined,
+                }}
+                onClick={() => {
+                  if (!hostLeadUserId) return;
+                  history.push(`/host-profile?id=${hostLeadUserId}`);
+                }}
+                title={hostLeadUserId ? "View host profile" : undefined}
+              >
                 {displayHostName || "Event Host"}
               </h3>
               <p style={{ color: M, fontSize: 14, fontStyle: "italic", lineHeight: 1.7, marginBottom: 28 }}>{hostSubtitle}</p>
