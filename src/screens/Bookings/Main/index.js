@@ -252,8 +252,18 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   // Override status based on date to ensure correct tab categorization (Upcoming vs Completed).
   // This ensures stays and experiences only move to Completed after their end date has passed.
   if (status === "Upcoming" || status === "Completed") {
+    const stayRooms = Array.isArray(apiBooking?.stayOrderRooms) ? apiBooking.stayOrderRooms : [];
+    const roomCheckOutDates = stayRooms
+      .map((room) => room?.checkOutDate || room?.checkoutDate || room?.check_out_date)
+      .filter(Boolean);
+    const roomCheckOutTimes = stayRooms
+      .map((room) => room?.checkOutTime || room?.checkoutTime || room?.check_out_time)
+      .filter(Boolean);
+
     const bookingDateStr =
+      roomCheckOutDates[0] ||
       apiBooking.checkOutDate ||
+      apiBooking.checkoutDate ||
       apiBooking.checkInDate ||
       apiBooking.bookingDate ||
       apiBooking.eventDate ||
@@ -264,7 +274,13 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       // Compare against end-of-experience time if available, otherwise end-of-day
       const deadline = new Date(bookingDateStr);
       
-      const endTimeStr = apiBooking.timeSlotEndTime || apiBooking.checkOutTime || apiBooking.endTime || apiBooking.bookingTime;
+      const endTimeStr =
+        roomCheckOutTimes[0] ||
+        apiBooking.timeSlotEndTime ||
+        apiBooking.checkOutTime ||
+        apiBooking.checkoutTime ||
+        apiBooking.endTime ||
+        apiBooking.bookingTime;
       
       if (endTimeStr && typeof endTimeStr === 'string' && endTimeStr.includes(':')) {
         const [hours, minutes, seconds] = endTimeStr.split(':').map(Number);
