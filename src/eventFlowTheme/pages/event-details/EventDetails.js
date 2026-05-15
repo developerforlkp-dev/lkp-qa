@@ -1209,7 +1209,38 @@ function HostDetails({ event, hostName, reviews = [] }) {
     : Array.isArray(reviews?.reviews)
       ? reviews.reviews
       : [];
-  const ratingSummary = !Array.isArray(reviews) && reviews?.ratingSummary ? reviews.ratingSummary : null;
+  const ratingSummaryRaw = !Array.isArray(reviews)
+    ? (reviews?.ratingSummary || reviews?.summary || reviews?.data?.ratingSummary || reviews?.data?.summary || null)
+    : null;
+  const parseNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+  const derivedRatings = normalizedReviews
+    .map((rev) => parseNumber(rev?.rating ?? rev?.ratingScore ?? rev?.reviewRating ?? rev?.stars))
+    .filter((n) => n != null);
+  const derivedAverageRating = derivedRatings.length > 0
+    ? derivedRatings.reduce((sum, n) => sum + n, 0) / derivedRatings.length
+    : 0;
+  const rawAverageRating = parseNumber(
+    ratingSummaryRaw?.averageRating ??
+    ratingSummaryRaw?.average_rating ??
+    ratingSummaryRaw?.avgRating ??
+    ratingSummaryRaw?.avg_rating
+  );
+  const rawTotalReviews = parseNumber(
+    ratingSummaryRaw?.totalReviews ??
+    ratingSummaryRaw?.total_reviews ??
+    ratingSummaryRaw?.reviewCount ??
+    ratingSummaryRaw?.review_count
+  );
+  const ratingSummary = {
+    averageRating: rawAverageRating != null ? rawAverageRating : derivedAverageRating,
+    totalReviews: Math.max(rawTotalReviews || 0, normalizedReviews.length),
+    ratingDistribution: Array.isArray(ratingSummaryRaw?.ratingDistribution)
+      ? ratingSummaryRaw.ratingDistribution
+      : [],
+  };
   const displayReviews = normalizedReviews.slice(0, 2);
   const hasMore = normalizedReviews.length > 2;
 
@@ -1286,7 +1317,17 @@ function HostDetails({ event, hostName, reviews = [] }) {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {displayReviews.map((rev, i) => {
-                    const author = rev.customerName || rev.author || "Guest";
+                    const author =
+                      rev?.customerName ||
+                      rev?.reviewerName ||
+                      rev?.reviewer ||
+                      rev?.author ||
+                      rev?.customer?.fullName ||
+                      rev?.customer?.name ||
+                      rev?.user?.fullName ||
+                      rev?.user?.name ||
+                      rev?.createdByName ||
+                      "Guest";
                     const comment = rev.comment || rev.content || rev.reviewText || "";
                     const reviewRating = Number(rev.rating || rev.ratingScore || 0);
                     const time = formatReviewDate(rev.createdAt || rev.reviewDate || rev.time);
