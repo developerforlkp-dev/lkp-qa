@@ -64,7 +64,12 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
       </div>
       <div className={styles.list}>
         {items.map((x, index) => (
-          <div className={styles.item} key={index}>
+          <div
+            className={cn(styles.item, {
+              [styles.itemFull]: String(x.title || "").toLowerCase() === "guests",
+            })}
+            key={index}
+          >
             {x.icon && (
               <div className={styles.icon} style={{ borderColor: x.color }}>
                 <Icon name={x.icon} size="24" />

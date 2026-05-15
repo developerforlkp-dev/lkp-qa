@@ -82,6 +82,7 @@
 
 .list
     display: flex
+    flex-wrap: wrap
     margin-bottom: 32px
     +m
         display: block
@@ -97,6 +98,15 @@
     &:not(:last-child)
         +m
             margin-bottom: 16px
+
+.itemFull
+    flex: 0 0 100%
+    max-width: 100%
+    margin-top: 12px
+    &:first-child
+        padding-right: 0
+    +m
+        margin-top: 0
 
 .icon
     display: flex
