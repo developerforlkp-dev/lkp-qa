@@ -1385,8 +1385,9 @@ export const getEventReviews = async (eventId) => {
     return payload;
   } catch (error) {
     console.error(`❌ Error fetching reviews for event ${eventId}:`, error.response?.data || error.message);
-    // Fallback to listing reviews if event-specific endpoint fails or isn't appropriate
-    return getListingReviews(eventId);
+    // Do not fallback to listing reviews for events. That can show unrelated reviews.
+    // Return empty event reviews payload so UI shows "No reviews yet".
+    return { ratingSummary: { totalReviews: 0, averageRating: 0 }, reviews: [] };
   }
 };
 

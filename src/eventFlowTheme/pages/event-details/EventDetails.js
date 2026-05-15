@@ -7,7 +7,7 @@ import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getHost, getListingReviews } from "../../../utils/api";
+import { getEventDetails, getEventReviews, getHost } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
 import Loader from "../../../components/Loader";
@@ -1832,8 +1832,8 @@ export default function EventDetails() {
           }
         }
 
-        // Fetch listing reviews (non-blocking)
-        getListingReviews(eventId).then(rev => {
+        // Fetch event-only reviews (non-blocking)
+        getEventReviews(eventId).then(rev => {
           if (mounted) setReviews(rev ?? []);
         }).catch(() => {
           if (mounted) setReviews([]);
