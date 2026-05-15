@@ -29,7 +29,7 @@ const fixImageUrl = (url) => {
 
 const E = [0.22, 1, 0.36, 1];
 
-/* ─── HOOKS ─────────── */
+
 function useWindowSize() {
   const [size, setSize] = useState({
     width: window.innerWidth,
@@ -314,8 +314,8 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
   const BentoGridImages = () => (
     <div style={{
       display: "grid",
-      gridTemplateColumns: isMobile 
-        ? "repeat(3, 300px)" 
+      gridTemplateColumns: isMobile
+        ? "repeat(3, 300px)"
         : "minmax(500px, 1.2fr) minmax(300px, 0.8fr) minmax(400px, 1fr)",
       gridTemplateRows: "1fr 1fr",
       gap: isMobile ? 12 : 24,
@@ -355,21 +355,21 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
       </motion.div>
 
       {/* Static Fixed Text Overlay */}
-      <div style={{ 
-        position: "absolute", 
-        bottom: isMobile ? 20 : 80, 
-        left: isMobile ? 20 : 80, 
+      <div style={{
+        position: "absolute",
+        bottom: isMobile ? 20 : 80,
+        left: isMobile ? 20 : 80,
         right: isMobile ? 20 : "auto",
-        zIndex: 40, 
-        pointerEvents: "none" 
+        zIndex: 40,
+        pointerEvents: "none"
       }}>
         <Rev delay={0.2}>
-          <div style={{ 
-            background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.95)", 
-            backdropFilter: "blur(20px)", 
-            padding: isMobile ? "20px 20px" : "40px 60px", 
-            borderRadius: isMobile ? 20 : 32, 
-            border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`, 
+          <div style={{
+            background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(20px)",
+            padding: isMobile ? "20px 20px" : "40px 60px",
+            borderRadius: isMobile ? 20 : 32,
+            border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`,
             boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`,
             boxSizing: "border-box",
             width: "100%"
@@ -462,7 +462,7 @@ function StayAmenities({ stay }) {
                 const short = stay?.shortDescription || "";
                 const baseTitleCls = "font-display";
                 const baseTitleStyle = { fontSize: isMobile ? "clamp(1.6rem, 7vw, 2.2rem)" : "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden", wordBreak: "break-word" };
-                
+
                 if (!short) return (
                   <>
                     <Chars text="A sanctuary redefined" cls={baseTitleCls} style={baseTitleStyle} />
@@ -826,7 +826,7 @@ const StayDetails = () => {
 
   const handleRoomCountChange = useCallback((roomId, count) => {
     const rid = String(roomId);
-    setSelectedRooms(prev => prev.map(r => 
+    setSelectedRooms(prev => prev.map(r =>
       r.roomId === rid ? { ...r, count: Math.max(1, count) } : r
     ));
   }, []);
@@ -991,9 +991,9 @@ const StayDetails = () => {
 
       <StayPoliciesAndContact stay={stay} hostData={hostData} hostAvatar={hostAvatar} />
 
-      <StayReviews 
-        reviews={reviews} 
-        stayId={id} 
+      <StayReviews
+        reviews={reviews}
+        stayId={id}
         eligibleBookings={eligibleBookings}
         onReviewSubmitted={async () => {
           const resp = await getStayReviews(id);
@@ -1332,7 +1332,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
             </button>
           )}
         </div>
-        
+
         <div className="reviews-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: isMobile ? 60 : 100, marginTop: 40 }}>
           {/* Left: Summary */}
           <div>
@@ -1448,20 +1448,20 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                 </Rev>
               ))
             )}
-            
+
             {normalizedReviews.length > 2 && (
               <Rev delay={0.4}>
-                <button 
+                <button
                   onClick={() => routerHistory.push(`/reviews/stay/${stayId}`)}
-                  style={{ 
-                    background: "none", 
-                    border: `1px solid ${B}`, 
-                    padding: "16px 40px", 
-                    borderRadius: 100, 
-                    fontSize: 12, 
-                    fontWeight: 700, 
-                    color: FG, 
-                    textTransform: "uppercase", 
+                  style={{
+                    background: "none",
+                    border: `1px solid ${B}`,
+                    padding: "16px 40px",
+                    borderRadius: 100,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: FG,
+                    textTransform: "uppercase",
                     letterSpacing: "0.2em",
                     cursor: "pointer",
                     transition: "0.3s",
