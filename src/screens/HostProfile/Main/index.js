@@ -6,7 +6,14 @@ import Icon from "../../../components/Icon";
 import Details from "./Details";
 import List from "./List";
 import Comment from "../../../components/Comment";
-import { getHost } from "../../../utils/api";
+import {
+  getHost,
+  getListings,
+  getEventListings,
+  getStayListings,
+  getPlaces,
+  getFoodMenus,
+} from "../../../utils/api";
 
 const socials = [
   {
@@ -25,6 +32,13 @@ const socials = [
 
 const Main = ({ hostId }) => {
   const [hostData, setHostData] = useState(null);
+  const [tabListings, setTabListings] = useState({
+    experiences: [],
+    events: [],
+    stays: [],
+    places: [],
+    foodMenus: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -59,12 +73,58 @@ const Main = ({ hostId }) => {
     };
   }, [hostId]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const normalizeArray = (payload, keys = []) => {
+      if (Array.isArray(payload)) return payload;
+      if (!payload || typeof payload !== "object") return [];
+      for (const key of keys) {
+        if (Array.isArray(payload[key])) return payload[key];
+      }
+      if (payload.data && typeof payload.data === "object") {
+        for (const key of keys) {
+          if (Array.isArray(payload.data[key])) return payload.data[key];
+        }
+      }
+      return [];
+    };
+
+    const loadTabListings = async () => {
+      try {
+        const [experienceRes, eventRes, stayRes, placeRes, foodRes] = await Promise.all([
+          getListings("EXPERIENCE", 50, 0),
+          getEventListings(50, 0),
+          getStayListings(50, 0),
+          getPlaces(50, 0),
+          getFoodMenus(50, 0),
+        ]);
+
+        if (!mounted) return;
+
+        setTabListings({
+          experiences: Array.isArray(experienceRes) ? experienceRes : [],
+          events: normalizeArray(eventRes, ["events", "listings", "items", "data"]),
+          stays: Array.isArray(stayRes?.listings) ? stayRes.listings : normalizeArray(stayRes, ["stays", "listings", "items", "data"]),
+          places: Array.isArray(placeRes?.listings) ? placeRes.listings : normalizeArray(placeRes, ["places", "listings", "items", "data"]),
+          foodMenus: Array.isArray(foodRes?.listings) ? foodRes.listings : normalizeArray(foodRes, ["foodMenus", "food_menus", "listings", "items", "data"]),
+        });
+      } catch (err) {
+        console.error("Failed to load host profile tab listings:", err);
+      }
+    };
+
+    loadTabListings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Extract host information
   const host = hostData?.host || null;
   const statistics = hostData?.statistics || null;
   const businessInterests = hostData?.businessInterests || [];
-  const listings = hostData?.listings || [];
-  const recentReviews = hostData?.recentReviews || [];
+  const hostReviews = hostData?.reviews || hostData?.recentReviews || [];
 
   // Format host name - ensure it's a single line string
   const hostName = host
@@ -206,8 +266,8 @@ const Main = ({ hostId }) => {
               host={host}
               businessInterests={businessInterests}
             />
-            <List className={styles.list} listings={listings} hostName={hostName} />
-            <Comment reviews={recentReviews} />
+            <List className={styles.list} listingsByType={tabListings} hostName={hostName} />
+            <Comment reviews={hostReviews} />
           </div>
         </div>
       </div>

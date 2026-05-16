@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import cn from "classnames";
 import styles from "./List.module.sass";
 import Card from "../../../../components/Card";
@@ -6,52 +6,86 @@ import Icon from "../../../../components/Icon";
 import Slider from "react-slick";
 import { buildExperienceUrl } from "../../../../utils/experienceUrl";
 
-// Helper to format image URL from API
 const formatImageUrl = (url) => {
-  if (!url) return "/images/content/card-pic-13.jpg";
-
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
   if (url.includes("/") && !url.startsWith("/")) {
     return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${url}`;
   }
-
-  if (url.startsWith("/")) {
-    return url;
-  }
-
-  return "/images/content/card-pic-13.jpg";
+  if (url.startsWith("/")) return url;
+  return null;
 };
 
-// Transform API listing to Card component format
-const transformListingToCard = (listing) => {
-  const coverPhotoUrl = formatImageUrl(listing.coverPhotoUrl);
-  const location = [listing.location, listing.state, listing.country]
-    .filter(Boolean)
-    .join(", ") || "";
+const hasRenderableCover = (url) => {
+  if (!url || typeof url !== "string") return false;
+  if (url.startsWith("/")) return true;
+  if (!(url.startsWith("http://") || url.startsWith("https://"))) return false;
+  if (!url.includes("lkpleadstoragedev.blob.core.windows.net")) return true;
+  return url.includes("sig=") && url.includes("sv=");
+};
 
-  const price = listing.individualPrice || 0;
+const getIdByType = (listing, type) => {
+  if (type === "events") return listing?.eventId ?? listing?.event_id ?? listing?.id;
+  if (type === "stays") return listing?.stayId ?? listing?.stay_id ?? listing?.id;
+  if (type === "places") return listing?.placeId ?? listing?.place_id ?? listing?.id;
+  if (type === "foodMenus") return listing?.foodMenuId ?? listing?.food_menu_id ?? listing?.id;
+  return listing?.listingId ?? listing?.listing_id ?? listing?.id;
+};
+
+const getTitleByType = (listing, type) => {
+  if (type === "stays") return listing?.propertyName || listing?.title || "Stay";
+  if (type === "places") return listing?.placeName || listing?.title || "Place";
+  if (type === "foodMenus") return listing?.menuName || listing?.title || "Food Menu";
+  return listing?.title || "Listing";
+};
+
+const getPriceByType = (listing) => (
+  listing?.individualPrice ?? listing?.startingPrice ?? listing?.price ?? 0
+);
+
+const getUrlByType = (listing, type) => {
+  const id = getIdByType(listing, type);
+  if (!id && id !== 0) return "/listings";
+  if (type === "events") return `/event?id=${id}`;
+  if (type === "stays") return `/stay-details?id=${id}`;
+  if (type === "places") return `/place-details?id=${id}`;
+  if (type === "foodMenus") return `/food-details?id=${id}`;
+  return buildExperienceUrl(getTitleByType(listing, type), id);
+};
+
+const transformListingToCard = (listing, type) => {
+  const id = getIdByType(listing, type);
+  const coverPhotoUrl = formatImageUrl(
+    listing?.coverPhotoUrl ||
+      listing?.coverImageUrl ||
+      listing?.imageUrl ||
+      listing?.thumbnailUrl
+  );
+  if (!hasRenderableCover(coverPhotoUrl)) return null;
+
+  const location = [listing?.location, listing?.state, listing?.country]
+    .filter(Boolean)
+    .join(", ");
+
+  const price = Number(getPriceByType(listing)) || 0;
   const hasPrice = price > 0;
   const priceDisplay = hasPrice ? `₹${price.toLocaleString("en-IN")}` : null;
 
   return {
-    id: `listing-${listing.listingId}`,
-    listingId: listing.listingId,
-    title: listing.title || "Listing",
+    id: `${type}-${id}`,
+    listingId: id,
+    title: getTitleByType(listing, type),
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
-    url: buildExperienceUrl(listing.title || "experience", listing.listingId),
-    location: location,
-    priceActual: priceDisplay, // Only show price if individualPrice exists
-    hasPrice: hasPrice,
-    rating: listing.averageRating || 0,
-    reviews: listing.totalReviews || 0,
-    briefDescription: listing.description || listing.briefDescription,
-    // Card component expects these optional fields
+    url: getUrlByType(listing, type),
+    location,
+    priceActual: priceDisplay,
+    hasPrice,
+    rating: listing?.averageRating ?? listing?.rating ?? 0,
+    reviews: listing?.totalReviews ?? listing?.reviewCount ?? 0,
+    briefDescription: listing?.description || listing?.briefDescription,
     priceOld: null,
-    cost: priceDisplay, // Only show price if individualPrice exists
+    cost: priceDisplay,
     options: [],
     categoryText: null,
     comment: null,
@@ -59,257 +93,80 @@ const transformListingToCard = (listing) => {
   };
 };
 
-const defaultLocations = [
-  {
-    title: "Experience",
-    list: [
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$356",
-        priceActual: "$267",
-        categoryText: "superhost",
-        rating: "4.8",
-        reviews: "12",
-        cost: "$200 total",
-        src: "/images/content/card-pic-1.jpg",
-        srcSet: "/images/content/card-pic-1@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$245",
-        priceActual: "$167",
-        categoryText: "superhost",
-        rating: "4.9",
-        reviews: "24",
-        cost: "$100 total",
-        src: "/images/content/card-pic-2.jpg",
-        srcSet: "/images/content/card-pic-2@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$356",
-        priceActual: "$267",
-        categoryText: "superhost",
-        rating: "5.0",
-        reviews: "102",
-        cost: "$333 total",
-        src: "/images/content/card-pic-3.jpg",
-        srcSet: "/images/content/card-pic-3@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$156",
-        priceActual: "$267",
-        categoryText: "superhost",
-        rating: "4.5",
-        reviews: "5",
-        cost: "$230 total",
-        src: "/images/content/card-pic-4.jpg",
-        srcSet: "/images/content/card-pic-4@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Experiences",
-    list: [
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$245",
-        priceActual: "$167",
-        categoryText: "superhost",
-        rating: "4.9",
-        reviews: "24",
-        cost: "$100 total",
-        src: "/images/content/card-pic-2.jpg",
-        srcSet: "/images/content/card-pic-2@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$356",
-        priceActual: "$267",
-        categoryText: "superhost",
-        rating: "5.0",
-        reviews: "102",
-        cost: "$333 total",
-        src: "/images/content/card-pic-3.jpg",
-        srcSet: "/images/content/card-pic-3@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-      {
-        title: "Entire serviced classy moutain house",
-        priceOld: "$156",
-        priceActual: "$267",
-        categoryText: "superhost",
-        rating: "4.5",
-        reviews: "5",
-        cost: "$230 total",
-        src: "/images/content/card-pic-4.jpg",
-        srcSet: "/images/content/card-pic-4@2x.jpg",
-        url: "/experience-product",
-        options: [
-          {
-            title: "Free wifi",
-            icon: "modem",
-          },
-          {
-            title: "Breakfast included",
-            icon: "burger",
-          },
-        ],
-      },
-    ],
-  },
+const tabs = [
+  { key: "experiences", title: "Experiences" },
+  { key: "events", title: "Events" },
+  { key: "stays", title: "Stays" },
+  { key: "places", title: "Places" },
+  { key: "foodMenus", title: "Food Menus" },
 ];
 
-const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
-  <button {...props}>{children}</button>
-);
-
-const List = ({ className, listings = [], hostName = "Host" }) => {
+const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const sliderRef = useRef(null);
+  const activeTab = tabs[activeIndex];
+  const activeRawListings = Array.isArray(listingsByType?.[activeTab.key])
+    ? listingsByType[activeTab.key]
+    : [];
 
-  // Transform listings to card format
-  const transformedListings = useMemo(() => {
-    if (!Array.isArray(listings) || listings.length === 0) {
-      return [];
-    }
-    return listings.map(transformListingToCard);
-  }, [listings]);
-
-  // Build locations array from listings
-  const locations = useMemo(() => {
-    if (transformedListings.length > 0) {
-      return [
-        {
-          title: "Listings",
-          list: transformedListings,
-        },
-      ];
-    }
-    return defaultLocations;
-  }, [transformedListings]);
+  const transformedListings = useMemo(
+    () => activeRawListings
+      .map((listing) => transformListingToCard(listing, activeTab.key))
+      .filter(Boolean),
+    [activeRawListings, activeTab.key]
+  );
 
   const settings = {
     infinite: false,
     speed: 500,
     slidesToShow: 2,
     slidesToScroll: 1,
-    nextArrow: (
-      <SlickArrow>
-        <Icon name="arrow-next" size="14" />
-      </SlickArrow>
-    ),
-    prevArrow: (
-      <SlickArrow>
-        <Icon name="arrow-prev" size="14" />
-      </SlickArrow>
-    ),
+    arrows: false,
   };
-
-  // Don't show if no listings
-  if (!transformedListings.length && listings.length === 0) {
-    return (
-      <div className={cn(className, styles.list)}>
-        <div className={styles.title}>{hostName}'s listings</div>
-        <div className={styles.content}>No listings available</div>
-      </div>
-    );
-  }
 
   return (
     <div className={cn(className, styles.list)}>
       <div className={styles.title}>{hostName}'s listings</div>
-      {locations.length > 1 && (
-        <div className={styles.nav}>
-          {locations.map((x, index) => (
-            <button
-              className={cn(styles.link, {
-                [styles.active]: index === activeIndex,
-              })}
-              onClick={() => setActiveIndex(index)}
-              key={index}
-            >
-              {x.title}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className={styles.nav}>
+        {tabs.map((tab, index) => (
+          <button
+            className={cn(styles.link, { [styles.active]: index === activeIndex })}
+            onClick={() => setActiveIndex(index)}
+            key={tab.key}
+          >
+            {tab.title}
+          </button>
+        ))}
+      </div>
       <div className={styles.wrapper}>
         {transformedListings.length > 0 ? (
-          <Slider className="profile-slider" {...settings}>
-            {transformedListings.map((x, index) => (
-              <Card className={styles.card} item={x} key={x.id || index} />
+          <Slider ref={sliderRef} className="profile-slider" {...settings}>
+            {transformedListings.map((item) => (
+              <Card className={styles.card} item={item} key={item.id} />
             ))}
           </Slider>
         ) : (
-          <div>No listings to display</div>
+          <div className={styles.empty}>No {activeTab.title.toLowerCase()} available</div>
         )}
       </div>
+      {transformedListings.length > 0 && (
+        <div className={styles.carouselNav}>
+          <button
+            type="button"
+            className={styles.navBtn}
+            onClick={() => sliderRef.current?.slickPrev()}
+          >
+            <Icon name="arrow-prev" size="16" />
+          </button>
+          <button
+            type="button"
+            className={styles.navBtn}
+            onClick={() => sliderRef.current?.slickNext()}
+          >
+            <Icon name="arrow-next" size="16" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

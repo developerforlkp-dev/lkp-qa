@@ -35,6 +35,22 @@
         height: 100%
         border-radius: 50%
         object-fit: cover
+
+.avatarInitial
+    flex-shrink: 0
+    width: 48px
+    height: 48px
+    margin-right: 20px
+    border-radius: 50%
+    display: flex
+    align-items: center
+    justify-content: center
+    font-weight: 700
+    +caption-1
+    color: $n8
+    background: $p4
+    +m
+        margin-right: 14px
     
 .details
     flex-grow: 1
@@ -81,6 +97,35 @@
         color: $n8
     &:hover
         color: $p1
+
+.pagination
+    margin-top: 24px
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 12px
+
+.pageBtn
+    min-width: 72px
+    padding: 8px 12px
+    border-radius: 24px
+    border: 1px solid $n6
+    +caption-bold-2
+    color: $n2
+    transition: all .2s
+    +dark
+        border-color: $n3
+        color: $n8
+    &:hover:not(:disabled)
+        border-color: $p4
+        color: $p4
+    &:disabled
+        opacity: .45
+        cursor: not-allowed
+
+.pageInfo
+    +caption-2
+    color: $n4
 
 .btns
     margin-top: 32px

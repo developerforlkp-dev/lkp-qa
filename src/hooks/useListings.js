@@ -82,7 +82,9 @@ export const useListings = ({
         ? (Number.isFinite(customMax) && customMax >= 0 ? customMax : undefined)
         : (shouldUsePresetPrice ? presetMax : undefined);
 
-      if (hasCategoryFilter || hasRatingFilter) {
+      const hasPriceFilter = effectiveMinPrice !== undefined || effectiveMaxPrice !== undefined;
+
+      if (hasCategoryFilter || hasRatingFilter || hasPriceFilter) {
         const mappedBusinessInterestId =
           categoryFilter?.businessInterestId || mapBusinessInterestId(businessInterest);
 
