@@ -889,7 +889,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
     if (selectedDate) return makeLocalDate(getDateKey(selectedDate));
 
     const todayKey = getDateKey(new Date());
-    const availableKeys = [...availableDateKeys].filter((key) => key >= todayKey).sort();
+    const availableKeys = [...availableDateKeys].filter((key) => key > todayKey).sort();
     const currentMonthPrefix = todayKey.slice(0, 7);
     const currentMonthKey = availableKeys.find((key) => key.slice(0, 7) === currentMonthPrefix);
     const firstAvailableKey = currentMonthKey || availableKeys[0];
@@ -920,7 +920,9 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
       const day = index + 1;
       const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const isPast = key < todayKey;
-      return { day, key, isAvailable: !isPast && availableDateKeys.has(key), isPast };
+      const isToday = key === todayKey;
+      // Mark as unavailable if it's in the past OR if it's today
+      return { day, key, isAvailable: !isPast && !isToday && availableDateKeys.has(key), isPast, isToday };
     }),
   ];
 
@@ -1061,7 +1063,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
           if (stored.startDate) {
             const parsedDate = moment(stored.startDate);
-            if (parsedDate.isValid()) setStartDate(parsedDate);
+            const todayKey = moment().format("YYYY-MM-DD");
+            if (parsedDate.isValid() && parsedDate.format("YYYY-MM-DD") !== todayKey) {
+              setStartDate(parsedDate);
+            }
           }
           if (stored.startTime !== undefined) setStartTime(stored.startTime);
           if (stored.guests) setGuests(stored.guests);
@@ -2110,18 +2115,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setShow(true);
 
     if (isEventBooking || !listingId || !slotsLookupEndDate) return;
-
-    const todayKey = getDateKey(new Date());
-    getListingSlots(listingId, todayKey, slotsLookupEndDate)
-      .then((payload) => {
-        if (!isMountedRef.current || selectedDateKey !== todayKey) return;
-        const normalized = normalizeExperienceSlots(unwrapSlotsPayload(payload), todayKey);
-        setDateFilteredSlots(normalized);
-        setDateFilteredSlotsLoaded(true);
-      })
-      .catch((error) => {
-        console.warn("Could not preload slots on reserve click:", error?.response?.data || error?.message || error);
-      });
   }, [isEventBooking, listingId, selectedDateKey, slotsLookupEndDate, triggerDisabled]);
 
   // Check if all experience dates/slots are in the past
