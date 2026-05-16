@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import cn from "classnames";
 import styles from "./FilterSidebar.module.sass";
 import { Range, getTrackBackground } from "react-range";
@@ -54,6 +54,84 @@ const toText = (value) => {
   return "";
 };
 
+const formatSortLabel = (value) => {
+  const raw = toText(value).trim();
+  if (!raw) return "";
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+};
+
+const CollapsibleChipSection = ({ label, options, activeKeys, onSelect }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const updateOverflow = () => {
+      const el = containerRef.current;
+      if (!el) {
+        setHasOverflow(false);
+        return;
+      }
+
+      const rowTops = Array.from(el.children)
+        .map((child) => child.offsetTop)
+        .filter((top, idx, arr) => arr.indexOf(top) === idx)
+        .sort((a, b) => a - b);
+
+      setHasOverflow(rowTops.length > 3);
+    };
+
+    const rafId = requestAnimationFrame(updateOverflow);
+    window.addEventListener("resize", updateOverflow);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", updateOverflow);
+    };
+  }, [options]);
+
+  useEffect(() => {
+    if (!hasOverflow && isExpanded) {
+      setIsExpanded(false);
+    }
+  }, [hasOverflow, isExpanded]);
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.label}>{label}</div>
+      <div
+        ref={containerRef}
+        className={cn(styles.categoriesScroll, {
+          [styles.categoriesScrollCollapsed]: hasOverflow && !isExpanded,
+        })}
+      >
+        {options.map((option) => (
+          <button
+            key={option.key}
+            className={cn(styles.categoryChip, {
+              [styles.active]: Array.isArray(activeKeys) && activeKeys.includes(option.key),
+            })}
+            onClick={() => onSelect(option)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      {hasOverflow && (
+        <button
+          type="button"
+          className={styles.toggleMoreLess}
+          onClick={() => setIsExpanded((prev) => !prev)}
+        >
+          {isExpanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+};
+
 const FilterSidebar = ({
   filters,
   onFilterChange,
@@ -69,6 +147,7 @@ const FilterSidebar = ({
   const isEventInterest = normalizedInterest === "EVENT" || normalizedInterest === "EVENTS";
   const isExperienceInterest = normalizedInterest === "EXPERIENCE" || normalizedInterest === "EXPERIENCES";
   const isExpEventOrStay = isStayInterest || isEventInterest || isExperienceInterest;
+  const isPriceRangeEnabled = false;
 
   const primaryCategoryOptions = useMemo(() => {
     const primary = Array.isArray(businessInterestFilters?.primaryCategories)
@@ -116,7 +195,7 @@ const FilterSidebar = ({
                   key: `tag-${name}`,
                   label: name,
                   value: name,
-                  categoryType: "Tag",
+                  categoryType: "Tags",
                 }
               : null;
           })
@@ -128,7 +207,7 @@ const FilterSidebar = ({
           key: `tag-${tag}`,
           label: tag,
           value: tag,
-          categoryType: "Tag",
+          categoryType: "Tags",
         })))
       .map((item) => ({
         ...item,
@@ -148,7 +227,7 @@ const FilterSidebar = ({
                   key: `special-${id ?? name}`,
                   label: name,
                   value: id ?? name,
-                  categoryType: "Special Label",
+                  categoryType: "Special Labels",
                 }
               : null;
           })
@@ -160,7 +239,7 @@ const FilterSidebar = ({
           key: `special-${label}`,
           label,
           value: label,
-          categoryType: "Special Label",
+          categoryType: "Special Labels",
         })))
       .map((item) => ({
         ...item,
@@ -172,6 +251,40 @@ const FilterSidebar = ({
     filters.priceRange?.min || 0,
     filters.priceRange?.max || 10000,
   ]);
+
+  const sortDisplayPairs = useMemo(() => (
+    Array.isArray(sortingOptions)
+      ? sortingOptions
+          .map((option) => {
+            const raw = toText(option).trim();
+            if (!raw) return null;
+            return { raw, display: formatSortLabel(raw) };
+          })
+          .filter(Boolean)
+      : []
+  ), [sortingOptions]);
+
+  const displayToRawSort = useMemo(() => (
+    sortDisplayPairs.reduce((acc, item) => {
+      acc[item.display] = item.raw;
+      return acc;
+    }, {})
+  ), [sortDisplayPairs]);
+
+  const displaySortingOptions = useMemo(
+    () => sortDisplayPairs.map((item) => item.display),
+    [sortDisplayPairs]
+  );
+
+  const displaySortingValue = useMemo(() => {
+    const raw = toText(sorting).trim();
+    return formatSortLabel(raw);
+  }, [sorting]);
+
+  const handleSortingChange = (selectedDisplayValue) => {
+    const mappedRaw = displayToRawSort[selectedDisplayValue] || selectedDisplayValue;
+    setSorting(mappedRaw);
+  };
 
   const handlePriceChange = (values) => {
     setPriceValues(values);
@@ -201,18 +314,54 @@ const FilterSidebar = ({
   };
 
   const handleApiFilterChange = (option) => {
-    const currentKey = filters.apiCategoryFilter?.activeKey;
-    if (currentKey === option.key) {
-      onFilterChange("apiCategoryFilter", null);
-      return;
+    const current = filters.apiCategoryFilter || null;
+    const isSameType = current?.categoryType === option.categoryType;
+
+    let nextFilter;
+
+    if (!current || !isSameType) {
+      nextFilter = {
+        activeKeys: [option.key],
+        selectedCategoryLabels: [option.label],
+        selectedCategoryLabel: option.label,
+        categoryType: option.categoryType,
+        categoryValues: [option.value],
+      };
+    } else {
+      const currentKeys = Array.isArray(current.activeKeys)
+        ? current.activeKeys
+        : (current.activeKey ? [current.activeKey] : []);
+      const currentLabels = Array.isArray(current.selectedCategoryLabels)
+        ? current.selectedCategoryLabels
+        : (current.selectedCategoryLabel ? [current.selectedCategoryLabel] : []);
+      const currentValues = Array.isArray(current.categoryValues) ? current.categoryValues : [];
+
+      const isSelected = currentKeys.includes(option.key);
+      const nextKeys = isSelected
+        ? currentKeys.filter((key) => key !== option.key)
+        : [...currentKeys, option.key];
+      const nextLabels = isSelected
+        ? currentLabels.filter((label) => label !== option.label)
+        : [...currentLabels, option.label];
+      const nextValues = isSelected
+        ? currentValues.filter((value) => String(value) !== String(option.value))
+        : [...currentValues, option.value];
+
+      if (nextValues.length === 0) {
+        nextFilter = null;
+      } else {
+        nextFilter = {
+          activeKeys: nextKeys,
+          selectedCategoryLabels: nextLabels,
+          selectedCategoryLabel: nextLabels.join(", "),
+          categoryType: option.categoryType,
+          categoryValues: nextValues,
+        };
+      }
     }
 
-    onFilterChange("apiCategoryFilter", {
-      activeKey: option.key,
-      selectedCategoryLabel: option.label,
-      categoryType: option.categoryType,
-      categoryValues: [option.value],
-    });
+    console.log("[FilterSidebar] Category filter selected:", nextFilter);
+    onFilterChange("apiCategoryFilter", nextFilter);
   };
 
   const handleDateFieldChange = (key, value) => {
@@ -244,15 +393,15 @@ const FilterSidebar = ({
             <div className={styles.label}>Sort by</div>
             <Dropdown
               className={styles.sortDropdown}
-              value={sorting}
-              setValue={setSorting}
-              options={sortingOptions}
+              value={displaySortingValue}
+              setValue={handleSortingChange}
+              options={displaySortingOptions}
             />
           </div>
         )}
 
         {/* Price Range */}
-        {isExpEventOrStay && (
+        {isPriceRangeEnabled && isExpEventOrStay && (
           <div className={styles.section}>
             <div className={styles.label}>Price range</div>
             <div className={styles.priceRange}>
@@ -281,7 +430,7 @@ const FilterSidebar = ({
                         borderRadius: "4px",
                         background: getTrackBackground({
                           values: priceValues,
-                          colors: ["#3772FF", "#B1B5C3"],
+                          colors: ["#B1B5C3", "#3772FF", "#B1B5C3"],
                           min: minPrice,
                           max: maxPrice,
                         }),
@@ -333,6 +482,31 @@ const FilterSidebar = ({
           </div>
         )}
 
+        {/* Date Range for Experience/Events */}
+        {(isExperienceInterest || isEventInterest) && (
+          <div className={styles.section}>
+            <div className={styles.label}>Date range</div>
+            <div className={styles.dateGrid}>
+              <label className={styles.dateField}>
+                <span>Start</span>
+                <input
+                  type="date"
+                  value={filters.dateRange?.startDate || ""}
+                  onChange={(e) => handleDateFieldChange("startDate", e.target.value)}
+                />
+              </label>
+              <label className={styles.dateField}>
+                <span>End</span>
+                <input
+                  type="date"
+                  value={filters.dateRange?.endDate || ""}
+                  onChange={(e) => handleDateFieldChange("endDate", e.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Amenities */}
         {isStayInterest && (
           <div className={styles.section}>
@@ -373,101 +547,36 @@ const FilterSidebar = ({
         </div>
 
         {/* Main Category */}
-        <div className={styles.section}>
-          <div className={styles.label}>Main category</div>
-          <div className={styles.categoriesScroll}>
-            {primaryCategoryOptions.map((category) => (
-              <button
-                key={category.key}
-                className={cn(styles.categoryChip, {
-                  [styles.active]: filters.apiCategoryFilter?.activeKey === category.key,
-                })}
-                onClick={() => handleApiFilterChange(category)}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <CollapsibleChipSection
+          label="Main category"
+          options={primaryCategoryOptions}
+          activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
+          onSelect={handleApiFilterChange}
+        />
 
         {/* Sub Category */}
-        <div className={styles.section}>
-          <div className={styles.label}>Sub category</div>
-          <div className={styles.categoriesScroll}>
-            {secondaryCategoryOptions.map((category) => (
-              <button
-                key={category.key}
-                className={cn(styles.categoryChip, {
-                  [styles.active]: filters.apiCategoryFilter?.activeKey === category.key,
-                })}
-                onClick={() => handleApiFilterChange(category)}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <CollapsibleChipSection
+          label="Sub category"
+          options={secondaryCategoryOptions}
+          activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
+          onSelect={handleApiFilterChange}
+        />
 
         {/* Tags */}
-        <div className={styles.section}>
-          <div className={styles.label}>Tags</div>
-          <div className={styles.categoriesScroll}>
-            {tagOptions.map((tag) => (
-              <button
-                key={tag.key}
-                className={cn(styles.categoryChip, {
-                  [styles.active]: filters.apiCategoryFilter?.activeKey === tag.key,
-                })}
-                onClick={() => handleApiFilterChange(tag)}
-              >
-                {tag.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <CollapsibleChipSection
+          label="Tags"
+          options={tagOptions}
+          activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
+          onSelect={handleApiFilterChange}
+        />
 
         {/* Special Labels */}
-        <div className={styles.section}>
-          <div className={styles.label}>Special labels</div>
-          <div className={styles.categoriesScroll}>
-            {specialLabelOptions.map((label) => (
-              <button
-                key={label.key}
-                className={cn(styles.categoryChip, {
-                  [styles.active]: filters.apiCategoryFilter?.activeKey === label.key,
-                })}
-                onClick={() => handleApiFilterChange(label)}
-              >
-                {label.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Date Range for Experience/Events */}
-        {(isExperienceInterest || isEventInterest) && (
-          <div className={styles.section}>
-            <div className={styles.label}>Date range</div>
-            <div className={styles.dateGrid}>
-              <label className={styles.dateField}>
-                <span>Start</span>
-                <input
-                  type="date"
-                  value={filters.dateRange?.startDate || ""}
-                  onChange={(e) => handleDateFieldChange("startDate", e.target.value)}
-                />
-              </label>
-              <label className={styles.dateField}>
-                <span>End</span>
-                <input
-                  type="date"
-                  value={filters.dateRange?.endDate || ""}
-                  onChange={(e) => handleDateFieldChange("endDate", e.target.value)}
-                />
-              </label>
-            </div>
-          </div>
-        )}
+        <CollapsibleChipSection
+          label="Special labels"
+          options={specialLabelOptions}
+          activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
+          onSelect={handleApiFilterChange}
+        />
 
         {/* Property Types (stays only) */}
         {isStayInterest && (

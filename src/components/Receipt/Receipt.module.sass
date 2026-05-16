@@ -163,6 +163,15 @@
                     background: $n6
                     +dark
                         background: $n4
+    &.stacked
+        .itemsRow
+            flex-direction: column
+            .item,
+            .itemWrapper
+                width: 100%
+                flex: 1 1 100%
+                &:after
+                    display: none
 
 .itemsRow
     display: flex

@@ -133,14 +133,7 @@ export const useListings = ({
         }
 
         // Add filters
-        if (filters.priceRange) {
-          if (filters.priceRange.min !== undefined) {
-            params.minPrice = filters.priceRange.min;
-          }
-          if (filters.priceRange.max !== undefined) {
-            params.maxPrice = filters.priceRange.max;
-          }
-        }
+        // Price range is temporarily disabled
 
         if (filters.propertyTypes && filters.propertyTypes.length > 0) {
           params.propertyTypes = filters.propertyTypes.join(",");

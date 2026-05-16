@@ -100,6 +100,7 @@ const Receipt = ({
       <div
         className={cn(styles.description, {
           [styles.flex]: items.length > 1 && !stacked,
+          [styles.stacked]: stacked,
         })}
       >
         {/* First row: Date and Time slot */}

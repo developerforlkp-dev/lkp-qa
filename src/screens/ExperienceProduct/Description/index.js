@@ -2978,6 +2978,7 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
             {(!isFood && !isPlace) && (
               <Receipt
                 className={styles.receipt}
+                stacked={isStay}
                 items={items}
                 hostData={hostData}
                 priceActual={displayPrice}
