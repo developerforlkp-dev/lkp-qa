@@ -185,7 +185,7 @@ const Listings = () => {
     dateRange,
     guests,
     filters,
-    limit: 20,
+    limit: 8,
     businessInterest: businessInterest,
     categoryFilter: effectiveCategoryFilter,
   });

@@ -11,6 +11,7 @@ import { getEventDetails, getEventReviews, getHost } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
 import Loader from "../../../components/Loader";
+import RelatedListingsStrip from "../../../components/RelatedListingsStrip";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -1104,29 +1105,14 @@ function Rules({ event }) {
 
   const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions || event?.checkInInstruction || "Check-in instructions will be shared before the event.";
   const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText || "Cancellation policy will be shared before booking.";
-  const guestRequirementQuestions = useMemo(() => {
-    const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
-    return guestRequirements.flatMap((requirement, requirementIndex) => {
-      const questions = Array.isArray(requirement?.questions) ? requirement.questions : [];
-      return questions.map((question, questionIndex) => ({
-        id: question?.questionId || `${requirement?.settingId || requirementIndex}-${questionIndex}`,
-        title: question?.title || question?.question || `Question ${questionIndex + 1}`,
-        body: question?.helpText || question?.description || requirement?.description || "Please provide this information during booking.",
-        required: Boolean(question?.required),
-        fieldType: question?.fieldType || question?.type || "",
-        defaultValueBool: Boolean(question?.defaultValueBool ?? question?.default_value_bool ?? question?.defaultValue ?? question?.default_value),
-      }));
-    });
-  }, [event?.guestRequirements]);
-
+  
+  const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
 
   const displayRules = [
     { id: 1, title: "Check-in Instructions", body: checkInInstructions },
     { id: 2, title: "Cancellation Policy", body: cancellationPolicy },
   ];
   const dropdownRow = (item, index) => {
-
-
     return (
       <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
         <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
@@ -1138,8 +1124,47 @@ function Rules({ event }) {
         </summary>
         <div style={{ padding: "0 0 20px 48px" }}>
           <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: 0 }}>{item.body}</p>
+        </div>
+      </details>
+    );
+  };
 
+  const requirementDropdownRow = (req, index) => {
+    const reqId = req.id || req.settingId || `req-${index}`;
+    const reqTitle = req.setting?.title || req.title || "Guest Requirement";
+    const reqDescription = req.setting?.description || req.description;
+    const questions = req.questions || [];
 
+    return (
+      <details key={reqId} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
+        <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(index + 1).padStart(2, "0")}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{reqTitle}</span>
+          </span>
+          <ChevronDown size={16} color={M} />
+        </summary>
+        <div style={{ padding: "0 0 20px 48px" }}>
+          {reqDescription && (
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: questions.length > 0 ? "0 0 16px 0" : "0" }}>
+              {reqDescription}
+            </p>
+          )}
+          {questions.length > 0 && (
+            <div style={{ padding: "20px", background: AL || BG, borderRadius: 16, border: `1px solid ${B}` }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {questions.map((q, j) => {
+                  const qTitle = q.title || q.question?.title || q.question || `Question ${j + 1}`;
+                  return (
+                    <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                      <span style={{ fontSize: 13, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{qTitle}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </details>
     );
@@ -1178,8 +1203,8 @@ function Rules({ event }) {
                 Guest Requirements
               </h3>
               <div style={{ borderTop: `1px solid ${B}` }}>
-                {guestRequirementQuestions.length > 0 ? (
-                  guestRequirementQuestions.map((question, index) => dropdownRow(question, index))
+                {guestRequirements.length > 0 ? (
+                  guestRequirements.map((req, index) => requirementDropdownRow(req, index))
                 ) : (
                   <div style={{ borderBottom: `1px solid ${B}`, padding: "20px 16px", fontSize: 13, color: M }}>
                     No guest requirements have been added for this event.
@@ -1876,6 +1901,8 @@ export default function EventDetails() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const primaryCategoryId = event?.primaryCategoryId || event?.primaryCategory?.id || event?.categoryId || event?.category?.id;
+  const currentListingId = event?.eventId || event?.id || eventId;
 
   useEffect(() => {
     let mounted = true;
@@ -1944,6 +1971,12 @@ export default function EventDetails() {
       <Rules event={event} />
       <HostDetails event={event} hostName={hostName} reviews={reviews} />
       <EventBookingPopup event={event} />
+      <RelatedListingsStrip
+        businessInterestId={2}
+        primaryCategoryId={primaryCategoryId}
+        currentListingId={currentListingId}
+        title="More Events You Might Like"
+      />
       <Footer />
     </ScopedThemeProvider>
   );

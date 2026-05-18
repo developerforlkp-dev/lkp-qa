@@ -927,8 +927,13 @@ const StayBookingSystem = ({
       const nightsFromOrder = firstNumber(orderResponse?.numberOfNights, pricing.nightsCount) || 1;
       const nightlyFromOrder = firstNumber(orderResponse?.pricePerNight, pricing.originalPerNight) || 0;
       const totalFromOrder = firstNumber(orderResponse?.totalPrice, orderResponse?.finalPrice, backendTotalRupees, pricing.finalTotal) || 0;
+      const nightlyExtraAdults = Number(extraAdultsCount || 0) * Number(pricing.activeExtraAdultPrice || 0);
+      const nightlyExtraChildren = Number(extraChildrenCount || 0) * Number(pricing.activeExtraChildPrice || 0);
+      const nightlyExtras = nightlyExtraAdults + nightlyExtraChildren;
+      const nightlyBaseOnly = Math.max(0, Number(nightlyFromOrder || 0) - nightlyExtras);
+
       const frontendReceipt = [
-        { title: `Base Stay (${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`, content: `${currency} ${Number(nightlyFromOrder * nightsFromOrder).toFixed(2)}` },
+        { title: `Base Stay (${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`, content: `${currency} ${Number(nightlyBaseOnly * nightsFromOrder).toFixed(2)}` },
         { title: "Adults", content: `${guests.adults || 0}` },
         { title: "Children", content: `${guests.children || 0}` },
       ];
@@ -947,26 +952,42 @@ const StayBookingSystem = ({
       const taxRate = Array.isArray(stay?.taxes)
         ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
         : 0;
-      
+
+      // Display calculation should use gross stay total = base + extra adults + extra children
+      const baseStayDisplayTotal = Number(nightlyBaseOnly || 0) * Number(nightsFromOrder || 1);
+      const extraAdultDisplayTotal = Number(extraAdultsCount || 0) * Number(pricing.activeExtraAdultPrice || 0) * Number(nightsFromOrder || 1);
+      const extraChildDisplayTotal = Number(extraChildrenCount || 0) * Number(pricing.activeExtraChildPrice || 0) * Number(nightsFromOrder || 1);
+      const grossBeforeDiscount = baseStayDisplayTotal + extraAdultDisplayTotal + extraChildDisplayTotal;
+
+      const discountRateForDisplay = Math.max(
+        0,
+        Number(
+          firstNumber(
+            pricing.discountPercent,
+            stay?.discountTiers?.find(t => nightsFromOrder >= (t.minimumDays || 0) && nightsFromOrder <= (t.maximumDays || 999))?.discountPercentage,
+            0
+          ) || 0
+        )
+      );
+
+      const fallbackDiscountFromRate = grossBeforeDiscount * (discountRateForDisplay / 100);
       const inferredDiscountFromTotals = Math.max(
         0,
-        Number((nightlyFromOrder * nightsFromOrder) || 0) +
-          (extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder) +
-          (extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder) +
-          (pricing.subtotal * (taxRate / 100)) - // This is just a guestimate, but we have better info
-          Number(totalFromOrder || 0)
+        grossBeforeDiscount + (grossBeforeDiscount * (taxRate / 100)) - Number(totalFromOrder || 0)
       );
-      const discountToShow = firstNumber(
-        pricing.discount,
-        discount,
-        inferredDiscountFromTotals
-      ) || 0;
+      const discountToShow = Math.max(
+        0,
+        Number(
+          firstNumber(
+            fallbackDiscountFromRate,
+            discount,
+            pricing.discount,
+            inferredDiscountFromTotals
+          ) || 0
+        )
+      );
 
-      const baseStayTotal = (nightlyFromOrder * nightsFromOrder) + 
-                            (extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromOrder) + 
-                            (extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder);
-      
-      const subtotalBeforeTax = baseStayTotal - discountToShow;
+      const subtotalBeforeTax = Math.max(0, grossBeforeDiscount - discountToShow);
       const combinedFrontendTax = Math.max(0, subtotalBeforeTax * (taxRate / 100));
 
       if (discountToShow > 0) {
@@ -1421,7 +1442,7 @@ const StayBookingSystem = ({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.subtotal)}</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.finalTotal)}</span>
                     <span style={{ marginTop: 1, fontSize: 9, color: M, fontWeight: 500 }}>Inc. all taxes</span>
                   </div>
                   {(() => {

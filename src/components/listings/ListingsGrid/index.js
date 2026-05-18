@@ -73,7 +73,7 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
         <div className={styles.loadMore}>
           <button className={cn("button-stroke", styles.loadMoreButton)} onClick={onLoadMore}>
             <Loader className={styles.loader} />
-            <span>Show more</span>
+            <span>Explore More</span>
           </button>
         </div>
       )}

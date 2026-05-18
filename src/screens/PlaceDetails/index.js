@@ -10,6 +10,8 @@ import Loader from "../../components/Loader";
 import ProductNavbar from "../../components/ProductNavbar";
 import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
+import { Footer } from "../../components/JUI/Footer";
+import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getPlaceDetails, getHost } from "../../utils/api";
 
 /* ─── TOKENS & THEME ─────────── */
@@ -604,6 +606,9 @@ const PlaceDetails = () => {
     return avatarUrl ? formatImageUrl(avatarUrl) : null;
   }, [hostData, place]);
 
+  const primaryCategoryId = place?.primaryCategoryId || place?.primaryCategory?.id || place?.categoryId || place?.category?.id;
+  const currentListingId = place?.placeId || place?.id || id;
+
   if (loading && !place) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -640,6 +645,15 @@ const PlaceDetails = () => {
       <Mq items={["Location Access", "Arrival Logic", "Journey Blueprint"]} size="sm" bg={THEMES.light.S} accent />
 
       <Logistics place={place} hostData={hostData} />
+
+      <RelatedListingsStrip
+        businessInterestId={4}
+        primaryCategoryId={primaryCategoryId}
+        currentListingId={currentListingId}
+        title="More Places To Explore"
+      />
+
+      <Footer />
 
     </ScopedThemeProvider>
   );

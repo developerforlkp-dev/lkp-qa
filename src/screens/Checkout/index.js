@@ -378,11 +378,15 @@ const Checkout = () => {
         0
       ) || 0;
 
-      const longStayDiscountAmount = baseAmount > 0 && tierDiscountPercent > 0
-        ? (baseAmount * tierDiscountPercent) / 100
+      const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
+      const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
+      const discountableAmount = Math.max(0, baseAmount + extraAmount);
+
+      const longStayDiscountAmount = discountableAmount > 0 && tierDiscountPercent > 0
+        ? (discountableAmount * tierDiscountPercent) / 100
         : 0;
-      const additionalDiscountAmount = baseAmount > 0 && pricingDiscountPercent > 0
-        ? (baseAmount * pricingDiscountPercent) / 100
+      const additionalDiscountAmount = discountableAmount > 0 && pricingDiscountPercent > 0
+        ? (discountableAmount * pricingDiscountPercent) / 100
         : 0;
 
       const taxRate = Array.isArray(stayDetails?.taxes)
@@ -435,9 +439,6 @@ const Checkout = () => {
       if (taxRowIndex >= 0 && taxRate > 0) {
         // Recalculate tax based on discounted subtotal
         const discountRows = rows.filter((r) => /discount/i.test(String(r.title || "")));
-        const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
-        
-        const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
         const currentDiscountAmount = discountRows.reduce(
           (sum, r) => sum + Math.abs(parseAmount(r.value)),
           0

@@ -11,6 +11,7 @@ import cn from "classnames";
 import Loader from "../../components/Loader";
 import ProductNavbar from "../../components/ProductNavbar";
 import { Footer } from "../../components/JUI/Footer";
+import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost } from "../../utils/api";
 
 const toDisplayString = (value) => {
@@ -1060,6 +1061,9 @@ const FoodDetails = () => {
     return avatarUrl ? formatImageUrl(avatarUrl) : null;
   }, [hostData, food]);
 
+  const primaryCategoryId = food?.primaryCategoryId || food?.primaryCategory?.id || food?.categoryId || food?.category?.id;
+  const currentListingId = food?.foodMenuId || food?.foodId || food?.id || id;
+
   if (loading && !food) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -1109,6 +1113,13 @@ const FoodDetails = () => {
       <LocationSection food={food} />
 
       <ReservationNoir food={food} hostData={hostData} />
+
+      <RelatedListingsStrip
+        businessInterestId={5}
+        primaryCategoryId={primaryCategoryId}
+        currentListingId={currentListingId}
+        title="More Food Experiences"
+      />
 
       <Footer />
 

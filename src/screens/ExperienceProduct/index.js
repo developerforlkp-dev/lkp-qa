@@ -23,6 +23,7 @@ import Page from "../../components/Page";
 import ProductNavbar from "../../components/ProductNavbar";
 import PhotoView from "../../components/PhotoView";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
+import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -481,6 +482,27 @@ const ExperienceProduct = () => {
   }
 
   const description = listing?.description || listing?.aboutListing || "";
+  const primaryCategoryId =
+    listing?.primaryCategoryId ||
+    listing?.primaryCategory?.id ||
+    listing?.primaryCategory ||
+    listing?.categoryId ||
+    listing?.category?.id ||
+    listing?.category;
+  const currentListingId = listing?.listingId || listing?.id || id;
+  const fallbackLocationValues = [
+    listing?.locationName,
+    listing?.location,
+    listing?.city,
+    listing?.district,
+    listing?.state,
+  ].filter(Boolean);
+  const fallbackTagValues = Array.isArray(listing?.tags)
+    ? listing.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value)).filter(Boolean)
+    : [];
+  const fallbackSpecialLabelValues = Array.isArray(listing?.specialLabels)
+    ? listing.specialLabels.map((s) => (typeof s === "string" ? s : s?.name || s?.label || s?.value)).filter(Boolean)
+    : [];
 
   const displayTags = listing?.tags || [];
   const navigateToHostProfile = () => {
@@ -1020,6 +1042,16 @@ const ExperienceProduct = () => {
           listing={listing}
           selectedAddOns={selectedAddOns}
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
+        />
+
+        <RelatedListingsStrip
+          businessInterestId={1}
+          primaryCategoryId={primaryCategoryId}
+          currentListingId={currentListingId}
+          fallbackLocationValues={fallbackLocationValues}
+          fallbackTagValues={fallbackTagValues}
+          fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+          title="More Experiences You May Like"
         />
       </main>
       <style>{`

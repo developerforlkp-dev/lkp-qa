@@ -19,6 +19,7 @@ import StayBookingSystem from "./StayBookingSystem";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
 import { Footer } from "../../components/JUI/Footer";
 import Rating from "../../components/Rating";
+import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 
 const fixImageUrl = (url) => {
   if (!url) return "";
@@ -980,6 +981,9 @@ const StayDetails = () => {
     return scope.includes("PROPERTY") || !hasRoomInventory;
   }, [stay, hasRoomInventory]);
 
+  const primaryCategoryId = stay?.primaryCategoryId || stay?.primaryCategory?.id || stay?.categoryId || stay?.category?.id;
+  const currentListingId = stay?.stayId || stay?.id || id;
+
   if (loading && !stay) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -1060,6 +1064,14 @@ const StayDetails = () => {
         onRoomsCountChange={handleRoomCountChange}
       />
 
+      <RelatedListingsStrip
+        businessInterestId={3}
+        primaryCategoryId={primaryCategoryId}
+        currentListingId={currentListingId}
+        title="More Stays You May Like"
+      />
+
+      <Footer />
 
     </div>
   );
