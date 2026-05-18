@@ -20,6 +20,7 @@ import { useTheme, THEMES } from "../../components/JUI/Theme";
 import { Footer } from "../../components/JUI/Footer";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
+import ShareButton from "../../components/ShareButton";
 
 const fixImageUrl = (url) => {
   if (!url) return "";
@@ -401,6 +402,31 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
           </motion.div>
         </div>
       )}
+
+      {/* SHARE BUTTON — bottom-right corner, glass-morphism style */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5 }}
+        style={{ position: "absolute", bottom: isMobile ? 20 : 80, right: isMobile ? 20 : 80, zIndex: 50 }}
+      >
+        <ShareButton
+          title={title}
+          text={stay?.shortDescription || stay?.description || ""}
+          url={window.location.href}
+          imageUrl={stay?.coverPhotoUrl || stay?.coverImageUrl}
+          tokens={{ A, FG, B, BG: "transparent" }}
+          style={{
+            background: theme === 'dark' ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(16px)",
+            border: theme === 'dark' ? "1.5px solid rgba(255,255,255,0.15)" : `1.5px solid ${B}`,
+            color: theme === 'dark' ? "#FFF" : FG,
+            cursor: "pointer",
+          }}
+          size={isMobile ? 14 : 16}
+          showLabel={!isMobile}
+        />
+      </motion.div>
     </section>
   );
 }

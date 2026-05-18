@@ -85,6 +85,74 @@ const PriceDetails = ({
       </div>
 
       <div className={styles.body}>
+        {/* ── Selected add-on cards ── */}
+        {displayAddons.length > 0 && (
+          <div className={styles.addOnsSection}>
+            <div className={styles.addOnsTitle}>Selected Add-ons</div>
+            <div className={styles.addOnsList}>
+              {displayAddons.map((addon, index) => {
+                const addonName = addon.name || addon.addonName || addon.title || "Add-on";
+                const addonQty = addon.quantity || 1;
+                const unitPrice = addon.pricePerUnit || addon.price || 0;
+                const subtotal = addon.totalPrice || (unitPrice * addonQty);
+
+                return (
+                  <div className={styles.addOnItem} key={addon.addonId || index}>
+                    {/* Left: image + name/subtitle stacked */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                      {addon.image && (
+                        <img
+                          src={addon.image}
+                          alt={addonName}
+                          style={{
+                            width: 48,
+                            height: 48,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                            flexShrink: 0,
+                            display: "block",
+                          }}
+                        />
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        {/* Addon name & quantity */}
+                        <div className={styles.addOnItemName}>
+                          {addonName}
+                          <span style={{ opacity: 0.6, marginLeft: 4 }}>
+                            ×{addonQty}
+                          </span>
+                        </div>
+                        {/* Per-unit price as subtitle */}
+                        {unitPrice > 0 && (
+                          <div style={{ fontSize: 12, color: "#9A9FA5", marginTop: 2 }}>
+                            {currency} {Number(unitPrice).toFixed(2)} / item
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: total price */}
+                    <div className={styles.addOnItemPrice} style={{ flexShrink: 0 }}>
+                      {currency} {Number(subtotal).toFixed(2)}
+                    </div>
+
+                    {/* Optional remove button */}
+                    {onRemoveAddOn && (
+                      <button
+                        className={styles.addOnRemoveButton}
+                        onClick={() => onRemoveAddOn(index)}
+                        title="Remove add-on"
+                      >
+                        <Icon name="close" size="12" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className={styles.stage}>Price details</div>
 
         {/* ── Pricing breakdown rows (base price, add-ons, commission, tax, discount) ── */}
@@ -117,69 +185,6 @@ const PriceDetails = ({
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {/* ── Selected add-on cards ── */}
-        {displayAddons.length > 0 && (
-          <div className={styles.addOnsSection}>
-            <div className={styles.addOnsTitle}>Selected Add-ons</div>
-            <div className={styles.addOnsList}>
-              {displayAddons.map((addon, index) => (
-                <div className={styles.addOnItem} key={addon.addonId || index}>
-                  {/* Left: image + name/subtitle stacked */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                    {addon.image && (
-                      <img
-                        src={addon.image}
-                        alt={addon.name}
-                        style={{
-                          width: 48,
-                          height: 48,
-                          objectFit: "cover",
-                          borderRadius: 8,
-                          flexShrink: 0,
-                          display: "block",
-                        }}
-                      />
-                    )}
-                    <div style={{ minWidth: 0 }}>
-                      {/* Addon name */}
-                      <div className={styles.addOnItemName}>
-                        {addon.name}
-                        {addon.quantity > 1 && (
-                          <span style={{ opacity: 0.6, marginLeft: 4 }}>
-                            ×{addon.quantity}
-                          </span>
-                        )}
-                      </div>
-                      {/* Per-unit price as subtitle */}
-                      {addon.pricePerUnit > 0 && (
-                        <div style={{ fontSize: 12, color: "#9A9FA5", marginTop: 2 }}>
-                          {currency} {Number(addon.pricePerUnit).toFixed(2)} / item
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: total price */}
-                  <div className={styles.addOnItemPrice} style={{ flexShrink: 0 }}>
-                    {currency} {Number(addon.totalPrice || addon.pricePerUnit || 0).toFixed(2)}
-                  </div>
-
-                  {/* Optional remove button */}
-                  {onRemoveAddOn && (
-                    <button
-                      className={styles.addOnRemoveButton}
-                      onClick={() => onRemoveAddOn(index)}
-                      title="Remove add-on"
-                    >
-                      <Icon name="close" size="12" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
         )}
 

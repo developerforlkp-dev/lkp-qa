@@ -8,10 +8,22 @@ const Share = ({ className, openUp, darkButton }) => {
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const url = window.location.href;
-    // Professional and amazing message as requested
     const shareMessage = `Check out this incredible experience on Little Known Planet! 🌍 ✨ View details here: ${url}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: document.title || "Little Known Planet",
+          text: `Check out this incredible experience on Little Known Planet! 🌍 ✨`,
+          url: url,
+        });
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return;
+      }
+    }
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareMessage).then(() => {
@@ -29,6 +41,7 @@ const Share = ({ className, openUp, darkButton }) => {
       const textArea = document.createElement("textarea");
       textArea.value = shareMessage;
       document.body.appendChild(textArea);
+      textArea.focus();
       textArea.select();
       try {
         document.execCommand('copy');

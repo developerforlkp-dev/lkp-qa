@@ -13,6 +13,7 @@ import ProductNavbar from "../../components/ProductNavbar";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost } from "../../utils/api";
+import ShareButton from "../../components/ShareButton";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -385,6 +386,19 @@ function CulinaryHero({ food, galleryItems }) {
                 <div style={{ flex: 1 }}><HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} /></div>
                 <div style={{ flex: 1 }}><HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} /></div>
                 <div style={{ flex: 1.5 }}><HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder /></div>
+              </div>
+
+              {/* SHARE BUTTON */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 4 }}>
+                <ShareButton
+                  title={food?.menuName || food?.title}
+                  text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+                  url={window.location.href}
+                  imageUrl={food?.coverImageUrl}
+                  tokens={tokens}
+                  label="Share this"
+                  size={16}
+                />
               </div>
             </div>
           </Rev>

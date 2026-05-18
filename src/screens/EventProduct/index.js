@@ -19,6 +19,7 @@ import { useTheme } from "../../components/JUI/Theme";
 import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews } from "../../utils/api";
 import Modal from "../../components/Modal";
 import LoginPromptModal from "../../components/LoginPromptModal";
+import ShareButton from "../../components/ShareButton";
 
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 
@@ -1231,6 +1232,16 @@ const EventProduct = () => {
             <div className={styles.heroTitleBox}>
               <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
                 <h1 className={styles.heroTitle}>{event.title}</h1>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+                <ShareButton
+                  title={event?.title}
+                  text={event?.description || ""}
+                  url={window.location.href}
+                  imageUrl={event?.coverImage || event?.gallery?.[0]}
+                  label="Share"
+                  size={15}
+                />
               </div>
             </div>
             <div className={styles.heroActions}>

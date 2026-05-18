@@ -630,6 +630,7 @@ const ViewDetails = () => {
   const params = new URLSearchParams(location.search);
   const bookingId = params.get("id") || "bk-up-001";
   const bookingType = params.get("type"); // "event" for event orders
+  const sourceTab = String(location?.state?.sourceTab || "").toLowerCase();
 
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1650,8 +1651,10 @@ const ViewDetails = () => {
           onClick: handleCheckAvailabilityAndProceed,
           disabled: isCheckingAvailability || isConfirmingBooking,
         },
-        { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
       ];
+      if (sourceTab !== "cancelled") {
+        actions.push({ label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick });
+      }
       return actions;
     }
 
@@ -1660,7 +1663,7 @@ const ViewDetails = () => {
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
         { label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick },
       ];
-      if (canLeaveReview) {
+      if (canLeaveReview && sourceTab !== "upcoming") {
         actions.push({
           label: "Leave Review",
           variant: "secondary",
@@ -1677,7 +1680,7 @@ const ViewDetails = () => {
       const actions = [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
       ];
-      if (canLeaveReview) {
+      if (canLeaveReview && sourceTab !== "upcoming") {
         actions.push({
           label: "Leave Review",
           variant: "secondary",

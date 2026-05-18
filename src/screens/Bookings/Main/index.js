@@ -1212,7 +1212,10 @@ const Main = ({
                             return (
                               <Link
                                 key={`${booking.id}-${action.label}`}
-                                to={viewUrl}
+                                to={{
+                                  pathname: viewUrl,
+                                  state: { sourceTab: displayedTab },
+                                }}
                                 className={getButtonClassName(action.variant)}
                               >
                                 {action.label}

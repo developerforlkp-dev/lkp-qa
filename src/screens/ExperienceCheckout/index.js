@@ -551,8 +551,12 @@ const Checkout = () => {
       const totalDiscount = payableAmount > 0
         ? computedDiscountFromPayable
         : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
-      if (totalDiscount > 0) {
-        rows.push({ title: "Discounts", value: `- ${fmt(totalDiscount)}` });
+
+      // Avoid double-counting in UI: when early bird is shown as a separate row,
+      // "Discounts" should only include non-early-bird discounts.
+      const otherDiscounts = Math.max(0, Number(totalDiscount || 0) - Number(earlyBirdDiscount || 0));
+      if (otherDiscounts > 0) {
+        rows.push({ title: "Discounts", value: `- ${fmt(otherDiscounts)}` });
       }
 
       return {
