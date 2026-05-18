@@ -1995,7 +1995,16 @@ const StayProduct = () => {
       history.push("/checkout");
     } catch (err) {
       console.error("Booking error:", err);
-      alert(err.response?.data?.message || "Something went wrong while booking. Please try again.");
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "";
+      const errDetails = err.response?.data?.details || "";
+      if (
+        errMsg.toLowerCase().includes("same-day") ||
+        String(errDetails).toLowerCase().includes("same-day")
+      ) {
+        alert("The check-in window for today has already closed. Please try selecting a future date for your stay.");
+      } else {
+        alert(err.response?.data?.message || "Something went wrong while booking. Please try again.");
+      }
     } finally {
       setAvailabilityLoading(false);
     }

@@ -3,6 +3,7 @@ import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./Card.module.sass";
 import Icon from "../Icon";
+import FiveStarRating from "../FiveStarRating";
 
 const Item = ({ className, item, row, car }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -87,7 +88,7 @@ const Item = ({ className, item, row, car }) => {
               <div className={styles.cost}>{item.cost}</div>
             )}
             <div className={styles.rating}>
-              <Icon name="star" size="12" />
+              <FiveStarRating rating={item.rating} size={12} />
               <span className={styles.number}>{item.rating}</span>
               <span className={styles.review}>({item.reviews} reviews)</span>
             </div>

@@ -196,7 +196,7 @@ const StayBookingSystem = ({
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "" });
+  const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
 
   // Automatically reopen the modal if state was hydrated after auth redirect
   useEffect(() => {
@@ -1039,10 +1039,24 @@ const StayBookingSystem = ({
           : null) ||
         "Please try different dates or room selections.";
 
+      let finalTitle = String(title);
+      let finalMessage = String(detailMessage);
+      let isSameDay = false;
+
+      if (
+        finalTitle.toLowerCase().includes("same-day") ||
+        finalMessage.toLowerCase().includes("same-day")
+      ) {
+        finalTitle = "We’re Sorry — Today’s Check-In Window Has Closed";
+        finalMessage = "The check-in window for today has already closed. Please try selecting a future date for your stay.";
+        isSameDay = true;
+      }
+
       setBookingErrorPopup({
         visible: true,
-        title: String(title),
-        message: String(detailMessage),
+        title: finalTitle,
+        message: finalMessage,
+        isSameDay,
       });
     } finally {
       setLoading(false);
@@ -1095,10 +1109,26 @@ const StayBookingSystem = ({
           .booking-modal-footer button { width: 100% !important; }
           
           .stay-booking-trigger {
-            bottom: 20px !important;
+            bottom: 24px !important;
             right: 20px !important;
             left: 20px !important;
             width: calc(100% - 40px) !important;
+            justify-content: center !important;
+            padding: 16px 32px !important;
+            font-size: 16px !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 1024px) {
+          .stay-booking-trigger {
+            bottom: 30px !important;
+            right: 30px !important;
+            padding: 16px 36px !important;
+            font-size: 16px !important;
           }
         }
       `}</style>
@@ -1108,8 +1138,12 @@ const StayBookingSystem = ({
         onClick={() => setShow(true)}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{
+          scale: 1.04,
+          background: AH || A,
+          boxShadow: `0 20px 35px -8px rgba(0,0,0,0.15), 0 30px 60px -10px ${A}55, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)`
+        }}
+        whileTap={{ scale: 0.96 }}
         className="stay-booking-trigger"
         style={{
           position: "fixed",
@@ -1117,22 +1151,24 @@ const StayBookingSystem = ({
           right: 40,
           background: A,
           color: "#FFF",
-          padding: "18px 36px",
+          padding: "18px 42px",
           borderRadius: 100,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: 12,
-          boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
+          boxShadow: `0 12px 24px -6px rgba(0,0,0,0.12), 0 20px 40px -8px ${A}3b, 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.25)`,
           border: "none",
           cursor: "pointer",
           zIndex: 1000,
-          fontWeight: 700,
-          fontSize: 16,
-          letterSpacing: "0.02em"
+          fontWeight: 800,
+          fontSize: 17,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+          transition: "background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)"
         }}
       >
-        <Bed size={20} />
+        <Bed size={22} />
         Reserve
       </motion.button>
 
@@ -1493,7 +1529,7 @@ const StayBookingSystem = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "" })}
+              onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "", isSameDay: false })}
               style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
             />
             <motion.div
@@ -1506,41 +1542,79 @@ const StayBookingSystem = ({
                 maxWidth: 520,
                 background: BG,
                 color: FG,
-                borderRadius: 22,
-                border: `1px solid ${E}44`,
-                boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
-                padding: "22px 22px 18px",
-                zIndex: 1
+                borderRadius: bookingErrorPopup.isSameDay ? 28 : 22,
+                border: bookingErrorPopup.isSameDay ? `1px solid ${A}44` : `1px solid ${E}44`,
+                boxShadow: bookingErrorPopup.isSameDay 
+                  ? `0 30px 70px rgba(0,0,0,0.35), 0 0 50px ${A}15` 
+                  : "0 24px 64px rgba(0,0,0,0.35)",
+                padding: bookingErrorPopup.isSameDay ? "32px 32px 24px" : "22px 22px 18px",
+                zIndex: 1,
+                overflow: "hidden"
               }}
             >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: EL, border: `1px solid ${E}33`, display: "flex", alignItems: "center", justifyContent: "center", color: E, flexShrink: 0 }}>
-                  <AlertCircle size={18} />
+              {bookingErrorPopup.isSameDay && (
+                <div style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  background: `linear-gradient(90deg, ${A}, ${AL || '#A0AEC0'})`
+                }} />
+              )}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: bookingErrorPopup.isSameDay ? 18 : 12 }}>
+                <div style={{ 
+                  width: bookingErrorPopup.isSameDay ? 46 : 34, 
+                  height: bookingErrorPopup.isSameDay ? 46 : 34, 
+                  borderRadius: bookingErrorPopup.isSameDay ? 14 : 10, 
+                  background: bookingErrorPopup.isSameDay ? AL : EL, 
+                  border: bookingErrorPopup.isSameDay ? `1px solid ${A}33` : `1px solid ${E}33`, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  color: bookingErrorPopup.isSameDay ? A : E, 
+                  flexShrink: 0 
+                }}>
+                  {bookingErrorPopup.isSameDay ? <Calendar size={22} /> : <AlertCircle size={18} />}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: FG }}>{bookingErrorPopup.title}</h3>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.6, color: M }}>{bookingErrorPopup.message}</p>
+                  <h3 style={{ 
+                    margin: 0, 
+                    fontSize: bookingErrorPopup.isSameDay ? 19 : 17, 
+                    fontWeight: 800, 
+                    color: FG,
+                    lineHeight: 1.3
+                  }}>{bookingErrorPopup.title}</h3>
+                  <p style={{ 
+                    margin: "10px 0 0", 
+                    fontSize: bookingErrorPopup.isSameDay ? 14 : 13, 
+                    lineHeight: 1.6, 
+                    color: M 
+                  }}>{bookingErrorPopup.message}</p>
                 </div>
               </div>
-              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-                <button
+              <div style={{ marginTop: bookingErrorPopup.isSameDay ? 24 : 16, display: "flex", justifyContent: "flex-end" }}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   type="button"
-                  onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "" })}
+                  onClick={() => setBookingErrorPopup({ visible: false, title: "", message: "", isSameDay: false })}
                   style={{
                     background: A,
                     color: "#FFF",
                     border: "none",
-                    borderRadius: 10,
-                    padding: "10px 18px",
-                    fontSize: 12,
+                    borderRadius: bookingErrorPopup.isSameDay ? 12 : 10,
+                    padding: bookingErrorPopup.isSameDay ? "12px 28px" : "10px 18px",
+                    fontSize: bookingErrorPopup.isSameDay ? 13 : 12,
                     fontWeight: 800,
                     cursor: "pointer",
                     letterSpacing: "0.04em",
-                    textTransform: "uppercase"
+                    textTransform: "uppercase",
+                    boxShadow: bookingErrorPopup.isSameDay ? `0 8px 16px ${A}22` : "none"
                   }}
                 >
                   Okay
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           </div>

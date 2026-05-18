@@ -3,6 +3,7 @@ import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./Card.module.sass";
 import Icon from "../../../../components/Icon";
+import FiveStarRating from "../../../../components/FiveStarRating";
 
 const Card = ({ className, item }) => {
   return (
@@ -24,8 +25,8 @@ const Card = ({ className, item }) => {
         <div className={styles.line}>
           <div className={styles.date}>{item.date}</div>
           <div className={styles.rating}>
-            <Icon name="star" size="12" />
-            {item.rating}
+            <FiveStarRating rating={item.rating} size={12} />
+            <span style={{ marginLeft: 6 }}>{item.rating}</span>
           </div>
         </div>
       </div>
