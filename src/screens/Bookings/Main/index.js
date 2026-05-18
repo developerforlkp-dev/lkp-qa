@@ -1207,8 +1207,8 @@ const Main = ({
                               booking.bookingData?.eventId ||
                               booking.bookingData?.businessInterestCode === "EVENTS";
                             const viewUrl = isEvent
-                              ? `/viewdetails?id=${booking.id}&type=event&sourceTab=${displayedTab}`
-                              : `/viewdetails?id=${booking.id}&sourceTab=${displayedTab}`;
+                              ? `/viewdetails?id=${booking.id}&type=event`
+                              : `/viewdetails?id=${booking.id}`;
                             return (
                               <Link
                                 key={`${booking.id}-${action.label}`}

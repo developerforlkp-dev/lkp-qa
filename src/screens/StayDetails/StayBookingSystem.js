@@ -1028,30 +1028,16 @@ const StayBookingSystem = ({
     } catch (err) {
       console.error(err);
       const backendPayload = err?.response?.data || {};
-      let title =
+      const title =
         backendPayload?.error ||
         backendPayload?.message ||
         "Booking failed";
-      let detailMessage =
+      const detailMessage =
         backendPayload?.details ||
         (Array.isArray(backendPayload?.unavailableRooms) && backendPayload.unavailableRooms.length > 0
           ? backendPayload.unavailableRooms.join(", ")
           : null) ||
         "Please try different dates or room selections.";
-
-      const normalizedTitle = String(title || "").toLowerCase();
-      const normalizedMessage = String(detailMessage || "").toLowerCase();
-      const isCheckInWindowClosed =
-        normalizedTitle.includes("same-day booking closed") ||
-        normalizedTitle.includes("check-in window") ||
-        normalizedMessage.includes("same-day check-in") ||
-        normalizedMessage.includes("check-in window") ||
-        normalizedMessage.includes("today");
-
-      if (isCheckInWindowClosed) {
-        title = "We’re Sorry — Today’s Check-In Window Has Closed";
-        detailMessage = "The check-in window for today has already closed. Please try selecting a future date for your stay.";
-      }
 
       setBookingErrorPopup({
         visible: true,
