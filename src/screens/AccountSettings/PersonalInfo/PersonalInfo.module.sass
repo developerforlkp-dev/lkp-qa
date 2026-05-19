@@ -54,6 +54,12 @@
 .avatarDetails
     flex-grow: 1
 
+.note
+    +caption-2
+    color: $n4
+    +dark
+        color: $n5
+
 .avatarAction
     display: flex
     align-items: center
@@ -100,8 +106,6 @@
     &:not(:last-child)
         +m
             margin-bottom: 20px
-        +dark
-            box-shadow: inset 0 0 0 2px $n3
 
 .labelWrapper
     display: flex
