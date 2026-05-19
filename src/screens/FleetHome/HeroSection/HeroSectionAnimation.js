@@ -31,6 +31,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
   const detailsEvenRef_state = useRef(true);
   const isMountedRef = useRef(true);
   const currentActiveIndexRef = useRef(0);
+  const onReadyRef = useRef(onReady);
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   useEffect(() => {
     if (typeof gsap === 'undefined') {
@@ -270,7 +275,18 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       const detailsActive = detailsEvenRef_state.current ? "#details-even" : "#details-odd";
       const detailsInactive = detailsEvenRef_state.current ? "#details-odd" : "#details-even";
 
-      gsap.set(getCard(active), { x: 0, y: 0, width: containerWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 1 });
+      // Smoothly fade in active banner image once fully decoded to mask progressive loading sliced states
+      gsap.set(getCard(active), { x: 0, y: 0, width: containerWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 0 });
+      loadImage(destinations[active].image).then(() => {
+        if (isMountedRef.current) {
+          gsap.to(getCard(active), { opacity: 1, duration: 0.6, ease: "power2.out" });
+        }
+      }).catch(() => {
+        if (isMountedRef.current) {
+          gsap.to(getCard(active), { opacity: 1, duration: 0.3 });
+        }
+      });
+
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
       gsap.set(detailsActive, { opacity: 1, zIndex: 22, yPercent: -50, x: 0 });
       gsap.set(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1 });
@@ -300,8 +316,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         setTimeout(() => {
           if (orderRef.current && containerRef?.current && isMountedRef.current) {
             init(orderRef.current, detailsEvenRef_state.current);
-            if (typeof onReady === "function") {
-              requestAnimationFrame(() => onReady());
+            if (typeof onReadyRef.current === "function") {
+              requestAnimationFrame(() => onReadyRef.current());
             }
           }
         }, 80);
@@ -310,8 +326,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         setTimeout(() => {
           if (orderRef.current && containerRef?.current && isMountedRef.current) {
             init(orderRef.current, detailsEvenRef_state.current);
-            if (typeof onReady === "function") {
-              requestAnimationFrame(() => onReady());
+            if (typeof onReadyRef.current === "function") {
+              requestAnimationFrame(() => onReadyRef.current());
             }
           }
         }, 120);
@@ -351,7 +367,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       detailsEvenRef_state.current = true;
       if (demoRefCurrent) demoRefCurrent.innerHTML = '';
     };
-  }, [containerRef, destinations, onReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [containerRef, destinations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Button click navigation ───────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import HeroSectionAnimation from "./HeroSectionAnimation";
 import { getHomepageHero } from "../../../utils/api";
 import styles from "./HeroSection.module.sass";
@@ -25,17 +25,22 @@ const formatImageUrl = (url) => {
   return url;
 };
 
+// Module-level cache for hero banner data to prevent redundant API fetches and flickers on tab switches
+let cachedHeroData = null;
+
 const HeroSection = () => {
   const containerRef = useRef(null);
-  const [heroData, setHeroData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [heroReady, setHeroReady] = useState(false);
+  const [heroData, setHeroData] = useState(cachedHeroData || []);
+  const [loading, setLoading] = useState(!cachedHeroData);
+  const [heroReady, setHeroReady] = useState(!!cachedHeroData);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadHeroData = async () => {
       try {
-        setLoading(true);
+        if (!cachedHeroData) {
+          setLoading(true);
+        }
         setError(null);
         const data = await getHomepageHero();
         
@@ -52,17 +57,50 @@ const HeroSection = () => {
           .filter((item) => item.title && item.image) // Only include items with required fields
           .sort((a, b) => a.sortOrder - b.sortOrder); // Sort by sortOrder
         
+        cachedHeroData = mappedData;
         setHeroData(mappedData);
-        setHeroReady(false);
       } catch (err) {
         console.error("Error loading hero data:", err);
-        setError(err.message || "Failed to load hero content");
+        if (!cachedHeroData) {
+          setError(err.message || "Failed to load hero content");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadHeroData();
+  }, []);
+
+  // Preload critical banner assets in the document head for high priority browser fetching
+  useEffect(() => {
+    if (heroData && heroData.length > 0) {
+      const activeLinks = [];
+      heroData.forEach((item) => {
+        if (item.image) {
+          const link = document.createElement("link");
+          link.rel = "preload";
+          link.as = "image";
+          link.href = item.image;
+          document.head.appendChild(link);
+          activeLinks.push(link);
+        }
+      });
+      
+      return () => {
+        // Clean up injected preloads on unmount
+        activeLinks.forEach((link) => {
+          if (document.head.contains(link)) {
+            document.head.removeChild(link);
+          }
+        });
+      };
+    }
+  }, [heroData]);
+
+  // Stabilize the onReady callback to prevent child component re-evaluation
+  const handleReady = useCallback(() => {
+    setHeroReady(true);
   }, []);
 
   if (loading) {
@@ -99,7 +137,7 @@ const HeroSection = () => {
         <HeroSectionAnimation
           containerRef={containerRef}
           destinations={heroData}
-          onReady={() => setHeroReady(true)}
+          onReady={handleReady}
         />
       </div>
       <div
