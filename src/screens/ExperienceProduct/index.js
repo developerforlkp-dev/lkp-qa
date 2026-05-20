@@ -897,11 +897,16 @@ const ExperienceProduct = () => {
                       const activityImageUrl = getActivityImageUrl(it);
                       return (
                         <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
-                          whileHover={{ x: 10 }}
                           className="activity-item"
                           style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
-                          <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
-                          <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
+                          {/* ── STATIC LAYER: circular node stays fixed, never receives hover transform ── */}
+                          <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0, position: "relative", zIndex: 2 }} />
+                          {/* ── ANIMATED LAYER: only the content card slides on hover ── */}
+                          <motion.div
+                            whileHover={{ x: 10 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1, willChange: "transform" }}
+                          >
                             {activityImageUrl && (
                               <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
                                 <img
@@ -929,7 +934,7 @@ const ExperienceProduct = () => {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </motion.div>
                         </motion.div>
                       );
                     })}

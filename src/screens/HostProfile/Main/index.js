@@ -5,6 +5,7 @@ import Profile from "../../../components/Profile";
 import Icon from "../../../components/Icon";
 import Details from "./Details";
 import List from "./List";
+import Loader from "../../../components/Loader";
 import {
   getHost,
   getHostContent,
@@ -25,7 +26,7 @@ const socials = [
   },
 ];
 
-const Main = ({ hostId }) => {
+const Main = ({ hostId, onLoadingChange }) => {
   const [hostData, setHostData] = useState(null);
   const [tabListings, setTabListings] = useState({
     experiences: [],
@@ -36,6 +37,12 @@ const Main = ({ hostId }) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (onLoadingChange) {
+      onLoadingChange(loading);
+    }
+  }, [loading, onLoadingChange]);
 
   useEffect(() => {
     let mounted = true;
@@ -201,9 +208,20 @@ const Main = ({ hostId }) => {
   // Loading state
   if (loading && hostId) {
     return (
-      <div className={cn("section", styles.section)}>
-        <div className={cn("container", styles.container)}>
-          <div>Loading host profile...</div>
+      <div 
+        className={cn("section", styles.section)} 
+        style={{ 
+          minHeight: "80vh", 
+          display: "flex", 
+          flexDirection: "column",
+          alignItems: "center", 
+          justifyContent: "center",
+          gap: "24px"
+        }}
+      >
+        <Loader />
+        <div style={{ fontSize: "16px", fontWeight: "500", color: "#777E90" }}>
+          Loading host profile...
         </div>
       </div>
     );

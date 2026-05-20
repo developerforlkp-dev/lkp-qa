@@ -666,7 +666,19 @@ const ViewDetails = () => {
   const [hasAutopaid, setHasAutopaid] = useState(false);
   const [priceChangedData, setPriceChangedData] = useState(null);
   const [confirmPayModalVisible, setConfirmPayModalVisible] = useState(false);
-  const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
+
+  // Review modal state (for Leave Review button in action card)
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewModalRating, setReviewModalRating] = useState(0);
+  const [reviewModalComment, setReviewModalComment] = useState("");
+  const [reviewModalError, setReviewModalError] = useState(null);
+  const [isSubmittingReviewModal, setIsSubmittingReviewModal] = useState(false);
+
+  // isCompletedOrder: true if backend status is COMPLETED, OR if the booking has been date-overridden to "Completed"
+  const isCompletedOrder =
+    String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED" ||
+    booking?.status === "Completed" ||
+    booking?.statusTone === "completed";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
   const handleCancelBookingClick = () => {
@@ -1645,10 +1657,16 @@ const ViewDetails = () => {
   const getStatusClass = (status) => {
     if (!status) return styles.statusDefault;
 
-    // Get original orderStatus first for accurate status class
+    // If booking.status has been overridden to "Completed" by date-based logic,
+    // respect that override before checking the raw backend orderStatus.
+    if (booking?.status === "Completed" || booking?.statusTone === "completed") {
+      return styles.statusCompleted;
+    }
+
+    // Get original orderStatus for accurate status class
     const originalStatus = booking?.originalData?.orderStatus ? String(booking.originalData.orderStatus).toUpperCase().trim() : "";
 
-    // Check original orderStatus first
+    // Check original orderStatus
     if (originalStatus === "PENDING") {
       return styles.statusPending; // Orange background for pending
     }
@@ -1708,9 +1726,15 @@ const ViewDetails = () => {
           label: "Leave Review",
           variant: "secondary",
           onClick: () => {
+            // Try to scroll to inline review card first, else open modal
             const reviewSection = document.querySelector(`.${styles.reviewCard}`);
             if (reviewSection) {
               reviewSection.scrollIntoView({ behavior: "smooth" });
+            } else {
+              setReviewModalRating(0);
+              setReviewModalComment("");
+              setReviewModalError(null);
+              setReviewModalVisible(true);
             }
           },
         });
@@ -1725,9 +1749,15 @@ const ViewDetails = () => {
           label: "Leave Review",
           variant: "secondary",
           onClick: () => {
+            // Try to scroll to inline review card first, else open modal
             const reviewSection = document.querySelector(`.${styles.reviewCard}`);
             if (reviewSection) {
               reviewSection.scrollIntoView({ behavior: "smooth" });
+            } else {
+              setReviewModalRating(0);
+              setReviewModalComment("");
+              setReviewModalError(null);
+              setReviewModalVisible(true);
             }
           },
         });
@@ -1836,7 +1866,13 @@ const ViewDetails = () => {
               <div className={styles.summaryValue}>
                 <span className={cn(styles.statusBadge, getStatusClass(booking.status || booking.statusTone || booking.originalData?.orderStatus))}>
                   {(() => {
-                    // Get status from original orderStatus first, then fallback to mapped status
+                    // If booking.status has been overridden to "Completed" by date-based logic,
+                    // show "Completed" regardless of the raw backend orderStatus (which may still be CONFIRMED).
+                    if (booking.status === "Completed" || booking.statusTone === "completed") {
+                      return "Completed";
+                    }
+
+                    // Get status from original orderStatus, then fallback to mapped status
                     const originalStatus = booking.originalData?.orderStatus;
                     if (originalStatus) {
                       const normalized = String(originalStatus).toUpperCase().trim();
@@ -2206,6 +2242,7 @@ const ViewDetails = () => {
                   className={getButtonClassName(action.variant)}
                   onClick={action.onClick}
                   disabled={Boolean(action.disabled)}
+                  style={{ cursor: "pointer" }}
                 >
                   {action.label}
                 </button>
@@ -2397,6 +2434,128 @@ const ViewDetails = () => {
               disabled={isCancelling || !cancelReason.trim()}
             >
               {isCancelling ? "Cancelling..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Leave Review Modal - opened from the Leave Review action button */}
+      <Modal
+        visible={reviewModalVisible}
+        onClose={() => {
+          if (!isSubmittingReviewModal) {
+            setReviewModalVisible(false);
+            setReviewModalRating(0);
+            setReviewModalComment("");
+            setReviewModalError(null);
+          }
+        }}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>Leave a Review</h2>
+            <p className={styles.cancelModalDescription}>
+              {booking ? `How was your experience with "${booking.title}"?` : "Share your experience."}
+            </p>
+          </div>
+          <div className={styles.cancelModalBody}>
+            <div className={styles.cancelModalFormGroup}>
+              <label className={styles.cancelModalLabel}>
+                Rating <span className={styles.required}>*</span>
+              </label>
+              <Rating
+                className={styles.reviewRating}
+                rating={reviewModalRating}
+                onChange={setReviewModalRating}
+                readonly={false}
+              />
+            </div>
+            <div className={styles.cancelModalFormGroup}>
+              <label htmlFor="viewDetailsReviewComment" className={styles.cancelModalLabel}>
+                Comment (optional)
+              </label>
+              <textarea
+                id="viewDetailsReviewComment"
+                className={cn(styles.cancelModalInput, styles.cancelModalTextarea)}
+                value={reviewModalComment}
+                onChange={(e) => {
+                  setReviewModalComment(e.target.value);
+                  setReviewModalError(null);
+                }}
+                placeholder="Share your thoughts about your experience..."
+                rows={3}
+                disabled={isSubmittingReviewModal}
+              />
+            </div>
+            {reviewModalError && (
+              <div className={styles.cancelModalError}>{reviewModalError}</div>
+            )}
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => {
+                setReviewModalVisible(false);
+                setReviewModalRating(0);
+                setReviewModalComment("");
+                setReviewModalError(null);
+              }}
+              disabled={isSubmittingReviewModal}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              disabled={isSubmittingReviewModal || reviewModalRating < 1 || reviewModalRating > 5}
+              style={{ cursor: reviewModalRating >= 1 ? "pointer" : "not-allowed" }}
+              onClick={async () => {
+                if (!booking || reviewModalRating < 1) {
+                  setReviewModalError("Please select a rating (1–5 stars).");
+                  return;
+                }
+                setReviewModalError(null);
+                setIsSubmittingReviewModal(true);
+                try {
+                  await submitOrderReview(booking.orderId, {
+                    rating: reviewModalRating,
+                    comment: reviewModalComment.trim() || undefined,
+                    listingId: booking.originalData?.listingId,
+                    eventId: booking.originalData?.eventId,
+                    stayId: booking.originalData?.stayId ||
+                      (booking.originalData?.stayOrderRooms && booking.originalData.stayOrderRooms[0]?.stayId),
+                  });
+                  // Remove from eligible set so button disappears
+                  setOrderIdsEligibleForReview((prev) => {
+                    const next = new Set(prev);
+                    next.delete(Number(booking.orderId));
+                    return next;
+                  });
+                  setReviewSubmitted(true);
+                  setReviewModalVisible(false);
+                  setReviewModalRating(0);
+                  setReviewModalComment("");
+                } catch (err) {
+                  const status = err.response?.status;
+                  const message = err.response?.data?.message || err.message;
+                  if (status === 409) {
+                    setReviewModalError("You've already reviewed this order.");
+                    setOrderIdsEligibleForReview((prev) => {
+                      const next = new Set(prev);
+                      next.delete(Number(booking.orderId));
+                      return next;
+                    });
+                  } else {
+                    setReviewModalError(message || "Failed to submit review. Please try again.");
+                  }
+                } finally {
+                  setIsSubmittingReviewModal(false);
+                }
+              }}
+            >
+              {isSubmittingReviewModal ? "Submitting..." : "Post it!"}
             </button>
           </div>
         </div>
