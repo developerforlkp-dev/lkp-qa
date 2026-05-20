@@ -111,14 +111,15 @@ const getSlotSeatLimit = (slot) => {
   return total;
 };
 
-const getSlotId = (slot) => (
-  asNumber(slot) ??
-  asNumber(slot?.eventSlotId) ??
-  asNumber(slot?.event_slot_id) ??
-  asNumber(slot?.slotId) ??
-  asNumber(slot?.slot_id) ??
-  asNumber(slot?.id)
-);
+const getSlotId = (slot) => {
+  if (slot === null || slot === undefined) return null;
+  const raw = typeof slot === "object"
+    ? (slot.eventSlotId ?? slot.event_slot_id ?? slot.slotId ?? slot.slot_id ?? slot.id)
+    : slot;
+  if (raw == null) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : raw;
+};
 
 const getSlotLabel = (slot, index = 0) => (
   (typeof slot === "string" || typeof slot === "number" ? String(slot) : "") ||
@@ -144,7 +145,11 @@ const getSlotAccessKeys = (slot, index = 0) => {
       ]
     : [slot];
   const ids = rawIds
-    .map((value) => asNumber(value))
+    .map((value) => {
+      if (value == null) return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : value;
+    })
     .filter((value) => value != null);
   const label = String(getSlotLabel(slot, index) || "").trim().toLowerCase();
   return [
@@ -153,12 +158,13 @@ const getSlotAccessKeys = (slot, index = 0) => {
   ].filter(Boolean);
 };
 
-const getTicketId = (ticket) => (
-  asNumber(ticket?.ticketTypeId) ??
-  asNumber(ticket?.ticket_type_id) ??
-  asNumber(ticket?.typeId) ??
-  asNumber(ticket?.id)
-);
+const getTicketId = (ticket) => {
+  if (ticket === null || ticket === undefined) return null;
+  const raw = ticket.ticketTypeId ?? ticket.ticket_type_id ?? ticket.typeId ?? ticket.id;
+  if (raw == null) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : raw;
+};
 
 const getTicketName = (ticket, index = 0) => (
   ticket?.name ||
@@ -1092,6 +1098,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return [];
   }, [isEventBooking, listing?.ticketTypes, listing?.tickets, listing?.ticketTiers]);
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
+  const [isTicketDropdownOpen, setIsTicketDropdownOpen] = useState(false);
   const [selectedEventSlotIds, setSelectedEventSlotIds] = useState([]);
   const selectedEventSlotId = selectedEventSlotIds[0] || "";
 
@@ -1156,9 +1163,25 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [selectedTicket]);
   const canSelectMultipleEventSlots = ticketNameRestriction === "all";
   const ticketHasSlotRestrictions = ticketApplicableSlots.length > 0 || Boolean(ticketNameRestriction);
+  const allEventTicketsSlots = useMemo(() => {
+    const slots = [];
+    const seen = new Set();
+    eventTickets.forEach(ticket => {
+      getTicketSlotRestrictions(ticket).forEach(slot => {
+        const id = getSlotId(slot) || slot.slotName || slot.startTime;
+        const strId = String(id);
+        if (id && !seen.has(strId)) {
+          seen.add(strId);
+          slots.push(slot);
+        }
+      });
+    });
+    return slots;
+  }, [eventTickets]);
+
   const allEventSlotSource = useMemo(() => (
-    eventFallbackSlots.length > 0 ? eventFallbackSlots : ticketApplicableSlots
-  ), [eventFallbackSlots, ticketApplicableSlots]);
+    eventFallbackSlots.length > 0 ? eventFallbackSlots : allEventTicketsSlots
+  ), [eventFallbackSlots, allEventTicketsSlots]);
   const eventPrice = getTicketPrice(selectedTicket, asNumber(listing?.ticketPrice) ?? asNumber(listing?.price) ?? asNumber(listing?.basePrice) ?? 0);
   const effectiveEventPrice = useMemo(() => (
     getEffectiveTicketPrice(selectedTicket, billableAdults, eventPrice)
@@ -1196,11 +1219,33 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return false;
   }, [accessibleSlotKeys, ticketHasSlotRestrictions, ticketNameRestriction]);
   const selectedEventSlot = useMemo(() => (
-    eventSlots.find((slot, index) => String(slot.eventSlotId ?? slot.id) === String(selectedEventSlotId) && isEventSlotAccessible(slot, index)) || null
-  ), [eventSlots, selectedEventSlotId, isEventSlotAccessible]);
+    eventSlots.find((slot) => String(slot.eventSlotId ?? slot.id) === String(selectedEventSlotId)) || null
+  ), [eventSlots, selectedEventSlotId]);
   const selectedEventSlots = useMemo(() => (
-    eventSlots.filter((slot, index) => selectedEventSlotIds.includes(String(slot.eventSlotId ?? slot.id)) && isEventSlotAccessible(slot, index))
-  ), [eventSlots, selectedEventSlotIds, isEventSlotAccessible]);
+    eventSlots.filter((slot) => selectedEventSlotIds.includes(String(slot.eventSlotId ?? slot.id)))
+  ), [eventSlots, selectedEventSlotIds]);
+
+  // Compute which tickets are applicable to the currently selected slot.
+  // Returns [] when no slot is chosen, enforcing the slot-first selection flow.
+  const ticketsForSelectedSlot = useMemo(() => {
+    if (!isEventBooking) return eventTickets;
+    if (selectedEventSlots.length === 0) return []; // No slot selected → hide ticket dropdown
+    const activeSlot = selectedEventSlots[0];
+    const activeSlotId = getSlotId(activeSlot);
+    const activeSlotLabel = String(getSlotLabel(activeSlot) || "").toLowerCase();
+    return eventTickets.filter((ticket) => {
+      const restrictions = getTicketSlotRestrictions(ticket);
+      if (restrictions.length === 0) return true; // No restriction → ticket applies to all slots
+      return restrictions.some((item) => {
+        const itemId = item?.eventSlotId ?? item?.slotId ?? item?.id ?? item;
+        if (itemId != null && activeSlotId != null && String(itemId) === String(activeSlotId)) return true;
+        const itemLabel = String(item?.slotName ?? item?.name ?? item?.label ?? item ?? "").toLowerCase();
+        if (itemLabel && activeSlotLabel && itemLabel === activeSlotLabel) return true;
+        return false;
+      });
+    });
+  }, [isEventBooking, eventTickets, selectedEventSlots]);
+
   const selectedTicketAvailability = useMemo(() => {
     if (!isEventBooking || !selectedTicket) return null;
     const ticketId = getTicketId(selectedTicket);
@@ -1244,8 +1289,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     if (!isEventBooking) return new Set();
     const keys = new Set();
 
-    eventSlots.forEach((slot, index) => {
-      if (!isEventSlotAccessible(slot, index)) return;
+    // All slots contribute available dates — no ticket-based filtering here.
+    // Slots are always visible; ticket restrictions only apply to the ticket dropdown.
+    eventSlots.forEach((slot) => {
       addDateRangeKeys(
         keys,
         slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate,
@@ -1260,7 +1306,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     );
 
     return keys;
-  }, [eventSlots, isEventBooking, isEventSlotAccessible, listing?.bookingEndDate, listing?.bookingStartDate, listing?.endDate, listing?.eventEndDate, listing?.eventStartDate, listing?.startDate]);
+  }, [eventSlots, isEventBooking, listing?.bookingEndDate, listing?.bookingStartDate, listing?.endDate, listing?.eventEndDate, listing?.eventStartDate, listing?.startDate]);
   const listingId = listing?.listingId;
   const selectedDateKey = useMemo(() => getDateKey(startDate), [startDate]);
   const slotsLookupEndDate = useMemo(() => getLatestExperienceSlotEndDate(listing), [listing]);
@@ -1467,23 +1513,55 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   useEffect(() => {
     if (!isEventBooking) return;
-    const validSelectedSlots = eventSlots.filter((slot, index) => (
-      selectedEventSlotIds.includes(String(slot.eventSlotId ?? slot.id)) && isEventSlotAccessible(slot, index)
-    ));
+    // Only validate that the selected slot still exists in eventSlots.
+    // No ticket-based filtering. No auto-selection.
+    const validSelectedSlots = eventSlots.filter((slot) =>
+      selectedEventSlotIds.includes(String(slot.eventSlotId ?? slot.id))
+    );
     if (validSelectedSlots.length > 0) {
-      const nextSelection = canSelectMultipleEventSlots
-        ? validSelectedSlots.map((slot) => String(slot.eventSlotId ?? slot.id))
-        : [String(validSelectedSlots[0].eventSlotId ?? validSelectedSlots[0].id)];
+      const nextId = String(validSelectedSlots[0].eventSlotId ?? validSelectedSlots[0].id);
+      const nextSelection = [nextId];
       if (nextSelection.join("|") !== selectedEventSlotIds.join("|")) {
         setSelectedEventSlotIds(nextSelection);
       }
-      setStartTime(validSelectedSlots.map((slot) => slot.slotName).join(", "));
+      setStartTime(validSelectedSlots[0].slotName || null);
       return;
     }
-    const firstSlot = eventSlots.find((slot, index) => isEventSlotAccessible(slot, index));
-    setSelectedEventSlotIds(firstSlot ? [String(firstSlot.eventSlotId ?? firstSlot.id)] : []);
-    setStartTime(firstSlot ? firstSlot.slotName : null);
-  }, [canSelectMultipleEventSlots, eventSlots, isEventBooking, selectedEventSlotIds, isEventSlotAccessible]);
+    // Only clear if we had something selected and it's no longer valid
+    if (selectedEventSlotIds.length > 0) {
+      setSelectedEventSlotIds([]);
+      setStartTime(null);
+    }
+  }, [eventSlots, isEventBooking, selectedEventSlotIds]);
+
+  useEffect(() => {
+    if (!isEventBooking) return;
+    if (ticketsForSelectedSlot.length === 1) {
+      const onlyTicket = ticketsForSelectedSlot[0];
+      const onlyTicketId = String(onlyTicket.id ?? onlyTicket.ticketTypeId ?? onlyTicket.typeId ?? "ticket-0");
+      if (selectedTicketTypeId !== onlyTicketId) {
+        setSelectedTicketTypeId(onlyTicketId);
+        setValidationErrors(prev => {
+          const next = { ...prev };
+          delete next.ticketType;
+          return next;
+        });
+      }
+    } else if (ticketsForSelectedSlot.length === 0) {
+      if (selectedTicketTypeId !== "") {
+        setSelectedTicketTypeId("");
+      }
+    } else {
+      if (selectedTicketTypeId) {
+        const isValid = ticketsForSelectedSlot.some(
+          (ticket) => String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId) === selectedTicketTypeId
+        );
+        if (!isValid) {
+          setSelectedTicketTypeId("");
+        }
+      }
+    }
+  }, [ticketsForSelectedSlot, isEventBooking, selectedTicketTypeId]);
 
   const getAddonLineTotal = useCallback((item) => {
     const addon = item?.addon || item || {};
@@ -1786,7 +1864,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const dateStr = startDate.format("YYYY-MM-DD");
       const eventIdNum = asNumber(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId) ?? 0;
       const eventSlotIdNum = getSlotId(selectedEventSlot);
-      const eventSlotIds = selectedEventSlots.map((slot) => getSlotId(slot)).filter(Boolean);
+      const eventSlotIds = selectedEventSlots.map((slot) => getSlotId(slot)).filter(value => value != null && value !== "");
       const ticketTypeId = getTicketId(selectedTicket);
       const ticketTypeName = getTicketName(selectedTicket);
       const pricePerTicket = asNumber(effectiveEventPrice.price) ?? 0;
@@ -1803,7 +1881,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const customerName = `${customerDetails.firstName || ""} ${customerDetails.lastName || ""}`.trim() || "Guest User";
       const customerEmail = customerDetails.email || "guest@example.com";
       const customerPhone = customerDetails.phone || "";
-      if (!eventIdNum || !eventSlotIdNum || !ticketTypeId) {
+      if (eventIdNum == null || eventIdNum === "" || eventSlotIdNum == null || eventSlotIdNum === "" || ticketTypeId == null || ticketTypeId === "") {
         setValidationErrors({ slot: "Unable to book: event ticket or slot information is missing." });
         setShowValidation(true);
         return;
@@ -2229,7 +2307,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   const IconComp = data.icon;
   const canReserve = isEventBooking
-    ? Boolean(ticketSaleWindow.isOpen && startDate && selectedTicket && selectedEventSlots.length > 0 && getSlotId(selectedEventSlots[0]) && totalGuests >= 1 && (selectedTicketMaxPerBooking === undefined || totalGuests <= selectedTicketMaxPerBooking) && (selectedTicketRemainingTickets === undefined || totalGuests <= selectedTicketRemainingTickets) && !selectedTicketSoldOut && !eventAvailabilityLoading && !bookingLoading)
+    ? Boolean(ticketSaleWindow.isOpen && startDate && selectedTicket && selectedEventSlots.length > 0 && getSlotId(selectedEventSlots[0]) != null && totalGuests >= 1 && (selectedTicketMaxPerBooking === undefined || totalGuests <= selectedTicketMaxPerBooking) && (selectedTicketRemainingTickets === undefined || totalGuests <= selectedTicketRemainingTickets) && !selectedTicketSoldOut && !eventAvailabilityLoading && !bookingLoading)
     : Boolean(startDate && selectedSlotData && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && (!privateBooking || selectedSlotPrivateBookingAvailable) && !selectedSlotHasPrivateBooking && !bookingLoading);
   const triggerDisabled = isEventBooking && !ticketSaleWindow.isOpen;
 
@@ -2789,75 +2867,192 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     </AnimatePresence>
                     
                     {isEventBooking ? (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
-                        {(() => {
-                          const validSlotsForDate = eventSlots.filter((slot, index) => {
-                            const slotKeys = new Set();
-                            addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
-                            return (slotKeys.size === 0 || slotKeys.has(selectedDateKey)) && isEventSlotAccessible(slot, index);
-                          });
-
-                          if (startDate && validSlotsForDate.length === 0) {
-                            return <div style={{ gridColumn: "span 2", padding: "24px 20px", textAlign: "center", color: E, fontWeight: 700, background: EL, borderRadius: 16, border: `1px solid ${E}22`, fontSize: 13 }}>No booking slots are available for this day</div>;
-                          }
-
-                          return validSlotsForDate.map((slot, index) => {
-                            const slotId = String(slot.eventSlotId ?? slot.id);
-                            const isSelected = selectedEventSlotIds.includes(slotId);
-                            const slotLabel = slot.slotName && slot.slotName !== slot.startTime ? slot.slotName : null;
-                            const slotStartTime = formatTime12h(slot.startTime || slot.slotName);
-                            const slotEndTime = formatTime12h(slot.endTime);
-                            const slotTimeDisplay = slotEndTime ? `${slotStartTime} - ${slotEndTime}` : slotStartTime;
-                            return (
-                              <button
-                                key={slotId}
-                                onClick={startDate ? () => {
-                                  if (canSelectMultipleEventSlots) {
-                                    setSelectedEventSlotIds(cur => {
-                                      const next = cur.includes(slotId) ? cur.filter(id => id !== slotId) : [...cur, slotId];
-                                      if (next.length > 0) {
-                                        setValidationErrors(prev => {
-                                          const n = { ...prev };
-                                          delete n.slot;
-                                          return n;
-                                        });
-                                      }
-                                      return next;
-                                    });
-                                  } else {
-                                    setSelectedEventSlotIds([slotId]);
-                                    setStartTime(slot.slotName);
-                                    setValidationErrors(prev => {
-                                      const next = { ...prev };
-                                      delete next.slot;
-                                      return next;
-                                    });
-                                  }
-                                } : () => setShowDateWarning(true)}
-                                style={{
-                                  padding: "10px 12px",
-                                  borderRadius: 16,
-                                  border: `1.5px solid ${isSelected ? A : B}`,
-                                  background: isSelected ? AL : BG,
-                                  color: isSelected ? A : FG,
-                                  fontSize: 13,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+                          {(() => {
+                            if (!startDate) {
+                              return (
+                                <div style={{
+                                  gridColumn: "1 / -1",
+                                  padding: "20px 16px",
                                   textAlign: "center",
-                                  transition: "0.2s",
-                                  opacity: startDate ? 1 : 0.6,
-                                }}
-                              >
-                                {slotLabel && (
-                                  <span style={{ display: "block", marginBottom: 2 }}>{slotLabel}</span>
+                                  color: M,
+                                  fontWeight: 700,
+                                  background: BG,
+                                  borderRadius: 16,
+                                  border: `1.5px dashed ${B}`,
+                                  fontSize: 12,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 8
+                                }}>
+                                  <Calendar size={18} color={A} style={{ opacity: 0.85 }} />
+                                  <span>Please select a date to view available slots.</span>
+                                </div>
+                              );
+                            }
+
+                            const validSlotsForDate = eventSlots.filter((slot) => {
+                              const slotKeys = new Set();
+                              addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
+                              // All slots are shown — no ticket-based filtering here.
+                              // Ticket dropdown is filtered AFTER the user picks a slot.
+                              return slotKeys.size === 0 || slotKeys.has(selectedDateKey);
+                            });
+
+                            if (startDate && validSlotsForDate.length === 0) {
+                              return <div style={{ gridColumn: "span 2", padding: "24px 20px", textAlign: "center", color: E, fontWeight: 700, background: EL, borderRadius: 16, border: `1px solid ${E}22`, fontSize: 13 }}>No booking slots are available for this day</div>;
+                            }
+
+                            return validSlotsForDate.map((slot, index) => {
+                              const slotId = String(slot.eventSlotId ?? slot.id);
+                              const isSelected = selectedEventSlotIds.includes(slotId);
+                              const slotLabel = slot.slotName && slot.slotName !== slot.startTime ? slot.slotName : null;
+                              const slotStartTime = formatTime12h(slot.startTime || slot.slotName);
+                              const slotEndTime = formatTime12h(slot.endTime);
+                              const slotTimeDisplay = slotEndTime ? `${slotStartTime} - ${slotEndTime}` : slotStartTime;
+                              return (
+                                <button
+                                  key={slotId}
+                                  onClick={() => {
+                                    // Slots are always clickable — no startDate gate.
+                                    // Always enforce single-slot selection.
+                                    const alreadySelected = selectedEventSlotIds.includes(slotId);
+                                    if (alreadySelected) {
+                                      // Deselect
+                                      setSelectedEventSlotIds([]);
+                                      setStartTime(null);
+                                      setSelectedTicketTypeId("");
+                                    } else {
+                                      // Select this slot
+                                      setSelectedEventSlotIds([slotId]);
+                                      setStartTime(slot.slotName || null);
+                                      setSelectedTicketTypeId(""); // Reset ticket when slot changes
+                                      setValidationErrors(prev => {
+                                        const next = { ...prev };
+                                        delete next.slot;
+                                        delete next.ticketType;
+                                        return next;
+                                      });
+                                    }
+                                  }}
+                                  style={{
+                                    padding: "10px 12px",
+                                    borderRadius: 16,
+                                    border: `1.5px solid ${isSelected ? A : B}`,
+                                    background: isSelected ? AL : BG,
+                                    color: isSelected ? A : FG,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    textAlign: "center",
+                                    transition: "0.2s",
+                                    opacity: startDate ? 1 : 0.6,
+                                  }}
+                                >
+                                  {slotLabel && (
+                                    <span style={{ display: "block", marginBottom: 2 }}>{slotLabel}</span>
+                                  )}
+                                  <span style={{ display: "block", fontSize: 10, opacity: 0.85, marginTop: slotLabel ? 0 : 2 }}>
+                                    {slotTimeDisplay}
+                                  </span>
+                                </button>
+                              );
+                            });
+                          })()}
+                        </div>
+
+                        {/* Ticket Section directly below the slots grid */}
+                        {selectedEventSlotIds.length > 0 && (
+                          <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ fontSize: 10, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                              03. Ticket Option
+                              {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
+                            </div>
+
+                            {ticketsForSelectedSlot.length > 0 ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {ticketsForSelectedSlot.map((ticket, index) => {
+                                  const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
+                                  const isSelected = String(selectedTicketTypeId) === ticketId;
+                                  const ticketBasePrice = getTicketPrice(ticket, 0);
+                                  const ticketEffectivePrice = getEffectiveTicketPrice(ticket, billableAdults, ticketBasePrice).price;
+                                  const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
+                                  return (
+                                    <div
+                                      key={ticketId}
+                                      onClick={() => {
+                                        setSelectedTicketTypeId(ticketId);
+                                        setValidationErrors(prev => {
+                                          const next = { ...prev };
+                                          delete next.ticketType;
+                                          return next;
+                                        });
+                                      }}
+                                      style={{
+                                        padding: "12px 16px",
+                                        borderRadius: 16,
+                                        border: `1.5px solid ${isSelected ? A : B}`,
+                                        background: isSelected ? AL : BG,
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        transition: "0.2s",
+                                        boxShadow: isSelected ? `0 4px 12px ${A}11` : "none"
+                                      }}
+                                    >
+                                      <div>
+                                        <div style={{ fontWeight: 700, fontSize: 13, color: isSelected ? A : FG }}>
+                                          {getTicketName(ticket, index)}
+                                        </div>
+                                        {ticket.description && (
+                                          <div style={{ fontSize: 11, color: M, marginTop: 2 }}>
+                                            {ticket.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div style={{ fontWeight: 800, fontSize: 14, color: isSelected ? A : FG }}>
+                                        ₹{Number(ticketGuestPrice || 0).toFixed(2)}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+
+                                {/* Selected Ticket Extra Info */}
+                                {selectedTicketTypeId && selectedTicket && (
+                                  <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                                    {eventAvailabilityLoading && (
+                                      <div style={{ fontSize: 11, color: M, fontWeight: 700 }}>
+                                        Checking availability...
+                                      </div>
+                                    )}
+                                    {!eventAvailabilityLoading && selectedTicketSoldOut && (
+                                      <div style={{ fontSize: 11, color: "#d14343", fontWeight: 800 }}>
+                                        Ticket sold out.
+                                      </div>
+                                    )}
+                                    {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
+                                      <div style={{ padding: "6px 12px", background: AL, borderRadius: 8, border: `1px solid ${A}33`, alignSelf: "flex-start", display: "inline-block" }}>
+                                        <span style={{ fontSize: 11, color: A, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                                          <Sparkles size={12} />
+                                          {selectedTicketRemainingTickets !== undefined ? `Only ${selectedTicketRemainingTickets} seat${selectedTicketRemainingTickets === 1 ? "" : "s"} left (${selectedTicketRemainingTickets} spot${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining)` : "Available"}
+                                          {selectedTicketAvailabilityTotal !== undefined ? ` out of ${selectedTicketAvailabilityTotal} total` : ""}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
-                                <span style={{ display: "block", fontSize: 10, opacity: 0.85, marginTop: slotLabel ? 0 : 2 }}>
-                                  {slotTimeDisplay}
-                                </span>
-                              </button>
-                            );
-                          });
-                        })()}
+                              </div>
+                            ) : (
+                              <div style={{ padding: "12px 16px", background: BG, border: `1px solid ${B}`, borderRadius: 16, fontSize: 12, color: M, opacity: 0.65, fontStyle: "italic" }}>
+                                No tickets available for this slot.
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div style={{ position: "relative" }}>
@@ -2961,17 +3156,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
                   <div>
                     <div style={{ fontSize: 10, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
-                      03. Guests
+                      {isEventBooking ? "04. Guests" : "03. Guests"}
                       {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                     </div>
                     <div 
-                      title={!(startDate && startTime) ? "Please select date and time first" : undefined}
+                      title={!(startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
                       style={{ 
                         display: "flex", 
                         flexDirection: "column", 
                         gap: 12,
-                        opacity: (startDate && startTime) ? 1 : 0.5,
-                        pointerEvents: (startDate && startTime) ? "auto" : "none",
+                        opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
+                        pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
                         transition: "0.3s"
                       }}
                     >
@@ -3039,98 +3234,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         Group price: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} / ticket.
                       </div>
                     )}
-
-                    {isEventBooking && (
-                      <div style={{ marginTop: 10 }}>
-                        <div style={{ fontSize: 10, color: validationErrors.ticketType ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
-                          04. Ticket Type
-                          {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
-                        </div>
-                        {eventTickets.length > 0 ? (
-                          <div>
-                            <div style={{ position: "relative" }}>
-                              <select
-                              value={selectedTicketTypeId}
-                              onChange={(e) => {
-                                setSelectedTicketTypeId(e.target.value);
-                                setSelectedEventSlotIds([]);
-                                setStartTime(null);
-                                setValidationErrors(prev => {
-                                  const next = { ...prev };
-                                  delete next.ticketType;
-                                  return next;
-                                });
-                              }}
-                              style={{
-                                width: "100%",
-                                appearance: "none",
-                                padding: "10px 16px",
-                                borderRadius: 16,
-                                border: `1px solid ${validationErrors.ticketType ? `${E}44` : B}`,
-                                background: validationErrors.ticketType ? EL : BG,
-                                color: FG,
-                                cursor: "pointer",
-                                fontSize: 13,
-                                fontWeight: 600,
-                                outline: "none",
-                                transition: "0.3s"
-                              }}
-                            >
-                              <option value="">Select Ticket Type</option>
-                              {eventTickets.map((ticket, index) => {
-                                const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
-                                const ticketBasePrice = getTicketPrice(ticket, 0);
-                                const ticketEffectivePrice = getEffectiveTicketPrice(ticket, billableAdults, ticketBasePrice).price;
-                                const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
-                                return (
-                                  <option key={ticketId} value={ticketId}>
-                                    {getTicketName(ticket, index)} - ₹{Number(ticketGuestPrice || 0).toFixed(2)}
-                                  </option>
-                                );
-                              })}
-                              </select>
-                              <ChevronDown size={16} color={M} style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-                            </div>
-                             {eventAvailabilityLoading && (
-                              <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 700, lineHeight: 1.2 }}>
-                                Checking availability...
-                              </div>
-                            )}
-                            {!eventAvailabilityLoading && selectedTicketSoldOut && (
-                              <div style={{ marginTop: 4, fontSize: 11, color: "#d14343", fontWeight: 800, lineHeight: 1.2 }}>
-                                Ticket sold out.
-                              </div>
-                            )}
-                            {!eventAvailabilityLoading && !selectedTicketSoldOut && (selectedTicketAvailabilityTotal !== undefined || selectedTicketRemainingTickets !== undefined) && (
-                              <div style={{ marginTop: 8, padding: "6px 12px", background: AL, borderRadius: 8, border: `1px solid ${A}33`, display: "inline-block" }}>
-                                <span style={{ fontSize: 11, color: A, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
-                                  <Sparkles size={12} />
-                                  {selectedTicketRemainingTickets !== undefined ? `Only ${selectedTicketRemainingTickets} seat${selectedTicketRemainingTickets === 1 ? "" : "s"} left (${selectedTicketRemainingTickets} spot${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining)` : "Available"}
-                                  {selectedTicketAvailabilityTotal !== undefined ? ` out of ${selectedTicketAvailabilityTotal} total` : ""}
-                                </span>
-                              </div>
-                            )}
-                            {eventAvailabilityError && (
-                              <div style={{ marginTop: 2, fontSize: 11, color: "#d14343", fontWeight: 600, lineHeight: 1.2 }}>
-                                {eventAvailabilityError}
-                              </div>
-                            )}
-                            {selectedTicketMaxPerBooking !== undefined && (
-                              <div style={{ marginTop: 2, fontSize: 11, color: M, fontWeight: 600, lineHeight: 1.2 }}>
-                                Max {selectedTicketMaxPerBooking} per booking.
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div style={{ padding: "12px", background: BG, border: `1px solid ${B}`, borderRadius: 16, fontSize: 12, color: M }}>No ticket types available.</div>
-                        )}
-                      </div>
-                    )}
+                  </div>
 
                     {/* Price Summary removed to align with Event popup behavior */}
                   </div>
                 </div>
-              </div>
 
 
 
