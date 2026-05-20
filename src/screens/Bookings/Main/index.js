@@ -7,7 +7,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, validateStayOrder, getOrderDetails } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, validateExperienceOrEventOrder, validateStayOrder, getOrderDetails } from "../../../utils/api";
 import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
@@ -168,10 +168,10 @@ const transformMultipleBookings = async (bookingsArray) => {
     try {
       const listingId = apiBooking.listingId || apiBooking.experienceId || (apiBooking.listing && (apiBooking.listing.listingId || apiBooking.listing.id));
       const listingData = listingId ? listingCache.get(listingId) : null;
-      
+
       const eventId = apiBooking?.eventId || apiBooking?.eventDetails?.eventId || (apiBooking.listing && apiBooking.listing.eventId);
       const eventData = eventId ? eventCache.get(eventId) : null;
-      
+
       // Resolve stayId using same multi-path logic as uniqueStayIds extraction above
       const resolvedStayId = (() => {
         if (apiBooking?.stayId != null) return apiBooking.stayId;
@@ -183,7 +183,7 @@ const transformMultipleBookings = async (bookingsArray) => {
         return apiBooking?.propertyId ?? apiBooking?.stay_id ?? null;
       })();
       const stayData = resolvedStayId != null ? stayCache.get(resolvedStayId) : null;
-      
+
       // Resolve review data using category-specific keys
       const reviewData = (() => {
         if (listingId) return reviewCache.get(`experience_${listingId}`);
@@ -273,7 +273,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     if (bookingDateStr) {
       // Compare against end-of-experience time if available, otherwise end-of-day
       const deadline = new Date(bookingDateStr);
-      
+
       const endTimeStr =
         roomCheckOutTimes[0] ||
         apiBooking.timeSlotEndTime ||
@@ -281,7 +281,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
         apiBooking.checkoutTime ||
         apiBooking.endTime ||
         apiBooking.bookingTime;
-      
+
       if (endTimeStr && typeof endTimeStr === 'string' && endTimeStr.includes(':')) {
         const [hours, minutes, seconds] = endTimeStr.split(':').map(Number);
         deadline.setHours(hours || 0, minutes || 0, seconds || 0, 0);
@@ -300,8 +300,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Get title - for EVENTS orders, prefer eventTitle; for others, prefer listing data
   // Check if this is an EVENTS order by businessInterestCode
-  const isEventOrder = 
-    apiBooking?.businessInterestCode === "EVENTS" || 
+  const isEventOrder =
+    apiBooking?.businessInterestCode === "EVENTS" ||
     apiBooking?.businessInterestCode === "EVENT" ||
     apiBooking?.eventId != null;
 
@@ -542,8 +542,7 @@ const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
 
   if (tabId === "cancelled") {
     const validActions = baseActions.filter((a) => a.label === "View Details");
-    const categoryUpper = String(booking?.category || "").toUpperCase().trim();
-    if ((categoryUpper === "EXPERIENCE" || categoryUpper === "EVENTS" || categoryUpper === "EVENT") && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
+    if (booking?.category === "EXPERIENCE" && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
       validActions.unshift({ label: "Check Availability", variant: "secondary" });
     }
     return validActions;
@@ -671,11 +670,7 @@ const Main = ({
     setIsCheckingAvailability(true);
     setCheckingOrderId(booking.orderId);
     try {
-      const categoryUpper = String(booking?.category || "").toUpperCase().trim();
-      const isStay = categoryUpper === "STAYS" || categoryUpper === "STAY";
-      const response = isStay 
-        ? await validateStayOrder(booking.orderId)
-        : await validateExperienceOrEventOrder(booking.orderId);
+      const response = await validateExperienceOrEventOrder(booking.orderId);
       if (response?.canProceed === true) {
         setSelectedBookingForPayment(booking);
         setConfirmPayModalVisible(true);
@@ -946,7 +941,7 @@ const Main = ({
     const categorized = transformedBookings.reduce((acc, booking) => {
       const tabId = booking.statusTone === "upcoming" ? "upcoming"
         : booking.statusTone === "completed" ? "completed"
-        : "cancelled";
+          : "cancelled";
       acc[tabId] = (acc[tabId] || 0) + 1;
       return acc;
     }, {});
@@ -978,7 +973,7 @@ const Main = ({
       result = transformedBookings.filter((booking) => {
         const tabId = booking.statusTone === "upcoming" ? "upcoming"
           : booking.statusTone === "completed" ? null  // exclude — goes to completed tab
-          : "cancelled";
+            : "cancelled";
         return tabId === displayedTab;
       });
     }
@@ -998,7 +993,7 @@ const Main = ({
       // This ensures "Latest Bookings" appear on top as requested.
       const createdA = a.bookingData?.createdAt || a.bookingData?.orderDate || a.bookingData?.bookedAt || "";
       const createdB = b.bookingData?.createdAt || b.bookingData?.orderDate || b.bookingData?.bookedAt || "";
-      
+
       if (createdA !== createdB) {
         return createdB.localeCompare(createdA);
       }
@@ -1242,7 +1237,7 @@ const Main = ({
         listingId: bookingToReview.bookingData?.listingId,
         eventId: bookingToReview.bookingData?.eventId,
         stayId: bookingToReview.bookingData?.stayId ||
-                (bookingToReview.bookingData?.stayOrderRooms && bookingToReview.bookingData.stayOrderRooms[0]?.stayId),
+          (bookingToReview.bookingData?.stayOrderRooms && bookingToReview.bookingData.stayOrderRooms[0]?.stayId),
       });
 
       // Update eligibility immediately
@@ -1253,14 +1248,14 @@ const Main = ({
       });
 
       // Refresh review data for the specific listing to update the card's rating/count
-      const listingIdToRefresh = bookingToReview.bookingData?.listingId || 
-                                 bookingToReview.bookingData?.experienceId || 
-                                 bookingToReview.listingId;
+      const listingIdToRefresh = bookingToReview.bookingData?.listingId ||
+        bookingToReview.bookingData?.experienceId ||
+        bookingToReview.listingId;
       const eventIdToRefresh = bookingToReview.bookingData?.eventId || bookingToReview.eventId;
-      const stayIdToRefresh = bookingToReview.bookingData?.stayId || 
-                              (bookingToReview.bookingData?.stayOrderRooms && bookingToReview.bookingData.stayOrderRooms[0]?.stayId) ||
-                              bookingToReview.stayId;
-      
+      const stayIdToRefresh = bookingToReview.bookingData?.stayId ||
+        (bookingToReview.bookingData?.stayOrderRooms && bookingToReview.bookingData.stayOrderRooms[0]?.stayId) ||
+        bookingToReview.stayId;
+
       try {
         let freshReviewData = null;
         if (listingIdToRefresh) freshReviewData = await getListingReviews(listingIdToRefresh);
@@ -1270,13 +1265,13 @@ const Main = ({
         if (freshReviewData) {
           // Robustly extract rating and count (handles both object and plain array responses)
           const summary = freshReviewData?.ratingSummary || freshReviewData?.summary;
-          const rating = summary?.averageRating || 
-                        (Array.isArray(freshReviewData) && freshReviewData.length > 0 
-                         ? (freshReviewData.reduce((acc, r) => acc + (r.rating || 0), 0) / freshReviewData.length) 
-                         : 0);
-          const reviewCount = summary?.totalReviews || 
-                            (Array.isArray(freshReviewData) ? freshReviewData.length : 
-                            (Array.isArray(freshReviewData?.reviews) ? freshReviewData.reviews.length : 0));
+          const rating = summary?.averageRating ||
+            (Array.isArray(freshReviewData) && freshReviewData.length > 0
+              ? (freshReviewData.reduce((acc, r) => acc + (r.rating || 0), 0) / freshReviewData.length)
+              : 0);
+          const reviewCount = summary?.totalReviews ||
+            (Array.isArray(freshReviewData) ? freshReviewData.length :
+              (Array.isArray(freshReviewData?.reviews) ? freshReviewData.reviews.length : 0));
 
           const updateBooking = (prev) => prev.map(b => {
             if (b.orderId === bookingToReview.orderId) {
@@ -1393,15 +1388,15 @@ const Main = ({
                             (Number(booking.bookingData?.totalPrice) === 0) ||
                             (Number(booking.bookingData?.finalAmount) === 0) ||
                             (Number(booking.bookingData?.amount) === 0)) && (
-                            <>
-                              <span className={styles.dot} aria-hidden="true">
-                                •
-                              </span>
-                              <span className={styles.category} style={{ color: "#4584FF" }}>
-                                Free Reservation
-                              </span>
-                            </>
-                          )}
+                              <>
+                                <span className={styles.dot} aria-hidden="true">
+                                  •
+                                </span>
+                                <span className={styles.category} style={{ color: "#4584FF" }}>
+                                  Free Reservation
+                                </span>
+                              </>
+                            )}
                           {booking.bookingData?.orderStatus && (
                             <>
                               <span className={styles.dot} aria-hidden="true">
@@ -1418,13 +1413,13 @@ const Main = ({
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
                                 backgroundColor: (booking.status === "Completed" || displayedTab === "completed") ? "#E3F2FD" :
-                                                 (String(booking.bookingData.orderStatus || "").toUpperCase() === "CONFIRMED") ? "#E8F5E9" :
-                                                 (String(booking.bookingData.orderStatus || "").toUpperCase() === "PENDING")   ? "#FFF3E0" :
-                                                 (String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELLED" || String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELED") ? "#FFEBEE" : "#F3F4F6",
+                                  (String(booking.bookingData.orderStatus || "").toUpperCase() === "CONFIRMED") ? "#E8F5E9" :
+                                    (String(booking.bookingData.orderStatus || "").toUpperCase() === "PENDING") ? "#FFF3E0" :
+                                      (String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELLED" || String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELED") ? "#FFEBEE" : "#F3F4F6",
                                 color: (booking.status === "Completed" || displayedTab === "completed") ? "#1565C0" :
-                                       (String(booking.bookingData.orderStatus || "").toUpperCase() === "CONFIRMED") ? "#2E7D32" :
-                                       (String(booking.bookingData.orderStatus || "").toUpperCase() === "PENDING")   ? "#E65100" :
-                                       (String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELLED" || String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELED") ? "#C62828" : "#6B7280",
+                                  (String(booking.bookingData.orderStatus || "").toUpperCase() === "CONFIRMED") ? "#2E7D32" :
+                                    (String(booking.bookingData.orderStatus || "").toUpperCase() === "PENDING") ? "#E65100" :
+                                      (String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELLED" || String(booking.bookingData.orderStatus || "").toUpperCase() === "CANCELED") ? "#C62828" : "#6B7280",
                               }}>
                                 {(booking.status === "Completed" || displayedTab === "completed") ? "COMPLETED" : (
                                   String(booking.bookingData?.orderStatus || "").toUpperCase()
@@ -1776,9 +1771,9 @@ const Main = ({
               You can proceed with payment to confirm your booking.
             </p>
           </div>
-          
+
           <div className={styles.cancelModalBody} style={{ flex: "1 1 auto", overflowY: "auto", padding: "0 32px 16px" }}>
-            <div style={{ 
+            <div style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               gap: "20px",
@@ -1786,10 +1781,10 @@ const Main = ({
               textAlign: "left"
             }}>
               {/* Left Column: Booking Summary */}
-              <div style={{ 
-                background: "rgba(244, 245, 246, 0.03)", 
-                borderRadius: "12px", 
-                padding: "16px", 
+              <div style={{
+                background: "rgba(244, 245, 246, 0.03)",
+                borderRadius: "12px",
+                padding: "16px",
                 border: "1px solid rgba(226, 232, 240, 0.08)",
                 display: "flex",
                 flexDirection: "column",
@@ -1800,77 +1795,29 @@ const Main = ({
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
-                    <span style={{ color: "#777E90" }}>
-                      {(() => {
-                        const catUpper = String(selectedBookingForPayment?.category || "").toUpperCase().trim();
-                        if (catUpper === "STAYS" || catUpper === "STAY") return "Stay:";
-                        if (catUpper === "EVENTS" || catUpper === "EVENT") return "Event:";
-                        return "Experience:";
-                      })()}
-                    </span>
+                    <span style={{ color: "#777E90" }}>Experience:</span>
                     <span style={{ fontWeight: "500", textAlign: "right" }}>{selectedBookingForPayment?.title}</span>
                   </div>
-                  {(() => {
-                    const catUpper = String(selectedBookingForPayment?.category || "").toUpperCase().trim();
-                    const isStay = catUpper === "STAYS" || catUpper === "STAY";
-                    if (isStay) {
-                      return (
-                        <>
-                          <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "#777E90" }}>Check-in:</span>
-                            <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.startDate}</span>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "#777E90" }}>Check-out:</span>
-                            <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.endDate}</span>
-                          </div>
-                        </>
-                      );
-                    } else {
-                      return (
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "#777E90" }}>Date:</span>
-                          <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.bookingData?.bookingDate || selectedBookingForPayment?.startDate}</span>
-                        </div>
-                      );
-                    }
-                  })()}
-                  {(() => {
-                    const catUpper = String(selectedBookingForPayment?.category || "").toUpperCase().trim();
-                    const isStay = catUpper === "STAYS" || catUpper === "STAY";
-                    if (!isStay) {
-                      return (
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ color: "#777E90" }}>Time Slot:</span>
-                          <span style={{ fontWeight: "500" }}>
-                            {selectedBookingForPayment?.bookingData?.bookingTime || selectedBookingForPayment?.bookingData?.bookingSlot?.name || "Confirmed Slot"}
-                          </span>
-                        </div>
-                      );
-                    } else {
-                      const rooms = selectedBookingForPayment?.bookingData?.roomsCount || selectedBookingForPayment?.bookingData?.numberOfRooms || selectedBookingForPayment?.bookingData?.rooms?.length || 0;
-                      if (rooms > 0) {
-                        return (
-                          <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "#777E90" }}>Rooms:</span>
-                            <span style={{ fontWeight: "500" }}>{rooms} Room{rooms > 1 ? "s" : ""}</span>
-                          </div>
-                        );
-                      }
-                    }
-                    return null;
-                  })()}
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#777E90" }}>Date:</span>
+                    <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.bookingData?.bookingDate || selectedBookingForPayment?.startDate}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#777E90" }}>Time Slot:</span>
+                    <span style={{ fontWeight: "500" }}>
+                      {selectedBookingForPayment?.bookingData?.bookingTime || selectedBookingForPayment?.bookingData?.bookingSlot?.name || "Confirmed Slot"}
+                    </span>
+                  </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#777E90" }}>Guests:</span>
                     <span style={{ fontWeight: "500" }}>
                       {(() => {
-                        const adults = selectedBookingForPayment?.bookingData?.adultsCount > 0 ? selectedBookingForPayment.bookingData.adultsCount : Math.max(0, (selectedBookingForPayment?.bookingData?.guestCount || selectedBookingForPayment?.bookingData?.numberOfGuests || 0) - (selectedBookingForPayment?.bookingData?.childrenCount || 0));
+                        const adults = selectedBookingForPayment?.bookingData?.adultsCount > 0 ? selectedBookingForPayment.bookingData.adultsCount : Math.max(0, (selectedBookingForPayment?.bookingData?.guestCount || 0) - (selectedBookingForPayment?.bookingData?.childrenCount || 0));
                         const children = selectedBookingForPayment?.bookingData?.childrenCount || 0;
                         if (adults > 0 || children > 0) {
                           return `${adults} Adult${adults > 1 ? "s" : ""}${children > 0 ? `, ${children} Child${children !== 1 ? "ren" : ""}` : ""}`;
                         }
-                        const totalGuests = selectedBookingForPayment?.bookingData?.guestCount || selectedBookingForPayment?.bookingData?.numberOfGuests || selectedBookingForPayment?.guestCount || 0;
-                        return `${totalGuests} Guest${totalGuests === 1 ? "" : "s"}`;
+                        return `${selectedBookingForPayment?.bookingData?.guestCount || 0} Guest${selectedBookingForPayment?.bookingData?.guestCount === 1 ? "" : "s"}`;
                       })()}
                     </span>
                   </div>
@@ -1878,10 +1825,10 @@ const Main = ({
               </div>
 
               {/* Right Column: Price Details */}
-              <div style={{ 
-                background: "rgba(244, 245, 246, 0.03)", 
-                borderRadius: "12px", 
-                padding: "16px", 
+              <div style={{
+                background: "rgba(244, 245, 246, 0.03)",
+                borderRadius: "12px",
+                padding: "16px",
                 border: "1px solid rgba(226, 232, 240, 0.08)",
                 display: "flex",
                 flexDirection: "column",
@@ -1986,4 +1933,4 @@ const Main = ({
 };
 
 export default Main;
-          
+
