@@ -1302,11 +1302,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return keys;
   }, [baseTimeSlots, dateFilteredSlots, isEventBooking, listing]);
 
-  useEffect(() => {
-    if (!isEventBooking || selectedTicketTypeId || eventTickets.length === 0) return;
-    const firstTicket = eventTickets[0];
-    setSelectedTicketTypeId(String(firstTicket.id ?? firstTicket.ticketTypeId ?? firstTicket.typeId ?? "ticket-0"));
-  }, [eventTickets, isEventBooking, selectedTicketTypeId]);
+
 
   useEffect(() => {
     if (!isEventBooking || !show || !eventIdForAvailability) return;
@@ -2965,8 +2961,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           {validationErrors.ticketType && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Required</span>}
                         </div>
                         {eventTickets.length > 0 ? (
-                          <div style={{ position: "relative" }}>
-                            <select
+                          <div>
+                            <div style={{ position: "relative" }}>
+                              <select
                               value={selectedTicketTypeId}
                               onChange={(e) => {
                                 setSelectedTicketTypeId(e.target.value);
@@ -3005,8 +3002,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   </option>
                                 );
                               })}
-                            </select>
-                            <ChevronDown size={16} color={M} style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                              </select>
+                              <ChevronDown size={16} color={M} style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                            </div>
                              {eventAvailabilityLoading && (
                               <div style={{ marginTop: 4, fontSize: 11, color: M, fontWeight: 700, lineHeight: 1.2 }}>
                                 Checking availability...
