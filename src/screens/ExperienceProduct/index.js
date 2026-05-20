@@ -348,6 +348,13 @@ const ExperienceProduct = () => {
   const [gridVisible, setGridVisible] = useState(false);
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const hostLeadUserId = hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
+  const leadIdForProfile = leadData?.leadId || leadData?.id || listing?.leadId || listing?.lead_id || listing?.host?.leadId || null;
+  const displayHostName =
+    [leadData?.firstName, leadData?.lastName].filter(Boolean).join(" ").trim() ||
+    [hostData?.firstName, hostData?.lastName].filter(Boolean).join(" ").trim() ||
+    hostData?.displayName ||
+    hostData?.name ||
+    "Host";
 
   const handleUpdateAddonQuantity = (addon, delta) => {
     const addonId = addon.addonId || addon.id;
@@ -507,8 +514,13 @@ const ExperienceProduct = () => {
 
   const displayTags = listing?.tags || [];
   const navigateToHostProfile = () => {
-    if (!hostLeadUserId) return;
-    history.push(`/host-profile?id=${hostLeadUserId}`);
+    const profileId = leadIdForProfile || hostLeadUserId;
+    if (!profileId) return;
+    const query = new URLSearchParams();
+    query.set("id", String(profileId));
+    if (leadIdForProfile) query.set("leadId", String(leadIdForProfile));
+    if (hostLeadUserId) query.set("leadUserId", String(hostLeadUserId));
+    history.push(`/host-profile?${query.toString()}`);
   };
 
   return (
@@ -1022,21 +1034,21 @@ const ExperienceProduct = () => {
                     fontWeight: 700,
                     color: FG,
                     marginBottom: 8,
-                    cursor: hostLeadUserId ? "pointer" : "default",
-                    textDecoration: hostLeadUserId ? "underline" : "none",
+                    cursor: (leadIdForProfile || hostLeadUserId) ? "pointer" : "default",
+                    textDecoration: (leadIdForProfile || hostLeadUserId) ? "underline" : "none",
                     textDecorationThickness: "2px",
                     textUnderlineOffset: "5px"
                   }}
-                  title={hostLeadUserId ? "View all listings by this host" : undefined}
+                  title={(leadIdForProfile || hostLeadUserId) ? "View host profile" : undefined}
                 >
-                  {hostData?.firstName} {hostData?.lastName || ""}
+                  {displayHostName}
                 </h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
                 <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.about || "An expert guide who will personally lead the Experience group through the unseen veins of the venue, offering context and narrative to every installation."}</p>
                 {leadData && (
                   <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Phone size={14} color={A} /> {leadData.contactNumber}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Info size={14} color={A} /> {leadData.email}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Phone size={14} color={A} /> {leadData.phoneNumber || leadData.contactNumber || leadData.altPhoneNumber || "-"}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Info size={14} color={A} /> {leadData.email || leadData.altEmail || "-"}</div>
                   </div>
                 )}
               </div>
