@@ -7,7 +7,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder } from "../../../utils/api";
 import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
@@ -541,7 +541,11 @@ const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
   const baseActions = actionsByStatus[booking?.status] || [];
 
   if (tabId === "cancelled") {
-    return baseActions.filter((a) => a.label === "View Details");
+    const validActions = baseActions.filter((a) => a.label === "View Details");
+    if (booking?.category === "EXPERIENCE" && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
+      validActions.unshift({ label: "Check Availability", variant: "secondary" });
+    }
+    return validActions;
   }
 
   if (tabId === "upcoming") {
@@ -587,6 +591,138 @@ const Main = ({
   const [reviewError, setReviewError] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [orderIdsEligibleForReview, setOrderIdsEligibleForReview] = useState(new Set());
+
+  // Check Availability State
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [checkingOrderId, setCheckingOrderId] = useState(null);
+  const [validationModalVisible, setValidationModalVisible] = useState(false);
+  const [validationModalData, setValidationModalData] = useState({ title: "", message: "", details: "", isSuccess: false });
+  const [validatedBookingId, setValidatedBookingId] = useState(null);
+
+  const mapValidationFailureToFriendlyMessage = (failure) => {
+    const code = String(failure?.code || "UNKNOWN").toUpperCase();
+    const details = failure?.details || {};
+
+    switch (code) {
+      case "ORDER_NOT_FOUND":
+        return {
+          title: "Booking not found",
+          message: "We could not find this booking. Please refresh and try again.",
+          code,
+          details: "",
+          isSuccess: false,
+        };
+      case "ORDER_NOT_PENDING":
+        return {
+          title: "Booking is no longer pending",
+          message: "This booking cannot be confirmed now because its status has changed.",
+          code,
+          details: "",
+          isSuccess: false,
+        };
+      case "DATE_UNAVAILABLE":
+        return {
+          title: "Selected date unavailable",
+          message: "The selected date is no longer available.",
+          code,
+          details: "",
+          isSuccess: false,
+        };
+      case "SLOT_UNAVAILABLE":
+        return {
+          title: "Selected slot unavailable",
+          message: "The selected time slot is no longer available.",
+          code,
+          details: "",
+          isSuccess: false,
+        };
+      case "CAPACITY_EXCEEDED": {
+        const requested = details.requested != null ? String(details.requested) : "";
+        const available = details.available != null ? String(details.available) : "";
+        const ticketName = failure?.message?.match(/"([^"]+)"/)?.[1] || "";
+        const summary = requested || available
+          ? `${ticketName ? `${ticketName}: ` : ""}${available || "0"} left, requested ${requested || "N/A"}.`
+          : "Requested quantity exceeds current availability.";
+        return {
+          title: "Experience is fully booked",
+          message: "Selected slot is no longer available or not enough capacity.",
+          code,
+          details: summary,
+          isSuccess: false,
+        };
+      }
+      default:
+        return {
+          title: "Availability check failed",
+          message: "We could not validate this booking right now. Please try again.",
+          code,
+          details: "",
+          isSuccess: false,
+        };
+    }
+  };
+
+  const handleCheckAvailability = async (booking) => {
+    if (isCheckingAvailability) return;
+    setIsCheckingAvailability(true);
+    setCheckingOrderId(booking.orderId);
+    try {
+      const response = await validateExperienceOrEventOrder(booking.orderId);
+      if (response?.canProceed === true) {
+        setValidationModalData({
+          title: "Availability check",
+          message: "Slots are currently available",
+          details: "",
+          isSuccess: true,
+        });
+        setValidatedBookingId(booking.id);
+        setValidationModalVisible(true);
+        return;
+      }
+
+      const firstFailure = Array.isArray(response?.failures) && response.failures.length > 0
+        ? response.failures[0]
+        : null;
+
+      if (firstFailure) {
+        setValidationModalData(mapValidationFailureToFriendlyMessage(firstFailure));
+      } else {
+        setValidationModalData({
+          title: "Availability check failed",
+          message: "Selected slot is no longer available",
+          details: "",
+          isSuccess: false,
+        });
+      }
+      setValidatedBookingId(null);
+      setValidationModalVisible(true);
+    } catch (error) {
+      console.error("Error validating booking:", error);
+      const responseData = error?.response?.data;
+      if (error?.response?.status === 409 && responseData) {
+        const firstFailure = Array.isArray(responseData?.failures) && responseData.failures.length > 0
+          ? responseData.failures[0]
+          : null;
+        if (firstFailure) {
+          setValidationModalData(mapValidationFailureToFriendlyMessage(firstFailure));
+          setValidatedBookingId(null);
+          setValidationModalVisible(true);
+          return;
+        }
+      }
+      setValidationModalData({
+        title: "Unable to check availability",
+        message: error?.message || "Failed to check availability.",
+        details: "",
+        isSuccess: false,
+      });
+      setValidatedBookingId(null);
+      setValidationModalVisible(true);
+    } finally {
+      setIsCheckingAvailability(false);
+      setCheckingOrderId(null);
+    }
+  };
 
   // Fetch review eligibility on mount
   useEffect(() => {
@@ -1223,6 +1359,20 @@ const Main = ({
                               </Link>
                             );
                           }
+                          if (action.label === "Check Availability") {
+                            const isChecking = isCheckingAvailability && checkingOrderId === booking.orderId;
+                            return (
+                              <button
+                                type="button"
+                                key={`${booking.id}-${action.label}`}
+                                className={getButtonClassName(action.variant)}
+                                onClick={() => handleCheckAvailability(booking)}
+                                disabled={isCheckingAvailability}
+                              >
+                                {isChecking ? "Checking..." : action.label}
+                              </button>
+                            );
+                          }
                           if (action.label === "Cancel Booking") {
                             return (
                               <button
@@ -1439,6 +1589,50 @@ const Main = ({
             >
               {isSubmittingReview ? "Submitting..." : "Post it!"}
             </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        visible={validationModalVisible}
+        onClose={() => setValidationModalVisible(false)}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>
+              {validationModalData.title}
+            </h2>
+            <p className={styles.cancelModalDescription}>
+              {validationModalData.message}
+            </p>
+            {validationModalData.details && (
+              <p className={styles.cancelModalDescription} style={{ marginTop: '8px' }}>
+                {validationModalData.details}
+              </p>
+            )}
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => setValidationModalVisible(false)}
+            >
+              {validationModalData.isSuccess ? "Cancel" : "Close"}
+            </button>
+            {validationModalData.isSuccess && (
+              <Link
+                to={{
+                  pathname: "/viewdetails",
+                  search: `?id=${encodeURIComponent(validatedBookingId)}`,
+                  state: { sourceTab: displayedTab },
+                }}
+                className={cn("button", styles.cancelModalBtn)}
+                onClick={() => setValidationModalVisible(false)}
+              >
+                Continue to Payment
+              </Link>
+            )}
           </div>
         </div>
       </Modal>
