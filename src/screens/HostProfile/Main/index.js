@@ -7,11 +7,7 @@ import Details from "./Details";
 import List from "./List";
 import {
   getHost,
-  getListings,
-  getEventListings,
-  getStayListings,
-  getPlaces,
-  getFoodMenus,
+  getHostContent,
 } from "../../../utils/api";
 
 const socials = [
@@ -89,24 +85,62 @@ const Main = ({ hostId }) => {
       return [];
     };
 
+    const getInterestCode = (item) => {
+      const raw =
+        item?.itemType ||
+        item?.businessInterestCode ||
+        item?.businessInterest ||
+        item?.business_interest_code ||
+        item?.business_interest;
+      return String(raw || "").toUpperCase().trim();
+    };
+
     const loadTabListings = async () => {
+      if (!hostId) return;
       try {
-        const [experienceRes, eventRes, stayRes, placeRes, foodRes] = await Promise.all([
-          getListings("EXPERIENCE", 50, 0),
-          getEventListings(50, 0),
-          getStayListings(50, 0),
-          getPlaces(50, 0),
-          getFoodMenus(50, 0),
-        ]);
+        const contentRes = await getHostContent(hostId);
+        console.log("📦 Host content API response:", { hostId, contentRes });
 
         if (!mounted) return;
 
+        const grouped = {
+          experiences: [],
+          events: [],
+          stays: [],
+          places: [],
+          foodMenus: [],
+        };
+
+        const directExperiences = normalizeArray(contentRes, ["experiences", "experience", "listings"]);
+        const directEvents = normalizeArray(contentRes, ["events", "eventListings", "event_listings"]);
+        const directStays = normalizeArray(contentRes, ["stays", "stayListings", "stay_listings"]);
+        const directPlaces = normalizeArray(contentRes, ["places", "placeListings", "place_listings"]);
+        const directFood = normalizeArray(contentRes, ["foods", "foodMenus", "food_menus", "food", "menus"]);
+        const genericListings = normalizeArray(contentRes, ["content", "listings", "items", "data"]);
+
+        if (directExperiences.length || directEvents.length || directStays.length || directPlaces.length || directFood.length) {
+          grouped.experiences = directExperiences;
+          grouped.events = directEvents;
+          grouped.stays = directStays;
+          grouped.places = directPlaces;
+          grouped.foodMenus = directFood;
+        } else {
+          genericListings.forEach((item) => {
+            const code = getInterestCode(item);
+            if (code === "EVENT" || code === "EVENTS") grouped.events.push(item);
+            else if (code === "STAY" || code === "STAYS") grouped.stays.push(item);
+            else if (code === "PLACE" || code === "PLACES") grouped.places.push(item);
+            else if (code === "FOOD") grouped.foodMenus.push(item);
+            else grouped.experiences.push(item);
+          });
+        }
+
         setTabListings({
-          experiences: Array.isArray(experienceRes) ? experienceRes : [],
-          events: normalizeArray(eventRes, ["events", "listings", "items", "data"]),
-          stays: Array.isArray(stayRes?.listings) ? stayRes.listings : normalizeArray(stayRes, ["stays", "listings", "items", "data"]),
-          places: Array.isArray(placeRes?.listings) ? placeRes.listings : normalizeArray(placeRes, ["places", "listings", "items", "data"]),
-          foodMenus: Array.isArray(foodRes?.listings) ? foodRes.listings : normalizeArray(foodRes, ["foodMenus", "food_menus", "listings", "items", "data"]),
+          experiences: grouped.experiences,
+          events: grouped.events,
+          stays: grouped.stays,
+          places: grouped.places,
+          foodMenus: grouped.foodMenus,
         });
       } catch (err) {
         console.error("Failed to load host profile tab listings:", err);
@@ -117,7 +151,7 @@ const Main = ({ hostId }) => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [hostId]);
 
   // Extract host information
   const host = hostData?.host || null;
