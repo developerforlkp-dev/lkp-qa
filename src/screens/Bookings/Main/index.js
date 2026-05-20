@@ -669,14 +669,18 @@ const Main = ({
     try {
       const response = await validateExperienceOrEventOrder(booking.orderId);
       if (response?.canProceed === true) {
-        setValidationModalData({
-          title: "Availability check",
-          message: "Slots are currently available",
-          details: "",
-          isSuccess: true,
+        const isEvent = booking.category === "EVENTS" ||
+          booking.bookingData?.eventId ||
+          booking.bookingData?.businessInterestCode === "EVENTS";
+        const search = isEvent
+          ? `?id=${encodeURIComponent(booking.id)}&type=event&autopay=true`
+          : `?id=${encodeURIComponent(booking.id)}&autopay=true`;
+
+        history.push({
+          pathname: "/viewdetails",
+          search,
+          state: { sourceTab: displayedTab },
         });
-        setValidatedBookingId(booking.id);
-        setValidationModalVisible(true);
         return;
       }
 

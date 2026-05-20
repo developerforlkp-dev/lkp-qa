@@ -663,6 +663,8 @@ const ViewDetails = () => {
     code: "",
     details: "",
   });
+  const [hasAutopaid, setHasAutopaid] = useState(false);
+  const [priceChangedData, setPriceChangedData] = useState(null);
   const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
@@ -838,17 +840,9 @@ const ViewDetails = () => {
     }
   };
 
-  const openRazorpayForBooking = async () => {
-    if (!booking?.orderId || isConfirmingBooking) return;
+  const triggerRazorpayOpen = async (orderResponse, order, payment) => {
     setIsConfirmingBooking(true);
-
     try {
-      const orderResponse = booking.isEventOrder
-        ? await getEventOrderDetails(booking.orderId)
-        : await getOrderDetails(booking.orderId);
-      const order = orderResponse?.order || orderResponse || {};
-      const payment = orderResponse?.payment || order?.payment || {};
-
       const amountInPaise =
         Number(payment?.amount) > 0
           ? Number(payment.amount)
@@ -934,6 +928,42 @@ const ViewDetails = () => {
       console.error("Error confirming booking:", err);
       alert(err?.message || "Failed to open payment gateway.");
     } finally {
+      setIsConfirmingBooking(false);
+    }
+  };
+
+  const openRazorpayForBooking = async (bypassPriceCheck = false) => {
+    if (!booking?.orderId || isConfirmingBooking) return;
+    setIsConfirmingBooking(true);
+
+    try {
+      const orderResponse = booking.isEventOrder
+        ? await getEventOrderDetails(booking.orderId)
+        : await getOrderDetails(booking.orderId);
+      const order = orderResponse?.order || orderResponse || {};
+      const payment = orderResponse?.payment || order?.payment || {};
+
+      const latestPrice = Number(order?.totalPrice || order?.finalAmount || 0);
+      const originalPrice = Number(booking?.originalData?.totalPrice || 0);
+
+      if (!bypassPriceCheck && latestPrice > 0 && originalPrice > 0 && latestPrice !== originalPrice) {
+        setPriceChangedData({
+          oldPrice: originalPrice,
+          newPrice: latestPrice,
+          currency: order?.currency || booking?.originalData?.currency || "INR",
+          onConfirm: () => {
+            setPriceChangedData(null);
+            triggerRazorpayOpen(orderResponse, order, payment);
+          }
+        });
+        setIsConfirmingBooking(false);
+        return;
+      }
+
+      await triggerRazorpayOpen(orderResponse, order, payment);
+    } catch (err) {
+      console.error("Error fetching order details for Razorpay:", err);
+      alert(err?.message || "Failed to initialize payment.");
       setIsConfirmingBooking(false);
     }
   };
@@ -1409,6 +1439,14 @@ const ViewDetails = () => {
 
     loadBooking();
   }, [bookingId, bookingType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const autoPayParam = new URLSearchParams(location.search).get("autopay") === "true";
+    if (autoPayParam && booking && !loading && !error && !hasAutopaid) {
+      setHasAutopaid(true);
+      handleCheckAvailabilityAndProceed();
+    }
+  }, [booking, loading, error, hasAutopaid, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const loadReviewEligibility = async () => {
@@ -2167,6 +2205,58 @@ const ViewDetails = () => {
               onClick={() => setValidationModalVisible(false)}
             >
               Okay
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Price Update Consent Modal */}
+      <Modal
+        visible={!!priceChangedData}
+        onClose={() => {
+          setPriceChangedData(null);
+          setIsConfirmingBooking(false);
+        }}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>Price Updated</h2>
+            <p className={styles.cancelModalDescription}>
+              The price for this experience booking has been updated.
+            </p>
+          </div>
+          <div className={styles.cancelModalBody}>
+            <p className={styles.cancelModalDescription} style={{ marginBottom: "16px" }}>
+              Original Price: <strong>{priceChangedData ? formatMoney(priceChangedData.oldPrice, priceChangedData.currency) : ""}</strong>
+              <br />
+              Updated Price: <strong>{priceChangedData ? formatMoney(priceChangedData.newPrice, priceChangedData.currency) : ""}</strong>
+            </p>
+            <p className={styles.cancelModalDescription}>
+              Would you like to proceed with the updated payment amount?
+            </p>
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => {
+                setPriceChangedData(null);
+                setIsConfirmingBooking(false);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={() => {
+                if (priceChangedData?.onConfirm) {
+                  priceChangedData.onConfirm();
+                }
+              }}
+            >
+              Proceed to Payment
             </button>
           </div>
         </div>
