@@ -7,7 +7,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, validateStayOrder, getOrderDetails } from "../../../utils/api";
 import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
@@ -542,7 +542,8 @@ const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
 
   if (tabId === "cancelled") {
     const validActions = baseActions.filter((a) => a.label === "View Details");
-    if (booking?.category === "EXPERIENCE" && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
+    const categoryUpper = String(booking?.category || "").toUpperCase().trim();
+    if ((categoryUpper === "EXPERIENCE" || categoryUpper === "EVENTS" || categoryUpper === "EVENT") && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
       validActions.unshift({ label: "Check Availability", variant: "secondary" });
     }
     return validActions;
@@ -670,7 +671,11 @@ const Main = ({
     setIsCheckingAvailability(true);
     setCheckingOrderId(booking.orderId);
     try {
-      const response = await validateExperienceOrEventOrder(booking.orderId);
+      const categoryUpper = String(booking?.category || "").toUpperCase().trim();
+      const isStay = categoryUpper === "STAYS" || categoryUpper === "STAY";
+      const response = isStay 
+        ? await validateStayOrder(booking.orderId)
+        : await validateExperienceOrEventOrder(booking.orderId);
       if (response?.canProceed === true) {
         setSelectedBookingForPayment(booking);
         setConfirmPayModalVisible(true);
@@ -1795,29 +1800,77 @@ const Main = ({
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
-                    <span style={{ color: "#777E90" }}>Experience:</span>
+                    <span style={{ color: "#777E90" }}>
+                      {(() => {
+                        const catUpper = String(selectedBookingForPayment?.category || "").toUpperCase().trim();
+                        if (catUpper === "STAYS" || catUpper === "STAY") return "Stay:";
+                        if (catUpper === "EVENTS" || catUpper === "EVENT") return "Event:";
+                        return "Experience:";
+                      })()}
+                    </span>
                     <span style={{ fontWeight: "500", textAlign: "right" }}>{selectedBookingForPayment?.title}</span>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "#777E90" }}>Date:</span>
-                    <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.bookingData?.bookingDate || selectedBookingForPayment?.startDate}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "#777E90" }}>Time Slot:</span>
-                    <span style={{ fontWeight: "500" }}>
-                      {selectedBookingForPayment?.bookingData?.bookingTime || selectedBookingForPayment?.bookingData?.bookingSlot?.name || "Confirmed Slot"}
-                    </span>
-                  </div>
+                  {(() => {
+                    const catUpper = String(selectedBookingForPayment?.category || "").toUpperCase().trim();
+                    const isStay = catUpper === "STAYS" || catUpper === "STAY";
+                    if (isStay) {
+                      return (
+                        <>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "#777E90" }}>Check-in:</span>
+                            <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.startDate}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "#777E90" }}>Check-out:</span>
+                            <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.endDate}</span>
+                          </div>
+                        </>
+                      );
+                    } else {
+                      return (
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ color: "#777E90" }}>Date:</span>
+                          <span style={{ fontWeight: "500" }}>{selectedBookingForPayment?.bookingData?.bookingDate || selectedBookingForPayment?.startDate}</span>
+                        </div>
+                      );
+                    }
+                  })()}
+                  {(() => {
+                    const catUpper = String(selectedBookingForPayment?.category || "").toUpperCase().trim();
+                    const isStay = catUpper === "STAYS" || catUpper === "STAY";
+                    if (!isStay) {
+                      return (
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ color: "#777E90" }}>Time Slot:</span>
+                          <span style={{ fontWeight: "500" }}>
+                            {selectedBookingForPayment?.bookingData?.bookingTime || selectedBookingForPayment?.bookingData?.bookingSlot?.name || "Confirmed Slot"}
+                          </span>
+                        </div>
+                      );
+                    } else {
+                      const rooms = selectedBookingForPayment?.bookingData?.roomsCount || selectedBookingForPayment?.bookingData?.numberOfRooms || selectedBookingForPayment?.bookingData?.rooms?.length || 0;
+                      if (rooms > 0) {
+                        return (
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ color: "#777E90" }}>Rooms:</span>
+                            <span style={{ fontWeight: "500" }}>{rooms} Room{rooms > 1 ? "s" : ""}</span>
+                          </div>
+                        );
+                      }
+                    }
+                    return null;
+                  })()}
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#777E90" }}>Guests:</span>
                     <span style={{ fontWeight: "500" }}>
                       {(() => {
-                        const adults = selectedBookingForPayment?.bookingData?.adultsCount > 0 ? selectedBookingForPayment.bookingData.adultsCount : Math.max(0, (selectedBookingForPayment?.bookingData?.guestCount || 0) - (selectedBookingForPayment?.bookingData?.childrenCount || 0));
+                        const adults = selectedBookingForPayment?.bookingData?.adultsCount > 0 ? selectedBookingForPayment.bookingData.adultsCount : Math.max(0, (selectedBookingForPayment?.bookingData?.guestCount || selectedBookingForPayment?.bookingData?.numberOfGuests || 0) - (selectedBookingForPayment?.bookingData?.childrenCount || 0));
                         const children = selectedBookingForPayment?.bookingData?.childrenCount || 0;
                         if (adults > 0 || children > 0) {
                           return `${adults} Adult${adults > 1 ? "s" : ""}${children > 0 ? `, ${children} Child${children !== 1 ? "ren" : ""}` : ""}`;
                         }
-                        return `${selectedBookingForPayment?.bookingData?.guestCount || 0} Guest${selectedBookingForPayment?.bookingData?.guestCount === 1 ? "" : "s"}`;
+                        const totalGuests = selectedBookingForPayment?.bookingData?.guestCount || selectedBookingForPayment?.bookingData?.numberOfGuests || selectedBookingForPayment?.guestCount || 0;
+                        return `${totalGuests} Guest${totalGuests === 1 ? "" : "s"}`;
                       })()}
                     </span>
                   </div>
