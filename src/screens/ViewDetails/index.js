@@ -663,6 +663,9 @@ const ViewDetails = () => {
     code: "",
     details: "",
   });
+  const [hasAutopaid, setHasAutopaid] = useState(false);
+  const [priceChangedData, setPriceChangedData] = useState(null);
+  const [confirmPayModalVisible, setConfirmPayModalVisible] = useState(false);
   const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
@@ -838,17 +841,9 @@ const ViewDetails = () => {
     }
   };
 
-  const openRazorpayForBooking = async () => {
-    if (!booking?.orderId || isConfirmingBooking) return;
+  const triggerRazorpayOpen = async (orderResponse, order, payment) => {
     setIsConfirmingBooking(true);
-
     try {
-      const orderResponse = booking.isEventOrder
-        ? await getEventOrderDetails(booking.orderId)
-        : await getOrderDetails(booking.orderId);
-      const order = orderResponse?.order || orderResponse || {};
-      const payment = orderResponse?.payment || order?.payment || {};
-
       const amountInPaise =
         Number(payment?.amount) > 0
           ? Number(payment.amount)
@@ -902,6 +897,8 @@ const ViewDetails = () => {
 
       await ensureRazorpayScript();
 
+      setConfirmPayModalVisible(false);
+
       const options = {
         key: razorpayKeyId,
         amount: amountInPaise,
@@ -938,6 +935,42 @@ const ViewDetails = () => {
     }
   };
 
+  const openRazorpayForBooking = async (bypassPriceCheck = false) => {
+    if (!booking?.orderId || isConfirmingBooking) return;
+    setIsConfirmingBooking(true);
+
+    try {
+      const orderResponse = booking.isEventOrder
+        ? await getEventOrderDetails(booking.orderId)
+        : await getOrderDetails(booking.orderId);
+      const order = orderResponse?.order || orderResponse || {};
+      const payment = orderResponse?.payment || order?.payment || {};
+
+      const latestPrice = Number(order?.totalPrice || order?.finalAmount || 0);
+      const originalPrice = Number(booking?.originalData?.totalPrice || 0);
+
+      if (!bypassPriceCheck && latestPrice > 0 && originalPrice > 0 && latestPrice !== originalPrice) {
+        setPriceChangedData({
+          oldPrice: originalPrice,
+          newPrice: latestPrice,
+          currency: order?.currency || booking?.originalData?.currency || "INR",
+          onConfirm: () => {
+            setPriceChangedData(null);
+            triggerRazorpayOpen(orderResponse, order, payment);
+          }
+        });
+        setIsConfirmingBooking(false);
+        return;
+      }
+
+      await triggerRazorpayOpen(orderResponse, order, payment);
+    } catch (err) {
+      console.error("Error fetching order details for Razorpay:", err);
+      alert(err?.message || "Failed to initialize payment.");
+      setIsConfirmingBooking(false);
+    }
+  };
+
   const handleCheckAvailabilityAndProceed = async () => {
     if (!booking?.orderId || isCheckingAvailability || isConfirmingBooking) return;
 
@@ -953,7 +986,15 @@ const ViewDetails = () => {
         : await validateExperienceOrEventOrder(booking.orderId);
 
       if (response?.canProceed === true) {
-        await openRazorpayForBooking();
+        const isEvent = booking.isEventOrder || businessInterestCode === "EVENTS" || bookingType === "event";
+        const isExperienceOrder = !isStayOrder && !isEvent;
+        const originalStatus = booking?.originalData?.orderStatus ? String(booking.originalData.orderStatus).toUpperCase().trim() : "";
+
+        if (isExperienceOrder && originalStatus === "PENDING") {
+          setConfirmPayModalVisible(true);
+        } else {
+          await openRazorpayForBooking();
+        }
         return;
       }
 
@@ -1411,6 +1452,14 @@ const ViewDetails = () => {
   }, [bookingId, bookingType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    const autoPayParam = new URLSearchParams(location.search).get("autopay") === "true";
+    if (autoPayParam && booking && !loading && !error && !hasAutopaid) {
+      setHasAutopaid(true);
+      handleCheckAvailabilityAndProceed();
+    }
+  }, [booking, loading, error, hasAutopaid, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     const loadReviewEligibility = async () => {
       if (!booking?.orderId) return;
       try {
@@ -1642,16 +1691,7 @@ const ViewDetails = () => {
       : "";
 
     if (originalStatus === "PENDING" || status === "pending") {
-      const actions = [
-        {
-          label: isCheckingAvailability
-            ? "Checking..."
-            : (isConfirmingBooking ? "Opening Payment..." : "Check Availability"),
-          variant: "primary",
-          onClick: handleCheckAvailabilityAndProceed,
-          disabled: isCheckingAvailability || isConfirmingBooking,
-        },
-      ];
+      const actions = [];
       if (sourceTab !== "cancelled") {
         actions.push({ label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick });
       }
@@ -1970,9 +2010,24 @@ const ViewDetails = () => {
                 </div>
               )}
               <div className={cn(styles.paymentRow, styles.paymentTotal)}>
-                <span>Total Paid</span>
+                <span>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</span>
                 <span>{booking.pricing.total}</span>
               </div>
+              {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && (
+                <div className={styles.paymentActions}>
+                  <button
+                    type="button"
+                    className={cn("button", styles.payNowBtn)}
+                    onClick={handleCheckAvailabilityAndProceed}
+                    disabled={isCheckingAvailability || isConfirmingBooking}
+                    style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
+                  >
+                    {isCheckingAvailability
+                      ? "Checking Availability..."
+                      : (isConfirmingBooking ? "Opening Payment..." : "Check Availability & Pay Now")}
+                  </button>
+                </div>
+              )}
               {refundDetails && (
                 <>
                   <div className={styles.paymentRow}>
@@ -2124,22 +2179,24 @@ const ViewDetails = () => {
           </div>
         )}
 
-        <div className={cn(styles.card, styles.actionCard)}>
-          <h3 className={styles.actionTitle}>Actions</h3>
-          <div className={styles.actionButtons}>
-            {getActionButtons().map((action, index) => (
-              <button
-                key={index}
-                type="button"
-                className={getButtonClassName(action.variant)}
-                onClick={action.onClick}
-                disabled={Boolean(action.disabled)}
-              >
-                {action.label}
-              </button>
-            ))}
+        {getActionButtons().length > 0 && (
+          <div className={cn(styles.card, styles.actionCard)}>
+            <h3 className={styles.actionTitle}>Actions</h3>
+            <div className={styles.actionButtons}>
+              {getActionButtons().map((action, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className={getButtonClassName(action.variant)}
+                  onClick={action.onClick}
+                  disabled={Boolean(action.disabled)}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Cancellation Modal */}
@@ -2167,6 +2224,101 @@ const ViewDetails = () => {
               onClick={() => setValidationModalVisible(false)}
             >
               Okay
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Price Update Consent Modal */}
+      <Modal
+        visible={!!priceChangedData}
+        onClose={() => {
+          setPriceChangedData(null);
+          setIsConfirmingBooking(false);
+        }}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>Price Updated</h2>
+            <p className={styles.cancelModalDescription}>
+              The price for this experience booking has been updated.
+            </p>
+          </div>
+          <div className={styles.cancelModalBody}>
+            <p className={styles.cancelModalDescription} style={{ marginBottom: "16px" }}>
+              Original Price: <strong>{priceChangedData ? formatMoney(priceChangedData.oldPrice, priceChangedData.currency) : ""}</strong>
+              <br />
+              Updated Price: <strong>{priceChangedData ? formatMoney(priceChangedData.newPrice, priceChangedData.currency) : ""}</strong>
+            </p>
+            <p className={styles.cancelModalDescription}>
+              Would you like to proceed with the updated payment amount?
+            </p>
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => {
+                setPriceChangedData(null);
+                setIsConfirmingBooking(false);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={() => {
+                if (priceChangedData?.onConfirm) {
+                  priceChangedData.onConfirm();
+                }
+              }}
+            >
+              Proceed to Payment
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Slot Available Confirmation Modal */}
+      <Modal
+        visible={confirmPayModalVisible}
+        onClose={() => {
+          if (!isConfirmingBooking) setConfirmPayModalVisible(false);
+        }}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle} style={{ color: "#0097B2" }}>Slot Available</h2>
+            <p className={styles.cancelModalDescription}>
+              Your selected experience slot is currently available.
+              You can proceed with payment to confirm your booking.
+            </p>
+          </div>
+          
+
+
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => setConfirmPayModalVisible(false)}
+              disabled={isConfirmingBooking}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={async () => {
+                await openRazorpayForBooking();
+              }}
+              disabled={isConfirmingBooking}
+              style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
+            >
+              {isConfirmingBooking ? "Initializing..." : "Continue to Payment"}
             </button>
           </div>
         </div>
@@ -2321,7 +2473,7 @@ const ViewDetails = () => {
                   <div className={styles.dottedDivider}></div>
                   
                   <div className={cn(styles.receiptPriceRow, styles.invoiceTotal)}>
-                    <span className={styles.totalLabel}>Total Paid</span>
+                    <span className={styles.totalLabel}>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</span>
                     <span className={styles.totalValue}>{booking.pricing.total}</span>
                   </div>
                 </div>
