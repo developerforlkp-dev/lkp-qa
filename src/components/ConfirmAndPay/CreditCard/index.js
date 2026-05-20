@@ -140,8 +140,8 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (e) {
-      // If Razorpay fails to open, fallback navigation
-      history.push(buttonUrl);
+      console.error("❌ Failed to open Razorpay checkout:", e);
+      alert("Unable to start payment. Please check your internet connection and try again.");
     }
   };
 
