@@ -920,19 +920,25 @@ const getLatestExperienceSlotEndDate = (listing) => {
   return dateKeys.sort().pop() || getDateKey(listing?.endDate || listing?.bookingEndDate || listing?.startDate);
 };
 
-function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, tokens, emptyMessage = "No available dates." }) {
+function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, tokens, emptyMessage = "No available dates.", hasTodayValidSlots }) {
   const { A, AL, BG, FG, M, B, S, W } = tokens;
   const getInitialViewDate = useCallback(() => {
     if (selectedDate && typeof selectedDate.toDate === "function") return selectedDate.toDate();
     if (selectedDate) return makeLocalDate(getDateKey(selectedDate));
 
     const todayKey = getDateKey(new Date());
-    const availableKeys = [...availableDateKeys].filter((key) => key > todayKey).sort();
+    const availableKeys = [...availableDateKeys]
+      .filter((key) => {
+        if (key < todayKey) return false;
+        if (key === todayKey) return Boolean(hasTodayValidSlots);
+        return true;
+      })
+      .sort();
     const currentMonthPrefix = todayKey.slice(0, 7);
     const currentMonthKey = availableKeys.find((key) => key.slice(0, 7) === currentMonthPrefix);
     const firstAvailableKey = currentMonthKey || availableKeys[0];
     return firstAvailableKey ? makeLocalDate(firstAvailableKey) : new Date();
-  }, [availableDateKeys, selectedDate]);
+  }, [availableDateKeys, selectedDate, hasTodayValidSlots]);
   const [viewDate, setViewDate] = useState(() => getInitialViewDate());
 
   useEffect(() => {
@@ -959,8 +965,9 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
       const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const isPast = key < todayKey;
       const isToday = key === todayKey;
-      // Mark as unavailable if it's in the past OR if it's today
-      return { day, key, isAvailable: !isPast && !isToday && availableDateKeys.has(key), isPast, isToday };
+      // Mark as unavailable if it's in the past OR if it's today and today has no valid slots
+      const isAvailable = !isPast && availableDateKeys.has(key) && (isToday ? Boolean(hasTodayValidSlots) : true);
+      return { day, key, isAvailable, isPast, isToday };
     }),
   ];
 
@@ -1301,6 +1308,84 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     return keys;
   }, [baseTimeSlots, dateFilteredSlots, isEventBooking, listing]);
+
+  const hasTodayValidSlots = useMemo(() => {
+    if (isEventBooking) return false;
+    const today = new Date();
+    const todayKey = getDateKey(today);
+    const weekday = today.getDay();
+    const currentMinutes = today.getHours() * 60 + today.getMinutes();
+    const todayFullyBookedSlotIds = collectFullyBookedSlotIdsForDate(listing, todayKey);
+
+    const schedules = [
+      ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
+      ...(Array.isArray(dateFilteredSlots) ? dateFilteredSlots : []),
+      ...(Array.isArray(listing?.slots) ? listing.slots : []),
+    ];
+
+    const seenSlotIds = new Set();
+    const uniqueSlots = [];
+    schedules.forEach((slot) => {
+      if (!slot || typeof slot !== "object") return;
+      const slotId = getSlotId(slot) || slot.slotId || slot.slot_id || slot.slotName || slot.startTime;
+      if (slotId && !seenSlotIds.has(slotId)) {
+        seenSlotIds.add(slotId);
+        uniqueSlots.push(slot);
+      }
+    });
+
+    const validSlots = uniqueSlots.filter((slot) => {
+      if (!slot || typeof slot !== "object") return false;
+      const schedule = slot.schedule || {};
+      const slotId = getSlotId(slot);
+
+      // 1. Check if active
+      if (slot.is_active === false || slot.isActive === false) return false;
+
+      // 2. Check if weekday is enabled
+      if (!isWeekdayEnabled(slot, weekday) && !isWeekdayEnabled(schedule, weekday)) return false;
+
+      // 3. Check date range
+      const slotStart = slot.startDate || slot.start_date || schedule.startDate || schedule.start_date;
+      const slotEnd = slot.endDate || slot.end_date || schedule.endDate || schedule.end_date;
+      if (slotStart) {
+        const start = makeLocalDate(getDateKey(slotStart));
+        if (today < start) return false;
+      }
+      if (slotEnd) {
+        const end = makeLocalDate(getDateKey(slotEnd));
+        if (today > end) return false;
+      }
+
+      // 4. Check bookings/availability
+      const isPrivatelyBooked = slot?.hasPrivateBooking === true || (slotId != null && privateBookedSlotIds.has(String(slotId)));
+      if (isPrivatelyBooked) return false;
+
+      const isFullyBookedByConfig = slotId != null && todayFullyBookedSlotIds.has(String(slotId));
+      if (isFullyBookedByConfig) return false;
+
+      const availability = getSlotAvailabilityForDate(slot, todayKey);
+      const isUnavailable = (availability?.is_available ?? availability?.isAvailable ?? slot.is_available ?? slot.isAvailable) === false;
+      if (isUnavailable) return false;
+
+      const seats = availability?.available_seats ?? availability?.availableSeats ?? slot.availableSeats ?? slot.available_seats;
+      if (seats != null && seats <= 0) return false;
+
+      // 5. Check time validity (future slots only)
+      const startTime = slot.startTime || slot.start_time || schedule.startTime || schedule.start_time;
+      if (startTime) {
+        const [h, m] = startTime.split(':').map(Number);
+        const slotMinutes = h * 60 + m;
+        if (slotMinutes <= currentMinutes) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    return validSlots.length > 0;
+  }, [baseTimeSlots, dateFilteredSlots, listing, isEventBooking, privateBookedSlotIds]);
 
 
 
@@ -2655,6 +2740,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           availableDateKeys={experienceAvailableDateKeys}
                           tokens={{ A, AL, BG, FG, M, B, S, W }}
                           emptyMessage="No available dates for this experience."
+                          hasTodayValidSlots={hasTodayValidSlots}
                         />
                       )}
                     </div>
