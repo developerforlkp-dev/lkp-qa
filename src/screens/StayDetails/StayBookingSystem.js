@@ -138,6 +138,13 @@ const formatPrice = (price) => {
   });
 };
 
+const formatPricePrecise = (price) => {
+  return Number(price).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  });
+};
+
 const getSeasonIdCandidates = (season) => (
   [
     season?.tempId,
@@ -779,20 +786,43 @@ const StayBookingSystem = ({
       }
     }
 
-    // Discount Tiers
+    // Long-stay discount tiers
     let appliedDiscountPercent = 0;
     if (nightsCount > 0 && Array.isArray(stay.discountTiers)) {
       const tier = stay.discountTiers.find(t => nightsCount >= (t.minimumDays || 0) && nightsCount <= (t.maximumDays || 999));
       if (tier) appliedDiscountPercent = parseFloat(tier.discountPercentage || 0);
     }
 
-    const discountedPerNight = totalOriginalPerNight * (1 - (appliedDiscountPercent / 100));
-    const preTaxSubtotal = discountedPerNight * Math.max(1, nightsCount);
-    const discountAmount = (totalOriginalPerNight * Math.max(1, nightsCount)) - preTaxSubtotal;
+    // Billing-config discounts (if provided by stay configuration)
+    const billingConfigDiscountRate = (() => {
+      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || [];
+      if (!Array.isArray(discounts) || discounts.length === 0) return 0;
+      const totalRate = discounts.reduce((sum, discount) => {
+        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+        return sum + (Number.isFinite(rate) ? rate : 0);
+      }, 0);
+      return Math.max(0, Math.min(100, totalRate));
+    })();
 
+    const nights = Math.max(1, nightsCount);
+    const grossSubtotal = totalOriginalPerNight * nights;
+    const longStayDiscountAmount = grossSubtotal * (appliedDiscountPercent / 100);
+    const subtotalAfterLongStay = Math.max(0, grossSubtotal - longStayDiscountAmount);
+    const billingConfigDiscountAmount = subtotalAfterLongStay * (billingConfigDiscountRate / 100);
+    const preTaxSubtotal = Math.max(0, subtotalAfterLongStay - billingConfigDiscountAmount);
+    const discountAmount = longStayDiscountAmount + billingConfigDiscountAmount;
+    const discountedPerNight = preTaxSubtotal / nights;
+
+    // Taxes from stay config; fallback to legacy 18% GST + 2% service charge
+    const configuredTaxRate = Array.isArray(stay?.taxes)
+      ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+      : 0;
+    const effectiveTaxRate = configuredTaxRate > 0 ? configuredTaxRate : 20;
+
+    const totalTax = preTaxSubtotal * (effectiveTaxRate / 100);
     const gst = preTaxSubtotal * 0.18;
     const serviceFee = preTaxSubtotal * 0.02;
-    const finalTotalWithTax = preTaxSubtotal + gst + serviceFee;
+    const finalTotalWithTax = preTaxSubtotal + totalTax;
 
     return {
       perNight: discountedPerNight,
@@ -804,8 +834,9 @@ const StayBookingSystem = ({
       discountPercent: appliedDiscountPercent,
       warning,
       isOver,
-      gst,
-      serviceFee,
+      gst: configuredTaxRate > 0 ? totalTax : gst,
+      serviceFee: configuredTaxRate > 0 ? 0 : serviceFee,
+      taxRate: effectiveTaxRate,
       baseAdultsLimit: totalBaseAdultsLimit,
       extraAdultsLimit: totalExtraAdultsLimit,
       baseChildrenLimit: totalBaseChildrenLimit,
@@ -814,24 +845,6 @@ const StayBookingSystem = ({
       activeExtraChildPrice: finalExtraCP
     };
   }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount]);
-  const billingConfigDiscountRate = useMemo(() => {
-    const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || [];
-    if (!Array.isArray(discounts) || discounts.length === 0) return 0;
-
-    const totalRate = discounts.reduce((sum, discount) => {
-      const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
-      return sum + (Number.isFinite(rate) ? rate : 0);
-    }, 0);
-
-    return Math.max(0, Math.min(100, totalRate));
-  }, [stay?.billingConfig, stay?.billing_config]);
-
-  const nightlyBaseMinusDiscount = useMemo(() => {
-    const basePerNight = Number(pricing?.originalPerNight || 0);
-    const discountAmount = basePerNight * (billingConfigDiscountRate / 100);
-    return Math.max(0, basePerNight - discountAmount);
-  }, [pricing?.originalPerNight, billingConfigDiscountRate]);
-
   const blockedDateKeys = useMemo(() => {
     const ranges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
     if (!Array.isArray(ranges) || ranges.length === 0) return new Set();
@@ -1425,12 +1438,14 @@ const StayBookingSystem = ({
                     Reserve Your Stay
                   </h2>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>
-                      {fetchingAvailability ? "..." : `₹${formatPrice(nightlyBaseMinusDiscount)}`}
-                    </span>
-                    {!fetchingAvailability && billingConfigDiscountRate > 0 && (
-                      <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.6 }}>₹{formatPrice(pricing.originalPerNight)}</span>
+                    {!fetchingAvailability && pricing.discount > 0 && (
+                      <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.7 }}>
+                        {"\u20B9"}{formatPrice(pricing.originalPerNight)}
+                      </span>
                     )}
+                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>
+                      {fetchingAvailability ? "..." : `${"\u20B9"}${formatPrice(pricing.perNight)}`}
+                    </span>
                     <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>/ night</span>
                   </div>
                 </div>
@@ -1729,7 +1744,7 @@ const StayBookingSystem = ({
                           </div>
                           <div style={{ borderTop: `1px dashed ${B}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 11, fontWeight: 800, color: FG }}>Total Cost</span>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPrice(pricing.finalTotal)}</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
                           </div>
                         </div>
                       );
@@ -1805,7 +1820,7 @@ const StayBookingSystem = ({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPrice(pricing.finalTotal)}</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
                     <span style={{ marginTop: 1, fontSize: 9, color: M, fontWeight: 500 }}>Inc. all taxes</span>
                   </div>
                   {(() => {
@@ -1957,4 +1972,7 @@ const StayBookingSystem = ({
 };
 
 export default StayBookingSystem;
+
+
+
 
