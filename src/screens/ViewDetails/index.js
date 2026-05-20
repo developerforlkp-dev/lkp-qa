@@ -665,6 +665,7 @@ const ViewDetails = () => {
   });
   const [hasAutopaid, setHasAutopaid] = useState(false);
   const [priceChangedData, setPriceChangedData] = useState(null);
+  const [confirmPayModalVisible, setConfirmPayModalVisible] = useState(false);
   const isCompletedOrder = String(booking?.originalData?.orderStatus || "").toUpperCase() === "COMPLETED";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
@@ -896,6 +897,8 @@ const ViewDetails = () => {
 
       await ensureRazorpayScript();
 
+      setConfirmPayModalVisible(false);
+
       const options = {
         key: razorpayKeyId,
         amount: amountInPaise,
@@ -983,7 +986,15 @@ const ViewDetails = () => {
         : await validateExperienceOrEventOrder(booking.orderId);
 
       if (response?.canProceed === true) {
-        await openRazorpayForBooking();
+        const isEvent = booking.isEventOrder || businessInterestCode === "EVENTS" || bookingType === "event";
+        const isExperienceOrder = !isStayOrder && !isEvent;
+        const originalStatus = booking?.originalData?.orderStatus ? String(booking.originalData.orderStatus).toUpperCase().trim() : "";
+
+        if (isExperienceOrder && originalStatus === "PENDING") {
+          setConfirmPayModalVisible(true);
+        } else {
+          await openRazorpayForBooking();
+        }
         return;
       }
 
@@ -2257,6 +2268,106 @@ const ViewDetails = () => {
               }}
             >
               Proceed to Payment
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Slot Available Confirmation Modal */}
+      <Modal
+        visible={confirmPayModalVisible}
+        onClose={() => {
+          if (!isConfirmingBooking) setConfirmPayModalVisible(false);
+        }}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle} style={{ color: "#0097B2" }}>Slot Available</h2>
+            <p className={styles.cancelModalDescription}>
+              Your selected experience slot is currently available.
+              You can proceed with payment to confirm your booking.
+            </p>
+          </div>
+          
+          <div style={{ 
+            background: "rgba(244, 245, 246, 0.05)", 
+            borderRadius: "12px", 
+            padding: "16px", 
+            margin: "16px 0",
+            textAlign: "left",
+            border: "1px solid rgba(226, 232, 240, 0.1)"
+          }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", borderBottom: "1px solid rgba(226, 232, 240, 0.1)", paddingBottom: "8px" }}>
+              Booking Summary
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+                <span style={{ color: "#777E90" }}>Experience:</span>
+                <span style={{ fontWeight: "500", textAlign: "right" }}>{booking?.title}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#777E90" }}>Date:</span>
+                <span style={{ fontWeight: "500" }}>{booking?.bookingDate || booking?.startDate}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#777E90" }}>Time Slot:</span>
+                <span style={{ fontWeight: "500" }}>
+                  {booking?.startTime && booking?.endTime 
+                    ? `${booking.startTime} - ${booking.endTime}` 
+                    : (booking?.bookingTime || "Confirmed Slot")}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#777E90" }}>Guests:</span>
+                <span style={{ fontWeight: "500" }}>
+                  {(() => {
+                    const adults = booking?.adultsCount > 0 ? booking.adultsCount : Math.max(0, (booking?.guestCount || 0) - (booking?.childrenCount || 0));
+                    const children = booking?.childrenCount || 0;
+                    if (adults > 0 || children > 0) {
+                      return `${adults} Adult${adults > 1 ? "s" : ""}${children > 0 ? `, ${children} Child${children !== 1 ? "ren" : ""}` : ""}`;
+                    }
+                    return `${booking?.guestCount || 0} Guest${booking?.guestCount === 1 ? "" : "s"}`;
+                  })()}
+                </span>
+              </div>
+              {booking?.addons && booking.addons.length > 0 && (
+                <div style={{ borderTop: "1px dashed rgba(226, 232, 240, 0.1)", paddingTop: "8px", marginTop: "4px" }}>
+                  <span style={{ color: "#777E90", display: "block", marginBottom: "4px" }}>Add-ons:</span>
+                  {booking.addons.map((addon, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", paddingLeft: "8px", fontSize: "13px" }}>
+                      <span style={{ color: "#777E90" }}>• {addon.name} (x{addon.quantity})</span>
+                      <span>{addon.total}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(226, 232, 240, 0.1)", paddingTop: "8px", marginTop: "4px", fontSize: "16px", fontWeight: "600" }}>
+                <span>Total Amount:</span>
+                <span style={{ color: "#0097B2" }}>{booking?.pricing?.total}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => setConfirmPayModalVisible(false)}
+              disabled={isConfirmingBooking}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={async () => {
+                await openRazorpayForBooking();
+              }}
+              disabled={isConfirmingBooking}
+              style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
+            >
+              {isConfirmingBooking ? "Initializing..." : "Pay Now"}
             </button>
           </div>
         </div>
