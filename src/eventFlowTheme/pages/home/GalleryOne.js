@@ -96,7 +96,11 @@ export default function GalleryOne() {
       src,
       alt: `${event?.title || 'Gallery'} ${index + 1}`,
       title: event?.title || "Dream Makers Event Planning",
-      subtitle: event?.category || "Latest Moments",
+      subtitle: event?.category === "Others"
+        ? (event?.categoryOtherDescription && event.categoryOtherDescription.trim() !== ""
+            ? event.categoryOtherDescription
+            : "Others")
+        : (event?.category || "Latest Moments"),
       href: `/event-product?id=${eventId}`,
     }));
   }, [event, eventId]);

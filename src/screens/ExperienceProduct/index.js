@@ -3,7 +3,7 @@ import { useLocation, useParams, useHistory } from "react-router-dom";
 import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star, Compass, Share2 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -23,8 +23,8 @@ import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../util
 import Page from "../../components/Page";
 import ProductNavbar from "../../components/ProductNavbar";
 import PhotoView from "../../components/PhotoView";
-import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
+import { lockBodyScroll } from "../../utils/scrollLock";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -53,7 +53,7 @@ const getActivityImageUrl = (activity) => {
 function ExperienceBg({ progress, src }) {
   const { tokens: { A, BG } } = useTheme();
   const scale = useTransform(progress, [0, 1], [1, 1.2]);
-  const opacity = useTransform(progress, [0, 0.8], [0.6, 0]);
+  const opacity = useTransform(progress, [0, 0.8], [1, 0]);
   const blur = useTransform(progress, [0, 0.5], [0, 10]);
 
   return (
@@ -68,17 +68,114 @@ function ExperienceBg({ progress, src }) {
   );
 }
 
+/* ─── HERO SHARE FAB ─────────────────────────── */
+function HeroShareFab({ title, text, url }) {
+  const [copied, setCopied] = useState(false);
+  const [ripple, setRipple] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const { tokens: { A } } = useTheme();
+  const glow = A || "#0097B2";
+
+  const handleShare = async () => {
+    setRipple(true);
+    setTimeout(() => setRipple(false), 700);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2400);
+      }
+    } catch (_) {}
+  };
+
+  return (
+    <motion.button
+      onClick={handleShare}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      whileTap={{ scale: 0.86 }}
+      style={{
+        position: "absolute",
+        top: 96,
+        right: 60,
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        height: 44,
+        maxWidth: hovered ? 200 : 44,
+        overflow: "hidden",
+        paddingLeft: 13,
+        paddingRight: hovered ? 18 : 13,
+        background: "rgba(0,151,178,0.13)",
+        backdropFilter: "blur(22px)",
+        WebkitBackdropFilter: "blur(22px)",
+        border: `1.5px solid ${glow}55`,
+        borderRadius: 50,
+        cursor: "pointer",
+        color: "#FFFFFF",
+        fontFamily: "inherit",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.13em",
+        textTransform: "uppercase",
+        boxShadow: hovered
+          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
+          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
+        outline: "none",
+        userSelect: "none",
+        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+      }}
+    >
+      {/* Radial ripple on click */}
+      <motion.span
+        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
+        transition={{ duration: 0.65, ease: "easeOut" }}
+        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
+      />
+      {/* Icon — always visible with unique animation */}
+      <motion.span
+        animate={{
+          y: hovered ? 0 : [0, -2, 0, 2, 0],
+          rotate: hovered ? 360 : 0,
+          scale: hovered ? 1.15 : 1
+        }}
+        transition={{
+          y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+          rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+          scale: { duration: 0.3, ease: "easeOut" }
+        }}
+        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
+      >
+        <Share2 size={17} strokeWidth={2.2} />
+      </motion.span>
+      {/* Expandable label */}
+      <span style={{
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        maxWidth: hovered ? 140 : 0,
+        opacity: hovered ? 1 : 0,
+        marginLeft: hovered ? 9 : 0,
+        position: "relative",
+        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
+      }}>
+        {copied ? "✓ Copied!" : "Share Journey"}
+      </span>
+    </motion.button>
+  );
+}
+
 /* ─── GRID GALLERY MODAL ────────────────────────── */
 const GridGallery = ({ items, onClose, onSelect, title, A }) => {
   const galleryRef = useRef(null);
 
   useEffect(() => {
-    const target = galleryRef.current;
-    if (target) disableBodyScroll(target);
-    return () => {
-      if (target) enableBodyScroll(target);
-      else enableBodyScroll(document.body);
-    };
+    return lockBodyScroll();
   }, []);
 
   return (
@@ -91,12 +188,33 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9990,
-        background: '#FFFFFF',
-        overflowY: 'auto',
-        padding: 'clamp(40px, 8vw, 100px) clamp(20px, 5vw, 60px)'
+        background: 'rgba(0,0,0,0.72)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflowY: 'hidden',
+        overflowX: 'hidden',
+        overscrollBehavior: 'contain',
+        padding: 'clamp(14px, 4vw, 36px)'
       }}
     >
-      <div style={{ maxWidth: 1400, margin: '0 auto', position: 'relative' }}>
+      <div style={{
+        maxWidth: 1240,
+        maxHeight: 'min(86vh, 860px)',
+        width: '100%',
+        margin: '0 auto',
+        position: 'relative',
+        background: '#FFFFFF',
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: 28,
+        boxShadow: '0 36px 120px rgba(0,0,0,0.5)',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        overscrollBehavior: 'contain',
+        padding: 'clamp(24px, 5vw, 48px)'
+      }}>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -187,16 +305,21 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
 }
 
 /* ─── MODAL IMAGE POPUP ────────────────────────── */
-const FullScreenImage = ({ src, onClose }) => {
+const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
   const modalRef = useRef(null);
+  const hasNavigation = Array.isArray(items) && items.length > 1 && typeof onNavigate === "function";
+
+  const handleNavigate = (direction, event) => {
+    event.stopPropagation();
+    if (!hasNavigation) return;
+    const nextIndex = direction === "next"
+      ? (currentIndex + 1) % items.length
+      : (currentIndex - 1 + items.length) % items.length;
+    onNavigate(nextIndex);
+  };
 
   useEffect(() => {
-    const target = modalRef.current;
-    if (target) disableBodyScroll(target);
-    return () => {
-      if (target) enableBodyScroll(target);
-      else enableBodyScroll(document.body);
-    };
+    return lockBodyScroll();
   }, []);
 
   return (
@@ -214,7 +337,9 @@ const FullScreenImage = ({ src, onClose }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '5vh 5vw'
+        padding: '5vh 5vw',
+        overflow: 'hidden',
+        overscrollBehavior: 'contain'
       }}
       onClick={onClose}
     >
@@ -239,22 +364,97 @@ const FullScreenImage = ({ src, onClose }) => {
           background: '#000'
         }}
       >
-        <img
-          src={src}
-          onClick={onClose}
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'block',
-            objectFit: 'cover' // This fills the container, making it feel much "larger"
-          }}
-          alt="Popup"
-        />
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={src}
+            src={src}
+            onClick={onClose}
+            initial={{ opacity: 0, x: 28, scale: 1.02 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -28, scale: 0.98 }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              objectFit: 'cover' // This fills the container, making it feel much "larger"
+            }}
+            alt="Popup"
+          />
+        </AnimatePresence>
         {/* Subtle indicator that it's a popup */}
         <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
         </div>
       </motion.div>
+      {hasNavigation && (
+        <>
+          <motion.button
+            type="button"
+            aria-label="Previous image"
+            onClick={(event) => handleNavigate("prev", event)}
+            whileHover={{ opacity: 1, scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              position: 'absolute',
+              left: 'clamp(18px, 4vw, 56px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 'clamp(44px, 6vw, 58px)',
+              height: 'clamp(44px, 6vw, 58px)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'rgba(255,255,255,0.16)',
+              backdropFilter: 'blur(16px)',
+              color: '#FFF',
+              fontSize: 26,
+              fontWeight: 300,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.72,
+              zIndex: 2,
+              boxShadow: '0 18px 45px rgba(0,0,0,0.28)'
+            }}
+          >
+            &lt;
+          </motion.button>
+          <motion.button
+            type="button"
+            aria-label="Next image"
+            onClick={(event) => handleNavigate("next", event)}
+            whileHover={{ opacity: 1, scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              position: 'absolute',
+              right: 'clamp(18px, 4vw, 56px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 'clamp(44px, 6vw, 58px)',
+              height: 'clamp(44px, 6vw, 58px)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'rgba(255,255,255,0.16)',
+              backdropFilter: 'blur(16px)',
+              color: '#FFF',
+              fontSize: 26,
+              fontWeight: 300,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.72,
+              zIndex: 2,
+              boxShadow: '0 18px 45px rgba(0,0,0,0.28)'
+            }}
+          >
+            &gt;
+          </motion.button>
+        </>
+      )}
     </motion.div>
   );
 };
@@ -552,27 +752,11 @@ const ExperienceProduct = () => {
               </Rev>
             </motion.div>
           </div>
-          {/* SHARE BUTTON — bottom-left of hero */}
-          <motion.div
-            style={{ position: "absolute", bottom: 60, left: 60, opacity: fade, zIndex: 20 }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <ShareButton
-              title={listing?.title}
-              text={listing?.description || listing?.aboutListing || ""}
-              url={window.location.href}
-              imageUrl={formatImageUrl(listing?.coverPhotoUrl)}
-              style={{
-                background: "rgba(255,255,255,0.07)",
-                backdropFilter: "blur(16px)",
-                border: `1.5px solid rgba(255,255,255,0.18)`,
-                color: "#FFFFFF",
-              }}
-              size={16}
-            />
-          </motion.div>
+          <HeroShareFab
+            title={listing?.title}
+            text={listing?.description || listing?.aboutListing || ""}
+            url={window.location.href}
+          />
           {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
             <motion.div
               className="early-bird-wrapper"
@@ -657,6 +841,9 @@ const ExperienceProduct = () => {
             {photoVisible && (
               <FullScreenImage
                 src={galleryItems[photoIndex] || (galleryItems.length > 0 ? galleryItems[0] : "/images/content/placeholder.jpg")}
+                items={galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"]}
+                currentIndex={photoIndex}
+                onNavigate={setPhotoIndex}
                 onClose={() => setPhotoVisible(false)}
               />
             )}
@@ -897,11 +1084,16 @@ const ExperienceProduct = () => {
                       const activityImageUrl = getActivityImageUrl(it);
                       return (
                         <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
-                          whileHover={{ x: 10 }}
                           className="activity-item"
                           style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
-                          <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0 }} />
-                          <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
+                          {/* ── STATIC LAYER: circular node stays fixed, never receives hover transform ── */}
+                          <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0, position: "relative", zIndex: 2 }} />
+                          {/* ── ANIMATED LAYER: only the content card slides on hover ── */}
+                          <motion.div
+                            whileHover={{ x: 10 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1, willChange: "transform" }}
+                          >
                             {activityImageUrl && (
                               <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
                                 <img
@@ -929,7 +1121,7 @@ const ExperienceProduct = () => {
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </motion.div>
                         </motion.div>
                       );
                     })}

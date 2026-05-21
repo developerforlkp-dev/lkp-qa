@@ -80,14 +80,41 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       return new Promise((resolve, reject) => {
         if (!validateImageUrl(src)) { reject(new Error(`Invalid image URL: ${src}`)); return; }
         const img = new Image();
-        img.onload = () => resolve(img);
+        img.onload = () => {
+          if (img.decode) {
+            img.decode().then(() => resolve(img)).catch(() => resolve(img));
+          } else {
+            resolve(img);
+          }
+        };
         img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
         img.src = src;
       });
     }
 
     async function loadAllImages() {
-      return Promise.allSettled(destinations.map(({ image }) => loadImage(image)));
+      if (!destinations || destinations.length === 0) return;
+
+      const activeIndex = orderRef.current ? orderRef.current[0] : 0;
+      const activeDest = destinations[activeIndex];
+
+      // Wait ONLY for the active image to load completely before revealing the hero section
+      try {
+        if (activeDest && activeDest.image) {
+          await loadImage(activeDest.image);
+        }
+      } catch (e) {
+        console.warn("Failed to load active hero image", e);
+      }
+
+      // Preload remaining images in the background without blocking the initial render
+      destinations.forEach((dest, i) => {
+        if (i !== activeIndex && dest.image) {
+          loadImage(dest.image).catch(() => { });
+        }
+      });
+
+      return true;
     }
 
     // ── Animation step ────────────────────────────────────────────────────────
@@ -172,8 +199,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
     // ── Animation loop ────────────────────────────────────────────────────────
 
-    async function loop() {
-      await new Promise(resolve => setTimeout(resolve, ANIMATION_DURATION));
+    function loop() {
       if (!isMountedRef.current || !orderRef.current) return;
 
       const newOrder = [...orderRef.current];
@@ -183,13 +209,13 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       orderRef.current = newOrder;
       detailsEvenRef_state.current = newDetailsEven;
 
-      await step(newOrder, newDetailsEven);
-      if (!isMountedRef.current || !orderRef.current) return;
-
-      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
-      loopTimeoutRef.current = setTimeout(() => {
-        if (isMountedRef.current && orderRef.current) loop();
-      }, 0);
+      step(newOrder, newDetailsEven).then(() => {
+        if (!isMountedRef.current || !orderRef.current) return;
+        if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+        loopTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current && orderRef.current) loop();
+        }, ANIMATION_DURATION);
+      });
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
@@ -244,10 +270,12 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       gsap.set(`${detailsInactive} .hero-desc`, { y: 50, opacity: 0 });
       gsap.set(`${detailsInactive} .hero-button`, { y: 50, opacity: 0 });
 
-      setTimeout(() => {
+      if (loopTimeoutRef.current) { clearTimeout(loopTimeoutRef.current); }
+      loopTimeoutRef.current = setTimeout(() => {
         if (!isMountedRef.current || !orderRef.current) return;
         step(order, detailsEven).then(() => {
-          setTimeout(() => {
+          if (loopTimeoutRef.current) { clearTimeout(loopTimeoutRef.current); }
+          loopTimeoutRef.current = setTimeout(() => {
             if (isMountedRef.current && orderRef.current) loop();
           }, ANIMATION_DURATION);
         });
@@ -320,7 +348,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
               requestAnimationFrame(() => onReadyRef.current());
             }
           }
-        }, 80);
+        }, 350);
       } catch (error) {
         console.error("Hero section: Error loading images", error);
         setTimeout(() => {
@@ -330,7 +358,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
               requestAnimationFrame(() => onReadyRef.current());
             }
           }
-        }, 120);
+        }, 350);
       }
     }
 

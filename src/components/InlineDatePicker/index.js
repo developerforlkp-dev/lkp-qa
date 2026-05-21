@@ -199,20 +199,35 @@ const InlineDatePicker = ({
     const dayFlag = dayNames[dayOfWeek];
 
     const isInAnySlotRange = timeSlots.some((slot) => {
-      const startDate = new Date(slot.startDate);
-      const endDate = new Date(slot.endDate);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
+      const start = slot.startDate || slot.start_date;
+      const end = slot.endDate || slot.end_date;
+      let inDateRange = true;
+
       const checkDate = new Date(date);
       checkDate.setHours(0, 0, 0, 0);
 
-      const inDateRange = checkDate >= startDate && checkDate <= endDate;
+      if (start) {
+        const startDate = new Date(start);
+        startDate.setHours(0, 0, 0, 0);
+        if (isNaN(startDate.getTime()) || checkDate < startDate) {
+          inDateRange = false;
+        }
+      }
+      if (end) {
+        const endDate = new Date(end);
+        endDate.setHours(0, 0, 0, 0);
+        if (isNaN(endDate.getTime()) || checkDate > endDate) {
+          inDateRange = false;
+        }
+      }
+
       const isDayAvailable = slot[dayFlag] === true;
-      const isActive = slot.isActive !== false;
+      const isActive = slot.isActive !== false && slot.is_active !== false;
 
       let isTimeValid = true;
-      if (isToday && slot.startTime) {
-        const [h, m] = slot.startTime.split(':').map(Number);
+      const startTime = slot.startTime || slot.start_time;
+      if (isToday && startTime) {
+        const [h, m] = startTime.split(':').map(Number);
         const slotMinutes = h * 60 + m;
         if (slotMinutes <= currentMinutes) {
           isTimeValid = false;
@@ -222,23 +237,7 @@ const InlineDatePicker = ({
       return inDateRange && isDayAvailable && isActive && isTimeValid;
     });
 
-    // If date is in a slot range but the day flag is false or time is invalid, disable it
-    const isInSlotRange = timeSlots.some((slot) => {
-      const startDate = new Date(slot.startDate);
-      const endDate = new Date(slot.endDate);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
-      const checkDate = new Date(date);
-      checkDate.setHours(0, 0, 0, 0);
-      return checkDate >= startDate && checkDate <= endDate;
-    });
-
-    // Disable if in range but day flag is false (or time invalid)
-    if (isInSlotRange && !isInAnySlotRange) {
-      return true;
-    }
-
-    return false;
+    return !isInAnySlotRange;
   };
 
   const handleDateClick = (date) => {

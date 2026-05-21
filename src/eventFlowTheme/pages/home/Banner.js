@@ -160,7 +160,13 @@ export default function Banner() {
                 <div className="row">
                   <div className="col-xl-12">
                     <div className="main-slider__content">
-                      <p className="main-slider__sub-title">{event?.category || "Music Festival"}</p>
+                      <p className="main-slider__sub-title">
+                        {event?.category === "Others"
+                          ? (event?.categoryOtherDescription && event.categoryOtherDescription.trim() !== ""
+                              ? event.categoryOtherDescription
+                              : "Others")
+                          : (event?.category || "Music Festival")}
+                      </p>
                       <h2 className="main-slider__title">
                         <Link to={`/event-details?id=${eventId}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                           {event?.title ? (() => {

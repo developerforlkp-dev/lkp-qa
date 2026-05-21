@@ -5,7 +5,8 @@ import {
   Wifi, Waves, Sparkles, Dumbbell, Umbrella, Plane, GlassWater, Utensils,
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
-  Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft
+  Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
+  Tv, Coffee
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -21,6 +22,7 @@ import { Footer } from "../../components/JUI/Footer";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import ShareButton from "../../components/ShareButton";
+import { lockBodyScroll } from "../../utils/scrollLock";
 
 const fixImageUrl = (url) => {
   if (!url) return "";
@@ -297,6 +299,105 @@ function SHdr({ idx, label }) {
   );
 }
 
+/* ─── HERO SHARE FAB ─────────────────────────── */
+function HeroShareFab({ title, text, url }) {
+  const [copied, setCopied] = useState(false);
+  const [ripple, setRipple] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const { tokens: { A } } = useTheme();
+  const glow = A || "#0097B2";
+
+  const handleShare = async () => {
+    setRipple(true);
+    setTimeout(() => setRipple(false), 700);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2400);
+      }
+    } catch (_) { }
+  };
+
+  return (
+    <motion.button
+      onClick={handleShare}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      whileTap={{ scale: 0.86 }}
+      style={{
+        position: "absolute",
+        top: 96,
+        right: 60,
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        height: 44,
+        maxWidth: hovered ? 200 : 44,
+        overflow: "hidden",
+        paddingLeft: 13,
+        paddingRight: hovered ? 18 : 13,
+        background: "rgba(0,151,178,0.13)",
+        backdropFilter: "blur(22px)",
+        WebkitBackdropFilter: "blur(22px)",
+        border: `1.5px solid ${glow}55`,
+        borderRadius: 50,
+        cursor: "pointer",
+        color: "#FFFFFF",
+        fontFamily: "inherit",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.13em",
+        textTransform: "uppercase",
+        boxShadow: hovered
+          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
+          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
+        outline: "none",
+        userSelect: "none",
+        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+      }}
+    >
+      <motion.span
+        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
+        transition={{ duration: 0.65, ease: "easeOut" }}
+        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
+      />
+      <motion.span
+        animate={{
+          y: hovered ? 0 : [0, -2, 0, 2, 0],
+          rotate: hovered ? 360 : 0,
+          scale: hovered ? 1.15 : 1
+        }}
+        transition={{
+          y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+          rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+          scale: { duration: 0.3, ease: "easeOut" }
+        }}
+        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
+      >
+        <Share2 size={17} strokeWidth={2.2} />
+      </motion.span>
+      <span style={{
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        maxWidth: hovered ? 140 : 0,
+        opacity: hovered ? 1 : 0,
+        marginLeft: hovered ? 9 : 0,
+        position: "relative",
+        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
+      }}>
+        {copied ? "✓ Copied!" : "Share Escape"}
+      </span>
+    </motion.button>
+  );
+}
+
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
   const { width, isMobile } = useWindowSize();
@@ -403,30 +504,12 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
         </div>
       )}
 
-      {/* SHARE BUTTON — bottom-right corner, glass-morphism style */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5 }}
-        style={{ position: "absolute", bottom: isMobile ? 20 : 80, right: isMobile ? 20 : 80, zIndex: 50 }}
-      >
-        <ShareButton
-          title={title}
-          text={stay?.shortDescription || stay?.description || ""}
-          url={window.location.href}
-          imageUrl={stay?.coverPhotoUrl || stay?.coverImageUrl}
-          tokens={{ A, FG, B, BG: "transparent" }}
-          style={{
-            background: theme === 'dark' ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(16px)",
-            border: theme === 'dark' ? "1.5px solid rgba(255,255,255,0.15)" : `1.5px solid ${B}`,
-            color: theme === 'dark' ? "#FFF" : FG,
-            cursor: "pointer",
-          }}
-          size={isMobile ? 14 : 16}
-          showLabel={!isMobile}
-        />
-      </motion.div>
+      <HeroShareFab
+        title={title}
+        text={stay?.shortDescription || stay?.description || ""}
+        url={window.location.href}
+      />
+
     </section>
   );
 }
@@ -685,20 +768,20 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
 
     // 3. Cancellation Policy
     const cancelItems = [];
-    const summaryText = stay?.cancellationPolicySummary || 
-                        stay?.privacyAndPolicy?.cancellationPolicySummary || 
-                        stay?.listing?.cancellationPolicySummary || 
-                        stay?.stay?.cancellationPolicySummary ||
-                        stay?.generatedPolicySummary || 
-                        stay?.policySummary || 
-                        stay?.cancellation_policy_summary;
+    const summaryText = stay?.cancellationPolicySummary ||
+      stay?.privacyAndPolicy?.cancellationPolicySummary ||
+      stay?.listing?.cancellationPolicySummary ||
+      stay?.stay?.cancellationPolicySummary ||
+      stay?.generatedPolicySummary ||
+      stay?.policySummary ||
+      stay?.cancellation_policy_summary;
 
-    const templateText = stay?.cancellationPolicyTemplate || 
-                         stay?.privacyAndPolicy?.cancellationPolicyTemplate || 
-                         stay?.listing?.cancellationPolicyTemplate || 
-                         stay?.stay?.cancellationPolicyTemplate ||
-                         stay?.cancellationPolicy || 
-                         stay?.cancellationPolicyText;
+    const templateText = stay?.cancellationPolicyTemplate ||
+      stay?.privacyAndPolicy?.cancellationPolicyTemplate ||
+      stay?.listing?.cancellationPolicyTemplate ||
+      stay?.stay?.cancellationPolicyTemplate ||
+      stay?.cancellationPolicy ||
+      stay?.cancellationPolicyText;
 
     if (summaryText && summaryText.trim().length > 5 && !summaryText.toLowerCase().includes("no cancellation policy summary")) {
       cancelItems.push({ id: 'cancel-1', title: "Cancellation Terms", body: summaryText });
@@ -1087,6 +1170,7 @@ const StayDetails = () => {
         guests={guests}
         setGuests={setGuests}
         selectedRooms={selectedRooms}
+        setSelectedRooms={setSelectedRooms}
         onRoomsCountChange={handleRoomCountChange}
       />
 
@@ -1101,10 +1185,495 @@ const StayDetails = () => {
   );
 };
 
+const extractList = (arr) => {
+  if (!Array.isArray(arr) || arr.length === 0) return [];
+  return arr.map(item => {
+    if (typeof item === "string") return item;
+    return item?.name || item?.amenityName || item?.facilityName || item?.amenity || item?.facility || item?.label || item?.title || item?.value || "";
+  }).filter(Boolean);
+};
+
+const AMENITY_ICONS = {
+  wifi: Wifi,
+  ac: AirVent,
+  air: AirVent,
+  parking: Car,
+  pool: Waves,
+  swimming: Waves,
+  breakfast: Coffee,
+  food: Utensils,
+  tv: Tv,
+  television: Tv,
+  kitchen: Utensils,
+  gym: Dumbbell,
+  fitness: Dumbbell,
+  spa: Sparkles,
+  default: CheckCircle
+};
+
+const getAmenityIcon = (name) => {
+  const lower = String(name).toLowerCase();
+  for (const [key, icon] of Object.entries(AMENITY_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return AMENITY_ICONS.default;
+};
+
+function PropertyModal({ stay, onClose }) {
+  const { isMobile } = useWindowSize();
+  const { tokens: { A, FG, M, B, W, S, BG, AL } } = useTheme();
+  const detailsRef = useRef(null);
+
+  const name = stay.propertyName || stay.title || stay.name || "Property Details";
+  const desc = stay.detailedDescription || stay.description || stay.shortDescription;
+
+  const capacity = stay.maxGuests || stay.guests?.adults || stay.maxAdults || null;
+
+  const list = stay.amenities || stay.propertyAmenities || stay.stayAmenities || stay.amenityList || [];
+  const amenities = extractList(list);
+
+  const formatTime12h = (value, fallback = "") => {
+    if (!value) return fallback;
+    const raw = String(value).trim();
+    const parsed = moment(raw, ["HH:mm:ss", "HH:mm", "h:mm A", "h:mmA"], true);
+    if (!parsed.isValid()) return raw;
+    return parsed.format("h:mm A");
+  };
+
+  const checkInRaw = stay.checkInTime || stay.checkinTime || stay.check_in_time || "14:00";
+  const checkOutRaw = stay.checkOutTime || stay.checkoutTime || stay.check_out_time || "11:00";
+  const checkInText = formatTime12h(checkInRaw, "2:00 PM");
+  const checkOutText = formatTime12h(checkOutRaw, "11:00 AM");
+
+  const cancellationPolicy = stay.cancellationPolicy || stay.cancellationPolicySummary || stay.cancellationPolicyText;
+
+  const toAmount = (value) => {
+    if (value === null || value === undefined || value === "") return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+  const toDateOnly = (value) => {
+    if (!value) return null;
+    const m = moment(value, ["YYYY-MM-DD", moment.ISO_8601], true);
+    return m.isValid() ? m.startOf("day") : null;
+  };
+
+  const basePrice =
+    toAmount(stay.fullPropertyB2cPrice) ??
+    toAmount(stay.fullPropertyb2cPrice) ??
+    toAmount(stay.full_property_b2c_price) ??
+    toAmount(stay.b2cPrice) ??
+    toAmount(stay.pricePerNight) ??
+    toAmount(stay.startingPrice) ??
+    toAmount(stay.price);
+  const seasonalPeriods = Array.isArray(stay.seasonalPricing)
+    ? stay.seasonalPricing
+    : (Array.isArray(stay.seasonalPricings) ? stay.seasonalPricings : []);
+  const today = moment().startOf("day");
+  const activeSeason = seasonalPeriods.find((period) => {
+    const start = toDateOnly(period?.startDate || period?.start_date);
+    const end = toDateOnly(period?.endDate || period?.end_date);
+    if (!start || !end) return false;
+    return today.isSameOrAfter(start) && today.isSameOrBefore(end);
+  });
+  const seasonalB2CPrice =
+    activeSeason?.b2cPrice ??
+    activeSeason?.b2cprice ??
+    activeSeason?.pricePerNight ??
+    activeSeason?.price ??
+    null;
+  const priceValue = seasonalB2CPrice ?? basePrice;
+
+  const billingConfigDiscounts =
+    stay.billingConfig?.discounts ||
+    stay.billing_config?.discounts ||
+    [];
+  const discountRate = Array.isArray(billingConfigDiscounts)
+    ? Math.max(
+      0,
+      Math.min(
+        100,
+        billingConfigDiscounts.reduce((sum, discount) => {
+          const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+          return sum + (Number.isFinite(rate) ? rate : 0);
+        }, 0)
+      )
+    )
+    : 0;
+  const discountedPriceValue =
+    priceValue != null ? Math.max(0, Number(priceValue) * (1 - discountRate / 100)) : null;
+
+  const allImages = [];
+  const coverPhoto = stay.coverPhotoUrl || stay.coverImageUrl || stay.coverPhoto || stay.coverImage || stay.imageUrl;
+  if (coverPhoto) allImages.push(coverPhoto);
+  const media = stay.media || stay.images || stay.stayMedia || [];
+  media.forEach(m => {
+    const u = typeof m === "string" ? m : m.url || m.src || m.imageUrl;
+    if (u && !allImages.includes(u)) allImages.push(u);
+  });
+
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const galleryRef = useRef(null);
+
+  const scrollGallery = (dir) => {
+    if (!galleryRef.current) return;
+    const nextIdx = dir === 'next'
+      ? (galleryIndex + 1) % allImages.length
+      : (galleryIndex - 1 + allImages.length) % allImages.length;
+
+    setGalleryIndex(nextIdx);
+    const itemWidth = galleryRef.current.offsetWidth;
+    galleryRef.current.scrollTo({
+      left: nextIdx * itemWidth,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleGalleryScroll = () => {
+    if (!galleryRef.current) return;
+    const scrollLeft = galleryRef.current.scrollLeft;
+    const itemWidth = galleryRef.current.offsetWidth;
+    if (itemWidth > 0) {
+      const idx = Math.round(scrollLeft / itemWidth);
+      if (idx !== galleryIndex && idx >= 0 && idx < allImages.length) {
+        setGalleryIndex(idx);
+      }
+    }
+  };
+
+  const scrollToDetails = () => {
+    detailsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    return lockBodyScroll();
+  }, []);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 0 : 24, overflow: "hidden", overflowX: "hidden", overscrollBehavior: "contain" }}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }}
+        onClick={onClose}
+      />
+
+      <style>{`
+        .modal-scrollable-content::-webkit-scrollbar { width: 6px; }
+        .modal-scrollable-content::-webkit-scrollbar-thumb { background: ${B}; border-radius: 10px; }
+        .modal-scrollable-content { scrollbar-width: thin; scrollbar-color: ${B} transparent; }
+        .gallery-scroll-track::-webkit-scrollbar { display: none; }
+        .gallery-scroll-track { -ms-overflow-style: none; scrollbar-width: none; }
+        .gallery-nav-button:hover { opacity: 1 !important; background: rgba(255,255,255,0.24) !important; }
+      `}</style>
+
+      <motion.div
+        initial={{ opacity: 0, y: isMobile ? "100%" : 40, scale: isMobile ? 1 : 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: isMobile ? "100%" : 40, scale: isMobile ? 1 : 0.97 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: "relative", background: W, width: "100%", maxWidth: 1100,
+          maxHeight: isMobile ? "100vh" : "90vh",
+          marginTop: isMobile ? "auto" : 0,
+          borderRadius: isMobile ? "24px 24px 0 0" : 24, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1,
+          boxShadow: "0 40px 120px rgba(0,0,0,0.5)", border: `1px solid ${B}`
+        }}
+      >
+        {isMobile && (
+          <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", width: 44, height: 5, borderRadius: 100, background: "rgba(0,0,0,0.15)", zIndex: 30 }} />
+        )}
+
+        <button onClick={onClose} style={{
+          position: "absolute", top: isMobile ? 20 : 24, right: isMobile ? 20 : 24, width: 40, height: 40, borderRadius: "50%",
+          background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center",
+          justifyContent: "center", cursor: "pointer", zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+          transition: "all 0.3s ease", color: FG
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+
+        {/* Scrollable Content Container */}
+        <div className="modal-scrollable-content" style={{ overflowY: "auto", flex: 1, boxSizing: "border-box", padding: isMobile ? "40px 20px" : "48px 48px" }}>
+
+          {/* Top Hero Section */}
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: isMobile ? 32 : 40, marginBottom: 40, alignItems: "start" }}>
+
+            {/* LEFT SIDE: Large Featured Image */}
+            <div style={{
+              height: isMobile ? 260 : 440, overflow: "hidden", borderRadius: 20,
+              background: "#0F0F0F", position: "relative", display: "flex", flexShrink: 0,
+              border: `1px solid ${B}`
+            }}>
+              {allImages.length > 0 ? (
+                <>
+                  <div ref={galleryRef} onScroll={handleGalleryScroll} className="gallery-scroll-track" style={{ display: "flex", width: "100%", height: "100%", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                    {allImages.map((img, i) => (
+                      <div key={i} style={{ minWidth: "100%", height: "100%", scrollSnapAlign: "start", position: "relative" }}>
+                        <img src={fixImageUrl(img)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: galleryIndex === i ? 1 : 0.8, transition: "opacity 0.6s ease" }} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Gradient Overlay for Readability */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 50%)",
+                    pointerEvents: "none", zIndex: 10
+                  }} />
+
+                  {allImages.length > 1 && (
+                    <>
+                      <button className="gallery-nav-button" onClick={() => scrollGallery('prev')} style={{
+                        position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
+                        width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+                        backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", zIndex: 15, transition: "all 0.3s", opacity: 0.72, fontSize: 22, fontWeight: 300, lineHeight: 1
+                      }}>
+                        &lt;
+                      </button>
+                      <button className="gallery-nav-button" onClick={() => scrollGallery('next')} style={{
+                        position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+                        width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+                        backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", zIndex: 15, transition: "all 0.3s", opacity: 0.72, fontSize: 22, fontWeight: 300, lineHeight: 1
+                      }}>
+                        &gt;
+                      </button>
+                    </>
+                  )}
+
+                  <div style={{
+                    position: "absolute", bottom: 20, right: 20, background: "rgba(0,0,0,0.6)",
+                    backdropFilter: "blur(8px)", color: "#fff", padding: "6px 14px", borderRadius: 100,
+                    fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", zIndex: 15,
+                    border: "1px solid rgba(255,255,255,0.15)"
+                  }}>
+                    {galleryIndex + 1} <span style={{ opacity: 0.5, margin: "0 2px" }}>/</span> {allImages.length}
+                  </div>
+                </>
+              ) : (
+                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: S }}>
+                  <Building size="48" color={A} />
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT SIDE: Quick Info & Title */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div>
+                <span style={{
+                  fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase",
+                  color: A, fontWeight: 800, marginBottom: 8, display: "block"
+                }}>
+                  {toDisplayString(stay.propertyType) || "Property Stay"}
+                </span>
+
+                <h2 style={{
+                  fontSize: isMobile ? 32 : 40, fontWeight: 800, marginBottom: 12,
+                  fontFamily: "var(--font-fraunces, Georgia, serif)", color: FG,
+                  lineHeight: 1.1, letterSpacing: "-0.02em", wordBreak: "break-word"
+                }}>{name}</h2>
+
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: M, fontWeight: 550, margin: 0, opacity: 0.9 }}>
+                  {stay.shortDescription || "Entire-property booking with curated comfort and premium amenities."}
+                </p>
+              </div>
+
+              {/* Amenities Preview */}
+              {amenities.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: M, marginBottom: 10 }}>
+                    Amenities
+                  </h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {amenities.slice(0, 4).map((f, i) => {
+                      const IconComp = getAmenityIcon(f);
+                      return (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          background: S, border: `1px solid ${B}`, borderRadius: 20,
+                          padding: "6px 12px", fontSize: 11, fontWeight: 600, color: FG
+                        }}>
+                          <IconComp size={12} color={A} />
+                          <span>{f}</span>
+                        </div>
+                      );
+                    })}
+                    {amenities.length > 4 && (
+                      <div style={{
+                        display: "flex", alignItems: "center", background: S,
+                        border: `1px solid ${B}`, borderRadius: 20, padding: "6px 12px",
+                        fontSize: 11, fontWeight: 700, color: M
+                      }}>
+                        + {amenities.length - 4} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 2x2 Quick Info Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {/* Capacity */}
+                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Capacity</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{capacity != null ? `${capacity} Guests` : "Full Property"}</span>
+                </div>
+
+                {/* Price */}
+                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Nightly Price</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 4 }}>
+                    {priceValue != null ? (
+                      <>
+                        {discountRate > 0 && (
+                          <span style={{ fontSize: 11, color: M, textDecoration: "line-through", fontWeight: 500 }}>
+                            ₹{Number(priceValue).toLocaleString("en-IN")}
+                          </span>
+                        )}
+                        <span>₹{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")}</span>
+                      </>
+                    ) : (
+                      "On Request"
+                    )}
+                  </span>
+                </div>
+
+                {/* Check-in */}
+                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Check-in</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>After {checkInText}</span>
+                </div>
+
+                {/* Check-out */}
+                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Check-out</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>Before {checkOutText}</span>
+                </div>
+              </div>
+
+              {/* CTAs */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                <button
+                  onClick={() => {
+                    onClose();
+                    const btn = document.querySelector(".stay-booking-trigger");
+                    if (btn) {
+                      setTimeout(() => {
+                        const target = btn;
+                        if (target && typeof target.click === 'function') {
+                          target.click();
+                        }
+                      }, 120);
+                    }
+                  }}
+                  style={{
+                    background: A, color: "#fff", border: "none",
+                    padding: "14px 28px", borderRadius: 12, fontSize: 14, fontWeight: 800,
+                    cursor: "pointer", boxShadow: `0 10px 25px ${A}2a`,
+                    transition: "all 0.3s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}
+                >
+                  Reserve Stay
+                </button>
+
+                <button
+                  onClick={scrollToDetails}
+                  style={{
+                    background: "transparent", border: `1px solid ${B}`, color: FG,
+                    padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                    cursor: "pointer", transition: "all 0.3s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+                  }}
+                >
+                  View Full Details
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Divider & Full Narrative/Details */}
+          <div ref={detailsRef} style={{ borderTop: `1px solid ${B}`, paddingTop: 40, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: isMobile ? 32 : 40 }}>
+
+            {/* Narrative */}
+            <div>
+              <h3 style={{
+                fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+                letterSpacing: "0.2em", color: M, marginBottom: 16
+              }}>
+                Property Narrative
+              </h3>
+              <p style={{
+                fontSize: 15, lineHeight: 1.8, color: FG,
+                fontWeight: 450, opacity: 0.9, whiteSpace: "pre-line", margin: 0
+              }}>
+                {desc}
+              </p>
+            </div>
+
+            {/* Side features */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+              {amenities.length > 0 && (
+                <div>
+                  <h3 style={{
+                    fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+                    letterSpacing: "0.2em", color: M, marginBottom: 20
+                  }}>
+                    Amenities & Features
+                  </h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+                    {amenities.map((f, i) => {
+                      const IconComp = getAmenityIcon(f);
+                      return (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <IconComp size={15} color={A} />
+                          <span style={{ fontSize: 13, color: FG, fontWeight: 600 }}>{f}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {cancellationPolicy && (
+                <div>
+                  <h3 style={{
+                    fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+                    letterSpacing: "0.2em", color: M, marginBottom: 16
+                  }}>
+                    Cancellation Guidelines
+                  </h3>
+                  <div style={{ padding: 20, background: S, borderRadius: 16, border: `1px solid ${B}` }}>
+                    <p style={{ fontSize: 13, lineHeight: 1.6, color: FG, fontWeight: 500, opacity: 0.85, margin: 0 }}>
+                      {cancellationPolicy}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function PropertyStayCard({ stay }) {
-  const { tokens: { FG, M, B, W, S, A } } = useTheme();
+  const { tokens: { FG, M, B, W, S, A, AL } } = useTheme();
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [isHoveringCover, setIsHoveringCover] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
   const toDateOnly = (value) => {
     if (!value) return null;
     const m = moment(value, ["YYYY-MM-DD", moment.ISO_8601], true);
@@ -1171,20 +1740,25 @@ function PropertyStayCard({ stay }) {
     [];
   const discountRate = Array.isArray(billingConfigDiscounts)
     ? Math.max(
-        0,
-        Math.min(
-          100,
-          billingConfigDiscounts.reduce((sum, discount) => {
-            const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
-            return sum + (Number.isFinite(rate) ? rate : 0);
-          }, 0)
-        )
+      0,
+      Math.min(
+        100,
+        billingConfigDiscounts.reduce((sum, discount) => {
+          const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+          return sum + (Number.isFinite(rate) ? rate : 0);
+        }, 0)
       )
+    )
     : 0;
   const discountedPriceValue =
     priceValue != null ? Math.max(0, Number(priceValue) * (1 - discountRate / 100)) : null;
   const showSeasonal = seasonalB2CPrice != null;
   const propertyName = stay?.propertyName || stay?.title || stay?.name || "Property Stay";
+
+  const list = stay?.amenities || stay?.propertyAmenities || stay?.stayAmenities || stay?.amenityList || [];
+  const amenities = extractList(list);
+  const visibleAmenities = amenities.slice(0, 4);
+  const extraCount = amenities.length - 4;
 
   return (
     <motion.div
@@ -1277,78 +1851,151 @@ function PropertyStayCard({ stay }) {
             Entire-property booking with curated comfort and premium amenities.
           </p>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <motion.div
-            whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
-            transition={{ duration: 0.2 }}
-            style={{
-              border: `1px solid ${B}99`,
-              borderRadius: 10,
-              padding: "10px 14px",
-              background: "rgba(255,255,255,0.55)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-              minWidth: 150
-            }}
-          >
-            <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-in</div>
-            <div style={{ fontSize: 14, color: FG, fontWeight: 700, marginTop: 4 }}>{checkInText}</div>
-          </motion.div>
-          <motion.div
-            whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
-            transition={{ duration: 0.2 }}
-            style={{
-              border: `1px solid ${B}99`,
-              borderRadius: 10,
-              padding: "10px 14px",
-              background: "rgba(255,255,255,0.55)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-              minWidth: 150
-            }}
-          >
-            <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-out</div>
-            <div style={{ fontSize: 14, color: FG, fontWeight: 700, marginTop: 4 }}>{checkOutText}</div>
-          </motion.div>
-          <motion.div
-            whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
-            transition={{ duration: 0.2 }}
-            style={{
-              border: `1px solid ${B}99`,
-              borderRadius: 10,
-              padding: "10px 14px",
-              background: "rgba(255,255,255,0.55)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-              minWidth: 170
-            }}
-          >
-            <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Price</div>
-            {priceValue != null ? (
-              <div style={{ marginTop: 4, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                {discountRate > 0 && (
-                  <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.8 }}>
-                    {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
+
+        {amenities.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "4px 0" }}>
+            {visibleAmenities.map((amenity, idx) => {
+              const IconComp = getAmenityIcon(amenity);
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(255, 255, 255, 0.4)",
+                    border: `1px solid ${B}66`,
+                    borderRadius: 20,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: FG,
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.02)",
+                    backdropFilter: "blur(4px)",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <IconComp size={12} color={A} />
+                  <span>{amenity}</span>
+                </div>
+              );
+            })}
+            {extraCount > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: S,
+                  border: `1px solid ${B}66`,
+                  borderRadius: 20,
+                  padding: "6px 12px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: M,
+                  backdropFilter: "blur(4px)"
+                }}
+              >
+                + {extraCount} more
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            <motion.div
+              whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
+              transition={{ duration: 0.2 }}
+              style={{
+                border: `1px solid ${B}99`,
+                borderRadius: 10,
+                padding: "10px 14px",
+                background: "rgba(255,255,255,0.55)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+                minWidth: 150
+              }}
+            >
+              <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-in</div>
+              <div style={{ fontSize: 14, color: FG, fontWeight: 700, marginTop: 4 }}>{checkInText}</div>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
+              transition={{ duration: 0.2 }}
+              style={{
+                border: `1px solid ${B}99`,
+                borderRadius: 10,
+                padding: "10px 14px",
+                background: "rgba(255,255,255,0.55)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+                minWidth: 150
+              }}
+            >
+              <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-out</div>
+              <div style={{ fontSize: 14, color: FG, fontWeight: 700, marginTop: 4 }}>{checkOutText}</div>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
+              transition={{ duration: 0.2 }}
+              style={{
+                border: `1px solid ${B}99`,
+                borderRadius: 10,
+                padding: "10px 14px",
+                background: "rgba(255,255,255,0.55)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+                minWidth: 170
+              }}
+            >
+              <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Price</div>
+              {priceValue != null ? (
+                <div style={{ marginTop: 4, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                  {discountRate > 0 && (
+                    <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.8 }}>
+                      {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 16, color: FG, fontWeight: 800 }}>
+                    {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")} / night
                   </span>
-                )}
-                <span style={{ fontSize: 16, color: FG, fontWeight: 800 }}>
-                  {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")} / night
-                </span>
-              </div>
-            ) : (
-              <div style={{ fontSize: 16, color: FG, fontWeight: 800, marginTop: 4 }}>Price on request</div>
-            )}
-            {showSeasonal && (
-              <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Seasonal B2C Price
-              </div>
-            )}
-          </motion.div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 16, color: FG, fontWeight: 800, marginTop: 4 }}>Price on request</div>
+              )}
+              {showSeasonal && (
+                <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Seasonal B2C Price
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              background: AL, border: `1px solid ${A}`, color: A,
+              padding: "12px 24px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+              cursor: "pointer", whiteSpace: "nowrap",
+              transition: "all 0.3s ease",
+              display: "flex", alignItems: "center", justifyContent: "center"
+            }}>
+            View Details
+          </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showModal && (
+          <PropertyModal
+            stay={stay}
+            onClose={() => setShowModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
