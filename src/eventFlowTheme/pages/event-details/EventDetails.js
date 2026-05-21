@@ -657,10 +657,18 @@ function Hero({ event }) {
   const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
   const venueStr = event?.venueFullAddress || "Mumbai";
   const getCategoryDisplayName = (category, fallbackName) => {
+    let name = "";
     if (category && typeof category === "object") {
-      return category.displayName || category.display_name || category.name || "";
+      name = category.displayName || category.display_name || category.name || "";
+    } else {
+      name = category || fallbackName || "";
     }
-    return category || fallbackName || "";
+    if (name === "Others") {
+      return event?.categoryOtherDescription && event.categoryOtherDescription.trim() !== ""
+        ? event.categoryOtherDescription
+        : "Others";
+    }
+    return name;
   };
   const splitTitle = (str) => {
     if (!str) return ["", ""];
@@ -761,7 +769,16 @@ function About({ event }) {
       return sum + parseDurationMinutes(durationValue);
     }, 0)
     : 0;
-  const eventType = event?.eventType || event?.category || "Event";
+  const getEventTypeName = () => {
+    const rawType = event?.eventType || event?.category || "Event";
+    if (rawType === "Others") {
+      return event?.categoryOtherDescription && event.categoryOtherDescription.trim() !== ""
+        ? event.categoryOtherDescription
+        : "Others";
+    }
+    return rawType;
+  };
+  const eventType = getEventTypeName();
   const duration = formatDurationMinutes(totalSlotDuration);
   const ageLimit = event?.minimumAge != null ? `${event.minimumAge}+` : (event?.ageLimit || "All ages");
 

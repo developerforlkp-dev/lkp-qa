@@ -1563,7 +1563,17 @@ const EventProduct = () => {
                 </div>
                 <div className={styles.eventDetailItem}>
                   <Icon name="star" size="18" />
-                  <span>Music</span>
+                  <span>
+                    {(() => {
+                      const category = event?.category || "Music";
+                      if (category === "Others") {
+                        return event?.categoryOtherDescription && event.categoryOtherDescription.trim() !== ""
+                          ? event.categoryOtherDescription
+                          : "Others";
+                      }
+                      return category;
+                    })()}
+                  </span>
                 </div>
                 {/* Guest/Attendee Selector */}
                 <div

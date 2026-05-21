@@ -1432,14 +1432,14 @@ const StayBookingSystem = ({
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "16px 32px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "16px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <h2 style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2 }}>
+                  <h2 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2, lineHeight: "1.2" }}>
                     Reserve Your Stay
                   </h2>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     {!fetchingAvailability && pricing.discount > 0 && (
-                      <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.7 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: M, textDecoration: "line-through", opacity: 0.7 }}>
                         {"\u20B9"}{formatPrice(pricing.originalPerNight)}
                       </span>
                     )}
@@ -1460,7 +1460,7 @@ const StayBookingSystem = ({
                   <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8, lineHeight: "1.2" }}>
                           01. Select Dates
                           <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
                             {selectionMode === "check-in" ? "Select Check-in" : selectionMode === "check-out" ? "Select Check-out" : "Dates Selected"}
@@ -1506,7 +1506,7 @@ const StayBookingSystem = ({
                   <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
                     {/* Section 02: Booking Details */}
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em" }}>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", lineHeight: "1.2" }}>
                         02. Booking Details
                       </div>
                       
@@ -1515,7 +1515,7 @@ const StayBookingSystem = ({
                         <div 
                           onClick={() => setSelectionMode("check-in")}
                           style={{ 
-                            padding: "8px 12px", 
+                            padding: "10px 14px", 
                             background: BG, 
                             borderRadius: 16, 
                             border: `1px solid ${selectionMode === 'check-in' ? A : B}`,
@@ -1524,15 +1524,15 @@ const StayBookingSystem = ({
                             boxShadow: selectionMode === 'check-in' ? `0 0 15px ${A}22` : "none"
                           }}
                         >
-                          <p style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 2 }}>Check-in</p>
-                          <p style={{ fontSize: 12, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Check-in</p>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
                         </div>
                         <div 
                           onClick={() => {
                             if (checkInDate) setSelectionMode("check-out");
                           }}
                           style={{ 
-                            padding: "8px 12px", 
+                            padding: "10px 14px", 
                             background: BG, 
                             borderRadius: 16, 
                             border: `1px solid ${selectionMode === 'check-out' ? A : B}`,
@@ -1542,8 +1542,8 @@ const StayBookingSystem = ({
                             boxShadow: selectionMode === 'check-out' ? `0 0 15px ${A}22` : "none"
                           }}
                         >
-                          <p style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", marginBottom: 2 }}>Check-out</p>
-                          <p style={{ fontSize: 12, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Check-out</p>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
                         </div>
                       </div>
 
@@ -1563,7 +1563,7 @@ const StayBookingSystem = ({
                               background: AL, 
                               border: `1px solid ${A}33`, 
                               color: A, 
-                              fontSize: 9, 
+                              fontSize: 10, 
                               fontWeight: 800, 
                               textTransform: "uppercase",
                               letterSpacing: "0.05em",
@@ -1581,15 +1581,15 @@ const StayBookingSystem = ({
 
                     {/* Section 03: Guests & Accommodations */}
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 10, letterSpacing: "0.1em" }}>
+                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", lineHeight: "1.2" }}>
                         03. Guests & Accommodations
                       </div>
                       
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <div>
-                            <p style={{ fontSize: 12, fontWeight: 600, color: FG }}>Adults</p>
-                            <p style={{ fontSize: 9, color: M, fontWeight: 500 }}>{guestAgeLabels.adults}</p>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</p>
+                            <p style={{ fontSize: 10, color: M, fontWeight: 500 }}>{guestAgeLabels.adults}</p>
                           </div>
                           <Counter 
                             value={guests.adults} 
@@ -1600,8 +1600,8 @@ const StayBookingSystem = ({
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
                           <div>
-                            <p style={{ fontSize: 12, fontWeight: 600, color: FG }}>Children</p>
-                            <p style={{ fontSize: 9, color: M, fontWeight: 500 }}>{guestAgeLabels.children}</p>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</p>
+                            <p style={{ fontSize: 10, color: M, fontWeight: 500 }}>{guestAgeLabels.children}</p>
                           </div>
                           <Counter 
                             value={guests.children} 
@@ -1660,15 +1660,15 @@ const StayBookingSystem = ({
                       {resolvedSelectedRooms.length > 0 && (
                         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                           {resolvedSelectedRooms.map((room) => (
-                            <div key={room.roomId || room.id} style={{ padding: "8px 12px", background: BG, borderRadius: 12, border: `1px solid ${B}` }}>
+                            <div key={room.roomId || room.id} style={{ padding: "10px 14px", background: BG, borderRadius: 16, border: `1px solid ${B}` }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                                   <div style={{ width: 26, height: 26, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
                                     <Bed size={13} />
                                   </div>
                                   <div>
-                                    <p style={{ fontSize: 11, fontWeight: 700, color: FG }}>{room.roomName || room.name}</p>
-                                    <p style={{ fontSize: 9, color: M }}>{room.mealPlan || "EP"}</p>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>{room.roomName || room.name}</p>
+                                    <p style={{ fontSize: 10, fontWeight: 500, color: M }}>{room.mealPlan || "EP"}</p>
                                   </div>
                                 </div>
                                 <Counter 
@@ -1721,24 +1721,24 @@ const StayBookingSystem = ({
                           flexDirection: "column",
                           gap: "10px"
                         }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: "1.2" }}>
                             Stay Allocation Summary
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "10px" }}>
                             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 700 }}>Guests</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Guests</span>
                               <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{totalGuestsCount} {totalGuestsCount === 1 ? 'Guest' : 'Guests'}</span>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 700 }}>Room Capacity</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Capacity</span>
                               <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{roomCapacityText}</span>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 700 }}>Rooms Required</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Rooms Required</span>
                               <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{totalRoomsCount} {totalRoomsCount === 1 ? 'Room' : 'Rooms'}</span>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 700 }}>Room Type</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Type</span>
                               <span style={{ fontSize: 12, fontWeight: 700, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={roomTypeText}>{roomTypeText}</span>
                             </div>
                           </div>
@@ -1768,12 +1768,12 @@ const StayBookingSystem = ({
                     {/* Price Summary */}
                     {nightsCount > 0 && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 11, fontWeight: 500 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 12, fontWeight: 500 }}>
                           <span>Base ({nightsCount} night{nightsCount !== 1 ? 's' : ''})</span>
                           <span>₹{formatPrice(pricing.originalPerNight * nightsCount)}</span>
                         </div>
                         {pricing.discount > 0 && (
-                          <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 11, fontWeight: 700 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 12, fontWeight: 700 }}>
                             <span>Discounts</span>
                             <span>- ₹{formatPrice(pricing.discount)}</span>
                           </div>
@@ -1789,7 +1789,7 @@ const StayBookingSystem = ({
               </div>
 
               {/* Footer */}
-              <div className="booking-modal-footer" style={{ padding: "12px 32px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", flexDirection: "column", gap: 8, zIndex: 10 }}>
+              <div className="booking-modal-footer" style={{ padding: "16px 28px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", flexDirection: "column", gap: 8, zIndex: 10 }}>
                 <AnimatePresence>
                   {validationError && (
                     <motion.div
@@ -1819,9 +1819,9 @@ const StayBookingSystem = ({
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
-                    <span style={{ marginTop: 1, fontSize: 9, color: M, fontWeight: 500 }}>Inc. all taxes</span>
+                    <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
+                    <span style={{ marginTop: 1, fontSize: 10, color: M, fontWeight: 600 }}>Inc. all taxes</span>
                   </div>
                   {(() => {
                     const isPropertyBased = stay?.bookingScope === "Property-Based";
@@ -1836,12 +1836,12 @@ const StayBookingSystem = ({
                         onClick={handleReserve}
                         disabled={isDisabled}
                         style={{
-                          padding: "10px 32px",
+                          padding: "12px 32px",
                           background: isDisabled ? B : A,
                           color: "#FFF",
-                          borderRadius: 12,
+                          borderRadius: 16,
                           border: "none",
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: 800,
                           cursor: isDisabled ? "not-allowed" : "pointer",
                           boxShadow: isDisabled ? "none" : `0 10px 20px ${A}33`,
@@ -1855,9 +1855,9 @@ const StayBookingSystem = ({
                 </div>
               </div>
               
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, paddingBottom: 10, color: M, fontSize: 9, background: BG }}>
-                <ShieldCheck size={11} />
-                <span>Secure payment by LKP</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
+                <ShieldCheck size={12} />
+                <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
               </div>
             </motion.div>
           </div>
