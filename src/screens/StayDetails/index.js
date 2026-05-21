@@ -22,6 +22,7 @@ import { Footer } from "../../components/JUI/Footer";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import ShareButton from "../../components/ShareButton";
+import { lockBodyScroll } from "../../utils/scrollLock";
 
 const fixImageUrl = (url) => {
   if (!url) return "";
@@ -1345,15 +1346,11 @@ function PropertyModal({ stay, onClose }) {
   };
 
   useEffect(() => {
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
+    return lockBodyScroll();
   }, []);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 0 : 24, overflow: "hidden", overflowX: "hidden", overscrollBehavior: "contain" }}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1369,6 +1366,7 @@ function PropertyModal({ stay, onClose }) {
         .modal-scrollable-content { scrollbar-width: thin; scrollbar-color: ${B} transparent; }
         .gallery-scroll-track::-webkit-scrollbar { display: none; }
         .gallery-scroll-track { -ms-overflow-style: none; scrollbar-width: none; }
+        .gallery-nav-button:hover { opacity: 1 !important; background: rgba(255,255,255,0.24) !important; }
       `}</style>
 
       <motion.div
@@ -1428,23 +1426,23 @@ function PropertyModal({ stay, onClose }) {
 
                   {allImages.length > 1 && (
                     <>
-                      <button onClick={() => scrollGallery('prev')} style={{
+                      <button className="gallery-nav-button" onClick={() => scrollGallery('prev')} style={{
                         position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
                         width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
                         backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)",
                         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#fff", zIndex: 15, transition: "all 0.3s"
+                        color: "#fff", zIndex: 15, transition: "all 0.3s", opacity: 0.72, fontSize: 22, fontWeight: 300, lineHeight: 1
                       }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        &lt;
                       </button>
-                      <button onClick={() => scrollGallery('next')} style={{
+                      <button className="gallery-nav-button" onClick={() => scrollGallery('next')} style={{
                         position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
                         width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
                         backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)",
                         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#fff", zIndex: 15, transition: "all 0.3s"
+                        color: "#fff", zIndex: 15, transition: "all 0.3s", opacity: 0.72, fontSize: 22, fontWeight: 300, lineHeight: 1
                       }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        &gt;
                       </button>
                     </>
                   )}

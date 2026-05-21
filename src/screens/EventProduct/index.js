@@ -20,8 +20,7 @@ import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings
 import Modal from "../../components/Modal";
 import LoginPromptModal from "../../components/LoginPromptModal";
 import ShareButton from "../../components/ShareButton";
-
-import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
+import { lockBodyScroll } from "../../utils/scrollLock";
 
 /* ─── HERO SHARE FAB ─────────────────────────── */
 function HeroShareFab({ title, text, url }) {
@@ -349,12 +348,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
   const galleryRef = useRef(null);
 
   useEffect(() => {
-    const target = galleryRef.current;
-    if (target) disableBodyScroll(target);
-    return () => {
-      if (target) enableBodyScroll(target);
-      else enableBodyScroll(document.body);
-    };
+    return lockBodyScroll();
   }, []);
 
   return (
@@ -367,12 +361,33 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9990,
-        background: '#FFFFFF',
-        overflowY: 'auto',
-        padding: 'clamp(40px, 8vw, 100px) clamp(20px, 5vw, 60px)'
+        background: 'rgba(0,0,0,0.72)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflowY: 'hidden',
+        overflowX: 'hidden',
+        overscrollBehavior: 'contain',
+        padding: 'clamp(14px, 4vw, 36px)'
       }}
     >
-      <div style={{ maxWidth: 1400, margin: '0 auto', position: 'relative' }}>
+      <div style={{
+        maxWidth: 1240,
+        maxHeight: 'min(86vh, 860px)',
+        width: '100%',
+        margin: '0 auto',
+        position: 'relative',
+        background: '#FFFFFF',
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: 28,
+        boxShadow: '0 36px 120px rgba(0,0,0,0.5)',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        overscrollBehavior: 'contain',
+        padding: 'clamp(24px, 5vw, 48px)'
+      }}>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -463,16 +478,21 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
 };
 
 /* ─── MODAL IMAGE POPUP ────────────────────────── */
-const FullScreenImage = ({ src, onClose }) => {
+const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
   const modalRef = useRef(null);
+  const hasNavigation = Array.isArray(items) && items.length > 1 && typeof onNavigate === "function";
+
+  const handleNavigate = (direction, event) => {
+    event.stopPropagation();
+    if (!hasNavigation) return;
+    const nextIndex = direction === "next"
+      ? (currentIndex + 1) % items.length
+      : (currentIndex - 1 + items.length) % items.length;
+    onNavigate(nextIndex);
+  };
 
   useEffect(() => {
-    const target = modalRef.current;
-    if (target) disableBodyScroll(target);
-    return () => {
-      if (target) enableBodyScroll(target);
-      else enableBodyScroll(document.body);
-    };
+    return lockBodyScroll();
   }, []);
 
   return (
@@ -490,7 +510,9 @@ const FullScreenImage = ({ src, onClose }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '5vh 5vw'
+        padding: '5vh 5vw',
+        overflow: 'hidden',
+        overscrollBehavior: 'contain'
       }}
       onClick={onClose}
     >
@@ -515,21 +537,96 @@ const FullScreenImage = ({ src, onClose }) => {
           background: '#000'
         }}
       >
-        <img
-          src={src}
-          onClick={onClose}
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'block',
-            objectFit: 'cover'
-          }}
-          alt="Popup"
-        />
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={src}
+            src={src}
+            onClick={onClose}
+            initial={{ opacity: 0, x: 28, scale: 1.02 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -28, scale: 0.98 }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              objectFit: 'cover'
+            }}
+            alt="Popup"
+          />
+        </AnimatePresence>
         <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
           <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
         </div>
       </motion.div>
+      {hasNavigation && (
+        <>
+          <motion.button
+            type="button"
+            aria-label="Previous image"
+            onClick={(event) => handleNavigate("prev", event)}
+            whileHover={{ opacity: 1, scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              position: 'absolute',
+              left: 'clamp(18px, 4vw, 56px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 'clamp(44px, 6vw, 58px)',
+              height: 'clamp(44px, 6vw, 58px)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'rgba(255,255,255,0.16)',
+              backdropFilter: 'blur(16px)',
+              color: '#FFF',
+              fontSize: 26,
+              fontWeight: 300,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.72,
+              zIndex: 2,
+              boxShadow: '0 18px 45px rgba(0,0,0,0.28)'
+            }}
+          >
+            &lt;
+          </motion.button>
+          <motion.button
+            type="button"
+            aria-label="Next image"
+            onClick={(event) => handleNavigate("next", event)}
+            whileHover={{ opacity: 1, scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            style={{
+              position: 'absolute',
+              right: 'clamp(18px, 4vw, 56px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 'clamp(44px, 6vw, 58px)',
+              height: 'clamp(44px, 6vw, 58px)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'rgba(255,255,255,0.16)',
+              backdropFilter: 'blur(16px)',
+              color: '#FFF',
+              fontSize: 26,
+              fontWeight: 300,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 0.72,
+              zIndex: 2,
+              boxShadow: '0 18px 45px rgba(0,0,0,0.28)'
+            }}
+          >
+            &gt;
+          </motion.button>
+        </>
+      )}
     </motion.div>
   );
 };
@@ -1418,6 +1515,9 @@ const EventProduct = () => {
           {photoVisible && (
             <FullScreenImage
               src={allImages[photoIndex] || (allImages.length > 0 ? allImages[0] : "/images/content/placeholder.jpg")}
+              items={allImages}
+              currentIndex={photoIndex}
+              onNavigate={setPhotoIndex}
               onClose={() => setPhotoVisible(false)}
             />
           )}
