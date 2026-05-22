@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useHistory } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, AlertCircle, Sparkles, Plus, Minus, Info } from "lucide-react";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./StayProduct.module.sass";
@@ -8,6 +8,7 @@ import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
+import { useTheme } from "../../components/JUI/Theme";
 
 // Helper to format image URLs
 const formatImageUrl = (url) => {
@@ -247,12 +248,56 @@ const BookingSidebar = ({
   minRoomsNeeded,
   roomCapacityMessage
 }) => {
+  const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const [showRoomTypeDropdown, setShowRoomTypeDropdown] = useState(false);
   const [showStayDatePicker, setShowStayDatePicker] = useState(false);
   const [activeDateField, setActiveDateField] = useState("checkin");
 
   const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
+
+  const capacityInfo = useMemo(() => {
+    const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
+    
+    let allowedAdults = null;
+    let allowedChildren = null;
+    
+    if (isPropertyBased) {
+      const baseAdultsLimit = stay?.maxAdults || stay?.maxGuests || 1;
+      const extraAdultsLimit = stay?.maxExtraAdults || stay?.maxExtraAdultsAllowed || stay?.maxExtraBeds || 0;
+      allowedAdults = baseAdultsLimit + extraAdultsLimit;
+      
+      const baseChildrenLimit = stay?.maxChildren || 0;
+      const extraChildrenLimit = stay?.maxExtraChildren || stay?.maxExtraChildrenAllowed || 0;
+      allowedChildren = baseChildrenLimit + extraChildrenLimit;
+    } else if (selectedRoom) {
+      allowedAdults = selectedRoom.maxAdults || 2;
+      allowedChildren = selectedRoom.maxChildren !== undefined ? selectedRoom.maxChildren : 0;
+    }
+    
+    return { allowedAdults, allowedChildren };
+  }, [stay, selectedRoom]);
+
+  const isAdultExceeded = capacityInfo.allowedAdults !== null && (guests?.adults || 0) > capacityInfo.allowedAdults;
+  const isChildExceeded = capacityInfo.allowedChildren !== null && (guests?.children || 0) > capacityInfo.allowedChildren;
+  const isCapacityExceeded = isAdultExceeded || isChildExceeded || (roomCapacityMessage?.type === "warning");
+
+  const activeWarning = useMemo(() => {
+    if (isAdultExceeded) {
+      return {
+        type: "warning",
+        text: "Adult capacity exceeded for selected room"
+      };
+    }
+    if (isChildExceeded) {
+      return {
+        type: "warning",
+        text: "Children capacity exceeded for selected room"
+      };
+    }
+    return roomCapacityMessage;
+  }, [isAdultExceeded, isChildExceeded, roomCapacityMessage]);
+
   const isRoomBased = !isPropertyBased && (
     stay?.rooms?.length > 0 ||
     stay?.roomTypes?.length > 0 ||
@@ -644,53 +689,85 @@ const BookingSidebar = ({
           </div>
           {showGuestPicker && (
             <div className={styles.guestPicker}>
-              <div className={styles.guestType}>
-                <div className={styles.guestTypeInfo}>
-                  <span className={styles.guestTypeName}>Adults</span>
-                  <div className={styles.guestTypeDetails}>
-                    {stay?.maxAdults && <span className={styles.includedLabel}>Included: {stay.maxAdults}</span>}
-                    {(stay?.maxExtraAdultsAllowed > 0 || parseFloat(stay?.extraAdultPrice) > 0) && (
-                      <span className={styles.extraLabel}>
-                        + {stay?.maxExtraAdultsAllowed || 0} Extra (₹{stay?.extraAdultPrice}/night)
-                      </span>
-                    )}
+              <div style={{ display: "flex", flexDirection: "column", padding: "12px 0", borderBottom: `1px solid ${B}33` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className={styles.guestTypeInfo}>
+                    <span className={styles.guestTypeName}>Adults</span>
+                    <div className={styles.guestTypeDetails}>
+                      {stay?.maxAdults && <span className={styles.includedLabel}>Included: {stay.maxAdults}</span>}
+                      {(stay?.maxExtraAdultsAllowed > 0 || parseFloat(stay?.extraAdultPrice) > 0) && (
+                        <span className={styles.extraLabel}>
+                          + {stay?.maxExtraAdultsAllowed || 0} Extra (₹{stay?.extraAdultPrice}/night)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.counter}>
+                    <button
+                      onClick={() => setGuests(g => ({ ...g, adults: Math.max(1, (g.adults || 0) - 1) }))}
+                      disabled={(guests?.adults || 0) <= 1}
+                    >-</button>
+                    <span>{guests?.adults || 0}</span>
+                    <button
+                      onClick={() => setGuests(g => ({ ...g, adults: Math.min(99, (g.adults || 0) + 1) }))}
+                      disabled={(guests?.adults || 0) >= 99}
+                    >+</button>
                   </div>
                 </div>
-                <div className={styles.counter}>
-                  <button
-                    onClick={() => setGuests(g => ({ ...g, adults: Math.max(1, (g.adults || 0) - 1) }))}
-                    disabled={(guests?.adults || 0) <= 1}
-                  >-</button>
-                  <span>{guests?.adults || 0}</span>
-                  <button
-                    onClick={() => setGuests(g => ({ ...g, adults: Math.min((stay?.maxAdults || 0) + (stay?.maxExtraAdultsAllowed || 0), (g.adults || 0) + 1) }))}
-                    disabled={(guests?.adults || 0) >= ((stay?.maxAdults || 0) + (stay?.maxExtraAdultsAllowed || 0))}
-                  >+</button>
-                </div>
+                {capacityInfo.allowedAdults !== null && (
+                  <div style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: isAdultExceeded ? E : M,
+                    marginTop: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4
+                  }}>
+                    {isAdultExceeded && <AlertCircle size={10} color={E} />}
+                    <span>{guests?.adults || 0} / {capacityInfo.allowedAdults} allowed {isAdultExceeded ? "❌" : "✅"}</span>
+                  </div>
+                )}
               </div>
-              <div className={styles.guestType}>
-                <div className={styles.guestTypeInfo}>
-                  <span className={styles.guestTypeName}>Children</span>
-                  <div className={styles.guestTypeDetails}>
-                    {stay?.maxChildren !== undefined && <span className={styles.includedLabel}>Included: {stay.maxChildren}</span>}
-                    {(stay?.maxExtraChildrenAllowed > 0 || parseFloat(stay?.extraChildPrice) > 0) && (
-                      <span className={styles.extraLabel}>
-                        + {stay?.maxExtraChildrenAllowed || 0} Extra (₹{stay?.extraChildPrice}/night)
-                      </span>
-                    )}
+              <div style={{ display: "flex", flexDirection: "column", padding: "12px 0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className={styles.guestTypeInfo}>
+                    <span className={styles.guestTypeName}>Children</span>
+                    <div className={styles.guestTypeDetails}>
+                      {stay?.maxChildren !== undefined && <span className={styles.includedLabel}>Included: {stay.maxChildren}</span>}
+                      {(stay?.maxExtraChildrenAllowed > 0 || parseFloat(stay?.extraChildPrice) > 0) && (
+                        <span className={styles.extraLabel}>
+                          + {stay?.maxExtraChildrenAllowed || 0} Extra (₹{stay?.extraChildPrice}/night)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.counter}>
+                    <button
+                      onClick={() => setGuests(g => ({ ...g, children: Math.max(0, (g.children || 0) - 1) }))}
+                      disabled={(guests?.children || 0) <= 0}
+                    >-</button>
+                    <span>{guests?.children || 0}</span>
+                    <button
+                      onClick={() => setGuests(g => ({ ...g, children: Math.min(99, (g.children || 0) + 1) }))}
+                      disabled={(guests?.children || 0) >= 99}
+                    >+</button>
                   </div>
                 </div>
-                <div className={styles.counter}>
-                  <button
-                    onClick={() => setGuests(g => ({ ...g, children: Math.max(0, (g.children || 0) - 1) }))}
-                    disabled={(guests?.children || 0) <= 0}
-                  >-</button>
-                  <span>{guests?.children || 0}</span>
-                  <button
-                    onClick={() => setGuests(g => ({ ...g, children: Math.min((stay?.maxChildren || 0) + (stay?.maxExtraChildrenAllowed || 0), (g.children || 0) + 1) }))}
-                    disabled={(guests?.children || 0) >= ((stay?.maxChildren || 0) + (stay?.maxExtraChildrenAllowed || 0))}
-                  >+</button>
-                </div>
+                {capacityInfo.allowedChildren !== null && (
+                  <div style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: isChildExceeded ? E : M,
+                    marginTop: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4
+                  }}>
+                    {isChildExceeded && <AlertCircle size={10} color={E} />}
+                    <span>{guests?.children || 0} / {capacityInfo.allowedChildren} allowed {isChildExceeded ? "❌" : "✅"}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -806,13 +883,13 @@ const BookingSidebar = ({
         )}
 
         {/* Room capacity message – add another room or no room available */}
-        {roomCapacityMessage && (
+        {activeWarning && (
           <div className={cn(
             styles.roomCapacityMsg,
-            roomCapacityMessage.type === "warning" ? styles.roomCapacityWarn : styles.roomCapacityInfo
+            activeWarning.type === "warning" ? styles.roomCapacityWarn : styles.roomCapacityInfo
           )}>
-            <Icon name={roomCapacityMessage.type === "warning" ? "alert-circle" : "info"} size="14" />
-            <span>{roomCapacityMessage.text}</span>
+            <Icon name={activeWarning.type === "warning" ? "alert-circle" : "info"} size="14" />
+            <span>{activeWarning.text}</span>
           </div>
         )}
 
@@ -858,6 +935,7 @@ const BookingSidebar = ({
         <button
           className={styles.checkBtn}
           onClick={() => {
+            if (isCapacityExceeded) return;
             if (isRoomBased && !availabilityChecked && availableRooms?.length === 0) {
               onCheckAvailability();
             } else {
@@ -867,14 +945,22 @@ const BookingSidebar = ({
           disabled={
             !checkInDate || !checkOutDate ||
             availabilityLoading ||
-            (isRoomBased && availableRooms?.length > 0 && !selectedRoom)
+            (isRoomBased && availableRooms?.length > 0 && !selectedRoom) ||
+            isCapacityExceeded
           }
+          style={{
+            opacity: isCapacityExceeded ? 0.6 : (availabilityLoading ? 0.7 : 1),
+            pointerEvents: isCapacityExceeded ? "none" : "auto",
+            backgroundColor: isCapacityExceeded ? A : undefined
+          }}
         >
           {availabilityLoading
             ? "Checking..."
-            : (isRoomBased && !availabilityChecked && availableRooms?.length === 0
-              ? "Check Availability"
-              : "Book Now")}
+            : isCapacityExceeded
+              ? "Capacity Exceeded"
+              : (isRoomBased && !availabilityChecked && availableRooms?.length === 0
+                ? "Check Availability"
+                : "Book Now")}
         </button>
 
         <p className={styles.noCharge}>You won&apos;t be charged yet</p>
@@ -1440,19 +1526,20 @@ const StayProduct = () => {
   // Extra-room logic: if selected room's max capacity < totalGuests, suggest more rooms
   const { roomsNeeded, roomCapacityMessage, minRoomsNeeded } = useMemo(() => {
     if (!selectedRoom || !isRoomBased) return { roomsNeeded: 1, minRoomsNeeded: 1, roomCapacityMessage: null };
-    const totalGuests = (guests?.adults || 0) + (guests?.children || 0);
 
-    const roomCapacity = selectedRoom.maxGuests != null
-      ? Number(selectedRoom.maxGuests)
-      : (Number(selectedRoom.maxAdults) || 0) + (Number(selectedRoom.maxChildren) || 0) || 2;
+    const roomAdultCapacity = selectedRoom.maxAdults || 2;
+    const roomChildrenCapacity = selectedRoom.maxChildren !== undefined ? selectedRoom.maxChildren : 0;
 
-    const minNeeded = Math.ceil(totalGuests / roomCapacity);
+    const minAdultRooms = Math.ceil((guests?.adults || 0) / roomAdultCapacity);
+    const minChildrenRooms = roomChildrenCapacity > 0 ? Math.ceil((guests?.children || 0) / roomChildrenCapacity) : ((guests?.children || 0) > 0 ? 999 : 0);
+    const minNeeded = Math.max(minAdultRooms, minChildrenRooms, 1);
+
     const availableUnits = Number(selectedRoom.units || selectedRoom.availableRooms || selectedRoom.availableUnits || 99);
 
     // Final rooms needed is the max of automatically required and user selection
     const finalRoomsNeeded = Math.max(minNeeded, roomsCount);
 
-    if (availableUnits < finalRoomsNeeded) {
+    if (availableUnits < minNeeded) {
       return {
         roomsNeeded: availableUnits,
         minRoomsNeeded: minNeeded,
@@ -1463,24 +1550,45 @@ const StayProduct = () => {
       };
     }
 
-    if (finalRoomsNeeded > minNeeded) {
+    if (roomsCount < minNeeded) {
+      const isAdultExceeded = (guests?.adults || 0) > roomAdultCapacity * roomsCount;
+      const isChildExceeded = (guests?.children || 0) > roomChildrenCapacity * roomsCount;
+      let text = "Guest capacity exceeded for current rooms";
+      if (isAdultExceeded && isChildExceeded) {
+        text = "Guest capacity exceeded for selected room";
+      } else if (isAdultExceeded) {
+        text = "Adult capacity exceeded for selected room";
+      } else if (isChildExceeded) {
+        text = "Children capacity exceeded for selected room";
+      }
       return {
-        roomsNeeded: finalRoomsNeeded,
+        roomsNeeded: roomsCount,
+        minRoomsNeeded: minNeeded,
+        roomCapacityMessage: {
+          type: "warning",
+          text
+        }
+      };
+    }
+
+    if (roomsCount > minNeeded) {
+      return {
+        roomsNeeded: roomsCount,
         minRoomsNeeded: minNeeded,
         roomCapacityMessage: {
           type: "info",
-          text: `You have selected ${finalRoomsNeeded} rooms. Your group fits in ${minNeeded} room${minNeeded > 1 ? "s" : ""}.`
+          text: `You have selected ${roomsCount} rooms. Your group fits in ${minNeeded} room${minNeeded > 1 ? "s" : ""}.`
         }
       };
     }
 
     if (minNeeded > 1) {
       return {
-        roomsNeeded: finalRoomsNeeded,
+        roomsNeeded: roomsCount,
         minRoomsNeeded: minNeeded,
         roomCapacityMessage: {
           type: "info",
-          text: `Your group of ${totalGuests} needs ${minNeeded} room${minNeeded > 1 ? "s" : ""} (max ${roomCapacity} guests/room). ${minNeeded} rooms will be booked.`
+          text: `Your group needs ${minNeeded} rooms based on capacity limit. ${minNeeded} rooms will be booked.`
         }
       };
     }
@@ -1600,6 +1708,29 @@ const StayProduct = () => {
   const handleBooking = async (bookingInfo) => {
     if (!stayId || !checkInDate || !checkOutDate) {
       alert("Please select check-in and check-out dates first.");
+      return;
+    }
+
+    // Safety guard against capacity limit violations
+    const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
+    let allowedAdults = 99;
+    let allowedChildren = 99;
+    
+    if (isPropertyBased) {
+      const baseAdultsLimit = stay?.maxAdults || stay?.maxGuests || 1;
+      const extraAdultsLimit = stay?.maxExtraAdults || stay?.maxExtraAdultsAllowed || stay?.maxExtraBeds || 0;
+      allowedAdults = baseAdultsLimit + extraAdultsLimit;
+      
+      const baseChildrenLimit = stay?.maxChildren || 0;
+      const extraChildrenLimit = stay?.maxExtraChildren || stay?.maxExtraChildrenAllowed || 0;
+      allowedChildren = baseChildrenLimit + extraChildrenLimit;
+    } else if (selectedRoom) {
+      allowedAdults = selectedRoom.maxAdults || 2;
+      allowedChildren = selectedRoom.maxChildren !== undefined ? selectedRoom.maxChildren : 0;
+    }
+
+    if ((guests?.adults || 0) > allowedAdults || (guests?.children || 0) > allowedChildren) {
+      alert("Guest capacity exceeded. Please adjust guests or select more rooms.");
       return;
     }
 

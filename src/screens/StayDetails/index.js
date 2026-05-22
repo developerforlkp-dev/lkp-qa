@@ -978,10 +978,21 @@ const StayDetails = () => {
     const rid = String(roomId);
     setSelectedRooms(prev => {
       const exists = prev.find(r => r.roomId === rid);
-      if (exists) return prev.filter(r => r.roomId !== rid);
+      if (exists) {
+        const filtered = prev.filter(r => r.roomId !== rid);
+        if (filtered.length === 0) {
+          const stayRoomsCatalog = stay?.rooms || stay?.roomTypes || stay?.room_types || [];
+          if (stayRoomsCatalog.length > 0) {
+            const firstRoom = stayRoomsCatalog[0];
+            const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
+            return [{ roomId: firstRoomId, mealPlan: "EP", count: 1 }];
+          }
+        }
+        return filtered;
+      }
       return [...prev, { roomId: rid, mealPlan: mealPlan || "EP", count: 1 }];
     });
-  }, []);
+  }, [stay]);
 
   const handleRoomCountChange = useCallback((roomId, count) => {
     const rid = String(roomId);
