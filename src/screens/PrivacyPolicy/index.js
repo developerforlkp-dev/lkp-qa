@@ -304,27 +304,27 @@ const PrivacyPolicy = () => {
         }}
       />
 
-      <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "140px", paddingBottom: "120px", color: tokens.FG }}>
+      <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG }}>
         <div style={{ maxWidth: "860px", margin: "0 auto", padding: "0 24px" }}>
           
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{ textAlign: "center", marginBottom: "60px" }}
+            style={{ textAlign: "center", marginBottom: "40px" }}
           >
             <h1 className="font-display" style={{ 
               fontSize: "clamp(3.5rem, 7vw, 5.5rem)", 
               fontWeight: 400, 
               color: tokens.A, 
               letterSpacing: "-0.02em",
-              marginBottom: "24px",
+              marginBottom: "16px",
               fontFamily: "Georgia, serif"
             }}>
               Privacy Policy
             </h1>
             <p style={{ fontSize: "1.1rem", color: tokens.M, maxWidth: "600px", margin: "0 auto", lineHeight: 1.6 }}>
-              How we collect, use, and protect your information.
+              How we collect, use, and protect your information.<br />
               Last updated: May 2026.
             </p>
             
