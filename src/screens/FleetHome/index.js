@@ -9,6 +9,8 @@ import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import HeroSection from "./HeroSection";
+import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -712,7 +714,7 @@ const FleetHome = () => {
             <button className={styles.searchButton} onClick={handleSearch}>Search</button>
           </div>
 
-          <div className={styles.filtersContainer}>
+          <div className={cn(styles.filtersContainer, styles.desktopFilters)}>
             <div className={styles.filtersGrid}>
               {visibleFilterOptions.map((filter) => (
                 (() => {
@@ -741,6 +743,7 @@ const FleetHome = () => {
               ))}
             </div>
           </div>
+
         </div>
 
         {/* Dynamic Sections from API */}

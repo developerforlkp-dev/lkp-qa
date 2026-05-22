@@ -49,6 +49,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import TermsOfService from "./screens/TermsOfService";
 import PrivacyPolicy from "./screens/PrivacyPolicy";
+import MobileBottomNavbar from "./components/MobileBottomNavbar";
 
 function App() {
   // Get Google Client ID from environment variable
@@ -436,6 +437,7 @@ function App() {
             )}
           />
           </Switch>
+          <MobileBottomNavbar />
         </Router>
       </ThemeProvider>
     </GoogleOAuthProvider>

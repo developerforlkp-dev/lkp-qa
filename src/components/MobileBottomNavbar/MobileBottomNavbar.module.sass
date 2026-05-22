@@ -1,0 +1,100 @@
+@import ../../styles/helpers
+
+.mobileNavbarContainer
+    display: none
+    +m
+        display: block
+        position: fixed
+        bottom: 20px
+        left: 50%
+        transform: translateX(-50%)
+        width: calc(100% - 32px)
+        max-width: 480px
+        z-index: 9999
+        pointer-events: none
+        transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease
+        opacity: 1
+
+    &.hidden
+        +m
+            transform: translate(-50%, 100px)
+            opacity: 0
+
+.mobileNavbar
+    display: flex
+    flex-direction: row
+    align-items: center
+    justify-content: space-between
+    padding: 6px
+    background: rgba(252, 252, 253, 0.72)
+    backdrop-filter: blur(20px)
+    -webkit-backdrop-filter: blur(20px)
+    border: 1px solid rgba(228, 230, 236, 0.4)
+    border-radius: 28px
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04)
+    pointer-events: all
+    width: 100%
+    +dark
+        background: rgba(20, 20, 22, 0.72)
+        border: 1px solid rgba(53, 57, 69, 0.3)
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.2)
+
+.mobileNavItem
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+    flex: 1
+    height: 44px
+    border: none
+    background: transparent
+    cursor: pointer
+    padding: 0 4px
+    border-radius: 22px
+    color: $n4
+    -webkit-tap-highlight-color: transparent
+    transition: color 0.2s ease
+    +dark
+        color: $n5
+
+.mobileNavItemActive
+    color: #ffffff
+    +dark
+        color: #ffffff
+
+.mobileNavItemDisabled
+    opacity: 0.4
+    pointer-events: none
+
+.mobileActiveBg
+    position: absolute
+    inset: 2px
+    z-index: 1
+    border-radius: 20px
+    background: linear-gradient(135deg, #00D2FF 0%, #0097B2 100%)
+    box-shadow: 0 4px 14px rgba(0, 151, 178, 0.4)
+
+.mobileNavItemInner
+    position: relative
+    z-index: 2
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 6px
+    white-space: nowrap
+
+.mobileNavIcon
+    stroke: currentColor
+    stroke-width: 2.2
+    transition: transform 0.2s ease
+
+.mobileNavIconActive
+    transform: scale(1.08)
+
+.mobileNavLabel
+    font-size: 11px
+    font-weight: 700
+    letter-spacing: 0.2px
+    text-transform: capitalize
+    color: #ffffff
+    overflow: hidden
