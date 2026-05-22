@@ -356,11 +356,9 @@ const ScopedStyles = () => (
     .event-details-premium {
       font-family: var(--font-inter, system-ui, sans-serif);
       overflow-x: hidden;
-      cursor: none;
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
     }
-    .event-details-premium a, .event-details-premium button { cursor: none; }
     @keyframes marquee-l { from{transform:translateX(0)} to{transform:translateX(-50%)} }
     @keyframes marquee-r { from{transform:translateX(-50%)} to{transform:translateX(0)} }
     @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-16px) rotate(1deg)} }
@@ -407,9 +405,7 @@ const ScopedStyles = () => (
     .event-details-premium .venue-map-wrap:hover .venue-map-frame {
       filter: grayscale(0) contrast(1);
     }
-    
-    #cur-dot { position: fixed; width: 6px; height: 6px; background: var(--A); border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); transition: background 0.3s; }
-    #cur-ring { position: fixed; width: 38px; height: 38px; border: 1.5px solid var(--AL); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, border-color 0.3s; }
+
     
     .gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: start; height: 850px; overflow: hidden; border-radius: 40px; }
     .artist-row { display: grid; grid-template-columns: 80px 1fr 150px; gap: 24px; padding: 26px 0; border-bottom: 1px solid var(--B); align-items: center; cursor: default; transition: padding 0.3s, background 0.3s; }
@@ -549,23 +545,7 @@ const formatTime12h = (timeStr) => {
 
   return `${hour12}:${minutes} ${ampm}`;
 };
-function Cursor() {
-  const { tokens: { A, AL } } = useTheme();
-  const x = useMotionValue(-200), y = useMotionValue(-200);
-  const sx = useSpring(x, { stiffness: 120, damping: 20 });
-  const sy = useSpring(y, { stiffness: 120, damping: 20 });
-  useEffect(() => {
-    const fn = (e) => { x.set(e.clientX); y.set(e.clientY) };
-    window.addEventListener("mousemove", fn);
-    return () => window.removeEventListener("mousemove", fn);
-  }, [x, y]);
-  return (
-    <>
-      <motion.div id="cur-dot" style={{ left: x, top: y, background: A }} />
-      <motion.div id="cur-ring" style={{ left: sx, top: sy, borderColor: AL }} />
-    </>
-  );
-}
+
 
 function ProgressBar() {
   const { tokens: { A } } = useTheme();
@@ -2198,7 +2178,6 @@ export default function EventDetails() {
   return (
     <ScopedThemeProvider>
       <ScopedStyles />
-      <Cursor />
       <ProgressBar />
       <Hero event={event} />
       <About event={event} />

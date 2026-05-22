@@ -44,7 +44,7 @@ import FoodDetails from "./screens/FoodDetails";
 import PlaceDetails from "./screens/PlaceDetails";
 import ReviewsListing from "./screens/ReviewsListing";
 import { ThemeProvider } from "./components/JUI/Theme";
-import { Cursor, ProgressBar } from "./components/JUI/UI";
+import { ProgressBar } from "./components/JUI/UI";
 import ScrollToTop from "./components/ScrollToTop";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import TermsOfService from "./screens/TermsOfService";
@@ -70,7 +70,6 @@ function App() {
         <Router>
           <AnalyticsTracker />
           <ScrollToTop />
-          <Cursor />
           <ProgressBar />
           <Switch>
             <Route

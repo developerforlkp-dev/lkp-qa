@@ -77,11 +77,9 @@ const ScopedStyles = () => (
     .food-details-premium {
       font-family: 'Inter', system-ui, sans-serif;
       overflow-x: hidden;
-      cursor: none;
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
     }
-    .food-details-premium a, .food-details-premium button { cursor: none; }
     
     /* Header Blending */
     [class*="Header_header"] {
@@ -108,9 +106,7 @@ const ScopedStyles = () => (
     .food-details-premium .mq-l { display: flex; white-space: nowrap; animation: marquee-l 30s linear infinite; }
     .food-details-premium .mq-r { display: flex; white-space: nowrap; animation: marquee-r 34s linear infinite; }
     .food-details-premium .float-anim { animation: float 6s ease-in-out infinite; }
-    
-    #cur-dot { position: fixed; width: 6px; height: 6px; background: var(--A); border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); }
-    #cur-ring { position: fixed; width: 38px; height: 38px; border: 1.5px solid var(--AL); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); }
+
     
     .hero-img-curve {
       clip-path: circle(85% at 85% 50%);
@@ -126,23 +122,6 @@ const ScopedStyles = () => (
 );
 
 /* ─── UI COMPONENTS ─────────── */
-function Cursor() {
-  const { tokens: { A, AL } } = useTheme();
-  const x = useMotionValue(-200), y = useMotionValue(-200);
-  const sx = useSpring(x, { stiffness: 120, damping: 20 });
-  const sy = useSpring(y, { stiffness: 120, damping: 20 });
-  useEffect(() => {
-    const fn = (e) => { x.set(e.clientX); y.set(e.clientY) };
-    window.addEventListener("mousemove", fn);
-    return () => window.removeEventListener("mousemove", fn);
-  }, [x, y]);
-  return (
-    <>
-      <motion.div id="cur-dot" style={{ left: x, top: y, background: A }} />
-      <motion.div id="cur-ring" style={{ left: sx, top: sy, borderColor: AL }} />
-    </>
-  );
-}
 
 function ProgressBar() {
   const { tokens: { A } } = useTheme();
@@ -1181,7 +1160,6 @@ const FoodDetails = () => {
   return (
     <ScopedThemeProvider>
       <ProgressBar />
-      <Cursor />
       <ProductNavbar top={100} left={60} />
       <ScopedStyles />
 
