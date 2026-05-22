@@ -628,6 +628,9 @@ const FleetHome = () => {
             handleDateSelect={handleDateSelect}
             handleGuestChange={handleGuestChange}
             activeFilter={activeFilter}
+            onFilterClick={handleFilterClick}
+            businessInterestAvailability={businessInterestAvailability}
+            businessInterestActiveMap={businessInterestActiveMap}
           />
         )}
       </div>

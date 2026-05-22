@@ -180,18 +180,127 @@ function injectStyles() {
       /* Sheet header */
       .mcsh-sheet-header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
-        padding: 18px 20px 8px;
+        padding: 24px 20px 12px;
+      }
+      .mcsh-header-text-wrap {
+        flex: 1;
+        padding-right: 12px;
       }
       .mcsh-sheet-title {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.28em;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
         color: #0097B2;
+        display: block;
+        line-height: 1.3;
       }
-      .dark-mode .mcsh-sheet-title { color: rgba(0, 210, 255, 0.8); }
+      .dark-mode .mcsh-sheet-title { color: #00D2FF; }
+      .mcsh-sheet-subtitle {
+        font-size: 11px;
+        font-weight: 400;
+        color: rgba(60, 66, 87, 0.65);
+        display: block;
+        line-height: 1.4;
+        margin-top: 2px;
+      }
+      .dark-mode .mcsh-sheet-subtitle {
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      /* Inline switcher styles */
+      .mcsh-switcher-wrap {
+        padding: 6px 20px 14px;
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+        -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .mcsh-switcher-wrap::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome/Safari */
+      }
+      .mcsh-switcher {
+        display: flex;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 3px;
+        border-radius: 100px;
+        width: max-content;
+        position: relative;
+        margin: 0 auto;
+      }
+      .dark-mode .mcsh-switcher {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .mcsh-switcher-btn {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: 100px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+        transition: transform 0.2s ease;
+        opacity: 0.6;
+        flex-shrink: 0;
+      }
+      .mcsh-switcher-btn:hover {
+        opacity: 0.85;
+      }
+      .mcsh-switcher-btn.active {
+        opacity: 1;
+      }
+      .mcsh-switcher-btn:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+      .mcsh-switcher-label {
+        position: relative;
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.6);
+        z-index: 2;
+        transition: color 0.25s ease;
+      }
+      .dark-mode .mcsh-switcher-label {
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .mcsh-switcher-btn.active .mcsh-switcher-label {
+        color: #0097B2;
+      }
+      .dark-mode .mcsh-switcher-btn.active .mcsh-switcher-label {
+        color: #00D2FF;
+      }
+      
+      /* Active sliding highlight */
+      .mcsh-active-highlight {
+        position: absolute;
+        inset: 0;
+        border-radius: 100px;
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.05) 0%, rgba(0, 151, 178, 0.08) 100%);
+        border: 1px solid rgba(0, 151, 178, 0.22);
+        box-shadow: 0 2px 10px rgba(0, 151, 178, 0.12);
+        z-index: 1;
+      }
+      .dark-mode .mcsh-active-highlight {
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.08) 0%, rgba(0, 151, 178, 0.12) 100%);
+        border: 1px solid rgba(0, 210, 255, 0.35);
+        box-shadow: 0 0 14px rgba(0, 210, 255, 0.25);
+      }
 
       .mcsh-close-btn {
         width: 32px;
@@ -204,6 +313,7 @@ function injectStyles() {
         justify-content: center;
         cursor: pointer;
         color: rgba(0,0,0,0.45);
+        margin-top: 2px;
         -webkit-tap-highlight-color: transparent;
         transition: background 0.2s ease, color 0.2s ease;
       }
@@ -1128,7 +1238,54 @@ export default function MobileCinematicSearch({
   handleDateSelect,
   handleGuestChange,
   activeFilter,
+  onFilterClick,
+  businessInterestAvailability = {},
+  businessInterestActiveMap = {},
 }) {
+  const SECTION_CONFIG = {
+    experience: {
+      title: "CURATE YOUR EXPERIENCE",
+      subtitle: "Tailored adventures designed around your journey.",
+      placeholder: "Search experiences",
+      buttonText: "Explore Now",
+    },
+    stays: {
+      title: "FIND YOUR PERFECT STAY",
+      subtitle: "Luxury spaces crafted for unforgettable escapes.",
+      placeholder: "Search stays",
+      buttonText: "Find Stay",
+    },
+    events: {
+      title: "DISCOVER LIVE EXPERIENCES",
+      subtitle: "Reserve immersive moments happening around you.",
+      placeholder: "Search events",
+      buttonText: "Reserve Event",
+    },
+    food: {
+      title: "CURATE YOUR DINING EXPERIENCE",
+      subtitle: "Exceptional flavors and unforgettable culinary moments.",
+      placeholder: "Find dining experiences",
+      buttonText: "Discover Dining",
+    },
+    places: {
+      title: "EXPLORE NEW DESTINATIONS",
+      subtitle: "Discover beautiful places worth experiencing.",
+      placeholder: "Explore destinations",
+      buttonText: "Explore Places",
+    },
+  };
+
+  const currentConfig = SECTION_CONFIG[activeFilter] || SECTION_CONFIG.experience;
+
+  const switcherSections = [
+    { id: "experience", label: "Experience" },
+    { id: "events", label: "Events" },
+    { id: "stays", label: "Stays" },
+    { id: "food", label: "Food" },
+    { id: "places", label: "Places" },
+  ].filter((sec) => businessInterestActiveMap[sec.id] !== false);
+
+
   // Inject styles once
   useEffect(() => { injectStyles(); }, []);
 
@@ -1250,6 +1407,22 @@ export default function MobileCinematicSearch({
       document.body.classList.remove("mcsh-search-open");
     };
   }, [sheetOpen]);
+
+  // ── Scroll active switcher tab into view ───────────────────────────────────
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const timer = setTimeout(() => {
+      const activeBtn = sheetRef.current?.querySelector(".mcsh-switcher-btn.active");
+      if (activeBtn) {
+        activeBtn.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [activeFilter, sheetOpen]);
 
   // ── Auto-scroll sheet so calendar is visible after expanding ───────────────
   useEffect(() => {
@@ -1454,7 +1627,40 @@ export default function MobileCinematicSearch({
 
               {/* Header */}
               <div className="mcsh-sheet-header">
-                <span className="mcsh-sheet-title">Plan Your Escape</span>
+                <div className="mcsh-header-text-wrap">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeFilter}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+                    >
+                      <motion.span
+                        className="mcsh-sheet-title"
+                        variants={{
+                          initial: { opacity: 0, y: 8 },
+                          animate: { opacity: 1, y: 0 },
+                          exit: { opacity: 0, y: -8 },
+                        }}
+                        transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}
+                      >
+                        {currentConfig.title}
+                      </motion.span>
+                      <motion.span
+                        className="mcsh-sheet-subtitle"
+                        variants={{
+                          initial: { opacity: 0 },
+                          animate: { opacity: 1 },
+                          exit: { opacity: 0 },
+                        }}
+                        transition={{ duration: 0.22, ease: "easeInOut" }}
+                      >
+                        {currentConfig.subtitle}
+                      </motion.span>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
                 <button
                   className="mcsh-close-btn"
                   onClick={closeSheet}
@@ -1463,6 +1669,34 @@ export default function MobileCinematicSearch({
                 >
                   <X size={15} strokeWidth={2.2} />
                 </button>
+              </div>
+              
+              {/* Inline Section Switcher */}
+              <div className="mcsh-switcher-wrap">
+                <div className="mcsh-switcher">
+                  {switcherSections.map((sec) => {
+                    const isActive = activeFilter === sec.id;
+                    const isEnabledForListings = businessInterestAvailability[sec.id] !== false;
+                    return (
+                      <button
+                        key={sec.id}
+                        onClick={() => onFilterClick?.(sec.id)}
+                        disabled={!isEnabledForListings}
+                        className={cn("mcsh-switcher-btn", { active: isActive })}
+                        type="button"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeTabHighlight"
+                            className="mcsh-active-highlight"
+                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                        <span className="mcsh-switcher-label">{sec.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Form */}
@@ -1486,7 +1720,7 @@ export default function MobileCinematicSearch({
                       <span className="mcsh-field-label">Destination</span>
                       <input
                         type="text"
-                        placeholder="Search anywhere..."
+                        placeholder={currentConfig.placeholder}
                         className="mcsh-field-input"
                         value={searchQuery}
                         onChange={(e) => {
@@ -1679,7 +1913,7 @@ export default function MobileCinematicSearch({
                   type="button"
                 >
                   <Search size={17} strokeWidth={2.5} />
-                  Search
+                  {currentConfig.buttonText}
                   <ArrowRight size={16} strokeWidth={2.5} />
                 </motion.button>
               </div>
