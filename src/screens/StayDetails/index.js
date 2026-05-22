@@ -63,11 +63,9 @@ const ScopedStyles = () => (
     .stay-details-premium {
       font-family: var(--font-inter, system-ui, sans-serif);
       overflow-x: hidden;
-      cursor: none;
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
     }
-    .stay-details-premium a, .stay-details-premium button { cursor: none; }
     @keyframes marquee-l { from{transform:translateX(0)} to{transform:translateX(-50%)} }
     @keyframes marquee-r { from{transform:translateX(-50%)} to{transform:translateX(0)} }
     @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-16px) rotate(1deg)} }
@@ -75,9 +73,6 @@ const ScopedStyles = () => (
     .stay-details-premium .font-display { font-family: var(--font-fraunces, Georgia, serif); }
     .stay-details-premium .mq-l { display: flex; white-space: nowrap; animation: marquee-l 30s linear infinite; }
     .stay-details-premium .mq-r { display: flex; white-space: nowrap; animation: marquee-r 34s linear infinite; }
-    
-    #cur-dot { position: fixed; width: 6px; height: 6px; background: var(--A); border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); }
-    #cur-ring { position: fixed; width: 38px; height: 38px; border: 1.5px solid var(--AL); border-radius: 50%; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); }
     
     .shimmer-cta {
       position: relative;
@@ -113,9 +108,6 @@ const ScopedStyles = () => (
       .stay-details-premium .desk-only { display: none !important; }
       .pol-contact-grid, .amenities-grid, .location-grid, .reviews-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
       .property-stay-card { grid-template-columns: 1fr !important; }
-      .stay-details-premium #cur-dot, .stay-details-premium #cur-ring { display: none !important; }
-      .stay-details-premium { cursor: auto !important; }
-      .stay-details-premium a, .stay-details-premium button { cursor: pointer !important; }
     }
     
     @media(max-width:480px){
@@ -135,23 +127,7 @@ const toDisplayString = (value) => {
 };
 
 /* ─── UI COMPONENTS ─────────── */
-function Cursor() {
-  const { tokens: { A, AL } } = useTheme();
-  const x = useMotionValue(-200), y = useMotionValue(-200);
-  const sx = useSpring(x, { stiffness: 120, damping: 20 });
-  const sy = useSpring(y, { stiffness: 120, damping: 20 });
-  useEffect(() => {
-    const fn = (e) => { x.set(e.clientX); y.set(e.clientY) };
-    window.addEventListener("mousemove", fn);
-    return () => window.removeEventListener("mousemove", fn);
-  }, [x, y]);
-  return (
-    <>
-      <motion.div id="cur-dot" style={{ left: x, top: y, background: A }} />
-      <motion.div id="cur-ring" style={{ left: sx, top: sy, borderColor: AL }} />
-    </>
-  );
-}
+// Cursor component removed
 
 function ProgressBar() {
   const { tokens: { A } } = useTheme();
