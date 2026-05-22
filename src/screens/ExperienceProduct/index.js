@@ -227,7 +227,6 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 60 }}
         >
           <div>
-            <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
             <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
               {title}
             </h2>
@@ -847,7 +846,7 @@ const ExperienceProduct = () => {
 
 
         {/* GALLERY SECTION */}
-        <section className="gallery-section" style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex" }}>
+        <section className="gallery-section" style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex", position: "relative" }}>
           {(() => {
             const baseItemsLocal = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
             let filledItems = [...baseItemsLocal];
@@ -878,6 +877,33 @@ const ExperienceProduct = () => {
               </motion.div>
             );
           })()}
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setGridVisible(true)}
+            style={{
+              position: "absolute",
+              bottom: "80px",
+              right: "40px",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: W,
+              color: FG,
+              border: `1px solid ${B}`,
+              padding: "12px 24px",
+              borderRadius: "100px",
+              fontSize: "13px",
+              fontWeight: 700,
+              boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+              cursor: "pointer"
+            }}
+          >
+            <Camera size={16} />
+            See all photos
+          </motion.button>
 
           <AnimatePresence>
             {gridVisible && !photoVisible && (
