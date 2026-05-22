@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
-import ProductNavbar from "../../components/ProductNavbar";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost } from "../../utils/api";
@@ -1160,7 +1159,6 @@ const FoodDetails = () => {
   return (
     <ScopedThemeProvider>
       <ProgressBar />
-      <ProductNavbar top={100} left={60} />
       <ScopedStyles />
 
       <CulinaryHero food={food} galleryItems={galleryItems} />

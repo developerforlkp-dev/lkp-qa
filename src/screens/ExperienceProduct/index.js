@@ -21,7 +21,6 @@ import {
 import Rating from "../../components/Rating";
 import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
 import Page from "../../components/Page";
-import ProductNavbar from "../../components/ProductNavbar";
 import PhotoView from "../../components/PhotoView";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../utils/scrollLock";
@@ -730,7 +729,6 @@ const ExperienceProduct = () => {
         <section ref={heroRef} className="hero-section" style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
           <div className="hero-container" style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
-            <ProductNavbar top={100} left={60} />
             <motion.div style={{ opacity: fade, y: textY }}>
               <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
               <Rev>

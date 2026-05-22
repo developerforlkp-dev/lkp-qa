@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import ProductNavbar from "../../components/ProductNavbar";
 import cn from "classnames";
 import moment from "moment";
 import styles from "./StayProduct.module.sass";
@@ -178,7 +177,6 @@ const Header = ({ stay, onShare }) => {
 
   return (
     <div className={styles.header}>
-      <ProductNavbar top={window.innerWidth <= 768 ? 90 : 100} left={window.innerWidth <= 768 ? 16 : 60} />
       <div className={styles.tags}>
         {tags.map((tag, idx) => (
           <span key={idx} className={styles.tag}>{tag}</span>

@@ -11,7 +11,6 @@ import {
 import moment from "moment";
 import cn from "classnames";
 import Page from "../../components/Page";
-import ProductNavbar from "../../components/ProductNavbar";
 import Loader from "../../components/Loader";
 import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
@@ -1090,7 +1089,6 @@ const StayDetails = () => {
     <div className="stay-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
       <ScopedStyles />
 
-      <ProductNavbar top={isMobile ? 90 : 100} left={isMobile ? 16 : 60} />
 
       <StayHeroCarousel stay={stay} galleryItems={galleryItems} />
 

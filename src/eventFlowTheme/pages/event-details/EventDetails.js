@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import ProductNavbar from "../../../components/ProductNavbar";
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, Share2 } from "lucide-react";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
@@ -892,7 +891,6 @@ function Hero({ event }) {
         <div className="float-anim"><ImageRing event={event} /></div>
       </motion.div>
 
-      <ProductNavbar top={100} left={60} />
       <HeroShareFab
         title={title}
         text={`Check out ${title} on Little Known Planet`}

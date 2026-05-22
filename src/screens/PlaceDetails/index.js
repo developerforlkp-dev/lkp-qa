@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
-import ProductNavbar from "../../components/ProductNavbar";
 import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
 import { Footer } from "../../components/JUI/Footer";
@@ -705,7 +704,6 @@ const PlaceDetails = () => {
     <ScopedThemeProvider>
       <ScopedStyles />
       <ProgressBar />
-      <ProductNavbar top={100} left={60} />
 
       <PlaceHero place={place} galleryItems={galleryItems} />
 

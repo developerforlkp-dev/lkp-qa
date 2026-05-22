@@ -4,7 +4,6 @@ import moment from "moment";
 import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./EventProduct.module.sass";
 import Page from "../../components/Page";
-import ProductNavbar from "../../components/ProductNavbar";
 import Icon from "../../components/Icon";
 import Loader from "../../components/Loader";
 import Actions from "../../components/Actions";
@@ -1421,7 +1420,6 @@ const EventProduct = () => {
       )}
       {/* Hero Section with Title, Actions, and Gallery */}
       <div className={cn("section-mb64", styles.hero)} style={{ zIndex: 50, position: "relative" }}>
-        <ProductNavbar top={100} left={60} />
         <HeroShareFab
           title={event?.title}
           text={event?.description || ""}
