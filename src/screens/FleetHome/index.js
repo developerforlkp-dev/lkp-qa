@@ -9,6 +9,7 @@ import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import HeroSection from "./HeroSection";
+import MobileCinematicSearch from "./MobileCinematicSearch";
 import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -76,6 +77,8 @@ const FleetHome = () => {
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  // Mobile cinematic bottom sheet state
+  const [sheetOpen, setSheetOpen] = useState(false);
   const location = useLocation();
   const history = useHistory();
   const dateItemRef = useRef(null);
@@ -571,8 +574,37 @@ const FleetHome = () => {
   return (
     <div className={cn("section", styles.section)}>
       {/* Hero Section */}
-      <div className={styles.heroSection}>
+      <div className={styles.heroSection} style={{ position: "relative" }}>
         <HeroSection />
+        {/* Mobile-only: floating search pill + bottom sheet */}
+        <MobileCinematicSearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedDestination={selectedDestination}
+          setSelectedDestination={setSelectedDestination}
+          selectedDate={selectedDate}
+          guests={guests}
+          showCalendar={showCalendar}
+          formattedDate={formattedDate}
+          guestCountText={guestCountText}
+          showDatePicker={showDatePicker}
+          setShowDatePicker={setShowDatePicker}
+          showGuestPicker={showGuestPicker}
+          setShowGuestPicker={setShowGuestPicker}
+          destinationSuggestions={destinationSuggestions}
+          showDestinationSuggestions={showDestinationSuggestions}
+          setShowDestinationSuggestions={setShowDestinationSuggestions}
+          activeSuggestionIndex={activeSuggestionIndex}
+          setActiveSuggestionIndex={setActiveSuggestionIndex}
+          selectDestinationSuggestion={selectDestinationSuggestion}
+          destinationRef={destinationRef}
+          sheetOpen={sheetOpen}
+          setSheetOpen={setSheetOpen}
+          handleSearch={handleSearch}
+          handleDateSelect={handleDateSelect}
+          handleGuestChange={handleGuestChange}
+          activeFilter={activeFilter}
+        />
       </div>
 
 

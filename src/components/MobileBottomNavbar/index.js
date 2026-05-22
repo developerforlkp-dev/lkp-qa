@@ -86,6 +86,7 @@ export default function MobileBottomNavbar() {
   // Scroll and visibility state
   const [visible, setVisible] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [searchSheetOpen, setSearchSheetOpen] = useState(false);
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -179,6 +180,10 @@ export default function MobileBottomNavbar() {
         !!document.querySelector('[class*="PhotoView_modal"]')
       );
       setModalOpen(open);
+
+      // Detect mobile search sheet via body class set by MobileCinematicSearch
+      const sheetOpen = document.body.classList.contains("mcsh-search-open");
+      setSearchSheetOpen(sheetOpen);
     };
 
     checkModal();
@@ -220,7 +225,8 @@ export default function MobileBottomNavbar() {
     (filter) => businessInterestActiveMap[filter.id] !== false
   );
 
-  const isNavbarVisible = visible && !modalOpen;
+  // Navbar is hidden when: scrolled down, a modal is open, or the mobile search sheet is open
+  const isNavbarVisible = visible && !modalOpen && !searchSheetOpen;
 
   return (
     <div className={cn(styles.mobileNavbarContainer, { [styles.hidden]: !isNavbarVisible })}>

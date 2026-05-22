@@ -32,6 +32,7 @@
         margin-right: -50vw
         border-radius: 0
         overflow: visible
+        margin-bottom: 0
 
 .container
     max-width: none
@@ -44,6 +45,8 @@
         padding: 0 40px
     +m
         padding: 0 32px
+        // Space for the pill that hangs -26px below the hero edge
+        padding-top: 52px
 
 .glassContainer
     max-width: 900px
@@ -68,16 +71,9 @@
         margin-bottom: 40px
         margin-top: -60px
         max-width: 95%
+    // On mobile, hide entirely — cinematic pill + bottom sheet handles search instead
     +m
-        padding: 0
-        margin-bottom: 0
-        margin-top: 0
-        background: transparent
-        border: none
-        box-shadow: none
-        border-radius: 0
-        max-width: 100%
-        z-index: 1
+        display: none !important
 
 .searchBar
     display: flex
