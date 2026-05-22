@@ -50,19 +50,24 @@ const getActivityImageUrl = (activity) => {
 
 /* ─── KINETIC BACKGROUND ────────────────────────── */
 function ExperienceBg({ progress, src }) {
-  const { tokens: { A, BG } } = useTheme();
+  const { tokens: { A, BG }, theme } = useTheme();
   const scale = useTransform(progress, [0, 1], [1, 1.2]);
   const opacity = useTransform(progress, [0, 0.8], [1, 0]);
   const blur = useTransform(progress, [0, 0.5], [0, 10]);
 
+  const isDark = theme === "dark";
+  const imgFilter = isDark
+    ? "brightness(0.45) contrast(1.1)"
+    : "brightness(0.7) contrast(1.05)";
+
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0 }}>
       <motion.div style={{ scale, opacity, filter: `blur(${blur}px)`, width: "100%", height: "100%", position: "relative" }}>
-        <img src={src || "/gallery/concert.png"} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.5) contrast(1.1)" }} alt="" />
+        <img src={src || "/gallery/concert.png"} style={{ width: "100%", height: "100%", objectFit: "cover", filter: imgFilter }} alt="" />
         <motion.div animate={{ opacity: [0.1, 0.3, 0.1] }} transition={{ duration: 5, repeat: Infinity }} style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 30% 40%, ${A}44 0%, transparent 60%)` }} />
         <motion.div animate={{ opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 7, repeat: Infinity, delay: 2 }} style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 70% 60%, ${A}33 0%, transparent 50%)` }} />
       </motion.div>
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 60%, #080808 100%)` }} />
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 40%, ${BG}CC 70%, ${BG} 100%)` }} />
     </div>
   );
 }
@@ -730,7 +735,7 @@ const ExperienceProduct = () => {
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
           <div className="hero-container" style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
             <motion.div style={{ opacity: fade, y: textY }}>
-              <p style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
+              <p className="hero-subtitle" style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
               <Rev>
                 <h1 style={{ fontSize: "clamp(4.5rem, 12vw, 10rem)", fontWeight: 900, lineHeight: 0.85, color: "#FFFFFF", marginBottom: 40, letterSpacing: "-0.04em" }} className="font-display">
                   {listing?.title}
@@ -738,13 +743,13 @@ const ExperienceProduct = () => {
               </Rev>
               <Rev delay={0.2}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }} className="hero-stats">
-                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
-                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>01. Atmospherics</p>
-                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.experienceType || "A multisensory odyssey that blurs the line between perception and possibility."}</p>
+                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }} className="hero-stat-box">
+                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }} className="hero-stat-num">01. Atmospherics</p>
+                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }} className="hero-stat-desc">{listing?.experienceType || "A multisensory odyssey that blurs the line between perception and possibility."}</p>
                   </div>
-                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }}>
-                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }}>02. Interaction</p>
-                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }}>{listing?.activityType || "High-fidelity touchpoints that respond to your presence in real-time."}</p>
+                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }} className="hero-stat-box">
+                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }} className="hero-stat-num">02. Interaction</p>
+                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }} className="hero-stat-desc">{listing?.activityType || "High-fidelity touchpoints that respond to your presence in real-time."}</p>
                   </div>
                 </div>
               </Rev>
@@ -1279,6 +1284,61 @@ const ExperienceProduct = () => {
         />
       </main>
       <style>{`
+        /* Premium readability and visibility overrides for the Hero Section */
+        .hero-section {
+          background-color: var(--BG, #080808) !important;
+        }
+
+        /* LIGHT THEME SPECIFIC STYLES */
+        [data-theme='light'] .hero-section h1.font-display {
+          color: #0F0F0F !important;
+          -webkit-text-fill-color: #0F0F0F !important;
+          text-shadow: none !important;
+        }
+        [data-theme='light'] .hero-section .hero-subtitle {
+          color: #008CA5 !important;
+          -webkit-text-fill-color: #008CA5 !important;
+          text-shadow: none !important;
+        }
+        [data-theme='light'] .hero-section .hero-stats .hero-stat-num {
+          color: #008CA5 !important;
+          -webkit-text-fill-color: #008CA5 !important;
+          text-shadow: none !important;
+        }
+        [data-theme='light'] .hero-section .hero-stats .hero-stat-desc {
+          color: #2E2E2E !important;
+          -webkit-text-fill-color: #2E2E2E !important;
+          text-shadow: none !important;
+        }
+        [data-theme='light'] .hero-section .hero-stats .hero-stat-box {
+          border-left-color: #0097B2 !important;
+        }
+
+        /* DARK THEME SPECIFIC STYLES */
+        [data-theme='dark'] .hero-section h1.font-display {
+          color: #FFFFFF !important;
+          -webkit-text-fill-color: #FFFFFF !important;
+          text-shadow: none !important;
+        }
+        [data-theme='dark'] .hero-section .hero-subtitle {
+          color: var(--A, #0097B2) !important;
+          -webkit-text-fill-color: var(--A, #0097B2) !important;
+          text-shadow: none !important;
+        }
+        [data-theme='dark'] .hero-section .hero-stats .hero-stat-num {
+          color: var(--A, #0097B2) !important;
+          -webkit-text-fill-color: var(--A, #0097B2) !important;
+          text-shadow: none !important;
+        }
+        [data-theme='dark'] .hero-section .hero-stats .hero-stat-desc {
+          color: #E6E6E3 !important;
+          -webkit-text-fill-color: #E6E6E3 !important;
+          text-shadow: none !important;
+        }
+        [data-theme='dark'] .hero-section .hero-stats .hero-stat-box {
+          border-left-color: var(--A, #0097B2) !important;
+        }
+
         @media(max-width: 1024px) {
           .hero-container { padding: 0 40px !important; }
           .details-section, .prep-section, .policies-section { padding: 60px 24px !important; }
