@@ -1329,6 +1329,16 @@ function Rules({ event }) {
     { id: 1, title: "Check-in Instructions", body: checkInInstructions },
     { id: 2, title: "Cancellation Policy", body: cancellationPolicy },
   ];
+
+  if (event?.minimumAge != null && event.minimumAge !== "") {
+    displayRules.push({ id: "min_age", title: "Minimum Age", body: `${event.minimumAge}+` });
+  }
+  if (event?.dressCode && event.dressCode.trim() !== "") {
+    displayRules.push({ id: "dress_code", title: "Dress Code", body: event.dressCode.trim() });
+  }
+  displayRules.push({ id: "infants_allowed", title: "Infants Allowed", body: event?.infantsAllowed ? "Yes" : "No" });
+  displayRules.push({ id: "id_proof", title: "ID Proof Required", body: event?.idProofRequired ? "Yes" : "No" });
+
   const dropdownRow = (item, index) => {
     return (
       <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
