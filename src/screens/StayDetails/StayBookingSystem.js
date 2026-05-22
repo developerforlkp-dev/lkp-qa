@@ -510,22 +510,6 @@ const StayBookingSystem = ({
               break;
             }
           }
-        } else {
-          // Optimize/minimize counts if guests did not change but we can scale down
-          let optimized = true;
-          while (optimized) {
-            optimized = false;
-            for (let i = 0; i < counts.length; i++) {
-              if (counts[i].count > 1) {
-                const testCounts = counts.map((c, idx) => idx === i ? { ...c, count: c.count - 1 } : c);
-                if (canHost(testCounts, guests.adults, guests.children)) {
-                  counts[i].count -= 1;
-                  optimized = true;
-                  break;
-                }
-              }
-            }
-          }
         }
 
         updatedRooms = counts.map(c => ({
