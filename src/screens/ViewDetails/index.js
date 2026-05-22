@@ -2001,6 +2001,21 @@ const ViewDetails = () => {
               </div>
             </div>
           </div>
+          {booking.addons && booking.addons.length > 0 && (
+            <div className={styles.addonsInlineSection}>
+              <h3 className={styles.addonsSectionTitle}>Selected Add-ons</h3>
+              <div className={styles.addonsInlineList}>
+                {booking.addons.map((addon, index) => (
+                  <div key={index} className={styles.addonChip}>
+                    <span className={styles.addonName}>{addon.name}</span>
+                    <span className={styles.addonQty}>×{addon.quantity}</span>
+                    <span className={styles.addonSeparator}>—</span>
+                    <span className={styles.addonPrice}>{addon.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.locationPaymentGrid}>
@@ -2165,40 +2180,7 @@ const ViewDetails = () => {
           </div>
         </div>
 
-        {/* Addons Section */}
-        {booking.addons && booking.addons.length > 0 && (
-          <div className={cn(styles.card, "mb-5")} style={{ marginBottom: 32 }}>
-            <h2 className={styles.cardTitle} style={{ marginBottom: 20 }}>Selected Add-ons</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {booking.addons.map((addon, index) => (
-                <div key={index} style={{
-                  background: "rgba(244, 245, 246, 0.03)",
-                  border: "1px solid rgba(226, 232, 240, 0.08)",
-                  borderRadius: "12px",
-                  padding: "16px 20px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "16px"
-                }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: "1 1 auto", minWidth: 0 }}>
-                    <div style={{ fontSize: "16px", fontWeight: "600", color: "#FCFCFD", wordBreak: "break-word" }}>
-                      {addon.name}
-                    </div>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center", fontSize: "13px", color: "#777E90", flexWrap: "wrap" }}>
-                      <span>Price: {addon.price}</span>
-                      <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#777E90", opacity: 0.5 }}></span>
-                      <span>Qty: {addon.quantity}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: "700", color: "#0097B2", textAlign: "right", flexShrink: 0 }}>
-                    {addon.total}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
 
 
