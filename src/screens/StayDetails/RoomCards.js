@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import cn from "classnames";
 import styles from "./RoomCards.module.sass";
 import Icon from "../../components/Icon";
@@ -217,7 +218,13 @@ const CustomDropdown = ({ options, value, onChange }) => {
   );
 };
 
-/* ---------- Room Modal ---------------------------------------------- */
+/* ---------- Portal wrapper ------------------------------------------- */
+/* Renders children directly into document.body to escape any parent
+   overflow:hidden / transform / stacking-context that would clip the modal */
+const ModalPortal = ({ children }) => {
+  return ReactDOM.createPortal(children, document.body);
+};
+
 /* ---------- Room Modal ---------------------------------------------- */
 const RoomModal = ({ room, listing, isSelected, handleSelect, onClose }) => {
   const { isMobile } = useWindowSize();
@@ -831,17 +838,19 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         </div>
       </div>
       
-      <AnimatePresence>
-        {showModal && (
-          <RoomModal 
-            room={room} 
-            listing={{ ...listing, scrollToAmenities: showModal?.scrollToAmenities }} 
-            isSelected={isSelected}
-            handleSelect={handleSelect}
-            onClose={() => setShowModal(false)} 
-          />
-        )}
-      </AnimatePresence>
+      <ModalPortal>
+        <AnimatePresence>
+          {showModal && (
+            <RoomModal 
+              room={room} 
+              listing={{ ...listing, scrollToAmenities: showModal?.scrollToAmenities }} 
+              isSelected={isSelected}
+              handleSelect={handleSelect}
+              onClose={() => setShowModal(false)} 
+            />
+          )}
+        </AnimatePresence>
+      </ModalPortal>
     </div>
   );
 };

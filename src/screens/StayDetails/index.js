@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { useLocation, useHistory, Link } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
@@ -2038,14 +2039,17 @@ function PropertyStayCard({ stay }) {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showModal && (
-          <PropertyModal
-            stay={stay}
-            onClose={() => setShowModal(false)}
-          />
-        )}
-      </AnimatePresence>
+      {ReactDOM.createPortal(
+        <AnimatePresence>
+          {showModal && (
+            <PropertyModal
+              stay={stay}
+              onClose={() => setShowModal(false)}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </motion.div>
   );
 }
