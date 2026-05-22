@@ -719,6 +719,24 @@ export const createEventOrder = async (orderData) => {
   }
 };
 
+export const precheckEventOrder = async (precheckData) => {
+  try {
+    console.log("Creating event precheck with data:", JSON.stringify(precheckData, null, 2));
+    const response = await ListingsAPI.post("/orders/event/precheck", precheckData);
+    console.log("Event precheck success:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error during event precheck:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      requestData: precheckData
+    });
+    throw error;
+  }
+};
+
 export const getEventSlotAvailability = async (eventId) => {
   try {
     if (!eventId) {
