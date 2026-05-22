@@ -762,21 +762,21 @@ const TermsOfService = () => {
         }}
       />
 
-      <div style={{ background: "#FAFAFA", minHeight: "100vh", paddingTop: "140px", paddingBottom: "120px", color: "#333333", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <div style={{ background: "#FAFAFA", minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: "#333333", fontFamily: "system-ui, -apple-system, sans-serif" }}>
         <div style={{ maxWidth: "860px", margin: "0 auto", padding: "0 24px" }}>
           
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{ textAlign: "center", marginBottom: "60px" }}
+            style={{ textAlign: "center", marginBottom: "40px" }}
           >
             <h1 className="font-display" style={{ 
               fontSize: "clamp(3.5rem, 7vw, 5.5rem)",
               fontWeight: 400, 
               color: "#2D3239", 
               letterSpacing: "-0.02em",
-              marginBottom: "24px",
+              marginBottom: "0px",
               fontFamily: "Georgia, serif"
             }}>
               Terms & Conditions
