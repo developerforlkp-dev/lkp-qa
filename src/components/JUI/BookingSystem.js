@@ -8,7 +8,7 @@ import { Rev, Chars } from "./UI";
 
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
-import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots } from "../../utils/api";
+import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 
 
@@ -1913,6 +1913,43 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
       try {
         if (isMountedRef.current) setBookingLoading(true);
+
+        const precheckPayload = {
+          eventId: eventIdNum,
+          eventSlotId: eventSlotIdNum,
+          tickets: [
+            {
+              ticketTypeId,
+              quantity: totalGuests,
+            },
+          ],
+        };
+        if (customerEmail) precheckPayload.customerEmail = customerEmail;
+        if (customerPhone) precheckPayload.customerPhone = customerPhone;
+
+        const precheckRes = await precheckEventOrder(precheckPayload);
+        const precheckResults = Array.isArray(precheckRes?.results) ? precheckRes.results : [];
+        const reachedLimit = precheckResults.some(
+          (item) => Number(item?.remainingAllowedQuantity) === 0
+        );
+
+        if (reachedLimit) {
+          alert("Booking limit for this event slot has been reached.");
+          if (isMountedRef.current) setBookingLoading(false);
+          return;
+        }
+
+        if (precheckRes?.canBook === false || precheckResults.some((item) => item?.canBook === false)) {
+          const firstFailure = precheckResults.find((item) => item?.canBook === false);
+          const message =
+            firstFailure?.failureReason ||
+            precheckRes?.message ||
+            "Unable to proceed with this booking right now.";
+          alert(message);
+          if (isMountedRef.current) setBookingLoading(false);
+          return;
+        }
+
         const res = await createEventOrder(payload);
         const order = res?.order || res;
         const payment = res?.payment || res?.data?.payment || res?.order?.payment || order?.payment || null;
