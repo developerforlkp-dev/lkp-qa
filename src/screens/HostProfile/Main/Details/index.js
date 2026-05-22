@@ -4,6 +4,8 @@ import styles from "./Details.module.sass";
 import Icon from "../../../../components/Icon";
 
 const Details = ({ className, host, businessInterests }) => {
+  const hostBio = typeof host?.bio === "string" ? host.bio.trim() : "";
+
   // Build options from host data
   const options = [];
   
@@ -35,9 +37,7 @@ const Details = ({ className, host, businessInterests }) => {
   return (
     <div className={cn(className, styles.details)}>
       <div className={styles.title}>About Host</div>
-      <div className={styles.content}>
-        {host?.bio || "No biography available."}
-      </div>
+      {hostBio && <div className={styles.content}>{hostBio}</div>}
       {options.length > 0 && (
         <div className={styles.options}>
           {options.map((x, index) => (
