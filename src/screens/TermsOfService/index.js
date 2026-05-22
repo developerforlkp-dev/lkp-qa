@@ -763,7 +763,7 @@ const TermsOfService = () => {
       />
 
       <div style={{ background: "#FAFAFA", minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: "#333333", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-        <div style={{ maxWidth: "860px", margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
