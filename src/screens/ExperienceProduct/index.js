@@ -809,6 +809,14 @@ const ExperienceProduct = () => {
               </Rev>
             </motion.div>
           </div>
+          <button
+            type="button"
+            className="premium-back-button"
+            onClick={() => history.goBack()}
+            aria-label="Go back"
+          >
+            <ChevronLeft size={20} />
+          </button>
           <HeroShareFab
             title={listing?.title}
             text={listing?.description || listing?.aboutListing || ""}

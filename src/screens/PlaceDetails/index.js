@@ -670,12 +670,22 @@ function GoodToKnow({ place }) {
 function MobileHero({ place, galleryItems }) {
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B } = tokens;
+  const history = useHistory();
   const placeName = place?.placeName || place?.title || "COASTAL GEM";
 
   const images = galleryItems && galleryItems.length ? galleryItems : ["https://picsum.photos/seed/destination/800/1000"];
 
   return (
     <section style={{ background: BG, paddingTop: 90, position: "relative", overflow: "hidden" }}>
+      {/* Hero Back Button */}
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
       {/* Hero Share Button */}
       <HeroShareFab
         title={placeName}

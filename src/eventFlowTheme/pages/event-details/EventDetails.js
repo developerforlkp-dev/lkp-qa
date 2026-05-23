@@ -385,13 +385,15 @@ const ScopedStyles = () => (
       color: var(--W) !important;
       z-index: 2;
     }
-    .event-details-premium .event-hero-share {
-      position: absolute !important;
-      top: 96px !important;
-      right: 60px !important;
-      z-index: 10002 !important;
-      pointer-events: auto !important;
-      isolation: isolate;
+    @media (min-width: 769px) {
+      .event-details-premium .event-hero-share {
+        position: absolute !important;
+        top: 96px !important;
+        right: 60px !important;
+        z-index: 10002 !important;
+        pointer-events: auto !important;
+        isolation: isolate;
+      }
     }
     .event-details-premium .host-presented-label {
       color: #0097B2 !important;
@@ -887,6 +889,14 @@ function Hero({ event }) {
         <div className="float-anim"><ImageRing event={event} /></div>
       </motion.div>
 
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
       <HeroShareFab
         title={title}
         text={`Check out ${title} on Little Known Planet`}
@@ -2113,6 +2123,7 @@ function Tickets({ event }) {
 /* ─── MAIN ───────────────────────────────────────── */
 export default function EventDetails() {
   const location = useLocation();
+  const history = useHistory();
   const queryParams = new URLSearchParams(location.search);
   const eventId = queryParams.get('id') || '3';
   const { tokens: { BG, FG } } = useTheme();

@@ -638,6 +638,7 @@ function HeroShareFab({ title, text, url }) {
 
 /* ─── CULINARY SECTIONS ─────────── */
 function CulinaryHero({ food, galleryItems }) {
+  const history = useHistory();
   const { isMobile } = useWindowSize();
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
@@ -724,6 +725,23 @@ function CulinaryHero({ food, galleryItems }) {
           </div>
         </div>
 
+        {/* Hero Back Button */}
+        <button
+          type="button"
+          className="premium-back-button"
+          onClick={() => history.goBack()}
+          aria-label="Go back"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {/* Share Button absolute overlays */}
+        <HeroShareFab
+          title={food?.menuName || food?.title || ""}
+          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          url={window.location.href}
+        />
+
         {/* Floating Content Card */}
         <div className="hero-mobile-floating-card" style={{
           marginTop: "-64px",
@@ -799,18 +817,29 @@ function CulinaryHero({ food, galleryItems }) {
           </div>
         </div>
 
-        {/* Share Button absolute overlays */}
-        <HeroShareFab
-          title={food?.menuName || food?.title || ""}
-          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-          url={window.location.href}
-        />
       </section>
     );
   }
 
   return (
     <section className="hero-section-wrapper" style={{ background: BG, height: isMobile ? "auto" : "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", paddingTop: isMobile ? 120 : 80 }}>
+      {/* Hero Back Button */}
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      {/* Share Button absolute overlays */}
+      <HeroShareFab
+        title={food?.menuName || food?.title || ""}
+        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+        url={window.location.href}
+      />
+
       {/* Header Blending Gradient */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: isMobile ? "0 20px" : "0 60px", width: "100%", height: isMobile ? "auto" : "100%", display: "flex", alignItems: "center" }}>
@@ -899,11 +928,6 @@ function CulinaryHero({ food, galleryItems }) {
           {Array(25).fill(0).map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: FG }} />)}
         </div>
       </div>
-      <HeroShareFab
-        title={food?.menuName || food?.title || ""}
-        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-        url={window.location.href}
-      />
     </section>
   );
 }

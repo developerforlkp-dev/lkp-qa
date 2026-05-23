@@ -1505,8 +1505,15 @@ const EventProduct = () => {
           <p>⚠️ {error}</p>
         </div>
       )}
-      {/* Hero Section with Title, Actions, and Gallery */}
       <div className={cn("section-mb64", styles.hero)} style={{ zIndex: 50, position: "relative" }}>
+        <button
+          type="button"
+          className="premium-back-button"
+          onClick={() => history.goBack()}
+          aria-label="Go back"
+        >
+          <ChevronLeft size={20} />
+        </button>
         <HeroShareFab
           title={event?.title}
           text={event?.description || ""}
