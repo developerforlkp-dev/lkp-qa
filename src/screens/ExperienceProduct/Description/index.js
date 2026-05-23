@@ -501,7 +501,24 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
           startDate: apiSlot.schedule?.start_date,
           endDate: apiSlot.schedule?.end_date,
           maxSeats: apiSlot.capacity?.max_seats,
-          pricePerPerson: apiSlot.pricing?.price_per_person,
+          pricePerPerson:
+            apiSlot?.pricePerPerson ??
+            apiSlot?.price_per_person ??
+            apiSlot?.individualPrice ??
+            apiSlot?.adultPricePerPerson ??
+            apiSlot.pricing?.price_per_person ??
+            apiSlot.pricing?.pricePerPerson,
+          childPricePerChild:
+            // Prefer slot-level/base child price first (commonly undiscounted configured value)
+            apiSlot?.childPricePerChild ??
+            apiSlot?.child_price_per_child ??
+            apiSlot?.childPrice ??
+            apiSlot?.child_price ??
+            // Then fallback to pricing object values (may be effective/discounted)
+            apiSlot.pricing?.child_price_per_child ??
+            apiSlot.pricing?.childPricePerChild ??
+            apiSlot.pricing?.child_price ??
+            apiSlot.pricing?.childPrice,
           b2bRate: apiSlot.pricing?.b2b_rate,
           groupBookingPricing: apiSlot.group_booking_pricing || [],
         };
@@ -895,11 +912,11 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
     }, 0);
 
     // Total guests drive slot capacity; billable guests drive experience pricing.
-    // Use availability data if available, then selected slot, then fallback to listing data
-    let pricePerPerson = selectedDateAvailability?.price_per_person
-      ? parseFloat(selectedDateAvailability.price_per_person)
-      : (selectedTimeSlotData?.pricePerPerson
-        ? parseFloat(selectedTimeSlotData.pricePerPerson)
+    // Prefer selected slot base value, then availability (effective), then fallback.
+    let pricePerPerson = selectedTimeSlotData?.pricePerPerson
+      ? parseFloat(selectedTimeSlotData.pricePerPerson)
+      : (selectedDateAvailability?.price_per_person
+        ? parseFloat(selectedDateAvailability.price_per_person)
         : (listing?.timeSlots?.[0]?.pricePerPerson
           ? parseFloat(listing.timeSlots[0].pricePerPerson)
           : null));
@@ -1012,7 +1029,21 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
     const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
     const allowChildPricing = Boolean(listing?.allowChildPricing || listing?.childPricingAllowed);
-    const childPricePerChild = parseFloat(listing?.childPricePerChild || listing?.childPrice || 0);
+    const childPricePerChild = parseFloat(
+      // Prefer selected slot's configured/base child price first (undiscounted).
+      selectedTimeSlotData?.childPricePerChild ??
+      selectedTimeSlotData?.child_price_per_child ??
+      selectedTimeSlotData?.child_price ??
+      selectedTimeSlotData?.childPrice ??
+      // Availability-level values can be effective/discounted; keep as fallback.
+      selectedDateAvailability?.child_price_per_child ??
+      selectedDateAvailability?.childPricePerChild ??
+      selectedDateAvailability?.child_price ??
+      selectedDateAvailability?.childPrice ??
+      listing?.childPricePerChild ??
+      listing?.childPrice ??
+      0
+    );
 
     let basePriceAmount;
     let priceDescription;
@@ -1230,6 +1261,9 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       pricingBreakdown: {
         currency,
         basePrice: basePriceAmount,
+        basePricePerPerson: pricePerPerson || 0,
+        adultBasePricePerPerson: pricePerPerson || 0,
+        baseChildPricePerChild: childPricePerChild || 0,
         addonsTotal: addOnsPrice,
         subtotal,
         discountPercentage,
@@ -1569,11 +1603,13 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
       // Calculate base price amount
       const guestCountForPricing = billableGuests;
-      let pricePerPerson = selectedDateAvailability?.price_per_person
-        ? parseFloat(selectedDateAvailability.price_per_person)
-        : (listing?.timeSlots?.[0]?.pricePerPerson
-          ? parseFloat(listing.timeSlots[0].pricePerPerson)
-          : null);
+      let pricePerPerson = selectedTimeSlotData?.pricePerPerson
+        ? parseFloat(selectedTimeSlotData.pricePerPerson)
+        : (selectedDateAvailability?.price_per_person
+          ? parseFloat(selectedDateAvailability.price_per_person)
+          : (listing?.timeSlots?.[0]?.pricePerPerson
+            ? parseFloat(listing.timeSlots[0].pricePerPerson)
+            : null));
 
       // Re-apply Group Pricing match logic here
       const groupPricingRules = selectedDateAvailability?.group_booking_pricing ||
@@ -1599,7 +1635,21 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       let pricingBaseAmount = 0;
       const experiencePricingType = listing?.pricingType || (pricePerPerson ? "Individual" : "Group");
       const allowChildPricing = Boolean(listing?.allowChildPricing || listing?.childPricingAllowed);
-      const childPricePerChild = parseFloat(listing?.childPricePerChild || listing?.childPrice || 0);
+      const childPricePerChild = parseFloat(
+        // Prefer selected slot's configured/base child price first (undiscounted).
+        selectedTimeSlotData?.childPricePerChild ??
+        selectedTimeSlotData?.child_price_per_child ??
+        selectedTimeSlotData?.child_price ??
+        selectedTimeSlotData?.childPrice ??
+        // Availability-level values can be effective/discounted; keep as fallback.
+        selectedDateAvailability?.child_price_per_child ??
+        selectedDateAvailability?.childPricePerChild ??
+        selectedDateAvailability?.child_price ??
+        selectedDateAvailability?.childPrice ??
+        listing?.childPricePerChild ??
+        listing?.childPrice ??
+        0
+      );
 
       if (experiencePricingType === "Group") {
         // Group Pricing: Fixed price
@@ -2093,11 +2143,13 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
     // Calculate base price amount
     const guestCount = billableGuests;
-    const pricePerPerson = selectedDateAvailability?.price_per_person
-      ? parseFloat(selectedDateAvailability.price_per_person)
-      : (listing?.timeSlots?.[0]?.pricePerPerson
-        ? parseFloat(listing.timeSlots[0].pricePerPerson)
-        : null);
+    const pricePerPerson = selectedTimeSlotData?.pricePerPerson
+      ? parseFloat(selectedTimeSlotData.pricePerPerson)
+      : (selectedDateAvailability?.price_per_person
+        ? parseFloat(selectedDateAvailability.price_per_person)
+        : (listing?.timeSlots?.[0]?.pricePerPerson
+          ? parseFloat(listing.timeSlots[0].pricePerPerson)
+          : null));
     const pricePerNight = selectedDateAvailability?.b2b_rate
       ? parseFloat(selectedDateAvailability.b2b_rate)
       : (listing?.timeSlots?.[0]?.b2bRate
@@ -2189,7 +2241,17 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       bookingSlotId: bookingSlotId || 0,
       guestCount: totalGuestsForOrder,
       childCount: bookingData.guests?.children || 0,
-      childPricePerChild: bookingData.pricing?.childPricePerChild || listing?.childPricePerChild || listing?.childPrice || 0,
+      childPricePerChild:
+        bookingData.pricing?.childPricePerChild ||
+        selectedTimeSlotData?.childPricePerChild ||
+        selectedTimeSlotData?.child_price_per_child ||
+        selectedTimeSlotData?.child_price ||
+        selectedTimeSlotData?.childPrice ||
+        selectedDateAvailability?.child_price_per_child ||
+        selectedDateAvailability?.childPricePerChild ||
+        listing?.childPricePerChild ||
+        listing?.childPrice ||
+        0,
       customer: {
         name: customerName || "Guest User",
         email: customerEmail || "guest@example.com",
@@ -2518,7 +2580,13 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
             selected_days: selectedDays,
             ...dayFlags,
             maxSeats: slot.capacity?.max_seats,
-            pricePerPerson: slot.pricing?.price_per_person,
+            pricePerPerson:
+              slot?.pricePerPerson ??
+              slot?.price_per_person ??
+              slot?.individualPrice ??
+              slot?.adultPricePerPerson ??
+              slot.pricing?.price_per_person ??
+              slot.pricing?.pricePerPerson,
             b2bRate: slot.pricing?.b2b_rate,
             corporateRate: slot.pricing?.corporate_rate,
             isActive: true, // Assume active if returned from API
@@ -2541,7 +2609,18 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
                 max_seats: slot.capacity?.max_seats || 0,
                 start_time: slot.schedule?.start_time, // Format: HH:mm
                 end_time: slot.schedule?.end_time, // Format: HH:mm
-                price_per_person: slot.pricing?.price_per_person,
+                price_per_person:
+                  slot?.pricePerPerson ??
+                  slot?.price_per_person ??
+                  slot?.individualPrice ??
+                  slot?.adultPricePerPerson ??
+                  slot.pricing?.price_per_person ??
+                  slot.pricing?.pricePerPerson,
+                child_price_per_child:
+                  slot.pricing?.child_price_per_child ??
+                  slot.pricing?.childPricePerChild ??
+                  slot.pricing?.child_price ??
+                  slot.pricing?.childPrice,
                 b2b_rate: slot.pricing?.b2b_rate,
                 slot_id: slot.slot_id,
                 slot_name: slot.slot_name,

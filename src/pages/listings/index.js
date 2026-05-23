@@ -14,6 +14,7 @@ import { getBusinessInterestFilters } from "../../utils/api";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+const ENABLE_DESTINATION_SUGGESTIONS = false;
 
 const Listings = () => {
   const location = useLocation();
@@ -303,6 +304,7 @@ const Listings = () => {
   };
 
   useEffect(() => {
+    if (!ENABLE_DESTINATION_SUGGESTIONS) return;
     if (window.google?.maps?.places?.AutocompleteService) {
       autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
       autocompleteSessionTokenRef.current = window.google.maps.places.AutocompleteSessionToken
@@ -341,6 +343,12 @@ const Listings = () => {
   }, []);
 
   useEffect(() => {
+    if (!ENABLE_DESTINATION_SUGGESTIONS) {
+      setDestinationSuggestions([]);
+      setShowDestinationSuggestions(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
@@ -502,7 +510,7 @@ const Listings = () => {
                   }
                 }}
               />
-              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+              {ENABLE_DESTINATION_SUGGESTIONS && showDestinationSuggestions && destinationSuggestions.length > 0 && (
                 <div className={styles.destinationSuggestions}>
                   {destinationSuggestions.map((suggestion, index) => (
                     <button
