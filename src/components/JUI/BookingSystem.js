@@ -3340,6 +3340,74 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             Group price: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} / ticket.
                           </div>
                         )}
+
+                        {/* Dynamic Pricing Modifier Labels */}
+                        {(() => {
+                          const isGroupBookingApplied = (!isEventBooking && groupOverridePrice != null && groupOverridePrice > 0) || (isEventBooking && effectiveEventPrice?.tier);
+                          const isAddonsApplied = selectedAddOns && selectedAddOns.length > 0;
+                          const isEarlyBirdApplied = activeGuestPricing && (activeGuestPricing.earlyBirdDiscountRate > 0 || activeGuestPricing.earlyBirdDiscountAmount > 0);
+
+                          if (!isGroupBookingApplied && !isAddonsApplied && !isEarlyBirdApplied) return null;
+
+                          return (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, width: "100%" }}>
+                              {isGroupBookingApplied && (
+                                <span style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  padding: "4px 10px",
+                                  borderRadius: 100,
+                                  background: `${A}12`,
+                                  border: `1px solid ${A}28`,
+                                  color: A,
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em",
+                                }}>
+                                  🏷 Group Booking Applied
+                                </span>
+                              )}
+                              {isAddonsApplied && (
+                                <span style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  padding: "4px 10px",
+                                  borderRadius: 100,
+                                  background: `${A}12`,
+                                  border: `1px solid ${A}28`,
+                                  color: A,
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em",
+                                }}>
+                                  🏷 Add-ons Applied
+                                </span>
+                              )}
+                              {isEarlyBirdApplied && (
+                                <span style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  padding: "4px 10px",
+                                  borderRadius: 100,
+                                  background: `${A}12`,
+                                  border: `1px solid ${A}28`,
+                                  color: A,
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em",
+                                }}>
+                                  🏷 Early Bird Discount Applied
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Price Summary removed to align with Event popup behavior */}
