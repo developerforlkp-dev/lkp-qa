@@ -206,26 +206,56 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
         padding: 'clamp(14px, 4vw, 36px)'
       }}
     >
-      <div style={{
-        maxWidth: 1240,
-        maxHeight: 'min(86vh, 860px)',
-        width: '100%',
-        margin: '0 auto',
-        position: 'relative',
-        background: '#FFFFFF',
-        border: '1px solid rgba(255,255,255,0.18)',
-        borderRadius: 28,
-        boxShadow: '0 36px 120px rgba(0,0,0,0.5)',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        overscrollBehavior: 'contain',
-        padding: 'clamp(24px, 5vw, 48px)'
-      }}>
+      <style>{`
+        .grid-gallery-modal-content {
+          max-width: 1240px;
+          max-height: min(86vh, 860px);
+          width: 100%;
+          margin: 0 auto;
+          position: relative;
+          background: #FFFFFF;
+          border: 1px solid rgba(255,255,255,0.18);
+          border-radius: 28px;
+          box-shadow: 0 36px 120px rgba(0,0,0,0.5);
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          padding: clamp(24px, 5vw, 48px);
+        }
+        .grid-gallery-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 60px;
+        }
+        .grid-gallery-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+          gap: clamp(16px, 3vw, 32px);
+          grid-auto-rows: clamp(250px, 40vh, 400px);
+        }
+        @media (max-width: 768px) {
+          .grid-gallery-modal-content {
+            padding: 20px 16px 36px !important;
+            border-radius: 24px !important;
+            max-height: 90vh !important;
+          }
+          .grid-gallery-modal-header {
+            margin-bottom: 32px !important;
+          }
+          .grid-gallery-container {
+            grid-template-columns: repeat(2, 1fr) !important;
+            grid-auto-rows: clamp(120px, 20vh, 180px) !important;
+            gap: 10px !important;
+          }
+        }
+      `}</style>
+      <div className="grid-gallery-modal-content">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 60 }}
+          className="grid-gallery-modal-header"
         >
           <div>
             <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
@@ -256,12 +286,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
           </motion.button>
         </motion.div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
-          gap: 'clamp(16px, 3vw, 32px)',
-          gridAutoRows: 'clamp(250px, 40vh, 400px)'
-        }}>
+        <div className="grid-gallery-container">
           {items.map((img, i) => (
             <motion.div
               key={i}

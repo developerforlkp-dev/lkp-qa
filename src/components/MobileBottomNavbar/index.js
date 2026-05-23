@@ -52,6 +52,10 @@ const getActiveFilterFromPath = (pathname, search) => {
 const shouldShowNavbar = (pathname, search) => {
   const path = pathname.toLowerCase().replace(/\/$/, "");
   
+  if (path === "/event" || path === "/event-details" || path === "/event-product") {
+    return false;
+  }
+
   // Stays detail page is rendered on /stays when there is an 'id' query param
   if (path === "/stays") {
     const params = new URLSearchParams(search);
@@ -66,7 +70,6 @@ const shouldShowNavbar = (pathname, search) => {
     "/experience",
     "/experiences",
     "/events",
-    "/event",
     "/stays",
     "/food",
     "/places",
