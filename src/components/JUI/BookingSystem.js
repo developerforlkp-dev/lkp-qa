@@ -1073,6 +1073,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [validationErrors, setValidationErrors] = useState({});
   const [showValidation, setShowValidation] = useState(false);
   const [showDateWarning, setShowDateWarning] = useState(false);
+  const [errorPopup, setErrorPopup] = useState({ visible: false, title: "", message: "" });
 
 
 
@@ -1116,6 +1117,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     return normalizedMessage || "Booking failed. Please try again.";
   }, [getBusinessInterestLabel]);
+
+  const showErrorPopup = useCallback((message, title = "Booking Error") => {
+    setErrorPopup({
+      visible: true,
+      title,
+      message: String(message || "Unable to proceed with this booking right now."),
+    });
+  }, []);
 
   useEffect(() => {
     const rawStatus = listing?.status || listing?.listingStatus || listing?.state || "";
@@ -1992,7 +2001,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         );
 
         if (reachedLimit) {
-          alert("Booking limit for this event slot has been reached.");
+          showErrorPopup("Booking limit for this event slot has been reached.");
           if (isMountedRef.current) setBookingLoading(false);
           return;
         }
@@ -2003,7 +2012,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             firstFailure?.failureReason ||
             precheckRes?.message ||
             "Unable to proceed with this booking right now.";
-          alert(message);
+          showErrorPopup(message);
           if (isMountedRef.current) setBookingLoading(false);
           return;
         }
@@ -3381,6 +3390,65 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
       />
+      <AnimatePresence>
+        {errorPopup.visible && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 3100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setErrorPopup({ visible: false, title: "", message: "" })}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.97 }}
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: 500,
+                background: BG,
+                borderRadius: 18,
+                border: `1px solid ${E}33`,
+                boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
+                padding: "20px 20px 16px",
+                zIndex: 1,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: EL, border: `1px solid ${E}33`, display: "flex", alignItems: "center", justifyContent: "center", color: E, flexShrink: 0 }}>
+                  <AlertCircle size={18} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: FG }}>{errorPopup.title}</h3>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.55, color: M, fontWeight: 600 }}>
+                    {errorPopup.message}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => setErrorPopup({ visible: false, title: "", message: "" })}
+                  style={{
+                    border: "none",
+                    background: A,
+                    color: "#FFF",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    padding: "9px 16px",
+                    cursor: "pointer",
+                  }}
+                >
+                  OK
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <style>{`
         .SingleDatePicker_picker,
         .SingleDatePickerPortal,
