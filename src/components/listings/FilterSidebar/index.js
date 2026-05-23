@@ -62,6 +62,39 @@ const formatSortLabel = (value) => {
     .replace(/\b\w/g, (ch) => ch.toUpperCase());
 };
 
+// ─── Accordion Section — collapsible filter group header ──────────────────────
+const AccordionSection = ({ label, children, defaultOpen = true }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className={styles.accordionSection}>
+      <button
+        type="button"
+        className={styles.accordionHeader}
+        onClick={() => setIsOpen((p) => !p)}
+        aria-expanded={isOpen}
+      >
+        <span className={styles.accordionLabel}>{label}</span>
+        <svg
+          className={cn(styles.chevron, { [styles.chevronOpen]: isOpen })}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {isOpen && <div className={styles.accordionBody}>{children}</div>}
+    </div>
+  );
+};
+
+// ─── Collapsible Chip Section — shows show-more/less for large chip lists ──────
 const CollapsibleChipSection = ({ label, options, activeKeys, onSelect }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -98,8 +131,7 @@ const CollapsibleChipSection = ({ label, options, activeKeys, onSelect }) => {
   }, [hasOverflow, isExpanded]);
 
   return (
-    <div className={styles.section}>
-      <div className={styles.label}>{label}</div>
+    <AccordionSection label={label}>
       <div
         ref={containerRef}
         className={cn(styles.categoriesScroll, {
@@ -127,7 +159,7 @@ const CollapsibleChipSection = ({ label, options, activeKeys, onSelect }) => {
           {isExpanded ? "Show less" : "Show more"}
         </button>
       )}
-    </div>
+    </AccordionSection>
   );
 };
 
@@ -142,11 +174,133 @@ const FilterSidebar = ({
   businessInterestFilters,
   hideHeader = false,
 }) => {
+  const activeChips = useMemo(() => {
+    const chips = [];
+
+    // Ratings
+    if (Array.isArray(filters?.ratings)) {
+      filters.ratings.forEach((rId) => {
+        const found = ratings.find((r) => r.id === rId);
+        if (found) {
+          const cleanLabel = found.label.replace(/\bstars?\b/gi, "Stars");
+          chips.push({
+            type: "ratings",
+            value: rId,
+            label: cleanLabel,
+          });
+        }
+      });
+    }
+
+    // Property Types
+    if (Array.isArray(filters?.propertyTypes)) {
+      filters.propertyTypes.forEach((pId) => {
+        const found = propertyTypes.find((p) => p.id === pId);
+        if (found) {
+          chips.push({
+            type: "propertyTypes",
+            value: pId,
+            label: found.label,
+          });
+        }
+      });
+    }
+
+    // Amenities
+    if (Array.isArray(filters?.amenities)) {
+      filters.amenities.forEach((aId) => {
+        const found = amenities.find((a) => a.id === aId);
+        if (found) {
+          chips.push({
+            type: "amenities",
+            value: aId,
+            label: found.label,
+          });
+        }
+      });
+    }
+
+    // API Category Filter
+    if (filters?.apiCategoryFilter) {
+      const { activeKeys, selectedCategoryLabels } = filters.apiCategoryFilter;
+      if (Array.isArray(activeKeys) && Array.isArray(selectedCategoryLabels)) {
+        activeKeys.forEach((key, idx) => {
+          const label = selectedCategoryLabels[idx];
+          if (label) {
+            chips.push({
+              type: "apiCategoryFilter",
+              value: key,
+              label: label,
+            });
+          }
+        });
+      }
+    }
+
+    // Date range
+    if (filters?.dateRange?.startDate) {
+      chips.push({
+        type: "dateRange",
+        value: "startDate",
+        label: `In: ${filters.dateRange.startDate}`,
+      });
+    }
+    if (filters?.dateRange?.endDate) {
+      chips.push({
+        type: "dateRange",
+        value: "endDate",
+        label: `Out: ${filters.dateRange.endDate}`,
+      });
+    }
+
+    return chips;
+  }, [filters]);
+
+  const handleRemoveChip = (chip) => {
+    if (chip.type === "ratings") {
+      const updated = (filters.ratings || []).filter((x) => x !== chip.value);
+      onFilterChange("ratings", updated);
+    } else if (chip.type === "propertyTypes") {
+      const updated = (filters.propertyTypes || []).filter((x) => x !== chip.value);
+      onFilterChange("propertyTypes", updated);
+    } else if (chip.type === "amenities") {
+      const updated = (filters.amenities || []).filter((x) => x !== chip.value);
+      onFilterChange("amenities", updated);
+    } else if (chip.type === "apiCategoryFilter") {
+      const current = filters.apiCategoryFilter;
+      if (current && Array.isArray(current.activeKeys)) {
+        const idx = current.activeKeys.indexOf(chip.value);
+        if (idx > -1) {
+          const nextKeys = current.activeKeys.filter((k) => k !== chip.value);
+          const nextLabels = current.selectedCategoryLabels.filter((_, i) => i !== idx);
+          const nextValues = (current.categoryValues || []).filter((_, i) => i !== idx);
+          
+          if (nextKeys.length === 0) {
+            onFilterChange("apiCategoryFilter", null);
+          } else {
+            onFilterChange("apiCategoryFilter", {
+              ...current,
+              activeKeys: nextKeys,
+              selectedCategoryLabels: nextLabels,
+              selectedCategoryLabel: nextLabels.join(", "),
+              categoryValues: nextValues,
+            });
+          }
+        }
+      }
+    } else if (chip.type === "dateRange") {
+      const current = filters.dateRange || { startDate: "", endDate: "" };
+      onFilterChange("dateRange", {
+        ...current,
+        [chip.value]: "",
+      });
+    }
+  };
+
   const normalizedInterest = String(businessInterest || "").toUpperCase();
   const isStayInterest = normalizedInterest === "STAY" || normalizedInterest === "STAYS";
   const isEventInterest = normalizedInterest === "EVENT" || normalizedInterest === "EVENTS";
   const isExperienceInterest = normalizedInterest === "EXPERIENCE" || normalizedInterest === "EXPERIENCES";
-  const isExpEventOrStay = isStayInterest || isEventInterest || isExperienceInterest;
   const isPriceRangeEnabled = true;
   const pricePresetOptions = ["Any", "Under 15000", "Under 10000", "Under 5000", "Under 1000"];
   const presetToMaxMap = {
@@ -254,6 +408,7 @@ const FilterSidebar = ({
       }))
       .filter((item) => item.label);
   }, [businessInterestFilters]);
+
   const sortDisplayPairs = useMemo(() => (
     Array.isArray(sortingOptions)
       ? sortingOptions
@@ -394,35 +549,51 @@ const FilterSidebar = ({
     <div className={styles.sidebar}>
       {!hideHeader && (
         <div className={styles.header}>
-          <h3 className={cn("h4", styles.title)}>Filters</h3>
-          <button className={styles.resetButton} onClick={onReset}>
-            <Icon name="close-circle-fill" size="20" />
-            Reset
+          <h3 className={styles.title}>Filters</h3>
+          <button className={styles.clearAllButton} onClick={onReset}>
+            Clear all
           </button>
         </div>
       )}
 
+      {!hideHeader && activeChips.length > 0 && (
+        <div className={styles.activeFiltersSection}>
+          <div className={styles.activeFiltersTitle}>Active Filters</div>
+          <div className={styles.activeChipsList}>
+            {activeChips.map((chip) => (
+              <button
+                key={`${chip.type}-${chip.value}`}
+                className={styles.activeChip}
+                onClick={() => handleRemoveChip(chip)}
+                type="button"
+              >
+                <span>{chip.label}</span>
+                <span className={styles.removeIcon}>✕</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={styles.content}>
-        {/* Sort Dropdown */}
+        {/* Sort By */}
         {sortingOptions && sortingOptions.length > 0 && (
-          <div className={styles.section}>
-            <div className={styles.label}>Sort by</div>
+          <AccordionSection label="Sort by">
             <Dropdown
               className={styles.sortDropdown}
               value={displaySortingValue}
               setValue={handleSortingChange}
               options={displaySortingOptions}
             />
-          </div>
+          </AccordionSection>
         )}
 
-        {/* Date Range for Experience/Events */}
+        {/* Date Range — Experience / Events only */}
         {(isExperienceInterest || isEventInterest) && (
-          <div className={styles.section}>
-            <div className={styles.label}>Date range</div>
+          <AccordionSection label="Date range">
             <div className={styles.dateGrid}>
               <label className={styles.dateField}>
-                <span>Start</span>
+                <span>Check-in</span>
                 <input
                   type="date"
                   value={filters.dateRange?.startDate || ""}
@@ -430,7 +601,7 @@ const FilterSidebar = ({
                 />
               </label>
               <label className={styles.dateField}>
-                <span>End</span>
+                <span>Check-out</span>
                 <input
                   type="date"
                   value={filters.dateRange?.endDate || ""}
@@ -438,69 +609,11 @@ const FilterSidebar = ({
                 />
               </label>
             </div>
-          </div>
+          </AccordionSection>
         )}
 
-        {/* Price Range */}
-        {isPriceRangeEnabled && isExpEventOrStay && (
-          <div className={styles.section}>
-            <div className={styles.label}>Price range</div>
-            <div className={styles.priceRange}>
-              <Dropdown
-                className={styles.sortDropdown}
-                value={selectedPricePresetLabel}
-                setValue={handlePricePresetChange}
-                options={pricePresetOptions}
-              />
-              <div className={styles.priceInputs}>
-                <label className={styles.priceField}>
-                  <span>Min price</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={filters.priceRange?.min ?? ""}
-                    onChange={(e) => handleCustomPriceChange("min", e.target.value)}
-                  />
-                </label>
-                <label className={styles.priceField}>
-                  <span>Max price</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="10000"
-                    value={filters.priceRange?.max ?? ""}
-                    onChange={(e) => handleCustomPriceChange("max", e.target.value)}
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Amenities */}
-        {isStayInterest && (
-          <div className={styles.section}>
-            <div className={styles.label}>Amenities</div>
-            <div className={styles.amenitiesGrid}>
-              {amenities.map((amenity) => (
-                <button
-                  key={amenity.id}
-                  className={cn(styles.amenityChip, {
-                    [styles.active]: (filters.amenities || []).includes(amenity.id),
-                  })}
-                  onClick={() => handleAmenityChange(amenity.id)}
-                >
-                  {amenity.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Ratings */}
-        <div className={styles.section}>
-          <div className={styles.label}>Rating</div>
+        {/* Rating */}
+        <AccordionSection label="Rating">
           <div className={styles.ratingsList}>
             {ratings.map((rating) => (
               <button
@@ -515,7 +628,7 @@ const FilterSidebar = ({
               </button>
             ))}
           </div>
-        </div>
+        </AccordionSection>
 
         {/* Main Category */}
         <CollapsibleChipSection
@@ -549,10 +662,28 @@ const FilterSidebar = ({
           onSelect={handleApiFilterChange}
         />
 
-        {/* Property Types (stays only) */}
+        {/* Amenities — Stays only */}
         {isStayInterest && (
-          <div className={styles.section}>
-            <div className={styles.label}>Property type</div>
+          <AccordionSection label="Amenities">
+            <div className={styles.amenitiesGrid}>
+              {amenities.map((amenity) => (
+                <button
+                  key={amenity.id}
+                  className={cn(styles.amenityChip, {
+                    [styles.active]: (filters.amenities || []).includes(amenity.id),
+                  })}
+                  onClick={() => handleAmenityChange(amenity.id)}
+                >
+                  {amenity.label}
+                </button>
+              ))}
+            </div>
+          </AccordionSection>
+        )}
+
+        {/* Property Type — Stays only */}
+        {isStayInterest && (
+          <AccordionSection label="Property type">
             <div className={styles.checkboxList}>
               {propertyTypes.map((type) => (
                 <Checkbox
@@ -564,7 +695,7 @@ const FilterSidebar = ({
                 />
               ))}
             </div>
-          </div>
+          </AccordionSection>
         )}
       </div>
     </div>
@@ -572,5 +703,3 @@ const FilterSidebar = ({
 };
 
 export default FilterSidebar;
-
-
