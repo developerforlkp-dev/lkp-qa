@@ -2866,7 +2866,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </button>
                 </div>
               ) : (
-                <>
               <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                 {/* Left Column: Date & Ticket */}
                 <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -3337,45 +3336,46 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     {/* Price Summary removed to align with Event popup behavior */}
                   </div>
                 </div>
-
-
-
-              {/* Footer Button */}
-              <div className="booking-modal-footer" style={{ padding: "16px 28px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
-                  <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={bookingLoading}
-                  onClick={handleReserve}
-                  style={{
-                    padding: "12px 32px",
-                    background: (canReserve || showValidation) ? A : B,
-                    color: "#FFF",
-                    borderRadius: 16,
-                    border: "none",
-                    fontSize: 15,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    boxShadow: (canReserve || showValidation) ? `0 10px 30px ${A}44` : "none",
-                    transition: "0.3s"
-                  }}
-                >
-                  {bookingLoading ? "Processing..." : reserveLabel}
-                </motion.button>
-              </div>
-              
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
-                <ShieldCheck size={12} />
-                <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
-              </div>
-               </>
               )}
               </div>
+
+              {!isExperienceClosed && (
+                <>
+                  {/* Footer Button */}
+                  <div className="booking-modal-footer" style={{ padding: "16px 28px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
+                      <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      disabled={bookingLoading}
+                      onClick={handleReserve}
+                      style={{
+                        padding: "12px 32px",
+                        background: (canReserve || showValidation) ? A : B,
+                        color: "#FFF",
+                        borderRadius: 16,
+                        border: "none",
+                        fontSize: 15,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        boxShadow: (canReserve || showValidation) ? `0 10px 30px ${A}44` : "none",
+                        transition: "0.3s"
+                      }}
+                    >
+                      {bookingLoading ? "Processing..." : reserveLabel}
+                    </motion.button>
+                  </div>
+                  
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
+                    <ShieldCheck size={12} />
+                    <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
         )}
