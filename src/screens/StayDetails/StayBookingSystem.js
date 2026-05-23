@@ -194,8 +194,17 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
     );
     if (catalogRoom) {
       const maxAdults = catalogRoom.maxAdults || 2;
-      const maxExtraAdults = 0;
-      const maxExtraChildren = 0;
+      const maxExtraAdults = Number(
+        catalogRoom.maxExtraAdults ??
+        catalogRoom.maxExtraAdultsAllowed ??
+        catalogRoom.maxExtraBeds ??
+        0
+      );
+      const maxExtraChildren = Number(
+        catalogRoom.maxExtraChildren ??
+        catalogRoom.maxExtraChildrenAllowed ??
+        0
+      );
       const maxGuests = maxAdults + (catalogRoom.maxChildren || 0);
       const maxChildren = catalogRoom.maxChildren !== undefined ? catalogRoom.maxChildren : 0;
 
@@ -308,22 +317,26 @@ const StayBookingSystem = ({
   };
 
   const handleAddAnotherRoom = () => {
-    if (selectedRooms.length > 0) {
-      const firstRoom = selectedRooms[0];
-      const roomId = firstRoom.roomId;
-      const currentCount = firstRoom.count || 0;
-      
+    if (selectedRooms.length === 0) return;
+
+    for (const selRoom of selectedRooms) {
+      const roomId = selRoom.roomId;
+      const currentCount = selRoom.count || 0;
       const catalogRoom = stayRoomsCatalog.find(
         r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(roomId)
       );
-      const maxLimit = catalogRoom 
+      const maxLimit = catalogRoom
         ? Number(catalogRoom.units || catalogRoom.totalRooms || catalogRoom.availableRooms || 99)
         : 99;
-      
+
       if (currentCount < maxLimit) {
         handleRoomCountChangeWithReset(roomId, currentCount + 1);
+        setValidationError("Another room has been added to accommodate extra guests.");
+        return;
       }
     }
+
+    setValidationError("No additional rooms are available for the selected room type.");
   };
 
   // Automatically reopen the modal if state was hydrated after auth redirect
@@ -649,8 +662,17 @@ const StayBookingSystem = ({
         totalOriginalPerNight += roomBasePrice * room.count;
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
         totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
-        totalExtraAdultsLimit += 0;
-        totalExtraChildrenLimit += 0;
+        totalExtraAdultsLimit += Number(
+          room.maxExtraAdults ??
+          room.maxExtraAdultsAllowed ??
+          room.maxExtraBeds ??
+          0
+        ) * room.count;
+        totalExtraChildrenLimit += Number(
+          room.maxExtraChildren ??
+          room.maxExtraChildrenAllowed ??
+          0
+        ) * room.count;
 
         // Accumulate extra rates for overflow guests across all rooms
         // (weighted by room count for multi-room bookings)
@@ -699,10 +721,10 @@ const StayBookingSystem = ({
 
       if (currentAdults > allowedAdults) {
         isOver = true;
-        warning = "Adult capacity exceeded";
+        warning = "Adult limit reached even with extra adults. Please add another room.";
       } else if (currentChildren > allowedChildren) {
         isOver = true;
-        warning = "Children capacity exceeded";
+        warning = "Children limit reached even with extra guests. Please add another room.";
       } else {
         if (!isPropertyBased && resolvedSelectedRooms.length > 0) {
           const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, currentAdults, currentChildren);
@@ -795,8 +817,23 @@ const StayBookingSystem = ({
       resolvedSelectedRooms.forEach(room => {
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
         totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
-        totalExtraAdultsLimit += 0;
-        totalExtraChildrenLimit += 0;
+      totalExtraAdultsLimit += resolvedSelectedRooms.reduce((sum, room) => {
+        const extraAdultsPerRoom = Number(
+          room.maxExtraAdults ??
+          room.maxExtraAdultsAllowed ??
+          room.maxExtraBeds ??
+          0
+        );
+        return sum + (extraAdultsPerRoom * (room.count || 0));
+      }, 0);
+      totalExtraChildrenLimit += resolvedSelectedRooms.reduce((sum, room) => {
+        const extraChildrenPerRoom = Number(
+          room.maxExtraChildren ??
+          room.maxExtraChildrenAllowed ??
+          0
+        );
+        return sum + (extraChildrenPerRoom * (room.count || 0));
+      }, 0);
       });
     }
 
@@ -805,7 +842,7 @@ const StayBookingSystem = ({
 
     if (guests.adults > allowedAdults) {
       return {
-        text: "Adult capacity exceeded",
+        text: "Adult limit reached even with extra adults. Add another room.",
         type: "error",
         exceeded: true
       };
@@ -813,7 +850,7 @@ const StayBookingSystem = ({
 
     if (guests.children > allowedChildren) {
       return {
-        text: "Children capacity exceeded",
+        text: "Children limit reached even with extra guests. Add another room.",
         type: "error",
         exceeded: true
       };
@@ -851,7 +888,7 @@ const StayBookingSystem = ({
         };
       } else {
         return {
-          text: "Fits your group (with extra beds)",
+          text: "Extra guest pricing will be applied",
           type: "success"
         };
       }
@@ -911,7 +948,10 @@ const StayBookingSystem = ({
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
-    if (pricing.isOver) return;
+    if (pricing.isOver) {
+      handleAddAnotherRoom();
+      return;
+    }
 
     const token = localStorage.getItem("jwtToken");
     const isLoggedIn = !!token && token !== "undefined" && token !== "null";
@@ -1960,8 +2000,8 @@ const StayBookingSystem = ({
                     const isPropertyBased = stay?.bookingScope === "Property-Based";
                     const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
                     const isCapacityExceeded = pricing.isOver && !loading;
-                    const isDisabled = loading || pricing.isOver;
-                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve Stay" : "Select Room"));
+                    const isDisabled = loading;
+                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Add Another Room" : (hasSelection ? "Reserve Stay" : "Select Room"));
 
                     return (
                       <motion.button
