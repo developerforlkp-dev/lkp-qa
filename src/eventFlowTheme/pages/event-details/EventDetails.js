@@ -113,7 +113,6 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
           }}
         >
           <div>
-            <p style={{ fontSize: 10, letterSpacing: '0.8em', textTransform: 'uppercase', color: A, fontWeight: 800, marginBottom: 20 }}>Visual Anthology</p>
             <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: FG, lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
               {title}
             </h2>

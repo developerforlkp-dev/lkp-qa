@@ -2887,6 +2887,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           selectedDate={startDate}
                           onDateSelect={(date) => {
                             setStartDate(date);
+                            setGuests({ adults: 0, children: 0, infants: 0 });
                             setShowDateWarning(false);
                             setValidationErrors(prev => {
                               const next = { ...prev };
@@ -2903,6 +2904,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           selectedDate={startDate}
                           onDateSelect={(date) => {
                             setStartDate(date);
+                            setGuests({ adults: 0, children: 0, infants: 0 });
                             setShowDateWarning(false);
                             setValidationErrors(prev => {
                               const next = { ...prev };

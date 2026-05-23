@@ -305,7 +305,7 @@ const PrivacyPolicy = () => {
       />
 
       <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG }}>
-        <div style={{ maxWidth: "860px", margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
