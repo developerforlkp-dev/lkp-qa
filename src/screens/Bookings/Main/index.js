@@ -1102,6 +1102,35 @@ const Main = ({
     }
   };
 
+  const getFriendlyCancellationError = (error) => {
+    const status = Number(error?.response?.status);
+    const message = String(
+      error?.response?.data?.reason ||
+      error?.response?.data?.error ||
+      error?.response?.data?.message ||
+      error?.message ||
+      ""
+    );
+    const normalized = message.toLowerCase();
+    const isNoCancellationPolicy =
+      normalized.includes("cancellation not allowed") ||
+      normalized.includes("no cancellation policy") ||
+      normalized.includes("cancellation policy not defined") ||
+      normalized.includes("cancel is not allowed");
+
+    if (status === 400 && isNoCancellationPolicy) {
+      return "No cancellation available.";
+    }
+
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.reason ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Failed to cancel booking. Please try again."
+    );
+  };
+
   const handleCancelBookingClick = async (booking) => {
     setBookingToCancel(booking);
     setCancelReason("");
@@ -1189,11 +1218,7 @@ const Main = ({
       setCancelReason("");
     } catch (error) {
       console.error("Error cancelling booking:", error);
-      setCancelError(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to cancel booking. Please try again."
-      );
+      setCancelError(getFriendlyCancellationError(error));
     } finally {
       setIsCancelling(false);
     }

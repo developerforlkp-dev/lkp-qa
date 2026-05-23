@@ -8,7 +8,7 @@ import { Rev, Chars } from "./UI";
 
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
-import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots } from "../../utils/api";
+import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 
 
@@ -582,43 +582,48 @@ const addDateRangeKeys = (keys, startValue, endValue) => {
 const WEEKDAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 const getSelectedDayCodes = (source = {}) => {
-  const schedule = source.schedule || {};
-  const selectedDays = source.selected_days || source.selectedDays || schedule.selected_days || schedule.selectedDays;
+  const safeSource = source && typeof source === "object" ? source : {};
+  const schedule = safeSource.schedule && typeof safeSource.schedule === "object" ? safeSource.schedule : {};
+  const selectedDays = safeSource.selected_days || safeSource.selectedDays || schedule.selected_days || schedule.selectedDays;
   if (!Array.isArray(selectedDays) || selectedDays.length === 0) return null;
   return new Set(selectedDays.map((day) => String(day).trim().toUpperCase()).filter(Boolean));
 };
 
 const hasWeekdayFlags = (source = {}) => (
-  [
-    source.isSunday,
-    source.isMonday,
-    source.isTuesday,
-    source.isWednesday,
-    source.isThursday,
-    source.isFriday,
-    source.isSaturday,
-    source.is_sunday,
-    source.is_monday,
-    source.is_tuesday,
-    source.is_wednesday,
-    source.is_thursday,
-    source.is_friday,
-    source.is_saturday,
-  ].some((value) => value === true || value === false)
+  (() => {
+    const safeSource = source && typeof source === "object" ? source : {};
+    return [
+      safeSource.isSunday,
+      safeSource.isMonday,
+      safeSource.isTuesday,
+      safeSource.isWednesday,
+      safeSource.isThursday,
+      safeSource.isFriday,
+      safeSource.isSaturday,
+      safeSource.is_sunday,
+      safeSource.is_monday,
+      safeSource.is_tuesday,
+      safeSource.is_wednesday,
+      safeSource.is_thursday,
+      safeSource.is_friday,
+      safeSource.is_saturday,
+    ].some((value) => value === true || value === false);
+  })()
 );
 
 const isWeekdayEnabled = (source = {}, weekday) => {
-  const selectedDayCodes = getSelectedDayCodes(source);
+  const safeSource = source && typeof source === "object" ? source : {};
+  const selectedDayCodes = getSelectedDayCodes(safeSource);
   if (selectedDayCodes) return selectedDayCodes.has(WEEKDAY_CODES[weekday]);
 
   const flags = [
-    [source.isSunday, source.is_sunday],
-    [source.isMonday, source.is_monday],
-    [source.isTuesday, source.is_tuesday],
-    [source.isWednesday, source.is_wednesday],
-    [source.isThursday, source.is_thursday],
-    [source.isFriday, source.is_friday],
-    [source.isSaturday, source.is_saturday],
+    [safeSource.isSunday, safeSource.is_sunday],
+    [safeSource.isMonday, safeSource.is_monday],
+    [safeSource.isTuesday, safeSource.is_tuesday],
+    [safeSource.isWednesday, safeSource.is_wednesday],
+    [safeSource.isThursday, safeSource.is_thursday],
+    [safeSource.isFriday, safeSource.is_friday],
+    [safeSource.isSaturday, safeSource.is_saturday],
   ];
   const values = flags[weekday] || [];
   const explicit = values.find((value) => value === true || value === false);
@@ -626,36 +631,38 @@ const isWeekdayEnabled = (source = {}, weekday) => {
 };
 
 const addScheduleDateKeys = (keys, source = {}, fallback = {}) => {
-  const schedule = source.schedule || {};
+  const safeSource = source && typeof source === "object" ? source : {};
+  const safeFallback = fallback && typeof fallback === "object" ? fallback : {};
+  const schedule = safeSource.schedule && typeof safeSource.schedule === "object" ? safeSource.schedule : {};
   const startKey = getDateKey(
-    source.startDate ||
-    source.start_date ||
-    source.slotStartDate ||
-    source.slot_start_date ||
-    source.availableFrom ||
-    source.available_from ||
-    source.bookingStartDate ||
-    source.booking_start_date ||
+    safeSource.startDate ||
+    safeSource.start_date ||
+    safeSource.slotStartDate ||
+    safeSource.slot_start_date ||
+    safeSource.availableFrom ||
+    safeSource.available_from ||
+    safeSource.bookingStartDate ||
+    safeSource.booking_start_date ||
     schedule.startDate ||
     schedule.start_date ||
-    fallback.startDate ||
-    fallback.start_date ||
-    fallback.bookingStartDate
+    safeFallback.startDate ||
+    safeFallback.start_date ||
+    safeFallback.bookingStartDate
   );
   const endKey = getDateKey(
-    source.endDate ||
-    source.end_date ||
-    source.slotEndDate ||
-    source.slot_end_date ||
-    source.availableTo ||
-    source.available_to ||
-    source.bookingEndDate ||
-    source.booking_end_date ||
+    safeSource.endDate ||
+    safeSource.end_date ||
+    safeSource.slotEndDate ||
+    safeSource.slot_end_date ||
+    safeSource.availableTo ||
+    safeSource.available_to ||
+    safeSource.bookingEndDate ||
+    safeSource.booking_end_date ||
     schedule.endDate ||
     schedule.end_date ||
-    fallback.endDate ||
-    fallback.end_date ||
-    fallback.bookingEndDate ||
+    safeFallback.endDate ||
+    safeFallback.end_date ||
+    safeFallback.bookingEndDate ||
     startKey
   );
 
@@ -670,10 +677,10 @@ const addScheduleDateKeys = (keys, source = {}, fallback = {}) => {
 
   const current = start <= end ? start : end;
   const last = start <= end ? end : start;
-  const shouldFilterByWeekday = Boolean(getSelectedDayCodes(source)) || hasWeekdayFlags(source);
+  const shouldFilterByWeekday = Boolean(getSelectedDayCodes(safeSource)) || hasWeekdayFlags(safeSource);
 
   while (current <= last) {
-    if (!shouldFilterByWeekday || isWeekdayEnabled(source, current.getDay())) {
+    if (!shouldFilterByWeekday || isWeekdayEnabled(safeSource, current.getDay())) {
       keys.add(getDateKey(current));
     }
     current.setDate(current.getDate() + 1);
@@ -1046,6 +1053,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
+  const hasHandledUnavailableRef = useRef(false);
   const [show, setShow] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   
@@ -1070,6 +1078,56 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   
 
   const isEventBooking = type === "event";
+
+  const getBusinessInterestLabel = useCallback(() => {
+    const normalizedType = String(type || "").trim().toLowerCase();
+    const normalizedInterest = String(
+      listing?.businessInterestCode ||
+      listing?.businessInterest ||
+      listing?.business_interest_code ||
+      listing?.business_interest ||
+      ""
+    ).trim().toLowerCase();
+
+    const key = normalizedType || normalizedInterest;
+    if (key.includes("event")) return "Event";
+    if (key.includes("stay")) return "Stay";
+    if (key.includes("food")) return "Food";
+    if (key.includes("place")) return "Place";
+    if (key.includes("experience")) return "Experience";
+    return "Listing";
+  }, [listing?.businessInterest, listing?.businessInterestCode, listing?.business_interest, listing?.business_interest_code, type]);
+
+  const getBookingErrorMessage = useCallback((error) => {
+    const apiMessage =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "";
+    const normalizedMessage = String(apiMessage);
+
+    const hasUnavailableStatus =
+      /status\s*:\s*disabled/i.test(normalizedMessage) ||
+      /status\s*:\s*draft/i.test(normalizedMessage);
+
+    if (hasUnavailableStatus) {
+      return `${getBusinessInterestLabel()} no longer available.`;
+    }
+
+    return normalizedMessage || "Booking failed. Please try again.";
+  }, [getBusinessInterestLabel]);
+
+  useEffect(() => {
+    const rawStatus = listing?.status || listing?.listingStatus || listing?.state || "";
+    const normalizedStatus = String(rawStatus).trim().toUpperCase();
+    const isUnavailable = normalizedStatus === "DISABLED" || normalizedStatus === "DRAFT";
+
+    if (!isUnavailable || hasHandledUnavailableRef.current) return;
+    hasHandledUnavailableRef.current = true;
+
+    alert(`${getBusinessInterestLabel()} no longer available.`);
+    history.replace("/");
+  }, [getBusinessInterestLabel, history, listing?.listingStatus, listing?.state, listing?.status]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -1913,6 +1971,43 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
       try {
         if (isMountedRef.current) setBookingLoading(true);
+
+        const precheckPayload = {
+          eventId: eventIdNum,
+          eventSlotId: eventSlotIdNum,
+          tickets: [
+            {
+              ticketTypeId,
+              quantity: totalGuests,
+            },
+          ],
+        };
+        if (customerEmail) precheckPayload.customerEmail = customerEmail;
+        if (customerPhone) precheckPayload.customerPhone = customerPhone;
+
+        const precheckRes = await precheckEventOrder(precheckPayload);
+        const precheckResults = Array.isArray(precheckRes?.results) ? precheckRes.results : [];
+        const reachedLimit = precheckResults.some(
+          (item) => Number(item?.remainingAllowedQuantity) === 0
+        );
+
+        if (reachedLimit) {
+          alert("Booking limit for this event slot has been reached.");
+          if (isMountedRef.current) setBookingLoading(false);
+          return;
+        }
+
+        if (precheckRes?.canBook === false || precheckResults.some((item) => item?.canBook === false)) {
+          const firstFailure = precheckResults.find((item) => item?.canBook === false);
+          const message =
+            firstFailure?.failureReason ||
+            precheckRes?.message ||
+            "Unable to proceed with this booking right now.";
+          alert(message);
+          if (isMountedRef.current) setBookingLoading(false);
+          return;
+        }
+
         const res = await createEventOrder(payload);
         const order = res?.order || res;
         const payment = res?.payment || res?.data?.payment || res?.order?.payment || order?.payment || null;
@@ -2056,7 +2151,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         }
       } catch (e) {
         console.error("Event booking failed:", e?.response?.data || e?.message || e);
-        alert(e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.");
+        alert(getBookingErrorMessage(e));
       } finally {
         if (isMountedRef.current) setBookingLoading(false);
       }
@@ -2299,7 +2394,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       }
     } catch (e) {
       console.error("Experience booking failed:", e?.response?.data || e?.message || e);
-      alert(e?.response?.data?.message || e?.response?.data?.error || e?.message || "Booking failed. Please try again.");
+      alert(getBookingErrorMessage(e));
     } finally {
       if (isMountedRef.current) setBookingLoading(false);
     }

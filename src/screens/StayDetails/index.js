@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { useLocation, useHistory, Link } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
@@ -931,6 +932,8 @@ const StayDetails = () => {
   const [reviews, setReviews] = useState([]);
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
+  const unavailableRedirectRef = useRef(false);
 
   // Dynamic browser tab title
   useDocumentTitle(stay?.propertyName || stay?.title, "Stays");
@@ -941,6 +944,27 @@ const StayDetails = () => {
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
   const [selectedRooms, setSelectedRooms] = useState([]); // Array of {roomId, mealPlan, count}
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  const isStayUnavailable = (payload) => {
+    if (!payload || typeof payload !== "object") return true;
+    const status = String(
+      payload?.status ||
+      payload?.listingStatus ||
+      payload?.state ||
+      payload?.approvalStatus ||
+      payload?.publishStatus ||
+      ""
+    ).trim().toUpperCase();
+    if (["DISABLED", "DRAFT", "INACTIVE", "UNPUBLISHED", "REJECTED"].includes(status)) return true;
+    if (payload?.isActive === false || payload?.is_active === false) return true;
+    return false;
+  };
+
+  const showUnavailablePopupAndRedirect = () => {
+    setLoading(false);
+    unavailableRedirectRef.current = true;
+    setUnavailablePopupOpen(true);
+  };
 
   const formatImageUrl = (url) => {
     if (!url) return null;
@@ -955,10 +979,21 @@ const StayDetails = () => {
     const rid = String(roomId);
     setSelectedRooms(prev => {
       const exists = prev.find(r => r.roomId === rid);
-      if (exists) return prev.filter(r => r.roomId !== rid);
+      if (exists) {
+        const filtered = prev.filter(r => r.roomId !== rid);
+        if (filtered.length === 0) {
+          const stayRoomsCatalog = stay?.rooms || stay?.roomTypes || stay?.room_types || [];
+          if (stayRoomsCatalog.length > 0) {
+            const firstRoom = stayRoomsCatalog[0];
+            const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
+            return [{ roomId: firstRoomId, mealPlan: "EP", count: 1 }];
+          }
+        }
+        return filtered;
+      }
       return [...prev, { roomId: rid, mealPlan: mealPlan || "EP", count: 1 }];
     });
-  }, []);
+  }, [stay]);
 
   const handleRoomCountChange = useCallback((roomId, count) => {
     const rid = String(roomId);
@@ -1005,6 +1040,10 @@ const StayDetails = () => {
         setLoading(true);
         const data = await getStayDetails(id);
         if (!mounted) return;
+        if (isStayUnavailable(data)) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
 
         if (data) {
           setStay(data);
@@ -1049,12 +1088,62 @@ const StayDetails = () => {
         setLoading(false);
       } catch (e) {
         console.error("Failed to load stay details", e);
+        const statusCode = Number(e?.response?.status);
+        const message = String(e?.response?.data?.message || e?.response?.data?.error || e?.message || "");
+        const isUnavailable =
+          /status\s*:\s*disabled/i.test(message) ||
+          /status\s*:\s*draft/i.test(message) ||
+          /no\s*longer\s*available/i.test(message) ||
+          /not\s*found/i.test(message) ||
+          statusCode === 404 ||
+          statusCode === 410;
+        if (isUnavailable) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
         setLoading(false);
       }
     };
     load();
     return () => { mounted = false; };
   }, [id]);
+
+  const handleUnavailablePopupClose = () => {
+    setUnavailablePopupOpen(false);
+    if (unavailableRedirectRef.current) {
+      unavailableRedirectRef.current = false;
+      history.replace("/");
+    }
+  };
+
+  const unavailablePopup = (
+    <AnimatePresence>
+      {unavailablePopupOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+        >
+          <motion.div
+            initial={{ y: 16, scale: 0.98, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 8, scale: 0.98, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ width: "100%", maxWidth: 420, background: S, color: FG, border: `1px solid ${B}`, borderRadius: 16, boxShadow: "0 24px 64px rgba(0,0,0,0.28)", padding: 20 }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: FG }}>Stay Unavailable</div>
+            <div style={{ fontSize: 14, lineHeight: 1.6, color: M }}>Stay no longer available.</div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+              <button type="button" onClick={handleUnavailablePopupClose} style={{ border: "none", background: "#0097B2", color: W, borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                Go to Home
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   const hostAvatar = useMemo(() => {
     const avatarUrl = hostData?.host?.profilePhotoUrl || hostData?.host?.profilePhoto || stay?.host?.profilePhotoUrl || stay?.host?.profilePhoto;
@@ -1079,10 +1168,19 @@ const StayDetails = () => {
   const primaryCategoryId = stay?.primaryCategoryId || stay?.primaryCategory?.id || stay?.categoryId || stay?.category?.id;
   const currentListingId = stay?.stayId || stay?.id || id;
 
-  if (loading && !stay) {
+  if (loading && !stay && !unavailablePopupOpen) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
         <Loader />
+      </div>
+    );
+  }
+
+  if (unavailablePopupOpen) {
+    return (
+      <div className="stay-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
+        <ScopedStyles />
+        {unavailablePopup}
       </div>
     );
   }
@@ -1092,6 +1190,7 @@ const StayDetails = () => {
   return (
     <div className="stay-details-premium" style={{ minHeight: "100vh", background: BG, color: FG }}>
       <ScopedStyles />
+      {unavailablePopup}
 
 
       <StayHeroCarousel stay={stay} galleryItems={galleryItems} />
@@ -1468,39 +1567,6 @@ function PropertyModal({ stay, onClose }) {
                   {stay.shortDescription || "Entire-property booking with curated comfort and premium amenities."}
                 </p>
               </div>
-
-              {/* Amenities Preview */}
-              {amenities.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: M, marginBottom: 10 }}>
-                    Amenities
-                  </h4>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {amenities.slice(0, 4).map((f, i) => {
-                      const IconComp = getAmenityIcon(f);
-                      return (
-                        <div key={i} style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          background: S, border: `1px solid ${B}`, borderRadius: 20,
-                          padding: "6px 12px", fontSize: 11, fontWeight: 600, color: FG
-                        }}>
-                          <IconComp size={12} color={A} />
-                          <span>{f}</span>
-                        </div>
-                      );
-                    })}
-                    {amenities.length > 4 && (
-                      <div style={{
-                        display: "flex", alignItems: "center", background: S,
-                        border: `1px solid ${B}`, borderRadius: 20, padding: "6px 12px",
-                        fontSize: 11, fontWeight: 700, color: M
-                      }}>
-                        + {amenities.length - 4} more
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* 2x2 Quick Info Grid */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1973,14 +2039,17 @@ function PropertyStayCard({ stay }) {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showModal && (
-          <PropertyModal
-            stay={stay}
-            onClose={() => setShowModal(false)}
-          />
-        )}
-      </AnimatePresence>
+      {ReactDOM.createPortal(
+        <AnimatePresence>
+          {showModal && (
+            <PropertyModal
+              stay={stay}
+              onClose={() => setShowModal(false)}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </motion.div>
   );
 }

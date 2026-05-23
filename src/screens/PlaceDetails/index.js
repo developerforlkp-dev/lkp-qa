@@ -629,9 +629,32 @@ const PlaceDetails = () => {
   const [hostData, setHostData] = useState(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
+  const unavailableRedirectRef = useRef(false);
 
   // Dynamic browser tab title
   useDocumentTitle(place?.placeName || place?.title, "Places");
+
+  const isPlaceUnavailable = (payload) => {
+    if (!payload || typeof payload !== "object") return true;
+    const status = String(
+      payload?.status ||
+      payload?.listingStatus ||
+      payload?.state ||
+      payload?.approvalStatus ||
+      payload?.publishStatus ||
+      ""
+    ).trim().toUpperCase();
+    if (["DISABLED", "DRAFT", "INACTIVE", "UNPUBLISHED", "REJECTED"].includes(status)) return true;
+    if (payload?.isActive === false || payload?.is_active === false) return true;
+    return false;
+  };
+
+  const showUnavailablePopupAndRedirect = () => {
+    setLoading(false);
+    unavailableRedirectRef.current = true;
+    setUnavailablePopupOpen(true);
+  };
 
   const formatImageUrl = (url) => {
     if (!url) return null;
@@ -651,6 +674,10 @@ const PlaceDetails = () => {
         setLoading(true);
         const data = await getPlaceDetails(id);
         if (!mounted) return;
+        if (isPlaceUnavailable(data)) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
 
         if (data) {
           const normalizedData = {
@@ -681,12 +708,62 @@ const PlaceDetails = () => {
         setLoading(false);
       } catch (e) {
         console.error("Failed to load place details", e);
+        const statusCode = Number(e?.response?.status);
+        const message = String(e?.response?.data?.message || e?.response?.data?.error || e?.message || "");
+        const isUnavailable =
+          /status\s*:\s*disabled/i.test(message) ||
+          /status\s*:\s*draft/i.test(message) ||
+          /no\s*longer\s*available/i.test(message) ||
+          /not\s*found/i.test(message) ||
+          statusCode === 404 ||
+          statusCode === 410;
+        if (isUnavailable) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
         setLoading(false);
       }
     };
     load();
     return () => { mounted = false; };
   }, [id]);
+
+  const handleUnavailablePopupClose = () => {
+    setUnavailablePopupOpen(false);
+    if (unavailableRedirectRef.current) {
+      unavailableRedirectRef.current = false;
+      history.replace("/");
+    }
+  };
+
+  const unavailablePopup = (
+    <AnimatePresence>
+      {unavailablePopupOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+        >
+          <motion.div
+            initial={{ y: 16, scale: 0.98, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 8, scale: 0.98, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ width: "100%", maxWidth: 420, background: "var(--S)", color: "var(--FG)", border: "1px solid var(--B)", borderRadius: 16, boxShadow: "0 24px 64px rgba(0,0,0,0.28)", padding: 20 }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: "var(--FG)" }}>Place Unavailable</div>
+            <div style={{ fontSize: 14, lineHeight: 1.6, color: "var(--M)" }}>Place no longer available.</div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+              <button type="button" onClick={handleUnavailablePopupClose} style={{ border: "none", background: "var(--A)", color: "#FFFFFF", borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                Go to Home
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   const hostAvatar = useMemo(() => {
     const avatarUrl = hostData?.profilePhotoUrl || place?.host?.profilePhotoUrl;
@@ -696,7 +773,7 @@ const PlaceDetails = () => {
   const primaryCategoryId = place?.primaryCategoryId || place?.primaryCategory?.id || place?.categoryId || place?.category?.id;
   const currentListingId = place?.placeId || place?.id || id;
 
-  if (loading && !place) {
+  if (loading && !place && !unavailablePopupOpen) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
         <Loader />
@@ -704,10 +781,20 @@ const PlaceDetails = () => {
     );
   }
 
+  if (unavailablePopupOpen) {
+    return (
+      <ScopedThemeProvider>
+        <ScopedStyles />
+        {unavailablePopup}
+      </ScopedThemeProvider>
+    );
+  }
+
   return (
     <ScopedThemeProvider>
       <ScopedStyles />
       <ProgressBar />
+      {unavailablePopup}
 
       <PlaceHero place={place} galleryItems={galleryItems} />
 

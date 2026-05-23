@@ -697,7 +697,7 @@ function PolicyItem({ req }) {
 const EventProduct = () => {
   const location = useLocation();
   const history = useHistory();
-  const { tokens: { A, B } } = useTheme();
+  const { tokens: { A, B, FG, M, S, W } } = useTheme();
   const searchParams = new URLSearchParams(location.search);
   const eventIdFromQuery =
     searchParams.get("id") ||
@@ -744,6 +744,29 @@ const EventProduct = () => {
   const handleBookNowRef = useRef(null);
   const [bookButtonArmed, setBookButtonArmed] = useState(Boolean(checkoutAfterGuestSelection));
   const [eligibleBookings, setEligibleBookings] = useState([]);
+  const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
+  const unavailableRedirectRef = useRef(false);
+
+  const isEventUnavailable = (payload) => {
+    if (!payload || typeof payload !== "object") return true;
+    const status = String(
+      payload?.status ||
+      payload?.publishStatus ||
+      payload?.listingStatus ||
+      payload?.state ||
+      payload?.approvalStatus ||
+      ""
+    ).trim().toUpperCase();
+    if (["DISABLED", "DRAFT", "INACTIVE", "UNPUBLISHED", "REJECTED"].includes(status)) return true;
+    if (payload?.isActive === false || payload?.is_active === false) return true;
+    return false;
+  };
+
+  const showUnavailablePopupAndRedirect = () => {
+    setLoading(false);
+    unavailableRedirectRef.current = true;
+    setUnavailablePopupOpen(true);
+  };
 
   // Dynamic browser tab title
   useDocumentTitle(event?.title, "Events");
@@ -783,6 +806,10 @@ const EventProduct = () => {
         }).catch(e => console.warn("❌ Error fetching event eligibility:", e));
 
         const payload = await getEventDetails(eventId);
+        if (isEventUnavailable(payload)) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
 
         const derivedId = payload?.eventId ?? payload?.event_id ?? payload?.id ?? payload?._id ?? eventId;
 
@@ -953,6 +980,19 @@ const EventProduct = () => {
         }).catch(e => console.warn("Error fetching event reviews:", e));
       } catch (e) {
         if (!mounted) return;
+        const statusCode = Number(e?.response?.status);
+        const message = String(e?.response?.data?.message || e?.response?.data?.error || e?.message || "");
+        const isUnavailable =
+          /status\s*:\s*disabled/i.test(message) ||
+          /status\s*:\s*draft/i.test(message) ||
+          /no\s*longer\s*available/i.test(message) ||
+          /not\s*found/i.test(message) ||
+          statusCode === 404 ||
+          statusCode === 410;
+        if (isUnavailable) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
         const status = e?.response?.status;
         if (status === 401 || status === 403) {
           setError("Please login to view this event.");
@@ -971,6 +1011,43 @@ const EventProduct = () => {
       mounted = false;
     };
   }, [eventId]);
+
+  const handleUnavailablePopupClose = () => {
+    setUnavailablePopupOpen(false);
+    if (unavailableRedirectRef.current) {
+      unavailableRedirectRef.current = false;
+      history.replace("/");
+    }
+  };
+
+  const unavailablePopup = (
+    <AnimatePresence>
+      {unavailablePopupOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+        >
+          <motion.div
+            initial={{ y: 16, scale: 0.98, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 8, scale: 0.98, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ width: "100%", maxWidth: 420, background: S, color: FG, border: `1px solid ${B}`, borderRadius: 16, boxShadow: "0 24px 64px rgba(0,0,0,0.28)", padding: 20 }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: FG }}>Event Unavailable</div>
+            <div style={{ fontSize: 14, lineHeight: 1.6, color: M }}>Event no longer available.</div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+              <button type="button" onClick={handleUnavailablePopupClose} style={{ border: "none", background: A, color: W, borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                Go to Home
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   useEffect(() => {
     if (!event) return;
@@ -1388,12 +1465,16 @@ const EventProduct = () => {
     { title: "facebook", url: "https://www.facebook.com/ui8.net/" },
   ];
 
-  if (loading) {
+  if (loading && !unavailablePopupOpen) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
         <Loader />
       </div>
     );
+  }
+
+  if (unavailablePopupOpen) {
+    return <div className={styles.eventProduct}>{unavailablePopup}</div>;
   }
 
   if (!event) {
@@ -1417,6 +1498,7 @@ const EventProduct = () => {
   return (
     <div className={styles.eventProduct}>
       <LoginPromptModal visible={showLoginPrompt} onClose={() => setShowLoginPrompt(false)} />
+      {unavailablePopup}
       {error && (
         <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
           <p>⚠️ {error}</p>

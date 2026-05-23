@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle } from "lucide-react";
+import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
@@ -186,6 +186,103 @@ const isInSeasonRange = (dateValue, season) => {
   return check.isSameOrAfter(start, "day") && check.isSameOrBefore(end, "day");
 };
 
+const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => {
+  const roomInstances = [];
+  selectedRooms.forEach(sel => {
+    const catalogRoom = stayRoomsCatalog.find(
+      r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId)
+    );
+    if (catalogRoom) {
+      const maxAdults = catalogRoom.maxAdults || 2;
+      const maxExtraAdults = 0;
+      const maxExtraChildren = 0;
+      const maxGuests = maxAdults + (catalogRoom.maxChildren || 0);
+      const maxChildren = catalogRoom.maxChildren !== undefined ? catalogRoom.maxChildren : 0;
+
+      for (let i = 0; i < sel.count; i++) {
+        roomInstances.push({
+          instanceId: `${sel.roomId}-${i}`,
+          roomId: sel.roomId,
+          roomName: catalogRoom.roomName || catalogRoom.name || "Room",
+          maxAdults,
+          maxChildren,
+          maxExtraAdults,
+          maxExtraChildren,
+          maxGuests,
+          allocatedAdults: 0,
+          allocatedChildren: 0
+        });
+      }
+    }
+  });
+
+  if (roomInstances.length === 0) {
+    return { success: false, allocations: [] };
+  }
+
+  let remainingAdults = adults;
+  let remainingChildren = children;
+
+  // Allocate 1 adult per room first if adults are available
+  roomInstances.forEach(inst => {
+    if (remainingAdults > 0) {
+      inst.allocatedAdults += 1;
+      remainingAdults -= 1;
+    }
+  });
+
+  // Fill standard adults up to maxAdults
+  for (let inst of roomInstances) {
+    const standardAdultSpace = Math.max(0, inst.maxAdults - inst.allocatedAdults);
+    const toAllocate = Math.min(remainingAdults, standardAdultSpace);
+    if (toAllocate > 0) {
+      inst.allocatedAdults += toAllocate;
+      remainingAdults -= toAllocate;
+    }
+  }
+
+  // Fill extra adults up to maxExtraAdults
+  for (let inst of roomInstances) {
+    const extraAdultSpace = inst.maxExtraAdults;
+    const toAllocate = Math.min(remainingAdults, extraAdultSpace);
+    if (toAllocate > 0) {
+      inst.allocatedAdults += toAllocate;
+      remainingAdults -= toAllocate;
+    }
+  }
+
+  // Fill standard children up to maxChildren
+  for (let inst of roomInstances) {
+    const standardChildSpace = Math.max(0, inst.maxChildren - inst.allocatedChildren);
+    const toAllocate = Math.min(remainingChildren, standardChildSpace);
+    if (toAllocate > 0) {
+      inst.allocatedChildren += toAllocate;
+      remainingChildren -= toAllocate;
+    }
+  }
+
+  // Fill extra children up to maxExtraChildren
+  for (let inst of roomInstances) {
+    const extraChildSpace = inst.maxExtraChildren;
+    const toAllocate = Math.min(remainingChildren, extraChildSpace);
+    if (toAllocate > 0) {
+      inst.allocatedChildren += toAllocate;
+      remainingChildren -= toAllocate;
+    }
+  }
+
+  const success = (remainingAdults === 0 && remainingChildren === 0);
+  return {
+    success,
+    allocations: roomInstances.map(inst => ({
+      roomId: inst.roomId,
+      roomName: inst.roomName,
+      adults: inst.allocatedAdults,
+      children: inst.allocatedChildren
+    }))
+  };
+};
+
 const StayBookingSystem = ({
   stay,
   checkInDate,
@@ -205,6 +302,29 @@ const StayBookingSystem = ({
   const [selectionMode, setSelectionMode] = useState("check-in");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
+
+  const handleRoomCountChangeWithReset = (roomId, count) => {
+    onRoomsCountChange(roomId, count);
+  };
+
+  const handleAddAnotherRoom = () => {
+    if (selectedRooms.length > 0) {
+      const firstRoom = selectedRooms[0];
+      const roomId = firstRoom.roomId;
+      const currentCount = firstRoom.count || 0;
+      
+      const catalogRoom = stayRoomsCatalog.find(
+        r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(roomId)
+      );
+      const maxLimit = catalogRoom 
+        ? Number(catalogRoom.units || catalogRoom.totalRooms || catalogRoom.availableRooms || 99)
+        : 99;
+      
+      if (currentCount < maxLimit) {
+        handleRoomCountChangeWithReset(roomId, currentCount + 1);
+      }
+    }
+  };
 
   // Automatically reopen the modal if state was hydrated after auth redirect
   useEffect(() => {
@@ -335,54 +455,6 @@ const StayBookingSystem = ({
     };
   }, [stay]);
 
-  // Maximum guest capacity calculation based on available rooms inventory
-  const occupancyLimits = useMemo(() => {
-    const isPropertyBased = stay?.bookingScope === "Property-Based";
-    
-    if (isPropertyBased) {
-      const maxAdults = (stay.maxAdults || stay.maxGuests || 1) + (stay.maxExtraAdults || stay.maxExtraAdultsAllowed || stay.maxExtraBeds || 0);
-      const maxChildren = (stay.maxChildren || 0) + (stay.maxExtraChildren || stay.maxExtraChildrenAllowed || 0);
-      const maxGuests = stay.maxGuests || (maxAdults + maxChildren);
-      return { maxAdults, maxChildren, maxGuests };
-    }
-
-    if (stayRoomsCatalog.length === 0) {
-      return { maxAdults: 99, maxChildren: 99, maxGuests: 99 };
-    }
-
-    let targetSelections = [...selectedRooms];
-    if (targetSelections.length === 0) {
-      const firstRoom = stayRoomsCatalog[0];
-      const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
-      targetSelections = [{ roomId: firstRoomId, mealPlan: "EP", count: 1 }];
-    }
-
-    let maxAdults = 0;
-    let maxChildren = 0;
-    let maxGuests = 0;
-
-    targetSelections.forEach(sel => {
-      const catalogRoom = stayRoomsCatalog.find(
-        r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId)
-      );
-      if (catalogRoom) {
-        const roomMaxAvailable = Number(catalogRoom.totalRooms || catalogRoom.totalUnits || catalogRoom.availableRooms || 99);
-        const roomMaxGuests = catalogRoom.maxGuests || (catalogRoom.maxAdults ? catalogRoom.maxAdults + (catalogRoom.maxChildren || 0) : 2);
-        const roomMaxAdults = (catalogRoom.maxAdults || 1) + (catalogRoom.maxExtraAdults || catalogRoom.maxExtraAdultsAllowed || catalogRoom.maxExtraBeds || 0);
-        const roomMaxChildren = (catalogRoom.maxChildren || 0) + (catalogRoom.maxExtraChildren || catalogRoom.maxExtraChildrenAllowed || 0);
-
-        maxAdults += roomMaxAdults * roomMaxAvailable;
-        maxChildren += roomMaxChildren * roomMaxAvailable;
-        maxGuests += roomMaxGuests * roomMaxAvailable;
-      }
-    });
-
-    return { maxAdults, maxChildren, maxGuests };
-  }, [stay, stayRoomsCatalog, selectedRooms]);
-
-  // Auto Room Calculation based on guest count and room capacity
-  const lastGuestsRef = useRef({ adults: 1, children: 0 });
-  const lastSelectedRoomIdsRef = useRef([]);
 
   useEffect(() => {
     if (!stay || !setSelectedRooms) return;
@@ -391,165 +463,13 @@ const StayBookingSystem = ({
 
     if (stayRoomsCatalog.length === 0) return;
 
-    // Detect if guest count changed
-    const guestsChanged = 
-      guests.adults !== lastGuestsRef.current.adults || 
-      guests.children !== lastGuestsRef.current.children;
-
-    // Detect if new room types were added to selection
-    const currentRoomIds = selectedRooms.map(r => String(r.roomId));
-    const newRoomTypeAdded = currentRoomIds.some(id => !lastSelectedRoomIdsRef.current.includes(id));
-
-    // Update refs
-    lastGuestsRef.current = { adults: guests.adults, children: guests.children };
-    lastSelectedRoomIdsRef.current = currentRoomIds;
-
-    let targetSelections = [...selectedRooms];
-    // If no room is selected, default to the first room type in the catalog
-    if (targetSelections.length === 0) {
+    // Default to first room type if nothing selected
+    if (selectedRooms.length === 0) {
       const firstRoom = stayRoomsCatalog[0];
       const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
-      targetSelections = [{ roomId: firstRoomId, mealPlan: "EP", count: 1 }];
+      setSelectedRooms([{ roomId: firstRoomId, mealPlan: "EP", count: 1 }]);
     }
-
-    let updatedRooms = [];
-
-    if (targetSelections.length === 1) {
-      const sel = targetSelections[0];
-      const catalogRoom = stayRoomsCatalog.find(
-        r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId)
-      );
-
-      if (catalogRoom) {
-        const maxGuestsPerRoom = catalogRoom.maxGuests || (catalogRoom.maxAdults ? catalogRoom.maxAdults + (catalogRoom.maxChildren || 0) : 2);
-        const maxAdultsPerRoom = (catalogRoom.maxAdults || 1) + (catalogRoom.maxExtraAdults || catalogRoom.maxExtraAdultsAllowed || catalogRoom.maxExtraBeds || 0);
-        const maxChildrenPerRoom = (catalogRoom.maxChildren || 0) + (catalogRoom.maxExtraChildren || catalogRoom.maxExtraChildrenAllowed || 0);
-
-        const reqRoomsByTotal = Math.ceil((guests.adults + guests.children) / maxGuestsPerRoom);
-        const reqRoomsByAdults = Math.ceil(guests.adults / maxAdultsPerRoom);
-        const reqRoomsByChildren = maxChildrenPerRoom > 0 ? Math.ceil(guests.children / maxChildrenPerRoom) : 0;
-
-        const requiredCount = Math.max(reqRoomsByTotal, reqRoomsByAdults, reqRoomsByChildren);
-        const maxAvailable = Number(catalogRoom.totalRooms || catalogRoom.totalUnits || catalogRoom.availableRooms || 99);
-        
-        let finalCount = sel.count;
-        if (guestsChanged || newRoomTypeAdded || sel.count < requiredCount) {
-          finalCount = requiredCount;
-        }
-        finalCount = Math.min(finalCount, maxAvailable);
-
-        updatedRooms = [{
-          ...sel,
-          count: Math.max(1, finalCount)
-        }];
-      } else {
-        updatedRooms = targetSelections;
-      }
-    } else {
-      // Multiple room types are selected: distribute/allocate guests
-      let counts = targetSelections.map(sel => ({
-        ...sel,
-        roomObj: stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId)),
-        count: sel.count
-      })).filter(item => item.roomObj !== undefined);
-
-      if (counts.length > 0) {
-        const canHost = (roomsWithCounts, ads, chs) => {
-          let totalBaseAdults = 0;
-          let totalExtraAdults = 0;
-          let totalBaseChildren = 0;
-          let totalExtraChildren = 0;
-          let totalGuestsLimit = 0;
-
-          roomsWithCounts.forEach(item => {
-            const r = item.roomObj;
-            const count = item.count;
-            totalBaseAdults += (r.maxAdults || 1) * count;
-            totalExtraAdults += (r.maxExtraAdults || r.maxExtraAdultsAllowed || r.maxExtraBeds || 0) * count;
-            totalBaseChildren += (r.maxChildren || 0) * count;
-            totalExtraChildren += (r.maxExtraChildren || r.maxExtraChildrenAllowed || 0) * count;
-            totalGuestsLimit += (r.maxGuests || (r.maxAdults ? r.maxAdults + (r.maxChildren || 0) : 2)) * count;
-          });
-
-          return (
-            ads <= (totalBaseAdults + totalExtraAdults) &&
-            chs <= (totalBaseChildren + totalExtraChildren) &&
-            (ads + chs) <= totalGuestsLimit
-          );
-        };
-
-        // If guests changed or new room type added, or if current counts cannot host the guests, reset to minimum needed
-        const needsRecalc = guestsChanged || newRoomTypeAdded || !canHost(counts, guests.adults, guests.children);
-        
-        if (needsRecalc) {
-          // Reset counts to 1 to start from base and scale up
-          if (guestsChanged || newRoomTypeAdded) {
-            counts.forEach(c => { c.count = 1; });
-          }
-
-          let iterations = 0;
-          while (!canHost(counts, guests.adults, guests.children) && iterations < 100) {
-            iterations++;
-            let bestRoomToIncrement = null;
-            let maxCap = -1;
-
-            counts.forEach(item => {
-              const maxAvailable = Number(item.roomObj.totalRooms || item.roomObj.totalUnits || item.roomObj.availableRooms || 99);
-              if (item.count < maxAvailable) {
-                const cap = item.roomObj.maxGuests || (item.roomObj.maxAdults ? item.roomObj.maxAdults + (item.roomObj.maxChildren || 0) : 2);
-                if (cap > maxCap) {
-                  maxCap = cap;
-                  bestRoomToIncrement = item;
-                }
-              }
-            });
-
-            if (bestRoomToIncrement) {
-              bestRoomToIncrement.count += 1;
-            } else {
-              break;
-            }
-          }
-        } else {
-          // Optimize/minimize counts if guests did not change but we can scale down
-          let optimized = true;
-          while (optimized) {
-            optimized = false;
-            for (let i = 0; i < counts.length; i++) {
-              if (counts[i].count > 1) {
-                const testCounts = counts.map((c, idx) => idx === i ? { ...c, count: c.count - 1 } : c);
-                if (canHost(testCounts, guests.adults, guests.children)) {
-                  counts[i].count -= 1;
-                  optimized = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        updatedRooms = counts.map(c => ({
-          roomId: c.roomId,
-          mealPlan: c.mealPlan,
-          count: c.count
-        }));
-      } else {
-        updatedRooms = targetSelections;
-      }
-    }
-
-    // Check if anything actually changed to prevent infinite loops
-    const hasChanged = 
-      updatedRooms.length !== selectedRooms.length ||
-      updatedRooms.some((ur, idx) => {
-        const sr = selectedRooms[idx];
-        return !sr || ur.roomId !== sr.roomId || ur.count !== sr.count || ur.mealPlan !== sr.mealPlan;
-      });
-
-    if (hasChanged) {
-      setSelectedRooms(updatedRooms);
-    }
-  }, [guests.adults, guests.children, selectedRooms, stay, stayRoomsCatalog, setSelectedRooms]);
+  }, [selectedRooms, stay, stayRoomsCatalog, setSelectedRooms]);
 
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
@@ -729,8 +649,8 @@ const StayBookingSystem = ({
         totalOriginalPerNight += roomBasePrice * room.count;
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
         totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
-        totalExtraAdultsLimit += (room.maxExtraAdults || room.maxExtraAdultsAllowed || room.maxExtraBeds || 0) * room.count;
-        totalExtraChildrenLimit += (room.maxExtraChildren || room.maxExtraChildrenAllowed || 0) * room.count;
+        totalExtraAdultsLimit += 0;
+        totalExtraChildrenLimit += 0;
 
         // Accumulate extra rates for overflow guests across all rooms
         // (weighted by room count for multi-room bookings)
@@ -774,15 +694,27 @@ const StayBookingSystem = ({
     
     // 2. Check Capacity
     if (!isOver) {
-      const typeLabel = isPropertyBased ? "Property" : "Selected Rooms";
-      if (currentAdults > (totalBaseAdultsLimit + totalExtraAdultsLimit)) {
+      const allowedAdults = totalBaseAdultsLimit + totalExtraAdultsLimit;
+      const allowedChildren = totalBaseChildrenLimit + totalExtraChildrenLimit;
+
+      if (currentAdults > allowedAdults) {
         isOver = true;
-        warning = `${typeLabel} adult capacity reached (${totalBaseAdultsLimit + totalExtraAdultsLimit} max).`;
-      } else if (currentChildren > (totalBaseChildrenLimit + totalExtraChildrenLimit)) {
+        warning = "Adult capacity exceeded";
+      } else if (currentChildren > allowedChildren) {
         isOver = true;
-        warning = `${typeLabel} children capacity reached (${totalBaseChildrenLimit + totalExtraChildrenLimit} max).`;
-      } else if (currentAdults > totalBaseAdultsLimit || currentChildren > totalBaseChildrenLimit) {
-        warning = `Base occupants reached. Additional guests will incur extra charges.`;
+        warning = "Children capacity exceeded";
+      } else {
+        if (!isPropertyBased && resolvedSelectedRooms.length > 0) {
+          const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, currentAdults, currentChildren);
+          if (!distribution.success) {
+            isOver = true;
+            warning = "Selected room cannot accommodate all guests";
+          }
+        }
+      }
+
+      if (!isOver && (currentAdults > totalBaseAdultsLimit || currentChildren > totalBaseChildrenLimit)) {
+        warning = "Base occupants reached. Additional guests will incur extra charges.";
       }
     }
 
@@ -844,7 +776,94 @@ const StayBookingSystem = ({
       activeExtraAdultPrice: finalExtraAP,
       activeExtraChildPrice: finalExtraCP
     };
-  }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount]);
+  }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount, selectedRooms, stayRoomsCatalog]);
+
+  const capacityFeedback = useMemo(() => {
+    const isPropertyBased = stay?.bookingScope === "Property-Based";
+    
+    let totalBaseAdultsLimit = 0;
+    let totalBaseChildrenLimit = 0;
+    let totalExtraAdultsLimit = 0;
+    let totalExtraChildrenLimit = 0;
+
+    if (isPropertyBased) {
+      totalBaseAdultsLimit = stay.maxAdults || stay.maxGuests || 1;
+      totalBaseChildrenLimit = stay.maxChildren || 0;
+      totalExtraAdultsLimit = stay.maxExtraAdults || stay.maxExtraAdultsAllowed || stay.maxExtraBeds || 0;
+      totalExtraChildrenLimit = stay.maxExtraChildren || stay.maxExtraChildrenAllowed || 0;
+    } else {
+      resolvedSelectedRooms.forEach(room => {
+        totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
+        totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
+        totalExtraAdultsLimit += 0;
+        totalExtraChildrenLimit += 0;
+      });
+    }
+
+    const allowedAdults = totalBaseAdultsLimit + totalExtraAdultsLimit;
+    const allowedChildren = totalBaseChildrenLimit + totalExtraChildrenLimit;
+
+    if (guests.adults > allowedAdults) {
+      return {
+        text: "Adult capacity exceeded",
+        type: "error",
+        exceeded: true
+      };
+    }
+
+    if (guests.children > allowedChildren) {
+      return {
+        text: "Children capacity exceeded",
+        type: "error",
+        exceeded: true
+      };
+    }
+
+    if (isPropertyBased) {
+      const totalGuests = (guests.adults || 0) + (guests.children || 0);
+      const totalBaseGuests = totalBaseAdultsLimit + totalBaseChildrenLimit;
+      if (totalGuests === totalBaseGuests) {
+        return {
+          text: "Perfect for your group",
+          type: "success"
+        };
+      }
+      return {
+        text: "Comfortably accommodates your group",
+        type: "info"
+      };
+    }
+
+    const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults, guests.children);
+    if (distribution.success) {
+      const totalBaseGuests = totalBaseAdultsLimit + totalBaseChildrenLimit;
+      const totalGuests = (guests.adults || 0) + (guests.children || 0);
+
+      if (totalGuests === totalBaseGuests) {
+        return {
+          text: "Perfect for your group",
+          type: "success"
+        };
+      } else if (totalGuests < totalBaseGuests) {
+        return {
+          text: "Comfortably accommodates your group",
+          type: "info"
+        };
+      } else {
+        return {
+          text: "Fits your group (with extra beds)",
+          type: "success"
+        };
+      }
+    } else {
+      return {
+        text: "Selected room cannot accommodate all guests",
+        type: "warning",
+        exceeded: true
+      };
+    }
+  }, [guests, selectedRooms, stay, stayRoomsCatalog, resolvedSelectedRooms]);
+
   const blockedDateKeys = useMemo(() => {
     const ranges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
     if (!Array.isArray(ranges) || ranges.length === 0) return new Set();
@@ -887,11 +906,13 @@ const StayBookingSystem = ({
         setCheckOutDate(null);
       }
     }
-  }, [checkInDate, nextBlockedDate, checkOutDate]);
+  }, [checkInDate, nextBlockedDate, checkOutDate, setCheckOutDate]);
 
   const isBlockedDay = (day) => blockedDateKeys.has(moment(day).format("YYYY-MM-DD"));
 
   const handleReserve = async () => {
+    if (pricing.isOver) return;
+
     const token = localStorage.getItem("jwtToken");
     const isLoggedIn = !!token && token !== "undefined" && token !== "null";
     if (!isLoggedIn) {
@@ -994,7 +1015,6 @@ const StayBookingSystem = ({
           if (!obj || typeof obj !== "object") return;
           if (orderId && keyId) return;
           for (const key of Object.keys(obj)) {
-            const lowerKey = key.toLowerCase();
             const val = obj[key];
             if (typeof val === "string") {
               if (!orderId && val.startsWith("order_")) orderId = val;
@@ -1585,76 +1605,140 @@ const StayBookingSystem = ({
                         03. Guests & Accommodations
                       </div>
                       
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                          <div>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</p>
-                            <p style={{ fontSize: 10, color: M, fontWeight: 500 }}>{guestAgeLabels.adults}</p>
-                          </div>
-                          <Counter 
-                            value={guests.adults} 
-                            setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
-                            min={1} 
-                            max={Math.min(occupancyLimits.maxAdults, occupancyLimits.maxGuests - guests.children)}
-                          />
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                          <div>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</p>
-                            <p style={{ fontSize: 10, color: M, fontWeight: 500 }}>{guestAgeLabels.children}</p>
-                          </div>
-                          <Counter 
-                            value={guests.children} 
-                            setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
-                            min={0} 
-                            max={Math.min(occupancyLimits.maxChildren, occupancyLimits.maxGuests - guests.adults)}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Guest Occupancy Warning */}
                       {(() => {
-                        const totalGuests = (guests.adults || 0) + (guests.children || 0);
-                        if (occupancyLimits.maxGuests === 0) {
-                          return (
-                            <div style={{ 
-                              padding: "10px 14px", 
-                              borderRadius: 14, 
-                              background: `${E}10`, 
-                              border: `1px solid ${E}33`, 
-                              display: "flex", 
-                              gap: 8, 
-                              alignItems: "center", 
-                              marginTop: 8 
-                            }}>
-                              <AlertCircle size={14} color={E} />
-                              <p style={{ fontSize: 10, color: FG, lineHeight: 1.4, fontWeight: 650, margin: 0 }}>
-                                Selected stay cannot accommodate additional guests
-                              </p>
+                        const allowedAdults = (pricing.baseAdultsLimit || 0) + (pricing.extraAdultsLimit || 0);
+                        const allowedChildren = (pricing.baseChildrenLimit || 0) + (pricing.extraChildrenLimit || 0);
+
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div>
+                                  <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</p>
+                                  <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.adults}</p>
+                                </div>
+                                <Counter 
+                                  value={guests.adults} 
+                                  setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
+                                  min={1} 
+                                  max={99}
+                                />
+                              </div>
+                              <div style={{ 
+                                fontSize: 11, 
+                                fontWeight: 600, 
+                                color: guests.adults > allowedAdults ? E : M, 
+                                marginTop: 6,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4
+                              }}>
+                                {guests.adults > allowedAdults && <AlertCircle size={10} color={E} />}
+                                <span>{guests.adults} / {allowedAdults} adults allowed</span>
+                              </div>
                             </div>
-                          );
-                        }
-                        if (totalGuests >= occupancyLimits.maxGuests) {
-                          return (
-                            <div style={{ 
-                              padding: "10px 14px", 
-                              borderRadius: 14, 
-                              background: `${A}10`, 
-                              border: `1px solid ${A}33`, 
-                              display: "flex", 
-                              gap: 8, 
-                              alignItems: "center", 
-                              marginTop: 8 
-                            }}>
-                              <Info size={14} color={A} />
-                              <p style={{ fontSize: 10, color: FG, lineHeight: 1.4, fontWeight: 650, margin: 0 }}>
-                                Maximum occupancy reached for available rooms
-                              </p>
+
+                            <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div>
+                                  <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</p>
+                                  <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.children}</p>
+                                </div>
+                                <Counter 
+                                  value={guests.children} 
+                                  setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
+                                  min={0} 
+                                  max={99}
+                                />
+                              </div>
+                              <div style={{ 
+                                fontSize: 11, 
+                                fontWeight: 600, 
+                                color: guests.children > allowedChildren ? E : M, 
+                                marginTop: 6,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4
+                              }}>
+                                {guests.children > allowedChildren && <AlertCircle size={10} color={E} />}
+                                <span>{guests.children} / {allowedChildren} children allowed</span>
+                              </div>
                             </div>
-                          );
-                        }
-                        return null;
+                          </div>
+                        );
                       })()}
+
+                      {capacityFeedback && (
+                        <div style={{
+                          marginTop: 8,
+                          padding: "8px 12px",
+                          borderRadius: 12,
+                          background: capacityFeedback.type === "success" 
+                            ? `${A}0c` 
+                            : capacityFeedback.type === "warning" || capacityFeedback.type === "error"
+                              ? `${E}0c`
+                              : `${M}0c`,
+                          border: `1px solid ${
+                            capacityFeedback.type === "success" 
+                              ? `${A}22` 
+                              : capacityFeedback.type === "warning" || capacityFeedback.type === "error"
+                                ? `${E}22`
+                                : `${B}`
+                          }`,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6
+                        }}>
+                          {capacityFeedback.type === "success" ? (
+                            <Sparkles size={12} color={A} />
+                          ) : capacityFeedback.type === "warning" || capacityFeedback.type === "error" ? (
+                            <AlertCircle size={12} color={E} />
+                          ) : (
+                            <Info size={12} color={M} />
+                          )}
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 650,
+                            color: capacityFeedback.type === "success" 
+                              ? FG 
+                              : capacityFeedback.type === "warning" || capacityFeedback.type === "error"
+                                ? E
+                                : M
+                          }}>
+                            {capacityFeedback.text}
+                          </span>
+                        </div>
+                      )}
+
+                      {capacityFeedback && capacityFeedback.exceeded && (
+                        <motion.button
+                          whileHover={{ scale: 1.02, background: AL }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleAddAnotherRoom}
+                          style={{
+                            marginTop: 8,
+                            width: "100%",
+                            padding: "10px 16px",
+                            borderRadius: 14,
+                            border: `1px solid ${A}44`,
+                            background: "transparent",
+                            color: A,
+                            fontSize: 12,
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            transition: "background-color 0.2s ease"
+                          }}
+                        >
+                          <Plus size={14} />
+                          Add Another Room
+                        </motion.button>
+                      )}
+
+
 
                       {/* Selected Rooms */}
                       {resolvedSelectedRooms.length > 0 && (
@@ -1673,7 +1757,7 @@ const StayBookingSystem = ({
                                 </div>
                                 <Counter 
                                   value={room.count} 
-                                  setValue={(v) => onRoomsCountChange(room.roomId || room.id, v)} 
+                                  setValue={(v) => handleRoomCountChangeWithReset(room.roomId || room.id, v)} 
                                   min={1} 
                                   max={Number(room.units || room.totalRooms || room.availableRooms || 99)} 
                                 />
@@ -1742,6 +1826,7 @@ const StayBookingSystem = ({
                               <span style={{ fontSize: 12, fontWeight: 700, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={roomTypeText}>{roomTypeText}</span>
                             </div>
                           </div>
+
                           <div style={{ borderTop: `1px dashed ${B}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 11, fontWeight: 800, color: FG }}>Total Cost</span>
                             <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
@@ -1754,12 +1839,12 @@ const StayBookingSystem = ({
                     {pricing.warning && (
                       <div style={{ 
                         padding: "8px 12px", borderRadius: 12, 
-                        background: pricing.isOver ? "#FFF5F5" : AL, 
-                        border: `1px solid ${pricing.isOver ? "#FEB2B2" : A + '33'}`,
+                        background: pricing.isOver ? EL : AL, 
+                        border: `1px solid ${pricing.isOver ? E + '33' : A + '33'}`,
                         display: "flex", gap: 10, alignItems: "center"
                       }}>
-                        <AlertCircle size={14} color={pricing.isOver ? "#F56565" : A} />
-                        <p style={{ fontSize: 10, color: pricing.isOver ? "#C53030" : FG, lineHeight: 1.4, fontWeight: 600 }}>
+                        <AlertCircle size={14} color={pricing.isOver ? E : A} />
+                        <p style={{ fontSize: 10, color: pricing.isOver ? E : FG, lineHeight: 1.4, fontWeight: 600, margin: 0 }}>
                           {pricing.warning}
                         </p>
                       </div>
@@ -1826,6 +1911,7 @@ const StayBookingSystem = ({
                   {(() => {
                     const isPropertyBased = stay?.bookingScope === "Property-Based";
                     const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
+                    const isCapacityExceeded = pricing.isOver && !loading;
                     const isDisabled = loading || pricing.isOver;
                     const buttonText = loading ? "Processing..." : (pricing.isOver ? "Capacity Exceeded" : (hasSelection ? "Reserve Stay" : "Select Room"));
 
@@ -1834,10 +1920,9 @@ const StayBookingSystem = ({
                         whileHover={{ scale: isDisabled ? 1 : 1.02 }}
                         whileTap={{ scale: isDisabled ? 1 : 0.98 }}
                         onClick={handleReserve}
-                        disabled={isDisabled}
                         style={{
                           padding: "12px 32px",
-                          background: isDisabled ? B : A,
+                          background: loading ? B : A,
                           color: "#FFF",
                           borderRadius: 16,
                           border: "none",
@@ -1845,7 +1930,9 @@ const StayBookingSystem = ({
                           fontWeight: 800,
                           cursor: isDisabled ? "not-allowed" : "pointer",
                           boxShadow: isDisabled ? "none" : `0 10px 20px ${A}33`,
-                          transition: "0.3s"
+                          transition: "0.3s",
+                          opacity: isCapacityExceeded ? 0.6 : (loading ? 0.7 : 1),
+                          pointerEvents: isDisabled ? "none" : "auto"
                         }}
                       >
                         {buttonText}

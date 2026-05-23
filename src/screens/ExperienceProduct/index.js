@@ -526,6 +526,7 @@ const ExperienceProduct = () => {
   const [leadData, setLeadData] = useState(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -552,6 +553,7 @@ const ExperienceProduct = () => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [gridVisible, setGridVisible] = useState(false);
   const [eligibleBookings, setEligibleBookings] = useState([]);
+  const unavailableRedirectRef = useRef(false);
   const hostLeadUserId = hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
   const leadIdForProfile = leadData?.leadId || leadData?.id || listing?.leadId || listing?.lead_id || listing?.host?.leadId || null;
   const displayHostName =
@@ -560,6 +562,22 @@ const ExperienceProduct = () => {
     hostData?.displayName ||
     hostData?.name ||
     "Host";
+
+  const isListingUnavailable = (payload) => {
+    if (!payload || typeof payload !== "object") return true;
+    const status = String(payload?.status || payload?.listingStatus || payload?.state || payload?.approvalStatus || "").trim().toUpperCase();
+    if (status === "DISABLED" || status === "DRAFT" || status === "INACTIVE" || status === "UNPUBLISHED" || status === "REJECTED") {
+      return true;
+    }
+    if (payload?.isActive === false || payload?.is_active === false) return true;
+    return false;
+  };
+
+  const showUnavailablePopupAndRedirect = () => {
+    setLoading(false);
+    unavailableRedirectRef.current = true;
+    setUnavailablePopupOpen(true);
+  };
 
   // Dynamic browser tab title
   useDocumentTitle(listing?.title, "Experiences");
@@ -622,6 +640,11 @@ const ExperienceProduct = () => {
         const data = await getListing(id);
         if (!mounted) return;
 
+        if (isListingUnavailable(data)) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
+
         if (data) {
           setListing(data);
           const galleryImages = [];
@@ -677,16 +700,43 @@ const ExperienceProduct = () => {
             getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => console.warn(e));
           }
 
-          setLoading(false);
         }
+        setLoading(false);
       } catch (e) {
         console.error(e);
+        const errorMessage = String(
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          ""
+        );
+        const statusCode = Number(e?.response?.status);
+        const isUnavailable =
+          /status\s*:\s*disabled/i.test(errorMessage) ||
+          /status\s*:\s*draft/i.test(errorMessage) ||
+          /no\s*longer\s*available/i.test(errorMessage) ||
+          /listing\s*not\s*found/i.test(errorMessage) ||
+          /not\s*found/i.test(errorMessage) ||
+          statusCode === 404 ||
+          statusCode === 410;
+        if (isUnavailable) {
+          showUnavailablePopupAndRedirect();
+          return;
+        }
         setLoading(false);
       }
     };
     load();
     return () => { mounted = false; };
-  }, [id]);
+  }, [history, id]);
+
+  const handleUnavailablePopupClose = () => {
+    setUnavailablePopupOpen(false);
+    if (unavailableRedirectRef.current) {
+      unavailableRedirectRef.current = false;
+      history.replace("/");
+    }
+  };
 
   const heroRef = useRef(null);
   const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
@@ -1287,6 +1337,67 @@ const ExperienceProduct = () => {
           title="More Experiences You May Like"
         />
       </main>
+      <AnimatePresence>
+        {unavailablePopupOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 10000,
+              background: "rgba(0,0,0,0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+            }}
+          >
+            <motion.div
+              initial={{ y: 16, scale: 0.98, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 8, scale: 0.98, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                background: S,
+                color: FG,
+                border: `1px solid ${B}`,
+                borderRadius: 16,
+                boxShadow: "0 24px 64px rgba(0,0,0,0.28)",
+                padding: 20,
+              }}
+            >
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: FG }}>
+                Experience Unavailable
+              </div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: M }}>
+                Experience no longer available.
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+                <button
+                  type="button"
+                  onClick={handleUnavailablePopupClose}
+                  style={{
+                    border: "none",
+                    background: A,
+                    color: W,
+                    borderRadius: 10,
+                    padding: "10px 16px",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Go to Home
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <style>{`
         /* Premium readability and visibility overrides for the Hero Section */
         .hero-section {

@@ -14,22 +14,27 @@
   flex-direction: row
   background: var(--W)
   border: 1px solid var(--B)
-  border-radius: 20px
+  border-radius: 24px
   overflow: hidden
   position: relative
-  transition: box-shadow .3s, border-color .3s
-  box-shadow: 0 2px 20px rgba(0,0,0,0.06)
+  transition: all .35s cubic-bezier(0.25, 1, 0.5, 1)
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03)
   min-height: 280px
   &:hover
-    box-shadow: 0 8px 40px rgba(0,0,0,0.1)
+    box-shadow: 0 16px 40px rgba(0,0,0,0.08)
+    transform: translateY(-2px)
+    border-color: rgba(0,0,0,0.12)
     .img
-      transform: scale(1.04)
+      transform: scale(1.03)
   +m
     flex-direction: column
+    border-radius: 20px
+    &:hover
+      transform: none
 
 .cardSelected
   border-color: var(--A) !important
-  box-shadow: 0 0 0 2px rgba(var(--A), 0.3), 0 8px 32px rgba(0,0,0,0.08) !important
+  box-shadow: 0 0 0 2px var(--A), 0 12px 32px rgba(0,0,0,0.08) !important
 
 // ─── Left Image Panel ────────────────────────────────────────────────────────
 .imgWrap
@@ -287,20 +292,20 @@
 
 .bookBtn
   width: 100%
-  height: 52px
-  border-radius: 10px
+  height: 48px
+  border-radius: 12px
   background: var(--A)
   color: #FFF
   font-size: 12px
   font-weight: 700
-  letter-spacing: .15em
+  letter-spacing: .08em
   text-transform: uppercase
   border: none
   cursor: pointer
-  transition: opacity .2s, transform .15s
+  transition: all .25s ease
   &:hover
-    opacity: .88
-    transform: translateY(-1px)
+    opacity: .95
+    box-shadow: 0 6px 20px rgba(var(--A-rgb, 55, 114, 255), 0.2)
   &:active
     transform: scale(.98)
 
@@ -318,39 +323,46 @@
   display: flex
   align-items: center
   justify-content: center
-  gap: 20px
-  height: 48px
-  border-radius: 24px
-  background: var(--AL)
-  border: 1.5px solid var(--AL)
+  gap: 16px
+  height: 44px
+  border-radius: 22px
+  background: var(--S)
+  border: 1px solid var(--B)
+  padding: 0 4px
 
 .counterBtn
   display: flex
   align-items: center
   justify-content: center
-  width: 32px
-  height: 32px
+  width: 34px
+  height: 34px
   border-radius: 50%
-  background: var(--A)
-  border: none
-  color: $white
+  background: var(--W)
+  border: 1px solid var(--B)
+  color: var(--FG)
   cursor: pointer
-  transition: transform 0.1s, opacity 0.2s
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
   &:hover:not(:disabled)
-    transform: scale(1.1)
+    border-color: var(--A)
+    color: var(--A)
+    box-shadow: 0 0 10px rgba(var(--A-rgb, 55, 114, 255), 0.15)
   &:active:not(:disabled)
-    transform: scale(0.9)
+    transform: scale(0.92)
   &:disabled
-    background: var(--M)
-    cursor: default
-    opacity: 0.5
+    opacity: 0.3
+    cursor: not-allowed
+    background: var(--S)
+    border-color: var(--B)
+    color: var(--M)
   svg
     fill: currentColor
+    width: 14px
+    height: 14px
 
 .countValue
-  font-size: 18px
+  font-size: 16px
   font-weight: 700
   color: var(--FG)
-  min-width: 20px
+  min-width: 24px
   text-align: center
 

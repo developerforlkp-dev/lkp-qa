@@ -693,6 +693,35 @@ const ViewDetails = () => {
     setCancelError(null);
   };
 
+  const getFriendlyCancellationError = (error) => {
+    const status = Number(error?.response?.status);
+    const message = String(
+      error?.response?.data?.reason ||
+      error?.response?.data?.error ||
+      error?.response?.data?.message ||
+      error?.message ||
+      ""
+    );
+    const normalized = message.toLowerCase();
+    const isNoCancellationPolicy =
+      normalized.includes("cancellation not allowed") ||
+      normalized.includes("no cancellation policy") ||
+      normalized.includes("cancellation policy not defined") ||
+      normalized.includes("cancel is not allowed");
+
+    if (status === 400 && isNoCancellationPolicy) {
+      return "No cancellation available.";
+    }
+
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.reason ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Failed to cancel booking. Please try again."
+    );
+  };
+
   const handleCancelBooking = async () => {
     if (!cancelReason.trim()) {
       setCancelError("Please provide a reason for cancellation.");
@@ -730,11 +759,7 @@ const ViewDetails = () => {
       handleCloseCancelModal();
     } catch (err) {
       console.error("Error cancelling booking:", err);
-      setCancelError(
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to cancel booking. Please try again."
-      );
+      setCancelError(getFriendlyCancellationError(err));
     } finally {
       setIsCancelling(false);
     }
@@ -1521,6 +1546,57 @@ const ViewDetails = () => {
     return `${currency} ${numericAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const formatRefundStatus = (status) => {
+    const raw = String(status || "").trim();
+    if (!raw) return "N/A";
+    if (raw.toUpperCase() === "NOT_REQUIRED") return "No Refund";
+    return raw.replaceAll("_", " ");
+  };
+
+  const getAppliedRefundPolicyText = () => {
+    const listingCancellationPolicy = booking?.listingData?.cancellationPolicyText;
+    const listingPolicyText = Array.isArray(listingCancellationPolicy)
+      ? listingCancellationPolicy.map((item) => String(item || "").trim()).filter(Boolean).join(" ")
+      : (typeof listingCancellationPolicy === "string" ? listingCancellationPolicy.trim() : "");
+
+    const policyCandidates = [
+      listingPolicyText,
+      booking?.eventData?.cancellationPolicySummary,
+      booking?.eventData?.cancellationPolicyText,
+      booking?.eventData?.cancellationPolicy,
+      booking?.stayData?.cancellationPolicySummary,
+      booking?.stayData?.cancellationPolicyText,
+      booking?.stayData?.cancellationPolicy,
+      booking?.originalData?.eventData?.cancellationPolicySummary,
+      booking?.originalData?.eventData?.cancellationPolicyText,
+      booking?.originalData?.eventData?.cancellationPolicy,
+      booking?.originalData?.stayData?.cancellationPolicySummary,
+      booking?.originalData?.stayData?.cancellationPolicyText,
+      booking?.originalData?.stayData?.cancellationPolicy,
+      refundDetails?.appliedRefundPolicy,
+      refundDetails?.appliedRefundPolicyName,
+      refundDetails?.appliedPolicy,
+      refundDetails?.refundPolicyName,
+      refundDetails?.policyName,
+      refundDetails?.policyLabel,
+      refundDetails?.policy,
+      refundDetails?.refundPolicy,
+      refundDetails?.refundPolicyText,
+      booking?.originalData?.appliedRefundPolicy,
+      booking?.originalData?.appliedRefundPolicyName,
+      booking?.originalData?.appliedPolicy,
+      booking?.originalData?.refundPolicyName,
+      booking?.originalData?.refundPolicy,
+      booking?.originalData?.refundPolicyText,
+      Array.isArray(booking?.notes?.cancellationPolicy)
+        ? booking.notes.cancellationPolicy.map((item) => String(item || "").trim()).filter(Boolean).join(" ")
+        : "",
+    ];
+
+    const firstText = policyCandidates.find((val) => typeof val === "string" && val.trim() !== "");
+    return firstText ? firstText.trim() : "";
+  };
+
   const getInitialTab = () => {
     return "host";
   };
@@ -1925,6 +2001,21 @@ const ViewDetails = () => {
               </div>
             </div>
           </div>
+          {booking.addons && booking.addons.length > 0 && (
+            <div className={styles.addonsInlineSection}>
+              <h3 className={styles.addonsSectionTitle}>Selected Add-ons</h3>
+              <div className={styles.addonsInlineList}>
+                {booking.addons.map((addon, index) => (
+                  <div key={index} className={styles.addonChip}>
+                    <span className={styles.addonName}>{addon.name}</span>
+                    <span className={styles.addonQty}>×{addon.quantity}</span>
+                    <span className={styles.addonSeparator}>—</span>
+                    <span className={styles.addonPrice}>{addon.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.locationPaymentGrid}>
@@ -2068,7 +2159,7 @@ const ViewDetails = () => {
                 <>
                   <div className={styles.paymentRow}>
                     <span>Refund Status</span>
-                    <span>{refundDetails.refundStatus || "N/A"}</span>
+                    <span>{formatRefundStatus(refundDetails.refundStatus)}</span>
                   </div>
                   <div className={styles.paymentRow}>
                     <span>Refund Amount</span>
@@ -2080,49 +2171,16 @@ const ViewDetails = () => {
                   </div>
                 </>
               )}
-              {booking.originalData?.razorpayOrderId && (
+              {getAppliedRefundPolicyText() && (
                 <div className={styles.paymentMethod} style={{ marginTop: '8px', fontSize: '12px', color: '#777E90' }}>
-                  <span>Order ID: {booking.originalData.razorpayOrderId}</span>
+                  <span>Applied Refund Policy: {getAppliedRefundPolicyText()}</span>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Addons Section */}
-        {booking.addons && booking.addons.length > 0 && (
-          <div className={cn(styles.card, "mb-5")} style={{ marginBottom: 32 }}>
-            <h2 className={styles.cardTitle} style={{ marginBottom: 20 }}>Selected Add-ons</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {booking.addons.map((addon, index) => (
-                <div key={index} style={{
-                  background: "rgba(244, 245, 246, 0.03)",
-                  border: "1px solid rgba(226, 232, 240, 0.08)",
-                  borderRadius: "12px",
-                  padding: "16px 20px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "16px"
-                }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: "1 1 auto", minWidth: 0 }}>
-                    <div style={{ fontSize: "16px", fontWeight: "600", color: "#FCFCFD", wordBreak: "break-word" }}>
-                      {addon.name}
-                    </div>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center", fontSize: "13px", color: "#777E90", flexWrap: "wrap" }}>
-                      <span>Price: {addon.price}</span>
-                      <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#777E90", opacity: 0.5 }}></span>
-                      <span>Qty: {addon.quantity}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: "700", color: "#0097B2", textAlign: "right", flexShrink: 0 }}>
-                    {addon.total}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
 
 
