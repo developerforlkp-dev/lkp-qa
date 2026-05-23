@@ -31,7 +31,6 @@ const Checkout = () => {
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [addonDetails, setAddonDetails] = useState([]);
   const [reviewsData, setReviewsData] = useState({ rating: null, count: 0 });
-  const [slotUnitPricing, setSlotUnitPricing] = useState({ adult: null, child: null });
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -216,12 +215,7 @@ const Checkout = () => {
                     : (serverPricing.adultBasePricePerPerson || serverPricing.basePricePerPerson || 0),
                   baseChildPricePerChild: (Number(prevPricing.baseChildPricePerChild || 0) > 0)
                     ? prevPricing.baseChildPricePerChild
-                    : (
-                      // Prefer locally computed selected-slot child price when available.
-                      Number(prevPricing.childPricePerChild || 0) > 0
-                        ? prevPricing.childPricePerChild
-                        : (serverPricing.baseChildPricePerChild || serverPricing.childPricePerChild || 0)
-                    ),
+                    : (serverPricing.baseChildPricePerChild || 0),
                   discount: finalDiscount,
                   discountAmount: finalDiscount,
                   earlyBirdDiscount: prevPricing.earlyBirdDiscount || serverPricing.earlyBirdDiscount || 0,
@@ -254,7 +248,7 @@ const Checkout = () => {
                   childrenCount: prevPricing.childrenCount ?? serverPricing.childrenCount,
                   childPricePerChild: (Number(prevPricing.childPricePerChild || 0) > 0)
                     ? prevPricing.childPricePerChild
-                    : (serverPricing.childPricePerChild || serverPricing.baseChildPricePerChild || 0),
+                    : (serverPricing.childPricePerChild || 0),
                 },
               };
             });
@@ -337,90 +331,6 @@ const Checkout = () => {
   }, [bookingData?.listingId]);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
-  useEffect(() => {
-    const loadSelectedSlotPricingFromListing = async () => {
-      const listingId = bookingData?.listingId;
-      const selectedSlotId = bookingData?.bookingSummary?.slotId;
-      const selectedSlotName = bookingData?.selectedTimeSlot || bookingData?.bookingSummary?.time || "";
-      const selectedStartTime = bookingData?.bookingSummary?.time || "";
-      if (!listingId) {
-        setSlotUnitPricing({ adult: null, child: null });
-        return;
-      }
-
-      try {
-        const listing = await getListing(listingId);
-        const timeSlots = Array.isArray(listing?.timeSlots) ? listing.timeSlots : [];
-        const normalizeTime = (val) => {
-          if (!val) return "";
-          const raw = String(val).trim();
-          const parts = raw.split(":");
-          if (parts.length < 2) return raw.toLowerCase();
-          return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
-        };
-        const normSelectedStart = normalizeTime(selectedStartTime);
-        const selectedSlot = timeSlots.find((slot) => {
-          if (selectedSlotId != null && selectedSlotId !== "") {
-            if (String(slot?.slotId) === String(selectedSlotId)) return true;
-          }
-          if (selectedSlotName) {
-            const slotName = String(slot?.slotName || slot?.slot_name || "").toLowerCase().trim();
-            if (slotName && slotName === String(selectedSlotName).toLowerCase().trim()) return true;
-          }
-          if (normSelectedStart) {
-            const slotStart = normalizeTime(slot?.startTime || slot?.start_time);
-            if (slotStart && slotStart === normSelectedStart) return true;
-          }
-          return false;
-        });
-        if (!selectedSlot) {
-          setSlotUnitPricing({ adult: null, child: null });
-          return;
-        }
-
-        if (!selectedSlotId && selectedSlot?.slotId != null) {
-          setBookingData((prev) => ({
-            ...(prev || {}),
-            bookingSummary: {
-              ...(prev?.bookingSummary || {}),
-              slotId: selectedSlot.slotId,
-            },
-          }));
-        }
-
-        const adultUnit =
-          Number(
-            selectedSlot?.individualPrice ??
-            selectedSlot?.pricePerPerson ??
-            selectedSlot?.price_per_person ??
-            selectedSlot?.adultPricePerPerson ??
-            selectedSlot?.pricing?.price_per_person ??
-            selectedSlot?.pricing?.pricePerPerson ??
-            0
-          ) || null;
-
-        const childUnit =
-          Number(
-            selectedSlot?.childPricePerChild ??
-            selectedSlot?.child_price_per_child ??
-            selectedSlot?.childPrice ??
-            selectedSlot?.child_price ??
-            selectedSlot?.pricing?.child_price_per_child ??
-            selectedSlot?.pricing?.childPricePerChild ??
-            selectedSlot?.pricing?.child_price ??
-            selectedSlot?.pricing?.childPrice ??
-            0
-          ) || null;
-
-        setSlotUnitPricing({ adult: adultUnit, child: childUnit });
-      } catch (e) {
-        setSlotUnitPricing({ adult: null, child: null });
-      }
-    };
-
-    loadSelectedSlotPricingFromListing();
-  }, [bookingData?.listingId, bookingData?.bookingSummary?.slotId]);
-
   useEffect(() => {
     if (bookingData?.stayId) {
       getStayDetails(bookingData.stayId)
@@ -549,7 +459,6 @@ const Checkout = () => {
 
     if (pricing) {
       const rows = [];
-      let displayBaseForReconciliation = 0;
 
       const basePrice = pricing.basePrice || pricing.baseAmount || 0;
       const addonsTotal = pricing.addonsTotal || 0;
@@ -570,9 +479,8 @@ const Checkout = () => {
         const totalG = (adults + children) || Number(pricing.guestCount || 1);
 
         if (children > 0) {
-          const ppp = slotUnitPricing.adult || pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || (basePrice / totalG);
-          const cpp = slotUnitPricing.child || pricing.childPricePerChild || pricing.baseChildPricePerChild || ppp;
-          displayBaseForReconciliation = (ppp * Math.max(0, adults)) + (cpp * Math.max(0, children));
+          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || (basePrice / totalG);
+          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || ppp;
 
           if (adults > 0) {
             rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
@@ -582,15 +490,11 @@ const Checkout = () => {
           }
         } else {
           const guests = totalG;
-          const ppp = slotUnitPricing.adult || pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
+          const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
           const basePpp = ppp || (basePrice / guests);
-          displayBaseForReconciliation = basePpp * Math.max(1, guests);
           const label = `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`;
           rows.push({ title: label, value: fmt(basePrice) });
         }
-      }
-      if (displayBaseForReconciliation <= 0) {
-        displayBaseForReconciliation = Number(basePrice || 0);
       }
 
       // // Add-ons subtotal
@@ -608,13 +512,18 @@ const Checkout = () => {
 
       // Tax
       if (displayTax > 0) {
-        rows.push({ title: "Taxes (paid by you)", value: fmt(displayTax) });
+        const rate = pricing.taxRate ? ` (${pricing.taxRate}%)` : "";
+        rows.push({ title: `Taxes (paid by you)${rate}`, value: fmt(displayTax) });
       }
 
       // Discount
       const earlyBirdDiscount = pricing.earlyBirdDiscount || 0;
       const promoDiscount = pricing.promoDiscount || 0;
       const couponDiscount = pricing.couponDiscount || 0;
+
+      if (earlyBirdDiscount > 0) {
+        rows.push({ title: "Early Bird Discount", value: `- ${fmt(earlyBirdDiscount)}` });
+      }
 
       // Show all discounts together as one line item.
       const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
@@ -624,7 +533,7 @@ const Checkout = () => {
         pricing.finalAmount ??
         0
       );
-      const lineItemsGross = Number(displayBaseForReconciliation || 0) + Number(addonsTotal || 0) + Number(displayTax || 0);
+      const lineItemsGross = Number(basePrice || 0) + Number(addonsTotal || 0) + Number(displayTax || 0);
       // Some flows provide payable in paise. Normalize to rupees when amount is clearly out of range.
       const payableAmount =
         rawPayableAmount > 0 &&
@@ -632,45 +541,22 @@ const Checkout = () => {
         rawPayableAmount > lineItemsGross * 5
           ? rawPayableAmount / 100
           : rawPayableAmount;
-      // Reconcile discount rows against final payable so line items always add up.
-      // Keep Early Bird as a dedicated row, and put the remaining adjustment in "Discounts".
       const computedDiscountFromPayable = Math.max(
         0,
-        lineItemsGross - Number(payableAmount || 0)
+        Number(basePrice || 0) +
+        Number(addonsTotal || 0) +
+        Number(displayTax || 0) -
+        Number(payableAmount || 0)
       );
       const totalDiscount = payableAmount > 0
         ? computedDiscountFromPayable
         : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
-      // Reconcile discount rows so they always add up to totalDiscount.
-      const earlyBirdDisplay = Math.min(Number(earlyBirdDiscount || 0), Number(totalDiscount || 0));
-      const otherDiscounts = Math.max(0, Number(totalDiscount || 0) - earlyBirdDisplay);
 
-      if (earlyBirdDisplay > 0) {
-        rows.push({ title: "Early Bird Discount", value: `- ${fmt(earlyBirdDisplay)}` });
-      }
+      // Avoid double-counting in UI: when early bird is shown as a separate row,
+      // "Discounts" should only include non-early-bird discounts.
+      const otherDiscounts = Math.max(0, Number(totalDiscount || 0) - Number(earlyBirdDiscount || 0));
       if (otherDiscounts > 0) {
         rows.push({ title: "Discounts", value: `- ${fmt(otherDiscounts)}` });
-      }
-
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[ExperienceCheckout][PriceBreakdownDebug]", {
-          basePrice,
-          displayBaseForReconciliation,
-          addonsTotal,
-          displayTax,
-          earlyBirdDiscountRaw: earlyBirdDiscount,
-          promoDiscount,
-          couponDiscount,
-          discountRaw: discount,
-          rawPayableAmount,
-          payableAmount,
-          lineItemsGross,
-          computedDiscountFromPayable,
-          totalDiscount,
-          earlyBirdDisplay,
-          otherDiscounts,
-          rows,
-        });
       }
 
       return {
@@ -699,7 +585,7 @@ const Checkout = () => {
       finalTotal: addOnsPrice,
       table: [{ title: "Add-ons", value: `${addOnsPrice}` }],
     };
-  }, [bookingData, selectedAddOns, paymentData, slotUnitPricing]);
+  }, [bookingData, selectedAddOns, paymentData]);
 
   const [cancellationPolicy, setCancellationPolicy] = useState(null);
 
