@@ -1777,56 +1777,104 @@ const StayBookingSystem = ({
                       const totalRoomsCount = resolvedSelectedRooms.reduce((sum, r) => sum + (r.count || 0), 0);
                       if (totalRoomsCount === 0) return null;
 
-                      // Extract capacity text
-                      let roomCapacityText = "";
-                      let roomTypeText = "";
+                      // Chip style helpers
+                      const chipStyle = {
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "3px 8px",
+                        borderRadius: 100,
+                        background: `${A}12`,
+                        border: `1px solid ${A}28`,
+                        color: A,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                        maxWidth: "100%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      };
 
-                      if (resolvedSelectedRooms.length === 1) {
-                        const r = resolvedSelectedRooms[0];
+                      // Build compact capacity chips: "[EP • 3 Guests]" per room
+                      const capacityChips = resolvedSelectedRooms.map((r) => {
                         const cap = r.maxGuests || (r.maxAdults ? r.maxAdults + (r.maxChildren || 0) : 2);
-                        roomCapacityText = `${cap} Guests / Room`;
-                        roomTypeText = r.roomName || r.name || "Room";
-                      } else {
-                        roomCapacityText = resolvedSelectedRooms.map(r => {
-                          const cap = r.maxGuests || (r.maxAdults ? r.maxAdults + (r.maxChildren || 0) : 2);
-                          return `${r.roomName || r.name}: ${cap} Guests/Room`;
-                        }).join(", ");
-                        roomTypeText = resolvedSelectedRooms.map(r => `${r.count}x ${r.roomName || r.name}`).join(", ");
-                      }
+                        const plan = r.mealPlan || "EP";
+                        return `${plan} • ${cap} Guests`;
+                      });
+
+                      // Build compact room-type chips: "[1x RoomName]"
+                      const roomTypeChips = resolvedSelectedRooms.map((r) => {
+                        const label = r.roomName || r.name || "Room";
+                        return `${r.count}x ${label}`;
+                      });
+
+                      // Full room name(s) for tooltip
+                      const fullRoomNamesTitle = resolvedSelectedRooms
+                        .map((r) => `${r.count}x ${r.roomName || r.name || "Room"}`)
+                        .join(", ");
 
                       return (
                         <div style={{
-                          padding: "16px",
-                          borderRadius: "20px",
-                          background: `linear-gradient(135deg, ${AL}15, ${AL}25)`,
+                          padding: "14px",
+                          borderRadius: "18px",
+                          background: `linear-gradient(135deg, ${AL}12, ${AL}22)`,
                           border: `1px solid ${A}22`,
                           marginTop: "12px",
                           display: "flex",
                           flexDirection: "column",
-                          gap: "10px"
+                          gap: "10px",
+                          minWidth: 0,
+                          overflow: "hidden",
                         }}>
+                          {/* Title */}
                           <div style={{ fontSize: 11, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: "1.2" }}>
                             Stay Allocation Summary
                           </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "10px" }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+
+                          {/* 2-column info grid — minWidth:0 prevents overflow */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px" }}>
+
+                            {/* Guests */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
                               <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Guests</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{totalGuestsCount} {totalGuestsCount === 1 ? 'Guest' : 'Guests'}</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>
+                                {totalGuestsCount} {totalGuestsCount === 1 ? "Guest" : "Guests"}
+                              </span>
                             </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Capacity</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{roomCapacityText}</span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+
+                            {/* Rooms Required */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
                               <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Rooms Required</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{totalRoomsCount} {totalRoomsCount === 1 ? 'Room' : 'Rooms'}</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>
+                                {totalRoomsCount} {totalRoomsCount === 1 ? "Room" : "Rooms"}
+                              </span>
                             </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+
+                            {/* Room Capacity — compact chips */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Capacity</span>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}>
+                                {capacityChips.map((chip, i) => (
+                                  <span key={i} style={chipStyle}>{chip}</span>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Room Type — compact chips with truncation */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
                               <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Type</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={roomTypeText}>{roomTypeText}</span>
+                              <div
+                                style={{ display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}
+                                title={fullRoomNamesTitle}
+                              >
+                                {roomTypeChips.map((chip, i) => (
+                                  <span key={i} style={{ ...chipStyle, maxWidth: "100%" }}>{chip}</span>
+                                ))}
+                              </div>
                             </div>
+
                           </div>
 
+                          {/* Total Cost row */}
                           <div style={{ borderTop: `1px dashed ${B}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 11, fontWeight: 800, color: FG }}>Total Cost</span>
                             <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
