@@ -638,6 +638,7 @@ function HeroShareFab({ title, text, url }) {
 
 /* ─── CULINARY SECTIONS ─────────── */
 function CulinaryHero({ food, galleryItems }) {
+  const history = useHistory();
   const { isMobile } = useWindowSize();
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
@@ -715,14 +716,31 @@ function CulinaryHero({ food, galleryItems }) {
                 <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.05em" }}>Family Friendly</span>
               </div>
             )}
-            {(food?.isParkingAvailable || food?.parkingAvailable) && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
-                <MapPin size={12} color="#fff" />
-                <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
-              </div>
-            )}
           </div>
+          {(food?.isParkingAvailable || food?.parkingAvailable) && (
+            <div style={{ position: "absolute", bottom: 20, right: 20, zIndex: 10, display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+              <MapPin size={12} color="#fff" />
+              <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
+            </div>
+          )}
         </div>
+
+        {/* Hero Back Button */}
+        <button
+          type="button"
+          className="premium-back-button"
+          onClick={() => history.goBack()}
+          aria-label="Go back"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {/* Share Button absolute overlays */}
+        <HeroShareFab
+          title={food?.menuName || food?.title || ""}
+          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          url={window.location.href}
+        />
 
         {/* Floating Content Card */}
         <div className="hero-mobile-floating-card" style={{
@@ -799,18 +817,29 @@ function CulinaryHero({ food, galleryItems }) {
           </div>
         </div>
 
-        {/* Share Button absolute overlays */}
-        <HeroShareFab
-          title={food?.menuName || food?.title || ""}
-          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-          url={window.location.href}
-        />
       </section>
     );
   }
 
   return (
     <section className="hero-section-wrapper" style={{ background: BG, height: isMobile ? "auto" : "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", paddingTop: isMobile ? 120 : 80 }}>
+      {/* Hero Back Button */}
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      {/* Share Button absolute overlays */}
+      <HeroShareFab
+        title={food?.menuName || food?.title || ""}
+        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+        url={window.location.href}
+      />
+
       {/* Header Blending Gradient */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: isMobile ? "0 20px" : "0 60px", width: "100%", height: isMobile ? "auto" : "100%", display: "flex", alignItems: "center" }}>
@@ -899,11 +928,6 @@ function CulinaryHero({ food, galleryItems }) {
           {Array(25).fill(0).map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: FG }} />)}
         </div>
       </div>
-      <HeroShareFab
-        title={food?.menuName || food?.title || ""}
-        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-        url={window.location.href}
-      />
     </section>
   );
 }

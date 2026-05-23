@@ -88,29 +88,55 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
         WebkitOverflowScrolling: 'touch'
       }}
     >
-      <div style={{
-        padding: 'clamp(24px, 5vw, 48px)',
-        maxWidth: '1240px',
-        maxHeight: 'min(86vh, 860px)',
-        margin: '0 auto',
-        width: '100%',
-        background: W,
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.18)'}`,
-        borderRadius: 28,
-        boxShadow: '0 36px 120px rgba(0,0,0,0.5)',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        overscrollBehavior: 'contain'
-      }}>
+      <style>{`
+        .grid-gallery-modal-content {
+          max-width: 1240px;
+          max-height: min(86vh, 860px);
+          width: 100%;
+          margin: 0 auto;
+          position: relative;
+          background: ${W};
+          border: 1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.18)'};
+          border-radius: 28px;
+          box-shadow: 0 36px 120px rgba(0,0,0,0.5);
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          padding: clamp(24px, 5vw, 48px);
+        }
+        .grid-gallery-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: clamp(40px, 8vw, 80px);
+        }
+        .grid-gallery-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+          gap: clamp(16px, 3vw, 32px);
+          grid-auto-rows: clamp(250px, 40vh, 400px);
+        }
+        @media (max-width: 768px) {
+          .grid-gallery-modal-content {
+            padding: 20px 16px 36px !important;
+            border-radius: 24px !important;
+            max-height: 90vh !important;
+          }
+          .grid-gallery-modal-header {
+            margin-bottom: 32px !important;
+          }
+          .grid-gallery-container {
+            grid-template-columns: repeat(2, 1fr) !important;
+            grid-auto-rows: clamp(120px, 20vh, 180px) !important;
+            gap: 10px !important;
+          }
+        }
+      `}</style>
+      <div className="grid-gallery-modal-content">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: 'clamp(40px, 8vw, 80px)'
-          }}
+          className="grid-gallery-modal-header"
         >
           <div>
             <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: FG, lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
@@ -140,12 +166,7 @@ const GridGallery = ({ items, onClose, onSelect, title, A }) => {
           </motion.button>
         </motion.div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
-          gap: 'clamp(16px, 3vw, 32px)',
-          gridAutoRows: 'clamp(250px, 40vh, 400px)'
-        }}>
+        <div className="grid-gallery-container">
           {items.map((img, i) => (
             <motion.div
               key={i}
@@ -385,13 +406,15 @@ const ScopedStyles = () => (
       color: var(--W) !important;
       z-index: 2;
     }
-    .event-details-premium .event-hero-share {
-      position: absolute !important;
-      top: 96px !important;
-      right: 60px !important;
-      z-index: 10002 !important;
-      pointer-events: auto !important;
-      isolation: isolate;
+    @media (min-width: 769px) {
+      .event-details-premium .event-hero-share {
+        position: absolute !important;
+        top: 96px !important;
+        right: 60px !important;
+        z-index: 10002 !important;
+        pointer-events: auto !important;
+        isolation: isolate;
+      }
     }
     .event-details-premium .host-presented-label {
       color: #0097B2 !important;
@@ -887,6 +910,14 @@ function Hero({ event }) {
         <div className="float-anim"><ImageRing event={event} /></div>
       </motion.div>
 
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
       <HeroShareFab
         title={title}
         text={`Check out ${title} on Little Known Planet`}
@@ -2113,6 +2144,7 @@ function Tickets({ event }) {
 /* ─── MAIN ───────────────────────────────────────── */
 export default function EventDetails() {
   const location = useLocation();
+  const history = useHistory();
   const queryParams = new URLSearchParams(location.search);
   const eventId = queryParams.get('id') || '3';
   const { tokens: { BG, FG } } = useTheme();

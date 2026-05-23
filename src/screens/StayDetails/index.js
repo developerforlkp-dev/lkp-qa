@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee
+  Tv, Coffee, ChevronLeft
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -378,6 +378,7 @@ function HeroShareFab({ title, text, url }) {
 
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
+  const history = useHistory();
   const { width, isMobile } = useWindowSize();
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
@@ -481,6 +482,15 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
           </motion.div>
         </div>
       )}
+
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
 
       <HeroShareFab
         title={title}
