@@ -97,6 +97,7 @@ function HeroShareFab({ title, text, url }) {
 
   return (
     <motion.button
+      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}

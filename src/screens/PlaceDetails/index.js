@@ -265,6 +265,7 @@ function HeroShareFab({ title, text, url }) {
 
   return (
     <motion.button
+      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
@@ -676,13 +677,11 @@ function MobileHero({ place, galleryItems }) {
   return (
     <section style={{ background: BG, paddingTop: 90, position: "relative", overflow: "hidden" }}>
       {/* Hero Share Button */}
-      <div className="hero-share-fab-mobile" style={{ position: "absolute", top: 20, right: 16, zIndex: 100 }}>
-        <HeroShareFab
-          title={placeName}
-          text={place?.description || ""}
-          url={window.location.href}
-        />
-      </div>
+      <HeroShareFab
+        title={placeName}
+        text={place?.description || ""}
+        url={window.location.href}
+      />
 
       {/* Layered Image Stack / Peeking Slider */}
       <div style={{

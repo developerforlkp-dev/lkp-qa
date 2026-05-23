@@ -523,10 +523,6 @@ const ScopedStyles = () => (
         z-index: 1 !important;
         pointer-events: none !important;
       }
-      .event-details-premium .event-hero-share {
-        top: 24px !important;
-        right: 16px !important;
-      }
     }
   `}</style>
 );
@@ -593,7 +589,7 @@ function HeroShareFab({ title, text, url }) {
     <motion.button
       type="button"
       aria-label={`Share: ${title || "this event"}`}
-      className="event-hero-share"
+      className="event-hero-share premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}

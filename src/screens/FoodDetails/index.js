@@ -212,11 +212,6 @@ const ScopedStyles = () => (
         padding-bottom: 12px !important;
       }
 
-      /* Share Button Mobile Positioning */
-      .hero-share-fab-mobile {
-        top: 90px !important;
-        right: 20px !important;
-      }
 
       /* Chef Section Specifics */
       .chef-image-wrapper {
@@ -565,6 +560,7 @@ function HeroShareFab({ title, text, url }) {
 
   return (
     <motion.button
+      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
