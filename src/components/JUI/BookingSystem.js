@@ -3338,10 +3338,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </div>
                 </div>
 
+              </>
+              )}
+              </div>
 
-
-              {/* Footer Button */}
-              <div className="booking-modal-footer" style={{ padding: "16px 28px", background: BG, borderTop: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {/* Footer — outside scrollable content, always pinned at bottom of popup */}
+              <div className="booking-modal-footer" style={{ flexShrink: 0, padding: "16px 28px", background: BG, borderTop: `1px solid ${B}`, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: `0 -4px 20px rgba(0,0,0,0.06)` }}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
                   <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
@@ -3369,12 +3371,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 </motion.button>
               </div>
               
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
                 <ShieldCheck size={12} />
                 <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
-              </div>
-               </>
-              )}
               </div>
             </motion.div>
           </div>
@@ -3420,16 +3419,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           .booking-modal-column { padding: 32px 20px !important; }
           .booking-modal-footer { 
             flex-direction: column !important; 
-            gap: 24px !important; 
-            padding: 24px 20px !important; 
+            gap: 16px !important; 
+            padding: 20px !important; 
             align-items: stretch !important;
             text-align: center !important;
-            position: sticky !important;
-            bottom: 0 !important;
+            flex-shrink: 0 !important;
             background: ${BG} !important;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.12) !important;
+            border-top: 1px solid ${B} !important;
           }
-          .booking-modal-footer button { width: 100% !important; }
+          .booking-modal-footer button { width: 100% !important; padding: 14px 20px !important; font-size: 16px !important; }
           .booking-modal-closed { padding: 40px 20px !important; }
           
           .booking-trigger {
