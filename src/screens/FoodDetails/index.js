@@ -643,7 +643,7 @@ function HeroShareFab({ title, text, url }) {
 /* ─── CULINARY SECTIONS ─────────── */
 function CulinaryHero({ food, galleryItems }) {
   const { isMobile } = useWindowSize();
-  const { tokens } = useTheme();
+  const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
 
   const [idx, setIdx] = useState(0);
@@ -690,6 +690,128 @@ function CulinaryHero({ food, galleryItems }) {
 
     return rawDays.join(", ");
   }, [food?.openingDays]);
+
+  if (isMobile) {
+    return (
+      <section className="hero-section-wrapper-mobile" style={{ background: BG, minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
+        {/* Full-width screen bleed image slider at the top */}
+        <div className="hero-mobile-image-container" style={{ width: "100%", height: "55vh", position: "relative", overflow: "hidden", borderRadius: "0 0 36px 36px" }}>
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={idx}
+              src={items[idx]}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
+              alt={title}
+            />
+          </AnimatePresence>
+          {/* Subtle dark gradient overlay at the bottom of the image container to transition into the page background */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: `linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.65))` }} />
+          
+          {/* Reposition floating badges (e.g., Family Friendly, Parking Available) as compact overlays */}
+          <div style={{ position: "absolute", top: 100, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            {(food?.isFamilyFriendly || food?.familyFriendly) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${B}`, boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}>
+                <Star size={12} color={A} fill={A} style={{ display: "block" }} />
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.05em" }}>Family Friendly</span>
+              </div>
+            )}
+            {(food?.isParkingAvailable || food?.parkingAvailable) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+                <MapPin size={12} color="#fff" />
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Floating Content Card */}
+        <div className="hero-mobile-floating-card" style={{
+          marginTop: "-64px",
+          marginLeft: "16px",
+          marginRight: "16px",
+          padding: "24px 20px",
+          borderRadius: "28px",
+          background: theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.82)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: `1px solid ${B}`,
+          boxShadow: theme === "dark" ? "0 20px 48px rgba(0, 0, 0, 0.35)" : "0 20px 48px rgba(0, 0, 0, 0.08)",
+          zIndex: 15,
+          position: "relative"
+        }}>
+          <h1 className="font-display" style={{
+            fontSize: "24px",
+            fontWeight: 800,
+            color: FG,
+            lineHeight: 1.2,
+            margin: "0 0 6px 0",
+            textTransform: "capitalize"
+          }}>
+            {title}
+          </h1>
+          <h2 className="font-cursive" style={{
+            fontSize: "24px",
+            color: A,
+            margin: "0 0 12px 0",
+            fontWeight: 400
+          }}>
+            {food?.shortDescription || "Authentic Taste Experience"}
+          </h2>
+          <p style={{
+            fontSize: "13px",
+            color: M,
+            lineHeight: 1.5,
+            margin: 0
+          }}>
+            {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
+          </p>
+        </div>
+
+        {/* Details & Badges Section */}
+        <div style={{ padding: "0 16px", marginTop: "20px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="info-badges-grid" style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+            padding: "16px 0",
+            borderTop: `1px solid ${B}`,
+            borderBottom: `1px solid ${B}`
+          }}>
+            <InfoBadge icon={Utensils} label={cuisine} sublabel="Cuisine" tokens={tokens} />
+            <InfoBadge icon={Globe} label={source} sublabel="Source" tokens={tokens} />
+            <InfoBadge icon={Zap} label={serveMode} sublabel="Service" tokens={tokens} />
+            <InfoBadge icon={Leaf} label={dietary} sublabel="Dietary" tokens={tokens} />
+          </div>
+
+          <div className="hero-stats-card" style={{
+            background: W,
+            borderRadius: "20px",
+            padding: "16px",
+            border: `1px solid ${B}`,
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.02)",
+            gap: 0
+          }}>
+            <HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} />
+            <HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} />
+            <HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder />
+          </div>
+        </div>
+
+        {/* Share Button absolute overlays */}
+        <HeroShareFab
+          title={food?.menuName || food?.title || ""}
+          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          url={window.location.href}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className="hero-section-wrapper" style={{ background: BG, height: isMobile ? "auto" : "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", paddingTop: isMobile ? 120 : 80 }}>
