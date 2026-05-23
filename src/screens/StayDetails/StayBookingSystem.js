@@ -1915,11 +1915,7 @@ const StayBookingSystem = ({
 
                           </div>
 
-                          {/* Total Cost row */}
-                          <div style={{ borderTop: `1px dashed ${B}`, paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: 11, fontWeight: 800, color: FG }}>Total Cost</span>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
-                          </div>
+
                         </div>
                       );
                     })()}
@@ -1939,25 +1935,7 @@ const StayBookingSystem = ({
                       </div>
                     )}
                     
-                    {/* Price Summary */}
-                    {nightsCount > 0 && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px", background: BG, borderRadius: 16, border: `1px dashed ${B}` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", color: M, fontSize: 12, fontWeight: 500 }}>
-                          <span>Base ({nightsCount} night{nightsCount !== 1 ? 's' : ''})</span>
-                          <span>₹{formatPrice(pricing.originalPerNight * nightsCount)}</span>
-                        </div>
-                        {pricing.discount > 0 && (
-                          <div style={{ display: "flex", justifyContent: "space-between", color: "#10B981", fontSize: 12, fontWeight: 700 }}>
-                            <span>Discounts</span>
-                            <span>- ₹{formatPrice(pricing.discount)}</span>
-                          </div>
-                        )}
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, paddingTop: 4, borderTop: `1px solid ${B}` }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Subtotal</span>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: A }}>₹{formatPrice(pricing.subtotal)}</span>
-                        </div>
-                      </div>
-                    )}
+
                   </div>
                 </div>
               </div>
