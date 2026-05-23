@@ -716,13 +716,13 @@ function CulinaryHero({ food, galleryItems }) {
                 <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.05em" }}>Family Friendly</span>
               </div>
             )}
-            {(food?.isParkingAvailable || food?.parkingAvailable) && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
-                <MapPin size={12} color="#fff" />
-                <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
-              </div>
-            )}
           </div>
+          {(food?.isParkingAvailable || food?.parkingAvailable) && (
+            <div style={{ position: "absolute", bottom: 20, right: 20, zIndex: 10, display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+              <MapPin size={12} color="#fff" />
+              <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
+            </div>
+          )}
         </div>
 
         {/* Hero Back Button */}
