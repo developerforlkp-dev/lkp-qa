@@ -275,7 +275,7 @@
 
 .layout
     display: grid
-    grid-template-columns: 280px 1fr
+    grid-template-columns: 350px 1fr
     gap: 32px
     +t
         grid-template-columns: 1fr
@@ -285,7 +285,7 @@
         gap: 0
         width: 100%
     &.withMap
-        grid-template-columns: 280px 1fr 400px
+        grid-template-columns: 350px 1fr 400px
         +t
             grid-template-columns: 1fr
             gap: 24px
@@ -295,7 +295,7 @@
 
 .sidebar
     position: sticky
-    top: 100px
+    top: calc(72px + 24px) // 72px (sticky header height) + 24px (gap spacing)
     align-self: start
     display: block
     +t
@@ -549,3 +549,61 @@
     border: 2px solid $n8
     +dark
         border-color: $n1
+
+// ─── Results Toolbar ──────────────────────────────────────────────────────────
+.resultsToolbar
+    display: flex
+    align-items: center
+    justify-content: space-between
+    margin-bottom: 4px
+    +m
+        display: none
+
+.resultCount
+    font-size: 13px
+    font-weight: 600
+    color: $n4
+    letter-spacing: 0.01em
+    +dark
+        color: $n5
+
+// ─── Grid / List View Toggle ──────────────────────────────────────────────────
+.viewToggle
+    display: flex
+    align-items: center
+    gap: 2px
+    background: $n7
+    border-radius: 10px
+    padding: 3px
+    border: 1px solid $n6
+    +dark
+        background: $n2
+        border-color: $n3
+
+.viewToggleBtn
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 32px
+    height: 28px
+    border-radius: 8px
+    border: none
+    background: transparent
+    color: $n4
+    cursor: pointer
+    transition: all .18s ease
+    +dark
+        color: $n5
+    &:hover
+        color: $n2
+        +dark
+            color: $n7
+
+.viewToggleBtnActive
+    background: $n8
+    color: $n2
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10)
+    +dark
+        background: $n3
+        color: $n7
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25)

@@ -3,16 +3,25 @@
 .grid
     display: grid
     grid-template-columns: repeat(3, minmax(0, 1fr))
-    gap: 32px
+    gap: 24px
     width: 100%
     box-sizing: border-box
     align-items: start
     +t
         grid-template-columns: repeat(2, minmax(0, 1fr))
-        gap: 24px
+        gap: 20px
     +m
         grid-template-columns: repeat(2, minmax(0, 1fr))
         gap: 12px
+
+// ─── List View Mode ───────────────────────────────────────────────────────────
+.listGrid
+    grid-template-columns: 1fr
+    gap: 16px
+    +t
+        grid-template-columns: 1fr
+    +m
+        grid-template-columns: 1fr
 
 // ─── Mobile Card Improvements ────────────────────────────────────────────────
 .gridCard
@@ -22,6 +31,12 @@
     min-width: 0 !important
     max-width: 100% !important
     box-sizing: border-box !important
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important
+    &:hover
+        transform: translateY(-3px)
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10) !important
+        +dark
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.28) !important
     // Mobile: compact card appearance for 2-col grid
     +m
         border-radius: 14px !important
@@ -142,3 +157,262 @@
     +m
         margin-top: 16px
         padding: 16px
+
+// ─── Redesigned Horizontal List View Card ──────────────────────────────────────
+.listCardLink
+    text-decoration: none
+    color: inherit
+    display: block
+    width: 100%
+
+.listCard
+    display: flex
+    flex-direction: row
+    background: $n8
+    border: 1px solid rgba($n6, 0.6)
+    border-radius: 20px
+    overflow: hidden
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02)
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease
+    cursor: pointer
+    height: 200px
+    box-sizing: border-box
+    width: 100%
+    +dark
+        background: $n1
+        border-color: rgba($n3, 0.4)
+    &:hover
+        transform: translateY(-2px)
+        border-color: rgba(#0097B2, 0.5)
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06)
+        +dark
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25)
+        .ctaButton
+            background: darken(#0097B2, 6%)
+            transform: translateY(-1px)
+        .imageSection img
+            transform: scale(1.03)
+    +m
+        flex-direction: column
+        height: auto
+
+.imageSection
+    position: relative
+    width: 300px
+    height: 100%
+    flex-shrink: 0
+    overflow: hidden
+    background: #eef2f7
+    +m
+        width: 100%
+        height: 200px
+    img
+        width: 100%
+        height: 100%
+        object-fit: cover
+        transition: transform 0.4s ease
+
+.contentSection
+    display: flex
+    flex-direction: column
+    flex-grow: 1
+    padding: 16px 20px
+    justify-content: space-between
+    box-sizing: border-box
+    min-width: 0
+    +m
+        padding: 16px
+
+.topLayer
+    display: flex
+    flex-direction: column
+    gap: 2px
+
+.metaRow
+    display: flex
+    justify-content: space-between
+    align-items: center
+    gap: 12px
+
+.locationText
+    font-size: 11px
+    font-weight: 700
+    text-transform: uppercase
+    color: $n4
+    letter-spacing: 0.05em
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    +dark
+        color: $n5
+
+.ratingRow
+    display: flex
+    align-items: center
+    gap: 4px
+    flex-shrink: 0
+
+.starIcon
+    fill: $s3
+
+.ratingVal
+    font-size: 12px
+    font-weight: 700
+    color: $n2
+    +dark
+        color: $n8
+
+.reviewsCount
+    font-size: 11px
+    color: $n4
+    +dark
+        color: $n5
+
+.title
+    margin: 4px 0 0
+    font-size: 17px
+    line-height: 1.2
+    font-weight: 700
+    color: $n2
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+    +dark
+        color: $n8
+
+.middleLayer
+    display: flex
+    flex-direction: column
+    gap: 8px
+    margin-top: 4px
+
+.description
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    -webkit-box-orient: vertical
+    overflow: hidden
+    text-overflow: ellipsis
+    font-size: 13px
+    line-height: 1.45
+    color: $n4
+    margin: 0
+    +dark
+        color: $n5
+
+.middleFooter
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 12px
+    +m
+        flex-wrap: wrap
+
+.capacityInfo
+    display: flex
+    align-items: center
+    gap: 6px
+    font-size: 12px
+    font-weight: 600
+    color: $n4
+    +dark
+        color: $n5
+    svg
+        fill: $n4
+        +dark
+            fill: $n5
+
+.tagsContainer
+    display: flex
+    gap: 6px
+    flex-wrap: wrap
+
+.tagChip
+    font-size: 10px
+    font-weight: 700
+    padding: 3px 8px
+    background: rgba(0, 151, 178, 0.06)
+    color: #0097B2
+    border-radius: 6px
+    border: 1px solid rgba(0, 151, 178, 0.12)
+    text-transform: uppercase
+    letter-spacing: 0.02em
+    +dark
+        background: rgba(0, 151, 178, 0.12)
+        color: lighten(#0097B2, 5%)
+
+.bottomLayer
+    display: flex
+    justify-content: space-between
+    align-items: flex-end
+    margin-top: auto
+    padding-top: 8px
+    border-top: 1px solid rgba($n6, 0.5)
+    +dark
+        border-color: rgba($n3, 0.2)
+
+.priceContainer
+    display: flex
+    align-items: baseline
+    gap: 4px
+
+.priceValue
+    font-size: 19px
+    font-weight: 800
+    color: $n2
+    +dark
+        color: $n8
+
+.pricePeriod
+    font-size: 12px
+    color: $n4
+    font-weight: 500
+    +dark
+        color: $n5
+
+.ctaButton
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    height: 36px
+    padding: 0 16px
+    border-radius: 8px
+    background: #0097B2
+    color: $n8
+    font-size: 13px
+    font-weight: 700
+    transition: all 0.2s ease
+    +m
+        height: 32px
+        padding: 0 12px
+
+.categoryBadge
+    position: absolute
+    top: 12px
+    left: 12px
+    z-index: 2
+    background: #0097B2
+    color: $n8
+    font-size: 9px
+    font-weight: 800
+    text-transform: uppercase
+    letter-spacing: 0.05em
+    padding: 3px 8px
+    border-radius: 6px
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12)
+
+.imageBadge
+    position: absolute
+    bottom: 12px
+    right: 12px
+    z-index: 2
+    background: rgba(0, 0, 0, 0.6)
+    color: white
+    font-size: 10px
+    font-weight: 600
+    padding: 2px 6px
+    border-radius: 4px
+    display: flex
+    align-items: center
+    gap: 4px
+    svg
+        fill: white

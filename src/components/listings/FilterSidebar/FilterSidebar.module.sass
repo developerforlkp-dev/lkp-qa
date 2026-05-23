@@ -1,76 +1,110 @@
 @import ../../../styles/helpers
 
-// ─── Desktop Sidebar Card ─────────────────────────────────────────────────────
+// ─── Desktop Sidebar Card ──────────────────────────────────────────────────────
 .sidebar
-    width: 280px
-    padding: 20px
+    width: 350px
     background: $n8
     border-radius: 16px
-    border: 1px solid $n6
-    overflow: visible
+    border: 1px solid rgba($n6, 0.6)
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04)
+    overflow: hidden
+    overflow-x: hidden
     +dark
         background: $n1
-        border-color: $n3
+        border-color: rgba($n3, 0.4)
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2)
     // On tablet/mobile: rendered inside bottom sheet, strip card styling
     +t
         width: 100%
-        padding: 0
         background: transparent
         border: none
         border-radius: 0
+        box-shadow: none
+        overflow: visible
         +dark
             background: transparent
             border: none
 
-// ─── Desktop Header (hidden in bottom sheet via hideHeader prop) ───────────────
+// ─── Header ───────────────────────────────────────────────────────────────────
 .header
     display: flex
     justify-content: space-between
     align-items: center
-    margin-bottom: 20px
-    padding-bottom: 16px
-    border-bottom: 1px solid $n6
+    padding: 16px 20px
+    border-bottom: 1px solid rgba($n6, 0.6)
     +dark
-        border-color: $n3
+        border-color: rgba($n3, 0.4)
+    +t
+        padding: 0 0 16px
+        border-bottom: none
 
 .title
     margin: 0
+    font-size: 17px
+    line-height: 1.2
+    font-weight: 700
+    color: $n1
+    letter-spacing: -0.01em
+    +dark
+        color: $n8
 
-.resetButton
-    display: inline-flex
-    align-items: center
-    gap: 6px
-    +button-2
-    color: $n4
-    transition: color .2s
-    svg
-        fill: $n4
-        transition: fill .2s
+.clearAllButton
+    +caption-bold-1
+    color: $p1
+    background: none
+    border: none
+    cursor: pointer
+    padding: 4px 0
+    line-height: 1
+    transition: opacity .18s
     &:hover
-        color: $n2
-        svg
-            fill: $n2
-        +dark
-            color: $n6
-            svg
-                fill: $n6
+        opacity: .65
 
 // ─── Content Wrapper ──────────────────────────────────────────────────────────
 .content
     display: flex
     flex-direction: column
-    gap: 4px
+    max-height: calc(100vh - 40px)
+    overflow-y: auto
+    overflow-x: hidden
+    scroll-behavior: smooth
+    -webkit-overflow-scrolling: touch
+    padding-right: 8px
+    // Thin modern scrollbar - minimal appearance, fade/hidden until hover
+    scrollbar-width: thin
+    scrollbar-color: transparent transparent
+    transition: scrollbar-color 0.3s
+    &::-webkit-scrollbar
+        width: 6px
+    &::-webkit-scrollbar-track
+        background: transparent
+    &::-webkit-scrollbar-thumb
+        background-color: transparent
+        border-radius: 10px
+        transition: background-color 0.3s
+    &:hover
+        scrollbar-color: rgba($n5, 0.3) transparent
+        &::-webkit-scrollbar-thumb
+            background-color: rgba($n5, 0.3)
+            &:hover
+                background-color: rgba($n5, 0.5)
     +t
-        gap: 2px
-
-// ─── Premium Filter Section (ecommerce-style grouped card on mobile) ──────────
-.section
-    display: flex
-    flex-direction: column
-    gap: 12px
-    // On tablet/mobile: render as grouped card
-    +t
+        max-height: none
+        overflow-y: visible
+        overflow-x: visible
+        padding-right: 0
         gap: 0
+
+// ─── Accordion Section ────────────────────────────────────────────────────────
+.accordionSection
+    border-bottom: 1px solid rgba($n6, 0.6)
+    &:last-child
+        border-bottom: none
+    +dark
+        border-color: rgba($n3, 0.4)
+    // On mobile: each section becomes its own card
+    +t
+        border-bottom: none
         background: $n8
         border-radius: 16px
         border: 1px solid $n6
@@ -80,154 +114,121 @@
             background: $n1
             border-color: $n3
 
-// ─── Section Label ────────────────────────────────────────────────────────────
-.label
-    +hairline-2
-    color: $n5
-    margin-bottom: 0
+// ─── Accordion Toggle Button ───────────────────────────────────────────────────
+.accordionHeader
+    display: flex
+    justify-content: space-between
+    align-items: center
+    width: 100%
+    padding: 12px 20px
+    background: none
+    border: none
+    cursor: pointer
+    text-align: left
+    transition: background .15s ease
+    &:hover
+        background: $n7
+        +dark
+            background: rgba(255, 255, 255, 0.04)
     +t
-        padding: 16px 16px 0
-        font-size: 11px
-        font-weight: 700
-        letter-spacing: 0.08em
-        text-transform: uppercase
+        padding: 16px
+
+// ─── Accordion Label ──────────────────────────────────────────────────────────
+.accordionLabel
+    font-size: 11px
+    font-weight: 700
+    text-transform: uppercase
+    letter-spacing: 0.09em
+    color: $n4
+    +dark
+        color: $n5
+
+// ─── Chevron Icon ─────────────────────────────────────────────────────────────
+.chevron
+    color: $n5
+    flex-shrink: 0
+    transition: transform .22s ease
+    +dark
         color: $n4
 
-// ─── Section inner padding wrapper (applied on tablet/mobile) ─────────────────
-// We use gap and padding directly on child containers at mobile
+.chevronOpen
+    transform: rotate(180deg)
+
+// ─── Accordion Body ───────────────────────────────────────────────────────────
+.accordionBody
+    padding: 2px 20px 14px
+    +t
+        padding: 4px 16px 16px
 
 // ─── Sort Dropdown ────────────────────────────────────────────────────────────
 .sortDropdown
     width: 100%
-    +t
-        margin: 10px 0 0
-        padding: 0 16px 16px
-        box-sizing: border-box
-
-// ─── Sort Chips (mobile redesign of sort options) ─────────────────────────────
-// Sort is rendered as a Dropdown, so we just style the wrapper better on mobile
-
-// ─── Price Range ──────────────────────────────────────────────────────────────
-.priceRange
-    padding: 8px 0
-    display: flex
-    flex-direction: column
-    gap: 12px
-    +t
-        padding: 10px 16px 16px
-        gap: 14px
-
-.priceScale
-    display: flex
-    justify-content: space-between
-    margin-top: 8px
-    +caption-2
-    color: $n4
-
-.priceInputs
-    display: grid
-    grid-template-columns: 1fr 1fr
-    gap: 10px
-    +t
-        gap: 12px
-
-.priceField
-    display: flex
-    flex-direction: column
-    gap: 6px
-    span
-        +caption-2
-        color: $n4
-        font-weight: 600
-        +t
-            font-size: 11px
-    input
-        width: 100%
-        padding: 12px 14px
+    :global(.head)
+        height: 38px
+        line-height: 38px
+        font-size: 13px
+        padding: 0 40px 0 12px
         border-radius: 10px
-        border: 1.5px solid $n6
-        background: $n8
-        color: $n2
-        font-size: 14px
-        font-weight: 500
-        outline: none
-        transition: border-color .2s
-        +dark
-            border-color: $n3
-            background: $n2
-            color: $n8
-        &:focus
-            border-color: $p1
-        +t
-            padding: 13px 14px
-            border-radius: 10px
-            font-size: 15px
+    :global(.arrow)
+        width: 26px
+        height: 26px
 
-// ─── Date Fields ─────────────────────────────────────────────────────────────
+// ─── Date Fields ──────────────────────────────────────────────────────────────
 .dateGrid
     display: grid
-    grid-template-columns: 1fr
-    gap: 10px
-    +t
-        padding: 10px 16px 16px
-        gap: 12px
+    grid-template-columns: 1fr 1fr
+    gap: 8px
 
 .dateField
     display: flex
     flex-direction: column
-    gap: 6px
+    gap: 4px
     span
-        +caption-2
+        font-size: 9px
+        font-weight: 700
+        text-transform: uppercase
+        letter-spacing: 0.05em
         color: $n4
-        font-weight: 600
-        +t
-            font-size: 11px
     input
         width: 100%
-        padding: 12px 14px
+        padding: 8px 10px
         border-radius: 10px
         border: 1.5px solid $n6
-        background: $n8
+        background: $n7
         color: $n2
-        font-size: 14px
+        font-size: 13px
         font-weight: 500
         outline: none
-        transition: border-color .2s
+        transition: border-color .2s, background .2s
         +dark
-            border-color: $n3
+            border-color: rgba($n3, 0.6)
             background: $n2
             color: $n8
         &:focus
             border-color: $p1
-        +t
-            padding: 13px 14px
-            font-size: 15px
+            background: $n8
+            +dark
+                background: $n1
 
-// ─── Rating — Premium Chip Cards ─────────────────────────────────────────────
+// ─── Rating Chips ─────────────────────────────────────────────────────────────
 .ratingsList
     display: flex
     flex-direction: column
-    gap: 8px
-    +t
-        padding: 10px 16px 16px
-        flex-direction: row
-        flex-wrap: wrap
-        gap: 10px
+    gap: 7px
 
 .ratingChip
     display: inline-flex
     align-items: center
     gap: 8px
-    padding: 10px 14px
+    padding: 8px 12px
     border-radius: 10px
     border: 1.5px solid $n6
-    background: $n8
+    background: transparent
     +caption-bold-1
     color: $n2
-    transition: all .18s ease
+    transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     +dark
-        background: $n2
-        border-color: $n3
+        border-color: rgba($n3, 0.6)
         color: $n7
     svg
         fill: $s3
@@ -236,16 +237,16 @@
         border-color: $p1
         background: rgba(0, 151, 178, 0.06)
     &.active
-        background: $p1
+        background: rgba(0, 151, 178, 0.08)
         border-color: $p1
-        color: $n8
-        box-shadow: 0 2px 8px rgba(0, 151, 178, 0.3)
+        color: $p1
+        font-weight: 700
         +dark
-            color: $n8
-            box-shadow: 0 2px 12px rgba(0, 151, 178, 0.25)
+            background: rgba(0, 151, 178, 0.15)
+            border-color: $p1
+            color: lighten($p1, 5%)
         svg
-            fill: $n8
-    // Mobile: make each chip a larger touch target
+            fill: $s3
     +t
         flex: 1
         min-width: calc(33% - 8px)
@@ -253,52 +254,45 @@
         padding: 12px 10px
         border-radius: 12px
         font-size: 13px
-        font-weight: 600
 
 // ─── Amenities Grid ───────────────────────────────────────────────────────────
 .amenitiesGrid
     display: grid
     grid-template-columns: repeat(2, 1fr)
     gap: 8px
-    +t
-        padding: 10px 16px 16px
-        gap: 10px
 
 .amenityChip
-    padding: 11px 12px
+    padding: 8px 10px
     border-radius: 10px
     border: 1.5px solid $n6
-    background: $n8
+    background: transparent
     +caption-bold-2
     color: $n2
     text-align: center
-    transition: all .18s ease
+    transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     +dark
-        background: $n2
-        border-color: $n3
+        border-color: rgba($n3, 0.6)
         color: $n7
     &:hover
         border-color: $p1
         background: rgba(0, 151, 178, 0.06)
     &.active
-        background: $p1
+        background: rgba(0, 151, 178, 0.08)
         border-color: $p1
-        color: $n8
-        box-shadow: 0 2px 8px rgba(0, 151, 178, 0.25)
+        color: $p1
+        font-weight: 700
         +dark
-            color: $n8
-    +t
-        padding: 13px 10px
-        border-radius: 10px
-        font-size: 13px
+            background: rgba(0, 151, 178, 0.15)
+            border-color: $p1
+            color: lighten($p1, 5%)
 
 // ─── Property Type Checkboxes ─────────────────────────────────────────────────
 .checkboxList
     display: flex
     flex-direction: column
-    gap: 0
+    gap: 2px
     +t
-        padding: 4px 16px 8px
+        padding: 4px 0 4px
 
 .checkbox
     width: 100%
@@ -310,14 +304,12 @@
         &:last-child
             border-bottom: none
 
-// ─── Category Chips (collapsible) ────────────────────────────────────────────
+// ─── Category Chips (collapsible show-more/less) ──────────────────────────────
 .categoriesScroll
     display: flex
     flex-wrap: wrap
-    gap: 8px
+    gap: 10px
     overflow: visible
-    +t
-        padding: 10px 16px 16px
 
 .categoriesScrollCollapsed
     max-height: 128px
@@ -327,41 +319,97 @@
 
 .toggleMoreLess
     align-self: flex-start
+    margin-top: 6px
     +caption-bold-2
     color: $p1
-    transition: opacity .2s
+    transition: opacity .18s
     &:hover
-        opacity: .75
-    +dark
-        color: $p1
+        opacity: .7
     +t
-        padding: 0 16px 14px
-        align-self: stretch
-        text-align: left
+        padding-bottom: 4px
 
 .categoryChip
-    padding: 9px 16px
+    padding: 6px 12px
     border-radius: 100px
     border: 1.5px solid $n6
-    background: $n8
+    background: transparent
     +caption-bold-2
     color: $n2
     white-space: nowrap
-    transition: all .18s ease
+    transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     +dark
-        background: $n2
-        border-color: $n3
+        border-color: rgba($n3, 0.6)
         color: $n7
     &:hover
         border-color: $p1
         background: rgba(0, 151, 178, 0.06)
     &.active
-        background: $p1
+        background: rgba(0, 151, 178, 0.08)
         border-color: $p1
-        color: $n8
-        box-shadow: 0 1px 6px rgba(0, 151, 178, 0.25)
+        color: $p1
+        font-weight: 700
         +dark
-            color: $n8
-    +t
-        padding: 10px 18px
-        font-size: 13px
+            background: rgba(0, 151, 178, 0.15)
+            border-color: $p1
+            color: lighten($p1, 5%)
+
+// ─── Active Chips Section ──────────────────────────────────────────────────────
+.activeFiltersSection
+    padding: 12px 20px
+    border-bottom: 1px solid rgba($n6, 0.6)
+    background: $n8
+    +dark
+        border-color: rgba($n3, 0.4)
+        background: $n1
+
+.activeFiltersTitle
+    font-size: 11px
+    font-weight: 700
+    text-transform: uppercase
+    letter-spacing: 0.09em
+    color: $n4
+    margin-bottom: 8px
+    +dark
+        color: $n5
+
+.activeChipsList
+    display: flex
+    flex-wrap: wrap
+    gap: 6px
+
+.activeChip
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    padding: 5px 10px
+    border-radius: 6px
+    border: 1px solid rgba(0, 151, 178, 0.2)
+    background: rgba(0, 151, 178, 0.08)
+    color: $p1
+    font-size: 11px
+    font-weight: 600
+    line-height: 1
+    cursor: pointer
+    transition: all .15s ease
+    &:hover
+        background: rgba(0, 151, 178, 0.15)
+        border-color: rgba(0, 151, 178, 0.4)
+    +dark
+        background: rgba(0, 151, 178, 0.15)
+        border-color: rgba(0, 151, 178, 0.3)
+        color: lighten($p1, 10%)
+
+.removeIcon
+    font-size: 8px
+    margin-left: 2px
+    opacity: 0.8
+
+// ─── Legacy stubs (retained for mobile bottom-sheet compat) ───────────────────
+.section
+    display: flex
+    flex-direction: column
+    gap: 12px
+
+.label
+    +hairline-2
+    color: $n5
