@@ -158,6 +158,32 @@ const getSlotAccessKeys = (slot, index = 0) => {
   ].filter(Boolean);
 };
 
+const isSameSlot = (left, right, leftIndex = 0, rightIndex = 0) => {
+  if (!left || !right) return false;
+
+  const leftId = getSlotId(left);
+  const rightId = getSlotId(right);
+  if (leftId != null && rightId != null && String(leftId) === String(rightId)) return true;
+
+  const leftLabel = String(getSlotLabel(left, leftIndex) || "").trim().toLowerCase();
+  const rightLabel = String(getSlotLabel(right, rightIndex) || "").trim().toLowerCase();
+  if (leftLabel && rightLabel && leftLabel === rightLabel) return true;
+
+  const leftStart = String(left?.startTime || left?.start_time || left?.slotStartTime || left?.time || "").trim().toLowerCase();
+  const rightStart = String(right?.startTime || right?.start_time || right?.slotStartTime || right?.time || "").trim().toLowerCase();
+  return Boolean(leftStart && rightStart && leftStart === rightStart);
+};
+
+const mergeDefinedSlotFields = (baseSlot, overrideSlot) => {
+  const merged = { ...(baseSlot || {}) };
+  Object.entries(overrideSlot || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  });
+  return merged;
+};
+
 const getTicketId = (ticket) => {
   if (ticket === null || ticket === undefined) return null;
   const raw = ticket.ticketTypeId ?? ticket.ticket_type_id ?? ticket.typeId ?? ticket.id;
@@ -873,6 +899,44 @@ const normalizeExperienceSlots = (slots = [], dateKey = "") => (
         maxSeats: slot.maxSeats ?? slot.max_seats ?? capacity.maxSeats ?? capacity.max_seats,
         availableSeats: availability?.available_seats ?? availability?.availableSeats ?? slot.availableSeats ?? slot.available_seats,
         pricePerPerson: pricing.price_per_person ?? pricing.pricePerPerson ?? slot.pricePerPerson ?? slot.price_per_person ?? slot.price,
+        childPricePerChild:
+          pricing.child_price_per_child
+          ?? pricing.childPricePerChild
+          ?? slot.childPricePerChild
+          ?? slot.child_price_per_child
+          ?? slot.childPrice
+          ?? slot.child_price,
+        childPrice:
+          pricing.child_price_per_child
+          ?? pricing.childPricePerChild
+          ?? slot.childPrice
+          ?? slot.child_price
+          ?? slot.childPricePerChild
+          ?? slot.child_price_per_child,
+        allowChildPricing:
+          pricing.allow_child_pricing
+          ?? pricing.allowChildPricing
+          ?? slot.allowChildPricing
+          ?? slot.allow_child_pricing
+          ?? slot.childPricingAllowed
+          ?? slot.child_pricing_allowed,
+        childPricingAllowed:
+          pricing.allow_child_pricing
+          ?? pricing.allowChildPricing
+          ?? slot.childPricingAllowed
+          ?? slot.child_pricing_allowed
+          ?? slot.allowChildPricing
+          ?? slot.allow_child_pricing,
+        childAgeFrom:
+          pricing.child_age_from
+          ?? pricing.childAgeFrom
+          ?? slot.childAgeFrom
+          ?? slot.child_age_from,
+        childAgeTo:
+          pricing.child_age_to
+          ?? pricing.childAgeTo
+          ?? slot.childAgeTo
+          ?? slot.child_age_to,
         group_booking_pricing: slot.group_booking_pricing || slot.groupBookingPricing || [],
         availability: Array.isArray(slot.availability) ? slot.availability : [],
         selectedDateAvailability: availability,
@@ -1216,7 +1280,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     listing?.eventSlots || listing?.slots || listing?.timeSlots || []
   ), [listing?.eventSlots, listing?.slots, listing?.timeSlots]);
   const baseTimeSlots = useMemo(() => (
-    Array.isArray(listing?.timeSlots) ? listing.timeSlots : []
+    normalizeExperienceSlots(Array.isArray(listing?.timeSlots) ? listing.timeSlots : [])
   ), [listing?.timeSlots]);
   const ticketApplicableSlots = useMemo(() => {
     return getTicketSlotRestrictions(selectedTicket);
@@ -1384,7 +1448,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   );
   const timeSlots = useMemo(() => {
     const sourceSlots = selectedDateKey && dateFilteredSlotsLoaded ? dateFilteredSlots : baseTimeSlots;
-    return sourceSlots.filter((slot) => {
+    return sourceSlots.map((slot, index) => {
+      const baseMatch = baseTimeSlots.find((baseSlot, baseIndex) => isSameSlot(baseSlot, slot, baseIndex, index));
+      return baseMatch ? mergeDefinedSlotFields(baseMatch, slot) : slot;
+    }).filter((slot) => {
       const slotId = getSlotId(slot);
       const isPrivatelyBooked = slot?.hasPrivateBooking === true || (slotId != null && privateBookedSlotIds.has(String(slotId)));
       const isFullyBookedByConfig = slotId != null && fullyBookedSlotIdsForDate.has(String(slotId));
@@ -1560,6 +1627,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       .then((payload) => {
         if (cancelled || !isMountedRef.current) return;
         const normalized = normalizeExperienceSlots(unwrapSlotsPayload(payload), selectedDateKey);
+        console.log("[BookingSystem] getListingSlots debug", {
+          selectedDateKey,
+          listingId,
+          rawPayload: payload,
+          unwrappedSlots: unwrapSlotsPayload(payload),
+          normalizedSlots: normalized,
+          baseTimeSlots,
+        });
         setDateFilteredSlots(normalized);
         setDateFilteredSlotsLoaded(true);
       })
@@ -1727,9 +1802,23 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   );
   const rawChildPrice = isEventBooking
     ? (selectedTicket?.childPrice ?? selectedTicket?.child_price ?? 0)
-    : (listing?.childPricePerChild || listing?.childPrice || listing?.pricing?.childPricePerChild || 0);
+    : (
+      selectedSlotData?.childPricePerChild
+      ?? selectedSlotData?.childPrice
+      ?? listing?.childPricePerChild
+      ?? listing?.childPrice
+      ?? listing?.pricing?.childPricePerChild
+      ?? 0
+    );
   const allowChildPricing = asBoolean(
-    listing?.allowChildPricing ?? listing?.childPricingAllowed,
+    isEventBooking
+      ? (listing?.allowChildPricing ?? listing?.childPricingAllowed)
+      : (
+        selectedSlotData?.allowChildPricing
+        ?? selectedSlotData?.childPricingAllowed
+        ?? listing?.allowChildPricing
+        ?? listing?.childPricingAllowed
+      ),
     false
   );
   const childGuestPricing = childrenAllowed && rawChildPrice > 0
@@ -1739,8 +1828,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const effectiveChildPrice = childGuestPricing
     ? childGuestPricing.finalUnitPrice
     : extractedPrice;
-  const childAgeFrom = asNumber(listing?.childAgeFrom ?? listing?.pricing?.childAgeFrom);
-  const childAgeTo = asNumber(listing?.childAgeTo ?? listing?.pricing?.childAgeTo);
+  const childAgeFrom = asNumber(
+    selectedSlotData?.childAgeFrom
+    ?? listing?.childAgeFrom
+    ?? listing?.pricing?.childAgeFrom
+  );
+  const childAgeTo = asNumber(
+    selectedSlotData?.childAgeTo
+    ?? listing?.childAgeTo
+    ?? listing?.pricing?.childAgeTo
+  );
   const hasChildAgeRange = childAgeFrom != null && childAgeTo != null && childAgeTo >= childAgeFrom;
   const showExperienceChildAgeHint = !isEventBooking && allowChildPricing && childrenAllowed && hasChildAgeRange;
   const hasChildPricing = childrenAllowed && rawChildPrice > 0 && guests.children > 0;
@@ -1772,6 +1869,67 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const taxableSubtotal = Math.max(0, subtotalBeforeAdjustments - totalDiscountAmount);
   const totalTaxAmount = taxableSubtotal * (appliedTaxRate / 100);
   const finalTotal = taxableSubtotal + totalTaxAmount;
+
+  useEffect(() => {
+    if (!show || isEventBooking) return;
+    console.log("[BookingSystem] pricing selection debug", {
+      selectedDateKey,
+      startTime,
+      guests,
+      selectedSlotData,
+      staleSelectedSlotData,
+      baseTimeSlots,
+      dateFilteredSlots,
+      timeSlots,
+      rawExperiencePrice,
+      rawChildPrice,
+      allowChildPricing,
+      childrenAllowed,
+      hasChildPricing,
+      baseAdultPricePerPerson,
+      baseChildPricePerChild,
+      extractedPrice,
+      effectiveChildPrice,
+      adultSubtotal,
+      childSubtotal,
+      rawBaseTotal,
+      subtotalBeforeAdjustments,
+      totalDiscountAmount,
+      totalPromoDiscountAmount,
+      totalEarlyBirdDiscountAmount,
+      totalTaxAmount,
+      finalTotal,
+    });
+  }, [
+    show,
+    isEventBooking,
+    selectedDateKey,
+    startTime,
+    guests,
+    selectedSlotData,
+    staleSelectedSlotData,
+    baseTimeSlots,
+    dateFilteredSlots,
+    timeSlots,
+    rawExperiencePrice,
+    rawChildPrice,
+    allowChildPricing,
+    childrenAllowed,
+    hasChildPricing,
+    baseAdultPricePerPerson,
+    baseChildPricePerChild,
+    extractedPrice,
+    effectiveChildPrice,
+    adultSubtotal,
+    childSubtotal,
+    rawBaseTotal,
+    subtotalBeforeAdjustments,
+    totalDiscountAmount,
+    totalPromoDiscountAmount,
+    totalEarlyBirdDiscountAmount,
+    totalTaxAmount,
+    finalTotal,
+  ]);
   const eventBaseTotal = rawBaseTotal;
   const eventDiscountTotal = totalDiscountAmount;
   const eventPromoDiscountTotal = totalPromoDiscountAmount;
@@ -2301,7 +2459,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       bookingSlotId: Number(slotId),
       guestCount: totalGuests,
       childCount: guests.children || 0,
-      childPricePerChild: Number(listing?.childPricePerChild || listing?.childPrice || 0),
+      childPricePerChild: Number(hasChildPricing ? baseChildPricePerChild : 0),
       customer: {
         name: userInfo.name || (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || "Guest User",
         email: userInfo.email || userInfo.customerEmail || "guest@example.com",
