@@ -426,7 +426,14 @@ button.actionButton.button.button-small
 
 // Cancel Modal Styles
 .cancelModalOuter
-    max-width: 480px
+    max-width: 560px
+    +m
+        max-width: calc(100% - 40px)
+    & > div
+        padding: 0
+
+.confirmCancelModalOuter
+    max-width: 520px
     +m
         max-width: calc(100% - 40px)
     & > div
@@ -443,6 +450,25 @@ button.actionButton.button.button-small
         background: $n1
     +m
         min-height: auto
+        border-radius: 16px
+
+.cancelModalContentScrollable
+    max-height: min(88vh, 760px)
+
+.cancelModalBodyScrollable
+    flex: 1 1 auto
+    overflow-y: auto
+    padding-bottom: 12px
+
+.confirmCancelModalContent
+    display: flex
+    flex-direction: column
+    background: $n8
+    border-radius: 20px
+    overflow: hidden
+    +dark
+        background: $n1
+    +m
         border-radius: 16px
 
 .cancelModalHeader
@@ -475,6 +501,66 @@ button.actionButton.button.button-small
     padding: 0 32px 24px
     +m
         padding: 0 24px 20px
+
+.cancelPolicyBox
+    margin-bottom: 20px
+    padding: 14px 16px
+    border-radius: 12px
+    background: rgba(0, 151, 178, 0.06)
+    border: 1px solid rgba(0, 151, 178, 0.16)
+    +dark
+        background: rgba(0, 151, 178, 0.1)
+        border-color: rgba(0, 151, 178, 0.24)
+
+.cancelPolicyLabel
+    +body-bold-2
+    font-size: 13px
+    margin-bottom: 6px
+    color: $n2
+    +dark
+        color: $n8
+
+.cancelPolicyText
+    +body-2
+    font-size: 14px
+    line-height: 1.6
+    color: $n4
+    white-space: pre-line
+    +dark
+        color: $n5
+
+.cancelPolicyGrid
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    gap: 12px
+    +m
+        grid-template-columns: 1fr
+
+.cancelPolicyRow
+    display: flex
+    flex-direction: column
+    gap: 6px
+    min-width: 0
+    padding: 14px 14px 12px
+    border-radius: 12px
+    background: rgba(255, 255, 255, 0.52)
+    border: 1px solid rgba(0, 151, 178, 0.12)
+    +dark
+        background: rgba(255, 255, 255, 0.04)
+        border-color: rgba(0, 151, 178, 0.18)
+
+.cancelPolicyRowLabel
+    +caption-bold-2
+    color: $n3
+    +dark
+        color: $n5
+
+.cancelPolicyRowValue
+    +body-2
+    color: $n2
+    word-break: break-word
+    +dark
+        color: $n8
 
 .cancelModalFormGroup
     margin-bottom: 20px
@@ -588,6 +674,45 @@ button.actionButton.button.button-small
     +m
         flex: none
         width: 100%
+
+.confirmCancelSummary
+    margin: 0 32px 8px
+    padding: 16px
+    border-radius: 16px
+    background: rgba(0, 151, 178, 0.06)
+    border: 1px solid rgba(0, 151, 178, 0.16)
+    display: flex
+    flex-direction: column
+    gap: 12px
+    +dark
+        background: rgba(0, 151, 178, 0.1)
+        border-color: rgba(0, 151, 178, 0.24)
+    +m
+        margin: 0 24px 4px
+
+.confirmCancelSummaryRow
+    display: flex
+    justify-content: space-between
+    gap: 16px
+    align-items: flex-start
+    +m
+        flex-direction: column
+        gap: 4px
+
+.confirmCancelSummaryLabel
+    +caption-bold-2
+    color: $n3
+    +dark
+        color: $n5
+
+.confirmCancelSummaryValue
+    +body-2
+    color: $n2
+    text-align: right
+    +dark
+        color: $n8
+    +m
+        text-align: left
 
 .slotModalOuter
     max-width: 720px
