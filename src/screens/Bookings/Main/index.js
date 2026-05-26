@@ -1336,17 +1336,8 @@ const Main = ({
   // Show loading if: (1) currently loading, OR (2) no data provided yet (null)
   if ((loading && transformedBookings.length === 0) || (propBookingData === null && transformedBookings.length === 0)) {
     return (
-      <div className={cn("section", styles.section)}>
-        <div className={cn("container", styles.container)}>
-          <header className={styles.head}>
-            <div className={styles.heading}>
-              <h1 className={cn("h2", styles.title)}>My bookings</h1>
-            </div>
-          </header>
-          <div style={{ padding: "3rem", textAlign: "center" }}>
-            <p>Loading your bookings...</p>
-          </div>
-        </div>
+      <div style={{ padding: "8rem 2rem", textAlign: "center", minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontSize: "1.2rem", fontWeight: "500" }}>Loading bookings...</p>
       </div>
     );
   }
