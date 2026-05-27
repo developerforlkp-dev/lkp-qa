@@ -176,177 +176,23 @@ function HeroShareFab({ title, text, url }) {
   );
 }
 
-/* ─── GRID GALLERY MODAL ────────────────────────── */
-const GridGallery = ({ items, onClose, onSelect, title, A }) => {
-  const galleryRef = useRef(null);
 
-  useEffect(() => {
-    return lockBodyScroll();
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      ref={galleryRef}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9990,
-        background: 'rgba(0,0,0,0.72)',
-        backdropFilter: 'blur(18px)',
-        WebkitBackdropFilter: 'blur(18px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflowY: 'hidden',
-        overflowX: 'hidden',
-        overscrollBehavior: 'contain',
-        padding: 'clamp(14px, 4vw, 36px)'
-      }}
-    >
-      <style>{`
-        .grid-gallery-modal-content {
-          max-width: 1240px;
-          max-height: min(86vh, 860px);
-          width: 100%;
-          margin: 0 auto;
-          position: relative;
-          background: #FFFFFF;
-          border: 1px solid rgba(255,255,255,0.18);
-          border-radius: 28px;
-          box-shadow: 0 36px 120px rgba(0,0,0,0.5);
-          overflow-y: auto;
-          overflow-x: hidden;
-          overscroll-behavior: contain;
-          padding: clamp(24px, 5vw, 48px);
-        }
-        .grid-gallery-modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 60px;
-        }
-        .grid-gallery-container {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
-          gap: clamp(16px, 3vw, 32px);
-          grid-auto-rows: clamp(250px, 40vh, 400px);
-        }
-        @media (max-width: 768px) {
-          .grid-gallery-modal-content {
-            padding: 20px 16px 36px !important;
-            border-radius: 24px !important;
-            max-height: 90vh !important;
-          }
-          .grid-gallery-modal-header {
-            margin-bottom: 32px !important;
-          }
-          .grid-gallery-container {
-            grid-template-columns: repeat(2, 1fr) !important;
-            grid-auto-rows: clamp(120px, 20vh, 180px) !important;
-            gap: 10px !important;
-          }
-        }
-      `}</style>
-      <div className="grid-gallery-modal-content">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="grid-gallery-modal-header"
-        >
-          <div>
-            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 900, color: '#141414', lineHeight: 0.9, letterSpacing: '-0.04em' }} className="font-display">
-              {title}
-            </h2>
-          </div>
-          <motion.button
-            whileHover={{ rotate: 90, scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onClose}
-            style={{
-              background: 'rgba(0,0,0,0.03)',
-              border: `1px solid rgba(0,0,0,0.08)`,
-              color: '#000',
-              width: 'clamp(56px, 10vw, 80px)',
-              height: 'clamp(56px, 10vw, 80px)',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 0.3s',
-              flexShrink: 0,
-              marginLeft: 20
-            }}
-          >
-            <Plus size={32} style={{ transform: 'rotate(45deg)' }} color="#000" />
-          </motion.button>
-        </motion.div>
-
-        <div className="grid-gallery-container">
-          {items.map((img, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: (i % 3) * 0.1 }}
-              whileHover={{ y: -10, scale: 1.02 }}
-              onClick={() => onSelect(i)}
-              style={{
-                borderRadius: 24,
-                overflow: 'hidden',
-                cursor: 'pointer',
-                background: '#F4F4F4',
-                border: '1px solid rgba(0,0,0,0.05)',
-                position: 'relative',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
-              }}
-            >
-              <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)',
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  padding: '24px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: A, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Plus size={16} color="#FFF" />
-                  </div>
-                  <span style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700 }}>Expand View</span>
-                </div>
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ─── MODAL IMAGE POPUP ────────────────────────── */
 const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
-  const modalRef = useRef(null);
-  const hasNavigation = Array.isArray(items) && items.length > 1 && typeof onNavigate === "function";
+  const { theme, tokens: { BG, A } } = useTheme();
+  const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
+  
+  const textMain = isDark ? '#FFF' : '#141414';
+  const pillBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)';
+  const pillBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
+  const pillText = A || '#0097B2';
+  
+  const btnBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)';
+  const btnBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
+  const btnHoverBg = isDark ? 'rgba(255,255,255,0.2)' : '#FFFFFF';
 
-  const handleNavigate = (direction, event) => {
-    event.stopPropagation();
-    if (!hasNavigation) return;
-    const nextIndex = direction === "next"
-      ? (currentIndex + 1) % items.length
-      : (currentIndex - 1 + items.length) % items.length;
-    onNavigate(nextIndex);
-  };
+  const hasNavigation = Array.isArray(items) && items.length > 1 && typeof onNavigate === "function";
 
   useEffect(() => {
     return lockBodyScroll();
@@ -357,134 +203,279 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      ref={modalRef}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10000,
-        background: 'rgba(0,0,0,0.85)',
-        backdropFilter: 'blur(10px)',
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '5vh 5vw',
-        overflow: 'hidden',
-        overscrollBehavior: 'contain'
+        padding: 'clamp(16px, 4vw, 40px)',
       }}
       onClick={onClose}
     >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 30 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+      <style>{`
+        .fs-modal-box {
+          width: 100%;
+          max-width: 1400px;
+          height: 85vh;
+          background: ${isDark ? '#0A0A0A' : '#FFFFFF'};
+          border-radius: 32px;
+          box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+          display: flex;
+          overflow: hidden;
+          position: relative;
+          transform: translateZ(0);
+          -webkit-mask-image: -webkit-radial-gradient(white, black);
+        }
+        
+        .fs-left-pane {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          background: ${isDark ? '#141414' : '#FFFFFF'};
+        }
+        
+        .fs-right-pane {
+          width: clamp(200px, 20vw, 300px);
+          display: flex;
+          flex-direction: column;
+          border-left: 1px solid ${isDark ? '#333' : '#F0F0F0'};
+          background: ${isDark ? '#0A0A0A' : '#FAFAFA'};
+        }
+        
+        .fs-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 24px 32px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 10;
+        }
+        
+        .fs-image-container {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+        
+        .fs-image {
+          object-fit: contain !important;
+          width: 100% !important;
+          height: 100% !important;
+          filter: drop-shadow(0 20px 40px rgba(0,0,0,0.08));
+          position: absolute;
+          top: 0;
+          left: 0;
+          padding: 24px;
+          box-sizing: border-box;
+        }
+        
+        .fs-thumbnail-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          scrollbar-width: none;
+        }
+        
+        .fs-nav-btn {
+          position: absolute;
+          top: 50%;
+          margin-top: -24px;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: ${btnBg};
+          border: 1px solid ${btnBorder};
+          color: ${textMain};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          backdrop-filter: blur(20px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+          z-index: 10;
+        }
+        .fs-nav-left {
+          left: 24px;
+        }
+        .fs-nav-right {
+          right: 24px;
+        }
+        
+        .fs-thumbnail-list::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .fs-thumb {
+          width: 100%;
+          aspect-ratio: 4/3;
+          border-radius: 12px;
+          overflow: hidden;
+          cursor: pointer;
+          opacity: 0.5;
+          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+          box-sizing: border-box;
+          transform: scale(0.98);
+        }
+        
+        .fs-thumb:hover {
+          opacity: 0.8;
+        }
+        
+        .fs-thumb.active {
+          opacity: 1;
+          border: 3px solid ${A || '#0097B2'};
+          box-shadow: 0 10px 24px ${A ? A + '40' : 'rgba(0,151,178,0.25)'};
+          transform: scale(1.02);
+        }
+
+        @media (max-width: 900px) {
+          .fs-modal-box {
+            flex-direction: column;
+            height: 90vh;
+            border-radius: 24px 24px 0 0;
+            margin-top: auto;
+            align-self: flex-end;
+          }
+          
+          .fs-right-pane {
+            width: 100%;
+            height: clamp(100px, 15vh, 140px);
+            border-left: none;
+            border-top: 1px solid ${isDark ? '#333' : '#F0F0F0'};
+          }
+          
+          .fs-thumbnail-list {
+            flex-direction: row;
+            overflow-y: hidden;
+            overflow-x: auto;
+            padding: 16px 20px;
+            align-items: center;
+          }
+          
+          .fs-thumb {
+            width: clamp(80px, 25vw, 140px);
+            height: 100%;
+            flex-shrink: 0;
+          }
+          
+          .fs-header {
+            padding: 16px 20px;
+          }
+          
+          .fs-image-container {
+            padding: 0;
+          }
+          .fs-image {
+            padding: 12px;
+          }
+          .fs-nav-btn {
+            width: 40px;
+            height: 40px;
+            margin-top: -20px;
+          }
+          .fs-nav-left { left: 12px; }
+          .fs-nav-right { right: 12px; }
+        }
+      `}</style>
+
+      <motion.div 
+        className="fs-modal-box"
+        initial={{ y: 50, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 50, opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          height: '100%',
-          maxWidth: '1200px',
-          maxHeight: '80vh',
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'zoom-out',
-          borderRadius: 32,
-          overflow: 'hidden',
-          boxShadow: '0 50px 100px rgba(0,0,0,0.6)',
-          background: '#000'
-        }}
       >
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={src}
-            src={src}
-            onClick={onClose}
-            initial={{ opacity: 0, x: 28, scale: 1.02 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -28, scale: 0.98 }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'block',
-              objectFit: 'cover' // This fills the container, making it feel much "larger"
-            }}
-            alt="Popup"
-          />
-        </AnimatePresence>
-        {/* Subtle indicator that it's a popup */}
-        <div style={{ position: 'absolute', bottom: 30, right: 30, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 100, pointerEvents: 'none' }}>
-          <p style={{ color: '#FFF', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>Click to close</p>
+        
+        {/* LEFT PANE - Image Viewer */}
+        <div className="fs-left-pane">
+          <div className="fs-header">
+            {hasNavigation ? (
+              <div style={{ background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
+                {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{items.length}</span>
+              </div>
+            ) : <div />}
+            
+            <motion.button
+              onClick={onClose}
+              whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
+              whileTap={{ scale: 0.92 }}
+              style={{ width: 48, height: 48, borderRadius: '50%', background: btnBg, border: `1px solid ${btnBorder}`, color: textMain, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
+            >
+              <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
+            </motion.button>
+          </div>
+
+          <div className="fs-image-container">
+            <AnimatePresence>
+              <motion.img
+                className="fs-image"
+                key={src}
+                src={src}
+                initial={{ opacity: 0, scale: 0.98, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'brightness(1)' }}
+                exit={{ opacity: 0, scale: 1.02, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                alt="Viewer"
+              />
+            </AnimatePresence>
+
+            {hasNavigation && (
+              <>
+                <motion.button
+                  className="fs-nav-btn fs-nav-left"
+                  onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex - 1 + items.length) % items.length); }}
+                  whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
+                  whileTap={{ scale: 0.92 }}
+                >
+                  <ChevronLeft size={24} />
+                </motion.button>
+                <motion.button
+                  className="fs-nav-btn fs-nav-right"
+                  onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex + 1) % items.length); }}
+                  whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
+                  whileTap={{ scale: 0.92 }}
+                >
+                  <ChevronLeft size={24} style={{ transform: 'rotate(180deg)' }} />
+                </motion.button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* RIGHT PANE - Thumbnails */}
+        {hasNavigation && (
+          <div className="fs-right-pane">
+            <div className="fs-thumbnail-list">
+              {items.map((thumbSrc, idx) => (
+                <div
+                  key={idx}
+                  className={`fs-thumb ${idx === currentIndex ? 'active' : ''}`}
+                  onClick={() => onNavigate(idx)}
+                >
+                  <img src={thumbSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Thumbnail ${idx + 1}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </motion.div>
-      {hasNavigation && (
-        <>
-          <motion.button
-            type="button"
-            aria-label="Previous image"
-            onClick={(event) => handleNavigate("prev", event)}
-            whileHover={{ opacity: 1, scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            style={{
-              position: 'absolute',
-              left: 'clamp(18px, 4vw, 56px)',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 'clamp(44px, 6vw, 58px)',
-              height: 'clamp(44px, 6vw, 58px)',
-              borderRadius: '50%',
-              border: '1px solid rgba(255,255,255,0.28)',
-              background: 'rgba(255,255,255,0.16)',
-              backdropFilter: 'blur(16px)',
-              color: '#FFF',
-              fontSize: 26,
-              fontWeight: 300,
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              opacity: 0.72,
-              zIndex: 2,
-              boxShadow: '0 18px 45px rgba(0,0,0,0.28)'
-            }}
-          >
-            &lt;
-          </motion.button>
-          <motion.button
-            type="button"
-            aria-label="Next image"
-            onClick={(event) => handleNavigate("next", event)}
-            whileHover={{ opacity: 1, scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            style={{
-              position: 'absolute',
-              right: 'clamp(18px, 4vw, 56px)',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 'clamp(44px, 6vw, 58px)',
-              height: 'clamp(44px, 6vw, 58px)',
-              borderRadius: '50%',
-              border: '1px solid rgba(255,255,255,0.28)',
-              background: 'rgba(255,255,255,0.16)',
-              backdropFilter: 'blur(16px)',
-              color: '#FFF',
-              fontSize: 26,
-              fontWeight: 300,
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              opacity: 0.72,
-              zIndex: 2,
-              boxShadow: '0 18px 45px rgba(0,0,0,0.28)'
-            }}
-          >
-            &gt;
-          </motion.button>
-        </>
-      )}
     </motion.div>
   );
 };
@@ -576,7 +567,8 @@ const ExperienceProduct = () => {
   const [loading, setLoading] = useState(true);
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [gridVisible, setGridVisible] = useState(false);
+  const [activityPhotoVisible, setActivityPhotoVisible] = useState(false);
+  const [activityPhotoSrc, setActivityPhotoSrc] = useState(null);
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const unavailableRedirectRef = useRef(false);
   const hostLeadUserId = hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
@@ -921,7 +913,8 @@ const ExperienceProduct = () => {
                     key={i}
                     whileHover={{ scale: 0.98 }}
                     onClick={() => {
-                      setGridVisible(true);
+                      setPhotoIndex(i % (galleryItems.length || 1));
+                      setPhotoVisible(true);
                     }}
                     style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}`, cursor: "pointer" }}
                     className="gallery-item"
@@ -936,7 +929,10 @@ const ExperienceProduct = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setGridVisible(true)}
+            onClick={() => {
+              setPhotoIndex(0);
+              setPhotoVisible(true);
+            }}
             style={{
               position: "absolute",
               bottom: "80px",
@@ -960,20 +956,7 @@ const ExperienceProduct = () => {
             See all photos
           </motion.button>
 
-          <AnimatePresence>
-            {gridVisible && !photoVisible && (
-              <GridGallery
-                items={galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"]}
-                onClose={() => setGridVisible(false)}
-                onSelect={(index) => {
-                  setPhotoIndex(index);
-                  setPhotoVisible(true);
-                }}
-                title={listing?.title}
-                A={A}
-              />
-            )}
-          </AnimatePresence>
+
 
           <AnimatePresence>
             {photoVisible && (
@@ -1090,7 +1073,7 @@ const ExperienceProduct = () => {
                             transition: "0.3s"
                           }}
                         >
-                          <div style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
+                          <div className="addon-img" style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
                             {addonImage ? (
                               <img
                                 src={formatImageUrl(addonImage)}
@@ -1105,16 +1088,17 @@ const ExperienceProduct = () => {
                               <Plus size={24} color={A} />
                             )}
                           </div>
-                          <div style={{ flex: 1 }}>
+                          <div className="addon-content" style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }} className="addon-header">
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div className="addon-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title}</p>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="addon-actions">
-                                <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
+                                <span className="addon-badge" style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                                 {isSelected ? (
                                   pricingType === "Group" ? (
                                     <button
+                                      className="addon-btn addon-btn-remove"
                                       onClick={() => handleUpdateAddonQuantity(addon, -1)}
                                       style={{
                                         background: AL,
@@ -1135,7 +1119,7 @@ const ExperienceProduct = () => {
                                       Remove
                                     </button>
                                   ) : (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
+                                    <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
                                       <button
                                         onClick={() => handleUpdateAddonQuantity(addon, -1)}
                                         style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
@@ -1155,6 +1139,7 @@ const ExperienceProduct = () => {
                                   )
                                 ) : (
                                   <button
+                                    className="addon-btn addon-btn-add"
                                     onClick={() => handleUpdateAddonQuantity(addon, 1)}
                                     style={{
                                       background: S,
@@ -1177,9 +1162,9 @@ const ExperienceProduct = () => {
                                 )}
                               </div>
                             </div>
-                            <p style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
+                            <p className="addon-desc" style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
                             {addon.price > 0 && (
-                              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                              <div className="addon-price" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
                                 <p style={{ fontSize: 13, fontWeight: 700, color: A }}>+ ₹{addon.price}</p>
                                 {isSelected && (selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1) > 1 && (
                                   <p style={{ fontSize: 12, fontWeight: 500, color: M }}>
@@ -1233,7 +1218,10 @@ const ExperienceProduct = () => {
                             style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1, willChange: "transform" }}
                           >
                             {activityImageUrl && (
-                              <div style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S }}>
+                              <div 
+                                style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S, cursor: "pointer" }}
+                                onClick={() => { setActivityPhotoSrc(activityImageUrl); setActivityPhotoVisible(true); }}
+                              >
                                 <img
                                   src={activityImageUrl}
                                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -1553,7 +1541,7 @@ const ExperienceProduct = () => {
         }
 
         @media(max-width: 900px) { 
-          main { padding-bottom: 100px !important; }
+          main { padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important; }
           .hero-stats { grid-template-columns: 1fr !important; gap: 40px !important; } 
           .gal-grid { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 240px !important; gap: 8px !important; }
           .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
@@ -1579,11 +1567,55 @@ const ExperienceProduct = () => {
           .overview-card { padding: 20px 12px !important; }
           .overview-card p:first-of-type { font-size: 16px !important; }
           .details-inner { padding: 24px 16px !important; margin: 24px -16px !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
-          .activity-item { gap: 16px !important; margin-bottom: 32px !important; }
-          .activity-item > div:first-child { display: none; }
-          .activity-item > div:last-child { flex-direction: column !important; gap: 12px !important; }
-          .activity-item img { width: 100% !important; height: 180px !important; }
-          .activity-item > div:last-child > div:first-child { width: 100% !important; height: 180px !important; }
+          .activity-item { gap: 12px !important; margin-bottom: 24px !important; }
+          .activity-item > div:first-child { 
+            width: 10px !important; 
+            height: 10px !important; 
+            margin-top: 8px !important; 
+            border-width: 2px !important;
+            display: block !important; 
+          }
+          .activity-item > div:last-child { 
+            flex-direction: row !important; 
+            gap: 16px !important; 
+            padding: 12px !important; 
+            border-radius: 16px !important;
+            background: #fff !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04) !important;
+            border: 1px solid #eaeaea !important;
+            align-items: center !important;
+          }
+          .activity-item img { width: 100% !important; height: 100% !important; }
+          .activity-item > div:last-child > div:first-child { 
+            /* This targets either the image or the text wrapper if image is missing. But usually all have images or none. */
+            width: 64px !important; 
+            height: 64px !important; 
+            border-radius: 10px !important; 
+          }
+          .activity-item > div:last-child > div:last-child { 
+            gap: 2px !important; 
+          }
+          .activity-item > div:last-child > div:last-child > div:first-child { 
+            gap: 4px !important; 
+            flex-direction: column !important; 
+            align-items: flex-start !important; 
+          }
+          .activity-item > div:last-child > div:last-child > div:first-child > span:first-child { 
+            font-size: 10px !important; 
+          }
+          .activity-item > div:last-child > div:last-child > div:first-child > span:last-child { 
+            font-size: 14px !important; 
+            line-height: 1.2 !important; 
+          }
+          .activity-item > div:last-child > div:last-child > p { 
+            font-size: 12px !important; 
+            line-height: 1.4 !important; 
+            margin-top: 4px !important; 
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
           .prep-grid { gap: 32px !important; }
           .prep-grid h3 { font-size: 1.8rem !important; margin-bottom: 20px !important; }
           .host-grid { gap: 32px !important; }
@@ -1593,12 +1625,102 @@ const ExperienceProduct = () => {
           .gallery-item { height: 240px !important; width: 200px !important; }
           .early-bird-wrapper { bottom: 20px !important; right: 20px !important; }
           
+          /* Global bottom safe area for sticky Reserve button removed from here, applied to main */
+
           /* Addons mobile */
-          .addon-item { align-items: flex-start !important; padding: 16px !important; gap: 16px !important; }
-          .addon-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          .addon-actions { width: 100%; justify-content: flex-start !important; }
+          .addon-item { 
+            align-items: center !important; 
+            padding: 16px 12px !important; 
+            gap: 16px !important; 
+            border-radius: 20px !important;
+          }
+          .addon-img { 
+            width: 76px !important;
+            height: 76px !important;
+            border-radius: 14px !important;
+            aspect-ratio: 1/1 !important;
+            flex-shrink: 0 !important;
+          }
+          .addon-content {
+            display: grid !important;
+            grid-template-areas: 
+              "title title"
+              "badge badge"
+              "price btn";
+            grid-template-columns: 1fr auto !important;
+            row-gap: 6px !important;
+            column-gap: 8px !important;
+            align-items: center !important;
+            flex: 1 !important;
+          }
+          .addon-header { 
+            display: contents !important; 
+          }
+          .addon-title { 
+            grid-area: title !important;
+            margin-bottom: 2px !important;
+          }
+          .addon-title p { 
+            font-size: 15px !important;
+            line-height: 1.2 !important;
+            letter-spacing: -0.02em !important;
+          }
+          .addon-actions { 
+            display: contents !important;
+          }
+          .addon-badge { 
+            grid-area: badge !important;
+            justify-self: start !important;
+            font-size: 9px !important;
+            padding: 4px 8px !important;
+            border-radius: 100px !important;
+            letter-spacing: 0.05em !important;
+          }
+          .addon-btn, .addon-counter { 
+            grid-area: btn !important;
+            justify-self: end !important;
+            height: 34px !important;
+          }
+          .addon-btn {
+            padding: 0 18px !important;
+            font-size: 12px !important;
+            border-radius: 100px !important;
+          }
+          .addon-counter {
+             height: 34px !important;
+             padding: 0 8px !important;
+             gap: 12px !important;
+          }
+          .addon-counter button {
+             padding: 4px !important;
+          }
+          .addon-counter span {
+             font-size: 13px !important;
+             min-width: 16px !important;
+          }
+          .addon-desc { 
+            display: none !important; 
+          }
+          .addon-price { 
+            grid-area: price !important;
+            margin-top: 0 !important;
+            justify-content: flex-start !important;
+          }
+          .addon-price p:first-child {
+            font-size: 14px !important;
+            letter-spacing: -0.01em !important;
+          }
         }
       `}</style>
+      
+      <AnimatePresence>
+        {activityPhotoVisible && activityPhotoSrc && (
+          <FullScreenImage
+            src={activityPhotoSrc}
+            onClose={() => setActivityPhotoVisible(false)}
+          />
+        )}
+      </AnimatePresence>
     </Page>
   );
 };

@@ -104,7 +104,7 @@ const ListCard = ({ item, listing }) => {
 
         {/* BOTTOM: Pricing and CTA Action button */}
         <div className={styles.bottomLayer}>
-          {!isStay && item.priceActual && (
+          {false && !isStay && item.priceActual && (
             <div className={styles.priceContainer}>
               <span className={styles.priceValue}>{item.priceActual}</span>
               <span className={styles.pricePeriod}>{pricePeriod}</span>

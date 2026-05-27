@@ -18,7 +18,7 @@ const Item = ({ className, item, row, car, hidePrice }) => {
   const imageSrcSet = imageSrc; // Use same logic for srcSet
 
   const isStay = item.url && item.url.includes("stay-details");
-  const shouldHidePrice = hidePrice || isStay;
+  const shouldHidePrice = true; // hidePrice || isStay;
 
   return (
     <Link
