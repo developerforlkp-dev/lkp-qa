@@ -1634,12 +1634,22 @@ function PolicyItem({ req }) {
             <div style={{ padding: "0 16px 24px" }}>
               <div style={{ padding: "20px", background: AL, borderRadius: 16, border: `1px solid ${B}` }}>
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
-                  {questions.map((q, j) => (
-                    <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
-                      <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.title || q.question?.title}</span>
-                    </li>
-                  ))}
+                  {questions.map((q, j) => {
+                    const questionTitle = q.title || q.question?.title;
+                    const answerText = q.answer?.valueText || q.valueText;
+                    
+                    return (
+                      <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{questionTitle}</span>
+                          {answerText && (
+                            <span style={{ fontSize: 14, color: M, lineHeight: 1.4 }}>{answerText}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
