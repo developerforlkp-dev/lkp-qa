@@ -3,7 +3,7 @@ import { useLocation, useParams, useHistory } from "react-router-dom";
 import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Info, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star, Compass, Share2 } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star, Compass, Share2 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -579,6 +579,27 @@ const ExperienceProduct = () => {
     hostData?.displayName ||
     hostData?.name ||
     "Host";
+  const hostPhone =
+    leadData?.phoneNumber ||
+    leadData?.contactNumber ||
+    leadData?.altPhoneNumber ||
+    hostData?.phoneNumber ||
+    hostData?.phone ||
+    hostData?.mobile ||
+    hostData?.contactNumber ||
+    listing?.host?.phoneNumber ||
+    listing?.host?.phone ||
+    listing?.host?.mobile ||
+    listing?.host?.contactNumber ||
+    "";
+  const hostEmail =
+    leadData?.email ||
+    leadData?.altEmail ||
+    hostData?.email ||
+    hostData?.emailAddress ||
+    listing?.host?.email ||
+    listing?.host?.emailAddress ||
+    "";
 
   const isListingUnavailable = (payload) => {
     if (!payload || typeof payload !== "object") return true;
@@ -1342,10 +1363,18 @@ const ExperienceProduct = () => {
                 </h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
                 <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.about || ""}</p>
-                {leadData && (
+                {(hostPhone || hostEmail) && (
                   <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Phone size={14} color={A} /> {leadData.phoneNumber || leadData.contactNumber || leadData.altPhoneNumber || "-"}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}><Info size={14} color={A} /> {leadData.email || leadData.altEmail || "-"}</div>
+                    {hostPhone ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}>
+                        <Phone size={14} color={A} /> {hostPhone}
+                      </div>
+                    ) : null}
+                    {hostEmail ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}>
+                        <Mail size={14} color={A} /> {hostEmail}
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
