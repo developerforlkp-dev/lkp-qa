@@ -11,10 +11,9 @@
     padding: 20px 0
     margin: -20px 0
     overflow: visible
-    // Mobile 3-per-row: tighter padding so oval + title fit compactly
     +m
-        padding: 6px 0
-        margin: -6px 0
+        padding: 10px 0
+        margin: -10px 0
     &:hover
         color: $p1
         .imageWrapper
@@ -48,14 +47,11 @@
         transform: translateX(-120%)
         animation: imageShimmer 1.4s infinite
         border-radius: inherit
-    // Mobile: scale proportionally with calc() width — use aspect-ratio instead of fixed px
-    // At 3-per-row: ~97px wide, aspect-ratio 3/4 = ~130px tall — elegant slim oval
     +m
-        max-width: 100%
-        height: auto
-        aspect-ratio: 3 / 4
-        border-radius: 999px
-        margin-bottom: 8px
+        max-width: 120px
+        height: 156px
+        border-radius: 60px
+        margin-bottom: 16px
 
 .imageWrapper.loaded
     &:after
@@ -86,8 +82,6 @@
     gap: 4px
     width: 100%
     max-width: 100%
-    +m
-        gap: 2px
 
 .title
     +body-bold-2
@@ -96,11 +90,6 @@
     text-overflow: ellipsis
     white-space: nowrap
     max-width: 100%
-    // Mobile 3-per-row: card is ~97px wide, title must be very compact
-    +m
-        font-size: 11px
-        line-height: 1.3
-        font-weight: 600
 
 .location
     +caption-2

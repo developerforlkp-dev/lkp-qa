@@ -43,8 +43,7 @@
         height: auto
         +m
             width: 150px
-
-// ─── Desktop nav wrapper / Mobile premium drawer ──────────────────────────────
+    
 .wrapper
     display: flex
     align-items: center
@@ -56,65 +55,36 @@
     +t
         padding-left: 0
         border: none
+    +m
+        position: absolute
+        top: 0
+        left: 0
+        right: 0
+        z-index: 10
+        flex-direction: column
+        align-items: stretch
+        height: 100vh
+        min-height: auto
+        padding: 132px 32px 48px
+        background: $n8
+        visibility: hidden
+        opacity: 0
+        pointer-events: none
+        transition: all .3s
+        +dark
+            background: $n1
+        &.active
+            visibility: visible
+            opacity: 1
+            pointer-events: auto
     +dark
         border-color: $n2
     & > div
         &:first-child
             +t
                 margin-right: auto
-    // ── Mobile: right-side floating drawer ──
-    +m
-        // Slide in from right
-        position: fixed
-        top: 0
-        right: 0
-        left: auto
-        bottom: 0
-        z-index: 1002
-        // Layout
-        flex-direction: column
-        align-items: stretch
-        width: 82vw
-        max-width: 360px
-        height: 100%
-        min-height: auto
-        padding: 0
-        // Rounded left corners only
-        border-radius: 24px 0 0 24px
-        // Glassmorphism
-        background: rgba(252, 252, 253, 0.97)
-        backdrop-filter: blur(40px) saturate(180%)
-        -webkit-backdrop-filter: blur(40px) saturate(180%)
-        border-left: 1px solid rgba(0, 0, 0, 0.07)
-        box-shadow: -20px 0 72px rgba(0, 0, 0, 0.13), -4px 0 20px rgba(0, 0, 0, 0.07)
-        // Always visible — use transform instead of opacity for animation
-        visibility: visible
-        opacity: 1
-        transform: translateX(110%)
-        pointer-events: none
-        transition: transform .36s cubic-bezier(0.4, 0, 0.2, 1)
-        overflow-y: auto
-        overflow-x: hidden
-        +dark
-            background: rgba(17, 17, 22, 0.97)
-            border-left: 1px solid rgba(255, 255, 255, 0.06)
-            box-shadow: -20px 0 72px rgba(0, 0, 0, 0.6), -4px 0 20px rgba(0, 0, 0, 0.35)
-        &.active
-            transform: translateX(0)
-            pointer-events: auto
-            // Staggered entrance for nav items
-            .drawerNavItem
-                opacity: 1
-                transform: translateX(0)
-                &:nth-child(1)
-                    transition-delay: .12s
-                &:nth-child(2)
-                    transition-delay: .18s
-                &:nth-child(3)
-                    transition-delay: .24s
-            .drawerProfile
-                opacity: 1
-                transform: translateY(0)
+            +m
+                margin: 0
 
 .dropdown
     margin-right: auto
@@ -131,18 +101,46 @@
     +t
         display: none
     +m
-        display: none
+        display: flex
+        align-items: center
+        margin: 0 -32px
+        padding: 0 32px
+        height: 64px
+        +poppins
+        font-size: 24px
+        font-weight: 600
+        svg
+            fill: #000000
+            margin-right: 16px
+            +dark
+                fill: #FFFFFF
     &:hover,
     &.active
         color: $n2
+        +m
+            background: none
+            box-shadow: inset 2px 0 0 $p1
         +dark
             color: $n8
+            +m
+                background: none
+                color: $n8
+    
+.mobileIcon
+    display: none
+    +m
+        display: block
+
+.mobileOnlyLink
+    display: flex
+    +rmin(768)
+        display: none
 
 .bookingsLink
     margin-left: 20px
     +m
         display: none
-
+    
 .language
     margin-left: 40px
     +t
@@ -193,12 +191,8 @@
 .user,
 .login
     margin-left: 12px
-
-// Desktop-only wrapper — hides User/Login icon on mobile
-.desktopUserOnly
-    display: contents
     +m
-        display: none
+        margin-left: 12px
 
 .login
     width: 40px
@@ -216,7 +210,7 @@
     +m
         display: block
         position: relative
-        z-index: 1003
+        z-index: 15
         margin-left: 20px
         width: 32px
         height: 32px
@@ -242,336 +236,3 @@
             transform: translateY(-4px)
         &:after
             transform: translateY(3px)
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PREMIUM MOBILE DRAWER COMPONENTS
-// All hidden on desktop — only rendered/visible inside the mobile drawer
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ── Backdrop overlay ──────────────────────────────────────────────────────────
-.drawerBackdrop
-    display: none
-    +m
-        display: block
-        position: fixed
-        inset: 0
-        z-index: 1001
-        background: rgba(0, 0, 0, 0)
-        opacity: 1
-        pointer-events: none
-        transition: background .36s ease
-        &.active
-            background: rgba(0, 0, 0, 0.52)
-            pointer-events: auto
-
-// ── Top bar: logo + close button ─────────────────────────────────────────────
-.drawerTopBar
-    display: none
-    +m
-        display: flex
-        align-items: center
-        justify-content: space-between
-        padding: 18px 20px 14px
-        border-bottom: 1px solid rgba(0, 0, 0, 0.06)
-        position: sticky
-        top: 0
-        z-index: 2
-        background: inherit
-        flex-shrink: 0
-        +dark
-            border-bottom-color: rgba(255, 255, 255, 0.05)
-
-.drawerBrand
-    display: block
-    img
-        width: 110px
-        height: auto
-
-.drawerCloseBtn
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 34px
-    height: 34px
-    border-radius: 50%
-    background: rgba(0, 0, 0, 0.06)
-    border: none
-    cursor: pointer
-    transition: background .2s, transform .15s
-    -webkit-tap-highlight-color: rgba(0,0,0,0)
-    +dark
-        background: rgba(255, 255, 255, 0.09)
-    svg
-        fill: $n3
-        transition: fill .2s
-        +dark
-            fill: $n6
-    &:hover
-        background: rgba(0, 0, 0, 0.1)
-        transform: scale(1.05)
-        +dark
-            background: rgba(255, 255, 255, 0.13)
-    &:active
-        transform: scale(0.95)
-
-// ── Profile / greeting card ───────────────────────────────────────────────────
-.drawerProfile
-    display: none
-    +m
-        display: flex
-        align-items: center
-        gap: 13px
-        margin: 18px 16px 8px
-        padding: 14px 16px
-        border-radius: 16px
-        background: linear-gradient(135deg, rgba(#0097B2, 0.1) 0%, rgba(#0097B2, 0.03) 100%)
-        border: 1px solid rgba(#0097B2, 0.14)
-        flex-shrink: 0
-        // Animate in with the drawer
-        opacity: 0
-        transform: translateY(-6px)
-        transition: opacity .3s ease .06s, transform .3s ease .06s
-        +dark
-            background: linear-gradient(135deg, rgba(#0097B2, 0.18) 0%, rgba(#0097B2, 0.06) 100%)
-            border-color: rgba(#0097B2, 0.22)
-
-.drawerProfileAvatar
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 40px
-    height: 40px
-    border-radius: 50%
-    flex-shrink: 0
-    background: linear-gradient(135deg, #0097B2, #00c4d4)
-    box-shadow: 0 4px 14px rgba(#0097B2, 0.4)
-    svg
-        fill: #FFFFFF
-
-.drawerProfileText
-    display: flex
-    flex-direction: column
-    gap: 2px
-    min-width: 0
-
-.drawerProfileName
-    +poppins
-    font-size: 15px
-    font-weight: 600
-    color: $n2
-    overflow: hidden
-    text-overflow: ellipsis
-    white-space: nowrap
-    +dark
-        color: $n8
-
-.drawerProfileRole
-    font-size: 11px
-    font-weight: 500
-    color: #0097B2
-    letter-spacing: 0.04em
-    text-transform: uppercase
-
-// ── Main navigation list ──────────────────────────────────────────────────────
-.drawerNav
-    display: none
-    +m
-        display: flex
-        flex-direction: column
-        padding: 10px 12px 4px
-        gap: 2px
-        flex-shrink: 0
-
-.drawerNavItem
-    display: none
-    +m
-        display: flex
-        align-items: center
-        padding: 0 12px
-        height: 50px
-        border-radius: 13px
-        text-decoration: none
-        background: none
-        border: none
-        cursor: pointer
-        // Staggered enter animation — initial hidden state
-        opacity: 0
-        transform: translateX(18px)
-        transition: opacity .28s ease, transform .28s ease, background .18s, color .18s
-        -webkit-tap-highlight-color: rgba(0,0,0,0)
-        +dark
-            color: $n6
-        &:hover
-            background: rgba(0, 0, 0, 0.04)
-            .drawerNavLabel
-                color: $n2
-            .drawerNavIcon
-                background: rgba(#0097B2, 0.08)
-                svg
-                    fill: #0097B2
-            +dark
-                background: rgba(255, 255, 255, 0.05)
-                .drawerNavLabel
-                    color: $n8
-
-.drawerNavActive
-    +m
-        background: rgba(#0097B2, 0.09) !important
-        .drawerNavLabel
-            color: #0097B2 !important
-            font-weight: 600
-        .drawerNavIcon
-            background: rgba(#0097B2, 0.12) !important
-            svg
-                fill: #0097B2 !important
-        +dark
-            background: rgba(#0097B2, 0.14) !important
-
-.drawerNavIcon
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 32px
-    height: 32px
-    border-radius: 9px
-    margin-right: 12px
-    flex-shrink: 0
-    background: rgba(0, 0, 0, 0.045)
-    transition: background .18s
-    +dark
-        background: rgba(255, 255, 255, 0.07)
-    svg
-        fill: $n4
-        transition: fill .18s
-        +dark
-            fill: $n5
-
-.drawerNavLabel
-    +poppins
-    font-size: 14px
-    font-weight: 500
-    color: $n3
-    flex-grow: 1
-    transition: color .18s
-    +dark
-        color: $n6
-
-.drawerNavArrow
-    flex-shrink: 0
-    margin-left: 4px
-    svg
-        fill: $n6
-        +dark
-            fill: $n3
-
-// ── Spacer pushes footer to bottom ───────────────────────────────────────────
-.drawerSpacer
-    display: none
-    +m
-        display: block
-        flex-grow: 1
-        min-height: 16px
-
-// ── Theme toggle row ──────────────────────────────────────────────────────────
-.drawerThemeRow
-    display: none
-    +m
-        display: flex
-        align-items: center
-        width: 100%
-        padding: 0 24px
-        height: 52px
-        border: none
-        border-top: 1px solid rgba(0, 0, 0, 0.06)
-        background: none
-        cursor: pointer
-        -webkit-tap-highlight-color: rgba(0,0,0,0)
-        flex-shrink: 0
-        +dark
-            border-top-color: rgba(255, 255, 255, 0.06)
-        &:hover
-            .drawerNavLabel
-                color: $n2
-            +dark
-                .drawerNavLabel
-                    color: $n8
-
-.drawerTogglePill
-    width: 36px
-    height: 20px
-    border-radius: 10px
-    background: $n6
-    position: relative
-    transition: background .28s cubic-bezier(0.4, 0, 0.2, 1)
-    flex-shrink: 0
-    margin-left: auto
-    +dark
-        background: $n3
-    &.on
-        background: #0097B2
-
-.drawerToggleDot
-    position: absolute
-    top: 2px
-    left: 2px
-    width: 16px
-    height: 16px
-    border-radius: 50%
-    background: #FFFFFF
-    transition: transform .28s cubic-bezier(0.4, 0, 0.2, 1)
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.22)
-    .on &
-        transform: translateX(16px)
-
-// ── Footer: Sign In / Log Out ─────────────────────────────────────────────────
-.drawerFooter
-    display: none
-    +m
-        display: flex
-        padding: 14px 20px 32px
-        border-top: 1px solid rgba(0, 0, 0, 0.06)
-        flex-shrink: 0
-        +dark
-            border-top-color: rgba(255, 255, 255, 0.06)
-
-.drawerLogoutBtn
-    flex: 1
-    height: 44px
-    border-radius: 12px
-    background: rgba(229, 57, 53, 0.08)
-    color: #e53935
-    +poppins
-    font-size: 14px
-    font-weight: 600
-    border: none
-    cursor: pointer
-    transition: background .2s, transform .15s
-    -webkit-tap-highlight-color: rgba(0,0,0,0)
-    &:hover
-        background: rgba(229, 57, 53, 0.15)
-    &:active
-        transform: scale(0.97)
-    +dark
-        background: rgba(229, 57, 53, 0.15)
-        color: #ff5252
-        &:hover
-            background: rgba(229, 57, 53, 0.25)
-
-.drawerSignInBtn
-    flex: 1
-    height: 44px
-    border-radius: 12px
-    background: #0097B2
-    color: #FFFFFF
-    +poppins
-    font-size: 14px
-    font-weight: 600
-    border: none
-    cursor: pointer
-    transition: background .2s, transform .15s
-    box-shadow: 0 4px 16px rgba(#0097B2, 0.3)
-    -webkit-tap-highlight-color: rgba(0,0,0,0)
-    &:hover
-        background: darken(#0097B2, 8%)
-    &:active
-        transform: scale(0.97)

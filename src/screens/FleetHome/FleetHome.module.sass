@@ -467,14 +467,10 @@
     margin-bottom: 0
 
 .sectionHeader
-    display: flex
-    align-items: center
-    justify-content: space-between
     margin-bottom: 0
-    padding: 4px 0
+    text-align: left
     +m
         margin-bottom: 0
-        padding: 2px 0
 
 .sectionTitleLink
     display: inline-block
@@ -492,7 +488,7 @@
     line-height: (44/36)
     margin-bottom: 0
     +m
-        font-size: 20px
+        font-size: 24px
         line-height: 1.3
 
 .sectionTitleWrapper
@@ -504,45 +500,7 @@
         flex-direction: column
         gap: 4px
         align-items: flex-start
-        margin-bottom: 0
-
-// Airbnb-style inline arrow button in section header
-.sectionArrowBtn
-    flex-shrink: 0
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 44px
-    height: 44px
-    border-radius: 50%
-    background: rgba(#0097B2, 0.1)
-    border: 1.5px solid rgba(#0097B2, 0.35)
-    color: #0097B2
-    text-decoration: none
-    transition: all .25s ease
-    cursor: pointer
-    +t
-        width: 40px
-        height: 40px
-    +m
-        width: 36px
-        height: 36px
-        background: rgba(#0097B2, 0.08)
-    +dark
-        background: rgba(#0097B2, 0.15)
-        border-color: rgba(#0097B2, 0.4)
-    &:hover
-        background: #0097B2
-        border-color: #0097B2
-        transform: translateX(3px)
-        box-shadow: 0 4px 16px rgba(#0097B2, 0.35)
-        svg
-            fill: #FCFCFD
-    &:active
-        transform: scale(0.96)
-    svg
-        fill: #0097B2
-        transition: fill .2s ease
+        margin-bottom: 12px
 
 .priceStarting
     +body-2
@@ -565,9 +523,7 @@
         font-size: 14px
 
 // Browse Card Square - CARD_SQUARE_HORIZONTAL_NODETAIL
-// Mobile cinematic layout: 2.2 cards visible (2 full + partial 3rd creates scroll curiosity)
-// Math: (100vw - 64px padding - 12px gap) / 2.2 = calc(45vw - 34px)
-// At 375px: (375-76)/2.2 ≈ 136px → 2×136 + 12 + 0.2×136 = 311px ✓
+// Uses same structure as other card styles (HorizontalScroll wrapper)
 .browseCardSquare
     flex: 0 0 auto
     width: 240px
@@ -576,7 +532,7 @@
     scroll-snap-align: start
     scroll-snap-stop: always
     box-sizing: border-box
-    // Desktop: fixed 240px square
+    // Ensure preview container is exactly 240px × 240px (square)
     :global
         .preview
             width: 240px !important
@@ -588,21 +544,6 @@
                 padding-bottom: 0 !important
                 height: 240px !important
                 display: block !important
-    // Mobile: 2.2-per-row cinematic peeking layout
-    // Two full cards visible + 20% of third creates scroll curiosity without compression
-    +m
-        width: calc(45vw - 34px)
-        min-width: calc(45vw - 34px)
-        :global
-            .preview
-                width: 100% !important
-                max-width: 100% !important
-                height: auto !important
-                aspect-ratio: 1 / 1
-                margin-bottom: 10px !important
-                &:before
-                    padding-bottom: 100% !important
-                    height: auto !important
 
 // Horizontal Scroll Wrapper - Used by all sections
 .horizontalScrollWrapper
@@ -614,7 +555,7 @@
     +m
         margin-left: -32px
         margin-right: -32px
-        padding: 12px 32px 18px
+        padding: 16px 32px 20px
 
 .horizontalScroll
     position: relative
@@ -625,39 +566,7 @@
             margin: 0
             overflow-y: visible !important
             overflow-x: auto !important
-    +m
-        // Default gap for 2-per-row and 1.5-per-row layouts
-        :global
-            .scrollWrapper
-                gap: 12px !important
 
-// Gap overrides per card shape on mobile
-// Square 2.2-per-row: 12px gap for compact premium feel
-.horizontalScrollSquare
-    +m
-        :global
-            .scrollWrapper
-                gap: 12px !important
-
-// Oval 3-per-row: tighter 10px gap for elegant compact rhythm
-.horizontalScrollOval
-    +m
-        :global
-            .scrollWrapper
-                gap: 10px !important
-
-// Horizontal 1.2-per-row: 16px gap between full cinematic cards
-.horizontalScrollFullWidth
-    +m
-        :global
-            .scrollWrapper
-                gap: 16px !important
-
-// Oval Destination Card - CARD_OVAL_VERTICAL_NODETAIL
-// Mobile cinematic layout: 3 elegant oval cards per row
-// Light elegant premium visual rhythm — like Apple's category browsing
-// Math: (100vw - 64px - 2×10px gap) / 3 = calc(33.3vw - 28px)
-// At 375px: (375-84)/3 ≈ 97px → 3×97 + 2×10 = 311px ✓
 .destinationCard
     flex: 0 0 auto
     width: 180px
@@ -670,21 +579,16 @@
     padding: 10px 0
     margin-top: -10px
     margin-bottom: -10px
-    // Mobile: 3-per-row compact oval layout
     +m
-        width: calc(33.3vw - 28px)
-        min-width: calc(33.3vw - 28px)
-        padding: 6px 0
-        margin-top: -6px
-        margin-bottom: -6px
+        width: 120px
+        min-width: 120px
+        padding: 8px 0
+        margin-top: -8px
+        margin-bottom: -8px
     &:hover
 
 
-// Grid Card - CARD_RECT_VERTICAL_DETAIL
-// Mobile cinematic layout: 1.5 cards per row — premium editorial feel
-// Slightly larger presentation, better readability, encourages horizontal discovery
-// Math: (100vw - 64px - 12px gap) / 1.5 = calc(67vw - 51px)
-// At 375px: (375-76)/1.5 ≈ 199px → 1×199 + 12 + 0.5×199 = 311px ✓
+// Grid Card - Horizontal scroll version
 .gridCardHorizontal
     flex: 0 0 auto
     width: 280px
@@ -696,21 +600,16 @@
     +t
         width: 260px
         min-width: 260px
-    // Mobile: 1.5-per-row premium editorial layout
     +m
-        width: calc(67vw - 51px)
-        min-width: calc(67vw - 51px)
+        width: 240px
+        min-width: 240px
     &:hover
         transform: translateY(-4px)
         box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08)
         +dark
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3)
 
-// Destination Card Horizontal - CARD_RECT_HORIZONTAL_NODETAIL
-// Mobile cinematic layout: 1.2 cards — immersive storytelling, like Apple editorial
-// One full cinematic card + 20% of next creates powerful scroll affordance
-// Math: (100vw - 64px - 16px gap) / 1.2 = calc(83vw - 67px)
-// At 375px: (375-80)/1.2 ≈ 246px → 1×246 + 16 + 0.2×246 = 311px ✓
+// Destination Card Horizontal - Horizontal scroll version
 .destinationCardHorizontal
     flex: 0 0 auto
     width: 300px
@@ -721,10 +620,11 @@
     +t
         width: 280px
         min-width: 280px
-    // Mobile: 1.2-per-row immersive cinematic layout
     +m
-        width: calc(83vw - 67px)
-        min-width: calc(83vw - 67px)
+        width: 260px
+        min-width: 260px
+    // Override title font size and style to match other card styles
+    // Target title and content elements using universal selector for CSS modules
     :global
         div[class*="title"]
             font-size: 16px !important
@@ -734,15 +634,8 @@
             overflow: hidden
             text-overflow: ellipsis
             white-space: nowrap
-            +m
-                font-size: 15px !important
-                margin-bottom: 6px !important
         div[class*="content"]
             display: none !important
-        div[class*="preview"]
-            +m
-                border-radius: 16px !important
-                margin-bottom: 14px !important
 
 .desktopFilters
     +t

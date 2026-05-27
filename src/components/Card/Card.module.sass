@@ -119,8 +119,6 @@
 .body
     flex-grow: 1
     padding: 24px 22px
-    +m
-        padding: 16px 14px
 
 .line
     display: flex
@@ -133,9 +131,6 @@
     overflow: hidden
     text-overflow: ellipsis
     white-space: nowrap
-    +m
-        font-size: 14px
-        line-height: 1.3
 
 .price
     margin-left: 16px
@@ -176,17 +171,12 @@
     display: flex
     flex-wrap: wrap
     margin: -8px 0 16px -12px
-    +m
-        margin: -4px 0 10px -8px
 
 .option
     display: flex
     margin: 8px 0 0 12px
     +caption-2
     color: $n4
-    +m
-        margin: 4px 0 0 8px
-        font-size: 11px
     svg
         flex-shrink: 0
         margin: 1px 6px 0 0
@@ -195,8 +185,6 @@
 .foot
     padding-top: 16px
     border-top: 1px solid $n6
-    +m
-        padding-top: 10px
     +dark
         border-color: $n2
 
@@ -257,9 +245,6 @@
     +caption-2
     color: $n4
     white-space: nowrap
-    // Hide review count at mobile to prevent overflow on 1.5-per-row narrow cards
-    +m
-        display: none
 
 @media (max-width: 1440px)
     .rating
