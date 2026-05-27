@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import styles from "./MobileFilterModal.module.sass";
-import Modal from "../../Modal";
 import FilterSidebar from "../FilterSidebar";
 import Icon from "../../Icon";
 import cn from "classnames";
@@ -18,30 +19,62 @@ const MobileFilterModal = ({
   businessInterestFilters,
   activeFilterCount = 0,
 }) => {
+  const drawerRef = useRef(null);
+  const scrollContentRef = useRef(null);
+
+  // ESC key to close
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (visible) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [visible, handleKeyDown]);
+
+  // Body scroll lock — lock to the drawer's scrollable content area
+  useEffect(() => {
+    const el = scrollContentRef.current;
+    if (visible && el) {
+      disableBodyScroll(el, { reserveScrollBarGap: true });
+    }
+    return () => {
+      if (el) enableBodyScroll(el);
+    };
+  }, [visible]);
+
   const handleReset = () => {
     onReset();
   };
 
-  return (
-    <Modal visible={visible} onClose={onClose} outerClassName={styles.modal}>
-      <div className={styles.sheet}>
+  return createPortal(
+    <>
+      {/* Overlay — fade in/out */}
+      <div
+        className={cn(styles.overlay, { [styles.overlayVisible]: visible })}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-        {/* Drag Handle */}
-        <div className={styles.handle} />
-
-        {/* Sticky Header */}
+      {/* Drawer — slides from right */}
+      <div
+        ref={drawerRef}
+        className={cn(styles.drawer, { [styles.drawerOpen]: visible })}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filters"
+      >
+        {/* ── Sticky Header ── */}
         <div className={styles.header}>
           <div className={styles.headerRow}>
-            {/* Close */}
-            <button
-              className={styles.closeBtn}
-              onClick={onClose}
-              aria-label="Close filters"
-            >
-              <Icon name="close" size="16" />
-            </button>
-
-            {/* Title + subtitle */}
+            {/* Title block */}
             <div className={styles.titleBlock}>
               <h3 className={styles.title}>Filters</h3>
               {activeFilterCount > 0 && (
@@ -58,13 +91,22 @@ const MobileFilterModal = ({
               })}
               onClick={handleReset}
             >
-              {activeFilterCount > 0 ? `Clear all` : "Clear"}
+              {activeFilterCount > 0 ? "Clear all" : "Clear"}
+            </button>
+
+            {/* Close */}
+            <button
+              className={styles.closeBtn}
+              onClick={onClose}
+              aria-label="Close filters"
+            >
+              <Icon name="close" size="16" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Filter Content */}
-        <div className={styles.content}>
+        {/* ── Scrollable Filter Content ── */}
+        <div className={styles.content} ref={scrollContentRef}>
           <FilterSidebar
             filters={filters}
             onFilterChange={onFilterChange}
@@ -78,7 +120,7 @@ const MobileFilterModal = ({
           />
         </div>
 
-        {/* Sticky Footer CTA */}
+        {/* ── Sticky Footer CTA ── */}
         <div className={styles.footer}>
           <div className={styles.footerInner}>
             {activeFilterCount > 0 && (
@@ -91,9 +133,9 @@ const MobileFilterModal = ({
             </button>
           </div>
         </div>
-
       </div>
-    </Modal>
+    </>,
+    document.body
   );
 };
 

@@ -109,7 +109,8 @@
         border-radius: 16px
         border: 1px solid $n6
         margin-bottom: 8px
-        overflow: hidden
+        // overflow: visible — required so the Sort By dropdown popup isn't clipped
+        overflow: visible
         +dark
             background: $n1
             border-color: $n3
@@ -163,6 +164,8 @@
 // ─── Sort Dropdown ────────────────────────────────────────────────────────────
 .sortDropdown
     width: 100%
+    // Allow the dropdown options list to paint outside its parent container
+    overflow: visible
     :global(.head)
         height: 38px
         line-height: 38px
@@ -172,6 +175,8 @@
     :global(.arrow)
         width: 26px
         height: 26px
+    :global(.body)
+        z-index: 9999
 
 // ─── Date Fields ──────────────────────────────────────────────────────────────
 .dateGrid
