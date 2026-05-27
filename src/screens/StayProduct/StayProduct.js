@@ -54,6 +54,29 @@ const toDisplayString = (value) => {
   return "";
 };
 
+const buildStayHeaderLocation = (stay) => {
+  const locationParts = [
+    stay?.city,
+    stay?.district,
+    stay?.state,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index);
+
+  if (locationParts.length > 0) {
+    return locationParts.join(", ");
+  }
+
+  return (
+    stay?.fullAddress ||
+    stay?.cityArea ||
+    stay?.location ||
+    stay?.address ||
+    "Location not available"
+  );
+};
+
 const formatTimeTo12hr = (timeStr) => {
   if (!timeStr) return "";
   const m = moment(timeStr, ["HH:mm", "h:mm A", "HH:mm:ss"], true);
@@ -162,6 +185,7 @@ const Gallery = ({ images }) => {
 // Header Component
 const Header = ({ stay, onShare }) => {
   const history = useHistory();
+  const locationText = buildStayHeaderLocation(stay);
   const tags = [];
   {
     const propertyTypeLabel = toDisplayString(stay?.propertyType);
@@ -187,7 +211,7 @@ const Header = ({ stay, onShare }) => {
       <div className={styles.locationRow}>
         <span className={styles.location}>
           <Icon name="marker" size="16" />
-          {stay?.fullAddress || stay?.cityArea || stay?.location || stay?.address || stay?.city || "Location not available"}
+          {locationText}
         </span>
         <div className={styles.actions}>
           <button className={styles.actionBtn} onClick={onShare}>

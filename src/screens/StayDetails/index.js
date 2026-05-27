@@ -32,6 +32,43 @@ const fixImageUrl = (url) => {
   return u.replace(/%25/g, '%');
 };
 
+const getStayLocationParts = (stay) => {
+  const location = stay?.location || stay?.locationName || stay?.fullAddress || "";
+  const city = stay?.city || stay?.locationCity || stay?.town || "";
+  const cityArea = stay?.cityArea || "";
+  const district = stay?.district || stay?.meetingDistrict || "";
+  const state = stay?.state || stay?.province || stay?.region || "";
+  const uniqueValues = [location, cityArea, city, district, state]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index);
+
+  return {
+    location,
+    cityArea,
+    city,
+    district,
+    state,
+    heroText:
+      [cityArea, district, state]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
+        .join(", ") ||
+      [cityArea, state]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
+        .join(", ") ||
+      [city, state]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
+        .join(", ") ||
+      uniqueValues.slice(-2).join(", "),
+  };
+};
+
 const E = [0.22, 1, 0.36, 1];
 
 
@@ -383,6 +420,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
   const items = galleryItems.slice(0, 5);
+  const { heroText } = getStayLocationParts(stay);
 
   // Infinite Loop Logic for images only
   const x = useMotionValue(0);
@@ -463,7 +501,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
             <h1 className="font-display" style={{ fontSize: isMobile ? "clamp(1.5rem, 6.5vw, 2rem)" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em", wordBreak: "break-word" }}>{title.toUpperCase()}</h1>
             <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: theme === 'dark' ? "#FFF" : FG }}>
               <MapPin size={isMobile ? 14 : 18} />
-              <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{stay?.city}, {stay?.state}</span>
+              <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{heroText || "Location not available"}</span>
             </div>
           </div>
         </Rev>
@@ -2299,6 +2337,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
 function StayLocation({ stay }) {
   const { isMobile } = useWindowSize();
   const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+  const { city, district, state } = getStayLocationParts(stay);
 
   // Robustly extract coordinates
   const lat = stay?.latitude || stay?.latitude_decimal || stay?.lat || stay?.meetingLatitude || stay?.listingLatitude;
@@ -2306,8 +2345,6 @@ function StayLocation({ stay }) {
 
   // Robustly extract the full address from various possible backend fields
   const address = stay?.address || stay?.fullAddress || stay?.location || stay?.meetingAddress || [stay?.city, stay?.state, stay?.country].filter(Boolean).join(", ");
-  const city = stay?.city || stay?.district || "Destination";
-  const state = stay?.state || stay?.province || "N/A";
   const country = stay?.country || "N/A";
 
   // Build the query: Prefer coordinates for pinpoint accuracy, fallback to address
@@ -2319,10 +2356,11 @@ function StayLocation({ stay }) {
 
   const detailRows = [
     { label: "ADDRESS", value: address },
-    { label: "DISTRICT", value: city },
-    { label: "STATE", value: state },
+    { label: "CITY", value: city },
+    { label: "DISTRICT", value: district || city || "N/A" },
+    { label: "STATE", value: state || "N/A" },
     { label: "COUNTRY", value: country },
-  ];
+  ].filter((row) => row.value);
 
   return (
     <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
