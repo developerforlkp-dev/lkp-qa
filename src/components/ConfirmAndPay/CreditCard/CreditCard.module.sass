@@ -38,5 +38,19 @@
 .button
     margin-top: 32px
     +m
+        margin-top: 0
         height: 56px
         border-radius: 28px
+        width: 100%
+
+.stickyBottom
+    +m
+        position: fixed
+        bottom: 0
+        left: 0
+        right: 0
+        padding: 16px 16px calc(16px + env(safe-area-inset-bottom))
+        z-index: 99
+        pointer-events: none
+        .button
+            pointer-events: auto
