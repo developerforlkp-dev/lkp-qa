@@ -2589,6 +2589,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return [...experienceAvailableDateKeys].every(key => key < todayKey);
   }, [isEventBooking, experienceAvailableDateKeys]);
 
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth <= 768) {
+        const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 300;
+        setIsFooterVisible(scrolledToBottom);
+      } else {
+        setIsFooterVisible(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
   return (
     <>
       <style>{`
@@ -2604,7 +2624,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       <motion.button
         onClick={handleOpenBooking}
         initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
         whileHover={triggerDisabled ? undefined : {
           scale: 1.04,
           background: AH || A,
@@ -2642,7 +2662,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         {triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : triggerLabel}
       </motion.button>
       {triggerDisabled && (
-        <div
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
           className="booking-trigger-message"
           style={{
             position: "fixed",
@@ -2662,7 +2684,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           }}
         >
           {ticketSaleWindow.message}
-        </div>
+        </motion.div>
       )}
 
       <AnimatePresence>
