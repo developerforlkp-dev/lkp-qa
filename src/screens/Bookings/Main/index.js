@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import ProductNavbar from "../../../components/ProductNavbar";
+import { Link, useHistory } from "react-router-dom";
 import cn from "classnames";
 import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
@@ -651,6 +650,7 @@ const Main = ({
   completedCount = 0,
   setCompletedOrders = null
 }) => {
+  const history = useHistory();
   const [activeTab, setActiveTab] = useState(tabs[0].id);
   const [displayedTab, setDisplayedTab] = useState(tabs[0].id);
   const [transitionPhase, setTransitionPhase] = useState("idle");
@@ -1106,8 +1106,19 @@ const Main = ({
 
   const totalPages = Math.ceil(bookingsForTab.length / itemsPerPage);
 
-  const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const prevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+    scrollToTop();
+  };
+  
+  const nextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    scrollToTop();
+  };
 
   const emptyState = emptyStateCopy[displayedTab] || emptyStateCopy.upcoming;
   const cancelPreviewRows = getCancelPreviewRows(cancelPreview);
@@ -1467,11 +1478,13 @@ const Main = ({
   }
 
   return (
-    <div className={cn("section-pd", styles.main)}>
-      <ProductNavbar top={100} left={60} />
+    <div className={cn("section-pd", styles.section)}>
       <div className={cn("container", styles.container)}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 40 }}>
+        <div className={styles.headerWrapper}>
           <div className={styles.heading}>
+            <button className={styles.backButton} onClick={() => history.length > 2 ? history.goBack() : history.push('/')}>
+              <Icon name="arrow-prev" size="24" />
+            </button>
             <h1 className={cn("h2", styles.title)}>My bookings</h1>
           </div>
         </div>
