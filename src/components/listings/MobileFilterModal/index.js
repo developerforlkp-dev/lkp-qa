@@ -26,6 +26,9 @@ const MobileFilterModal = ({
     <Modal visible={visible} onClose={onClose} outerClassName={styles.modal}>
       <div className={styles.sheet}>
 
+        {/* Drag Handle */}
+        <div className={styles.handle} />
+
         {/* Sticky Header */}
         <div className={styles.header}>
           <div className={styles.headerRow}>
