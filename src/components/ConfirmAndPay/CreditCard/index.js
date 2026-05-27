@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import { useHistory } from "react-router-dom";
 import styles from "./CreditCard.module.sass";
@@ -19,7 +19,20 @@ const cards = [
 
 const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null }) => {
   const [save, setSave] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(false);
   const history = useHistory();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+      setIsAtBottom(scrolledToBottom);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const ensureRazorpayScript = () =>
     new Promise((resolve, reject) => {
@@ -212,9 +225,18 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           required="required"
         />
       </div>
-      <button className={cn("button", styles.button)} type="button" onClick={handleConfirmClick}>
-        Confirm and pay
-      </button>
+      <div 
+        className={styles.stickyBottom}
+        style={{
+          opacity: isAtBottom ? 0 : 1,
+          visibility: isAtBottom ? "hidden" : "visible",
+          transition: "opacity 0.3s ease, visibility 0.3s ease"
+        }}
+      >
+        <button className={cn("button", styles.button)} type="button" onClick={handleConfirmClick}>
+          Confirm and pay
+        </button>
+      </div>
     </div>
   );
 };

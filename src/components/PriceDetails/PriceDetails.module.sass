@@ -8,9 +8,15 @@
     +d
         padding: 24px
     +m
-        padding: 16px
+        padding: 24px 20px
+        border-radius: 24px
+        box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.06)
+        border: none
     +dark
         border-color: $n3
+        +m
+            box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.4)
+            background: $n2
 
 .description
     margin-top: 32px
@@ -84,13 +90,17 @@
     justify-content: space-between
     align-items: center
     +m
-        padding: 16px 20px
+        padding: 20px 24px
         flex-direction: column
         align-items: flex-start
         gap: 8px
+        background: rgba($p1, 0.05)
+        border: none
     +dark
         background: $n2
         border-color: $p1
+        +m
+            background: rgba($p1, 0.1)
 
 .amountToPayLabel
     +body-bold-2
@@ -116,6 +126,8 @@
 
 .table
     margin-bottom: 8px
+    +m
+        margin-bottom: 24px
 
 .row
     display: flex
@@ -125,13 +137,36 @@
         border-radius: 8px
         +dark
             background: $n2
+        +m
+            background: none
+            border-top: 1px solid $n6
+            border-radius: 0
+            padding-top: 16px
+            margin-top: 8px
+            +dark
+                border-color: $n3
+                background: none
         .cell
             &:first-child
                 color: $n2
                 +dark
                     color: $n8
+                +m
+                    font-weight: 700
+                    font-size: 16px
+            &:nth-child(2)
+                +m
+                    font-weight: 700
+                    color: $p1
+                    font-size: 16px
     &:not(:last-child)
         margin-bottom: 4px
+        +m
+            margin-bottom: 12px
+            padding-bottom: 12px
+            border-bottom: 1px solid $n6
+            +dark
+                border-color: $n3
 
 .cell
     display: flex
