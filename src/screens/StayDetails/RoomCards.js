@@ -744,7 +744,11 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   return (
     <div className={cn(styles.card, { [styles.cardSelected]: isSelected })}>
       {/* Left: Image */}
-      <div className={styles.imgWrap} style={{ position: "relative" }}>
+      <div 
+        className={styles.imgWrap} 
+        style={{ position: "relative", cursor: "pointer" }}
+        onClick={() => setShowModal(true)}
+      >
         {coverImage
           ? <img src={coverImage} alt={name} className={styles.img} />
           : <div className={styles.imgPlaceholder}><Icon name="home" size="48" /></div>

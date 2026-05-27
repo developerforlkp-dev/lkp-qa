@@ -1770,6 +1770,7 @@ function PropertyModal({ stay, onClose }) {
 
 function PropertyStayCard({ stay }) {
   const { tokens: { FG, M, B, W, S, A, AL } } = useTheme();
+  const { isMobile } = useWindowSize();
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [isHoveringCover, setIsHoveringCover] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -1876,17 +1877,18 @@ function PropertyStayCard({ stay }) {
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       style={{
         display: "grid",
-        gridTemplateColumns: "320px 1fr",
-        gap: 24,
+        gridTemplateColumns: isMobile ? "1fr" : "320px 1fr",
+        gap: isMobile ? 16 : 24,
         background: W,
         border: `1px solid ${B}`,
         borderRadius: 12,
-        padding: 20,
+        padding: isMobile ? 16 : 20,
         marginBottom: 24,
       }}
       className="property-stay-card"
     >
       <motion.div
+        onClick={() => setShowModal(true)}
         whileHover={{ scale: 1.02, y: -2 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         style={{
@@ -1894,7 +1896,8 @@ function PropertyStayCard({ stay }) {
           overflow: "hidden",
           background: "linear-gradient(120deg, rgba(230,236,246,0.9), rgba(242,246,252,0.9))",
           minHeight: 200,
-          position: "relative"
+          position: "relative",
+          cursor: "pointer"
         }}
         onHoverStart={() => setIsHoveringCover(true)}
         onHoverEnd={() => setIsHoveringCover(false)}
@@ -2023,8 +2026,14 @@ function PropertyStayCard({ stay }) {
           </div>
         )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
+          <div style={{ 
+            display: isMobile ? "grid" : "flex", 
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "unset",
+            flexWrap: "wrap", 
+            gap: 12,
+            width: isMobile ? "100%" : "auto"
+          }}>
             <motion.div
               whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
               transition={{ duration: 0.2 }}
@@ -2034,7 +2043,7 @@ function PropertyStayCard({ stay }) {
                 padding: "10px 14px",
                 background: S,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: 150
+                minWidth: isMobile ? 0 : 150
               }}
             >
               <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-in</div>
@@ -2049,7 +2058,7 @@ function PropertyStayCard({ stay }) {
                 padding: "10px 14px",
                 background: S,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: 150
+                minWidth: isMobile ? 0 : 150
               }}
             >
               <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-out</div>
@@ -2064,7 +2073,8 @@ function PropertyStayCard({ stay }) {
                 padding: "10px 14px",
                 background: S,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: 170
+                minWidth: isMobile ? 0 : 170,
+                gridColumn: isMobile ? "1 / -1" : "auto"
               }}
             >
               <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Price</div>
