@@ -1069,7 +1069,7 @@ const ExperienceProduct = () => {
                             transition: "0.3s"
                           }}
                         >
-                          <div style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
+                          <div className="addon-img" style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
                             {addonImage ? (
                               <img
                                 src={formatImageUrl(addonImage)}
@@ -1084,16 +1084,17 @@ const ExperienceProduct = () => {
                               <Plus size={24} color={A} />
                             )}
                           </div>
-                          <div style={{ flex: 1 }}>
+                          <div className="addon-content" style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }} className="addon-header">
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div className="addon-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title}</p>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="addon-actions">
-                                <span style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
+                                <span className="addon-badge" style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
                                 {isSelected ? (
                                   pricingType === "Group" ? (
                                     <button
+                                      className="addon-btn addon-btn-remove"
                                       onClick={() => handleUpdateAddonQuantity(addon, -1)}
                                       style={{
                                         background: AL,
@@ -1114,7 +1115,7 @@ const ExperienceProduct = () => {
                                       Remove
                                     </button>
                                   ) : (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
+                                    <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
                                       <button
                                         onClick={() => handleUpdateAddonQuantity(addon, -1)}
                                         style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
@@ -1134,6 +1135,7 @@ const ExperienceProduct = () => {
                                   )
                                 ) : (
                                   <button
+                                    className="addon-btn addon-btn-add"
                                     onClick={() => handleUpdateAddonQuantity(addon, 1)}
                                     style={{
                                       background: S,
@@ -1156,9 +1158,9 @@ const ExperienceProduct = () => {
                                 )}
                               </div>
                             </div>
-                            <p style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
+                            <p className="addon-desc" style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
                             {addon.price > 0 && (
-                              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                              <div className="addon-price" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
                                 <p style={{ fontSize: 13, fontWeight: 700, color: A }}>+ ₹{addon.price}</p>
                                 {isSelected && (selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1) > 1 && (
                                   <p style={{ fontSize: 12, fontWeight: 500, color: M }}>
@@ -1524,7 +1526,7 @@ const ExperienceProduct = () => {
         }
 
         @media(max-width: 900px) { 
-          main { padding-bottom: 100px !important; }
+          main { padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important; }
           .hero-stats { grid-template-columns: 1fr !important; gap: 40px !important; } 
           .gal-grid { grid-template-columns: 1fr 1fr !important; grid-auto-rows: 240px !important; gap: 8px !important; }
           .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
@@ -1564,10 +1566,91 @@ const ExperienceProduct = () => {
           .gallery-item { height: 240px !important; width: 200px !important; }
           .early-bird-wrapper { bottom: 20px !important; right: 20px !important; }
           
+          /* Global bottom safe area for sticky Reserve button removed from here, applied to main */
+
           /* Addons mobile */
-          .addon-item { align-items: flex-start !important; padding: 16px !important; gap: 16px !important; }
-          .addon-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          .addon-actions { width: 100%; justify-content: flex-start !important; }
+          .addon-item { 
+            align-items: center !important; 
+            padding: 16px 12px !important; 
+            gap: 16px !important; 
+            border-radius: 20px !important;
+          }
+          .addon-img { 
+            width: 76px !important;
+            height: 76px !important;
+            border-radius: 14px !important;
+            aspect-ratio: 1/1 !important;
+            flex-shrink: 0 !important;
+          }
+          .addon-content {
+            display: grid !important;
+            grid-template-areas: 
+              "title title"
+              "badge badge"
+              "price btn";
+            grid-template-columns: 1fr auto !important;
+            row-gap: 6px !important;
+            column-gap: 8px !important;
+            align-items: center !important;
+            flex: 1 !important;
+          }
+          .addon-header { 
+            display: contents !important; 
+          }
+          .addon-title { 
+            grid-area: title !important;
+            margin-bottom: 2px !important;
+          }
+          .addon-title p { 
+            font-size: 15px !important;
+            line-height: 1.2 !important;
+            letter-spacing: -0.02em !important;
+          }
+          .addon-actions { 
+            display: contents !important;
+          }
+          .addon-badge { 
+            grid-area: badge !important;
+            justify-self: start !important;
+            font-size: 9px !important;
+            padding: 4px 8px !important;
+            border-radius: 100px !important;
+            letter-spacing: 0.05em !important;
+          }
+          .addon-btn, .addon-counter { 
+            grid-area: btn !important;
+            justify-self: end !important;
+            height: 34px !important;
+          }
+          .addon-btn {
+            padding: 0 18px !important;
+            font-size: 12px !important;
+            border-radius: 100px !important;
+          }
+          .addon-counter {
+             height: 34px !important;
+             padding: 0 8px !important;
+             gap: 12px !important;
+          }
+          .addon-counter button {
+             padding: 4px !important;
+          }
+          .addon-counter span {
+             font-size: 13px !important;
+             min-width: 16px !important;
+          }
+          .addon-desc { 
+            display: none !important; 
+          }
+          .addon-price { 
+            grid-area: price !important;
+            margin-top: 0 !important;
+            justify-content: flex-start !important;
+          }
+          .addon-price p:first-child {
+            font-size: 14px !important;
+            letter-spacing: -0.01em !important;
+          }
         }
       `}</style>
     </Page>
