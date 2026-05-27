@@ -2074,17 +2074,6 @@ function PropertyStayCard({ stay }) {
             </motion.div>
           </div>
 
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              background: AL, border: `1px solid ${A}`, color: A,
-              padding: "12px 24px", borderRadius: 10, fontSize: 13, fontWeight: 700,
-              cursor: "pointer", whiteSpace: "nowrap",
-              transition: "all 0.3s ease",
-              display: "flex", alignItems: "center", justifyContent: "center"
-            }}>
-            View Details
-          </button>
         </div>
       </div>
 
