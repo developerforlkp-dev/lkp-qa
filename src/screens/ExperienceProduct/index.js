@@ -59,7 +59,7 @@ function ExperienceBg({ progress, src }) {
   const isDark = theme === "dark";
   const imgFilter = isDark
     ? "brightness(0.45) contrast(1.1)"
-    : "brightness(0.7) contrast(1.05)";
+    : "brightness(0.9) contrast(1.05)";
 
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0 }}>
@@ -92,7 +92,7 @@ function HeroShareFab({ title, text, url }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2400);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   return (
@@ -182,12 +182,12 @@ function HeroShareFab({ title, text, url }) {
 const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
   const { theme, tokens: { BG, A } } = useTheme();
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
-  
+
   const textMain = isDark ? '#FFF' : '#141414';
   const pillBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)';
   const pillBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
   const pillText = A || '#0097B2';
-  
+
   const btnBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)';
   const btnBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
   const btnHoverBg = isDark ? 'rgba(255,255,255,0.2)' : '#FFFFFF';
@@ -393,7 +393,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         }
       `}</style>
 
-      <motion.div 
+      <motion.div
         className="fs-modal-box"
         initial={{ y: 50, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -401,7 +401,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         onClick={(e) => e.stopPropagation()}
       >
-        
+
         {/* LEFT PANE - Image Viewer */}
         <div className="fs-left-pane">
           <div className="fs-header">
@@ -410,7 +410,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
                 {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{items.length}</span>
               </div>
             ) : <div />}
-            
+
             <motion.button
               onClick={onClose}
               whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
@@ -480,7 +480,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
   );
 };
 
-const EarlyBirdTicker = ({ discounts, A }) => {
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -507,18 +507,18 @@ const EarlyBirdTicker = ({ discounts, A }) => {
             fontSize: 10,
             letterSpacing: "0.3em",
             textTransform: "uppercase",
-            color: "#FFFFFF",
+            color: FG || "#FFFFFF",
             fontWeight: 800,
             whiteSpace: "nowrap",
             display: "block"
           }}
         >
-          <span style={{ opacity: 0.7 }}>Book</span>{" "}
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
           <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
             {discounts[index].daysInAdvance} Days
           </span>{" "}
-          <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
-          <span style={{ color: "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
             {discounts[index].percentage}% OFF
           </span>
         </motion.span>
@@ -874,7 +874,7 @@ const ExperienceProduct = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
-                  background: "rgba(255, 255, 255, 0.03)",
+                  background: theme === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.03)",
                   backdropFilter: "blur(12px)",
                   padding: "12px 24px",
                   borderRadius: 100,
@@ -884,7 +884,7 @@ const ExperienceProduct = () => {
                 }}
               >
                 <Sparkles color={A} size={14} />
-                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} />
+                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
               </motion.div>
             </motion.div>
           )}
@@ -1218,7 +1218,7 @@ const ExperienceProduct = () => {
                             style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1, willChange: "transform" }}
                           >
                             {activityImageUrl && (
-                              <div 
+                              <div
                                 style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S, cursor: "pointer" }}
                                 onClick={() => { setActivityPhotoSrc(activityImageUrl); setActivityPhotoVisible(true); }}
                               >
@@ -1483,8 +1483,8 @@ const ExperienceProduct = () => {
 
         /* LIGHT THEME SPECIFIC STYLES */
         [data-theme='light'] .hero-section h1.font-display {
-          color: #0F0F0F !important;
-          -webkit-text-fill-color: #0F0F0F !important;
+          color: #20242C !important;
+          -webkit-text-fill-color: #20242C !important;
           text-shadow: none !important;
         }
         [data-theme='light'] .hero-section .hero-subtitle {
@@ -1712,7 +1712,7 @@ const ExperienceProduct = () => {
           }
         }
       `}</style>
-      
+
       <AnimatePresence>
         {activityPhotoVisible && activityPhotoSrc && (
           <FullScreenImage
@@ -1788,7 +1788,7 @@ function PolicyItem({ req }) {
                   {questions.map((q, j) => {
                     const questionTitle = q.title || q.question?.title;
                     const answerText = q.answer?.valueText || q.valueText;
-                    
+
                     return (
                       <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
