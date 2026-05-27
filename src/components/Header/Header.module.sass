@@ -55,36 +55,15 @@
     +t
         padding-left: 0
         border: none
+    // Hidden on mobile — nav lives in the slide-in drawer instead
     +m
-        position: absolute
-        top: 0
-        left: 0
-        right: 0
-        z-index: 10
-        flex-direction: column
-        align-items: stretch
-        height: 100vh
-        min-height: auto
-        padding: 132px 32px 48px
-        background: $n8
-        visibility: hidden
-        opacity: 0
-        pointer-events: none
-        transition: all .3s
-        +dark
-            background: $n1
-        &.active
-            visibility: visible
-            opacity: 1
-            pointer-events: auto
+        display: none
     +dark
         border-color: $n2
     & > div
         &:first-child
             +t
                 margin-right: auto
-            +m
-                margin: 0
 
 .dropdown
     margin-right: auto
@@ -172,6 +151,9 @@
     height: 40px
     margin-left: 12px
     -webkit-tap-highlight-color: rgba(0,0,0,0)
+    // Hidden on mobile — accessible in the slide-in drawer instead
+    +m
+        display: none
     svg
         fill: #000000
         width: 24px
@@ -191,8 +173,9 @@
 .user,
 .login
     margin-left: 12px
+    // Hidden on mobile — accessible in the slide-in drawer instead
     +m
-        margin-left: 12px
+        display: none
 
 .login
     width: 40px
@@ -208,31 +191,41 @@
 .burger
     display: none
     +m
-        display: block
+        display: flex
+        align-items: center
+        justify-content: center
         position: relative
         z-index: 15
         margin-left: 20px
-        width: 32px
-        height: 32px
-        background: none
+        width: 36px
+        height: 36px
+        border-radius: 10px
+        background: $n7
+        border: 1.5px solid $n6
         -webkit-tap-highlight-color: rgba(0,0,0,0)
-        &.active
-            &:before
-                transform: translateY(0) rotate(-45deg)
-            &:after
-                transform: translateY(0) rotate(45deg)
-        &:before,
-        &:after
+        transition: background .2s, border-color .2s
+        +dark
+            background: $n2
+            border-color: $n3
+        &:hover
+            background: $n6
+            border-color: $n5
+            +dark
+                background: $n3
+                border-color: $n4
+        // Three-line hamburger icon via pseudo-elements
+        &:before
             content: ''
             position: absolute
-            top: 16px
-            left: 6px
-            width: 20px
-            height: 2px
-            background: $n4
+            left: 8px
+            right: 8px
+            top: 50%
+            height: 1.5px
+            background: $n3
             border-radius: 2px
-            transition: transform .2s
-        &:before
-            transform: translateY(-4px)
-        &:after
-            transform: translateY(3px)
+            box-shadow: 0 -5px 0 $n3, 0 5px 0 $n3
+            transform: translateY(-50%)
+            transition: box-shadow .2s
+            +dark
+                background: $n6
+                box-shadow: 0 -5px 0 $n6, 0 5px 0 $n6

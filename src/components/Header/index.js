@@ -9,6 +9,7 @@ import Icon from "../Icon";
 import Modal from "../Modal";
 import Login from "../Login";
 import useDarkMode from "use-dark-mode";
+import MobileNavDrawer from "./MobileDrawer/MobileNavDrawer";
 
 
 
@@ -58,18 +59,12 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
               alt="FleetHome"
             />
           </Link>
-          <div className={cn(styles.wrapper, { [styles.active]: visibleNav })}>
 
-            <NavLink
-              className={cn(styles.link, styles.mobileOnlyLink)}
-              to="/bookings"
-              activeClassName={styles.active}
-              onClick={() => setVisibleNav(false)}
-            >
-              <Icon name="home" size="24" className={styles.mobileIcon} />
-              <span>Bookings</span>
-            </NavLink>
+          {/* Desktop nav wrapper — hidden on mobile */}
+          <div className={styles.wrapper}>
+            {/* Desktop nav links can go here */}
           </div>
+
           <button
             type="button"
             className={styles.themeToggle}
@@ -96,15 +91,30 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
           ) : (
             <User className={styles.user} items={items} />
           )}
+
+          {/* Burger — mobile only, opens the slide-in drawer */}
           <button
             className={cn(styles.burger, { [styles.active]: visibleNav })}
-            onClick={() => setVisibleNav(!visibleNav)}
+            onClick={() => setVisibleNav(true)}
+            aria-label="Open menu"
           ></button>
         </div>
       </div>
+
+      {/* Login modal */}
       <Modal visible={visible} onClose={() => setVisible(false)}>
         <Login onClose={() => setVisible(false)} />
       </Modal>
+
+      {/* Mobile nav drawer — slide-in from right, mobile only */}
+      <MobileNavDrawer
+        visible={visibleNav}
+        onClose={() => setVisibleNav(false)}
+        shouldShowLogin={shouldShowLogin}
+        onLoginClick={() => setVisible(true)}
+        darkMode={darkMode}
+        isAuthenticated={isAuthenticated()}
+      />
     </>
   );
 };
