@@ -1412,6 +1412,26 @@ const StayBookingSystem = ({
     }
   };
 
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth <= 768) {
+        const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 300;
+        setIsFooterVisible(scrolledToBottom);
+      } else {
+        setIsFooterVisible(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
   return (
     <>
       <style>{`
@@ -1486,7 +1506,7 @@ const StayBookingSystem = ({
       <motion.button
         onClick={() => setShow(true)}
         initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
         whileHover={{
           scale: 1.04,
           background: AH || A,
