@@ -52,6 +52,7 @@ const Item = ({ className, item, row, car, hidePrice }) => {
             className={cn(
               "category",
               { "category-blue": item.category === "blue" },
+              { [styles.categoryRight]: item.categoryPosition === "right" },
               styles.category
             )}
           >
