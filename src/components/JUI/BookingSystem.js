@@ -1138,6 +1138,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [showValidation, setShowValidation] = useState(false);
   const [showDateWarning, setShowDateWarning] = useState(false);
   const [errorPopup, setErrorPopup] = useState({ visible: false, title: "", message: "" });
+  const pendingRestoreRef = useRef(null);
 
 
 
@@ -1245,18 +1246,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
         if (stored?.listingId === currentListingId && isLoggedIn) {
           console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
+          
+          pendingRestoreRef.current = stored;
+
           if (stored.startDate) {
             const parsedDate = moment(stored.startDate);
-            const todayKey = moment().format("YYYY-MM-DD");
-            if (parsedDate.isValid() && parsedDate.format("YYYY-MM-DD") !== todayKey) {
+            if (parsedDate.isValid()) {
               setStartDate(parsedDate);
             }
           }
-          if (stored.startTime !== undefined) setStartTime(stored.startTime);
-          if (stored.guests) setGuests(stored.guests);
           if (stored.selectedTicketTypeId !== undefined) setSelectedTicketTypeId(stored.selectedTicketTypeId);
-          if (stored.selectedEventSlotIds) setSelectedEventSlotIds(stored.selectedEventSlotIds);
-          if (stored.privateBooking !== undefined) setPrivateBooking(stored.privateBooking);
 
           // Clear so it does not persist across future completely independent user visits
           localStorage.removeItem("frontendPendingBookingState");
@@ -1583,6 +1582,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         console.log("Event slot availability raw payload:", payload);
         console.log("Event slot availability normalized records:", normalized);
         setEventAvailabilityRecords(normalized);
+
+        if (pendingRestoreRef.current) {
+          const stored = pendingRestoreRef.current;
+          pendingRestoreRef.current = null;
+          if (stored.selectedEventSlotIds) setSelectedEventSlotIds(stored.selectedEventSlotIds);
+          if (stored.startTime !== undefined) setStartTime(stored.startTime);
+          if (stored.guests) setGuests(stored.guests);
+          if (stored.privateBooking !== undefined) setPrivateBooking(stored.privateBooking);
+        }
       })
       .catch((error) => {
         if (cancelled || !isMountedRef.current) return;
@@ -1601,14 +1609,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   useEffect(() => {
     if (isEventBooking) {
       // For events, also reset selected slots when date changes
-      setSelectedEventSlotIds([]);
-      setStartTime(null);
+      if (!pendingRestoreRef.current) {
+        setSelectedEventSlotIds([]);
+        setStartTime(null);
+      }
       return;
     }
 
-    setStartTime(null);
-    setPrivateBooking(false);
-    setShowTimePicker(false);
+    if (!pendingRestoreRef.current) {
+      setStartTime(null);
+      setPrivateBooking(false);
+      setShowTimePicker(false);
+    }
 
     if (!show || !listingId || !selectedDateKey || !slotsLookupEndDate) {
       setDateFilteredSlots([]);
@@ -1637,6 +1649,37 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         });
         setDateFilteredSlots(normalized);
         setDateFilteredSlotsLoaded(true);
+
+        if (pendingRestoreRef.current) {
+          const stored = pendingRestoreRef.current;
+          pendingRestoreRef.current = null;
+
+          if (stored.startTime) {
+            const targetSlot = normalized.find(s => s.slotName === stored.startTime || s.startTime === stored.startTime);
+            let isValid = false;
+            
+            if (targetSlot && targetSlot.isAvailable !== false) {
+              const totalStoredGuests = (stored.guests?.adults || 0) + (stored.guests?.children || 0);
+              const limit = getSlotSeatLimit(targetSlot);
+              if (limit === undefined || limit >= totalStoredGuests) {
+                isValid = true;
+              }
+            }
+
+            if (isValid) {
+              setStartTime(stored.startTime);
+              if (stored.guests) setGuests(stored.guests);
+              if (stored.privateBooking !== undefined) setPrivateBooking(stored.privateBooking);
+            } else {
+              setStartTime(null);
+              setErrorPopup({
+                visible: true,
+                title: "Slot Unavailable",
+                message: "The slot you previously selected is no longer available. Please choose another available time slot."
+              });
+            }
+          }
+        }
       })
       .catch((error) => {
         if (cancelled || !isMountedRef.current) return;
