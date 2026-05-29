@@ -410,13 +410,7 @@ const ScopedStyles = () => (
       color: #0097B2 !important;
       -webkit-text-fill-color: #0097B2 !important;
     }
-    .event-details-premium .venue-map-frame {
-      filter: grayscale(1) contrast(1.05);
-      transition: filter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .event-details-premium .venue-map-wrap:hover .venue-map-frame {
-      filter: grayscale(0) contrast(1);
-    }
+
 
     
     .gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: start; height: 850px; overflow: hidden; border-radius: 40px; }
@@ -1239,37 +1233,34 @@ function Venue({ event, hostName }) {
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
           <SHdr idx="04" label="Landscape" />
           <Chars text="Where It's Happening" cls="font-display" style={{ fontSize: "clamp(1.8rem,4.5vw,4.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
+          <div style={{ background: W, border: `1px solid ${B}`, borderRadius: 16, padding: 40, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
             <Rev delay={0.1}>
-              <div style={{ background: W, padding: 52 }}>
-                <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 24 }}>
                   <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
-                    <MapPin size={18} color={A} style={{ flexShrink: 0, marginTop: 4 }} />
+                    <MapPin size={24} color={A} style={{ flexShrink: 0 }} />
                   </motion.div>
-                  <div>
-                    <h3 className="font-display" style={{ fontSize: "clamp(1.8rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 4 }}>
-                      {event?.venueFullAddress?.split(',')[0] || "The Venue"}
-                    </h3>
-                  </div>
+                  <h3 style={{ fontSize: "clamp(1.5rem,2.5vw,2rem)", fontWeight: 700, color: FG, margin: 0 }}>
+                    {event?.venueFullAddress?.split(',')[0] || "The Venue"}
+                  </h3>
                 </div>
-                <p style={{ fontSize: 14, color: M, lineHeight: 1.85, marginBottom: 32, maxWidth: 540 }}>
+                <p style={{ fontSize: 14, color: M, lineHeight: 1.85, marginBottom: 32 }}>
                   {event?.venueDescription || event?.description?.slice(0, 200) || "Join us at this premier location for an unforgettable experience."}
                 </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {event?.venueName && (
-                    <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 600 }}>Venue Name: </span>{event?.venueName}</p>
-                  )}
-                  <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 600 }}>Address: </span>{event?.venueFullAddress || "Venue details to be updated"}</p>
-                  {event?.district && (
-                    <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 600 }}>District: </span>{event?.district}</p>
-                  )}
-                  {event?.state && (
-                    <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 600 }}>State: </span>{event?.state}</p>
-                  )}
-                  {displayHostName && (
-                    <p style={{ fontSize: 12, color: M }}><span style={{ color: FG, fontWeight: 600 }}>Host name: </span>{displayHostName}</p>
-                  )}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {[
+                    event?.venueName ? { label: "Venue Name", value: event.venueName } : null,
+                    { label: "Address", value: event?.venueFullAddress || "Venue details to be updated" },
+                    event?.district ? { label: "District", value: event.district } : null,
+                    event?.state ? { label: "State", value: event.state } : null,
+                    displayHostName ? { label: "Host Name", value: displayHostName } : null,
+                  ].filter(Boolean).map((row, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 24, padding: "20px 0", borderBottom: `1px solid ${B}` }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: A, textTransform: "uppercase" }}>{row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: FG, lineHeight: 1.5 }}>{row.value}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <div style={{ marginTop: 40 }}>
@@ -1278,38 +1269,33 @@ function Venue({ event, hostName }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     whileHover={{ x: 8 }}
-                    style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700, color: A, textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}
+                    style={{ fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700, color: A, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}
                   >
-                    Get Directions <ArrowRight size={14} />
+                    Get Directions <ArrowRight size={16} />
                   </motion.a>
                 </div>
               </div>
             </Rev>
-            <Rev delay={0.2}>
-              <div style={{ background: S, padding: 52, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 400 }}>
-                <div>
-                  <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: M, marginBottom: 24, fontWeight: 500 }}>Location</p>
-                  <div className="venue-map-wrap" style={{ position: "relative", width: "100%", paddingBottom: "85%", background: W, overflow: "hidden", border: `1px solid ${B}` }}>
-                    {mapSrc ? (
-                      <iframe
-                        className="venue-map-frame"
-                        title="Venue location map"
-                        src={mapSrc}
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
-                      />
-                    ) : (
-                      <>
-                        <motion.div animate={{ backgroundPosition: ["0px 0px", "28px 28px"] }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }} style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "28px 28px" }} />
-                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
-                          <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-8px", borderRadius: "50%", border: `1.5px solid ${A}`, transform: "translate(-50%,-50%)", top: "50%", left: "50%" }} />
-                          <div style={{ width: 10, height: 10, borderRadius: "50%", background: A, position: "relative", zIndex: 1 }} />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+            <Rev delay={0.2} style={{ height: "100%" }}>
+              <div style={{ height: "100%", minHeight: 400, position: "relative", borderRadius: 16, overflow: "hidden", border: `1px solid ${B}` }}>
+                {mapSrc ? (
+                  <iframe
+                    className="venue-map-frame"
+                    title="Venue location map"
+                    src={mapSrc}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+                  />
+                ) : (
+                  <>
+                    <motion.div animate={{ backgroundPosition: ["0px 0px", "28px 28px"] }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }} style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "28px 28px" }} />
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+                      <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-8px", borderRadius: "50%", border: `1.5px solid ${A}`, transform: "translate(-50%,-50%)", top: "50%", left: "50%" }} />
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: A, position: "relative", zIndex: 1 }} />
+                    </div>
+                  </>
+                )}
               </div>
             </Rev>
           </div>

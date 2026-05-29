@@ -1270,15 +1270,12 @@ const ExperienceProduct = () => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
               <Rev delay={0.1}>
                 <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Where it All Happens</h3>
-                <div style={{ background: S, border: `1px solid ${B}`, padding: 40, display: "flex", flexDirection: "column", gap: 16 }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                    <MapPin size={20} color={A} />
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</p>
-                      <p style={{ fontSize: 13, color: M, marginTop: 4 }}>{listing?.meetingAddress || "Arrive via Gate 3 (Private Entrance). Our concierge will meet you at the inner courtyard."}</p>
-                    </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <MapPin size={24} color={A} />
+                    <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</p>
                   </div>
-                  <div style={{ background: W, border: `1px solid ${B}`, height: 200, marginTop: 16, position: "relative", overflow: "hidden" }}>
+                  <div style={{ background: W, border: `1px solid ${B}`, height: 320, position: "relative", overflow: "hidden", borderRadius: 16 }}>
                     {listing?.meetingLatitude && listing?.meetingLongitude ? (
                       <iframe
                         width="100%"

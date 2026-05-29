@@ -2386,19 +2386,12 @@ function StayLocation({ stay }) {
           {/* Left Column: Location Card */}
           <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 32 }}>
             <h2 className="font-display" style={{ fontSize: isMobile ? 32 : 48, fontWeight: 700, color: FG }}>Location</h2>
-            <div style={{ background: S, borderRadius: 2, overflow: "hidden", border: `1px solid ${B}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-              {/* Card Header Area */}
-              <div style={{ padding: isMobile ? "20px" : "24px 32px", background: BG, borderBottom: `1px solid ${B}` }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <MapPin size={20} color={A} style={{ marginTop: 4 }} />
-                  <div>
-                    <p style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 4 }}>{city}</p>
-                    <p style={{ fontSize: 13, color: M, lineHeight: 1.5 }}>{address}</p>
-                  </div>
-                </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <MapPin size={24} color={A} />
+                <p style={{ fontSize: 18, fontWeight: 700, color: FG, margin: 0 }}>{stay?.locationName || (address ? address.split(',')[0] : null) || city || stay?.propertyName || stay?.title || stay?.name || "Location"}</p>
               </div>
-              {/* Map Area */}
-              <div style={{ height: isMobile ? 300 : 400, position: "relative" }}>
+              <div style={{ background: W, border: `1px solid ${B}`, height: isMobile ? 320 : 400, position: "relative", overflow: "hidden", borderRadius: 16 }}>
                 <iframe
                   title="Property Location Map"
                   width="100%"
