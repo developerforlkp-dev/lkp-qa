@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSp
 import {
   Utensils, Star, Clock, MapPin, ChefHat, Award, Leaf, Globe,
   Coffee, Info, ChevronRight, ChevronDown, Phone, Instagram, Check, ArrowRight, ArrowDown,
-  Calendar, Zap, CheckCircle, ChevronLeft, UtensilsCrossed, Share2
+  Calendar, Zap, CheckCircle, ChevronLeft, UtensilsCrossed, Share2, Search
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -70,6 +70,32 @@ function ScopedThemeProvider({ children }) {
 
 const E = [0.22, 1, 0.36, 1];
 
+function useWindowSize() {
+  const [size, setSize] = useState({
+    width: typeof window !== "undefined" ? window.innerWidth : 1200,
+    height: typeof window !== "undefined" ? window.innerHeight : 800,
+    isMobile: typeof window !== "undefined" ? window.innerWidth <= 768 : false,
+    isTablet: typeof window !== "undefined" ? (window.innerWidth > 768 && window.innerWidth <= 1024) : false,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isMobile: window.innerWidth <= 768,
+        isTablet: window.innerWidth > 768 && window.innerWidth <= 1024,
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return size;
+}
+
+
 const ScopedStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Italianno&family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,800&display=swap');
@@ -107,16 +133,231 @@ const ScopedStyles = () => (
     .food-details-premium .mq-r { display: flex; white-space: nowrap; animation: marquee-r 34s linear infinite; }
     .food-details-premium .float-anim { animation: float 6s ease-in-out infinite; }
 
-    
     .hero-img-curve {
       clip-path: circle(85% at 85% 50%);
     }
 
+    /* ─── PREMIUM MOBILE RESPONSIVE OVERRIDES ─── */
     @media(max-width:768px){
       .food-details-premium .desk-only { display: none !important; }
-      .chef-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
-      .hero-grid { grid-template-columns: 1fr !important; }
-      .hero-img-curve { clip-path: none !important; border-radius: 40px; margin-top: 40px; }
+      
+      /* Section Paddings */
+      .hero-section-wrapper {
+        height: auto !important;
+        min-height: 100vh;
+        padding: 120px 20px 60px !important;
+        display: flex !important;
+        align-items: center !important;
+      }
+      .chef-section-wrapper {
+        padding: 80px 20px !important;
+      }
+      .dish-gallery-wrapper {
+        padding: 60px 0 !important;
+      }
+      .availability-section-wrapper {
+        padding: 80px 20px !important;
+      }
+      .location-section-wrapper {
+        padding: 80px 20px !important;
+      }
+      .reservation-section-wrapper {
+        padding: 80px 20px !important;
+      }
+
+      /* Grid & Layout Adjustments */
+      .hero-grid {
+        grid-template-columns: 1fr !important;
+        gap: 32px !important;
+      }
+      .chef-grid {
+        grid-template-columns: 1fr !important;
+        gap: 40px !important;
+      }
+      .res-grid {
+        grid-template-columns: 1fr !important;
+        gap: 48px !important;
+        padding: 40px 24px !important;
+        border-radius: 28px !important;
+      }
+
+      /* Hero Specifics */
+      .hero-img-curve {
+        clip-path: none !important;
+        border-radius: 28px !important;
+        margin-top: 16px;
+        aspect-ratio: 4/3 !important;
+        max-height: 45vh !important;
+      }
+      .info-badges-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px !important;
+      }
+      .hero-stats-card {
+        flex-direction: column !important;
+        padding: 12px !important;
+        border-radius: 20px !important;
+        gap: 0 !important;
+      }
+      .hero-stat-item {
+        border-right: none !important;
+        border-bottom: 1px solid var(--B) !important;
+        padding: 16px 12px !important;
+        height: auto !important;
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+      .hero-stat-item:last-child {
+        border-bottom: none !important;
+        padding-bottom: 12px !important;
+      }
+
+
+      /* Chef Section Specifics */
+      .chef-image-wrapper {
+        height: 380px !important;
+        border-radius: 28px !important;
+      }
+      .chef-boxes-wrapper {
+        flex-direction: column !important;
+        gap: 16px !important;
+      }
+      .chef-box-item {
+        padding: 18px 24px !important;
+        border-radius: 16px !important;
+      }
+
+      /* Availability Section Specifics */
+      .availability-operating-card {
+        padding: 28px !important;
+        border-radius: 28px !important;
+      }
+      .availability-hours-text {
+        font-size: 1.65rem !important;
+      }
+      .availability-specs-container {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        padding: 28px !important;
+        border-radius: 28px !important;
+      }
+      
+      /* Location Section Specifics */
+      .location-list-item {
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 20px 0 !important;
+        align-items: flex-start !important;
+      }
+      .location-label {
+        width: auto !important;
+      }
+      .location-value {
+        font-size: 16px !important;
+      }
+      
+      /* Reservation Section Specifics */
+      .res-contact-grid {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+      }
+      .res-accordion-wrapper {
+        padding: 28px !important;
+        border-radius: 28px !important;
+      }
+
+      /* Dish Gallery Filters & Redesigned Cards */
+      .dish-filter-container {
+        padding: 0 20px 24px !important;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .dish-search-wrapper {
+        position: relative;
+        width: 100%;
+      }
+      .dish-search-input {
+        width: 100%;
+        padding: 14px 16px 14px 44px;
+        font-size: 14px;
+        font-family: inherit;
+        border-radius: 12px;
+        border: 1px solid var(--B);
+        background: var(--S);
+        color: var(--FG);
+        outline: none;
+        transition: border-color 0.3s ease;
+      }
+      .dish-search-input:focus {
+        border-color: var(--A);
+      }
+      .dish-search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--M);
+        pointer-events: none;
+      }
+      .dish-chips-row {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+      }
+      .dish-chips-row::-webkit-scrollbar {
+        display: none;
+      }
+      .dish-chip {
+        padding: 8px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 20px;
+        border: 1px solid var(--B);
+        background: var(--W);
+        color: var(--M);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .dish-chip.active {
+        background: var(--A);
+        color: #FFFFFF;
+        border-color: var(--A);
+        box-shadow: 0 4px 12px var(--AL);
+      }
+      .dish-card-img-wrapper {
+        height: 240px !important;
+      }
+      .dish-card-body {
+        padding: 20px !important;
+      }
+      .dish-card-overlay {
+        bottom: 16px !important;
+        left: 16px !important;
+        right: 16px !important;
+      }
+      .dish-card-cta {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 12px;
+        margin-top: 16px;
+        border: none;
+        border-radius: 10px;
+        background: var(--A);
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+      .dish-card-cta:active {
+        transform: scale(0.97);
+      }
     }
   `}</style>
 );
@@ -269,15 +510,26 @@ function InfoBadge({ icon: Icon, label, sublabel, color, tokens }) {
 }
 
 function HeroStat({ icon: Icon, label, value, subvalue, tokens, hideBorder }) {
+  const { isMobile } = useWindowSize();
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "center", padding: "0 24px", borderRight: hideBorder ? "none" : `1px solid ${tokens.B}`, height: "100%" }}>
-      <div style={{ color: tokens.A }}>
+    <div className="hero-stat-item" style={{
+      display: "flex",
+      gap: 16,
+      alignItems: "center",
+      padding: isMobile ? "16px 12px" : "0 24px",
+      borderRight: (isMobile || hideBorder) ? "none" : `1px solid ${tokens.B}`,
+      borderBottom: isMobile && !hideBorder ? `1px solid ${tokens.B}` : "none",
+      height: "100%",
+      width: "100%",
+      boxSizing: "border-box"
+    }}>
+      <div style={{ color: tokens.A, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Icon size={24} />
       </div>
       <div>
-        <p style={{ fontSize: 9, textTransform: "uppercase", color: tokens.M, fontWeight: 700, marginBottom: 4, letterSpacing: "0.05em" }}>{label}</p>
-        <p style={{ fontSize: 14, fontWeight: 800, color: tokens.FG, marginBottom: 2 }}>{value}</p>
-        {subvalue && <p style={{ fontSize: 9, color: tokens.M }}>{subvalue}</p>}
+        <p style={{ fontSize: 9, textTransform: "uppercase", color: tokens.M, fontWeight: 700, marginBottom: 4, letterSpacing: "0.05em", margin: 0 }}>{label}</p>
+        <p style={{ fontSize: 14, fontWeight: 800, color: tokens.FG, marginBottom: 2, margin: 0 }}>{value}</p>
+        {subvalue && <p style={{ fontSize: 9, color: tokens.M, margin: 0 }}>{subvalue}</p>}
       </div>
     </div>
   );
@@ -285,6 +537,7 @@ function HeroStat({ icon: Icon, label, value, subvalue, tokens, hideBorder }) {
 
 /* ─── HERO SHARE FAB ─────────────────────────── */
 function HeroShareFab({ title, text, url }) {
+  const { isMobile } = useWindowSize();
   const [copied, setCopied] = useState(false);
   const [ripple, setRipple] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -307,6 +560,7 @@ function HeroShareFab({ title, text, url }) {
 
   return (
     <motion.button
+      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
@@ -316,8 +570,8 @@ function HeroShareFab({ title, text, url }) {
       whileTap={{ scale: 0.86 }}
       style={{
         position: "absolute",
-        top: 96,
-        right: 60,
+        top: isMobile ? 90 : 96,
+        right: isMobile ? 20 : 60,
         zIndex: 200,
         display: "flex",
         alignItems: "center",
@@ -384,7 +638,9 @@ function HeroShareFab({ title, text, url }) {
 
 /* ─── CULINARY SECTIONS ─────────── */
 function CulinaryHero({ food, galleryItems }) {
-  const { tokens } = useTheme();
+  const history = useHistory();
+  const { isMobile } = useWindowSize();
+  const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
 
   const [idx, setIdx] = useState(0);
@@ -432,20 +688,170 @@ function CulinaryHero({ food, galleryItems }) {
     return rawDays.join(", ");
   }, [food?.openingDays]);
 
+  if (isMobile) {
+    return (
+      <section className="hero-section-wrapper-mobile" style={{ background: BG, minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
+        {/* Full-width screen bleed image slider at the top */}
+        <div className="hero-mobile-image-container" style={{ width: "100%", height: "55vh", position: "relative", overflow: "hidden", borderRadius: "0 0 36px 36px" }}>
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={idx}
+              src={items[idx]}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
+              alt={title}
+            />
+          </AnimatePresence>
+          {/* Subtle dark gradient overlay at the bottom of the image container to transition into the page background */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: `linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.65))` }} />
+          
+          {/* Reposition floating badges (e.g., Family Friendly, Parking Available) as compact overlays */}
+          <div style={{ position: "absolute", top: 100, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            {(food?.isFamilyFriendly || food?.familyFriendly) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${B}`, boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}>
+                <Star size={12} color={A} fill={A} style={{ display: "block" }} />
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.05em" }}>Family Friendly</span>
+              </div>
+            )}
+          </div>
+          {(food?.isParkingAvailable || food?.parkingAvailable) && (
+            <div style={{ position: "absolute", bottom: 20, right: 20, zIndex: 10, display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+              <MapPin size={12} color="#fff" />
+              <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
+            </div>
+          )}
+        </div>
+
+        {/* Hero Back Button */}
+        <button
+          type="button"
+          className="premium-back-button"
+          onClick={() => history.goBack()}
+          aria-label="Go back"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {/* Share Button absolute overlays */}
+        <HeroShareFab
+          title={food?.menuName || food?.title || ""}
+          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          url={window.location.href}
+        />
+
+        {/* Floating Content Card */}
+        <div className="hero-mobile-floating-card" style={{
+          marginTop: "-64px",
+          marginLeft: "16px",
+          marginRight: "16px",
+          padding: "24px 20px",
+          borderRadius: "28px",
+          background: theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.82)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: `1px solid ${B}`,
+          boxShadow: theme === "dark" ? "0 20px 48px rgba(0, 0, 0, 0.35)" : "0 20px 48px rgba(0, 0, 0, 0.08)",
+          zIndex: 15,
+          position: "relative"
+        }}>
+          <h1 className="font-display" style={{
+            fontSize: "24px",
+            fontWeight: 800,
+            color: FG,
+            lineHeight: 1.2,
+            margin: "0 0 6px 0",
+            textTransform: "capitalize"
+          }}>
+            {title}
+          </h1>
+          <h2 className="font-cursive" style={{
+            fontSize: "24px",
+            color: A,
+            margin: "0 0 12px 0",
+            fontWeight: 400
+          }}>
+            {food?.shortDescription || "Authentic Taste Experience"}
+          </h2>
+          <p style={{
+            fontSize: "13px",
+            color: M,
+            lineHeight: 1.5,
+            margin: 0
+          }}>
+            {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
+          </p>
+        </div>
+
+        {/* Details & Badges Section */}
+        <div style={{ padding: "0 16px", marginTop: "20px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="info-badges-grid" style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+            padding: "16px 0",
+            borderTop: `1px solid ${B}`,
+            borderBottom: `1px solid ${B}`
+          }}>
+            <InfoBadge icon={Utensils} label={cuisine} sublabel="Cuisine" tokens={tokens} />
+            <InfoBadge icon={Globe} label={source} sublabel="Source" tokens={tokens} />
+            <InfoBadge icon={Zap} label={serveMode} sublabel="Service" tokens={tokens} />
+            <InfoBadge icon={Leaf} label={dietary} sublabel="Dietary" tokens={tokens} />
+          </div>
+
+          <div className="hero-stats-card" style={{
+            background: W,
+            borderRadius: "20px",
+            padding: "16px",
+            border: `1px solid ${B}`,
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.02)",
+            gap: 0
+          }}>
+            <HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} />
+            <HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} />
+            <HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder />
+          </div>
+        </div>
+
+      </section>
+    );
+  }
+
   return (
-    <section style={{ background: BG, height: "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", paddingTop: 80 }}>
+    <section className="hero-section-wrapper" style={{ background: BG, height: isMobile ? "auto" : "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", paddingTop: isMobile ? 120 : 80 }}>
+      {/* Hero Back Button */}
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      {/* Share Button absolute overlays */}
+      <HeroShareFab
+        title={food?.menuName || food?.title || ""}
+        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+        url={window.location.href}
+      />
+
       {/* Header Blending Gradient */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
-      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 60px", width: "100%", height: "100%", display: "flex", alignItems: "center" }}>
-        <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center", width: "100%" }}>
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: isMobile ? "0 20px" : "0 60px", width: "100%", height: isMobile ? "auto" : "100%", display: "flex", alignItems: "center" }}>
+        <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 32 : 60, alignItems: "center", width: "100%" }}>
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
               <div>
-                <h1 className="font-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4.2rem)", fontWeight: 800, color: FG, lineHeight: 1, margin: 0, textTransform: "capitalize" }}>
+                <h1 className="font-display" style={{ fontSize: isMobile ? "clamp(2rem, 7vw, 3rem)" : "clamp(2.5rem, 5vw, 4.2rem)", fontWeight: 800, color: FG, lineHeight: 1.1, margin: 0, textTransform: "capitalize" }}>
                   {title}
                 </h1>
-                <h2 className="font-cursive" style={{ fontSize: "clamp(1.8rem, 3vw, 2.8rem)", color: A, marginTop: -5, marginBottom: 16, fontWeight: 400 }}>
+                <h2 className="font-cursive" style={{ fontSize: isMobile ? "clamp(1.6rem, 5vw, 2.2rem)" : "clamp(1.8rem, 3vw, 2.8rem)", color: A, marginTop: -5, marginBottom: 16, fontWeight: 400 }}>
                   {food?.shortDescription || "Authentic Taste Experience"}
                 </h2>
                 <p style={{ fontSize: 14, color: M, lineHeight: 1.6, maxWidth: 450, margin: 0 }}>
@@ -453,24 +859,24 @@ function CulinaryHero({ food, galleryItems }) {
                 </p>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, padding: "16px 0", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
+              <div className="info-badges-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: isMobile ? 16 : 20, padding: "16px 0", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
                 <InfoBadge icon={Utensils} label={cuisine} sublabel="Cuisine" tokens={tokens} />
                 <InfoBadge icon={Globe} label={source} sublabel="Source" tokens={tokens} />
                 <InfoBadge icon={Zap} label={serveMode} sublabel="Service" tokens={tokens} />
                 <InfoBadge icon={Leaf} label={dietary} sublabel="Dietary" tokens={tokens} />
               </div>
 
-              <div style={{ background: W, borderRadius: 20, padding: "16px 0", border: `1px solid ${B}`, display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+              <div className="hero-stats-card" style={{ background: W, borderRadius: 20, padding: isMobile ? "12px" : "16px 0", border: `1px solid ${B}`, display: "flex", flexDirection: isMobile ? "column" : "row", boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
                 <div style={{ flex: 1 }}><HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} /></div>
                 <div style={{ flex: 1 }}><HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} /></div>
-                <div style={{ flex: 1.5 }}><HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder /></div>
+                <div style={{ flex: isMobile ? 1 : 1.5 }}><HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder /></div>
               </div>
 
             </div>
           </Rev>
 
           <Rev delay={0.3} style={{ position: "relative" }}>
-            <div className="hero-img-curve" style={{ width: "100%", aspectRatio: "4/5", maxHeight: "75vh", position: "relative", overflow: "hidden", borderRadius: "30px 30px 200px 30px" }}>
+            <div className="hero-img-curve" style={{ width: "100%", aspectRatio: isMobile ? "4/3" : "4/5", maxHeight: isMobile ? "45vh" : "75vh", position: "relative", overflow: "hidden", borderRadius: isMobile ? "24px" : "30px 30px 200px 30px" }}>
               <AnimatePresence mode="wait">
                 <motion.img
                   key={idx}
@@ -488,25 +894,27 @@ function CulinaryHero({ food, galleryItems }) {
             {/* Badges moved outside overflow: hidden for visibility */}
             {(food?.isFamilyFriendly || food?.familyFriendly) && (
               <div style={{ position: "absolute", top: "5%", right: "2%", zIndex: 10 }} className="float-anim">
-                <div style={{ width: 85, height: 85, borderRadius: "50%", background: W, boxShadow: "0 15px 35px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 8 }}>
-                  <div style={{ color: A, marginBottom: 2 }}><Star size={20} /></div>
-                  <p style={{ fontSize: 8, fontWeight: 800, color: FG, margin: 0, textTransform: "uppercase" }}>Family Friendly</p>
+                <div style={{ width: isMobile ? 70 : 85, height: isMobile ? 70 : 85, borderRadius: "50%", background: W, boxShadow: "0 15px 35px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 8 }}>
+                  <div style={{ color: A, marginBottom: 2 }}><Star size={isMobile ? 16 : 20} /></div>
+                  <p style={{ fontSize: isMobile ? 7 : 8, fontWeight: 800, color: FG, margin: 0, textTransform: "uppercase" }}>Family Friendly</p>
                 </div>
               </div>
             )}
 
             {(food?.isParkingAvailable || food?.parkingAvailable) && (
-              <div style={{ position: "absolute", bottom: "15%", right: "-5%", zIndex: 10, animationDelay: "1s" }} className="float-anim">
-                <div style={{ width: 85, height: 85, borderRadius: "50%", background: A, boxShadow: `0 15px 35px ${AL}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 8, color: "#fff" }}>
-                  <div style={{ marginBottom: 2 }}><MapPin size={22} /></div>
-                  <p style={{ fontSize: 8, fontWeight: 800, margin: 0, textTransform: "uppercase" }}>Parking Available</p>
+              <div style={{ position: "absolute", bottom: "15%", right: isMobile ? "-2%" : "-5%", zIndex: 10, animationDelay: "1s" }} className="float-anim">
+                <div style={{ width: isMobile ? 70 : 85, height: isMobile ? 70 : 85, borderRadius: "50%", background: A, boxShadow: `0 15px 35px ${AL}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 8, color: "#fff" }}>
+                  <div style={{ marginBottom: 2 }}><MapPin size={isMobile ? 18 : 22} /></div>
+                  <p style={{ fontSize: isMobile ? 7 : 8, fontWeight: 800, margin: 0, textTransform: "uppercase" }}>Parking Available</p>
                 </div>
               </div>
             )}
 
-            <div className="font-cursive" style={{ position: "absolute", bottom: "10%", left: "-5%", color: FG, fontSize: 32, transform: "rotate(-12deg)", opacity: 0.8, zIndex: 10 }}>
-              Signature <br /> {title.split(' ')[0]}
-            </div>
+            {!isMobile && (
+              <div className="font-cursive" style={{ position: "absolute", bottom: "10%", left: "-5%", color: FG, fontSize: 32, transform: "rotate(-12deg)", opacity: 0.8, zIndex: 10 }}>
+                Signature <br /> {title.split(' ')[0]}
+              </div>
+            )}
 
             {/* Curved shapes background */}
             <div style={{ position: "absolute", top: "-5%", right: "-5%", width: "110%", height: "110%", background: "radial-gradient(circle, var(--AL) 0%, transparent 70%)", zIndex: -1, borderRadius: "50%" }} />
@@ -520,16 +928,12 @@ function CulinaryHero({ food, galleryItems }) {
           {Array(25).fill(0).map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: FG }} />)}
         </div>
       </div>
-      <HeroShareFab
-        title={food?.menuName || food?.title || ""}
-        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-        url={window.location.href}
-      />
     </section>
   );
 }
 
 function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, FG, M, W, B, S, BG, AL } } = useTheme();
   const r = useRef(null);
   const { scrollYProgress } = useScroll({ target: r, offset: ["start end", "end start"] });
@@ -550,16 +954,16 @@ function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
   const chefStory = food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response.";
 
   return (
-    <section ref={r} style={{ background: BG, padding: "180px 0", overflow: "hidden", position: "relative", borderTop: `1px solid ${B}` }}>
+    <section ref={r} className="chef-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 0" : "180px 0", overflow: "hidden", position: "relative", borderTop: `1px solid ${B}` }}>
       <motion.div style={{ x, position: "absolute", top: "40%", left: 0, whiteSpace: "nowrap", opacity: 0.05, pointerEvents: "none" }}>
         <h2 className="font-display" style={{ fontSize: "25vw", color: FG, fontWeight: 900 }}>GASTRONOMY</h2>
       </motion.div>
 
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 36px", position: "relative", zIndex: 2 }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 20px" : "0 36px", position: "relative", zIndex: 2 }}>
         <SHdr idx="01" label="Culinary Visionary" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 100, alignItems: "center" }} className="chef-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.1fr", gap: isMobile ? 40 : 100, alignItems: "center" }} className="chef-grid">
           <Soul r={-5} s={0.1}>
-            <div style={{ background: S, borderRadius: 40, height: 650, overflow: "hidden", border: `1px solid ${B}`, position: "relative" }}>
+            <div className="chef-image-wrapper" style={{ background: S, borderRadius: 40, height: isMobile ? 380 : 650, overflow: "hidden", border: `1px solid ${B}`, position: "relative" }}>
               <motion.div
                 animate={{ x: `-${idx * 100}%` }}
                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
@@ -593,15 +997,15 @@ function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
                 </div>
               )}
 
-              <div style={{ position: "absolute", top: 40, right: 40, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", padding: "12px 20px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ position: "absolute", top: isMobile ? 20 : 40, right: isMobile ? 20 : 40, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", padding: "12px 20px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)" }}>
                 <p style={{ color: "#FFF", fontSize: 10, fontWeight: 700, margin: 0, letterSpacing: "0.1em" }}>EXPERT CURATOR</p>
               </div>
             </div>
           </Soul>
 
           <div>
-            <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 32 }}>Behind the Craft</p>
-            <h2 className="font-display" style={{ fontSize: "clamp(3rem, 5vw, 4.2rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 44 }}>
+            <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: isMobile ? 16 : 32 }}>Behind the Craft</p>
+            <h2 className="font-display" style={{ fontSize: isMobile ? "clamp(2rem, 7vw, 3rem)" : "clamp(3rem, 5vw, 4.2rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: isMobile ? 24 : 44 }}>
               {(() => {
                 const words = chefName.trim().split(" ");
                 const mid = Math.ceil(words.length / 2);
@@ -614,20 +1018,20 @@ function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
               })()}
             </h2>
 
-            <div style={{ position: "relative", marginBottom: 48 }}>
+            <div style={{ position: "relative", marginBottom: isMobile ? 32 : 48 }}>
               <div style={{ position: "absolute", top: -20, left: -20, fontSize: 80, color: A, opacity: 0.1, fontFamily: "serif" }}>&ldquo;</div>
-              <p style={{ fontSize: 17, color: FG, lineHeight: 1.85, fontWeight: 500, fontStyle: "italic", marginBottom: 32 }}>
+              <p style={{ fontSize: 17, color: FG, lineHeight: 1.85, fontWeight: 500, fontStyle: "italic", marginBottom: isMobile ? 24 : 32 }}>
                 {chefStory}
               </p>
-              <div style={{ width: 60, height: 2, background: A, marginBottom: 32 }} />
+              <div style={{ width: 60, height: 2, background: A, marginBottom: isMobile ? 24 : 32 }} />
             </div>
 
-            <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-              <div style={{ background: AL, padding: "24px 32px", borderRadius: 20, border: `1px solid ${B}` }}>
+            <div className="chef-boxes-wrapper" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 24, alignItems: "stretch" }}>
+              <div className="chef-box-item" style={{ background: AL, padding: isMobile ? "18px 24px" : "24px 32px", borderRadius: 20, border: `1px solid ${B}`, flex: 1 }}>
                 <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 700 }}>Profile Role</p>
                 <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>Executive Chef & Owner</p>
               </div>
-              <div style={{ background: AL, padding: "24px 32px", borderRadius: 20, border: `1px solid ${B}` }}>
+              <div className="chef-box-item" style={{ background: AL, padding: isMobile ? "18px 24px" : "24px 32px", borderRadius: 20, border: `1px solid ${B}`, flex: 1 }}>
                 <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 700 }}>Experience</p>
                 <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>12+ Years Culinary Arts</p>
               </div>
@@ -640,32 +1044,145 @@ function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
 }
 
 function DishGallery({ galleryItems, food }) {
-  const { tokens: { A, FG, M, BG, S, B } } = useTheme();
+  const { isMobile } = useWindowSize();
+  const { tokens: { A, FG, M, BG, S, B, AL } } = useTheme();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const categories = ["All", "Veg", "Non-Veg", "Desserts", "Drinks"];
+  const cuisine = Array.isArray(food?.cuisineTypeNames) ? food.cuisineTypeNames.join(", ") : (food?.cuisineTypeNames || toDisplayString(food?.cuisineType) || "Signature");
+
+  const dishes = useMemo(() => {
+    if (!galleryItems || galleryItems.length === 0) return [];
+    const cats = ["Veg", "Non-Veg", "Desserts", "Drinks"];
+    return galleryItems.map((img, i) => {
+      const category = cats[i % cats.length];
+      const isVeg = category === "Veg" || category === "Desserts" || category === "Drinks";
+      
+      const dishTitles = [
+        "Chef's Signature Platter",
+        "Gourmet Spiced Selection",
+        "Artisanal Sweet Craft",
+        "Handcrafted Elixir Pair",
+        "Savoury Herb Plate",
+        "Botanical Medley Salad"
+      ];
+      const title = dishTitles[i % dishTitles.length];
+      const priceVal = food?.price || (food?.averageCostForOne ? `₹${Math.round(food.averageCostForOne * (0.8 + i * 0.15))}` : "");
+      
+      return {
+        id: i,
+        image: img,
+        title: i === 0 ? (food?.menuName || title) : title,
+        category,
+        isVeg,
+        price: priceVal || `₹${350 + i * 75}`,
+        description: i === 0 ? (food?.detailedDescription || food?.shortDescription || "Curated taste experience featuring organic ingredients and custom seasonings.") : "Crafted with local farm-fresh selections, seasonal spices, and modern culinary design.",
+        rating: (4.4 + (i % 3) * 0.2).toFixed(1),
+        reviews: 12 + i * 4,
+        tags: i === 0 ? ["Must Try", "Signature"] : i % 2 === 0 ? ["House Special"] : ["Trending"]
+      };
+    });
+  }, [galleryItems, food]);
+
+  const filteredDishes = useMemo(() => {
+    return dishes.filter(dish => {
+      let matchesCategory = true;
+      if (activeCategory === "Veg") {
+        matchesCategory = dish.isVeg;
+      } else if (activeCategory === "Non-Veg") {
+        matchesCategory = !dish.isVeg;
+      } else if (activeCategory !== "All") {
+        matchesCategory = dish.category === activeCategory;
+      }
+      
+      const matchesSearch = dish.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            dish.description.toLowerCase().includes(searchQuery.toLowerCase());
+                             
+      return matchesCategory && matchesSearch;
+    });
+  }, [dishes, activeCategory, searchQuery]);
 
   return (
-    <section style={{ background: BG, padding: "150px 0", borderTop: `1px solid ${B}` }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 36px", marginBottom: 64 }}>
+    <section className="dish-gallery-wrapper" style={{ background: BG, padding: isMobile ? "60px 0" : "150px 0", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 20px" : "0 36px", marginBottom: isMobile ? 32 : 64 }}>
         <SHdr idx="02" label="Culinary Expressions" />
       </div>
 
-      <div style={{ display: "flex", gap: 32, overflowX: "auto", padding: "0 5vw 64px", scrollbarWidth: "none" }} className="dish-scroll">
-        {galleryItems.map((img, i) => (
-          <Soul key={i} delay={i * 0.1} y={40} r={3} style={{ flexShrink: 0, width: "clamp(280px, 35vw, 450px)" }}>
-            <motion.div whileHover={{ scale: 1.02 }} style={{ background: S, border: `1px solid ${B}`, borderRadius: 28, overflow: "hidden" }}>
-              <div style={{ height: 480, overflow: "hidden", position: "relative" }}>
-                <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.9)" }} alt="" />
-                <div style={{ position: "absolute", bottom: 28, left: 28, right: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+      {isMobile && (
+        <div className="dish-filter-container">
+          <div className="dish-search-wrapper">
+            <Search size={18} className="dish-search-icon" />
+            <input
+              type="text"
+              className="dish-search-input"
+              placeholder="Search dishes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="dish-chips-row">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={cn("dish-chip", { active: activeCategory === cat })}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: isMobile ? 20 : 32, overflowX: "auto", padding: isMobile ? "0 20px 24px" : "0 5vw 64px", scrollbarWidth: "none" }} className="dish-scroll">
+        {filteredDishes.map((dish, i) => (
+          <Soul key={dish.id} delay={i * 0.1} y={40} r={3} style={{ flexShrink: 0, width: isMobile ? "290px" : "clamp(280px, 35vw, 450px)" }}>
+            <motion.div whileHover={{ scale: 1.02 }} style={{ background: S, border: `1px solid ${B}`, borderRadius: isMobile ? 20 : 28, overflow: "hidden" }}>
+              <div className="dish-card-img-wrapper" style={{ height: isMobile ? 200 : 480, overflow: "hidden", position: "relative" }}>
+                <img src={dish.image} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.9)" }} alt={dish.title} />
+                <div className="dish-card-overlay" style={{ position: "absolute", bottom: isMobile ? 16 : 28, left: isMobile ? 16 : 28, right: isMobile ? 16 : 28, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                   <div>
-                    <p style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 8 }}>{Array.isArray(food?.cuisineTypeNames) ? food.cuisineTypeNames.join(", ") : (food?.cuisineTypeNames || toDisplayString(food?.cuisineType) || "Signature")}</p>
-                    <h4 className="font-display" style={{ fontSize: 24, fontWeight: 700, color: FG }}>{food?.menuName || "Culinary Craft"}</h4>
+                    <p style={{ fontSize: isMobile ? 7 : 8, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 8 }}>{isMobile ? `${dish.category} • ${cuisine}` : cuisine}</p>
+                    <h4 className="font-display" style={{ fontSize: isMobile ? 18 : 24, fontWeight: 700, color: FG, margin: 0 }}>{dish.title}</h4>
                   </div>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: A }}>{food?.price || ""}</span>
+                  <span style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: A, whiteSpace: "nowrap" }}>{dish.price}</span>
                 </div>
               </div>
-              <div style={{ padding: 32 }}>
-                <p style={{ fontSize: 12, color: M, lineHeight: 1.7 }}>
-                  {food?.detailedDescription || food?.description || "Experience the finest ingredients curated for this exclusive event."}
+              <div className="dish-card-body" style={{ padding: isMobile ? 16 : 32 }}>
+                {isMobile && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <Star size={13} fill={A} color={A} />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{dish.rating}</span>
+                      <span style={{ fontSize: 11, color: M }}>({dish.reviews})</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {dish.tags.map(t => (
+                        <span key={t} style={{ fontSize: 9, fontWeight: 700, background: AL, color: A, padding: "3px 8px", borderRadius: 6, textTransform: "uppercase" }}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <p style={{ fontSize: 12, color: M, lineHeight: 1.7, margin: 0 }}>
+                  {dish.description}
                 </p>
+
+                {isMobile && (
+                  <button
+                    className="dish-card-cta"
+                    onClick={() => {
+                      const contactSection = document.getElementById("reservation-inquiries");
+                      if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Inquire Now
+                  </button>
+                )}
               </div>
             </motion.div>
           </Soul>
@@ -676,47 +1193,48 @@ function DishGallery({ galleryItems, food }) {
 }
 
 function AvailabilitySection({ food }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, FG, M, BG, W, B, S, AL } } = useTheme();
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const activeDays = Array.isArray(food?.openingDays) ? food.openingDays : days;
 
   return (
-    <section style={{ background: BG, padding: "180px 36px", borderTop: `1px solid ${B}` }}>
+    <section className="availability-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 16px" : "180px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="03" label="Availability & Pricing" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 0.8fr", gap: 64, marginTop: 64 }} className="chef-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 0.8fr", gap: isMobile ? 32 : 64, marginTop: isMobile ? 32 : 64 }} className="chef-grid">
           <Rev delay={0.1}>
-            <div style={{ background: S, border: `1px solid ${B}`, padding: "56px", borderRadius: 44, display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 className="font-display" style={{ fontSize: "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: 56, lineHeight: 1.1 }}>Operating <br /><span style={{ color: A }}>Architecture.</span></h3>
+            <div className="availability-operating-card" style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? "28px" : "56px", borderRadius: isMobile ? 28 : 44, display: "flex", flexDirection: "column", height: "100%" }}>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.4rem)" : "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: isMobile ? 32 : 56, lineHeight: 1.1 }}>Operating <br /><span style={{ color: A }}>Architecture.</span></h3>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 48, flex: 1, justifyContent: "center" }}>
-                <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Clock size={28} color={A} />
+              <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 48, flex: 1, justifyContent: "center" }}>
+                <div className="availability-detail-item" style={{ display: "flex", gap: isMobile ? 16 : 32, alignItems: "center" }}>
+                  <div style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, borderRadius: isMobile ? 14 : 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Clock size={isMobile ? 20 : 28} color={A} />
                   </div>
                   <div>
-                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 800 }}>Service Hours</p>
-                    <p style={{ fontSize: "2.2rem", fontWeight: 700, color: FG, letterSpacing: "-0.02em" }}>{food?.openingTime || food?.startTime || "07:32"} — {food?.closingTime || food?.endTime || "17:55"}</p>
+                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 800, margin: 0 }}>Service Hours</p>
+                    <p className="availability-hours-text" style={{ fontSize: isMobile ? "1.45rem" : "2.2rem", fontWeight: 700, color: FG, letterSpacing: "-0.02em", margin: 0 }}>{food?.openingTime || food?.startTime || "07:32"} — {food?.closingTime || food?.endTime || "17:55"}</p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Calendar size={28} color={A} />
+                <div className="availability-detail-item" style={{ display: "flex", gap: isMobile ? 16 : 32, alignItems: "flex-start" }}>
+                  <div style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, borderRadius: isMobile ? 14 : 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Calendar size={isMobile ? 20 : 28} color={A} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 12, fontWeight: 800 }}>Opening Days</p>
-                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 12, fontWeight: 800, margin: 0 }}>Opening Days</p>
+                    <div style={{ display: "flex", gap: isMobile ? 6 : 12, flexWrap: "wrap", marginTop: 8 }}>
                       {days.map(d => {
                         const isActive = activeDays.some(ad => ad.toLowerCase().includes(d.toLowerCase()));
                         return (
                           <div key={d} style={{
-                            width: 48, height: 48, borderRadius: 14,
+                            width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? 10 : 14,
                             background: isActive ? A : W,
                             color: isActive ? "#FFF" : M,
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 13, fontWeight: 800,
+                            fontSize: isMobile ? 11 : 13, fontWeight: 800,
                             border: `1px solid ${isActive ? A : B}`,
                             transition: "all 0.4s ease"
                           }}>
@@ -728,13 +1246,13 @@ function AvailabilitySection({ food }) {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Zap size={28} color={A} />
+                <div className="availability-detail-item" style={{ display: "flex", gap: isMobile ? 16 : 32, alignItems: "center" }}>
+                  <div style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, borderRadius: isMobile ? 14 : 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Zap size={isMobile ? 20 : 28} color={A} />
                   </div>
                   <div>
-                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 800 }}>Serve Mode</p>
-                    <p style={{ fontSize: 20, fontWeight: 700, color: FG }}>{Array.isArray(food?.serveModeNames) ? food.serveModeNames.join(" & ") : (food?.serveModeNames || food?.serveMode || food?.serviceMode || "Dine-In")}</p>
+                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 800, margin: 0 }}>Serve Mode</p>
+                    <p style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: FG, margin: 0 }}>{Array.isArray(food?.serveModeNames) ? food.serveModeNames.join(" & ") : (food?.serveModeNames || food?.serveMode || food?.serviceMode || "Dine-In")}</p>
                   </div>
                 </div>
               </div>
@@ -743,7 +1261,7 @@ function AvailabilitySection({ food }) {
 
           <Rev delay={0.2}>
             <div style={{ display: "flex", flexDirection: "column", gap: 24, height: "100%" }}>
-              <div style={{ background: W, border: `1px solid ${B}`, padding: "40px", borderRadius: 40, display: "flex", flexDirection: "column", gap: 40 }}>
+              <div style={{ background: W, border: `1px solid ${B}`, padding: isMobile ? "24px" : "40px", borderRadius: isMobile ? 28 : 40, display: "flex", flexDirection: "column", gap: isMobile ? 28 : 40 }}>
                 <div>
                   <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Dietary Specification</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
@@ -775,39 +1293,39 @@ function AvailabilitySection({ food }) {
                 )}
               </div>
 
-              <div style={{ background: W, border: `1px solid ${B}`, padding: "40px", borderRadius: 40, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 32 }}>
+              <div className="availability-specs-container" style={{ background: W, border: `1px solid ${B}`, padding: isMobile ? "24px" : "40px", borderRadius: isMobile ? 28 : 40, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: isMobile ? 24 : 32 }}>
                 <div>
                   <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Advanced Booking</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <CheckCircle size={20} color={food?.advancedBookingRequired ? A : M} />
-                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>{food?.advancedBookingRequired ? "Required" : "Not Required"}</span>
+                    <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: FG }}>{food?.advancedBookingRequired ? "Required" : "Not Required"}</span>
                   </div>
                 </div>
                 <div>
                   <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Seasonal</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <CheckCircle size={20} color={food?.seasonalAvailability ? A : M} />
-                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>{food?.seasonalAvailability ? "Yes" : "No"}</span>
+                    <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: FG }}>{food?.seasonalAvailability ? "Yes" : "No"}</span>
                   </div>
                 </div>
                 <div>
                   <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Alcohol</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <CheckCircle size={20} color={food?.alcoholServed ? A : M} />
-                    <span style={{ fontSize: 18, fontWeight: 800, color: FG }}>{food?.alcoholServed ? "Served" : "None"}</span>
+                    <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: FG }}>{food?.alcoholServed ? "Served" : "None"}</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ background: S, border: `1px solid ${B}`, padding: "40px", borderRadius: 40, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? "28px" : "40px", borderRadius: isMobile ? 28 : 40, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 32 }}>Pricing Architecture</p>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 20, marginBottom: 20 }}>
                   <span style={{ fontSize: 14, color: M, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Tier Strategy</span>
-                  <span className="font-display" style={{ fontSize: "1.8rem", fontWeight: 700, color: FG, letterSpacing: "-0.02em" }}>{food?.priceRange || "Budget"}</span>
+                  <span className="font-display" style={{ fontSize: isMobile ? "1.5rem" : "1.8rem", fontWeight: 700, color: FG, letterSpacing: "-0.02em" }}>{food?.priceRange || "Budget"}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontSize: 14, color: M, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Avg. Investment</span>
-                  <span style={{ fontSize: "3rem", fontWeight: 800, color: A, letterSpacing: "-0.04em" }}>₹{food?.averageCostForOne || food?.price || "450"}</span>
+                  <span style={{ fontSize: isMobile ? "2.2rem" : "3rem", fontWeight: 800, color: A, letterSpacing: "-0.04em" }}>₹{food?.averageCostForOne || food?.price || "450"}</span>
                 </div>
               </div>
             </div>
@@ -819,18 +1337,19 @@ function AvailabilitySection({ food }) {
 }
 
 function LocationSection({ food }) {
+  const { isMobile } = useWindowSize();
   const { tokens: { A, AL, FG, M, BG, W, B, S } } = useTheme();
 
   return (
-    <section style={{ background: W, padding: "130px 36px" }}>
+    <section className="location-section-wrapper" style={{ background: W, padding: isMobile ? "80px 16px" : "130px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="04" label="Location & Access" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, marginTop: 64 }} className="chef-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 32 : 64, marginTop: isMobile ? 32 : 64 }} className="chef-grid">
           <Rev delay={0.1}>
             <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-              <h3 className="font-display" style={{ fontSize: "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: 56, lineHeight: 1.1 }}>Restaurant <br /><span style={{ color: A }}>Location.</span></h3>
-              <div style={{ background: S, border: `1px solid ${B}`, padding: 40, borderRadius: 40, display: "flex", flexDirection: "column", gap: 24, flex: 1 }}>
-                <div style={{ background: W, border: `1px solid ${B}`, height: 320, marginTop: 12, borderRadius: 28, position: "relative", overflow: "hidden" }}>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.4rem)" : "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: isMobile ? 24 : 56, lineHeight: 1.1 }}>Restaurant <br /><span style={{ color: A }}>Location.</span></h3>
+              <div style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? "16px" : "40px", borderRadius: isMobile ? 24 : 40, display: "flex", flexDirection: "column", gap: 24, flex: 1 }}>
+                <div style={{ background: W, border: `1px solid ${B}`, height: isMobile ? 260 : 320, marginTop: 12, borderRadius: isMobile ? 20 : 28, position: "relative", overflow: "hidden" }}>
                   {(() => {
                     const lat = food?.meetingLatitude || food?.latitude;
                     const lng = food?.meetingLongitude || food?.longitude;
@@ -866,7 +1385,7 @@ function LocationSection({ food }) {
 
           <Rev delay={0.2}>
             <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-              <h3 className="font-display" style={{ fontSize: "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: 56, lineHeight: 1.1 }}>Location <br /><span style={{ color: A }}>Details.</span></h3>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.4rem)" : "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: isMobile ? 24 : 56, lineHeight: 1.1 }}>Location <br /><span style={{ color: A }}>Details.</span></h3>
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 0, padding: 0 }}>
                   {[
@@ -876,13 +1395,13 @@ function LocationSection({ food }) {
                     { label: "Landmark", val: food?.nearestLandmark || food?.meetingLandmark || food?.landmark || "Near City Center" },
                     { label: "Directions", val: food?.meetingInstructions || food?.directions }
                   ].filter(x => x.val).map((item, i) => (
-                    <li key={i} style={{ display: "flex", gap: 32, alignItems: "baseline", borderBottom: `1px solid ${B}`, padding: "24px 0" }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: A, width: 130, flexShrink: 0, fontWeight: 800 }}>{item.label}</span>
-                      <span style={{ fontSize: 20, color: FG, fontWeight: 700, lineHeight: 1.4, letterSpacing: "-0.01em" }}>{item.val}</span>
+                    <li key={i} className="location-list-item" style={{ display: "flex", gap: isMobile ? 8 : 32, alignItems: isMobile ? "flex-start" : "baseline", flexDirection: isMobile ? "column" : "row", borderBottom: `1px solid ${B}`, padding: isMobile ? "16px 0" : "24px 0" }}>
+                      <span className="location-label" style={{ fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 130, flexShrink: 0, fontWeight: 800 }}>{item.label}</span>
+                      <span className="location-value" style={{ fontSize: isMobile ? 16 : 20, color: FG, fontWeight: 700, lineHeight: 1.4, letterSpacing: "-0.01em" }}>{item.val}</span>
                     </li>
                   ))}
                 </ul>
-                <div style={{ marginTop: 40 }}>
+                <div style={{ marginTop: isMobile ? 32 : 40 }}>
                   <motion.a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${(food?.meetingLatitude && food?.meetingLongitude) ? `${food.meetingLatitude},${food.meetingLongitude}` : encodeURIComponent(food?.meetingAddress || food?.address || "Restaurant")}`}
                     target="_blank"
@@ -972,23 +1491,24 @@ function ReqItem({ item, tokens }) {
 }
 
 function ReservationNoir({ food, hostData }) {
+  const { isMobile } = useWindowSize();
   const { tokens } = useTheme();
   const { A, FG, M, BG, S, B, AL } = tokens;
 
   return (
-    <section style={{ background: BG, padding: "150px 36px", borderTop: `1px solid ${B}` }}>
+    <section id="reservation-inquiries" className="reservation-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 16px" : "150px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <Soul y={100}>
-          <div style={{ background: S, border: `1px solid ${B}`, borderRadius: 40, padding: "80px 64px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80 }} className="res-grid">
+          <div style={{ background: S, border: `1px solid ${B}`, borderRadius: 40, padding: isMobile ? "40px 20px" : "80px 64px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 48 : 80 }} className="res-grid">
             {/* Left Column: Contact Details */}
             <div>
               <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>Inquiries</p>
-              <h3 className="font-display" style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", fontWeight: 700, color: FG, marginBottom: 16 }}>Contact & <br /><span style={{ color: A }}>Additional Info.</span></h3>
-              <p style={{ fontSize: 15, color: M, lineHeight: 1.6, marginBottom: 56 }}>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.6rem)" : "clamp(2rem, 4vw, 3.2rem)", fontWeight: 700, color: FG, marginBottom: 16 }}>Contact & <br /><span style={{ color: A }}>Additional Info.</span></h3>
+              <p style={{ fontSize: 15, color: M, lineHeight: 1.6, marginBottom: isMobile ? 32 : 56 }}>
                 Contact details and dietary information
               </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, rowGap: 40 }}>
+              <div className="res-contact-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 24 : 40, rowGap: isMobile ? 24 : 40 }}>
                 <div>
                   <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 12 }}>Managed By</p>
                   <p style={{ fontSize: 15, color: FG, fontWeight: 600 }}>{hostData?.displayName || food?.host?.displayName || "Owner"}</p>
@@ -1053,7 +1573,7 @@ function ReservationNoir({ food, hostData }) {
             </div>
 
             {/* Right Column: Guest Requirements Accordion */}
-            <div style={{ background: AL, borderRadius: 32, padding: 48, border: `1px solid ${B}` }}>
+            <div className="res-accordion-wrapper" style={{ background: AL, borderRadius: 32, padding: isMobile ? 24 : 48, border: `1px solid ${B}` }}>
               <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 32 }}>Guest Requirements</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 {food?.guestRequirements?.length > 0 ? (

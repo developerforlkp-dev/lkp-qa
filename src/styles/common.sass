@@ -70,3 +70,74 @@ img
 #credential_picker_container,
 #google-one-tap-container
     z-index: 999999 !important
+
+.premium-share-fab
+    @media (max-width: 768px)
+        position: absolute !important
+        top: calc(72px + 20px + env(safe-area-inset-top, 0px)) !important
+        right: calc(20px + env(safe-area-inset-right, 0px)) !important
+        z-index: 9999 !important
+        width: 40px !important
+        height: 40px !important
+        border-radius: 50% !important
+        display: flex !important
+        align-items: center !important
+        justify-content: center !important
+        padding: 0 !important
+        border: 1px solid rgba(255, 255, 255, 0.12) !important
+        background: rgba(15, 15, 15, 0.32) !important
+        backdrop-filter: blur(20px) !important
+        -webkit-backdrop-filter: blur(20px) !important
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important
+        color: #FFFFFF !important
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important
+        &:active
+            transform: scale(0.9) !important
+            background: rgba(15, 15, 15, 0.45) !important
+
+.dark-mode .premium-share-fab
+    @media (max-width: 768px)
+        background: rgba(0, 0, 0, 0.45) !important
+        border-color: rgba(255, 255, 255, 0.08) !important
+        color: #EBEBE6 !important
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24) !important
+        &:active
+            background: rgba(0, 0, 0, 0.6) !important
+
+.premium-back-button
+    display: none !important
+    @media (max-width: 768px)
+        display: flex !important
+        position: absolute !important
+        top: calc(72px + 20px + env(safe-area-inset-top, 0px)) !important
+        left: calc(20px + env(safe-area-inset-left, 0px)) !important
+        z-index: 9999 !important
+        width: 40px !important
+        height: 40px !important
+        border-radius: 50% !important
+        align-items: center !important
+        justify-content: center !important
+        cursor: pointer
+        outline: none
+        user-select: none
+        border: 1px solid rgba(255, 255, 255, 0.12) !important
+        background: rgba(15, 15, 15, 0.32) !important
+        backdrop-filter: blur(20px) !important
+        -webkit-backdrop-filter: blur(20px) !important
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important
+        color: #FFFFFF !important
+        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important
+        &:active
+            transform: scale(0.9) !important
+            background: rgba(15, 15, 15, 0.45) !important
+
+.dark-mode .premium-back-button
+    @media (max-width: 768px)
+        background: rgba(0, 0, 0, 0.45) !important
+        border-color: rgba(255, 255, 255, 0.08) !important
+        color: #EBEBE6 !important
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24) !important
+        &:active
+            background: rgba(0, 0, 0, 0.6) !important
+
+

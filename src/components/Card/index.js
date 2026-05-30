@@ -5,7 +5,7 @@ import styles from "./Card.module.sass";
 import Icon from "../Icon";
 import FiveStarRating from "../FiveStarRating";
 
-const Item = ({ className, item, row, car }) => {
+const Item = ({ className, item, row, car, hidePrice }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   // Use default image if item.src is an Azure blob URL without SAS token
   // SAS token URLs (with sig= and sv= query params) should work
@@ -16,6 +16,9 @@ const Item = ({ className, item, row, car }) => {
     ? defaultImage 
     : (item.src || defaultImage);
   const imageSrcSet = imageSrc; // Use same logic for srcSet
+
+  const isStay = item.url && item.url.includes("stay-details");
+  const shouldHidePrice = true; // hidePrice || isStay;
 
   return (
     <Link
@@ -49,6 +52,7 @@ const Item = ({ className, item, row, car }) => {
             className={cn(
               "category",
               { "category-blue": item.category === "blue" },
+              { [styles.categoryRight]: item.categoryPosition === "right" },
               styles.category
             )}
           >
@@ -59,7 +63,7 @@ const Item = ({ className, item, row, car }) => {
       <div className={styles.body}>
         <div className={styles.line}>
           <div className={styles.title}>{item.title}</div>
-          {item.hasPrice && item.priceActual && (
+          {!shouldHidePrice && item.hasPrice && item.priceActual && (
             <div className={styles.price}>
               <div className={styles.old}>{item.priceOld}</div>
               <div className={styles.actual}>{item.priceActual}</div>
@@ -84,15 +88,21 @@ const Item = ({ className, item, row, car }) => {
             </div>
           )}
           <div className={styles.flex}>
-            {item.hasPrice && item.cost && (
+            {!shouldHidePrice && item.hasPrice && item.cost && (
               <div className={styles.cost}>{item.cost}</div>
             )}
             <div className={styles.rating}>
               <div className={styles.ratingTop}>
                 <FiveStarRating rating={item.rating} size={12} />
-                <span className={styles.number}>{item.rating}</span>
+                <span className={styles.number}>
+                  {typeof item.rating === "number" && !Number.isInteger(item.rating)
+                    ? item.rating.toFixed(1)
+                    : item.rating}
+                </span>
               </div>
-              <span className={styles.review}>({item.reviews} reviews)</span>
+              {item.reviews > 0 || !item.rating ? (
+                <span className={styles.review}>({item.reviews || 0} review{item.reviews === 1 ? "" : "s"})</span>
+              ) : null}
             </div>
           </div>
         </div>

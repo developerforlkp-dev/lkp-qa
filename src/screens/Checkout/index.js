@@ -22,6 +22,53 @@ const formatImageUrl = (url) => {
   return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
+const formatInr = (amount) => `INR ${Number(amount || 0).toFixed(2)}`;
+
+const normalizeTaxTitle = (title, taxRate = null) => {
+  if (!/^tax/i.test(String(title || ""))) return title;
+  const rateLabel = taxRate && Number(taxRate) > 0 ? ` (${Number(taxRate).toFixed(2)}%)` : "";
+  return `Taxes${rateLabel}`;
+};
+
+const reorderPriceRows = (rows, computedTotal = null) => {
+  const primaryRows = [];
+  const addOnRows = [];
+  const discountRows = [];
+  const taxRows = [];
+  const trailingRows = [];
+
+  rows.forEach((row) => {
+    const title = String(row?.title || "");
+    if (/add[\s-]?ons?/i.test(title)) {
+      addOnRows.push({ ...row, title: "Add-ons Total" });
+      return;
+    }
+    if (/discount/i.test(title)) {
+      discountRows.push(row);
+      return;
+    }
+    if (/^tax/i.test(title)) {
+      taxRows.push(row);
+      return;
+    }
+    if (/^subtotal$/i.test(title) || /^total$/i.test(title) || /amount payable|total paid|grand total/i.test(title)) {
+      return;
+    }
+    if (/base stay|base price|extra adult|extra child|adults|children/i.test(title)) {
+      primaryRows.push(row);
+      return;
+    }
+    trailingRows.push(row);
+  });
+
+  const orderedRows = [...primaryRows, ...addOnRows];
+  if (computedTotal !== null && Number(computedTotal) > 0) {
+    orderedRows.push({ title: "Total", value: formatInr(computedTotal) });
+  }
+  orderedRows.push(...discountRows, ...taxRows, ...trailingRows);
+  return orderedRows;
+};
+
 
   // The correct breadcrumbs logic is placed in the component render method
 
@@ -380,6 +427,8 @@ const Checkout = () => {
 
       const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
       const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
+      const addOnRows = rows.filter((r) => /add[\s-]?ons?/i.test(String(r.title || "")));
+      const addOnsAmount = addOnRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
       const discountableAmount = Math.max(0, baseAmount + extraAmount);
 
       const longStayDiscountAmount = discountableAmount > 0 && tierDiscountPercent > 0
@@ -421,7 +470,7 @@ const Checkout = () => {
       // Total Discount should represent only additional pricing discount (not long-stay)
       if (additionalDiscountAmount > 0) {
         rows.splice(nextInsertIndex, 0, {
-          title: `Total Discount (${pricingDiscountPercent.toFixed(2)}%)`,
+          title: `Discount (${pricingDiscountPercent.toFixed(2)}%)`,
           value: `- INR ${additionalDiscountAmount.toFixed(2)}`,
         });
         nextInsertIndex += 1;
@@ -449,21 +498,37 @@ const Checkout = () => {
 
         rows[taxRowIndex] = {
           ...rows[taxRowIndex],
-          title: `Tax (${taxRate.toFixed(2)}%)`,
-          value: `+ INR ${correctedTax.toFixed(2)}`,
+          title: normalizeTaxTitle(rows[taxRowIndex]?.title, taxRate),
+          value: formatInr(correctedTax),
         };
       }
 
-      return { table: rows };
+      const normalizedRows = rows.map((row) => {
+        const title = String(row?.title || "");
+        if (/add[\s-]?ons?/i.test(title)) {
+          return { ...row, title: "Add-ons Total", value: formatInr(parseAmount(row.value)) };
+        }
+        if (/^tax/i.test(title)) {
+          return { ...row, title: normalizeTaxTitle(title, taxRate), value: formatInr(parseAmount(row.value)) };
+        }
+        return row;
+      });
+
+      return {
+        table: reorderPriceRows(
+          normalizedRows,
+          Math.max(0, baseAmount + extraAmount + addOnsAmount)
+        ),
+      };
     }
 
     if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
       const rows = bookingData.receipt.map((r) => ({
-        title: r.title,
+        title: /^tax/i.test(String(r.title || "")) ? normalizeTaxTitle(r.title) : r.title,
         value: r.content,
       }));
       return {
-        table: rows,
+        table: reorderPriceRows(rows),
       };
     }
 
@@ -475,8 +540,8 @@ const Checkout = () => {
     return {
       table: [
         {
-          title: "Add-ons",
-          value: `${addOnsPrice}`,
+          title: "Add-ons Total",
+          value: formatInr(addOnsPrice),
         },
       ],
     };

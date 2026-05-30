@@ -146,6 +146,7 @@ const Listings = () => {
   const [showMap, setShowMap] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
+  const [viewMode, setViewMode] = useState("grid");
   const [businessInterestFilters, setBusinessInterestFilters] = useState(null);
 
   // Mobile sticky search scroll state
@@ -164,8 +165,6 @@ const Listings = () => {
   const sortChips = [
     { label: "Newest", value: "newest" },
     { label: "Top Rated", value: "rating" },
-    { label: "Price ↑", value: "price_low" },
-    { label: "Price ↓", value: "price_high" },
   ];
 
   // Count active filters for badge
@@ -181,7 +180,7 @@ const Listings = () => {
     return count;
   }, [filters]);
 
-  const sortOptions = ["newest", "rating", "price_low", "price_high"];
+  const sortOptions = ["newest", "rating"];
   const isEventInterest = String(businessInterest || "").toUpperCase().includes("EVENT");
   const emptyMessage = isEventInterest && selectedDate
     ? "No events in this date."
@@ -632,7 +631,42 @@ const Listings = () => {
                 </div>
               )}
 
-
+              {/* Results Toolbar */}
+              <div className={styles.resultsToolbar}>
+                <span className={styles.resultCount}>
+                  {loading && listings.length === 0
+                    ? "Loading..."
+                    : `${listings.length} ${listings.length === 1 ? "property" : "properties"} found`
+                  }
+                </span>
+                <div className={styles.viewToggle}>
+                  <button
+                    className={cn(styles.viewToggleBtn, { [styles.viewToggleBtnActive]: viewMode === "grid" })}
+                    onClick={() => setViewMode("grid")}
+                    title="Grid view"
+                    aria-label="Grid view"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <rect x="1" y="1" width="6" height="6" rx="1.5"/>
+                      <rect x="9" y="1" width="6" height="6" rx="1.5"/>
+                      <rect x="1" y="9" width="6" height="6" rx="1.5"/>
+                      <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+                    </svg>
+                  </button>
+                  <button
+                    className={cn(styles.viewToggleBtn, { [styles.viewToggleBtnActive]: viewMode === "list" })}
+                    onClick={() => setViewMode("list")}
+                    title="List view"
+                    aria-label="List view"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <rect x="1" y="2" width="14" height="2" rx="1"/>
+                      <rect x="1" y="7" width="14" height="2" rx="1"/>
+                      <rect x="1" y="12" width="14" height="2" rx="1"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
               {/* Listings Grid */}
               <ListingsGrid
@@ -642,6 +676,7 @@ const Listings = () => {
                 hasMore={hasMore}
                 onLoadMore={fetchMore}
                 emptyMessage={emptyMessage}
+                listView={viewMode === "list"}
               />
             </main>
             

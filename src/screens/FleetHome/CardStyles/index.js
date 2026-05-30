@@ -188,6 +188,9 @@ const getEntityUrl = (listing, id) => {
 const transformListingToCard = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
+  const primaryCategoryLabel = isShowListingMode(section)
+    ? getPrimaryCategoryLabel(listing)
+    : null;
 
   const price = listing.individualPrice ?? listing.startingPrice ?? 0;
   const hasPrice = price > 0;
@@ -212,7 +215,7 @@ const transformListingToCard = (listing, section) => {
     priceOld: null,
     cost: priceDisplay, // Only show price if individualPrice exists
     options: [],
-    categoryText: null,
+    categoryText: primaryCategoryLabel,
     comment: null,
     avatar: null,
   };
@@ -272,6 +275,46 @@ const transformListingToDestinationHorizontal = (listing, section) => {
 
 const isShowCategoriesOnly = (section) =>
   section?.displayMode === "SHOW_CATEGORIES_ONLY";
+
+const isShowListingMode = (section) => {
+  const normalizedDisplayMode = String(section?.displayMode || "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toUpperCase();
+
+  return (
+    normalizedDisplayMode === "SHOW_LISTING" ||
+    normalizedDisplayMode === "SHOW_LISTINGS"
+  );
+};
+
+const getPrimaryCategoryLabel = (listing) => {
+  const primaryCategory = listing?.primaryCategory;
+
+  if (typeof primaryCategory === "string" && primaryCategory.trim()) {
+    return primaryCategory.trim();
+  }
+
+  if (primaryCategory && typeof primaryCategory === "object") {
+    const categoryName =
+      primaryCategory.name ??
+      primaryCategory.title ??
+      primaryCategory.label;
+
+    if (typeof categoryName === "string" && categoryName.trim()) {
+      return categoryName.trim();
+    }
+  }
+
+  const fallbackCategory =
+    listing?.primaryCategoryName ??
+    listing?.categoryName ??
+    listing?.category;
+
+  return typeof fallbackCategory === "string" && fallbackCategory.trim()
+    ? fallbackCategory.trim()
+    : null;
+};
 
 const getSectionListingsUrl = (section) => {
   const params = new URLSearchParams();

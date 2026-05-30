@@ -276,10 +276,6 @@ const ReviewsListing = () => {
               )}
             </>
           )}
-
-          <button className={styles.backBtn} onClick={() => history.goBack()}>
-            Back
-          </button>
         </div>
       </div>
     </div>

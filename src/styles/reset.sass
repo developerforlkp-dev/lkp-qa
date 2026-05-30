@@ -26,6 +26,12 @@ button
     &::-moz-focus-inner
         padding: 0
         border: 0
+input:disabled,
+button:disabled,
+select:disabled,
+textarea:disabled
+    cursor: not-allowed !important
+    pointer-events: auto !important
 button
     background: none
 textarea

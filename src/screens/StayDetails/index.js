@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee
+  Tv, Coffee, ChevronLeft
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -30,6 +30,43 @@ const fixImageUrl = (url) => {
   let u = typeof url === 'string' ? url : (url.url || url.src || url.mediaUrl || url.coverImageUrl || url.coverPhotoUrl || "");
   if (!u || typeof u !== 'string') return "";
   return u.replace(/%25/g, '%');
+};
+
+const getStayLocationParts = (stay) => {
+  const location = stay?.location || stay?.locationName || stay?.fullAddress || "";
+  const city = stay?.city || stay?.locationCity || stay?.town || "";
+  const cityArea = stay?.cityArea || "";
+  const district = stay?.district || stay?.meetingDistrict || "";
+  const state = stay?.state || stay?.province || stay?.region || "";
+  const uniqueValues = [location, cityArea, city, district, state]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index);
+
+  return {
+    location,
+    cityArea,
+    city,
+    district,
+    state,
+    heroText:
+      [cityArea, district, state]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
+        .join(", ") ||
+      [cityArea, state]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
+        .join(", ") ||
+      [city, state]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .filter((value, index, arr) => arr.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
+        .join(", ") ||
+      uniqueValues.slice(-2).join(", "),
+  };
 };
 
 const E = [0.22, 1, 0.36, 1];
@@ -300,6 +337,7 @@ function HeroShareFab({ title, text, url }) {
 
   return (
     <motion.button
+      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
@@ -377,10 +415,12 @@ function HeroShareFab({ title, text, url }) {
 
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
+  const history = useHistory();
   const { width, isMobile } = useWindowSize();
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
   const items = galleryItems.slice(0, 5);
+  const { heroText } = getStayLocationParts(stay);
 
   // Infinite Loop Logic for images only
   const x = useMotionValue(0);
@@ -461,7 +501,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
             <h1 className="font-display" style={{ fontSize: isMobile ? "clamp(1.5rem, 6.5vw, 2rem)" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em", wordBreak: "break-word" }}>{title.toUpperCase()}</h1>
             <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: theme === 'dark' ? "#FFF" : FG }}>
               <MapPin size={isMobile ? 14 : 18} />
-              <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{stay?.city}, {stay?.state}</span>
+              <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{heroText || "Location not available"}</span>
             </div>
           </div>
         </Rev>
@@ -480,6 +520,15 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
           </motion.div>
         </div>
       )}
+
+      <button
+        type="button"
+        className="premium-back-button"
+        onClick={() => history.goBack()}
+        aria-label="Go back"
+      >
+        <ChevronLeft size={20} />
+      </button>
 
       <HeroShareFab
         title={title}
@@ -621,7 +670,7 @@ function PolicyItem({ rule, A, FG, M, B, S }) {
   return (
     <motion.div key={rule.id} style={{ borderBottom: `1px solid ${B}` }}>
       <button onClick={() => setOp(!op)}
-        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "30px 20px", background: "none", border: "none", cursor: "none", textAlign: "left" }}>
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "30px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <FileText size={20} color={op ? A : M} />
           <motion.span animate={{ color: op ? A : FG }} style={{ fontSize: 16, fontWeight: 700 }}>{rule.title}</motion.span>
@@ -1721,6 +1770,7 @@ function PropertyModal({ stay, onClose }) {
 
 function PropertyStayCard({ stay }) {
   const { tokens: { FG, M, B, W, S, A, AL } } = useTheme();
+  const { isMobile } = useWindowSize();
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [isHoveringCover, setIsHoveringCover] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -1808,8 +1858,16 @@ function PropertyStayCard({ stay }) {
 
   const list = stay?.amenities || stay?.propertyAmenities || stay?.stayAmenities || stay?.amenityList || [];
   const amenities = extractList(list);
-  const visibleAmenities = amenities.slice(0, 4);
-  const extraCount = amenities.length - 4;
+
+  const allImages = [];
+  const coverP = stay?.coverPhotoUrl || stay?.coverImageUrl || stay?.coverPhoto || stay?.coverImage || stay?.imageUrl;
+  if (coverP) allImages.push(coverP);
+  const med = stay?.media || stay?.images || stay?.stayMedia || stay?.listingMedia || [];
+  med.forEach(m => {
+    const u = typeof m === "string" ? m : m.url || m.src || m.imageUrl || m.fileUrl || m.blobName;
+    if (u && !allImages.includes(u)) allImages.push(u);
+  });
+  const totalPhotos = Math.max(1, allImages.length);
 
   return (
     <motion.div
@@ -1819,17 +1877,18 @@ function PropertyStayCard({ stay }) {
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       style={{
         display: "grid",
-        gridTemplateColumns: "320px 1fr",
-        gap: 24,
+        gridTemplateColumns: isMobile ? "1fr" : "320px 1fr",
+        gap: isMobile ? 16 : 24,
         background: W,
         border: `1px solid ${B}`,
         borderRadius: 12,
-        padding: 20,
+        padding: isMobile ? 16 : 20,
         marginBottom: 24,
       }}
       className="property-stay-card"
     >
       <motion.div
+        onClick={() => setShowModal(true)}
         whileHover={{ scale: 1.02, y: -2 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         style={{
@@ -1837,7 +1896,8 @@ function PropertyStayCard({ stay }) {
           overflow: "hidden",
           background: "linear-gradient(120deg, rgba(230,236,246,0.9), rgba(242,246,252,0.9))",
           minHeight: 200,
-          position: "relative"
+          position: "relative",
+          cursor: "pointer"
         }}
         onHoverStart={() => setIsHoveringCover(true)}
         onHoverEnd={() => setIsHoveringCover(false)}
@@ -1891,6 +1951,38 @@ function PropertyStayCard({ stay }) {
             setCoverLoaded(true);
           }}
         />
+        
+        {/* Total Photo Count */}
+        <div style={{
+          position: "absolute", top: 12, left: 12, zIndex: 10,
+          background: S, color: FG, padding: "4px 8px", borderRadius: 6,
+          fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)", border: `1px solid ${B}66`
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          1 / {totalPhotos}
+        </div>
+
+        {/* View Photos Button */}
+        <div style={{
+          position: "absolute", bottom: 12, left: 12, zIndex: 10
+        }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowModal(true);
+            }}
+            style={{
+              background: S, color: FG, border: `1px solid ${B}66`,
+              padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            View Photos
+          </button>
+        </div>
       </motion.div>
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 16 }}>
         <div>
@@ -1905,7 +1997,7 @@ function PropertyStayCard({ stay }) {
 
         {amenities.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "4px 0" }}>
-            {visibleAmenities.map((amenity, idx) => {
+            {amenities.map((amenity, idx) => {
               const IconComp = getAmenityIcon(amenity);
               return (
                 <div
@@ -1914,7 +2006,7 @@ function PropertyStayCard({ stay }) {
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    background: "rgba(255, 255, 255, 0.4)",
+                    background: S,
                     border: `1px solid ${B}66`,
                     borderRadius: 20,
                     padding: "6px 12px",
@@ -1931,29 +2023,17 @@ function PropertyStayCard({ stay }) {
                 </div>
               );
             })}
-            {extraCount > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: S,
-                  border: `1px solid ${B}66`,
-                  borderRadius: 20,
-                  padding: "6px 12px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: M,
-                  backdropFilter: "blur(4px)"
-                }}
-              >
-                + {extraCount} more
-              </div>
-            )}
           </div>
         )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
+          <div style={{ 
+            display: isMobile ? "grid" : "flex", 
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "unset",
+            flexWrap: "wrap", 
+            gap: 12,
+            width: isMobile ? "100%" : "auto"
+          }}>
             <motion.div
               whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
               transition={{ duration: 0.2 }}
@@ -1961,11 +2041,9 @@ function PropertyStayCard({ stay }) {
                 border: `1px solid ${B}99`,
                 borderRadius: 10,
                 padding: "10px 14px",
-                background: "rgba(255,255,255,0.55)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
+                background: S,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: 150
+                minWidth: isMobile ? 0 : 150
               }}
             >
               <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-in</div>
@@ -1978,11 +2056,9 @@ function PropertyStayCard({ stay }) {
                 border: `1px solid ${B}99`,
                 borderRadius: 10,
                 padding: "10px 14px",
-                background: "rgba(255,255,255,0.55)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
+                background: S,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: 150
+                minWidth: isMobile ? 0 : 150
               }}
             >
               <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-out</div>
@@ -1995,11 +2071,10 @@ function PropertyStayCard({ stay }) {
                 border: `1px solid ${B}99`,
                 borderRadius: 10,
                 padding: "10px 14px",
-                background: "rgba(255,255,255,0.55)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
+                background: S,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: 170
+                minWidth: isMobile ? 0 : 170,
+                gridColumn: isMobile ? "1 / -1" : "auto"
               }}
             >
               <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Price</div>
@@ -2025,17 +2100,6 @@ function PropertyStayCard({ stay }) {
             </motion.div>
           </div>
 
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              background: AL, border: `1px solid ${A}`, color: A,
-              padding: "12px 24px", borderRadius: 10, fontSize: 13, fontWeight: 700,
-              cursor: "pointer", whiteSpace: "nowrap",
-              transition: "all 0.3s ease",
-              display: "flex", alignItems: "center", justifyContent: "center"
-            }}>
-            View Details
-          </button>
         </div>
       </div>
 
@@ -2288,6 +2352,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
 function StayLocation({ stay }) {
   const { isMobile } = useWindowSize();
   const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+  const { city, district, state } = getStayLocationParts(stay);
 
   // Robustly extract coordinates
   const lat = stay?.latitude || stay?.latitude_decimal || stay?.lat || stay?.meetingLatitude || stay?.listingLatitude;
@@ -2295,8 +2360,6 @@ function StayLocation({ stay }) {
 
   // Robustly extract the full address from various possible backend fields
   const address = stay?.address || stay?.fullAddress || stay?.location || stay?.meetingAddress || [stay?.city, stay?.state, stay?.country].filter(Boolean).join(", ");
-  const city = stay?.city || stay?.district || "Destination";
-  const state = stay?.state || stay?.province || "N/A";
   const country = stay?.country || "N/A";
 
   // Build the query: Prefer coordinates for pinpoint accuracy, fallback to address
@@ -2308,10 +2371,11 @@ function StayLocation({ stay }) {
 
   const detailRows = [
     { label: "ADDRESS", value: address },
-    { label: "DISTRICT", value: city },
-    { label: "STATE", value: state },
+    { label: "CITY", value: city },
+    { label: "DISTRICT", value: district || city || "N/A" },
+    { label: "STATE", value: state || "N/A" },
     { label: "COUNTRY", value: country },
-  ];
+  ].filter((row) => row.value);
 
   return (
     <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
@@ -2322,19 +2386,12 @@ function StayLocation({ stay }) {
           {/* Left Column: Location Card */}
           <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 32 }}>
             <h2 className="font-display" style={{ fontSize: isMobile ? 32 : 48, fontWeight: 700, color: FG }}>Location</h2>
-            <div style={{ background: S, borderRadius: 2, overflow: "hidden", border: `1px solid ${B}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-              {/* Card Header Area */}
-              <div style={{ padding: isMobile ? "20px" : "24px 32px", background: BG, borderBottom: `1px solid ${B}` }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <MapPin size={20} color={A} style={{ marginTop: 4 }} />
-                  <div>
-                    <p style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 4 }}>{city}</p>
-                    <p style={{ fontSize: 13, color: M, lineHeight: 1.5 }}>{address}</p>
-                  </div>
-                </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <MapPin size={24} color={A} />
+                <p style={{ fontSize: 18, fontWeight: 700, color: FG, margin: 0 }}>{stay?.locationName || (address ? address.split(',')[0] : null) || city || stay?.propertyName || stay?.title || stay?.name || "Location"}</p>
               </div>
-              {/* Map Area */}
-              <div style={{ height: isMobile ? 300 : 400, position: "relative" }}>
+              <div style={{ background: W, border: `1px solid ${B}`, height: isMobile ? 320 : 400, position: "relative", overflow: "hidden", borderRadius: 16 }}>
                 <iframe
                   title="Property Location Map"
                   width="100%"

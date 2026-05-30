@@ -448,10 +448,7 @@ function App() {
             exact
             path={[
               "/reviews",
-              "/reviews/listing/:id",
-              "/reviews/experience/:id",
-              "/reviews/event/:id",
-              "/reviews/stay/:id",
+              "/reviews/:type/:id",
             ]}
             render={() => (
               <Page separatorHeader>

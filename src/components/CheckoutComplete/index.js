@@ -23,7 +23,10 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
           </>
         ) : (
           <>
-            <div className={cn("h2", styles.title)}>Congratulation!</div>
+            <div className={cn("h2", styles.title)}>
+              <span className={styles.desktopText}>Congratulation!</span>
+              <span className={styles.mobileText}>Your Journey Begins</span>
+            </div>
             <div className={styles.info}>
               {bookedMessage}{" "}
               <span role="img" aria-label="firework">

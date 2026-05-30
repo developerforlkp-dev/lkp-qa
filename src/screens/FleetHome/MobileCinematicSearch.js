@@ -50,7 +50,7 @@ function injectStyles() {
         max-width: 400px;
         box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,151,178,0.06);
         cursor: pointer;
-        pointer-events: all;
+        pointer-events: auto;
         -webkit-tap-highlight-color: transparent;
         user-select: none;
         transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
@@ -884,7 +884,7 @@ function injectStyles() {
           max-width: 100%;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
           cursor: pointer;
-          pointer-events: all;
+          pointer-events: auto;
           -webkit-tap-highlight-color: transparent;
           user-select: none;
           transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease, transform 0.2s ease;

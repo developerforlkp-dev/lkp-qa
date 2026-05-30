@@ -20,6 +20,8 @@ const formatImageUrl = (url) => {
   return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
+const formatMoneyLabel = (currency, amount) => `${currency} ${Number(amount || 0).toFixed(2)}`;
+
 
 const Checkout = () => {
   const location = useLocation();
@@ -455,14 +457,13 @@ const Checkout = () => {
   const { addOnsTotal, finalTotal, table } = useMemo(() => {
     const pricing = bookingData?.pricing;
     const cur = pricing?.currency || paymentData?.currency || "INR";
-    const fmt = (n) => `${cur} ${Number(n || 0).toFixed(2)}`;
+    const fmt = (n) => formatMoneyLabel(cur, n);
 
     if (pricing) {
       const rows = [];
 
       const basePrice = pricing.basePrice || pricing.baseAmount || 0;
       const addonsTotal = pricing.addonsTotal || 0;
-      const commission = pricing.commission || pricing.platformCommission || pricing.platformFee || 0;
       const tax = pricing.tax || pricing.taxAmount || 0;
       const discount = pricing.discount || pricing.discountAmount || 0;
       const taxRate = Number(pricing.taxRate || 0);
@@ -471,6 +472,7 @@ const Checkout = () => {
       // Keep checkout breakdown aligned with payable total:
       // use provided tax first (server/local computed), only derive from rate as fallback.
       const displayTax = Number(tax || 0) > 0 ? Number(tax) : computedTaxFromSubtotal;
+      const subtotalBeforeDiscountAndTax = Math.max(0, Number(basePrice || 0) + Number(addonsTotal || 0));
 
       // Base price
       if (basePrice > 0) {
@@ -483,49 +485,31 @@ const Checkout = () => {
           const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || ppp;
 
           if (adults > 0) {
-            rows.push({ title: `Adults (${fmt(ppp)} × ${adults})`, value: fmt(ppp * adults) });
+            rows.push({ title: `Adults (${fmt(ppp)} x ${adults})`, value: fmt(ppp * adults) });
           }
           if (children > 0) {
-            rows.push({ title: `Children (${fmt(cpp)} × ${children})`, value: fmt(cpp * children) });
+            rows.push({ title: `Children (${fmt(cpp)} x ${children})`, value: fmt(cpp * children) });
           }
         } else {
           const guests = totalG;
           const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
           const basePpp = ppp || (basePrice / guests);
-          const label = `Base price (${fmt(basePpp)} × ${guests} guest${guests !== 1 ? 's' : ''})`;
+          const label = `Base price (${fmt(basePpp)} x ${guests} guest${guests !== 1 ? "s" : ""})`;
           rows.push({ title: label, value: fmt(basePrice) });
         }
       }
 
-      // // Add-ons subtotal
-      // if (addonsTotal > 0) {
-      //   rows.push({ title: "Add-ons", value: fmt(addonsTotal) });
-      // }
-
-      // Commission / service fee - Hidden for guest view as per requirement (host deduction)
-      /*
-      if (commission > 0) {
-        const rate = pricing.commissionRate ? ` (${pricing.commissionRate}%)` : "";
-        rows.push({ title: `Service fee${rate}`, value: fmt(commission) });
-      }
-      */
-
-      // Tax
-      if (displayTax > 0) {
-        const rate = pricing.taxRate ? ` (${pricing.taxRate}%)` : "";
-        rows.push({ title: `Taxes (paid by you)${rate}`, value: fmt(displayTax) });
+      if (addonsTotal > 0) {
+        rows.push({ title: "Add-ons Total", value: fmt(addonsTotal) });
       }
 
-      // Discount
+      if (subtotalBeforeDiscountAndTax > 0) {
+        rows.push({ title: "Total", value: fmt(subtotalBeforeDiscountAndTax) });
+      }
+
       const earlyBirdDiscount = pricing.earlyBirdDiscount || 0;
       const promoDiscount = pricing.promoDiscount || 0;
       const couponDiscount = pricing.couponDiscount || 0;
-
-      if (earlyBirdDiscount > 0) {
-        rows.push({ title: "Early Bird Discount", value: `- ${fmt(earlyBirdDiscount)}` });
-      }
-
-      // Show all discounts together as one line item.
       const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
       const rawPayableAmount = Number(
         paymentData?.amount ??
@@ -552,11 +536,17 @@ const Checkout = () => {
         ? computedDiscountFromPayable
         : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
 
-      // Avoid double-counting in UI: when early bird is shown as a separate row,
-      // "Discounts" should only include non-early-bird discounts.
-      const otherDiscounts = Math.max(0, Number(totalDiscount || 0) - Number(earlyBirdDiscount || 0));
-      if (otherDiscounts > 0) {
-        rows.push({ title: "Discounts", value: `- ${fmt(otherDiscounts)}` });
+      if (totalDiscount > 0) {
+        const discountRate = subtotalBeforeDiscountAndTax > 0
+          ? (Number(totalDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
+          : 0;
+        const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
+        rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(totalDiscount)}` });
+      }
+
+      if (displayTax > 0) {
+        const rate = taxRate > 0 ? ` (${taxRate.toFixed(2)}%)` : "";
+        rows.push({ title: `Taxes${rate}`, value: fmt(displayTax) });
       }
 
       return {
@@ -583,7 +573,7 @@ const Checkout = () => {
     return {
       addOnsTotal: addOnsPrice,
       finalTotal: addOnsPrice,
-      table: [{ title: "Add-ons", value: `${addOnsPrice}` }],
+      table: [{ title: "Add-ons Total", value: formatMoneyLabel(cur, addOnsPrice) }],
     };
   }, [bookingData, selectedAddOns, paymentData]);
 

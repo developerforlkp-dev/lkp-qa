@@ -1,55 +1,60 @@
 @import ../../../styles/helpers
 
-// ─── Modal Override — Bottom Sheet ───────────────────────────────────────────
-.modal
-    :global(.outer)
-        max-width: 100% !important
-        width: 100% !important
-        max-height: 88vh !important
-        margin: auto 0 0 !important
-        border-radius: 20px 20px 0 0 !important
-        padding: 0 !important
-        display: flex
-        flex-direction: column
-        overflow: hidden
-        box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.14) !important
-        +dark
-            box-shadow: 0 -4px 40px rgba(0, 0, 0, 0.5) !important
-        // Hide Modal's built-in close button
-        :global(.close)
-            display: none !important
-    :global(.outer) > div
-        padding: 0 !important
-        height: 100%
-        display: flex
-        flex-direction: column
+// ─── Overlay ─────────────────────────────────────────────────────────────────
+// Covers the background with a dark semi-transparent layer.
+// Clicks on it close the drawer.
+.overlay
+    position: fixed
+    inset: 0
+    z-index: 9990
+    background: rgba(0, 0, 0, 0)
+    backdrop-filter: blur(0px)
+    -webkit-backdrop-filter: blur(0px)
+    pointer-events: none
+    transition: background 0.35s ease, backdrop-filter 0.35s ease
 
-// ─── Sheet Wrapper ────────────────────────────────────────────────────────────
-.sheet
+.overlayVisible
+    background: rgba(0, 0, 0, 0.48)
+    backdrop-filter: blur(2px)
+    -webkit-backdrop-filter: blur(2px)
+    pointer-events: all
+
+// ─── Drawer Shell ─────────────────────────────────────────────────────────────
+// Right-side slide-in panel — mobile-only
+.drawer
+    position: fixed
+    top: 0
+    right: 0
+    bottom: 0
+    z-index: 9991
+    width: 85%
+    max-width: 400px
     display: flex
     flex-direction: column
-    height: 88vh
-    max-height: 88vh
-    overflow: hidden
     background: $n8
+    box-shadow: -6px 0 40px rgba(0, 0, 0, 0.16), -2px 0 12px rgba(0, 0, 0, 0.08)
+    border-radius: 20px 0 0 20px
+    // `clip` preserves the rounded-corner visual boundary without creating a
+    // new stacking context — lets the Sort By dropdown popup paint on top
+    overflow: clip
+    // Slide out to the right by default (hidden)
+    transform: translateX(100%)
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)
+    will-change: transform
     +dark
         background: #1A1D23
+        box-shadow: -6px 0 48px rgba(0, 0, 0, 0.55), -2px 0 16px rgba(0, 0, 0, 0.35)
+    // Only shown on tablet/mobile — desktop never renders this
+    +rmin(1024)
+        display: none
 
-// ─── Drag Handle ─────────────────────────────────────────────────────────────
-.handle
-    width: 36px
-    height: 4px
-    border-radius: 100px
-    background: $n6
-    margin: 12px auto 0
-    flex-shrink: 0
-    +dark
-        background: $n3
+.drawerOpen
+    transform: translateX(0)
 
-// ─── Sticky Header ───────────────────────────────────────────────────────────
+// ─── Sticky Header ────────────────────────────────────────────────────────────
 .header
     flex-shrink: 0
-    padding: 14px 20px 0
+    padding: 20px 20px 0
     background: $n8
     +dark
         background: #1A1D23
@@ -58,49 +63,25 @@
     display: flex
     align-items: center
     justify-content: space-between
-    padding-bottom: 14px
+    gap: 12px
+    padding-bottom: 16px
     border-bottom: 1px solid $n6
     +dark
         border-color: $n3
 
-// Left: close button
-.closeBtn
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 34px
-    height: 34px
-    border-radius: 50%
-    background: $n7
-    border: 1px solid $n6
-    cursor: pointer
-    transition: background .2s
-    flex-shrink: 0
-    +dark
-        background: $n3
-        border-color: $n3
-    svg
-        fill: $n3
-        +dark
-            fill: $n6
-    &:hover
-        background: $n6
-        +dark
-            background: $n2
-
-// Center: title block
+// Left: title + subtitle
 .titleBlock
+    flex: 1
     display: flex
     flex-direction: column
-    align-items: center
     gap: 2px
 
 .title
-    font-size: 15px
+    font-size: 16px
     font-weight: 700
     color: $n2
     margin: 0
-    letter-spacing: -0.01em
+    letter-spacing: -0.015em
     +dark
         color: $n8
 
@@ -111,7 +92,7 @@
     +dark
         color: $n5
 
-// Right: clear all button
+// Center: Clear All button
 .resetBtn
     font-size: 13px
     font-weight: 600
@@ -137,13 +118,49 @@
     &:hover
         color: darken(#0097B2, 8%)
 
+// Right: Close button
+.closeBtn
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 36px
+    height: 36px
+    border-radius: 50%
+    background: $n7
+    border: 1.5px solid $n6
+    cursor: pointer
+    transition: background .2s, border-color .2s
+    flex-shrink: 0
+    +dark
+        background: $n3
+        border-color: $n3
+    svg
+        fill: $n3
+        transition: fill .2s
+        +dark
+            fill: $n6
+    &:hover
+        background: $n6
+        border-color: $n5
+        +dark
+            background: $n2
+            border-color: $n4
+        svg
+            fill: $n2
+            +dark
+                fill: $n7
+
 // ─── Scrollable Content ───────────────────────────────────────────────────────
+// overflow-x uses `clip` (not `hidden`) so the Sort By Dropdown's absolutely-
+// positioned options list can still paint above other elements via z-index,
+// while horizontal overflow is still visually clipped.
 .content
     flex: 1
     overflow-y: auto
+    overflow-x: clip
     -webkit-overflow-scrolling: touch
-    padding: 12px 0 0
-    // Subtle scrollbar
+    padding: 8px 0 0
+    // Thin, styled scrollbar
     &::-webkit-scrollbar
         width: 3px
     &::-webkit-scrollbar-track
@@ -157,7 +174,7 @@
 // ─── Sticky Footer CTA ───────────────────────────────────────────────────────
 .footer
     flex-shrink: 0
-    padding: 12px 20px 20px
+    padding: 14px 20px 28px
     background: $n8
     border-top: 1px solid $n6
     +dark
@@ -181,17 +198,20 @@
 .applyBtn
     flex: 1
     padding: 15px 20px
-    border-radius: 12px
+    border-radius: 14px
     background: $p1
     border: none
     font-size: 15px
     font-weight: 700
     color: $n8
     cursor: pointer
-    transition: all .18s ease
+    transition: all .2s ease
     letter-spacing: -0.01em
+    box-shadow: 0 4px 16px rgba(0, 151, 178, 0.28)
     &:hover
         background: darken(#0097B2, 5%)
-        box-shadow: 0 4px 12px rgba(0, 151, 178, 0.35)
+        box-shadow: 0 6px 20px rgba(0, 151, 178, 0.4)
+        transform: translateY(-1px)
     &:active
-        transform: scale(0.99)
+        transform: scale(0.99) translateY(0)
+        box-shadow: 0 2px 8px rgba(0, 151, 178, 0.25)

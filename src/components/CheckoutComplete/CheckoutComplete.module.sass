@@ -1,11 +1,38 @@
 @import ../../styles/helpers
 
+.complete
+    +m
+        padding: 32px 20px
+        background: $n8
+        border-radius: 24px
+        box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.06)
+        +dark
+            background: $n2
+
 .head
     margin-bottom: 24px
     padding-bottom: 24px
     border-bottom: 1px solid $n6
+    +m
+        text-align: center
+        border-bottom: none
+        margin-bottom: 16px
+        padding-bottom: 16px
     +dark
         border-color: $n2
+
+.desktopText
+    display: block
+    +m
+        display: none
+
+.mobileText
+    display: none
+    +m
+        display: block
+        color: $p1
+        font-size: 32px
+        line-height: 1.2
 
 .title
     margin-bottom: 4px
@@ -22,6 +49,8 @@
 .author
     display: flex
     align-items: center
+    +m
+        justify-content: center
     .text
         margin-right: 4px
         +caption-2
@@ -98,6 +127,10 @@
     &:not(:last-child)
         +m
             margin-bottom: 16px
+            padding-bottom: 16px
+            border-bottom: 1px solid $n6
+            +dark
+                border-color: $n3
 
 .itemFull
     flex: 0 0 100%
@@ -142,6 +175,12 @@
     align-items: center
     &:not(:last-child)
         margin-bottom: 20px
+        +m
+            margin-bottom: 16px
+            padding-bottom: 16px
+            border-bottom: 1px solid $n6
+            +dark
+                border-color: $n3
 
 .cell
     flex: 0 0 50%
@@ -162,8 +201,16 @@
     
 .btns
     display: flex
+    +m
+        flex-direction: column
+        gap: 12px
     .button
         +m
-            padding: 0 16px
+            padding: 0
+            width: 100%
+            height: 56px
+            border-radius: 28px
         &:not(:last-child)
             margin-right: 12px
+            +m
+                margin-right: 0

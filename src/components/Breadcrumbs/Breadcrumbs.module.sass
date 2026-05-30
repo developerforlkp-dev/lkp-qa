@@ -6,7 +6,13 @@
 
 .item
     +button-2
-    color: $n5
+    color: $n4
+    +dark
+        color: $n6
+    &:last-child
+        color: $n2
+        +dark
+            color: $n8
     &:not(:last-child)
         margin-right: 16px
         +t
@@ -20,7 +26,7 @@
             background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='10' fill='none' viewBox='0 0 6 10'%3E%3Cpath fill-rule='evenodd' d='M.793.793a1 1 0 0 0 0 1.414L3.586 5 .793 7.793a1 1 0 0 0 1.414 1.414l3.5-3.5a1 1 0 0 0 0-1.414l-3.5-3.5a1 1 0 0 0-1.414 0z' fill='%23777E90'/%3E%3C/svg%3E") no-repeat 50% 50% / 100% auto
 
 .link
-    color: $n4
+    color: inherit
     transition: color .2s
     &:hover
         color: $p1
