@@ -11,7 +11,7 @@ import cn from "classnames";
 import Loader from "../../components/Loader";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
-import { getFoodDetails, getHost } from "../../utils/api";
+import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
@@ -950,8 +950,8 @@ function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
     return () => clearInterval(timer);
   }, [items.length]);
 
-  const chefName = hostData?.displayName || food?.host?.displayName || "Master Chef";
-  const chefStory = food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response.";
+  const chefName = hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Master Chef");
+  const chefStory = hostData?.host?.bio || hostData?.bio || food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response.";
 
   return (
     <section ref={r} className="chef-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 0" : "180px 0", overflow: "hidden", position: "relative", borderTop: `1px solid ${B}` }}>
@@ -1511,11 +1511,11 @@ function ReservationNoir({ food, hostData }) {
               <div className="res-contact-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 24 : 40, rowGap: isMobile ? 24 : 40 }}>
                 <div>
                   <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 12 }}>Managed By</p>
-                  <p style={{ fontSize: 15, color: FG, fontWeight: 600 }}>{hostData?.displayName || food?.host?.displayName || "Owner"}</p>
+                  <p style={{ fontSize: 15, color: FG, fontWeight: 600 }}>{hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Owner")}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 12 }}>Contact Phone</p>
-                  <p style={{ fontSize: 15, color: FG, fontWeight: 700 }}>{hostData?.phone || food?.host?.phone || "1234567890"}</p>
+                  <p style={{ fontSize: 15, color: FG, fontWeight: 700 }}>{hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || food?.host?.phone || "Contact via App"}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 16 }}>Website or Social Link</p>
@@ -1678,7 +1678,7 @@ const FoodDetails = () => {
 
           const hostId = data.hostId || data.host?.hostId || data.leadUserId;
           if (hostId) {
-            getHost(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
+            getHostContent(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
           }
         }
         setLoading(false);
