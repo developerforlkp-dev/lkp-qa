@@ -2,38 +2,10 @@ import axios from "axios";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 
-const stripHtml = (value) => {
-  if (typeof value !== "string") return value;
-  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-};
-
-const summarizeApiError = (error, fallbackMessage = "Request failed") => {
-  const status = error?.response?.status;
-  const responseData = error?.response?.data;
-  const responseMessage =
-    typeof responseData === "string"
-      ? stripHtml(responseData)
-      : responseData?.message || responseData?.error;
-
-  if (status === 503) {
-    return "Service is temporarily unavailable. Please try again shortly.";
-  }
-
-  return responseMessage || error?.message || fallbackMessage;
-};
-
-const getErrorLogData = (error) => {
-  const responseData = error?.response?.data;
-  if (typeof responseData === "string") {
-    return stripHtml(responseData).slice(0, 200);
-  }
-  return responseData || error?.message;
-};
-
 
 
 const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
-  "/api";
+  "https://api.dev.littleknownplanet.com/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
   return API_BASE_URL;
@@ -44,7 +16,8 @@ export const DEFAULT_API_BASE_URL = (() => {
 // Get API base URL from environment variable or use default
 // Priority:
 // 1. REACT_APP_API_URL environment variable
-// 2. Same-origin /api proxy (CRA dev proxy or Vercel rewrite)
+
+// 2. Runtime environment-specific base URL
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
     return normalizeBaseUrl(process.env.REACT_APP_API_URL);
@@ -129,7 +102,7 @@ ListingsAPI.interceptors.response.use(
     if (error.response) {
       // Server responded with error status
       const status = error.response.status;
-      const message = summarizeApiError(error);
+      const message = error.response.data?.message || error.message;
 
       // Check if this is a non-critical endpoint that can fail silently
       const isNonCriticalEndpoint = error.config?.url?.includes('/orders/complete-expired');
@@ -157,7 +130,7 @@ ListingsAPI.interceptors.response.use(
         console.error(`❌ API Error ${status}: ${message}`, {
           url: error.config?.url,
           method: error.config?.method,
-          data: getErrorLogData(error)
+          data: error.response.data
         });
       }
     } else if (error.request) {
@@ -337,8 +310,7 @@ export const getBusinessInterests = async () => {
     if (Array.isArray(payload?.items)) return payload.items;
     return [];
   } catch (error) {
-    error.message = summarizeApiError(error, "Failed to load business interests");
-    console.error("Error fetching business interests:", getErrorLogData(error));
+    console.error("Error fetching business interests:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -1261,8 +1233,7 @@ export const getHomepageHero = async () => {
     }
     return [];
   } catch (error) {
-    error.message = summarizeApiError(error, "Failed to load homepage hero");
-    console.error("❌ Error fetching homepage hero:", getErrorLogData(error));
+    console.error("❌ Error fetching homepage hero:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -1291,8 +1262,7 @@ export const getHomepageSections = async (businessInterestId) => {
     }
     return [];
   } catch (error) {
-    error.message = summarizeApiError(error, "Failed to load homepage sections");
-    console.error("❌ Error fetching homepage sections:", getErrorLogData(error));
+    console.error("❌ Error fetching homepage sections:", error.response?.data || error.message);
     throw error;
   }
 };

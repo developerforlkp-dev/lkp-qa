@@ -15,7 +15,7 @@ import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft, ChevronDown, FileText, Plus, Camera, Ticket, Share2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
-import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews, getHost } from "../../utils/api";
+import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews } from "../../utils/api";
 import Modal from "../../components/Modal";
 import LoginPromptModal from "../../components/LoginPromptModal";
 import ShareButton from "../../components/ShareButton";
@@ -760,7 +760,6 @@ const EventProduct = () => {
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
   const unavailableRedirectRef = useRef(false);
-  const [hostData, setHostData] = useState(null);
 
   const isEventUnavailable = (payload) => {
     if (!payload || typeof payload !== "object") return true;
@@ -986,15 +985,6 @@ const EventProduct = () => {
 
         if (!mounted) return;
         setEvent(normalizedEvent);
-
-        const hostId = payload?.hostId || payload?.host?.id || payload?.host?.hostId || payload?.leadUserId || payload?.host?.leadUserId || payload?.userId;
-        if (hostId) {
-          getHost(hostId).then(h => {
-            if (mounted) {
-              setHostData(h?.host || h || null);
-            }
-          }).catch(e => console.warn(e));
-        }
 
         // Fetch reviews for the event listing
         getListingReviews(eventId).then(resp => {

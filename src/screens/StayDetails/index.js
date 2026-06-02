@@ -909,9 +909,6 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
                       {primaryName}
                     </h3>
                     <p style={{ fontSize: 14, color: M }}>Property Representative</p>
-                    {(hostData?.bio || hostData?.about) && (
-                      <p style={{ fontSize: 13, color: M, lineHeight: 1.6, marginTop: 12 }}>{hostData?.bio || hostData?.about}</p>
-                    )}
                   </div>
                 </div>
 

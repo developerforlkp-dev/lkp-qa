@@ -951,7 +951,7 @@ function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
   }, [items.length]);
 
   const chefName = hostData?.displayName || food?.host?.displayName || "Master Chef";
-  const chefStory = hostData?.bio || hostData?.about || food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response.";
+  const chefStory = food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response.";
 
   return (
     <section ref={r} className="chef-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 0" : "180px 0", overflow: "hidden", position: "relative", borderTop: `1px solid ${B}` }}>

@@ -505,9 +505,6 @@ function DestAbout({ place, hostData, hostAvatar }) {
                     <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
                     <p style={{ fontSize: 15, fontWeight: 700, color: FG }}>{hostData?.displayName || "Lead Curator"}</p>
                   </div>
-                  {(hostData?.bio || hostData?.about) && (
-                    <p style={{ fontSize: 12, color: M, lineHeight: 1.6, marginTop: 8, maxWidth: 280 }}>{hostData?.bio || hostData?.about}</p>
-                  )}
                 </div>
               </div>
             </Rev>
@@ -911,9 +908,6 @@ function MobileAbout({ place, hostData, hostAvatar }) {
               <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }} alt="" />
               <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>{hostData?.displayName || "Lead Curator"}</p>
             </div>
-            {(hostData?.bio || hostData?.about) && (
-              <p style={{ fontSize: 11, color: M, lineHeight: 1.5, marginTop: 4, textAlign: "right" }}>{hostData?.bio || hostData?.about}</p>
-            )}
           </div>
         </div>
       </div>
