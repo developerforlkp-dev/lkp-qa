@@ -5,7 +5,7 @@ import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, M
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getEventReviews, getHost } from "../../../utils/api";
+import { getEventDetails, getEventReviews, getHost, getHostContent } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
 import Loader from "../../../components/Loader";
@@ -1446,7 +1446,7 @@ function HostDetails({ event, hostName, reviews = [] }) {
     event?.leadUserId ||
     event?.host?.leadUserId ||
     event?.hostId;
-  const hostDescription = host?.description || host?.bio || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
+  const hostDescription = host?.bio || host?.description || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
   const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
 
   // Normalise reviews – API may return { ratingSummary, reviews:[...] } or a plain array
@@ -2135,7 +2135,7 @@ export default function EventDetails() {
 
         if (data?.leadUserId) {
           try {
-            const hostData = await getHost(data.leadUserId);
+            const hostData = await getHostContent(data.leadUserId);
             fetchedHostName = formatHostName(hostData);
             hostProfile = hostData;
           } catch (hostErr) {

@@ -12,7 +12,7 @@ import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
-import { getPlaceDetails, getHost } from "../../utils/api";
+import { getPlaceDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
@@ -503,7 +503,14 @@ function DestAbout({ place, hostData, hostAvatar }) {
                   <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Curator</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
-                    <p style={{ fontSize: 15, fontWeight: 700, color: FG }}>{hostData?.displayName || "Lead Curator"}</p>
+                    <div>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: FG, margin: 0 }}>
+                        {hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || "Lead Curator")}
+                      </p>
+                      {(hostData?.host?.bio || hostData?.bio) && (
+                        <p style={{ fontSize: 12, color: M, marginTop: 4, fontStyle: "italic", margin: "4px 0 0 0" }}>{hostData?.host?.bio || hostData?.bio}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -556,10 +563,10 @@ function Logistics({ place, hostData }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
               <div style={{ padding: 48, border: `1px solid ${B}`, borderRadius: 32, background: W }}>
                 <p style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 24 }}>Official Inquiries</p>
-                <h3 className="font-display" style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 32 }}>{hostData?.displayName || "Tourism Authority"}</h3>
+                <h3 className="font-display" style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 32 }}>{hostData?.host?.displayName || hostData?.displayName || "Tourism Authority"}</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  <a href={`tel:${hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
-                    <Phone size={18} color={A} /> {hostData?.phone || "Contact via App"}
+                  <a href={`tel:${hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
+                    <Phone size={18} color={A} /> {hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || "Contact via App"}
                   </a>
                   <a href="#" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
                     <Globe size={18} color={A} /> {place?.website || "Official Portal"}
@@ -906,7 +913,14 @@ function MobileAbout({ place, hostData, hostAvatar }) {
             <p style={{ fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 4, textAlign: "right" }}>Curator</p>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }} alt="" />
-              <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>{hostData?.displayName || "Lead Curator"}</p>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>
+                  {hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || "Lead Curator")}
+                </p>
+                {(hostData?.host?.bio || hostData?.bio) && (
+                  <p style={{ fontSize: 11, color: M, margin: "4px 0 0 0", fontStyle: "italic" }}>{hostData?.host?.bio || hostData?.bio}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1327,11 +1341,11 @@ function MobileLogistics({ place, hostData }) {
         <div style={{ padding: 18, border: `1.5px solid ${B}`, borderRadius: 20, background: S }}>
           <p style={{ fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: M, marginBottom: 12, margin: "0 0 12px 0" }}>Official Inquiries</p>
           <h4 className="font-display" style={{ fontSize: 16, fontWeight: 700, color: FG, marginBottom: 16, margin: "0 0 16px 0" }}>
-            {hostData?.displayName || "Tourism Authority"}
+            {hostData?.host?.displayName || hostData?.displayName || "Tourism Authority"}
           </h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <a href={`tel:${hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", fontSize: 12, color: FG, fontWeight: 600 }}>
-              <Phone size={14} color={A} /> {hostData?.phone || "Contact via App"}
+            <a href={`tel:${hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", fontSize: 12, color: FG, fontWeight: 600 }}>
+              <Phone size={14} color={A} /> {hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || "Contact via App"}
             </a>
             <a href={place?.website || "#"} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", fontSize: 12, color: FG, fontWeight: 600 }}>
               <Globe size={14} color={A} /> {place?.website ? "Official Website" : "Official Portal"}
@@ -1541,7 +1555,7 @@ const PlaceDetails = () => {
 
           const hostId = data.hostId || data.host?.hostId || data.leadUserId;
           if (hostId) {
-            getHost(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
+            getHostContent(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
           }
         }
         setLoading(false);
@@ -1605,7 +1619,7 @@ const PlaceDetails = () => {
   );
 
   const hostAvatar = useMemo(() => {
-    const avatarUrl = hostData?.profilePhotoUrl || place?.host?.profilePhotoUrl;
+    const avatarUrl = hostData?.host?.profilePhotoUrl || hostData?.profilePhotoUrl || place?.host?.profilePhotoUrl;
     return avatarUrl ? formatImageUrl(avatarUrl) : null;
   }, [hostData, place]);
 

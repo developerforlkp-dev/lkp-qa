@@ -13,6 +13,7 @@ import Icon from "../../components/Icon";
 import {
   getListing,
   getHost,
+  getHostContent,
   getLeadDetails,
   getListingReviews,
   getEligibleBookings,
@@ -571,19 +572,24 @@ const ExperienceProduct = () => {
   const [activityPhotoSrc, setActivityPhotoSrc] = useState(null);
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const unavailableRedirectRef = useRef(false);
-  const hostLeadUserId = hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
+  const hostLeadUserId = hostData?.host?.leadUserId || hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
   const leadIdForProfile = leadData?.leadId || leadData?.id || listing?.leadId || listing?.lead_id || listing?.host?.leadId || null;
   const displayHostName =
     [leadData?.firstName, leadData?.lastName].filter(Boolean).join(" ").trim() ||
+    [hostData?.host?.firstName, hostData?.host?.lastName].filter(Boolean).join(" ").trim() ||
     [hostData?.firstName, hostData?.lastName].filter(Boolean).join(" ").trim() ||
+    hostData?.host?.displayName ||
     hostData?.displayName ||
+    hostData?.host?.name ||
     hostData?.name ||
     "Host";
   const hostPhone =
     leadData?.phoneNumber ||
     leadData?.contactNumber ||
     leadData?.altPhoneNumber ||
+    hostData?.host?.phoneNumber ||
     hostData?.phoneNumber ||
+    hostData?.host?.phone ||
     hostData?.phone ||
     hostData?.mobile ||
     hostData?.contactNumber ||
@@ -595,6 +601,7 @@ const ExperienceProduct = () => {
   const hostEmail =
     leadData?.email ||
     leadData?.altEmail ||
+    hostData?.host?.email ||
     hostData?.email ||
     hostData?.emailAddress ||
     listing?.host?.email ||
@@ -703,7 +710,7 @@ const ExperienceProduct = () => {
 
           const hostId = data.hostId || data.host?.id || data.host?.hostId || data.leadUserId || data.host?.leadUserId;
           if (hostId) {
-            getHost(hostId).then(resp => {
+            getHostContent(hostId).then(resp => {
               if (mounted) {
                 setHostData(resp.host || resp);
               }
@@ -1359,7 +1366,7 @@ const ExperienceProduct = () => {
                   {displayHostName}
                 </h3>
                 <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
-                <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.about || ""}</p>
+                <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.host?.bio || hostData?.bio || hostData?.about || ""}</p>
                 {(hostPhone || hostEmail) && (
                   <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 24 }}>
                     {hostPhone ? (

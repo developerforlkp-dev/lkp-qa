@@ -15,7 +15,7 @@ import Page from "../../components/Page";
 import Loader from "../../components/Loader";
 import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
-import { getStayDetails, getHost, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
+import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
 import { Footer } from "../../components/JUI/Footer";
@@ -909,6 +909,9 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
                       {primaryName}
                     </h3>
                     <p style={{ fontSize: 14, color: M }}>Property Representative</p>
+                    {(hostData?.host?.bio || hostData?.bio) && (
+                      <p style={{ fontSize: 13, color: M, lineHeight: 1.8, marginTop: 12, fontStyle: "italic" }}>{hostData?.host?.bio || hostData?.bio}</p>
+                    )}
                   </div>
                 </div>
 
@@ -1114,7 +1117,7 @@ const StayDetails = () => {
           setGalleryItems(galleryImages.filter(u => u && !seen.has(u) && seen.add(u)));
 
           const hostId = data.hostId || data.host?.hostId || data.leadUserId || data.userId;
-          if (hostId) getHost(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
+          if (hostId) getHostContent(hostId).then(h => mounted && setHostData(h || null)).catch(e => console.warn(e));
 
           // Fetch reviews using stay-specific API
           getStayReviews(id).then(resp => {
