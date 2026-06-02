@@ -1622,6 +1622,21 @@ function HostDetails({ event, hostName, reviews = [] }) {
                         {comment && (
                           <p style={{ fontSize: 13, color: M, lineHeight: 1.65, margin: 0, paddingLeft: 46 }}>{comment}</p>
                         )}
+                        {rev.vendorResponse && (
+                          <div style={{ marginTop: 16, marginLeft: 46, padding: "16px 20px", background: "#F4F5F6", borderRadius: 12, border: `1px solid ${B}` }}>
+                            <p style={{ fontSize: 12, fontWeight: 700, color: FG, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0, paddingBottom: 6 }}>
+                              RESPONSE FROM HOST
+                            </p>
+                            <p style={{ fontSize: 14, color: FG, lineHeight: 1.6, margin: 0 }}>
+                              {rev.vendorResponse}
+                            </p>
+                            {rev.vendorRespondedAt && (
+                              <p style={{ fontSize: 11, color: M, marginTop: 8, margin: 0 }}>
+                                {formatReviewDate(rev.vendorRespondedAt)}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

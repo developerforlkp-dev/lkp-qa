@@ -237,7 +237,7 @@ const ReviewsListing = () => {
                         {rev.vendorResponse && (
                           <div className={styles.vendorResponse}>
                             <div className={styles.vendorResponseTitle}>
-                              Response from Host
+                              RESPONSE FROM HOST
                             </div>
                             <div className={styles.vendorResponseText}>
                               {rev.vendorResponse}

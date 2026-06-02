@@ -1883,6 +1883,21 @@ function ReviewsItem({ reviews, summary }) {
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{rev.customerName || rev.author}</span>
                       </div>
+                      {rev.vendorResponse && (
+                        <div style={{ marginTop: 16, padding: "16px 20px", background: AL || "#F4F5F6", borderRadius: 12, border: `1px solid ${B}` }}>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: FG, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0, paddingBottom: 6 }}>
+                            RESPONSE FROM HOST
+                          </p>
+                          <p style={{ fontSize: 14, color: FG, lineHeight: 1.6, margin: 0 }}>
+                            {rev.vendorResponse}
+                          </p>
+                          {rev.vendorRespondedAt && (
+                            <p style={{ fontSize: 11, color: M, marginTop: 8, margin: 0 }}>
+                              {moment(rev.vendorRespondedAt).format("MMM DD, YYYY")}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -2403,6 +2418,21 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                   <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, fontStyle: "italic", opacity: 0.9 }}>
                     &ldquo;{rev.comment || rev.text}&rdquo;
                   </p>
+                  {rev.vendorResponse && (
+                    <div style={{ marginTop: 16, padding: "16px 20px", background: AL || "#F4F5F6", borderRadius: 12, border: `1px solid ${B}` }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: FG, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0, paddingBottom: 6 }}>
+                        RESPONSE FROM HOST
+                      </p>
+                      <p style={{ fontSize: 14, color: FG, lineHeight: 1.6, margin: 0 }}>
+                        {rev.vendorResponse}
+                      </p>
+                      {rev.vendorRespondedAt && (
+                        <p style={{ fontSize: 11, color: M, marginTop: 8, margin: 0 }}>
+                          {moment(rev.vendorRespondedAt).format("MMM DD, YYYY")}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </Rev>
