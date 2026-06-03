@@ -569,7 +569,13 @@ const ExperienceProduct = () => {
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [activityPhotoVisible, setActivityPhotoVisible] = useState(false);
-  const [activityPhotoSrc, setActivityPhotoSrc] = useState(null);
+  const [activityPhotoIndex, setActivityPhotoIndex] = useState(0);
+
+  const activityImages = useMemo(() => {
+    return (listing?.keyActivities || [])
+      .map(it => getActivityImageUrl(it))
+      .filter(Boolean);
+  }, [listing?.keyActivities]);
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const unavailableRedirectRef = useRef(false);
   const hostLeadUserId = hostData?.host?.leadUserId || hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
@@ -1227,7 +1233,11 @@ const ExperienceProduct = () => {
                             {activityImageUrl && (
                               <div
                                 style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S, cursor: "pointer" }}
-                                onClick={() => { setActivityPhotoSrc(activityImageUrl); setActivityPhotoVisible(true); }}
+                                onClick={() => { 
+                                  const idx = activityImages.indexOf(activityImageUrl);
+                                  setActivityPhotoIndex(idx !== -1 ? idx : 0);
+                                  setActivityPhotoVisible(true); 
+                                }}
                               >
                                 <img
                                   src={activityImageUrl}
@@ -1479,6 +1489,17 @@ const ExperienceProduct = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {activityPhotoVisible && (
+          <FullScreenImage
+            src={activityImages[activityPhotoIndex] || "/images/content/placeholder.jpg"}
+            items={activityImages.length > 0 ? activityImages : ["/images/content/placeholder.jpg"]}
+            currentIndex={activityPhotoIndex}
+            onNavigate={setActivityPhotoIndex}
+            onClose={() => setActivityPhotoVisible(false)}
+          />
+        )}
+      </AnimatePresence>
       <style>{`
         /* Premium readability and visibility overrides for the Hero Section */
         .hero-section {
@@ -1719,14 +1740,7 @@ const ExperienceProduct = () => {
         }
       `}</style>
 
-      <AnimatePresence>
-        {activityPhotoVisible && activityPhotoSrc && (
-          <FullScreenImage
-            src={activityPhotoSrc}
-            onClose={() => setActivityPhotoVisible(false)}
-          />
-        )}
-      </AnimatePresence>
+
     </Page>
   );
 };
