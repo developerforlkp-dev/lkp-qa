@@ -755,39 +755,6 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         }
         {totalRooms != null && <span className={styles.badge}>{totalRooms} ROOMS</span>}
         {isSelected && <span className={styles.selectedBadge}>✓ Selected</span>}
-        
-        {/* Total Photo Count */}
-        {/* Total Photo Count */}
-        <div style={{
-          position: "absolute", top: 12, left: 12, zIndex: 10,
-          background: S, color: FG, padding: "4px 8px", borderRadius: 6,
-          fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)", border: `1px solid ${B}66`
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          1 / {totalPhotos}
-        </div>
-
-        {/* View Photos Button */}
-        <div style={{
-          position: "absolute", bottom: 12, left: 12, zIndex: 10
-        }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowModal(true);
-            }}
-            style={{
-              background: S, color: FG, border: `1px solid ${B}66`,
-              padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-              cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-            View Photos
-          </button>
-        </div>
       </div>
 
       {/* Right: Content */}
@@ -813,6 +780,30 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                 : <span className={styles.priceOnRequest}>Price on request</span>
               }
             </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowModal(true);
+              }}
+              style={{
+                marginTop: 8,
+                background: "transparent",
+                color: A,
+                border: "none",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: 0,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em"
+              }}
+            >
+              View Details
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
           </div>
         </div>
 

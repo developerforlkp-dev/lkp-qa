@@ -2299,6 +2299,12 @@ const StayProduct = () => {
                     </div>
                   </div>
                   <p style={{ fontSize: 14, color: FG, lineHeight: 1.6, margin: 0 }}>&ldquo;{rev.comment || rev.content || rev.reviewText || rev.text}&rdquo;</p>
+                  {rev?.vendorResponse && (
+                    <div style={{ marginTop: 12, padding: "12px 16px", background: AL, borderLeft: `3px solid ${A}`, borderRadius: "0 8px 8px 0" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Response from Host</div>
+                      <p style={{ fontSize: 13, color: M, margin: 0, lineHeight: 1.5 }}>{rev.vendorResponse}</p>
+                    </div>
+                  )}
                 </div>
               ))
             )}
