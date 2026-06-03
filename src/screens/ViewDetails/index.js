@@ -1688,7 +1688,7 @@ const ViewDetails = () => {
       <div className={cn("section", styles.section)}>
         <div className={cn("container", styles.container)}>
           <div className={styles.notFound}>
-            <h2>Loading booking details...</h2>
+            <p style={{ fontSize: "1.2rem", fontWeight: "500" }}>Loading booking details...</p>
           </div>
         </div>
       </div>
