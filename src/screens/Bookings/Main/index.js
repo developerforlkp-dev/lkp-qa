@@ -733,8 +733,8 @@ const Main = ({
           ? `${ticketName ? `${ticketName}: ` : ""}${available || "0"} left, requested ${requested || "N/A"}.`
           : "Requested quantity exceeds current availability.";
         return {
-          title: "Experience is fully booked",
-          message: "Selected slot is no longer available or not enough capacity.",
+          title: "Not enough capacity",
+          message: "Some selected tickets are no longer available in the requested quantity.",
           code,
           details: summary,
           isSuccess: false,
