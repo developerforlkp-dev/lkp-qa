@@ -426,6 +426,12 @@ const CommentsProduct = ({
                         {comment}
                       </p>
                     )}
+                    {rev?.vendorResponse && (
+                      <div style={{ marginTop: 12, marginLeft: 48, padding: "12px 16px", background: "rgba(0, 151, 178, 0.05)", borderLeft: `3px solid #0097B2`, borderRadius: "0 8px 8px 0" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#0097B2", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Response from Host</div>
+                        <p style={{ fontSize: 13, color: "#777E90", margin: 0, lineHeight: 1.5 }}>{rev.vendorResponse}</p>
+                      </div>
+                    )}
                   </div>
                 );
               })}

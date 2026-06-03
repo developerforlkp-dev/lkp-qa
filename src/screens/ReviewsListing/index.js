@@ -13,6 +13,7 @@ import {
   getStayDetails,
   getStayReviews,
 } from "../../utils/api";
+import { useTheme } from "../../components/JUI/Theme";
 
 const asNum = (value) => {
   const n = Number(value);
@@ -106,6 +107,7 @@ const getSummary = (payload, reviewsArray) => {
 const ReviewsListing = () => {
   const history = useHistory();
   const { type = "listing", id } = useParams();
+  const { tokens: { FG, M } } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [entity, setEntity] = useState(null);
@@ -137,16 +139,14 @@ const ReviewsListing = () => {
               : getListingReviews(id),
         ]);
 
-        if (!mounted) return;
-        const detailObj = detailRes?.data || detailRes || {};
-        const reviewsArray = toReviewsArray(reviewsRes);
-        setEntity(detailObj);
-        setReviews(reviewsArray);
-        setSummary(getSummary(reviewsRes, reviewsArray));
-        setPage(1);
-      } catch (e) {
-        if (!mounted) return;
-        setError(e?.message || "Failed to load reviews.");
+        if (mounted) {
+          setEntity(detailRes?.data || detailRes || null);
+          const revs = toReviewsArray(reviewsRes);
+          setReviews(revs);
+          setSummary(getSummary(reviewsRes, revs));
+        }
+      } catch (err) {
+        if (mounted) setError(err.response?.data?.message || err.message || "Failed to load data.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -185,16 +185,16 @@ const ReviewsListing = () => {
 
           <div className={styles.head}>
             <div>
-              <h2 className={styles.title}>{title}</h2>
-              <div className={styles.location}>
-                <Icon name="marker" size="16" />
+              <h2 className={styles.title} style={{ color: FG }}>{title}</h2>
+              <div className={styles.location} style={{ color: FG }}>
+                <Icon name="marker" size="16" style={{ fill: FG }} />
                 <span>{locationText}</span>
               </div>
             </div>
             <div className={styles.ratingBubble}>
               <div className={styles.ratingValue}>{Number(summary.averageRating || 0).toFixed(1)}</div>
-              <div className={styles.ratingMeta}>
-                <Icon name="star" size="16" />
+              <div className={styles.ratingMeta} style={{ color: FG }}>
+                <Icon name="star" size="16" style={{ fill: "#FFBC00" }} />
                 <span>{summary.totalReviews} {summary.totalReviews === 1 ? "review" : "reviews"}</span>
               </div>
             </div>
@@ -225,14 +225,20 @@ const ReviewsListing = () => {
                       <div className={styles.avatar}>{String(name).charAt(0).toUpperCase()}</div>
                       <div className={styles.content}>
                         <div className={styles.rowTop}>
-                          <div className={styles.name}>{name}</div>
-                          <div className={styles.time}>{when ? moment(when).format("MMM YYYY") : "Recently"}</div>
+                          <div className={styles.name} style={{ color: FG }}>{name}</div>
+                          <div className={styles.time} style={{ color: FG }}>{when ? moment(when).format("MMM YYYY") : "Recently"}</div>
                         </div>
-                        <div className={styles.rowRating}>
-                          <Icon name="star" size="14" />
+                        <div className={styles.rowRating} style={{ color: FG }}>
+                          <Icon name="star" size="14" style={{ fill: "#FFBC00" }} />
                           <span>{Number.isFinite(rating) ? rating.toFixed(1) : "0.0"}</span>
                         </div>
                         <p className={styles.comment}>&ldquo;{comment}&rdquo;</p>
+                        {rev?.vendorResponse && (
+                          <div style={{ marginTop: 12, padding: 12, background: "rgba(0, 151, 178, 0.05)", borderLeft: "2px solid #0097B2", borderRadius: "0 8px 8px 0" }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "#0097B2", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Response from Host</div>
+                            <p style={{ fontSize: 13, color: "inherit", margin: 0, lineHeight: 1.5 }}>{rev.vendorResponse}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
