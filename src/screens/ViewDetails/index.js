@@ -612,6 +612,17 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   // Extract stay amenities/policies if available
   if (stayData) {
+    const stayCheckInMethod = pickText(stayData.checkInMethod);
+    const stayCheckInInstruction = pickText(stayData.checkInInstructions);
+
+    if (stayCheckInMethod) {
+      result.notes.hostInstructions.push(`Check-in Method: ${stayCheckInMethod}`);
+    }
+
+    if (stayCheckInInstruction) {
+      result.notes.hostInstructions.push(`Check-in Instructions: ${stayCheckInInstruction}`);
+    }
+
     if (stayData.houseRules && !result.notes.hostInstructions.length) {
       result.notes.hostInstructions = Array.isArray(stayData.houseRules)
         ? stayData.houseRules

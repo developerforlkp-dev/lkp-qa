@@ -596,7 +596,12 @@ export const getBillingConfiguration = async (listingId) => {
       throw new Error(`Invalid listingId: ${listingId} (converted to: ${listingIdStr})`);
     }
 
-    const response = await ListingsAPI.get(`/public/listings/${listingIdStr}/billing-configuration`);
+    const billingConfigUrl = `/public/listings/${listingIdStr}/billing-configuration`;
+    console.log("Fetching public billing configuration:", {
+      listingId: listingIdStr,
+      url: billingConfigUrl
+    });
+    const response = await ListingsAPI.get(billingConfigUrl);
     console.log("✅ Billing configuration fetched:", response.data);
     return response.data;
   } catch (error) {
