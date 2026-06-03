@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { lockBodyScroll } from "../../utils/scrollLock";
 import {
   Wifi, Waves, Sparkles, Dumbbell, Umbrella, Utensils,
-  Tv, Coffee, Car, AirVent, CheckCircle, Building, Home
+  Tv, Coffee, Car, AirVent, CheckCircle, Building, Home, Plus, ChevronLeft
 } from "lucide-react";
 import moment from "moment";
 
@@ -225,470 +225,305 @@ const ModalPortal = ({ children }) => {
   return ReactDOM.createPortal(children, document.body);
 };
 
-/* ---------- Room Modal ---------------------------------------------- */
-const RoomModal = ({ room, listing, isSelected, handleSelect, onClose }) => {
-  const { isMobile } = useWindowSize();
-  const { tokens: { A, FG, M, B, W, S, BG, AL } } = useTheme();
-  const name = room.roomName || room.roomTypeName || room.name || "Room Details";
-  const desc = room.roomDescription || room.description || room.shortDescription;
-  const capacity = room.maxGuests || (room.maxAdults ? room.maxAdults + (room.maxChildren || 0) : null);
-  const totalRooms = room.totalRooms || room.totalUnits || null;
-  const features = getRoomFeatures(room, listing);
-  const scrollRef = useRef(null);
-  const galleryRef = useRef(null);
-  const [galleryIndex, setGalleryIndex] = useState(0);
+/* ---------- Full Screen Image ----------------------------------------- */
+const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
+  const { theme, tokens: { BG, A } } = useTheme();
+  const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
 
-  // Extra Details
-  const bedInfo = room.bedType || room.bedTypeName || room.beddingType || (room.noOfBeds ? `${room.noOfBeds} Bed(s)` : null);
-  const bedSize = room.bedSize;
-  const inclusions = room.inclusions || room.roomInclusions || room.room_inclusions || [];
-  const summaryText = listing?.cancellationPolicySummary || 
-                      listing?.privacyAndPolicy?.cancellationPolicySummary || 
-                      listing?.listing?.cancellationPolicySummary || 
-                      listing?.stay?.cancellationPolicySummary ||
-                      listing?.generatedPolicySummary || 
-                      listing?.policySummary || 
-                      listing?.cancellation_policy_summary;
+  const textMain = isDark ? '#FFF' : '#141414';
+  const pillBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)';
+  const pillBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
+  const pillText = A || '#0097B2';
 
-  const templateText = listing?.cancellationPolicyTemplate || 
-                       listing?.privacyAndPolicy?.cancellationPolicyTemplate || 
-                       listing?.listing?.cancellationPolicyTemplate || 
-                       listing?.stay?.cancellationPolicyTemplate ||
-                       listing?.cancellationPolicy || 
-                       listing?.cancellationPolicyText;
+  const btnBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)';
+  const btnBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
+  const btnHoverBg = isDark ? 'rgba(255,255,255,0.2)' : '#FFFFFF';
 
-  const cancellationPolicy = room.cancellationPolicy || 
-                             room.cancellationTerms || 
-                             (summaryText && summaryText.trim().length > 5 && !summaryText.toLowerCase().includes("no cancellation policy summary") ? summaryText : null) ||
-                             (templateText && templateText.trim().length > 0 && !templateText.toLowerCase().includes("no cancellation policy rules") ? templateText : null);
-
-  useEffect(() => {
-    if (listing?.scrollToAmenities && scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [listing]);
-  
-  // Compile all images safely
-  const media = room.media || [];
-  const allImages = [];
-  const coverImage = resolveCoverImage(room);
-  if (coverImage) allImages.push(coverImage);
-  media.forEach(m => {
-    const u = fixImageUrl(typeof m === "string" ? m : m.url || m.src);
-    if (u && !allImages.includes(u)) allImages.push(u);
-  });
-
-  const scrollGallery = (dir) => {
-    if (!galleryRef.current) return;
-    const nextIdx = dir === 'next' 
-      ? (galleryIndex + 1) % allImages.length 
-      : (galleryIndex - 1 + allImages.length) % allImages.length;
-    
-    setGalleryIndex(nextIdx);
-    const itemWidth = galleryRef.current.offsetWidth;
-    galleryRef.current.scrollTo({
-      left: nextIdx * itemWidth,
-      behavior: 'smooth'
-    });
-  };
-
-  const handleGalleryScroll = () => {
-    if (!galleryRef.current) return;
-    const scrollLeft = galleryRef.current.scrollLeft;
-    const itemWidth = galleryRef.current.offsetWidth;
-    if (itemWidth > 0) {
-      const idx = Math.round(scrollLeft / itemWidth);
-      if (idx !== galleryIndex && idx >= 0 && idx < allImages.length) {
-        setGalleryIndex(idx);
-      }
-    }
-  };
-
-  const seasonalPeriods = listing?.seasonalPeriods || [];
+  const hasNavigation = Array.isArray(items) && items.length > 1 && typeof onNavigate === "function";
 
   useEffect(() => {
     return lockBodyScroll();
   }, []);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    try {
-      return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short' }).format(new Date(dateStr));
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
-  const formatTime12h = (value, fallback = "") => {
-    if (!value) return fallback;
-    const raw = String(value).trim();
-    const parsed = moment(raw, ["HH:mm:ss", "HH:mm", "h:mm A", "h:mmA"], true);
-    if (!parsed.isValid()) return raw;
-    return parsed.format("h:mm A");
-  };
-
-  const checkInRaw = listing?.checkInTime || listing?.checkinTime || listing?.check_in_time || "14:00";
-  const checkOutRaw = listing?.checkOutTime || listing?.checkoutTime || listing?.check_out_time || "11:00";
-  const checkInText = formatTime12h(checkInRaw, "2:00 PM");
-  const checkOutText = formatTime12h(checkOutRaw, "11:00 AM");
-
-  // Calculate pricing for the grid
-  const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
-  if (!allPlans.length) {
-    if (room.epPrice) allPlans.push("EP");
-    if (room.bbPrice) allPlans.push("BB");
-    if (room.cpPrice) allPlans.push("CP");
-    if (room.mapPrice) allPlans.push("MAP");
-    if (room.apPrice) allPlans.push("AP");
-  }
-  const defaultPlan = allPlans[0] || null;
-  const rawPrice = defaultPlan ? getPriceForPlan(room, defaultPlan) : room.b2cPrice || room.price;
-  const discountRate = getBillingConfigDiscountRate(listing);
-  const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
-
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9990, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 0 : 24, overflow: "hidden", overflowX: "hidden", overscrollBehavior: "contain" }}>
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }} 
-        onClick={onClose} 
-      />
-      
-      {/* Scrollbar CSS Injection */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10000,
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'clamp(16px, 4vw, 40px)',
+      }}
+      onClick={onClose}
+    >
       <style>{`
-        .modal-scrollable-content::-webkit-scrollbar { width: 6px; }
-        .modal-scrollable-content::-webkit-scrollbar-thumb { background: ${B}; border-radius: 10px; }
-        .modal-scrollable-content { scrollbar-width: thin; scrollbar-color: ${B} transparent; }
-        .gallery-scroll-track::-webkit-scrollbar { display: none; }
-        .gallery-scroll-track { -ms-overflow-style: none; scrollbar-width: none; }
-        .gallery-nav-button:hover { opacity: 1 !important; background: rgba(255,255,255,0.24) !important; }
+        .fs-modal-box {
+          width: 100%;
+          max-width: 1400px;
+          height: 85vh;
+          background: ${isDark ? '#0A0A0A' : '#FFFFFF'};
+          border-radius: 32px;
+          box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+          display: flex;
+          overflow: hidden;
+          position: relative;
+          transform: translateZ(0);
+          -webkit-mask-image: -webkit-radial-gradient(white, black);
+        }
+        
+        .fs-left-pane {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          background: ${isDark ? '#141414' : '#FFFFFF'};
+        }
+        
+        .fs-right-pane {
+          width: clamp(200px, 20vw, 300px);
+          display: flex;
+          flex-direction: column;
+          border-left: 1px solid ${isDark ? '#333' : '#F0F0F0'};
+          background: ${isDark ? '#0A0A0A' : '#FAFAFA'};
+        }
+        
+        .fs-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 24px 32px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 10;
+        }
+        
+        .fs-image-container {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+        
+        .fs-image {
+          object-fit: contain !important;
+          width: 100% !important;
+          height: 100% !important;
+          filter: drop-shadow(0 20px 40px rgba(0,0,0,0.08));
+          position: absolute;
+          top: 0;
+          left: 0;
+          padding: 24px;
+          box-sizing: border-box;
+        }
+        
+        .fs-thumbnail-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          scrollbar-width: none;
+        }
+        
+        .fs-nav-btn {
+          position: absolute;
+          top: 50%;
+          margin-top: -24px;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: ${btnBg};
+          border: 1px solid ${btnBorder};
+          color: ${textMain};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          backdrop-filter: blur(20px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+          z-index: 10;
+        }
+        .fs-nav-left {
+          left: 24px;
+        }
+        .fs-nav-right {
+          right: 24px;
+        }
+        
+        .fs-thumbnail-list::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .fs-thumb {
+          width: 100%;
+          aspect-ratio: 4/3;
+          border-radius: 12px;
+          overflow: hidden;
+          cursor: pointer;
+          opacity: 0.5;
+          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+          box-sizing: border-box;
+          transform: scale(0.98);
+        }
+        
+        .fs-thumb:hover {
+          opacity: 0.8;
+        }
+        
+        .fs-thumb.active {
+          opacity: 1;
+          border: 3px solid ${A || '#0097B2'};
+          box-shadow: 0 10px 24px ${A ? A + '40' : 'rgba(0,151,178,0.25)'};
+          transform: scale(1.02);
+        }
+
+        @media (max-width: 900px) {
+          .fs-modal-box {
+            flex-direction: column;
+            height: 90vh;
+            border-radius: 24px 24px 0 0;
+            margin-top: auto;
+            align-self: flex-end;
+          }
+          
+          .fs-right-pane {
+            width: 100%;
+            height: clamp(100px, 15vh, 140px);
+            border-left: none;
+            border-top: 1px solid ${isDark ? '#333' : '#F0F0F0'};
+          }
+          
+          .fs-thumbnail-list {
+            flex-direction: row;
+            overflow-y: hidden;
+            overflow-x: auto;
+            padding: 16px 20px;
+            align-items: center;
+          }
+          
+          .fs-thumb {
+            width: clamp(80px, 25vw, 140px);
+            height: 100%;
+            flex-shrink: 0;
+          }
+          
+          .fs-header {
+            padding: 16px 20px;
+          }
+          
+          .fs-image-container {
+            padding: 0;
+          }
+          .fs-image {
+            padding: 12px;
+          }
+          .fs-nav-btn {
+            width: 40px;
+            height: 40px;
+            margin-top: -20px;
+          }
+          .fs-nav-left { left: 12px; }
+          .fs-nav-right { right: 12px; }
+        }
       `}</style>
 
-      <motion.div 
-        initial={{ opacity: 0, y: isMobile ? "100%" : 40, scale: isMobile ? 1 : 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: isMobile ? "100%" : 40, scale: isMobile ? 1 : 0.97 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        style={{ 
-          position: "relative", background: W, width: "100%", maxWidth: 1100, 
-          maxHeight: isMobile ? "100vh" : "90vh", 
-          marginTop: isMobile ? "auto" : 0,
-          borderRadius: isMobile ? "24px 24px 0 0" : 24, overflow: "hidden", display: "flex", flexDirection: "column", zIndex: 1, 
-          boxShadow: "0 40px 120px rgba(0,0,0,0.5)", border: `1px solid ${B}` 
-        }}
+      <motion.div
+        className="fs-modal-box"
+        initial={{ y: 50, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 50, opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* iOS style top handle indicator for mobile sheets */}
-        {isMobile && (
-          <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", width: 44, height: 5, borderRadius: 100, background: "rgba(0,0,0,0.15)", zIndex: 30 }} />
-        )}
-        
-        {/* Close Button */}
-        <button onClick={onClose} style={{ 
-          position: "absolute", top: isMobile ? 20 : 24, right: isMobile ? 20 : 24, width: 40, height: 40, borderRadius: "50%", 
-          background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", 
-          justifyContent: "center", cursor: "pointer", zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.08)", 
-          transition: "all 0.3s ease", color: FG
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
 
-        {/* Scrollable Content Container */}
-        <div className="modal-scrollable-content" style={{ overflowY: "auto", flex: 1, boxSizing: "border-box", padding: isMobile ? "40px 20px" : "48px 48px" }}>
-          
-          {/* Top Hero Section */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: isMobile ? 32 : 40, marginBottom: 40, alignItems: "start" }}>
-            
-            {/* LEFT SIDE: Large Featured Image */}
-            <div style={{ 
-              height: isMobile ? 260 : 440, overflow: "hidden", borderRadius: 20,
-              background: "#0F0F0F", position: "relative", display: "flex", flexShrink: 0,
-              border: `1px solid ${B}`
-            }}>
-              {allImages.length > 0 ? (
-                <>
-                  <div ref={galleryRef} onScroll={handleGalleryScroll} className="gallery-scroll-track" style={{ display: "flex", width: "100%", height: "100%", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                    {allImages.map((img, i) => (
-                      <div key={i} style={{ minWidth: "100%", height: "100%", scrollSnapAlign: "start", position: "relative" }}>
-                        <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: galleryIndex === i ? 1 : 0.8, transition: "opacity 0.6s ease" }} />
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Gradient Overlay for Readability */}
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 50%)",
-                    pointerEvents: "none", zIndex: 10
-                  }} />
-
-                  {/* Navigation Arrows */}
-                  {allImages.length > 1 && (
-                    <>
-                      <button className="gallery-nav-button" onClick={() => scrollGallery('prev')} style={{ 
-                        position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", 
-                        width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)", 
-                        backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)", 
-                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", 
-                        color: "#fff", zIndex: 15, transition: "all 0.3s", opacity: 0.72, fontSize: 22, fontWeight: 300, lineHeight: 1
-                      }}>
-                        &lt;
-                      </button>
-                      <button className="gallery-nav-button" onClick={() => scrollGallery('next')} style={{ 
-                        position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", 
-                        width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)", 
-                        backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.3)", 
-                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", 
-                        color: "#fff", zIndex: 15, transition: "all 0.3s", opacity: 0.72, fontSize: 22, fontWeight: 300, lineHeight: 1
-                      }}>
-                        &gt;
-                      </button>
-                    </>
-                  )}
-
-                  <div style={{ 
-                    position: "absolute", bottom: 20, right: 20, background: "rgba(0,0,0,0.6)", 
-                    backdropFilter: "blur(8px)", color: "#fff", padding: "6px 14px", borderRadius: 100, 
-                    fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", zIndex: 15, 
-                    border: "1px solid rgba(255,255,255,0.15)" 
-                  }}>
-                    {galleryIndex + 1} <span style={{ opacity: 0.5, margin: "0 2px" }}>/</span> {allImages.length}
-                  </div>
-                </>
-              ) : (
-                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: S }}>
-                  <Building size="48" color={A} />
-                </div>
-              )}
-            </div>
-
-            {/* RIGHT SIDE: Quick Info & Title */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div>
-                <span style={{
-                  fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase",
-                  color: A, fontWeight: 800, marginBottom: 8, display: "block"
-                }}>
-                  Room Accommodation
-                </span>
-
-                <h2 style={{ 
-                  fontSize: isMobile ? 32 : 40, fontWeight: 800, marginBottom: 12, 
-                  fontFamily: "var(--font-fraunces, Georgia, serif)", color: FG, 
-                  lineHeight: 1.1, letterSpacing: "-0.02em", wordBreak: "break-word" 
-                }}>{name}</h2>
-                
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: M, fontWeight: 550, margin: 0, opacity: 0.9 }}>
-                  {desc ? (desc.length > 160 ? desc.substring(0, 160) + "..." : desc) : "Curated comfort and premium amenities."}
-                </p>
+        {/* LEFT PANE - Image Viewer */}
+        <div className="fs-left-pane">
+          <div className="fs-header">
+            {hasNavigation ? (
+              <div style={{ background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
+                {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{items.length}</span>
               </div>
+            ) : <div />}
 
-              {/* 2x2 Quick Info Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {/* Capacity */}
-                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Capacity</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{capacity != null ? `${capacity} Guests` : "Standard Capacity"}</span>
-                </div>
-
-                {/* Price */}
-                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Nightly Price</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 4 }}>
-                    {rawPrice != null ? (
-                      <>
-                        {discountRate > 0 && (
-                          <span style={{ fontSize: 11, color: M, textDecoration: "line-through", fontWeight: 500 }}>
-                            ₹{Number(rawPrice).toLocaleString("en-IN")}
-                          </span>
-                        )}
-                        <span>₹{Number(discountRate > 0 ? discountedRawPrice : rawPrice).toLocaleString("en-IN")}</span>
-                      </>
-                    ) : (
-                      "On Request"
-                    )}
-                  </span>
-                </div>
-
-                {/* Check-in */}
-                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Check-in</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>After {checkInText}</span>
-                </div>
-
-                {/* Check-out */}
-                <div style={{ padding: "12px 16px", background: S, borderRadius: 14, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.08em" }}>Check-out</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>Before {checkOutText}</span>
-                </div>
-              </div>
-
-              {/* CTAs */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
-                {handleSelect && (
-                  <button
-                    onClick={() => {
-                      handleSelect();
-                      onClose();
-                    }}
-                    style={{
-                      background: isSelected ? S : A,
-                      color: isSelected ? FG : "#fff",
-                      border: isSelected ? `1px solid ${B}` : "none",
-                      padding: "14px 28px", borderRadius: 12, fontSize: 14, fontWeight: 800,
-                      cursor: "pointer", boxShadow: isSelected ? "none" : `0 10px 25px ${A}2a`,
-                      transition: "all 0.3s ease",
-                      display: "flex", alignItems: "center", justifyContent: "center"
-                    }}
-                  >
-                    {isSelected ? "✓ Selected" : "Select Room"}
-                  </button>
-                )}
-
-                <button
-                  onClick={() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                  style={{
-                    background: "transparent", border: `1px solid ${B}`, color: FG,
-                    padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 700,
-                    cursor: "pointer", transition: "all 0.3s ease",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8
-                  }}
-                >
-                  View Full Details
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </button>
-              </div>
-            </div>
-
+            <motion.button
+              onClick={onClose}
+              whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
+              whileTap={{ scale: 0.92 }}
+              style={{ width: 48, height: 48, borderRadius: '50%', background: btnBg, border: `1px solid ${btnBorder}`, color: textMain, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
+            >
+              <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
+            </motion.button>
           </div>
 
-          {/* Divider & Full Narrative/Details */}
-          <div ref={scrollRef} style={{ borderTop: `1px solid ${B}`, paddingTop: 40, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: isMobile ? 32 : 40 }}>
-            
-            {/* Left Column: Narrative */}
-            <div>
-              <h3 style={{ 
-                fontSize: 11, fontWeight: 800, textTransform: "uppercase", 
-                letterSpacing: "0.2em", color: M, marginBottom: 16 
-              }}>
-                Room Narrative
-              </h3>
-              <p style={{ 
-                fontSize: 15, lineHeight: 1.8, color: FG, 
-                fontWeight: 450, opacity: 0.9, whiteSpace: "pre-line", margin: 0 
-              }}>
-                {desc}
-              </p>
-              
-              {/* Bed Specs (Accommodation Specs) */}
-              {(bedInfo || bedSize) && (
-                <div style={{ marginTop: 32, paddingTop: 32, borderTop: `1px solid ${B}` }}>
-                  <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: M, marginBottom: 20 }}>Accommodation Specs</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 24 : 40 }}>
-                    <div>
-                      <p style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", marginBottom: 6 }}>Configuration</p>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: FG }}>{bedInfo || "Standard Configuration"}</p>
-                    </div>
-                    {bedSize && (
-                      <div>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", marginBottom: 6 }}>Dimension</p>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: FG }}>{bedSize}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="fs-image-container">
+            <AnimatePresence>
+              <motion.img
+                className="fs-image"
+                key={src}
+                src={src}
+                initial={{ opacity: 0, scale: 0.98, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'brightness(1)' }}
+                exit={{ opacity: 0, scale: 1.02, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                alt="Viewer"
+              />
+            </AnimatePresence>
 
-            {/* Right Column: Amenities, Inclusions, Policy */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-              
-              {/* Amenities */}
-              {features.length > 0 && (
-                <div>
-                  <h3 style={{ 
-                    fontSize: 11, fontWeight: 800, textTransform: "uppercase", 
-                    letterSpacing: "0.2em", color: M, marginBottom: 20 
-                  }}>
-                    Amenities & Features
-                  </h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
-                    {features.map((f, i) => {
-                      const IconComp = getAmenityIcon(f);
-                      return (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <IconComp size={15} color={A} />
-                          <span style={{ fontSize: 13, color: FG, fontWeight: 600 }}>{f}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Inclusions */}
-              {Array.isArray(inclusions) && inclusions.length > 0 && (
-                <div>
-                  <h3 style={{ 
-                    fontSize: 11, fontWeight: 800, textTransform: "uppercase", 
-                    letterSpacing: "0.2em", color: M, marginBottom: 16 
-                  }}>
-                    Stay Inclusions
-                  </h3>
-                  <div style={{ padding: 20, background: S, borderRadius: 16, border: `1px solid ${B}`, display: "flex", flexDirection: "column", gap: 12 }}>
-                    {inclusions.map((inc, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: FG, fontWeight: 600 }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={A} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        {typeof inc === 'string' ? inc : (inc.name || inc.label || inc.title)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Seasonal Availability */}
-              {seasonalPeriods.length > 0 && (
-                <div>
-                  <h3 style={{ 
-                    fontSize: 11, fontWeight: 800, textTransform: "uppercase", 
-                    letterSpacing: "0.2em", color: A, marginBottom: 16 
-                  }}>
-                    Seasonal Availability
-                  </h3>
-                  <div style={{ padding: 20, background: AL, borderRadius: 16, border: `1px solid ${A}`, display: "flex", flexDirection: "column", gap: 12 }}>
-                    {seasonalPeriods.map((p, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, fontSize: 13, color: FG, fontWeight: 600 }}>
-                        <span style={{ flex: 1 }}>{p.seasonName || p.name || p.label || `Season ${i + 1}`}</span>
-                        <span style={{ fontSize: 11, opacity: 0.8, whiteSpace: "nowrap" }}>{formatDate(p.startDate)} – {formatDate(p.endDate)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Cancellation Policy */}
-              {typeof cancellationPolicy === 'string' && cancellationPolicy.trim() !== "" && cancellationPolicy !== "No cancellation policy rules defined." && (
-                <div>
-                  <h3 style={{ 
-                    fontSize: 11, fontWeight: 800, textTransform: "uppercase", 
-                    letterSpacing: "0.2em", color: M, marginBottom: 16 
-                  }}>
-                    Cancellation Guidelines
-                  </h3>
-                  <div style={{ padding: 20, background: S, borderRadius: 16, border: `1px solid ${B}` }}>
-                    <p style={{ fontSize: 13, lineHeight: 1.6, color: FG, fontWeight: 500, opacity: 0.85, margin: 0 }}>
-                      {cancellationPolicy}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            {hasNavigation && (
+              <>
+                <motion.button
+                  className="fs-nav-btn fs-nav-left"
+                  onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex - 1 + items.length) % items.length); }}
+                  whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
+                  whileTap={{ scale: 0.92 }}
+                >
+                  <ChevronLeft size={24} />
+                </motion.button>
+                <motion.button
+                  className="fs-nav-btn fs-nav-right"
+                  onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex + 1) % items.length); }}
+                  whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
+                  whileTap={{ scale: 0.92 }}
+                >
+                  <ChevronLeft size={24} style={{ transform: 'rotate(180deg)' }} />
+                </motion.button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* RIGHT PANE - Thumbnails */}
+        {hasNavigation && (
+          <div className="fs-right-pane">
+            <div className="fs-thumbnail-list">
+              {items.map((thumbSrc, idx) => (
+                <div
+                  key={idx}
+                  className={`fs-thumb ${idx === currentIndex ? 'active' : ''}`}
+                  onClick={() => onNavigate(idx)}
+                >
+                  <img src={thumbSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Thumbnail ${idx + 1}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </motion.div>
-    </div>
+    </motion.div>
   );
 };;
 
@@ -699,6 +534,7 @@ const RoomModal = ({ room, listing, isSelected, handleSelect, onClose }) => {
 const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange }) => {
   const { tokens: { FG, B, A, AL, S } } = useTheme();
   const [showModal, setShowModal] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
   if (!allPlans.length) {
@@ -755,6 +591,22 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         }
         {totalRooms != null && <span className={styles.badge}>{totalRooms} ROOMS</span>}
         {isSelected && <span className={styles.selectedBadge}>✓ Selected</span>}
+        
+
+        {/* View Photos button */}
+        <div style={{
+          position: "absolute", bottom: 12, left: 12,
+          background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
+          color: "#000", fontSize: 13, fontWeight: 700,
+          padding: "8px 12px", borderRadius: 8,
+          display: "flex", alignItems: "center", gap: 6,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          transition: "all 0.2s ease",
+          zIndex: 2
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          View Photos
+        </div>
       </div>
 
       {/* Right: Content */}
@@ -780,30 +632,6 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                 : <span className={styles.priceOnRequest}>Price on request</span>
               }
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowModal(true);
-              }}
-              style={{
-                marginTop: 8,
-                background: "transparent",
-                color: A,
-                border: "none",
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: 0,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em"
-              }}
-            >
-              View Details
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
           </div>
         </div>
 
@@ -861,12 +689,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
       <ModalPortal>
         <AnimatePresence>
           {showModal && (
-            <RoomModal 
-              room={room} 
-              listing={{ ...listing, scrollToAmenities: showModal?.scrollToAmenities }} 
-              isSelected={isSelected}
-              handleSelect={handleSelect}
-              onClose={() => setShowModal(false)} 
+            <FullScreenImage
+              src={allImages[galleryIndex]}
+              items={allImages}
+              currentIndex={galleryIndex}
+              onNavigate={setGalleryIndex}
+              onClose={() => setShowModal(false)}
             />
           )}
         </AnimatePresence>
