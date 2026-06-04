@@ -26,7 +26,7 @@ import HostProfile from "./screens/HostProfile";
 import ProfileUser from "./screens/ProfileUser";
 import AccountSettings from "./screens/AccountSettings";
 import Support from "./screens/Support";
-import PageList from "./screens/PageList";
+
 import MessageCenter from "./screens/MessageCenter";
 import Wishlists from "./screens/Wishlists";
 import YourTrips from "./screens/YourTrips";
@@ -36,8 +36,7 @@ import ListYourProperty from "./screens/ListYourProperty";
 import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import EventProduct from "./screens/EventProduct";
-import EventFlowHome from "./eventFlowTheme/pages/home";
-import EventDetailsPage from "./eventFlowTheme/pages/event-details";
+
 import StayProduct from "./screens/StayProduct";
 import StayDetails from "./screens/StayDetails";
 import FoodDetails from "./screens/FoodDetails";
@@ -378,7 +377,7 @@ function App() {
               </Page>
             )}
           />
-          <Route exact path="/pagelist" component={PageList} />
+
           <Route
             exact
             path="/listings"
@@ -388,20 +387,7 @@ function App() {
               </Page>
             )}
           />
-          <Route
-            exact
-            path="/event"
-            render={() => (
-              <Page separatorHeader fooferHide>
-                <EventFlowHome />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/event-details"
-            render={() => <EventDetailsPage />}
-          />
+
 
           <Route
             exact
