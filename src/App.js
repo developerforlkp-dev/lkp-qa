@@ -9,19 +9,11 @@ import ExperienceProduct from "./screens/ExperienceProduct";
 import ExperienceCheckout from "./screens/ExperienceCheckout";
 import ExperienceCheckoutComplete from "./screens/ExperienceCheckoutComplete";
 import FullPhoto from "./screens/FullPhoto";
-import Flights from "./screens/Flights";
-import FlightsCategory from "./screens/FlightsCategory";
 import ThingsToDo from "./screens/ThingsToDo";
 import Category from "./screens/Category";
 import Product from "./screens/Product";
 import Checkout from "./screens/Checkout";
 import CheckoutComplete from "./screens/CheckoutComplete";
-import Cars from "./screens/Cars";
-import CarsCategory from "./screens/CarsCategory";
-import CarsCategory2 from "./screens/CarsCategory2";
-import CarsProduct from "./screens/CarsProduct";
-import CarsCheckout from "./screens/CarsCheckout";
-import CarsCheckoutComplete from "./screens/CarsCheckoutComplete";
 import HostProfile from "./screens/HostProfile";
 import ProfileUser from "./screens/ProfileUser";
 import AccountSettings from "./screens/AccountSettings";
@@ -174,24 +166,7 @@ function App() {
               </Page>
             )}
           />
-          <Route
-            exact
-            path="/flights"
-            render={() => (
-              <Page>
-                <Flights />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/flights-category"
-            render={() => (
-              <Page>
-                <FlightsCategory />
-              </Page>
-            )}
-          />
+
           <Route
             exact
             path="/things-to-do"
@@ -237,60 +212,7 @@ function App() {
               </Page>
             )}
           />
-          <Route
-            exact
-            path="/cars"
-            render={() => (
-              <Page>
-                <Cars />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/cars-category"
-            render={() => (
-              <Page>
-                <CarsCategory />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/cars-category-2"
-            render={() => (
-              <Page>
-                <CarsCategory2 />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/cars-product"
-            render={() => (
-              <Page separatorHeader>
-                <CarsProduct />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/cars-checkout"
-            render={() => (
-              <Page separatorHeader>
-                <CarsCheckout />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/cars-checkout-complete"
-            render={() => (
-              <Page separatorHeader>
-                <CarsCheckoutComplete />
-              </Page>
-            )}
-          />
+
           <Route
             exact
             path="/messages"
