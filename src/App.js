@@ -9,11 +9,6 @@ import ExperienceProduct from "./screens/ExperienceProduct";
 import ExperienceCheckout from "./screens/ExperienceCheckout";
 import ExperienceCheckoutComplete from "./screens/ExperienceCheckoutComplete";
 import FullPhoto from "./screens/FullPhoto";
-import ThingsToDo from "./screens/ThingsToDo";
-import Category from "./screens/Category";
-import Product from "./screens/Product";
-import Checkout from "./screens/Checkout";
-import CheckoutComplete from "./screens/CheckoutComplete";
 import HostProfile from "./screens/HostProfile";
 import ProfileUser from "./screens/ProfileUser";
 import AccountSettings from "./screens/AccountSettings";
@@ -24,7 +19,6 @@ import Wishlists from "./screens/Wishlists";
 import YourTrips from "./screens/YourTrips";
 import Bookings from "./screens/Bookings";
 import ViewDetails from "./screens/ViewDetails";
-import ListYourProperty from "./screens/ListYourProperty";
 import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import EventProduct from "./screens/EventProduct";
@@ -169,52 +163,6 @@ function App() {
 
           <Route
             exact
-            path="/things-to-do"
-            render={() => (
-              <Page>
-                <ThingsToDo />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/category"
-            render={() => (
-              <Page>
-                <Category />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/product"
-            render={() => (
-              <Page separatorHeader>
-                <Product />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/checkout"
-            render={() => (
-              <Page separatorHeader>
-                <Checkout />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/checkout-complete"
-            render={() => (
-              <Page separatorHeader>
-                <CheckoutComplete />
-              </Page>
-            )}
-          />
-
-          <Route
-            exact
             path="/messages"
             render={() => (
               <Page separatorHeader fooferHide wide>
@@ -254,16 +202,7 @@ function App() {
               </Page>
             )}
           />
-          <Route
-            exact
-            path="/list-your-property"
-            render={() => (
-              <Page separatorHeader>
-                <ListYourProperty />
-              </Page>
-            )}
-          />
-          <Route
+                    <Route
             exact
             path="/profile"
             render={() => (
@@ -373,3 +312,4 @@ function App() {
 }
 
 export default App;
+
