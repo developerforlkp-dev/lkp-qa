@@ -304,7 +304,9 @@ const StayBookingSystem = ({
   setGuests,
   selectedRooms, // Array of {roomId, mealPlan, count}
   setSelectedRooms,
-  onRoomsCountChange
+  onRoomsCountChange,
+  selectedAddOns = [],
+  addOnQuantities = {}
 }) => {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
@@ -1225,13 +1227,39 @@ const StayBookingSystem = ({
         response?.finalGuestPrice,
         response?.data?.finalGuestPrice
       );
-      const amountInPaise = firstNumber(
+      const selectedAddOnsData = selectedAddOns.map(id => {
+        const addonData = Array.isArray(stay?.addons) ? stay.addons.find(a => (a.addonId || a.assignmentId || a.id) === id) : null;
+        if (!addonData) return null;
+        
+        const isIndividual = addonData.pricingType === "Individual";
+        const quantity = isIndividual ? (addOnQuantities[id] || 1) : 1;
+        const priceValue = parseFloat(addonData.price || 0) * quantity;
+        
+        return {
+          id: addonData.addonId || addonData.assignmentId || addonData.id,
+          title: addonData.title || addonData.name || "Addon",
+          price: `${addonData.currency || "INR"} ${priceValue.toFixed(2)}`,
+          priceValue: priceValue,
+          currency: addonData.currency || "INR",
+          quantity: quantity,
+          pricingType: addonData.pricingType || "Individual",
+        };
+      }).filter(Boolean);
+
+      const addOnsTotalRupees = selectedAddOnsData.reduce((sum, item) => sum + item.priceValue, 0);
+
+      let amountInPaise = firstNumber(
         paymentResponse?.amount,
         orderResponse?.amount,
         response?.amount,
         backendTotalRupees != null ? Math.round(backendTotalRupees * 100) : null,
         Math.round(pricing.finalTotal * 100)
       );
+
+      // Add frontend calculated addons total if not zero
+      if (addOnsTotalRupees > 0) {
+        amountInPaise += Math.round(addOnsTotalRupees * 100);
+      }
 
       localStorage.setItem("pendingPayment", JSON.stringify({
         paymentMethod: "razorpay",
@@ -1349,7 +1377,10 @@ const StayBookingSystem = ({
       if (combinedFrontendTax > 0) {
         frontendReceipt.push({ title: `Tax (${Number(taxRate).toFixed(2)}%)`, content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
       }
-      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder).toFixed(2)}` });
+      if (addOnsTotalRupees > 0) {
+        frontendReceipt.push({ title: "Add-ons Total", content: `+ ${currency} ${Number(addOnsTotalRupees).toFixed(2)}` });
+      }
+      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder + addOnsTotalRupees).toFixed(2)}` });
 
       // Frontend-calculated breakdown should be shown in Confirm & Pay.
       // Keep backend breakdown only as a fallback.
@@ -1372,7 +1403,8 @@ const StayBookingSystem = ({
         extraAdults: extraAdultsCount,
         extraChildren: extraChildrenCount,
         receipt: finalReceipt,
-        totalAmount: backendTotalRupees ?? pricing.finalTotal,
+        totalAmount: (backendTotalRupees ?? pricing.finalTotal) + addOnsTotalRupees,
+        selectedAddOns: selectedAddOnsData,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
       localStorage.removeItem("frontendPendingBookingState");

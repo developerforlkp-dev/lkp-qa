@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee, ChevronLeft, Plus
+  Tv, Coffee, ChevronLeft, Plus, Minus
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -969,6 +969,133 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   );
 }
 
+function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAddOnQuantityChange }) {
+  const { isMobile } = useWindowSize();
+  const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+
+  const activeAddons = useMemo(() => {
+    return Array.isArray(stay?.addons) 
+      ? stay.addons.filter(a => a.isActive || a.status === 'Active') 
+      : [];
+  }, [stay]);
+
+  if (activeAddons.length === 0) return null;
+
+  return (
+    <div style={{ background: BG, padding: isMobile ? "80px 16px 40px" : "140px 36px 80px", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SHdr idx="02.5" label="Enhance Your Stay" />
+        <p style={{ fontSize: 16, color: M, marginBottom: 56, maxWidth: 600, lineHeight: 1.7 }}>
+          Curate your experience with our selection of premium add-ons and services.
+        </p>
+        
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(320px, 1fr))", gap: 24 }}>
+          {activeAddons.map(addon => {
+            const addonId = addon.addonId || addon.assignmentId || addon.id;
+            const isSelected = selectedAddOns.includes(addonId);
+            const isIndividual = addon.pricingType === "Individual";
+            const qty = isIndividual ? (addOnQuantities[addonId] || 1) : 1;
+            const price = parseFloat(addon.price || 0);
+            const imageUrl = Array.isArray(addon.imageUrls) && addon.imageUrls[0] ? fixImageUrl(addon.imageUrls[0]) : null;
+            
+            return (
+              <motion.div 
+                key={addonId}
+                whileHover={{ y: -4 }}
+                style={{ 
+                  borderRadius: 16, 
+                  border: isSelected ? `2px solid ${A}` : `1px solid ${B}`, 
+                  background: W,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.3s ease'
+                }}
+                onClick={() => {
+                  if (!isSelected) {
+                    onToggleAddOn(addonId, addon.pricingType);
+                  }
+                }}
+              >
+                <div style={{ height: 160, width: '100%', background: S, position: 'relative' }}>
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={addon.title || addon.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: M }}>
+                      <Sparkles size={32} />
+                    </div>
+                  )}
+                  {isSelected && (
+                    <div style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: '50%', background: A, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <CheckCircle size={16} />
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', height: 'calc(100% - 160px)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <h4 style={{ fontSize: 18, fontWeight: 700, color: FG, margin: 0 }}>{addon.title || addon.name}</h4>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: A, whiteSpace: 'nowrap', marginLeft: 12 }}>
+                      {addon.currency} {price.toFixed(2)}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 14, color: M, lineHeight: 1.5, marginBottom: 20, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {addon.briefDescription || addon.description}
+                  </p>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: M, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {addon.pricingType}
+                    </span>
+                    
+                    {isSelected ? (
+                      isIndividual ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: S, borderRadius: 20, padding: '4px 8px' }} onClick={e => e.stopPropagation()}>
+                          <button 
+                            style={{ width: 24, height: 24, borderRadius: '50%', background: W, border: `1px solid ${B}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: FG }}
+                            onClick={() => onAddOnQuantityChange(addonId, qty - 1)}
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: FG, minWidth: 20, textAlign: 'center' }}>{qty}</span>
+                          <button 
+                            style={{ width: 24, height: 24, borderRadius: '50%', background: W, border: `1px solid ${B}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: FG }}
+                            onClick={() => onAddOnQuantityChange(addonId, qty + 1)}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          style={{ background: 'transparent', border: 'none', color: A, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleAddOn(addonId, addon.pricingType);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      )
+                    ) : (
+                      <button 
+                        style={{ background: A, color: '#FFF', border: 'none', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleAddOn(addonId, addon.pricingType);
+                        }}
+                      >
+                        <Plus size={14} /> Add
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN COMPONENT ─────────── */
 const StayDetails = () => {
   const { width, isMobile } = useWindowSize();
@@ -996,6 +1123,29 @@ const StayDetails = () => {
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
   const [selectedRooms, setSelectedRooms] = useState([]); // Array of {roomId, mealPlan, count}
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [addOnQuantities, setAddOnQuantities] = useState({});
+
+  const handleToggleAddOn = useCallback((addOnId, pricingType) => {
+    setSelectedAddOns((prev) => {
+      if (prev.includes(addOnId)) {
+        return prev.filter((id) => id !== addOnId);
+      } else {
+        if (pricingType === "Individual") {
+          setAddOnQuantities((qPrev) => ({ ...qPrev, [addOnId]: qPrev[addOnId] || 1 }));
+        }
+        return [...prev, addOnId];
+      }
+    });
+  }, []);
+
+  const handleAddOnQuantityChange = useCallback((addOnId, value) => {
+    if (value <= 0) {
+      setSelectedAddOns((prev) => prev.filter((id) => id !== addOnId));
+    } else {
+      setAddOnQuantities((prev) => ({ ...prev, [addOnId]: value }));
+    }
+  }, []);
 
   const isStayUnavailable = (payload) => {
     if (!payload || typeof payload !== "object") return true;
@@ -1249,6 +1399,14 @@ const StayDetails = () => {
 
       <StayAmenities stay={stay} />
 
+      <StayAddons 
+        stay={stay} 
+        selectedAddOns={selectedAddOns} 
+        onToggleAddOn={handleToggleAddOn} 
+        addOnQuantities={addOnQuantities} 
+        onAddOnQuantityChange={handleAddOnQuantityChange} 
+      />
+
       <div style={{ background: W, padding: "80px 36px 140px", borderTop: `1px solid ${B}` }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
           <SHdr idx="03" label="Accommodations" />
@@ -1308,6 +1466,8 @@ const StayDetails = () => {
         selectedRooms={selectedRooms}
         setSelectedRooms={setSelectedRooms}
         onRoomsCountChange={handleRoomCountChange}
+        selectedAddOns={selectedAddOns}
+        addOnQuantities={addOnQuantities}
       />
 
       <RelatedListingsStrip
