@@ -13,7 +13,7 @@ const PayPal = ({ className, buttonUrl }) => {
       <div className={styles.line}>
         <div className={styles.subtitle}>Login to Paypal</div>
         <div className={styles.logo}>
-          <img src="" alt="PayPal" />
+          <img src="" alt="" />
         </div>
       </div>
       <div className={styles.fieldset}>
@@ -37,7 +37,7 @@ const PayPal = ({ className, buttonUrl }) => {
           Confirm and pay
         </Link>
         <div className={styles.verified}>
-          <img src="" alt="PayPal" />
+          <img src="" alt="" />
         </div>
       </div>
       <Checkbox

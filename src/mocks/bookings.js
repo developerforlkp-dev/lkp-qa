@@ -13,7 +13,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Eco lodge nestled in the mountains",
+        alt: "",
       },
     },
     {
@@ -29,7 +29,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Catamaran sailing across Santorini caldera",
+        alt: "",
       },
     },
     {
@@ -45,7 +45,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Aurora lights over snowy mountains",
+        alt: "",
       },
     },
   ],
@@ -63,7 +63,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Street food experience in Lisbon",
+        alt: "",
       },
     },
     {
@@ -79,7 +79,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Modern loft overlooking Barcelona skyline",
+        alt: "",
       },
     },
   ],
@@ -97,7 +97,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Desert camp under starry sky",
+        alt: "",
       },
     },
     {
@@ -113,7 +113,7 @@ export const bookingsByStatus = {
       thumbnail: {
         src: "",
         srcSet: "",
-        alt: "Kayakers exploring coastal cliffs",
+        alt: "",
       },
     },
   ],
@@ -126,7 +126,7 @@ export const emptyStateCopy = {
       "Ready for your next journey? Save an experience and it will show up here the moment you confirm.",
     illustration: "",
     illustrationSet: "",
-    illustrationAlt: "Traveler planning the next trip",
+    illustrationAlt: "",
   },
   completed: {
     title: "Nothing completed yet",
@@ -134,7 +134,7 @@ export const emptyStateCopy = {
       "Once you wrap an experience, you'll find receipts, highlights, and rebooking options in this tab.",
     illustration: "",
     illustrationSet: "",
-    illustrationAlt: "Happy traveler celebrating after a trip",
+    illustrationAlt: "",
   },
   cancelled: {
     title: "No cancelled bookings",
@@ -142,7 +142,7 @@ export const emptyStateCopy = {
       "Great news—everything is on track. If plans change, you can review cancellation details right here.",
     illustration: "",
     illustrationSet: "",
-    illustrationAlt: "Traveler relaxing with suitcase beside them",
+    illustrationAlt: "",
   },
 };
 
@@ -157,7 +157,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Eco lodge nestled in the mountains",
+      alt: "",
     },
     location: {
       address: "142 Mountain View Road",
@@ -207,7 +207,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Catamaran sailing across Santorini caldera",
+      alt: "",
     },
     location: {
       address: "Old Port of Fira",
@@ -257,7 +257,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Aurora lights over snowy mountains",
+      alt: "",
     },
     location: {
       address: "Tromsø Wilderness Center",
@@ -307,7 +307,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Street food experience in Lisbon",
+      alt: "",
     },
     location: {
       address: "Praça do Comércio",
@@ -353,7 +353,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Modern loft overlooking Barcelona skyline",
+      alt: "",
     },
     location: {
       address: "Carrer de la Marina, 245",
@@ -399,7 +399,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Desert camp under starry sky",
+      alt: "",
     },
     location: {
       address: "Wadi Rum Protected Area",
@@ -439,7 +439,7 @@ const bookingDetails = {
     bannerImage: {
       src: "",
       srcSet: "",
-      alt: "Kayakers exploring coastal cliffs",
+      alt: "",
     },
     location: {
       address: "Big Sur State Park",
