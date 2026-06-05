@@ -126,7 +126,7 @@ export const emptyStateCopy = {
       "Ready for your next journey? Save an experience and it will show up here the moment you confirm.",
     illustration: "",
     illustrationSet: "",
-    illustrationAlt: "Traveler planning the next trip",
+    illustrationAlt: "",
   },
   completed: {
     title: "Nothing completed yet",
@@ -134,7 +134,7 @@ export const emptyStateCopy = {
       "Once you wrap an experience, you'll find receipts, highlights, and rebooking options in this tab.",
     illustration: "",
     illustrationSet: "",
-    illustrationAlt: "Happy traveler celebrating after a trip",
+    illustrationAlt: "",
   },
   cancelled: {
     title: "No cancelled bookings",
@@ -142,7 +142,7 @@ export const emptyStateCopy = {
       "Great news—everything is on track. If plans change, you can review cancellation details right here.",
     illustration: "",
     illustrationSet: "",
-    illustrationAlt: "Traveler relaxing with suitcase beside them",
+    illustrationAlt: "",
   },
 };
 
