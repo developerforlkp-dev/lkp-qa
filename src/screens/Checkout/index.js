@@ -476,7 +476,7 @@ const Checkout = () => {
       // Remove generic discount rows; we'll reinsert a single authoritative one
       for (let i = rows.length - 1; i >= 0; i -= 1) {
         const title = String(rows[i]?.title || "");
-        if (/discount/i.test(title) && !/long[\s-]?stay/i.test(title)) {
+        if (/discount/i.test(title) && !/long[\s-]?stay/i.test(title) && !/early[\s-]?bird/i.test(title)) {
           rows.splice(i, 1);
         }
       }

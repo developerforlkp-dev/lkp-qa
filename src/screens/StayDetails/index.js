@@ -413,6 +413,54 @@ function HeroShareFab({ title, text, url }) {
   );
 }
 
+/* ─── EARLY BIRD TICKER ─────────── */
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!discounts || discounts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % discounts.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [discounts]);
+
+  if (!discounts || discounts.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
+      <AnimatePresence>
+        <motion.span
+          key={index}
+          initial={{ y: 15, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -15, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          style={{
+            gridArea: "1 / 1",
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+            display: "block"
+          }}
+        >
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
+            {discounts[index].daysInAdvance} Days
+          </span>{" "}
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
+            {discounts[index].percentage}% OFF
+          </span>
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
   const history = useHistory();
@@ -518,6 +566,28 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
               </text>
             </svg>
           </motion.div>
+        </div>
+      )}
+
+      {/* Early Bird Overlay */}
+      {!isMobile && stay?.earlyBirdDiscounts?.some(d => d.isActive) && (
+        <div style={{
+          position: "absolute",
+          bottom: 40,
+          right: 40,
+          zIndex: 40,
+          background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(20px)",
+          padding: "16px 24px",
+          borderRadius: 24,
+          border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`,
+          boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`,
+          display: "flex",
+          alignItems: "center",
+          gap: 12
+        }}>
+          <Sparkles size={20} color={A} />
+          <EarlyBirdTicker discounts={stay.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={theme === 'dark' ? "#FFF" : FG} isDark={theme === "dark"} />
         </div>
       )}
 

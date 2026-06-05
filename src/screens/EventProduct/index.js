@@ -12,7 +12,7 @@ import Browse from "../../components/Browse";
 import GuestPicker from "../../components/GuestPicker";
 import { browse2 } from "../../mocks/browse";
 import { useLocation, useHistory } from "react-router-dom";
-import { ChevronLeft, ChevronDown, FileText, Plus, Camera, Ticket, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronDown, FileText, Plus, Camera, Ticket, Share2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
 import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews } from "../../utils/api";
@@ -121,6 +121,53 @@ function HeroShareFab({ title, text, url }) {
     </motion.button>
   );
 }
+
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!discounts || discounts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % discounts.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [discounts]);
+
+  if (!discounts || discounts.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
+      <AnimatePresence>
+        <motion.span
+          key={index}
+          initial={{ y: 15, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -15, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          style={{
+            gridArea: "1 / 1",
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+            display: "block"
+          }}
+        >
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
+            {discounts[index].daysInAdvance} Days
+          </span>{" "}
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
+            {discounts[index].percentage}% OFF
+          </span>
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const asNonEmptyString = (value) => {
   if (typeof value !== "string") return null;
@@ -712,7 +759,7 @@ function PolicyItem({ req }) {
 const EventProduct = () => {
   const location = useLocation();
   const history = useHistory();
-  const { tokens: { A, B, FG, M, S, W } } = useTheme();
+  const { tokens: { A, B, FG, M, S, W }, theme } = useTheme();
   const searchParams = new URLSearchParams(location.search);
   const eventIdFromQuery =
     searchParams.get("id") ||
@@ -760,6 +807,14 @@ const EventProduct = () => {
   const [eligibleBookings, setEligibleBookings] = useState([]);
   const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
   const unavailableRedirectRef = useRef(false);
+
+  const earlyBirdDiscountRate = useMemo(() => {
+    if (!event?.earlyBirdDiscounts) return 0;
+    const daysInAdvance = moment(event.startDate || moment()).diff(moment().startOf('day'), 'days');
+    const validTiers = event.earlyBirdDiscounts.filter(tier => tier.isActive && tier.daysInAdvance <= daysInAdvance);
+    if (validTiers.length === 0) return 0;
+    return Math.max(...validTiers.map(t => t.percentage));
+  }, [event?.earlyBirdDiscounts, event?.startDate]);
 
   const isEventUnavailable = (payload) => {
     if (!payload || typeof payload !== "object") return true;
@@ -1305,7 +1360,9 @@ const EventProduct = () => {
       console.log("🔑 Extracted razorpayOrderId:", razorpayOrderId);
 
       // Calculate total amount (in paise for Razorpay)
-      const totalAmount = quantity * pricePerTicket;
+      const baseAmount = quantity * pricePerTicket;
+      const discountAmount = earlyBirdDiscountRate > 0 ? baseAmount * (earlyBirdDiscountRate / 100) : 0;
+      const totalAmount = baseAmount - discountAmount;
       // Use amount from payment response if available, otherwise calculate
       const amountInPaise = payment?.amount || Math.round(totalAmount * 100);
 
@@ -1341,8 +1398,12 @@ const EventProduct = () => {
         receipt: [
           {
             title: `${currency} ${pricePerTicket.toFixed(2)} x ${numberOfGuests} ${numberOfGuests === 1 ? 'ticket' : 'tickets'}`,
-            content: `${currency} ${totalAmount.toFixed(2)}`,
+            content: `${currency} ${baseAmount.toFixed(2)}`,
           },
+          ...(discountAmount > 0 ? [{
+            title: `Early Bird Discount (${earlyBirdDiscountRate}%)`,
+            content: `- ${currency} ${discountAmount.toFixed(2)}`,
+          }] : []),
           {
             title: "Total",
             content: `${currency} ${totalAmount.toFixed(2)}`,
@@ -1533,6 +1594,34 @@ const EventProduct = () => {
           url={window.location.href}
           A={A}
         />
+        {event?.earlyBirdDiscounts?.some(d => d.isActive) && (
+          <motion.div
+            className="early-bird-wrapper"
+            style={{ position: "absolute", bottom: 60, right: 60, zIndex: 100 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <motion.div
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                background: theme === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.03)",
+                backdropFilter: "blur(12px)",
+                padding: "12px 24px",
+                borderRadius: 100,
+                border: `1px solid ${A}33`,
+                boxShadow: `0 10px 30px rgba(0,0,0,0.2), inset 0 0 20px ${A}11`,
+                whiteSpace: "nowrap"
+              }}
+            >
+              <Sparkles color={A} size={14} />
+              <EarlyBirdTicker discounts={event.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
+            </motion.div>
+          </motion.div>
+        )}
         <div className={cn("container", styles.heroContainer)}>
           {/* Header with Title and Actions */}
           <div className={styles.heroHeader}>
@@ -1873,6 +1962,13 @@ const EventProduct = () => {
                 </div>
               )}
 
+              {earlyBirdDiscountRate > 0 && (
+                <div style={{ background: `${A}15`, border: `1px solid ${A}40`, borderRadius: 8, padding: "12px", display: "flex", alignItems: "center", gap: 8, marginBottom: 24, marginTop: -8 }}>
+                  <span style={{ fontSize: 16 }}>🏷</span>
+                  <span style={{ color: A, fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Early Bird Discount Applied</span>
+                </div>
+              )}
+
               {/* Total Price and Book Button Section */}
               <div className={styles.bookingFooter}>
                 <div className={styles.totalPriceSection}>
@@ -1882,8 +1978,22 @@ const EventProduct = () => {
                       const selectedType = event.ticketTypes?.find(t => t.id === selectedTicketType) || event.ticketTypes?.[0] || { price: event.ticketPrice || 0 };
                       const totalGuests = guests.adults + guests.children;
                       const unitPrice = asNumber(selectedType?.price) ?? asNumber(event.ticketPrice) ?? 0;
-                      const totalPrice = totalGuests * unitPrice;
-                      return `${displayCurrency} ${totalPrice.toFixed(2)}`;
+                      const basePrice = totalGuests * unitPrice;
+                      const totalPrice = earlyBirdDiscountRate > 0 ? basePrice * (1 - earlyBirdDiscountRate / 100) : basePrice;
+                      
+                      return (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                          {earlyBirdDiscountRate > 0 && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                              <span style={{ fontSize: 13, textDecoration: "line-through", color: M }}>{displayCurrency} {basePrice.toFixed(2)}</span>
+                              <span style={{ fontSize: 11, background: `${A}20`, color: A, padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>{earlyBirdDiscountRate}% OFF</span>
+                            </div>
+                          )}
+                          <span style={{ color: earlyBirdDiscountRate > 0 ? (theme === "dark" ? "#4ADE80" : "#059669") : "inherit" }}>
+                            {displayCurrency} {totalPrice.toFixed(2)}
+                          </span>
+                        </div>
+                      );
                     })()}
                   </span>
                 </div>

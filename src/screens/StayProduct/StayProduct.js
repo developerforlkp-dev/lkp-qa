@@ -9,6 +9,7 @@ import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Helper to format image URLs
 const formatImageUrl = (url) => {
@@ -183,8 +184,56 @@ const Gallery = ({ images }) => {
 };
 
 // Header Component
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!discounts || discounts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % discounts.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [discounts]);
+
+  if (!discounts || discounts.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
+      <AnimatePresence>
+        <motion.span
+          key={index}
+          initial={{ y: 15, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -15, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          style={{
+            gridArea: "1 / 1",
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+            display: "block"
+          }}
+        >
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
+            {discounts[index].daysInAdvance} Days
+          </span>{" "}
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
+            {discounts[index].percentage}% OFF
+          </span>
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const Header = ({ stay, onShare }) => {
   const history = useHistory();
+  const { theme, tokens: { A, FG } } = useTheme();
   const locationText = buildStayHeaderLocation(stay);
   const tags = [];
   {
@@ -202,10 +251,16 @@ const Header = ({ stay, onShare }) => {
 
   return (
     <div className={styles.header}>
-      <div className={styles.tags}>
+      <div className={styles.tags} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
         {tags.map((tag, idx) => (
           <span key={idx} className={styles.tag}>{tag}</span>
         ))}
+        {stay?.earlyBirdDiscounts?.some(d => d.isActive) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: theme === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.05)", padding: "4px 16px", borderRadius: 100, border: `1px solid ${A}33`, marginLeft: "auto" }}>
+            <Sparkles color={A} size={12} />
+            <EarlyBirdTicker discounts={stay.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
+          </div>
+        )}
       </div>
       <h1 className={styles.title}>{stay?.propertyName || stay?.title || "Stay"}</h1>
       <div className={styles.locationRow}>
@@ -492,8 +547,18 @@ const BookingSidebar = ({
       0
     );
 
-  const discountedBasePrice = discountPercentage > 0
-    ? basePrice * (1 - discountPercentage / 100)
+  const earlyBirdDiscountRate = useMemo(() => {
+    if (!checkInDate || !stay?.earlyBirdDiscounts) return 0;
+    const daysInAdvance = moment(checkInDate).diff(moment().startOf('day'), 'days');
+    const validTiers = stay.earlyBirdDiscounts.filter(tier => tier.isActive && tier.daysInAdvance <= daysInAdvance);
+    if (validTiers.length === 0) return 0;
+    return Math.max(...validTiers.map(t => t.percentage));
+  }, [checkInDate, stay?.earlyBirdDiscounts]);
+
+  const totalDiscountPercentage = (discountPercentage || 0) + earlyBirdDiscountRate;
+
+  const discountedBasePrice = totalDiscountPercentage > 0
+    ? basePrice * (1 - totalDiscountPercentage / 100)
     : basePrice;
 
   // ✅ For room-based: use selectedRoom.maxAdults (stay.maxAdults is null for room-based)
@@ -595,7 +660,7 @@ const BookingSidebar = ({
         )}
         <div className={styles.priceRow}>
           <div className={styles.priceGroup}>
-            {discountPercentage > 0 && showTotal && (
+            {totalDiscountPercentage > 0 && showTotal && (
               <div className={styles.oldPrice}>
                 <span className={styles.strikedPart}>{formatPrice(basePrice)}</span>
                 {totalExtraPrice > 0 && (
@@ -607,8 +672,8 @@ const BookingSidebar = ({
               <div className={styles.currentPriceRow}>
                 <span className={styles.price}>{formatPrice(price)}</span>
                 <span className={styles.perNight}>/ night</span>
-                {discountPercentage > 0 && (
-                  <span className={styles.discountBadge}>{discountPercentage}% OFF</span>
+                {totalDiscountPercentage > 0 && (
+                  <span className={styles.discountBadge}>{totalDiscountPercentage}% OFF</span>
                 )}
               </div>
             )}
@@ -1846,7 +1911,8 @@ const StayProduct = () => {
       const baseStayTotal = basePrice * nightsCount * roomsNeeded;
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount * roomsNeeded;
       const extraChildTotal = extraChildren * extraChildPrice * nightsCount * roomsNeeded;
-      const discountAmount = (basePrice * (discountPercentage / 100)) * nightsCount * roomsNeeded;
+      const totalDiscountPercentage = (discountPercentage || 0) + (stay?.earlyBirdDiscounts ? (Math.max(...(stay.earlyBirdDiscounts.filter(t => t.isActive && t.daysInAdvance <= Math.max(0, moment(checkInDate).diff(moment().startOf('day'), 'days'))).map(t => t.percentage)), 0)) : 0);
+      const discountAmount = (basePrice * (totalDiscountPercentage / 100)) * nightsCount * roomsNeeded;
       const preTaxTotal = (calculatedAmount * roomsNeeded) - discountAmount;
       const taxAmount = preTaxTotal * (taxRate / 100);
       const finalGuestPrice = preTaxTotal + taxAmount;
@@ -1860,7 +1926,7 @@ const StayProduct = () => {
         extraChildPrice,
         extraAdultTotal,
         extraChildTotal,
-        discountPercent: discountPercentage || 0,
+        discountPercent: totalDiscountPercentage || 0,
         discountAmount,
         taxRate,
         taxAmount,
@@ -1921,7 +1987,8 @@ const StayProduct = () => {
       const baseStayTotal = propertyBasePrice * nightsCount;
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount;
       const extraChildTotal = extraChildren * extraChildPrice * nightsCount;
-      const discountAmount = (propertyBasePrice * (discountPercentage / 100)) * nightsCount;
+      const totalDiscountPercentage = (discountPercentage || 0) + (stay?.earlyBirdDiscounts ? (Math.max(...(stay.earlyBirdDiscounts.filter(t => t.isActive && t.daysInAdvance <= Math.max(0, moment(checkInDate).diff(moment().startOf('day'), 'days'))).map(t => t.percentage)), 0)) : 0);
+      const discountAmount = (propertyBasePrice * (totalDiscountPercentage / 100)) * nightsCount;
       const preTaxTotal = calculatedAmountProperty - discountAmount;
       const taxAmount = preTaxTotal * (taxRate / 100);
       const finalGuestPrice = preTaxTotal + taxAmount;
@@ -1935,7 +2002,7 @@ const StayProduct = () => {
         extraChildPrice,
         extraAdultTotal,
         extraChildTotal,
-        discountPercent: discountPercentage || 0,
+        discountPercent: totalDiscountPercentage || 0,
         discountAmount,
         taxRate,
         taxAmount,

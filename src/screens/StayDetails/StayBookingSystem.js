@@ -790,12 +790,32 @@ const StayBookingSystem = ({
       return Math.max(0, Math.min(100, totalRate));
     })();
 
+    // Early Bird Discount Calculation
+    let earlyBirdDiscountPercent = 0;
+    let appliedEarlyBirdDiscountTier = null;
+    const ebDiscounts = stay?.earlyBirdDiscounts || stay?.early_bird_discounts || [];
+    if (checkInDate && Array.isArray(ebDiscounts)) {
+      const today = moment().startOf('day');
+      const checkInDay = moment(checkInDate).startOf('day');
+      const daysDiff = checkInDay.diff(today, 'days');
+      
+      const eligibleTiers = ebDiscounts.filter(t => t.isActive && daysDiff >= t.daysInAdvance);
+        
+      if (eligibleTiers.length > 0) {
+        eligibleTiers.sort((a, b) => parseFloat(b.percentage || 0) - parseFloat(a.percentage || 0));
+        appliedEarlyBirdDiscountTier = eligibleTiers[0];
+        earlyBirdDiscountPercent = parseFloat(appliedEarlyBirdDiscountTier.percentage || 0);
+      }
+    }
+
     const nights = Math.max(1, nightsCount);
     const grossSubtotal = totalOriginalPerNight * nights;
     const longStayDiscountAmount = grossSubtotal * (appliedDiscountPercent / 100);
     const billingConfigDiscountAmount = grossSubtotal * (billingConfigDiscountRate / 100);
-    const preTaxSubtotal = Math.max(0, grossSubtotal - longStayDiscountAmount - billingConfigDiscountAmount);
-    const discountAmount = longStayDiscountAmount + billingConfigDiscountAmount;
+    const earlyBirdDiscountAmount = grossSubtotal * (earlyBirdDiscountPercent / 100);
+
+    const preTaxSubtotal = Math.max(0, grossSubtotal - longStayDiscountAmount - billingConfigDiscountAmount - earlyBirdDiscountAmount);
+    const discountAmount = longStayDiscountAmount + billingConfigDiscountAmount + earlyBirdDiscountAmount;
     const discountedPerNight = preTaxSubtotal / nights;
 
     // Taxes from stay config; fallback to legacy 18% GST + 2% service charge
@@ -827,6 +847,8 @@ const StayBookingSystem = ({
       nightsCount,
       discount: discountAmount,
       discountPercent: appliedDiscountPercent,
+      earlyBirdDiscountAmount,
+      earlyBirdDiscountPercent,
       warning,
       isOver,
       gst: configuredTaxRate > 0 ? totalTax : gst,
@@ -1344,7 +1366,15 @@ const StayBookingSystem = ({
       const combinedFrontendTax = Math.max(0, subtotalBeforeTax * (taxRate / 100));
 
       if (discountToShow > 0) {
-        frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
+        if (pricing.earlyBirdDiscountAmount > 0) {
+          frontendReceipt.push({ title: `Early Bird Discount (${pricing.earlyBirdDiscountPercent}%)`, content: `- ${currency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
+          const remainingDiscount = discountToShow - pricing.earlyBirdDiscountAmount;
+          if (remainingDiscount > 0.01) {
+            frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(remainingDiscount).toFixed(2)}` });
+          }
+        } else {
+          frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
+        }
       }
       if (combinedFrontendTax > 0) {
         frontendReceipt.push({ title: `Tax (${Number(taxRate).toFixed(2)}%)`, content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
@@ -1381,6 +1411,33 @@ const StayBookingSystem = ({
     } catch (err) {
       console.error(err);
       const backendPayload = err?.response?.data || {};
+
+      if (
+        err?.response?.status === 401 ||
+        backendPayload?.message === "Invalid or expired token" ||
+        backendPayload?.error === "Invalid or expired token"
+      ) {
+        const listingIdToSave = stay?.stayId || stay?.id;
+        if (listingIdToSave) {
+          const stateToStore = {
+            listingId: String(listingIdToSave),
+            type: "stay",
+            checkInDate: checkInDate ? checkInDate.format("YYYY-MM-DD") : null,
+            checkOutDate: checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null,
+            guests,
+            selectedRooms,
+          };
+          try {
+            localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+          } catch (e) {}
+        }
+
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("userInfo");
+        setShowLoginPrompt(true);
+        return;
+      }
+
       const title =
         backendPayload?.error ||
         backendPayload?.message ||
@@ -1763,6 +1820,13 @@ const StayBookingSystem = ({
                                 />
                               </div>
                             </div>
+
+                            {pricing.earlyBirdDiscountPercent > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: AL, border: `1px solid ${A}33`, borderRadius: 100, width: "fit-content", marginTop: 4 }}>
+                                <Sparkles size={14} color={A} />
+                                <span style={{ fontSize: 11, fontWeight: 700, color: A }}>EARLY BIRD DISCOUNT APPLIED</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
