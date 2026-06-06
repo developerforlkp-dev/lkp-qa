@@ -85,14 +85,26 @@ const CheckoutComplete = () => {
 
   const title = booking?.listingTitle || "Your booking is confirmed";
 
+  let bookingDetailsUrl = "/experience-product";
+  const isEventBooking = Boolean(booking?.eventId);
+  const isStayBooking = Boolean(booking?.stayId || booking?.isStay || booking?.checkInDate);
+
+  if (booking?.returnTo) {
+    bookingDetailsUrl = booking.returnTo;
+  } else if (isEventBooking && booking?.eventId) {
+    bookingDetailsUrl = `/event?id=${booking.eventId}`;
+  } else if (isStayBooking && booking?.stayId) {
+    bookingDetailsUrl = `/stay-details?id=${booking.stayId}`;
+  } else if (booking?.listingId) {
+    bookingDetailsUrl = buildExperienceUrl(booking?.listingTitle || "experience", booking.listingId);
+  } else if (isStayBooking) {
+    bookingDetailsUrl = "/stay-details";
+  }
+
   const breadcrumbs = [
     {
       title: title,
-      url: booking?.listingId 
-        ? (booking?.isStay || booking?.checkInDate
-            ? `/stay-product?id=${booking.listingId}`
-            : buildExperienceUrl(booking?.listingTitle || "experience", booking.listingId))
-        : (booking?.isStay || booking?.checkInDate ? "/stay-product" : "/experience-product"),
+      url: bookingDetailsUrl,
     },
     {
       title: "Confirm and pay",

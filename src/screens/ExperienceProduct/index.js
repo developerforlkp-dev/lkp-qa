@@ -1193,22 +1193,7 @@ const ExperienceProduct = () => {
                       <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
                     )}
                   </div>
-                  {selectedAddOns.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{ marginTop: 40, padding: "24px 32px", background: AL, borderRadius: 24, border: `1px solid ${A}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                    >
-                      <div>
-                        <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 4 }}>Add-ons Summary</p>
-                        <p style={{ fontSize: 13, color: M, fontWeight: 500 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, fontWeight: 700, marginBottom: 4 }}>Subtotal</p>
-                        <p style={{ fontSize: 24, fontWeight: 900, color: FG }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
-                      </div>
-                    </motion.div>
-                  )}
+
                 </div>
 
                 <div>

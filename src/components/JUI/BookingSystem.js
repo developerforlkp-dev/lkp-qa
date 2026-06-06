@@ -1218,9 +1218,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (window.innerWidth <= 768) {
         // On mobile, defer the heavy render so the opening animation starts instantly
         const timer = setTimeout(() => setRenderContent(true), 50);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+          document.body.style.overflow = "";
+        };
       } else {
         setRenderContent(true);
+        return () => {
+          document.body.style.overflow = "";
+        };
       }
     } else {
       document.body.style.overflow = "";

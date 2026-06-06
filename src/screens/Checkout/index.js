@@ -602,12 +602,27 @@ const Checkout = () => {
                    "Host";
   const hostAvatar = hostInfo?.picture || hostInfo?.avatar || hostInfo?.profileImage || hostInfo?.image;
 
+  const isEventBooking = Boolean(bookingData?.eventId);
+  const backUrl =
+    bookingData?.returnTo ||
+    (isEventBooking ? `/event?id=${bookingData.eventId}` : null) ||
+    (bookingData?.stayId ? `/stay-details?id=${bookingData.stayId}` : null);
+
+  let bookingDetailsUrl = "/experience-product";
+  if (bookingData?.returnTo) {
+    bookingDetailsUrl = bookingData.returnTo;
+  } else if (isEventBooking && bookingData?.eventId) {
+    bookingDetailsUrl = `/event?id=${bookingData.eventId}`;
+  } else if (bookingData?.stayId) {
+    bookingDetailsUrl = `/stay-details?id=${bookingData.stayId}`;
+  } else if (bookingData?.listingId) {
+    bookingDetailsUrl = buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId);
+  }
+
   const breadcrumbs = [
     {
       title: "Booking details",
-      url: bookingData?.listingId
-        ? buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId)
-        : "/experience-product",
+      url: bookingDetailsUrl,
     },
     {
       title: "Confirm and pay",
@@ -620,6 +635,7 @@ const Checkout = () => {
         <Control
           className={styles.control}
           urlHome="/"
+          backUrl={backUrl}
           breadcrumbs={breadcrumbs}
         />
         <div className={styles.wrapper}>

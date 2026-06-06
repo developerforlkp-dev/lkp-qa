@@ -699,16 +699,28 @@ const Checkout = () => {
 
   const listingTitle = bookingData?.listingTitle || "Your trip";
   const isEventBooking = Boolean(bookingData?.eventId);
+  const isStayBooking = Boolean(bookingData?.stayId);
   const isAmountInPaise = paymentData?.paymentMethod === "razorpay";
   const backUrl =
     bookingData?.returnTo ||
-    (isEventBooking ? `/event?id=${bookingData.eventId}` : null);
+    (isEventBooking ? `/event?id=${bookingData.eventId}` : null) ||
+    (isStayBooking ? `/stay-details?id=${bookingData.stayId}` : null);
+
+  let bookingDetailsUrl = "/experience-product";
+  if (bookingData?.returnTo) {
+    bookingDetailsUrl = bookingData.returnTo;
+  } else if (isEventBooking && bookingData?.eventId) {
+    bookingDetailsUrl = `/event?id=${bookingData.eventId}`;
+  } else if (isStayBooking && bookingData?.stayId) {
+    bookingDetailsUrl = `/stay-details?id=${bookingData.stayId}`;
+  } else if (bookingData?.listingId) {
+    bookingDetailsUrl = buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId);
+  }
+
   const breadcrumbs = [
     {
       title: "Booking details",
-      url: bookingData?.listingId
-        ? buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId)
-        : "/experience-product",
+      url: bookingDetailsUrl,
     },
     {
       title: "Confirm and pay",
