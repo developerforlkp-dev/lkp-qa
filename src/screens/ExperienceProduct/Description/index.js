@@ -1159,7 +1159,6 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
     // Prioritize granular taxes from billingConfig (these are typically guest-facing)
     const enabledBillingTaxes = billingConfig?.taxes?.filter(tax => tax.isEnabled) || [];
-
     if (enabledBillingTaxes.length > 0) {
       enabledBillingTaxes.forEach(tax => {
         const taxRate = parseFloat(tax.currentRate || 0);

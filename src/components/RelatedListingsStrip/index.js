@@ -70,6 +70,8 @@ export default function RelatedListingsStrip({
   fallbackSpecialLabelValues = [],
   title = "More in this category",
   limit = 12,
+  sectionStyle = {},
+  titleStyle = {},
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -357,7 +359,7 @@ export default function RelatedListingsStrip({
 
   if (loading || filteredItems.length === 0) return null;
 
-  const scrollByAmount = 320;
+  const scrollByAmount = 322;
   const scrollLeft = () => {
     const el = railRef.current;
     if (!el) return;
@@ -382,7 +384,7 @@ export default function RelatedListingsStrip({
   };
 
   return (
-    <section style={{ padding: "72px 28px", background: "var(--W, #ffffff)" }}>
+    <section style={{ padding: "72px 28px", background: "var(--W, #ffffff)", ...sectionStyle }}>
       <style>{`
         .related-strip-scroll {
           -ms-overflow-style: none;
@@ -405,7 +407,7 @@ export default function RelatedListingsStrip({
       `}</style>
       <div style={{ maxWidth: 1440, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 24 }}>
-          <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--FG, #131313)" }}>{title}</h3>
+          <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--FG, #131313)", ...titleStyle }}>{title}</h3>
           <div style={{ display: "flex", gap: 10 }}>
             <button
               type="button"
@@ -447,46 +449,97 @@ export default function RelatedListingsStrip({
             </button>
           </div>
         </div>
-        <div
-          ref={railRef}
-          onScroll={normalizeLoopPosition}
-          onMouseEnter={() => {
-            clearResumeTimer();
-            pauseAutoScrollRef.current = true;
-          }}
-          onMouseLeave={() => {
-            pauseAutoScrollRef.current = false;
-          }}
-          className="related-strip-scroll"
-          style={{ overflowX: "auto", overflowY: "hidden", paddingBottom: 8 }}
-        >
-          <div style={{ display: "flex", gap: 22, minWidth: "max-content" }}>
-            {loopItems.map((item, idx) => (
-              <Link
-                key={`${getTargetId(item, businessInterestId) || idx}-${idx}`}
-                to={getDetailPath(item, businessInterestId)}
-                style={{ textDecoration: "none", color: "inherit", width: 260, flex: "0 0 auto" }}
-              >
-                <div
-                  style={{
-                    border: "1px solid var(--B, #e8e8e8)",
-                    borderRadius: 14,
-                    padding: 6,
-                    background: "var(--W, #fff)",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                  }}
+        <div style={{ position: "relative" }}>
+          {/* Left and Right Fade Overlays */}
+          <div style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: "40px",
+            background: "linear-gradient(to right, var(--W, #ffffff) 10%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 5
+          }} />
+          <div style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: "40px",
+            background: "linear-gradient(to left, var(--W, #ffffff) 10%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 5
+          }} />
+
+          <div
+            ref={railRef}
+            onScroll={normalizeLoopPosition}
+            onMouseEnter={() => {
+              clearResumeTimer();
+              pauseAutoScrollRef.current = true;
+            }}
+            onMouseLeave={() => {
+              pauseAutoScrollRef.current = false;
+            }}
+            className="related-strip-scroll"
+            style={{ overflowX: "auto", overflowY: "hidden", paddingBottom: 8 }}
+          >
+            <div style={{ display: "flex", gap: 22, minWidth: "max-content" }}>
+              {loopItems.map((item, idx) => (
+                <Link
+                  key={`${getTargetId(item, businessInterestId) || idx}-${idx}`}
+                  to={getDetailPath(item, businessInterestId)}
+                  style={{ textDecoration: "none", color: "inherit", width: 300, flex: "0 0 auto" }}
                 >
-                  <img
-                    src={getImageUrl(item)}
-                    alt={getTitle(item)}
-                    style={{ width: "100%", height: 170, objectFit: "cover", borderRadius: 10, display: "block", background: "#f3f3f3" }}
-                  />
-                </div>
-                <p style={{ margin: "12px 4px 0", fontSize: 17, fontWeight: 600, color: "var(--FG, #161616)" }}>
-                  {getTitle(item)}
-                </p>
-              </Link>
-            ))}
+                  <div
+                    style={{
+                      position: "relative",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+                      background: "var(--W, #fff)",
+                    }}
+                  >
+                    <img
+                      src={getImageUrl(item)}
+                      alt={getTitle(item)}
+                      style={{ width: "100%", height: 200, objectFit: "cover", display: "block", background: "#1a1a1a" }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(to bottom, transparent 40%, #000000CC 70%, #000000 100%)",
+                        display: "flex",
+                        alignItems: "flex-end",
+                        padding: "16px",
+                        zIndex: 2,
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#FFFFFF",
+                          WebkitTextFillColor: "#FFFFFF",
+                          textShadow: "none",
+                          WebkitTextStroke: "none",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          width: "100%",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        {getTitle(item)}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -292,7 +292,7 @@ function App() {
             exact
             path="/place-details"
             render={() => (
-              <Page separatorHeader>
+              <Page separatorHeader fooferHide>
                 <PlaceDetails />
               </Page>
             )}

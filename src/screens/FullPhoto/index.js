@@ -5,7 +5,7 @@ import Product from "../../components/Product";
 import Icon from "../../components/Icon";
 import { useHistory, useLocation } from "react-router-dom";
 import PhotoView from "../../components/PhotoView";
-import { getListingMedia } from "../../utils/api";
+import { getListingMedia, normalizePublicImageUrl } from "../../utils/api";
 
 const breadcrumbs = [
   {
@@ -62,14 +62,6 @@ const FullPhoto = () => {
   useEffect(() => {
     let mounted = true;
 
-    const normalizeMediaUrl = (media) => {
-      const rawUrl = media?.url || media?.fileUrl || media?.blobName || media;
-      if (!rawUrl) return null;
-      if (String(rawUrl).startsWith("http://") || String(rawUrl).startsWith("https://")) return rawUrl;
-      if (String(rawUrl).startsWith("/")) return rawUrl;
-      return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${rawUrl}`;
-    };
-
     const loadMedia = async () => {
       if (!listingId) return;
 
@@ -77,9 +69,7 @@ const FullPhoto = () => {
         const media = await getListingMedia(listingId);
         if (!mounted) return;
 
-        const apiGallery = media
-          .map(normalizeMediaUrl)
-          .filter(Boolean);
+        const apiGallery = media.map(normalizePublicImageUrl).filter(Boolean);
 
         if (apiGallery.length > 0) {
           setGallery(apiGallery);

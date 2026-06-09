@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTheme } from "./Theme";
 import { Rev, Chars } from "./UI";
-import { Instagram, Facebook, Youtube, Linkedin } from "lucide-react";
+import { Instagram, Facebook, Youtube, Linkedin, Globe } from "lucide-react";
 
 const WhatsAppIcon = ({ size = 16, color = "currentColor" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true">
@@ -25,9 +25,13 @@ export function Footer() {
     offset: ["start end", "end end"]
   });
 
-  const scaleX = useTransform(scrollYProgress, [0, 0.4, 1], [0.85, 0.95, 1]);
-  const letterSpacing = useTransform(scrollYProgress, [0, 1], ["0.5em", "-0.02em"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 1], [0, 1, 1]);
+  const scaleX = useTransform(scrollYProgress, [0, 0.5, 1], [0.92, 0.97, 1]);
+  const brandLetterSpacing = useTransform(scrollYProgress, [0, 1], ["0.45em", "0.25em"]);
+  const taglineLetterSpacing = useTransform(scrollYProgress, [0, 1], ["0.6em", "0.4em"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.25, 1], [0, 0.8, 1]);
+  const leftX = useTransform(scrollYProgress, [0, 1], [-100, 0]);
+  const rightX = useTransform(scrollYProgress, [0, 1], [100, 0]);
+  const centerY = useTransform(scrollYProgress, [0, 1], [25, 0]);
 
   return (
     <footer 
@@ -44,16 +48,63 @@ export function Footer() {
     >
 
 
-      <div style={{ padding: "80px 0", textAlign: "center", borderBottom: "1px solid #222" }}>
-        <motion.h1 
-          className="font-display"
-          style={{ 
-            fontSize: "clamp(4rem, 15vw, 18rem)", fontWeight: 900, color: "#FFFFFF", margin: 0, lineHeight: 0.8,
-            scaleX, letterSpacing, opacity, transformOrigin: "center center"
+      <div style={{ padding: "50px 20px 45px 20px", textAlign: "center", borderBottom: "1px solid #222", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+        <motion.div
+          style={{ opacity, display: "flex", alignItems: "center", justifyContent: "center" }}
+          animate={{ 
+            y: [0, -6, 0],
+            scale: [1, 1.08, 1],
+            filter: [
+              "drop-shadow(0 0 2px rgba(0,151,178,0.2))",
+              "drop-shadow(0 0 10px rgba(0,151,178,0.5))",
+              "drop-shadow(0 0 2px rgba(0,151,178,0.2))"
+            ]
+          }}
+          transition={{ 
+            duration: 4, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
           }}
         >
-          LITTLE KNOWN PLANET
-        </motion.h1>
+          <Globe size={28} color="#0097B2" strokeWidth={1.5} />
+        </motion.div>
+        <div>
+          <motion.h2 
+            className="font-display"
+            style={{ 
+              fontSize: "clamp(1.6rem, 3vw, 2.5rem)", 
+              fontWeight: 800, 
+              color: "#FFFFFF", 
+              margin: "0 0 10px 0", 
+              lineHeight: 1.2,
+              letterSpacing: brandLetterSpacing,
+              opacity,
+              textTransform: "uppercase",
+              display: "flex",
+              justifyContent: "center",
+              gap: "0.3em",
+              flexWrap: "wrap"
+            }}
+          >
+            <motion.span style={{ x: leftX, display: "inline-block" }}>LITTLE</motion.span>
+            <motion.span style={{ y: centerY, display: "inline-block" }}>KNOWN</motion.span>
+            <motion.span style={{ x: rightX, display: "inline-block" }}>PLANET</motion.span>
+          </motion.h2>
+          <motion.p
+            style={{
+              fontSize: "10px",
+              fontWeight: 600,
+              color: "#8C8C88",
+              marginTop: "10px",
+              marginBottom: 0,
+              letterSpacing: taglineLetterSpacing,
+              textTransform: "uppercase",
+              opacity
+            }}
+          >
+            Curating Extraordinary Journeys
+          </motion.p>
+        </div>
       </div>
 
       <div className="bottom-footer-bar">
