@@ -327,8 +327,8 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
                         className={styles.addOnImg}
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
-                          if (!e.target.src.includes("/images/content/card-pic-13.jpg")) {
-                            e.target.src = "/images/content/card-pic-13.jpg";
+                          if (!e.target.src.includes("")) {
+                            e.target.src = "";
                             e.target.onerror = null;
                           }
                         }}
@@ -432,3 +432,4 @@ const Details = ({ className, listing, selectedAddOns, addOnQuantities, onToggle
 };
 
 export default Details;
+

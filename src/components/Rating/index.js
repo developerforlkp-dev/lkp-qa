@@ -15,14 +15,14 @@ const Form = ({ className, initialRating, rating, onChange, readonly }) => {
       readonly={readonly}
       emptySymbol={
         <img
-          src="/images/content/rating-star.svg"
+          src=""
           className={styles.star}
           alt=""
         />
       }
       fullSymbol={
         <img
-          src="/images/content/rating-star-fill.svg"
+          src=""
           className={styles.star}
           alt=""
         />
@@ -32,3 +32,4 @@ const Form = ({ className, initialRating, rating, onChange, readonly }) => {
 };
 
 export default Form;
+

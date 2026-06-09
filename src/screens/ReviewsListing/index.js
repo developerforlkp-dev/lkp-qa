@@ -44,7 +44,7 @@ const getLocationText = (item) => {
 };
 
 const getCoverPhoto = (item) => {
-  if (!item || typeof item !== "object") return "/images/content/slider-pic-1.jpg";
+  if (!item || typeof item !== "object") return "";
   return (
     item.coverPhotoUrl ||
     item.coverImageUrl ||
@@ -56,7 +56,7 @@ const getCoverPhoto = (item) => {
     item.listingMedia?.[0]?.blobName ||
     item.images?.[0]?.url ||
     item.images?.[0] ||
-    "/images/content/slider-pic-1.jpg"
+    ""
   );
 };
 
@@ -289,3 +289,4 @@ const ReviewsListing = () => {
 };
 
 export default ReviewsListing;
+

@@ -10,7 +10,7 @@ import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
 const formatImageUrl = (url) => {
-  if (!url) return "/images/content/card-pic-13.jpg";
+  if (!url) return "";
 
   // If already a full URL, return as is
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -28,7 +28,7 @@ const formatImageUrl = (url) => {
   }
 
   // Default fallback
-  return "/images/content/card-pic-13.jpg";
+  return "";
 };
 
 const formatCancelPreviewMoney = (amount) => {
@@ -2160,4 +2160,5 @@ const Main = ({
 };
 
 export default Main;
+
 

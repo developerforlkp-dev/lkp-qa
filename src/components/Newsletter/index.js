@@ -6,28 +6,28 @@ import Form from "../Form";
 
 const gallery = [
   {
-    src: "/images/content/newsletter-pic-1.png",
-    srcSet: "/images/content/newsletter-pic-1@2x.png",
-    srcDark: "/images/content/newsletter-pic-dark-1.png",
-    srcSetDark: "/images/content/newsletter-pic-dark-1@2x.png",
+    src: "",
+    srcSet: "",
+    srcDark: "",
+    srcSetDark: "",
   },
   {
-    src: "/images/content/newsletter-pic-2.png",
-    srcSet: "/images/content/newsletter-pic-2@2x.png",
-    srcDark: "/images/content/newsletter-pic-dark-2.png",
-    srcSetDark: "/images/content/newsletter-pic-dark-2@2x.png",
+    src: "",
+    srcSet: "",
+    srcDark: "",
+    srcSetDark: "",
   },
   {
-    src: "/images/content/newsletter-pic-3.png",
-    srcSet: "/images/content/newsletter-pic-3@2x.png",
-    srcDark: "/images/content/newsletter-pic-dark-3.png",
-    srcSetDark: "/images/content/newsletter-pic-dark-3@2x.png",
+    src: "",
+    srcSet: "",
+    srcDark: "",
+    srcSetDark: "",
   },
   {
-    src: "/images/content/newsletter-pic-4.png",
-    srcSet: "/images/content/newsletter-pic-4@2x.png",
-    srcDark: "/images/content/newsletter-pic-dark-4.png",
-    srcSetDark: "/images/content/newsletter-pic-dark-4@2x.png",
+    src: "",
+    srcSet: "",
+    srcDark: "",
+    srcSetDark: "",
   },
 ];
 
@@ -106,3 +106,4 @@ const Newsletter = ({ classSection, title }) => {
 };
 
 export default Newsletter;
+

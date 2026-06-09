@@ -621,3 +621,5 @@ export const HomepageSectionCard = ({ section, listings, className }) => {
 // Export helper functions for use in other components
 export { transformListingToCard, transformListingToBrowse, transformListingToDestination, transformListingToDestinationHorizontal, formatImageUrl };
 
+
+

@@ -12,7 +12,7 @@ const Backgroung = ({ className }) => {
         <div
           className={cn(styles.head, { [styles.active]: visible })}
           style={{
-            backgroundImage: "url(/images/content/bg-profile.jpg)",
+            backgroundImage: "url()",
           }}
         >
           <div className={styles.btns}>
@@ -45,3 +45,4 @@ const Backgroung = ({ className }) => {
 };
 
 export default Backgroung;
+

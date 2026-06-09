@@ -8,11 +8,11 @@ import Checkbox from "../../Checkbox";
 
 const cards = [
   {
-    image: "./images/content/visa.svg",
+    image: "",
     alt: "Visa",
   },
   {
-    image: "./images/content/master-card.svg",
+    image: "",
     alt: "Master Card",
   },
 ];
@@ -257,3 +257,5 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 };
 
 export default CreditCard;
+
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles } from "lucide-react";
+import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
@@ -304,7 +304,10 @@ const StayBookingSystem = ({
   setGuests,
   selectedRooms, // Array of {roomId, mealPlan, count}
   setSelectedRooms,
-  onRoomsCountChange
+  onRoomsCountChange,
+  selectedAddOns = [],
+  addOnQuantities = {},
+  onAddOnQuantityChange
 }) => {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
@@ -790,14 +793,45 @@ const StayBookingSystem = ({
       return Math.max(0, Math.min(100, totalRate));
     })();
 
+    // Early Bird Discount Calculation
+    let earlyBirdDiscountPercent = 0;
+    let appliedEarlyBirdDiscountTier = null;
+    const ebDiscounts = stay?.earlyBirdDiscounts || stay?.early_bird_discounts || [];
+    if (checkInDate && Array.isArray(ebDiscounts)) {
+      const today = moment().startOf('day');
+      const checkInDay = moment(checkInDate).startOf('day');
+      const daysDiff = checkInDay.diff(today, 'days');
+      
+      const eligibleTiers = ebDiscounts.filter(t => t.isActive && daysDiff >= t.daysInAdvance);
+        
+      if (eligibleTiers.length > 0) {
+        eligibleTiers.sort((a, b) => parseFloat(b.percentage || 0) - parseFloat(a.percentage || 0));
+        appliedEarlyBirdDiscountTier = eligibleTiers[0];
+        earlyBirdDiscountPercent = parseFloat(appliedEarlyBirdDiscountTier.percentage || 0);
+      }
+    }
+
     const nights = Math.max(1, nightsCount);
     const grossSubtotal = totalOriginalPerNight * nights;
     const longStayDiscountAmount = grossSubtotal * (appliedDiscountPercent / 100);
-    const subtotalAfterLongStay = Math.max(0, grossSubtotal - longStayDiscountAmount);
-    const billingConfigDiscountAmount = subtotalAfterLongStay * (billingConfigDiscountRate / 100);
-    const preTaxSubtotal = Math.max(0, subtotalAfterLongStay - billingConfigDiscountAmount);
-    const discountAmount = longStayDiscountAmount + billingConfigDiscountAmount;
-    const discountedPerNight = preTaxSubtotal / nights;
+    const billingConfigDiscountAmount = grossSubtotal * (billingConfigDiscountRate / 100);
+    const earlyBirdDiscountAmount = grossSubtotal * (earlyBirdDiscountPercent / 100);
+
+    let addonsTotal = 0;
+    if (Array.isArray(stay?.addons) && Array.isArray(selectedAddOns) && selectedAddOns.length > 0) {
+      selectedAddOns.forEach(addonId => {
+        const addonObj = stay.addons.find(a => String(a.addonId || a.assignmentId || a.id) === String(addonId));
+        if (addonObj) {
+          const isIndividual = addonObj.pricingType === "Individual";
+          const qty = isIndividual ? (addOnQuantities[addonId] || 1) : 1;
+          addonsTotal += parseFloat(addonObj.price || 0) * qty;
+        }
+      });
+    }
+
+    const preTaxSubtotal = Math.max(0, grossSubtotal - longStayDiscountAmount - billingConfigDiscountAmount - earlyBirdDiscountAmount) + addonsTotal;
+    const discountAmount = longStayDiscountAmount + billingConfigDiscountAmount + earlyBirdDiscountAmount;
+    const discountedPerNight = Math.max(0, preTaxSubtotal - addonsTotal) / nights;
 
     // Taxes from stay config; fallback to legacy 18% GST + 2% service charge
     const configuredTaxRate = Array.isArray(stay?.taxes)
@@ -828,6 +862,8 @@ const StayBookingSystem = ({
       nightsCount,
       discount: discountAmount,
       discountPercent: appliedDiscountPercent,
+      earlyBirdDiscountAmount,
+      earlyBirdDiscountPercent,
       warning,
       isOver,
       gst: configuredTaxRate > 0 ? totalTax : gst,
@@ -842,9 +878,10 @@ const StayBookingSystem = ({
       extraAdultsCount,
       extraChildrenCount,
       normalAdultsCount,
-      normalChildrenCount
+      normalChildrenCount,
+      addonsTotal
     };
-  }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount, selectedRooms, stayRoomsCatalog]);
+  }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities]);
 
   const capacityFeedback = useMemo(() => {
     const isPropertyBased = stay?.bookingScope === "Property-Based";
@@ -1226,13 +1263,39 @@ const StayBookingSystem = ({
         response?.finalGuestPrice,
         response?.data?.finalGuestPrice
       );
-      const amountInPaise = firstNumber(
+      const selectedAddOnsData = selectedAddOns.map(id => {
+        const addonData = Array.isArray(stay?.addons) ? stay.addons.find(a => (a.addonId || a.assignmentId || a.id) === id) : null;
+        if (!addonData) return null;
+        
+        const isIndividual = addonData.pricingType === "Individual";
+        const quantity = isIndividual ? (addOnQuantities[id] || 1) : 1;
+        const priceValue = parseFloat(addonData.price || 0) * quantity;
+        
+        return {
+          id: addonData.addonId || addonData.assignmentId || addonData.id,
+          title: addonData.title || addonData.name || "Addon",
+          price: `${addonData.currency || "INR"} ${priceValue.toFixed(2)}`,
+          priceValue: priceValue,
+          currency: addonData.currency || "INR",
+          quantity: quantity,
+          pricingType: addonData.pricingType || "Individual",
+        };
+      }).filter(Boolean);
+
+      const addOnsTotalRupees = selectedAddOnsData.reduce((sum, item) => sum + item.priceValue, 0);
+
+      let amountInPaise = firstNumber(
         paymentResponse?.amount,
         orderResponse?.amount,
         response?.amount,
         backendTotalRupees != null ? Math.round(backendTotalRupees * 100) : null,
         Math.round(pricing.finalTotal * 100)
       );
+
+      // Add frontend calculated addons total if not zero
+      if (addOnsTotalRupees > 0) {
+        amountInPaise += Math.round(addOnsTotalRupees * 100);
+      }
 
       localStorage.setItem("pendingPayment", JSON.stringify({
         paymentMethod: "razorpay",
@@ -1274,15 +1337,21 @@ const StayBookingSystem = ({
       if (isPresent(finalGuestPrice)) receipt.push({ title: "Final Guest Price", content: formatMoney(finalGuestPrice) });
 
       const nightsFromOrder = firstNumber(orderResponse?.numberOfNights, pricing.nightsCount) || 1;
-      const nightlyFromOrder = firstNumber(orderResponse?.pricePerNight, pricing.originalPerNight) || 0;
+      const nightlyFromOrder = isPropertyBased
+        ? (firstNumber(orderResponse?.pricePerNight, pricing.originalPerNight) || 0)
+        : (firstNumber(pricing.originalPerNight, orderResponse?.pricePerNight) || 0);
       const totalFromOrder = firstNumber(orderResponse?.totalPrice, orderResponse?.finalPrice, backendTotalRupees, pricing.finalTotal) || 0;
       const nightlyExtraAdults = Number(extraAdultsCount || 0) * Number(pricing.activeExtraAdultPrice || 0);
       const nightlyExtraChildren = Number(extraChildrenCount || 0) * Number(pricing.activeExtraChildPrice || 0);
       const nightlyExtras = nightlyExtraAdults + nightlyExtraChildren;
       const nightlyBaseOnly = Math.max(0, Number(nightlyFromOrder || 0) - nightlyExtras);
+      const fallbackBaseStayTotal = Math.max(0, Number(nightlyBaseOnly || 0) * Number(nightsFromOrder || 1));
+      const baseStayDisplayTotal = isPropertyBased
+        ? (firstNumber(basePrice, fallbackBaseStayTotal) || 0)
+        : fallbackBaseStayTotal;
 
       const frontendReceipt = [
-        { title: `Base Stay (${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`, content: `${currency} ${Number(nightlyBaseOnly * nightsFromOrder).toFixed(2)}` },
+        { title: `Base Stay (${nightsFromOrder} night${nightsFromOrder !== 1 ? "s" : ""})`, content: `${currency} ${Number(baseStayDisplayTotal).toFixed(2)}` },
         { title: "Adults", content: `${guests.adults || 0}` },
         { title: "Children", content: `${guests.children || 0}` },
       ];
@@ -1303,7 +1372,6 @@ const StayBookingSystem = ({
         : 0;
 
       // Display calculation should use gross stay total = base + extra adults + extra children
-      const baseStayDisplayTotal = Number(nightlyBaseOnly || 0) * Number(nightsFromOrder || 1);
       const extraAdultDisplayTotal = Number(extraAdultsCount || 0) * Number(pricing.activeExtraAdultPrice || 0) * Number(nightsFromOrder || 1);
       const extraChildDisplayTotal = Number(extraChildrenCount || 0) * Number(pricing.activeExtraChildPrice || 0) * Number(nightsFromOrder || 1);
       const grossBeforeDiscount = baseStayDisplayTotal + extraAdultDisplayTotal + extraChildDisplayTotal;
@@ -1340,12 +1408,23 @@ const StayBookingSystem = ({
       const combinedFrontendTax = Math.max(0, subtotalBeforeTax * (taxRate / 100));
 
       if (discountToShow > 0) {
-        frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
+        if (pricing.earlyBirdDiscountAmount > 0) {
+          frontendReceipt.push({ title: `Early Bird Discount (${pricing.earlyBirdDiscountPercent}%)`, content: `- ${currency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
+          const remainingDiscount = discountToShow - pricing.earlyBirdDiscountAmount;
+          if (remainingDiscount > 0.01) {
+            frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(remainingDiscount).toFixed(2)}` });
+          }
+        } else {
+          frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
+        }
       }
       if (combinedFrontendTax > 0) {
         frontendReceipt.push({ title: `Tax (${Number(taxRate).toFixed(2)}%)`, content: `+ ${currency} ${Number(combinedFrontendTax).toFixed(2)}` });
       }
-      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder).toFixed(2)}` });
+      if (addOnsTotalRupees > 0) {
+        frontendReceipt.push({ title: "Add-ons Total", content: `+ ${currency} ${Number(addOnsTotalRupees).toFixed(2)}` });
+      }
+      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder + addOnsTotalRupees).toFixed(2)}` });
 
       // Frontend-calculated breakdown should be shown in Confirm & Pay.
       // Keep backend breakdown only as a fallback.
@@ -1368,7 +1447,8 @@ const StayBookingSystem = ({
         extraAdults: extraAdultsCount,
         extraChildren: extraChildrenCount,
         receipt: finalReceipt,
-        totalAmount: backendTotalRupees ?? pricing.finalTotal,
+        totalAmount: (backendTotalRupees ?? pricing.finalTotal) + addOnsTotalRupees,
+        selectedAddOns: selectedAddOnsData,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
       localStorage.removeItem("frontendPendingBookingState");
@@ -1377,6 +1457,33 @@ const StayBookingSystem = ({
     } catch (err) {
       console.error(err);
       const backendPayload = err?.response?.data || {};
+
+      if (
+        err?.response?.status === 401 ||
+        backendPayload?.message === "Invalid or expired token" ||
+        backendPayload?.error === "Invalid or expired token"
+      ) {
+        const listingIdToSave = stay?.stayId || stay?.id;
+        if (listingIdToSave) {
+          const stateToStore = {
+            listingId: String(listingIdToSave),
+            type: "stay",
+            checkInDate: checkInDate ? checkInDate.format("YYYY-MM-DD") : null,
+            checkOutDate: checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null,
+            guests,
+            selectedRooms,
+          };
+          try {
+            localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+          } catch (e) {}
+        }
+
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("userInfo");
+        setShowLoginPrompt(true);
+        return;
+      }
+
       const title =
         backendPayload?.error ||
         backendPayload?.message ||
@@ -1593,6 +1700,185 @@ const StayBookingSystem = ({
                 </button>
               </div>
 
+              {/* Addons Scrollable Banner */}
+              {Array.isArray(stay?.addons) && stay.addons.length > 0 && (
+                <div style={{ background: BG, borderBottom: `1px solid ${B}88`, padding: "12px 28px" }}>
+                  <style>{`
+                    .stay-modal-addon-item {
+                      flex: 0 0 auto;
+                      width: 260px;
+                      border-radius: 16px;
+                      padding: 10px;
+                      display: flex;
+                      gap: 12px;
+                      align-items: center;
+                      cursor: pointer;
+                      transition: all 0.2s;
+                    }
+                    .stay-modal-addon-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                    .stay-modal-action-btn {
+                      width: 28px;
+                      height: 28px;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      border: none;
+                      cursor: pointer;
+                      transition: 0.2s;
+                    }
+                    .stay-addon-scroll-btn {
+                      position: absolute;
+                      top: 50%;
+                      transform: translateY(-50%);
+                      width: 36px;
+                      height: 36px;
+                      border-radius: 50%;
+                      background: ${BG};
+                      border: 1px solid ${B};
+                      color: ${FG};
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      cursor: pointer;
+                      z-index: 10;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                      transition: all 0.2s;
+                    }
+                    .stay-addon-scroll-btn:hover {
+                      background: ${S};
+                      transform: translateY(-50%) scale(1.05);
+                    }
+                  `}</style>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <button
+                      className="stay-addon-scroll-btn"
+                      onClick={() => {
+                        const container = document.getElementById("stay-header-addons-scroll");
+                        if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
+                      }}
+                      style={{ left: -18 }}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+
+                    <div id="stay-header-addons-scroll" style={{
+                      display: "flex",
+                      overflowX: "auto",
+                      gap: 16,
+                      padding: "4px",
+                      margin: "0 4px",
+                      WebkitOverflowScrolling: "touch",
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                      width: "100%",
+                      maskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
+                      WebkitMaskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)"
+                    }}>
+                      {stay.addons.map((item, i) => {
+                        const addon = item.addon || item;
+                        const addonId = addon.addonId || addon.id;
+                        const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                        const isSelected = selectedAddOns.some(a => String(a.addonId || a.id || a) === String(addonId));
+                        const quantity = addOnQuantities[addonId] || 1;
+                        const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+
+                        const handleCardClick = () => {
+                          if (!onAddOnQuantityChange) return;
+                          if (!isSelected) {
+                            onAddOnQuantityChange(addonId, 1, addon);
+                          } else if (pricingType === "Group") {
+                            onAddOnQuantityChange(addonId, 0, addon);
+                          }
+                        };
+
+                        const priceLabel = addon.price > 0 ? `₹${addon.price}` : "Free";
+                        const typeLabel = pricingType === "Group" ? "Group" : "Per Item";
+
+                        return (
+                          <div
+                            key={i}
+                            onClick={handleCardClick}
+                            className="stay-modal-addon-item"
+                            style={{
+                              background: isSelected ? AL : S,
+                              border: `1.5px solid ${isSelected ? A : B}`,
+                            }}
+                          >
+                            {addonImage && (
+                              <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}88` }}>
+                                <img src={addonImage} alt={addon.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                              <p style={{ fontSize: 12, fontWeight: 700, color: isSelected ? A : FG, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {addon.title}
+                              </p>
+                              <p style={{ fontSize: 11, fontWeight: 800, color: isSelected ? A : M, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                <span>{priceLabel}</span>
+                                <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  • {typeLabel}
+                                </span>
+                              </p>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                              {isSelected ? (
+                                pricingType === "Group" ? (
+                                  <button
+                                    onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, 0, addon)}
+                                    className="stay-modal-action-btn"
+                                    style={{ background: A, color: "#fff" }}
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  </button>
+                                ) : (
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: BG, padding: "4px", borderRadius: 100, border: `1px solid ${B}` }}>
+                                    <button
+                                      onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, quantity - 1, addon)}
+                                      className="stay-modal-action-btn"
+                                      style={{ width: 24, height: 24, background: S, color: FG }}
+                                    >
+                                      -
+                                    </button>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: FG, minWidth: 16, textAlign: "center" }}>{quantity}</span>
+                                    <button
+                                      onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, quantity + 1, addon)}
+                                      className="stay-modal-action-btn"
+                                      style={{ width: 24, height: 24, background: S, color: FG }}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                )
+                              ) : (
+                                <button
+                                  onClick={handleCardClick}
+                                  className="stay-modal-action-btn"
+                                  style={{ background: BG, border: `1px solid ${B}`, color: A }}
+                                >
+                                  +
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <button
+                      className="stay-addon-scroll-btn"
+                      onClick={() => {
+                        const container = document.getElementById("stay-header-addons-scroll");
+                        if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
+                      }}
+                      style={{ right: -18 }}
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
                 <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
                   {/* Left Column: Calendar */}
@@ -1759,6 +2045,13 @@ const StayBookingSystem = ({
                                 />
                               </div>
                             </div>
+
+                            {pricing.earlyBirdDiscountPercent > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: AL, border: `1px solid ${A}33`, borderRadius: 100, width: "fit-content", marginTop: 4 }}>
+                                <Sparkles size={14} color={A} />
+                                <span style={{ fontSize: 11, fontWeight: 700, color: A }}>EARLY BIRD DISCOUNT APPLIED</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -1994,9 +2287,23 @@ const StayBookingSystem = ({
                                   </div>
                                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                     <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Extra Children</span>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: A }}>{pricing.extraChildrenCount} / {pricing.extraChildrenLimit}</span>
                                   </div>
                                 </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Add-ons Pricing Breakdown */}
+                          {pricing.addonsTotal > 0 && (
+                            <>
+                              <div style={{ height: 1, background: `${A}22`, margin: "12px 0 8px" }} />
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: 10, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                                  Add-ons Total
+                                </span>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
+                                  + ₹{pricing.addonsTotal.toLocaleString('en-IN')}
+                                </span>
                               </div>
                             </>
                           )}

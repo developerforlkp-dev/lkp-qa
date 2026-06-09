@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee, ChevronLeft, Plus
+  Tv, Coffee, ChevronLeft, Plus, Minus
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -413,6 +413,54 @@ function HeroShareFab({ title, text, url }) {
   );
 }
 
+/* ─── EARLY BIRD TICKER ─────────── */
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!discounts || discounts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % discounts.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [discounts]);
+
+  if (!discounts || discounts.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
+      <AnimatePresence>
+        <motion.span
+          key={index}
+          initial={{ y: 15, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -15, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          style={{
+            gridArea: "1 / 1",
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+            display: "block"
+          }}
+        >
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
+            {discounts[index].daysInAdvance} Days
+          </span>{" "}
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
+            {discounts[index].percentage}% OFF
+          </span>
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 /* ─── STAY SECTIONS ─────────── */
 function StayHeroCarousel({ stay, galleryItems = [] }) {
   const history = useHistory();
@@ -518,6 +566,28 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
               </text>
             </svg>
           </motion.div>
+        </div>
+      )}
+
+      {/* Early Bird Overlay */}
+      {!isMobile && stay?.earlyBirdDiscounts?.some(d => d.isActive) && (
+        <div style={{
+          position: "absolute",
+          bottom: 40,
+          right: 40,
+          zIndex: 40,
+          background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(20px)",
+          padding: "16px 24px",
+          borderRadius: 24,
+          border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`,
+          boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`,
+          display: "flex",
+          alignItems: "center",
+          gap: 12
+        }}>
+          <Sparkles size={20} color={A} />
+          <EarlyBirdTicker discounts={stay.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={theme === 'dark' ? "#FFF" : FG} isDark={theme === "dark"} />
         </div>
       )}
 
@@ -871,7 +941,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
     <section style={{ background: BG, padding: isMobile ? "80px 16px" : "140px 36px", boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
 
-        <SHdr idx="05" label="Guidelines & Contact" />
+        <SHdr idx="06" label="Guidelines & Contact" />
 
         <div className="pol-contact-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.5fr", gap: isMobile ? 60 : 100, alignItems: "start", marginTop: 40 }}>
 
@@ -969,6 +1039,164 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
   );
 }
 
+function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAddOnQuantityChange }) {
+  const { isMobile } = useWindowSize();
+  const { theme, tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
+
+  const activeAddons = useMemo(() => {
+    return Array.isArray(stay?.addons) 
+      ? stay.addons.filter(a => a.isActive || a.status === 'Active') 
+      : [];
+  }, [stay]);
+
+  if (activeAddons.length === 0) return null;
+
+  return (
+    <div style={{ background: BG, padding: isMobile ? "80px 16px 40px" : "140px 36px 80px", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SHdr idx="03" label="Enhance Your Stay" />
+        
+        <Rev delay={0.4} style={{ marginTop: 40 }}>
+          <div style={{ background: W, border: `1px solid ${B}`, padding: isMobile ? "32px 20px" : "64px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2.5fr", gap: isMobile ? 32 : 80 }} className="details-inner">
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+              <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 16, fontWeight: 600 }}>Make it Yours</p>
+              <p style={{ fontSize: 14, color: M, marginBottom: 0, lineHeight: 1.7 }}>
+                Elevate your stay with our thoughtfully curated selection of premium amenities and personalized services.
+              </p>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 32 }}>
+              {activeAddons.map(addon => {
+                const addonId = addon.addonId || addon.assignmentId || addon.id;
+                const isSelected = selectedAddOns.includes(addonId);
+                const isIndividual = addon.pricingType === "Individual";
+                const qty = isIndividual ? (addOnQuantities[addonId] || 1) : 1;
+                const price = parseFloat(addon.price || 0);
+                const imageUrl = Array.isArray(addon.imageUrls) && addon.imageUrls[0] ? fixImageUrl(addon.imageUrls[0]) : null;
+                
+                return (
+                  <motion.div
+                    key={addonId}
+                    whileHover={{ x: 10 }}
+                    transition={{ duration: 0.3 }}
+                    className="addon-item"
+                    style={{
+                      display: "flex",
+                      gap: 24,
+                      alignItems: "center",
+                      padding: "20px",
+                      background: isSelected ? AL : "transparent",
+                      borderRadius: 24,
+                      border: `1px solid ${isSelected ? A : B}`,
+                      transition: "0.3s"
+                    }}
+                  >
+                    <div className="addon-img" style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={addon.title || addon.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <Plus size={24} color={A} />
+                      )}
+                    </div>
+                    <div className="addon-content" style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }} className="addon-header">
+                        <div className="addon-title" style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                          <p style={{ fontSize: 16, fontWeight: 700, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{addon.title || addon.name}</p>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="addon-actions">
+                          <span className="addon-badge" style={{ fontSize: 10, fontWeight: 700, color: addon.pricingType === "Group" ? "#d14343" : A, background: addon.pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{addon.pricingType}</span>
+                          {isSelected ? (
+                            addon.pricingType === "Group" ? (
+                              <button
+                                className="addon-btn addon-btn-remove"
+                                onClick={() => onToggleAddOn(addonId, addon.pricingType)}
+                                style={{
+                                  background: AL,
+                                  color: A,
+                                  border: `1px solid ${A}`,
+                                  borderRadius: 100,
+                                  padding: "0 16px",
+                                  height: "32px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em"
+                                }}
+                              >
+                                Remove
+                              </button>
+                            ) : (
+                              <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 12, background: S, borderRadius: 100, padding: "0 10px", height: "32px", border: `1px solid ${B}` }}>
+                                <button
+                                  onClick={() => onAddOnQuantityChange(addonId, qty - 1)}
+                                  style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                                >
+                                  <Minus size={12} />
+                                </button>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: FG, minWidth: 16, textAlign: "center" }}>
+                                  {qty}
+                                </span>
+                                <button
+                                  onClick={() => onAddOnQuantityChange(addonId, qty + 1)}
+                                  style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                                >
+                                  <Plus size={12} />
+                                </button>
+                              </div>
+                            )
+                          ) : (
+                            <button
+                              className="addon-btn addon-btn-add"
+                              onClick={() => onToggleAddOn(addonId, addon.pricingType)}
+                              style={{
+                                background: S,
+                                color: FG,
+                                border: `1px solid ${B}`,
+                                borderRadius: 100,
+                                padding: "0 16px",
+                                height: "32px",
+                                display: "flex",
+                                alignItems: "center",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em"
+                              }}
+                            >
+                              Add
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {(addon.briefDescription || addon.description) && (
+                        <p className="addon-desc" style={{ fontSize: 13, color: M, lineHeight: 1.5, marginTop: 6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{addon.briefDescription || addon.description}</p>
+                      )}
+                      {price > 0 && (
+                        <div className="addon-price" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: FG }}>+ {addon.currency || "₹"} {price.toFixed(2)}</p>
+                          {isSelected && qty > 1 && (
+                            <p style={{ fontSize: 11, fontWeight: 500, color: M }}>
+                              × {qty} = {addon.currency || "₹"} {(price * qty).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </Rev>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN COMPONENT ─────────── */
 const StayDetails = () => {
   const { width, isMobile } = useWindowSize();
@@ -996,6 +1224,30 @@ const StayDetails = () => {
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
   const [selectedRooms, setSelectedRooms] = useState([]); // Array of {roomId, mealPlan, count}
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [addOnQuantities, setAddOnQuantities] = useState({});
+
+  const handleToggleAddOn = useCallback((addOnId, pricingType) => {
+    setSelectedAddOns((prev) => {
+      if (prev.includes(addOnId)) {
+        return prev.filter((id) => id !== addOnId);
+      } else {
+        if (pricingType === "Individual") {
+          setAddOnQuantities((qPrev) => ({ ...qPrev, [addOnId]: qPrev[addOnId] || 1 }));
+        }
+        return [...prev, addOnId];
+      }
+    });
+  }, []);
+
+  const handleAddOnQuantityChange = useCallback((addOnId, value) => {
+    if (value <= 0) {
+      setSelectedAddOns((prev) => prev.filter((id) => id !== addOnId));
+    } else {
+      setAddOnQuantities((prev) => ({ ...prev, [addOnId]: value }));
+      setSelectedAddOns((prev) => prev.includes(addOnId) ? prev : [...prev, addOnId]);
+    }
+  }, []);
 
   const isStayUnavailable = (payload) => {
     if (!payload || typeof payload !== "object") return true;
@@ -1249,9 +1501,17 @@ const StayDetails = () => {
 
       <StayAmenities stay={stay} />
 
+      <StayAddons 
+        stay={stay} 
+        selectedAddOns={selectedAddOns} 
+        onToggleAddOn={handleToggleAddOn} 
+        addOnQuantities={addOnQuantities} 
+        onAddOnQuantityChange={handleAddOnQuantityChange} 
+      />
+
       <div style={{ background: W, padding: "80px 36px 140px", borderTop: `1px solid ${B}` }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <SHdr idx="03" label="Accommodations" />
+          <SHdr idx="04" label="Accommodations" />
           <p style={{ fontSize: 16, color: M, marginBottom: 56, maxWidth: 600, lineHeight: 1.7 }}>
             Choose from our curated selection of rooms and suites. Each space is thoughtfully designed for an unparalleled stay experience.
           </p>
@@ -1308,6 +1568,9 @@ const StayDetails = () => {
         selectedRooms={selectedRooms}
         setSelectedRooms={setSelectedRooms}
         onRoomsCountChange={handleRoomCountChange}
+        selectedAddOns={selectedAddOns}
+        addOnQuantities={addOnQuantities}
+        onAddOnQuantityChange={handleAddOnQuantityChange}
       />
 
       <RelatedListingsStrip
@@ -2102,7 +2365,7 @@ function PropertyStayCard({ stay }) {
     (Array.isArray(stay?.listingMedia) && stay.listingMedia[0]
       ? (stay.listingMedia[0].url || stay.listingMedia[0].blobName || stay.listingMedia[0].fileUrl)
       : null) ||
-    "/images/content/card-pic-13.jpg";
+    "";
 
   const checkInRaw = stay?.checkInTime || stay?.checkinTime || stay?.check_in_time || "14:00";
   const checkOutRaw = stay?.checkOutTime || stay?.checkoutTime || stay?.check_out_time || "11:00";
@@ -2252,7 +2515,7 @@ function PropertyStayCard({ stay }) {
           }}
           onLoad={() => setCoverLoaded(true)}
           onError={(e) => {
-            e.currentTarget.src = "/images/content/card-pic-13.jpg";
+            e.currentTarget.src = "";
             setCoverLoaded(true);
           }}
         />
@@ -2493,7 +2756,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
     <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-end", gap: 24, marginBottom: 52 }}>
-          <SHdr idx="06" label="GUEST REVIEWS" />
+          <SHdr idx="07" label="GUEST REVIEWS" />
           {eligibleBookings.length > 0 && (
             <button
               onClick={() => {
@@ -2694,7 +2957,7 @@ function StayLocation({ stay }) {
   return (
     <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <SHdr idx="02" label="PREPARATION" />
+        <SHdr idx="05" label="PREPARATION" />
 
         <div className="location-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(400px, 1fr))", gap: isMobile ? 60 : 100, marginTop: 40 }}>
           {/* Left Column: Location Card */}
@@ -2738,4 +3001,5 @@ function StayLocation({ stay }) {
 }
 
 export default StayDetails;
+
 

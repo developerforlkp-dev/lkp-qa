@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, Share2 } from "lucide-react";
+import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, Share2, Sparkles } from "lucide-react";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
@@ -60,12 +60,12 @@ function ScopedThemeProvider({ children }) {
 const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
   const { theme, tokens: { BG, A } } = useTheme();
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
-  
+
   const textMain = isDark ? '#FFF' : '#141414';
   const pillBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)';
   const pillBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
   const pillText = A || '#0097B2';
-  
+
   const btnBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)';
   const btnBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
   const btnHoverBg = isDark ? 'rgba(255,255,255,0.2)' : '#FFFFFF';
@@ -271,7 +271,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         }
       `}</style>
 
-      <motion.div 
+      <motion.div
         className="fs-modal-box"
         initial={{ y: 50, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -279,7 +279,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         onClick={(e) => e.stopPropagation()}
       >
-        
+
         {/* LEFT PANE - Image Viewer */}
         <div className="fs-left-pane">
           <div className="fs-header">
@@ -288,7 +288,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
                 {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{items.length}</span>
               </div>
             ) : <div />}
-            
+
             <motion.button
               onClick={onClose}
               whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
@@ -844,9 +844,56 @@ function SHdr({ idx, label }) {
   );
 }
 
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!discounts || discounts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % discounts.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [discounts]);
+
+  if (!discounts || discounts.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
+      <AnimatePresence>
+        <motion.span
+          key={index}
+          initial={{ y: 15, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -15, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          style={{
+            gridArea: "1 / 1",
+            fontSize: 10,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+            display: "block"
+          }}
+        >
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
+            {discounts[index].daysInAdvance} Days
+          </span>{" "}
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
+            {discounts[index].percentage}% OFF
+          </span>
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 /* ─── SECTIONS ───────────────────────────────────── */
 function Hero({ event }) {
-  const { tokens: { A, W, M, FG } } = useTheme();
+  const { tokens: { A, W, M, FG }, theme } = useTheme();
   const history = useHistory();
   const title = event?.title || "SOLSTICE";
   const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
@@ -906,6 +953,34 @@ function Hero({ event }) {
         title={title}
         text={`Check out ${title} on Little Known Planet`}
       />
+      {event?.earlyBirdDiscounts?.some(d => d.isActive) && (
+        <motion.div
+          className="early-bird-wrapper"
+          style={{ position: "absolute", bottom: 60, right: 60, zIndex: 100 }}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <motion.div
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              background: theme === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.03)",
+              backdropFilter: "blur(12px)",
+              padding: "12px 24px",
+              borderRadius: 100,
+              border: `1px solid ${A}33`,
+              boxShadow: `0 10px 30px rgba(0,0,0,0.2), inset 0 0 20px ${A}11`,
+              whiteSpace: "nowrap"
+            }}
+          >
+            <Sparkles color={A} size={14} />
+            <EarlyBirdTicker discounts={event.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
+          </motion.div>
+        </motion.div>
+      )}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }} style={{ position: "relative", zIndex: 2, maxWidth: 1320, margin: "0 auto", padding: "64px 36px 0", width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 20 }}>
 
@@ -1310,7 +1385,7 @@ function Rules({ event }) {
 
   const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions || event?.checkInInstruction || "Check-in instructions will be shared before the event.";
   const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText || "Cancellation policy will be shared before booking.";
-  
+
   const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
 
   const displayRules = [

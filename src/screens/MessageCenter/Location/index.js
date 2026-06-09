@@ -34,8 +34,8 @@ const Location = ({ className }) => {
       <div className={styles.wrapper}>
         <div className={styles.preview}>
           <img
-            srcSet="/images/content/location-photo@2x.jpg"
-            src="/images/content/location-photo.jpg"
+            srcSet=""
+            src=""
             alt="Spectacular views of Queenstown"
           />
           <Link
@@ -97,3 +97,4 @@ const Location = ({ className }) => {
 };
 
 export default Location;
+

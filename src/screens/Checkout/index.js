@@ -395,9 +395,6 @@ const Checkout = () => {
     if (isStay && bookingData?.receipt && Array.isArray(bookingData.receipt) && stayDetails) {
       const rows = bookingData.receipt.map((r) => ({ title: r.title, value: r.content }));
 
-      const baseRow = rows.find((r) => /base stay|base price|total base/i.test(String(r.title || "")));
-      const baseAmount = parseAmount(baseRow?.value);
-
       let nights = 1;
       if (bookingData?.checkInDate && bookingData?.checkOutDate) {
         const inDate = new Date(bookingData.checkInDate);
@@ -405,6 +402,15 @@ const Checkout = () => {
         const diff = Math.ceil((outDate - inDate) / (1000 * 60 * 60 * 24));
         if (Number.isFinite(diff) && diff > 0) nights = diff;
       }
+
+      const baseRow = rows.find((r) => /base stay|base price|total base/i.test(String(r.title || "")));
+      const isPropertyBasedStay = /property-based|property based/i.test(String(stayDetails?.bookingScope || ""));
+      const propertyBaseFromApi = isPropertyBasedStay
+        ? parseAmount(stayDetails?.fullPropertyB2cPrice) * nights
+        : 0;
+      let baseAmount = propertyBaseFromApi > 0
+        ? propertyBaseFromApi
+        : parseAmount(baseRow?.value);
 
       const discountTiers = Array.isArray(stayDetails?.discountTiers) ? stayDetails.discountTiers : [];
       const activeTier = discountTiers.find((t) => {
@@ -429,6 +435,26 @@ const Checkout = () => {
       const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
       const addOnRows = rows.filter((r) => /add[\s-]?ons?/i.test(String(r.title || "")));
       const addOnsAmount = addOnRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
+      const existingDiscountAmount = rows
+        .filter((r) => /discount/i.test(String(r.title || "")))
+        .reduce((sum, r) => sum + Math.abs(parseAmount(r.value)), 0);
+      const existingTaxAmount = rows
+        .filter((r) => /^tax/i.test(String(r.title || "")))
+        .reduce((sum, r) => sum + parseAmount(r.value), 0);
+      const finalGuestPriceRow = rows.find((r) => /final guest price|stay total|grand total/i.test(String(r.title || "")));
+      const finalGuestAmount = parseAmount(finalGuestPriceRow?.value || bookingData?.totalAmount);
+
+      if (baseAmount <= 0) {
+        const reconstructedDiscountableAmount = Math.max(
+          0,
+          finalGuestAmount - existingTaxAmount + existingDiscountAmount
+        );
+        const inferredBaseAmount = Math.max(0, reconstructedDiscountableAmount - extraAmount);
+        if (inferredBaseAmount > 0) {
+          baseAmount = inferredBaseAmount;
+        }
+      }
+
       const discountableAmount = Math.max(0, baseAmount + extraAmount);
 
       const longStayDiscountAmount = discountableAmount > 0 && tierDiscountPercent > 0
@@ -443,14 +469,14 @@ const Checkout = () => {
         : 0;
 
       // Keep base stay as pure room charge (no discount/tax mixed in)
-      if (baseRow && baseAmount > 0) {
+      if (baseRow) {
         baseRow.value = `INR ${baseAmount.toFixed(2)}`;
       }
 
       // Remove generic discount rows; we'll reinsert a single authoritative one
       for (let i = rows.length - 1; i >= 0; i -= 1) {
         const title = String(rows[i]?.title || "");
-        if (/discount/i.test(title) && !/long[\s-]?stay/i.test(title)) {
+        if (/discount/i.test(title) && !/long[\s-]?stay/i.test(title) && !/early[\s-]?bird/i.test(title)) {
           rows.splice(i, 1);
         }
       }
@@ -485,22 +511,26 @@ const Checkout = () => {
       }
 
       const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
-      if (taxRowIndex >= 0 && taxRate > 0) {
-        // Recalculate tax based on discounted subtotal
+      if (taxRate > 0) {
+        // Recalculate tax based on discounted subtotal and ensure the row exists.
         const discountRows = rows.filter((r) => /discount/i.test(String(r.title || "")));
         const currentDiscountAmount = discountRows.reduce(
           (sum, r) => sum + Math.abs(parseAmount(r.value)),
           0
         );
-        
+
         const subtotalForTax = baseAmount + extraAmount - currentDiscountAmount;
         const correctedTax = Math.max(0, subtotalForTax * (taxRate / 100));
-
-        rows[taxRowIndex] = {
-          ...rows[taxRowIndex],
-          title: normalizeTaxTitle(rows[taxRowIndex]?.title, taxRate),
+        const taxRow = {
+          title: normalizeTaxTitle("Tax", taxRate),
           value: formatInr(correctedTax),
         };
+
+        if (taxRowIndex >= 0) {
+          rows[taxRowIndex] = taxRow;
+        } else {
+          rows.push(taxRow);
+        }
       }
 
       const normalizedRows = rows.map((row) => {
@@ -572,12 +602,27 @@ const Checkout = () => {
                    "Host";
   const hostAvatar = hostInfo?.picture || hostInfo?.avatar || hostInfo?.profileImage || hostInfo?.image;
 
+  const isEventBooking = Boolean(bookingData?.eventId);
+  const backUrl =
+    bookingData?.returnTo ||
+    (isEventBooking ? `/event?id=${bookingData.eventId}` : null) ||
+    (bookingData?.stayId ? `/stay-details?id=${bookingData.stayId}` : null);
+
+  let bookingDetailsUrl = "/experience-product";
+  if (bookingData?.returnTo) {
+    bookingDetailsUrl = bookingData.returnTo;
+  } else if (isEventBooking && bookingData?.eventId) {
+    bookingDetailsUrl = `/event?id=${bookingData.eventId}`;
+  } else if (bookingData?.stayId) {
+    bookingDetailsUrl = `/stay-details?id=${bookingData.stayId}`;
+  } else if (bookingData?.listingId) {
+    bookingDetailsUrl = buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId);
+  }
+
   const breadcrumbs = [
     {
       title: "Booking details",
-      url: bookingData?.listingId
-        ? buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId)
-        : "/experience-product",
+      url: bookingDetailsUrl,
     },
     {
       title: "Confirm and pay",
@@ -590,6 +635,7 @@ const Checkout = () => {
         <Control
           className={styles.control}
           urlHome="/"
+          backUrl={backUrl}
           breadcrumbs={breadcrumbs}
         />
         <div className={styles.wrapper}>

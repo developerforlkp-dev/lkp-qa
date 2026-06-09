@@ -10,8 +10,8 @@ export const wishlists = [
         rating: "4.8",
         reviews: "12",
         cost: "$200 total",
-        src: "/images/content/card-pic-1.jpg",
-        srcSet: "/images/content/card-pic-1@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/experience-product",
         options: [
           {
@@ -32,8 +32,8 @@ export const wishlists = [
         rating: "4.9",
         reviews: "24",
         cost: "$100 total",
-        src: "/images/content/card-pic-2.jpg",
-        srcSet: "/images/content/card-pic-2@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/experience-product",
         options: [
           {
@@ -54,8 +54,8 @@ export const wishlists = [
         rating: "5.0",
         reviews: "102",
         cost: "$333 total",
-        src: "/images/content/card-pic-3.jpg",
-        srcSet: "/images/content/card-pic-3@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/experience-product",
         options: [
           {
@@ -76,8 +76,8 @@ export const wishlists = [
         rating: "4.5",
         reviews: "5",
         cost: "$230 total",
-        src: "/images/content/card-pic-4.jpg",
-        srcSet: "/images/content/card-pic-4@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/experience-product",
         options: [
           {
@@ -98,8 +98,8 @@ export const wishlists = [
         rating: "4.8",
         reviews: "12",
         cost: "$200 total",
-        src: "/images/content/card-pic-5.jpg",
-        srcSet: "/images/content/card-pic-5@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/experience-product",
         options: [
           {
@@ -120,8 +120,8 @@ export const wishlists = [
         rating: "4.8",
         reviews: "12",
         cost: "$300 total",
-        src: "/images/content/card-pic-6.jpg",
-        srcSet: "/images/content/card-pic-6@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/experience-product",
         options: [
           {
@@ -148,14 +148,14 @@ export const wishlists = [
             flightTo: "SGN",
             timeFlightFrom: "6:45 AM",
             timeFlightTo: "9:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
           {
             flightFrom: "SGN",
             flightTo: "AKL",
             timeFlightFrom: "12:45 AM",
             timeFlightTo: "3:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
         ],
       },
@@ -168,14 +168,14 @@ export const wishlists = [
             flightTo: "SGN",
             timeFlightFrom: "6:45 AM",
             timeFlightTo: "9:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
           {
             flightFrom: "SGN",
             flightTo: "AKL",
             timeFlightFrom: "12:45 AM",
             timeFlightTo: "3:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
         ],
       },
@@ -188,14 +188,14 @@ export const wishlists = [
             flightTo: "SGN",
             timeFlightFrom: "6:45 AM",
             timeFlightTo: "9:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
           {
             flightFrom: "SGN",
             flightTo: "AKL",
             timeFlightFrom: "12:45 AM",
             timeFlightTo: "3:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
         ],
       },
@@ -208,14 +208,14 @@ export const wishlists = [
             flightTo: "SGN",
             timeFlightFrom: "6:45 AM",
             timeFlightTo: "9:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
           {
             flightFrom: "SGN",
             flightTo: "AKL",
             timeFlightFrom: "12:45 AM",
             timeFlightTo: "3:45 AM",
-            logo: "/images/content/emirates.svg",
+            logo: "",
           },
         ],
       },
@@ -298,8 +298,8 @@ export const wishlists = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$600 total",
-        src: "/images/content/card-pic-6.jpg",
-        srcSet: "/images/content/card-pic-6@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -322,8 +322,8 @@ export const wishlists = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$300 total",
-        src: "/images/content/card-pic-7.jpg",
-        srcSet: "/images/content/card-pic-7@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -346,8 +346,8 @@ export const wishlists = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$200 total",
-        src: "/images/content/card-pic-8.jpg",
-        srcSet: "/images/content/card-pic-8@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -363,3 +363,5 @@ export const wishlists = [
     ],
   },
 ];
+
+

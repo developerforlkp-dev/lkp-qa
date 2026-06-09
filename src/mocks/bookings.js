@@ -11,9 +11,9 @@ export const bookingsByStatus = {
       status: "Upcoming",
       statusTone: "upcoming",
       thumbnail: {
-        src: "/images/content/card-pic-13.jpg",
-        srcSet: "/images/content/card-pic-13@2x.jpg",
-        alt: "Eco lodge nestled in the mountains",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
     {
@@ -27,9 +27,9 @@ export const bookingsByStatus = {
       status: "Upcoming",
       statusTone: "upcoming",
       thumbnail: {
-        src: "/images/content/card-pic-7.jpg",
-        srcSet: "/images/content/card-pic-7@2x.jpg",
-        alt: "Catamaran sailing across Santorini caldera",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
     {
@@ -43,9 +43,9 @@ export const bookingsByStatus = {
       status: "Upcoming",
       statusTone: "upcoming",
       thumbnail: {
-        src: "/images/content/card-pic-17.jpg",
-        srcSet: "/images/content/card-pic-17@2x.jpg",
-        alt: "Aurora lights over snowy mountains",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
   ],
@@ -61,9 +61,9 @@ export const bookingsByStatus = {
       status: "Completed",
       statusTone: "completed",
       thumbnail: {
-        src: "/images/content/card-pic-4.jpg",
-        srcSet: "/images/content/card-pic-4@2x.jpg",
-        alt: "Street food experience in Lisbon",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
     {
@@ -77,9 +77,9 @@ export const bookingsByStatus = {
       status: "Completed",
       statusTone: "completed",
       thumbnail: {
-        src: "/images/content/card-pic-11.jpg",
-        srcSet: "/images/content/card-pic-11@2x.jpg",
-        alt: "Modern loft overlooking Barcelona skyline",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
   ],
@@ -95,9 +95,9 @@ export const bookingsByStatus = {
       status: "Cancelled",
       statusTone: "cancelled",
       thumbnail: {
-        src: "/images/content/card-pic-9.jpg",
-        srcSet: "/images/content/card-pic-9@2x.jpg",
-        alt: "Desert camp under starry sky",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
     {
@@ -111,9 +111,9 @@ export const bookingsByStatus = {
       status: "Cancelled",
       statusTone: "cancelled",
       thumbnail: {
-        src: "/images/content/card-pic-16.jpg",
-        srcSet: "/images/content/card-pic-16@2x.jpg",
-        alt: "Kayakers exploring coastal cliffs",
+        src: "",
+        srcSet: "",
+        alt: "",
       },
     },
   ],
@@ -124,25 +124,25 @@ export const emptyStateCopy = {
     title: "You have no upcoming adventures",
     description:
       "Ready for your next journey? Save an experience and it will show up here the moment you confirm.",
-    illustration: "/images/content/card-pic-12.jpg",
-    illustrationSet: "/images/content/card-pic-12@2x.jpg",
-    illustrationAlt: "Traveler planning the next trip",
+    illustration: "",
+    illustrationSet: "",
+    illustrationAlt: "",
   },
   completed: {
     title: "Nothing completed yet",
     description:
       "Once you wrap an experience, you'll find receipts, highlights, and rebooking options in this tab.",
-    illustration: "/images/content/card-pic-6.jpg",
-    illustrationSet: "/images/content/card-pic-6@2x.jpg",
-    illustrationAlt: "Happy traveler celebrating after a trip",
+    illustration: "",
+    illustrationSet: "",
+    illustrationAlt: "",
   },
   cancelled: {
     title: "No cancelled bookings",
     description:
       "Great news—everything is on track. If plans change, you can review cancellation details right here.",
-    illustration: "/images/content/card-pic-18.jpg",
-    illustrationSet: "/images/content/card-pic-18@2x.jpg",
-    illustrationAlt: "Traveler relaxing with suitcase beside them",
+    illustration: "",
+    illustrationSet: "",
+    illustrationAlt: "",
   },
 };
 
@@ -155,15 +155,15 @@ const bookingDetails = {
     endDate: "Mon, 24 Nov 2025",
     guestCount: 2,
     bannerImage: {
-      src: "/images/content/card-pic-13.jpg",
-      srcSet: "/images/content/card-pic-13@2x.jpg",
-      alt: "Eco lodge nestled in the mountains",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "142 Mountain View Road",
       city: "Wanaka",
       country: "New Zealand",
-      mapImage: "/images/content/card-pic-13.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Wanaka+New+Zealand",
     },
     guest: {
@@ -205,15 +205,15 @@ const bookingDetails = {
     endDate: "Thu, 05 Dec 2025",
     guestCount: 4,
     bannerImage: {
-      src: "/images/content/card-pic-7.jpg",
-      srcSet: "/images/content/card-pic-7@2x.jpg",
-      alt: "Catamaran sailing across Santorini caldera",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "Old Port of Fira",
       city: "Santorini",
       country: "Greece",
-      mapImage: "/images/content/card-pic-7.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Santorini+Greece",
     },
     guest: {
@@ -255,15 +255,15 @@ const bookingDetails = {
     endDate: "Sat, 11 Jan 2026",
     guestCount: 3,
     bannerImage: {
-      src: "/images/content/card-pic-17.jpg",
-      srcSet: "/images/content/card-pic-17@2x.jpg",
-      alt: "Aurora lights over snowy mountains",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "Tromsø Wilderness Center",
       city: "Tromsø",
       country: "Norway",
-      mapImage: "/images/content/card-pic-17.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Tromsø+Norway",
     },
     guest: {
@@ -305,15 +305,15 @@ const bookingDetails = {
     endDate: "Sat, 21 Sep 2025",
     guestCount: 2,
     bannerImage: {
-      src: "/images/content/card-pic-4.jpg",
-      srcSet: "/images/content/card-pic-4@2x.jpg",
-      alt: "Street food experience in Lisbon",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "Praça do Comércio",
       city: "Lisbon",
       country: "Portugal",
-      mapImage: "/images/content/card-pic-4.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Lisbon+Portugal",
     },
     guest: {
@@ -351,15 +351,15 @@ const bookingDetails = {
     endDate: "Mon, 15 Jul 2025",
     guestCount: 2,
     bannerImage: {
-      src: "/images/content/card-pic-11.jpg",
-      srcSet: "/images/content/card-pic-11@2x.jpg",
-      alt: "Modern loft overlooking Barcelona skyline",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "Carrer de la Marina, 245",
       city: "Barcelona",
       country: "Spain",
-      mapImage: "/images/content/card-pic-11.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Barcelona+Spain",
     },
     guest: {
@@ -397,15 +397,15 @@ const bookingDetails = {
     endDate: "Thu, 18 Apr 2025",
     guestCount: 4,
     bannerImage: {
-      src: "/images/content/card-pic-9.jpg",
-      srcSet: "/images/content/card-pic-9@2x.jpg",
-      alt: "Desert camp under starry sky",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "Wadi Rum Protected Area",
       city: "Wadi Rum",
       country: "Jordan",
-      mapImage: "/images/content/card-pic-9.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Wadi+Rum+Jordan",
     },
     guest: {
@@ -437,15 +437,15 @@ const bookingDetails = {
     endDate: "Sun, 02 Mar 2025",
     guestCount: 2,
     bannerImage: {
-      src: "/images/content/card-pic-16.jpg",
-      srcSet: "/images/content/card-pic-16@2x.jpg",
-      alt: "Kayakers exploring coastal cliffs",
+      src: "",
+      srcSet: "",
+      alt: "",
     },
     location: {
       address: "Big Sur State Park",
       city: "Big Sur",
       country: "United States",
-      mapImage: "/images/content/card-pic-16.jpg",
+      mapImage: "",
       directionsUrl: "https://maps.google.com/?q=Big+Sur+United+States",
     },
     guest: {
@@ -475,4 +475,6 @@ const bookingDetails = {
 export const getBookingDetails = (bookingId) => {
   return bookingDetails[bookingId] || null;
 };
+
+
 

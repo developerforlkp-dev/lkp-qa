@@ -14,9 +14,9 @@ const Destination = ({ className, item }) => {
           alt="City"
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
-            if (e.target.src !== "/images/content/card-pic-13.jpg") {
-              e.target.src = "/images/content/card-pic-13.jpg";
-              e.target.srcSet = "/images/content/card-pic-13.jpg";
+            if (e.target.src !== "") {
+              e.target.src = "";
+              e.target.srcSet = "";
             }
             setImageLoaded(true);
           }}
@@ -38,3 +38,4 @@ const Destination = ({ className, item }) => {
 };
 
 export default Destination;
+

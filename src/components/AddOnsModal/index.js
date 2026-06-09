@@ -12,42 +12,42 @@ const mockAddOns = [
     name: "Airport Transfer",
     description: "Complimentary pick-up and drop-off service from Queenstown Airport",
     price: 45,
-    image: "/images/content/photo-1.1.jpg",
+    image: "",
   },
   {
     id: 2,
     name: "Breakfast Package",
     description: "Daily continental breakfast with local specialties included",
     price: 25,
-    image: "/images/content/photo-1.2.jpg",
+    image: "",
   },
   {
     id: 3,
     name: "Spa & Wellness",
     description: "Access to on-site spa facilities and wellness amenities",
     price: 80,
-    image: "/images/content/photo-1.3.jpg",
+    image: "",
   },
   {
     id: 4,
     name: "Late Checkout",
     description: "Extend your checkout until 2 PM at no additional charge",
     price: 30,
-    image: "/images/content/photo-1.4.jpg",
+    image: "",
   },
   {
     id: 5,
     name: "Room Upgrade",
     description: "Upgrade to a suite with mountain views and premium amenities",
     price: 150,
-    image: "/images/content/photo-1.1.jpg",
+    image: "",
   },
   {
     id: 6,
     name: "WiFi Premium",
     description: "High-speed internet connection with unlimited data",
     price: 15,
-    image: "/images/content/photo-1.2.jpg",
+    image: "",
   },
 ];
 
@@ -205,4 +205,5 @@ const AddOnsModal = ({ visible, onClose, basePrice = baseTotal }) => {
 };
 
 export default AddOnsModal;
+
 

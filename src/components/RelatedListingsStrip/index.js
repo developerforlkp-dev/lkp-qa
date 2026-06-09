@@ -54,7 +54,7 @@ const getTargetId = (item, businessInterestId) => {
 const getDetailPath = (item, businessInterestId) => {
   const targetId = getTargetId(item, businessInterestId);
   if (!targetId) return "/listings";
-  if (businessInterestId === 2) return `/event-details?id=${targetId}`;
+  if (businessInterestId === 2) return `/event?id=${targetId}`;
   if (businessInterestId === 3) return `/stay-details?id=${targetId}`;
   if (businessInterestId === 4) return `/place-details?id=${targetId}`;
   if (businessInterestId === 5) return `/food-details?id=${targetId}`;
@@ -493,3 +493,5 @@ export default function RelatedListingsStrip({
     </section>
   );
 }
+
+

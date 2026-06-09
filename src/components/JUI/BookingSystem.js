@@ -1218,9 +1218,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (window.innerWidth <= 768) {
         // On mobile, defer the heavy render so the opening animation starts instantly
         const timer = setTimeout(() => setRenderContent(true), 50);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+          document.body.style.overflow = "";
+        };
       } else {
         setRenderContent(true);
+        return () => {
+          document.body.style.overflow = "";
+        };
       }
     } else {
       document.body.style.overflow = "";
@@ -2272,7 +2278,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           eventSlotIds,
           listingTitle: listing?.title || "Event Booking",
           listingImage: listing?.coverPhotoUrl || listing?.listingMedia?.[0]?.url || "",
-          returnTo: `/event-details?id=${eventIdNum}`,
+          returnTo: `/event?id=${eventIdNum}`,
           bookingSummary: {
             date: dateStr,
             time: selectedEventSlots.map((slot) => slot.startTime || slot.slotName).filter(Boolean).join(", "),
@@ -2309,9 +2315,21 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           },
           receipt: [
             {
-              title: `${currency} ${eventGuestPricing.finalUnitPrice.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? "ticket" : "tickets"}`,
-              content: `${currency} ${finalTotal.toFixed(2)}`,
+              title: `${currency} ${eventGuestPricing.baseUnitPrice.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? "ticket" : "tickets"}`,
+              content: `${currency} ${eventBaseTotal.toFixed(2)}`,
             },
+            ...(eventEarlyBirdDiscountTotal > 0 ? [{
+              title: `Early Bird Discount (${eventGuestPricing.earlyBirdDiscountRate}%)`,
+              content: `- ${currency} ${eventEarlyBirdDiscountTotal.toFixed(2)}`,
+            }] : []),
+            ...(eventPromoDiscountTotal > 0 ? [{
+              title: `Promo Discount (${eventGuestPricing.promoDiscountRate}%)`,
+              content: `- ${currency} ${eventPromoDiscountTotal.toFixed(2)}`,
+            }] : []),
+            ...(eventTaxTotal > 0 ? [{
+              title: `Taxes & Fees (${appliedTaxRate}%)`,
+              content: `+ ${currency} ${eventTaxTotal.toFixed(2)}`,
+            }] : []),
             {
               title: "Total",
               content: `${currency} ${finalTotal.toFixed(2)}`,
@@ -2369,6 +2387,35 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         }
       } catch (e) {
         console.error("Event booking failed:", e?.response?.data || e?.message || e);
+        const errPayload = e?.response?.data || {};
+        if (
+          e?.response?.status === 401 ||
+          errPayload?.message === "Invalid or expired token" ||
+          errPayload?.error === "Invalid or expired token"
+        ) {
+          const listingIdToSave = listing?.listingId || listing?.id || listing?.eventId || listing?.stayId;
+          if (listingIdToSave) {
+            const stateToStore = {
+              listingId: String(listingIdToSave),
+              type,
+              startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
+              startTime,
+              guests,
+              selectedTicketTypeId,
+              selectedEventSlotIds,
+              privateBooking,
+              selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
+            };
+            try {
+              localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+            } catch (err) { }
+          }
+          localStorage.removeItem("jwtToken");
+          localStorage.removeItem("userInfo");
+          setShowLoginPrompt(true);
+          if (isMountedRef.current) setBookingLoading(false);
+          return;
+        }
         alert(getBookingErrorMessage(e));
       } finally {
         if (isMountedRef.current) setBookingLoading(false);
@@ -2430,9 +2477,36 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       });
     });
 
+    if (totalEarlyBirdDiscountAmount > 0) {
+      receipt.push({
+        title: `Early Bird Discount`,
+        content: `- ₹${totalEarlyBirdDiscountAmount.toFixed(2)}`,
+        kind: "discount-early-bird",
+        showInCheckout: true
+      });
+    }
+
+    if (totalPromoDiscountAmount > 0) {
+      receipt.push({
+        title: `Promo Discount`,
+        content: `- ₹${totalPromoDiscountAmount.toFixed(2)}`,
+        kind: "discount-promo",
+        showInCheckout: true
+      });
+    }
+
+    if (totalTaxAmount > 0) {
+      receipt.push({
+        title: `Taxes & Fees`,
+        content: `+ ₹${totalTaxAmount.toFixed(2)}`,
+        kind: "tax",
+        showInCheckout: true
+      });
+    }
+
     receipt.push({
       title: "Total",
-      content: `₹${finalTotal}`,
+      content: `₹${finalTotal.toFixed(2)}`,
       kind: "total",
       showInCheckout: true
     });
@@ -2612,6 +2686,35 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       }
     } catch (e) {
       console.error("Experience booking failed:", e?.response?.data || e?.message || e);
+      const errPayload = e?.response?.data || {};
+      if (
+        e?.response?.status === 401 ||
+        errPayload?.message === "Invalid or expired token" ||
+        errPayload?.error === "Invalid or expired token"
+      ) {
+        const listingIdToSave = listing?.listingId || listing?.id || listing?.eventId || listing?.stayId;
+        if (listingIdToSave) {
+          const stateToStore = {
+            listingId: String(listingIdToSave),
+            type,
+            startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
+            startTime,
+            guests,
+            selectedTicketTypeId,
+            selectedEventSlotIds,
+            privateBooking,
+            selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
+          };
+          try {
+            localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
+          } catch (err) { }
+        }
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("userInfo");
+        setShowLoginPrompt(true);
+        if (isMountedRef.current) setBookingLoading(false);
+        return;
+      }
       alert(getBookingErrorMessage(e));
     } finally {
       if (isMountedRef.current) setBookingLoading(false);
@@ -3842,3 +3945,5 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     </>
   );
 }
+
+

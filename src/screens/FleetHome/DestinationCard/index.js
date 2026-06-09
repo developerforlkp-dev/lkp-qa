@@ -16,9 +16,9 @@ const DestinationCard = ({ className, item }) => {
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             // Silently fallback to default image if original fails to load
-            if (e.target.src !== "/images/content/card-pic-13.jpg") {
-              e.target.src = "/images/content/card-pic-13.jpg";
-              e.target.srcSet = "/images/content/card-pic-13.jpg";
+            if (e.target.src !== "") {
+              e.target.src = "";
+              e.target.srcSet = "";
             }
             setImageLoaded(true);
           }}
@@ -35,4 +35,5 @@ const DestinationCard = ({ className, item }) => {
 };
 
 export default DestinationCard;
+
 

@@ -7,8 +7,8 @@ export const experience = [
     rating: "4.8",
     reviews: "12",
     cost: "$200 total",
-    src: "/images/content/card-pic-1.jpg",
-    srcSet: "/images/content/card-pic-1@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -29,8 +29,8 @@ export const experience = [
     rating: "4.9",
     reviews: "24",
     cost: "$100 total",
-    src: "/images/content/card-pic-2.jpg",
-    srcSet: "/images/content/card-pic-2@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -51,8 +51,8 @@ export const experience = [
     rating: "5.0",
     reviews: "102",
     cost: "$333 total",
-    src: "/images/content/card-pic-3.jpg",
-    srcSet: "/images/content/card-pic-3@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -73,8 +73,8 @@ export const experience = [
     rating: "4.5",
     reviews: "5",
     cost: "$230 total",
-    src: "/images/content/card-pic-4.jpg",
-    srcSet: "/images/content/card-pic-4@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -95,8 +95,8 @@ export const experience = [
     rating: "4.8",
     reviews: "12",
     cost: "$200 total",
-    src: "/images/content/card-pic-5.jpg",
-    srcSet: "/images/content/card-pic-5@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -117,8 +117,8 @@ export const experience = [
     rating: "4.8",
     reviews: "12",
     cost: "$300 total",
-    src: "/images/content/card-pic-6.jpg",
-    srcSet: "/images/content/card-pic-6@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -139,8 +139,8 @@ export const experience = [
     rating: "4.7",
     reviews: "12",
     cost: "$200 total",
-    src: "/images/content/card-pic-7.jpg",
-    srcSet: "/images/content/card-pic-7@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -161,8 +161,8 @@ export const experience = [
     rating: "4.8",
     reviews: "12",
     cost: "$200 total",
-    src: "/images/content/card-pic-8.jpg",
-    srcSet: "/images/content/card-pic-8@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -183,8 +183,8 @@ export const experience = [
     rating: "4.9",
     reviews: "32",
     cost: "$123 total",
-    src: "/images/content/card-pic-9.jpg",
-    srcSet: "/images/content/card-pic-9@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/experience-product",
     options: [
       {
@@ -212,8 +212,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$400 total",
-    src: "/images/content/card-pic-10.jpg",
-    srcSet: "/images/content/card-pic-10@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -238,8 +238,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$600 total",
-    src: "/images/content/card-pic-11.jpg",
-    srcSet: "/images/content/card-pic-11@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -262,8 +262,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$300 total",
-    src: "/images/content/card-pic-12.jpg",
-    srcSet: "/images/content/card-pic-12@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -286,8 +286,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$200 total",
-    src: "/images/content/card-pic-13.jpg",
-    srcSet: "/images/content/card-pic-13@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -312,8 +312,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$400 total",
-    src: "/images/content/card-pic-14.jpg",
-    srcSet: "/images/content/card-pic-14@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -336,8 +336,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$600 total",
-    src: "/images/content/card-pic-15.jpg",
-    srcSet: "/images/content/card-pic-15@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -362,8 +362,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$300 total",
-    src: "/images/content/card-pic-16.jpg",
-    srcSet: "/images/content/card-pic-16@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -386,8 +386,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$200 total",
-    src: "/images/content/card-pic-17.jpg",
-    srcSet: "/images/content/card-pic-17@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -410,8 +410,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$400 total",
-    src: "/images/content/card-pic-18.jpg",
-    srcSet: "/images/content/card-pic-18@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -436,8 +436,8 @@ export const experience1 = [
     comment:
       "The best 16 passenger small group, intimate and unique, Milford Sound...",
     cost: "$600 total",
-    src: "/images/content/card-pic-19.jpg",
-    srcSet: "/images/content/card-pic-19@2x.jpg",
+    src: "",
+    srcSet: "",
     url: "/product",
     options: [
       {
@@ -468,8 +468,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$400 total",
-        src: "/images/content/card-pic-5.jpg",
-        srcSet: "/images/content/card-pic-5@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -494,8 +494,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$600 total",
-        src: "/images/content/card-pic-6.jpg",
-        srcSet: "/images/content/card-pic-6@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -518,8 +518,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$300 total",
-        src: "/images/content/card-pic-7.jpg",
-        srcSet: "/images/content/card-pic-7@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -542,8 +542,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$200 total",
-        src: "/images/content/card-pic-8.jpg",
-        srcSet: "/images/content/card-pic-8@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -573,8 +573,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$400 total",
-        src: "/images/content/card-pic-2.jpg",
-        srcSet: "/images/content/card-pic-2@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -599,8 +599,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$600 total",
-        src: "/images/content/card-pic-6.jpg",
-        srcSet: "/images/content/card-pic-6@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -623,8 +623,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$300 total",
-        src: "/images/content/card-pic-1.jpg",
-        srcSet: "/images/content/card-pic-1@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -647,8 +647,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$200 total",
-        src: "/images/content/card-pic-8.jpg",
-        srcSet: "/images/content/card-pic-8@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -678,8 +678,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$400 total",
-        src: "/images/content/card-pic-5.jpg",
-        srcSet: "/images/content/card-pic-5@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -704,8 +704,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$600 total",
-        src: "/images/content/card-pic-6.jpg",
-        srcSet: "/images/content/card-pic-6@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -728,8 +728,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$300 total",
-        src: "/images/content/card-pic-7.jpg",
-        srcSet: "/images/content/card-pic-7@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -752,8 +752,8 @@ export const experience2 = [
         comment:
           "The best 16 passenger small group, intimate and unique, Milford Sound...",
         cost: "$200 total",
-        src: "/images/content/card-pic-8.jpg",
-        srcSet: "/images/content/card-pic-8@2x.jpg",
+        src: "",
+        srcSet: "",
         url: "/product",
         options: [
           {
@@ -769,6 +769,8 @@ export const experience2 = [
     ],
   },
 ];
+
+
 
 
 

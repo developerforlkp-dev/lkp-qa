@@ -9,7 +9,7 @@ const Item = ({ className, item, row, car, hidePrice }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   // Use default image if item.src is an Azure blob URL without SAS token
   // SAS token URLs (with sig= and sv= query params) should work
-  const defaultImage = "/images/content/card-pic-13.jpg";
+  const defaultImage = "";
   const hasSasToken = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && 
                       item.src.includes("sig=") && item.src.includes("sv=");
   const imageSrc = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && !hasSasToken
@@ -39,7 +39,7 @@ const Item = ({ className, item, row, car, hidePrice }) => {
           onError={(e) => {
             // Silently fallback to default image if original fails to load
             // Prevent infinite loop by checking if already on fallback
-            if (!e.target.src.includes("/images/content/card-pic-13.jpg")) {
+            if (!e.target.src.includes("")) {
               e.target.src = defaultImage;
               e.target.srcSet = defaultImage;
               e.target.onerror = null; // Prevent further error handling
@@ -112,3 +112,4 @@ const Item = ({ className, item, row, car, hidePrice }) => {
 };
 
 export default Item;
+

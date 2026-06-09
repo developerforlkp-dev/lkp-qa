@@ -26,15 +26,15 @@ const breadcrumbs = [
 ];
 
 const defaultGallery = [
-  "/images/content/photo-2.1.jpg",
-  "/images/content/photo-2.2.jpg",
-  "/images/content/photo-2.6.jpg",
-  "/images/content/photo-2.3.jpg",
-  "/images/content/photo-2.7.jpg",
-  "/images/content/photo-2.4.jpg",
-  "/images/content/photo-2.8.jpg",
-  "/images/content/photo-2.5.jpg",
-  "/images/content/photo-2.9.jpg",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
 ];
 
 const defaultOptions = [
@@ -152,3 +152,4 @@ const FullPhoto = () => {
 };
 
 export default FullPhoto;
+

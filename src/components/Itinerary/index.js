@@ -9,7 +9,7 @@ const defaultItems = [
     title: "Wine Tasting Tour",
     description: "Explore the finest vineyards in Queenstown with a guided tour of local wineries, sampling premium New Zealand wines and learning about the region's wine-making heritage.",
     fullDescription: "Explore the finest vineyards in Queenstown with a guided tour of local wineries, sampling premium New Zealand wines and learning about the region's wine-making heritage.",
-    image: "/images/content/photo-1.1.jpg",
+    image: "",
     duration: "4 hours",
     highlights: ["Wine tastings", "Vineyard tours", "Local cheese pairings"],
   },
@@ -17,7 +17,7 @@ const defaultItems = [
     title: "Milford Sound Cruise",
     description: "Experience the breathtaking beauty of Milford Sound on a scenic cruise through pristine fjords, surrounded by towering mountains and cascading waterfalls.",
     fullDescription: "Experience the breathtaking beauty of Milford Sound on a scenic cruise through pristine fjords, surrounded by towering mountains and cascading waterfalls.",
-    image: "/images/content/photo-1.2.jpg",
+    image: "",
     duration: "Full day",
     highlights: ["Scenic cruise", "Wildlife spotting", "Mountain views"],
   },
@@ -25,7 +25,7 @@ const defaultItems = [
     title: "Bungee Jumping Adventure",
     description: "Take the ultimate leap of faith with New Zealand's original bungee jump experience, featuring stunning views and an adrenaline rush you'll never forget.",
     fullDescription: "Take the ultimate leap of faith with New Zealand's original bungee jump experience, featuring stunning views and an adrenaline rush you'll never forget.",
-    image: "/images/content/photo-1.3.jpg",
+    image: "",
     duration: "2 hours",
     highlights: ["Bungee jumping", "Safety briefing", "Certificate included"],
   },
@@ -33,7 +33,7 @@ const defaultItems = [
     title: "Hiking & Nature Walk",
     description: "Discover Queenstown's natural beauty on a guided hiking tour through scenic trails, offering panoramic views of lakes and mountains.",
     fullDescription: "Discover Queenstown's natural beauty on a guided hiking tour through scenic trails, offering panoramic views of lakes and mountains.",
-    image: "/images/content/photo-1.4.jpg",
+    image: "",
     duration: "3-4 hours",
     highlights: ["Scenic trails", "Panoramic views", "Nature photography"],
   },
@@ -41,7 +41,7 @@ const defaultItems = [
     title: "Spa & Wellness Experience",
     description: "Relax and rejuvenate with a luxurious spa treatment, featuring massages, facials, and access to premium wellness facilities.",
     fullDescription: "Relax and rejuvenate with a luxurious spa treatment, featuring massages, facials, and access to premium wellness facilities.",
-    image: "/images/content/photo-1.1.jpg",
+    image: "",
     duration: "2-3 hours",
     highlights: ["Massage therapy", "Facial treatments", "Wellness facilities"],
   },
@@ -49,7 +49,7 @@ const defaultItems = [
     title: "Skiing & Snowboarding",
     description: "Hit the slopes at world-class ski resorts near Queenstown, with options for all skill levels and stunning alpine scenery.",
     fullDescription: "Hit the slopes at world-class ski resorts near Queenstown, with options for all skill levels and stunning alpine scenery.",
-    image: "/images/content/photo-1.2.jpg",
+    image: "",
     duration: "Full day",
     highlights: ["Ski equipment", "Lift passes", "Instructor available"],
   },
@@ -57,7 +57,7 @@ const defaultItems = [
     title: "Kayaking Adventure",
     description: "Paddle through crystal-clear waters on a kayaking tour, exploring hidden coves and enjoying the tranquility of Queenstown's lakes.",
     fullDescription: "Paddle through crystal-clear waters on a kayaking tour, exploring hidden coves and enjoying the tranquility of Queenstown's lakes.",
-    image: "/images/content/photo-1.3.jpg",
+    image: "",
     duration: "3 hours",
     highlights: ["Kayak rental", "Safety equipment", "Guided tour"],
   },
@@ -65,7 +65,7 @@ const defaultItems = [
     title: "Helicopter Scenic Flight",
     description: "Soar above Queenstown's stunning landscapes on a helicopter flight, capturing aerial views of mountains, lakes, and valleys.",
     fullDescription: "Soar above Queenstown's stunning landscapes on a helicopter flight, capturing aerial views of mountains, lakes, and valleys.",
-    image: "/images/content/photo-1.4.jpg",
+    image: "",
     duration: "30-60 minutes",
     highlights: ["Aerial views", "Photo opportunities", "Pilot commentary"],
   },
@@ -275,14 +275,14 @@ const Itinerary = ({ classSection, listing }) => {
         fullDescription: act.description || act.pilot || "",
         image: (() => {
           const firstImg = Array.isArray(act.images) && act.images.length ? act.images[0] : null;
-          if (!firstImg) return "/images/content/photo-1.1.jpg";
+          if (!firstImg) return "";
           if (firstImg.url) return firstImg.url;
           if (firstImg.imageUrl) {
             return firstImg.imageUrl.startsWith("http")
               ? firstImg.imageUrl
               : `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${firstImg.imageUrl}`;
           }
-          return "/images/content/photo-1.1.jpg";
+          return "";
         })(),
         duration: "",
         highlights: [],
@@ -407,3 +407,4 @@ const Itinerary = ({ classSection, listing }) => {
 };
 
 export default Itinerary;
+

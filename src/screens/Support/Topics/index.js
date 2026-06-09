@@ -11,37 +11,37 @@ const topics = [
     title: "Refund timelines",
     content:
       "We realize ideas from simple to complex, everything becomes easy to use and reach the most potential customers.",
-    image: "/images/content/folder-green.svg",
+    image: "",
   },
   {
     title: "Coronavirus disease",
     content:
       "We realize ideas from simple to complex, everything becomes easy to use and reach the most potential customers.",
-    image: "/images/content/mouse.svg",
+    image: "",
   },
   {
     title: "Use a Fleet coupon",
     content:
       "We realize ideas from simple to complex, everything becomes easy to use and reach the most potential customers.",
-    image: "/images/content/folder-blue.svg",
+    image: "",
   },
   {
     title: "Refund timelines",
     content:
       "We realize ideas from simple to complex, everything becomes easy to use and reach the most potential customers.",
-    image: "/images/content/folder-green.svg",
+    image: "",
   },
   {
     title: "Coronavirus disease",
     content:
       "We realize ideas from simple to complex, everything becomes easy to use and reach the most potential customers.",
-    image: "/images/content/mouse.svg",
+    image: "",
   },
   {
     title: "Use a Fleet coupon",
     content:
       "We realize ideas from simple to complex, everything becomes easy to use and reach the most potential customers.",
-    image: "/images/content/folder-blue.svg",
+    image: "",
   },
 ];
 
@@ -106,3 +106,5 @@ const Topics = () => {
 };
 
 export default Topics;
+
+

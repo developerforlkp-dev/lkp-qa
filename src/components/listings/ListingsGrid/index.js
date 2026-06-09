@@ -10,7 +10,7 @@ import { transformListingToCard } from "../../../screens/FleetHome/CardStyles";
 // Redesigned horizontal split-layout list view card
 const ListCard = ({ item, listing }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const defaultImage = "/images/content/card-pic-13.jpg";
+  const defaultImage = "";
   const imageSrc = item.src || defaultImage;
 
   const isStay = item.url && item.url.includes("stay-details");
@@ -202,3 +202,4 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
 };
 
 export default ListingsGrid;
+

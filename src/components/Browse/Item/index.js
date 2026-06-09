@@ -8,9 +8,9 @@ const Item = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const handleImageError = (e) => {
     // Silently fallback to default image if original fails to load
-    if (e.target.src !== "/images/content/card-pic-13.jpg") {
-      e.target.src = "/images/content/card-pic-13.jpg";
-      e.target.srcSet = "/images/content/card-pic-13.jpg";
+    if (e.target.src !== "") {
+      e.target.src = "";
+      e.target.srcSet = "";
     }
     setImageLoaded(true);
   };
@@ -44,3 +44,4 @@ const Item = ({ className, item }) => {
 };
 
 export default Item;
+

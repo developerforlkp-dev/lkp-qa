@@ -27,20 +27,36 @@ const ExperienceCheckoutComplete = () => {
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [allStayImages, setAllStayImages] = useState([]);
 
-  const breadcrumbs = useMemo(() => [
-    {
-      title: booking?.listingTitle || "Experience Details",
-      url: booking?.listingId
-        ? buildExperienceUrl(booking?.listingTitle || "experience", booking.listingId)
-        : "/experience-product",
-    },
-    {
-      title: "Confirm and pay",
-    },
-    {
-      title: "Checkout completed",
-    },
-  ], [booking]);
+  const breadcrumbs = useMemo(() => {
+    let bookingDetailsUrl = "/experience-product";
+    const isEventBooking = Boolean(booking?.eventId);
+    const isStayBooking = Boolean(booking?.stayId || booking?.isStay || booking?.checkInDate);
+
+    if (booking?.returnTo) {
+      bookingDetailsUrl = booking.returnTo;
+    } else if (isEventBooking && booking?.eventId) {
+      bookingDetailsUrl = `/event?id=${booking.eventId}`;
+    } else if (isStayBooking && booking?.stayId) {
+      bookingDetailsUrl = `/stay-details?id=${booking.stayId}`;
+    } else if (booking?.listingId) {
+      bookingDetailsUrl = buildExperienceUrl(booking?.listingTitle || "experience", booking.listingId);
+    } else if (isStayBooking) {
+      bookingDetailsUrl = "/stay-details";
+    }
+
+    return [
+      {
+        title: booking?.listingTitle || "Experience Details",
+        url: bookingDetailsUrl,
+      },
+      {
+        title: "Confirm and pay",
+      },
+      {
+        title: "Checkout completed",
+      },
+    ];
+  }, [booking]);
 
   useEffect(() => {
     try {
@@ -149,7 +165,7 @@ const ExperienceCheckoutComplete = () => {
     const rawImg = stayImageUrl || booking?.roomImage || booking?.listingImage;
     const img = rawImg && typeof rawImg === 'string' && !rawImg.startsWith('http') && !rawImg.startsWith('/')
       ? formatImageUrl(rawImg)
-      : (rawImg || "/images/content/slider-pic-1.jpg");
+      : (rawImg || "");
 
     return [
       { src: img, srcSet: img },
@@ -504,3 +520,4 @@ const ExperienceCheckoutComplete = () => {
 };
 
 export default ExperienceCheckoutComplete;
+
