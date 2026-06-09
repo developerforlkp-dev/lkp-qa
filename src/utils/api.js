@@ -1804,3 +1804,17 @@ export const sendOrderMessage = async (orderId, messageText) => {
     throw error;
   }
 };
+
+export const getCancellationReasons = async () => {
+  try {
+    const response = await ListingsAPI.get("/listing-admin-config/cancellation-reasons");
+    const data = response.data;
+    if (data && Array.isArray(data.reasons)) return data.reasons;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching cancellation reasons:", error);
+    return [];
+  }
+};

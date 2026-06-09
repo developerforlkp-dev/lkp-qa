@@ -5,7 +5,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, getCancellationReasons } from "../../../utils/api";
 import Rating from "../../../components/Rating";
 
 // Helper function to format image URLs
@@ -671,6 +671,8 @@ const Main = ({
   const [cancelError, setCancelError] = useState(null);
   const [cancelPreview, setCancelPreview] = useState(null);
   const [cancelPreviewLoading, setCancelPreviewLoading] = useState(false);
+  const [cancellationReasons, setCancellationReasons] = useState([]);
+  const [selectedReason, setSelectedReason] = useState("");
   const [confirmCancelModalVisible, setConfirmCancelModalVisible] = useState(false);
   const [transformedBookings, setTransformedBookings] = useState([]);
   const [transformedCompletedBookings, setTransformedCompletedBookings] = useState([]);
@@ -935,6 +937,18 @@ const Main = ({
       setIsConfirmingBooking(false);
     }
   };
+
+  useEffect(() => {
+    const fetchReasons = async () => {
+      try {
+        const reasons = await getCancellationReasons();
+        setCancellationReasons(reasons);
+      } catch (err) {
+        console.warn("Failed to fetch cancellation reasons", err);
+      }
+    };
+    fetchReasons();
+  }, []);
 
   // Fetch review eligibility on mount
   useEffect(() => {
@@ -1242,6 +1256,7 @@ const Main = ({
   const handleCancelBookingClick = async (booking) => {
     setBookingToCancel(booking);
     setCancelReason("");
+    setSelectedReason("");
     setPendingCancellation(null);
     setCancelError(null);
     setCancelPreview(null);
@@ -1272,8 +1287,20 @@ const Main = ({
     const booking = pendingCancellation?.booking || bookingToCancel;
     const reason = pendingCancellation?.reason || cancelReason;
 
-    if (!booking || !String(reason || "").trim()) {
-      setCancelError("Please enter a reason for cancellation");
+    // Use finalReason if not passed in pendingCancellation
+    let finalReason = reason;
+    if (!pendingCancellation?.reason) {
+      if (!selectedReason && !cancelReason.trim()) {
+        setCancelError("Please select or enter a reason for cancellation");
+        return;
+      }
+      finalReason = selectedReason 
+        ? (cancelReason.trim() ? `${selectedReason} - ${cancelReason.trim()}` : selectedReason)
+        : cancelReason.trim();
+    }
+
+    if (!booking || !String(finalReason || "").trim()) {
+      setCancelError("Please provide a reason for cancellation");
       return;
     }
 
@@ -1282,7 +1309,7 @@ const Main = ({
 
     try {
       const cancelRequestBody = {
-        reason: String(reason).trim(),
+        reason: String(finalReason).trim(),
         adminOverride: false,
       };
 
@@ -1348,6 +1375,7 @@ const Main = ({
     setCancelModalVisible(false);
     setBookingToCancel(null);
     setCancelReason("");
+    setSelectedReason("");
     setPendingCancellation(null);
     setCancelError(null);
     setCancelPreview(null);
@@ -1356,14 +1384,18 @@ const Main = ({
   };
 
   const handleConfirmCancel = () => {
-    if (!bookingToCancel || !cancelReason.trim()) {
-      setCancelError("Please enter a reason for cancellation");
+    if (!bookingToCancel || (!selectedReason && !cancelReason.trim())) {
+      setCancelError("Please select or enter a reason for cancellation");
       return;
     }
 
+    const finalReason = selectedReason 
+      ? (cancelReason.trim() ? `${selectedReason} - ${cancelReason.trim()}` : selectedReason)
+      : cancelReason.trim();
+
     setPendingCancellation({
       booking: bookingToCancel,
-      reason: cancelReason.trim(),
+      reason: finalReason,
     });
     setCancelError(null);
     setCancelModalVisible(false);
@@ -1759,27 +1791,37 @@ const Main = ({
           </div>
           <div className={cn(styles.cancelModalBody, styles.cancelModalBodyScrollable)}>
             <div className={styles.cancelPolicyBox}>
-              <div className={styles.cancelPolicyLabel}>Cancellation policy applied</div>
-              {cancelPreviewLoading ? (
-                <div className={styles.cancelPolicyText}>Loading cancellation policy...</div>
-              ) : cancelPreviewRows.length > 0 ? (
-                <div className={styles.cancelPolicyGrid}>
-                  {cancelPreviewRows.map((row) => (
-                    <div key={row.label} className={styles.cancelPolicyRow}>
-                      <span className={styles.cancelPolicyRowLabel}>{row.label}</span>
-                      <span className={styles.cancelPolicyRowValue}>{row.value}</span>
-                    </div>
-                  ))}
+              <div className={styles.cancelPolicyLabel} style={{ marginBottom: "16px" }}>Select a reason</div>
+              {cancellationReasons.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
+                  {[...cancellationReasons]
+                    .sort((a, b) => (a?.sortOrder || 0) - (b?.sortOrder || 0))
+                    .map((reason, idx) => {
+                    const reasonText = typeof reason === 'object' ? (reason.displayName || reason.reason || reason.name || JSON.stringify(reason)) : reason;
+                    return (
+                      <label key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                        <input
+                          type="radio"
+                          name="cancellationReason"
+                          value={reasonText}
+                          checked={selectedReason === reasonText}
+                          onChange={(e) => setSelectedReason(e.target.value)}
+                          style={{ cursor: "pointer" }}
+                        />
+                        <span style={{ fontSize: "14px" }}>{reasonText}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className={styles.cancelPolicyText}>
-                  Cancellation preview is unavailable for this booking.
+                <div className={styles.cancelPolicyText} style={{ marginBottom: "20px" }}>
+                  Loading reasons...
                 </div>
               )}
             </div>
             <div className={styles.cancelModalFormGroup}>
               <label htmlFor="cancelReason" className={styles.cancelModalLabel}>
-                Reason for Cancellation <span className={styles.required}>*</span>
+                Additional details (optional)
               </label>
               <textarea
                 id="cancelReason"
@@ -1815,7 +1857,7 @@ const Main = ({
               type="button"
               className={cn("button", styles.cancelModalBtn)}
               onClick={handleConfirmCancel}
-              disabled={isCancelling || !cancelReason.trim()}
+              disabled={isCancelling || (!selectedReason && !cancelReason.trim())}
             >
               {isCancelling ? "Cancelling..." : "Submit"}
             </button>
@@ -1837,15 +1879,10 @@ const Main = ({
                 : "Confirm this cancellation?"}
             </p>
           </div>
-          <div className={styles.confirmCancelSummary}>
-            {cancelPreviewRows
-              .filter((row) => ["Refund amount", "Cancellation fee", "Refund policy used", "Policy window used"].includes(row.label))
-              .map((row) => (
-                <div key={row.label} className={styles.confirmCancelSummaryRow}>
-                  <span className={styles.confirmCancelSummaryLabel}>{row.label}</span>
-                  <span className={styles.confirmCancelSummaryValue}>{row.value}</span>
-                </div>
-              ))}
+          <div className={styles.confirmCancelSummary} style={{ padding: "16px", background: "rgba(244, 245, 246, 0.03)", borderRadius: "8px", marginTop: "16px" }}>
+            <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#E65100" }}>
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </p>
           </div>
           <div className={styles.cancelModalFooter}>
             <button
