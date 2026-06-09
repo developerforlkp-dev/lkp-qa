@@ -1795,3 +1795,12 @@ export const getLeadDetails = async (leadId) => {
   }
 };
 
+export const sendOrderMessage = async (orderId, messageText) => {
+  try {
+    const response = await ListingsAPI.post(`/orders/${orderId}/messages`, { messageText });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error sending order message:", error);
+    throw error;
+  }
+};

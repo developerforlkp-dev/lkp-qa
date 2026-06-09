@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./ConfirmAndPay.module.sass";
 import CreditCard from "./CreditCard";
 import Icon from "../Icon";
+import TextArea from "../TextArea";
 
 const ConfirmAndPay = ({
   className,
@@ -26,6 +27,8 @@ const ConfirmAndPay = ({
   roomType,
   mealPlan,
 }) => {
+  const [messageText, setMessageText] = useState("");
+
   const formatAmount = (amount) => {
     if (!amount) return null;
     const numericAmount = Number(amount) || 0;
@@ -105,10 +108,21 @@ const ConfirmAndPay = ({
                 </>
               )}
             </div>
+
+            <div className={styles.message} style={{ marginTop: '32px', display: 'block' }}>
+              <div className={styles.category} style={{ marginBottom: '16px' }}>Message the host</div>
+              <TextArea
+                className={styles.field}
+                name="messageText"
+                placeholder="Hi, I need help confirming the booking time."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+              />
+            </div>
           </div>
         </div>
         <div className={styles.item}>
-          <CreditCard className={styles.credit} buttonUrl={buttonUrl} hidePaymentFields paymentData={paymentData} />
+          <CreditCard className={styles.credit} buttonUrl={buttonUrl} hidePaymentFields paymentData={paymentData} messageText={messageText} />
         </div>
       </div>
     </div>
@@ -116,4 +130,5 @@ const ConfirmAndPay = ({
 };
 
 export default ConfirmAndPay;
+
 
