@@ -1041,7 +1041,7 @@ function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
 
 function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAddOnQuantityChange }) {
   const { isMobile } = useWindowSize();
-  const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
+  const { theme, tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
 
   const activeAddons = useMemo(() => {
     return Array.isArray(stay?.addons) 
@@ -1059,7 +1059,7 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
           Curate your experience with our selection of premium add-ons and services.
         </p>
         
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(320px, 1fr))", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, width: "100%" }}>
           {activeAddons.map(addon => {
             const addonId = addon.addonId || addon.assignmentId || addon.id;
             const isSelected = selectedAddOns.includes(addonId);
@@ -1069,93 +1069,116 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
             const imageUrl = Array.isArray(addon.imageUrls) && addon.imageUrls[0] ? fixImageUrl(addon.imageUrls[0]) : null;
             
             return (
-              <motion.div 
+              <motion.div
                 key={addonId}
-                whileHover={{ y: -4 }}
-                style={{ 
-                  borderRadius: 16, 
-                  border: isSelected ? `2px solid ${A}` : `1px solid ${B}`, 
-                  background: W,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.3s ease'
-                }}
-                onClick={() => {
-                  if (!isSelected) {
-                    onToggleAddOn(addonId, addon.pricingType);
-                  }
+                whileHover={{ x: 10 }}
+                transition={{ duration: 0.3 }}
+                className="addon-item"
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  alignItems: "center",
+                  padding: "20px",
+                  background: isSelected ? AL : "transparent",
+                  borderRadius: 24,
+                  border: `1px solid ${isSelected ? A : "transparent"}`,
+                  transition: "0.3s"
                 }}
               >
-                <div style={{ height: 160, width: '100%', background: S, position: 'relative' }}>
+                <div className="addon-img" style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
                   {imageUrl ? (
-                    <img src={imageUrl} alt={addon.title || addon.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={imageUrl} alt={addon.title || addon.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: M }}>
-                      <Sparkles size={32} />
-                    </div>
-                  )}
-                  {isSelected && (
-                    <div style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: '50%', background: A, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CheckCircle size={16} />
-                    </div>
+                    <Plus size={24} color={A} />
                   )}
                 </div>
-                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', height: 'calc(100% - 160px)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <h4 style={{ fontSize: 18, fontWeight: 700, color: FG, margin: 0 }}>{addon.title || addon.name}</h4>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: A, whiteSpace: 'nowrap', marginLeft: 12 }}>
-                      {addon.currency} {price.toFixed(2)}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 14, color: M, lineHeight: 1.5, marginBottom: 20, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {addon.briefDescription || addon.description}
-                  </p>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: M, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {addon.pricingType}
-                    </span>
-                    
-                    {isSelected ? (
-                      isIndividual ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: S, borderRadius: 20, padding: '4px 8px' }} onClick={e => e.stopPropagation()}>
-                          <button 
-                            style={{ width: 24, height: 24, borderRadius: '50%', background: W, border: `1px solid ${B}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: FG }}
-                            onClick={() => onAddOnQuantityChange(addonId, qty - 1)}
+                <div className="addon-content" style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }} className="addon-header">
+                    <div className="addon-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title || addon.name}</p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="addon-actions">
+                      <span className="addon-badge" style={{ fontSize: 10, fontWeight: 700, color: addon.pricingType === "Group" ? "#d14343" : A, background: addon.pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{addon.pricingType}</span>
+                      {isSelected ? (
+                        addon.pricingType === "Group" ? (
+                          <button
+                            className="addon-btn addon-btn-remove"
+                            onClick={() => onToggleAddOn(addonId, addon.pricingType)}
+                            style={{
+                              background: AL,
+                              color: A,
+                              border: `1px solid ${A}`,
+                              borderRadius: 100,
+                              padding: "0 20px",
+                              height: "36px",
+                              display: "flex",
+                              alignItems: "center",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em"
+                            }}
                           >
-                            <Minus size={14} />
+                            Remove
                           </button>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: FG, minWidth: 20, textAlign: 'center' }}>{qty}</span>
-                          <button 
-                            style={{ width: 24, height: 24, borderRadius: '50%', background: W, border: `1px solid ${B}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: FG }}
-                            onClick={() => onAddOnQuantityChange(addonId, qty + 1)}
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
+                        ) : (
+                          <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
+                            <button
+                              onClick={() => onAddOnQuantityChange(addonId, qty - 1)}
+                              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: FG, minWidth: 20, textAlign: "center" }}>
+                              {qty}
+                            </span>
+                            <button
+                              onClick={() => onAddOnQuantityChange(addonId, qty + 1)}
+                              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        )
                       ) : (
-                        <button 
-                          style={{ background: 'transparent', border: 'none', color: A, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleAddOn(addonId, addon.pricingType);
+                        <button
+                          className="addon-btn addon-btn-add"
+                          onClick={() => onToggleAddOn(addonId, addon.pricingType)}
+                          style={{
+                            background: S,
+                            color: FG,
+                            border: `1px solid ${B}`,
+                            borderRadius: 100,
+                            padding: "0 20px",
+                            height: "36px",
+                            display: "flex",
+                            alignItems: "center",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em"
                           }}
                         >
-                          Remove
+                          Add
                         </button>
-                      )
-                    ) : (
-                      <button 
-                        style={{ background: A, color: '#FFF', border: 'none', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleAddOn(addonId, addon.pricingType);
-                        }}
-                      >
-                        <Plus size={14} /> Add
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
+                  {(addon.briefDescription || addon.description) && (
+                    <p className="addon-desc" style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
+                  )}
+                  {price > 0 && (
+                    <div className="addon-price" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: FG }}>+ {addon.currency} {price.toFixed(2)}</p>
+                      {isSelected && qty > 1 && (
+                        <p style={{ fontSize: 12, fontWeight: 500, color: M }}>
+                          × {qty} = {addon.currency} {(price * qty).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             );
