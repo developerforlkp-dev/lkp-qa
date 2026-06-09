@@ -636,6 +636,35 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   return result;
 };
 
+const formatCancelPreviewMoney = (amount) => {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return "N/A";
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
+const formatCancelPreviewDate = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+};
+
+const formatRefundPolicyUsed = (percentage) => {
+  const numericValue = Number(percentage);
+  if (!Number.isFinite(numericValue)) return "N/A";
+  if (numericValue <= 0) return "No refund";
+  return `${numericValue}% refund`;
+};
+
 const ViewDetails = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -659,6 +688,7 @@ const ViewDetails = () => {
   // Cancellation state
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [pendingCancellation, setPendingCancellation] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState(null);
 
@@ -666,6 +696,8 @@ const ViewDetails = () => {
   const [receiptModalVisible, setReceiptModalVisible] = useState(false);
   const [refundDetails, setRefundDetails] = useState(null);
   const [cancelPreview, setCancelPreview] = useState(null);
+  const [cancelPreviewLoading, setCancelPreviewLoading] = useState(false);
+  const [confirmCancelModalVisible, setConfirmCancelModalVisible] = useState(false);
   const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [validationModalVisible, setValidationModalVisible] = useState(false);
@@ -693,16 +725,36 @@ const ViewDetails = () => {
     booking?.statusTone === "completed";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
-  const handleCancelBookingClick = () => {
+  const handleCancelBookingClick = async () => {
+    setPendingCancellation(null);
     setCancelModalVisible(true);
     setCancelReason("");
     setCancelError(null);
+    setCancelPreviewLoading(Boolean(booking?.orderId));
+
+    if (!booking?.orderId) {
+      setCancelPreviewLoading(false);
+      return;
+    }
+
+    try {
+      const preview = await getOrderCancelPreview(booking.orderId);
+      setCancelPreview(preview && typeof preview === "object" ? preview : null);
+    } catch (err) {
+      console.warn("⚠️ Failed to fetch cancel preview:", err?.message || err);
+      setCancelPreview(null);
+    } finally {
+      setCancelPreviewLoading(false);
+    }
   };
 
   const handleCloseCancelModal = () => {
     setCancelModalVisible(false);
     setCancelReason("");
+    setPendingCancellation(null);
     setCancelError(null);
+    setCancelPreviewLoading(false);
+    setConfirmCancelModalVisible(false);
   };
 
   const getFriendlyCancellationError = (error) => {
@@ -734,8 +786,10 @@ const ViewDetails = () => {
     );
   };
 
-  const handleCancelBooking = async () => {
-    if (!cancelReason.trim()) {
+  const executeCancelBooking = async () => {
+    const reason = pendingCancellation?.reason || cancelReason;
+
+    if (!String(reason || "").trim()) {
       setCancelError("Please provide a reason for cancellation.");
       return;
     }
@@ -745,7 +799,7 @@ const ViewDetails = () => {
 
     try {
       const cancelRequestBody = {
-        reason: cancelReason.trim(),
+        reason: String(reason).trim(),
         adminOverride: false,
       };
 
@@ -768,13 +822,37 @@ const ViewDetails = () => {
         }
       }));
 
-      handleCloseCancelModal();
+      setConfirmCancelModalVisible(false);
+      setCancelModalVisible(false);
+      setCancelReason("");
+      setPendingCancellation(null);
     } catch (err) {
       console.error("Error cancelling booking:", err);
       setCancelError(getFriendlyCancellationError(err));
     } finally {
       setIsCancelling(false);
     }
+  };
+
+  const handleConfirmCancel = () => {
+    if (!cancelReason.trim()) {
+      setCancelError("Please provide a reason for cancellation.");
+      return;
+    }
+
+    setPendingCancellation({
+      booking,
+      reason: cancelReason.trim(),
+    });
+    setCancelError(null);
+    setCancelModalVisible(false);
+    setConfirmCancelModalVisible(true);
+  };
+
+  const handleCloseConfirmCancelModal = () => {
+    if (isCancelling) return;
+    setConfirmCancelModalVisible(false);
+    setCancelModalVisible(true);
   };
 
   const handleDownloadReceiptClick = () => {
@@ -1612,6 +1690,31 @@ const ViewDetails = () => {
     return "";
   };
 
+  const getCancelPreviewRows = (preview) => {
+    if (!preview || typeof preview !== "object") return [];
+
+    const policyUsed = preview.policyUsed || preview.policyApplied;
+    const appliedPercentage =
+      preview.policyUsed?.percentage ??
+      preview.policyApplied?.percentage ??
+      (preview.cancellationFeePercentage != null
+        ? 100 - Number(preview.cancellationFeePercentage || 0)
+        : null);
+    const refundPolicyUsed = formatRefundPolicyUsed(appliedPercentage);
+
+    return [
+      { label: "Cancellation available", value: preview.canCancel ? "Yes" : "No" },
+      { label: "Refund amount", value: formatCancelPreviewMoney(preview.refundAmount) },
+      { label: "Cancellation fee", value: formatCancelPreviewMoney(preview.cancellationFee) },
+      { label: "Cancellation fee %", value: preview.cancellationFeePercentage != null ? `${preview.cancellationFeePercentage}%` : "N/A" },
+      { label: "Total paid", value: formatCancelPreviewMoney(preview.totalPaid) },
+      { label: "Days before booking", value: preview.daysDifference != null ? `${preview.daysDifference} day${Number(preview.daysDifference) === 1 ? "" : "s"}` : "N/A" },
+      { label: refundPolicyUsed === "No refund" ? "Refund window used" : "Policy window used", value: formatPolicyWindow(policyUsed) },
+      { label: "Refund policy used", value: refundPolicyUsed },
+      { label: "Booking date", value: formatCancelPreviewDate(preview.bookingDate) },
+    ];
+  };
+
   const getAppliedRefundPolicyText = () => {
     const previewPolicy = cancelPreview?.policyUsed || cancelPreview?.policyApplied;
     const previewPercentage =
@@ -1678,6 +1781,8 @@ const ViewDetails = () => {
     const firstText = policyCandidates.find((val) => typeof val === "string" && val.trim() !== "");
     return firstText ? firstText.trim() : "";
   };
+
+  const cancelPreviewRows = getCancelPreviewRows(cancelPreview);
 
   const getInitialTab = () => {
     return "host";
@@ -2543,6 +2648,25 @@ const ViewDetails = () => {
             </p>
           </div>
           <div className={styles.cancelModalBody}>
+            <div className={styles.cancelPolicyBox}>
+              <div className={styles.cancelPolicyLabel}>Cancellation policy applied</div>
+              {cancelPreviewLoading ? (
+                <div className={styles.cancelPolicyText}>Loading cancellation policy...</div>
+              ) : cancelPreviewRows.length > 0 ? (
+                <div className={styles.cancelPolicyGrid}>
+                  {cancelPreviewRows.map((row) => (
+                    <div key={row.label} className={styles.cancelPolicyRow}>
+                      <span className={styles.cancelPolicyRowLabel}>{row.label}</span>
+                      <span className={styles.cancelPolicyRowValue}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.cancelPolicyText}>
+                  Cancellation preview is unavailable for this booking.
+                </div>
+              )}
+            </div>
             <div className={styles.cancelModalFormGroup}>
               <label htmlFor="cancelReason" className={styles.cancelModalLabel}>
                 Reason for Cancellation <span className={styles.required}>*</span>
@@ -2580,10 +2704,53 @@ const ViewDetails = () => {
             <button
               type="button"
               className={cn("button", styles.cancelModalBtn)}
-              onClick={handleCancelBooking}
+              onClick={handleConfirmCancel}
               disabled={isCancelling || !cancelReason.trim()}
             >
               {isCancelling ? "Cancelling..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        visible={confirmCancelModalVisible}
+        onClose={handleCloseConfirmCancelModal}
+        outerClassName={styles.confirmCancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>Confirm Cancellation</h2>
+            <p className={styles.cancelModalDescription}>
+              {booking ? `Cancel "${booking.title}" and apply the previewed cancellation policy?` : "Confirm this cancellation?"}
+            </p>
+          </div>
+          <div className={styles.confirmCancelSummary}>
+            {cancelPreviewRows
+              .filter((row) => ["Refund amount", "Cancellation fee", "Refund policy used", "Policy window used", "Refund window used"].includes(row.label))
+              .map((row) => (
+                <div key={row.label} className={styles.confirmCancelSummaryRow}>
+                  <span className={styles.confirmCancelSummaryLabel}>{row.label}</span>
+                  <span className={styles.confirmCancelSummaryValue}>{row.value}</span>
+                </div>
+              ))}
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={handleCloseConfirmCancelModal}
+              disabled={isCancelling}
+            >
+              No
+            </button>
+            <button
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
+              onClick={executeCancelBooking}
+              disabled={isCancelling}
+            >
+              {isCancelling ? "Cancelling..." : "Yes, Cancel Booking"}
             </button>
           </div>
         </div>

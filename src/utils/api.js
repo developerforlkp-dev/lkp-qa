@@ -31,7 +31,32 @@ export const normalizePublicImageUrl = (url) => {
 
 
 
-const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) || "/api";
+const resolveRuntimeApiBaseUrl = () => {
+  const runtimeEnv = String(
+    process.env.REACT_APP_RUNTIME_ENV || process.env.NODE_ENV || "development"
+  )
+    .trim()
+    .toLowerCase();
+
+  if (runtimeEnv === "development") {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL_DEV);
+  }
+
+  if (runtimeEnv === "qa") {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL_QA);
+  }
+
+  if (runtimeEnv === "production" || runtimeEnv === "prod") {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL_PROD);
+  }
+
+  return null;
+};
+
+const API_BASE_URL =
+  normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
+  resolveRuntimeApiBaseUrl() ||
+  "/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
   return API_BASE_URL;
@@ -47,7 +72,6 @@ export const DEFAULT_API_BASE_URL = (() => {
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
     return normalizeBaseUrl(process.env.REACT_APP_API_URL);
-
   }
 
   return DEFAULT_API_BASE_URL;
