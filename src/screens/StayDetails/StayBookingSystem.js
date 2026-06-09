@@ -1297,6 +1297,11 @@ const StayBookingSystem = ({
         amountInPaise += Math.round(addOnsTotalRupees * 100);
       }
 
+      const appOrderId = orderResponse?.orderId || response?.orderId || response?.data?.orderId || null;
+      if (appOrderId) {
+        localStorage.setItem("pendingOrderId", String(appOrderId));
+      }
+
       localStorage.setItem("pendingPayment", JSON.stringify({
         paymentMethod: "razorpay",
         razorpayOrderId,
