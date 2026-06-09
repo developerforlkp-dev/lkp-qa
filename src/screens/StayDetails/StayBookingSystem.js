@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles } from "lucide-react";
+import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
@@ -306,7 +306,8 @@ const StayBookingSystem = ({
   setSelectedRooms,
   onRoomsCountChange,
   selectedAddOns = [],
-  addOnQuantities = {}
+  addOnQuantities = {},
+  onAddOnQuantityChange
 }) => {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
@@ -1698,6 +1699,185 @@ const StayBookingSystem = ({
                   <X size={18} />
                 </button>
               </div>
+
+              {/* Addons Scrollable Banner */}
+              {Array.isArray(stay?.addons) && stay.addons.length > 0 && (
+                <div style={{ background: BG, borderBottom: `1px solid ${B}88`, padding: "12px 28px" }}>
+                  <style>{`
+                    .stay-modal-addon-item {
+                      flex: 0 0 auto;
+                      width: 260px;
+                      border-radius: 16px;
+                      padding: 10px;
+                      display: flex;
+                      gap: 12px;
+                      align-items: center;
+                      cursor: pointer;
+                      transition: all 0.2s;
+                    }
+                    .stay-modal-addon-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                    .stay-modal-action-btn {
+                      width: 28px;
+                      height: 28px;
+                      border-radius: 50%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      border: none;
+                      cursor: pointer;
+                      transition: 0.2s;
+                    }
+                    .stay-addon-scroll-btn {
+                      position: absolute;
+                      top: 50%;
+                      transform: translateY(-50%);
+                      width: 36px;
+                      height: 36px;
+                      border-radius: 50%;
+                      background: ${BG};
+                      border: 1px solid ${B};
+                      color: ${FG};
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      cursor: pointer;
+                      z-index: 10;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                      transition: all 0.2s;
+                    }
+                    .stay-addon-scroll-btn:hover {
+                      background: ${S};
+                      transform: translateY(-50%) scale(1.05);
+                    }
+                  `}</style>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <button
+                      className="stay-addon-scroll-btn"
+                      onClick={() => {
+                        const container = document.getElementById("stay-header-addons-scroll");
+                        if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
+                      }}
+                      style={{ left: -18 }}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+
+                    <div id="stay-header-addons-scroll" style={{
+                      display: "flex",
+                      overflowX: "auto",
+                      gap: 16,
+                      padding: "4px",
+                      margin: "0 4px",
+                      WebkitOverflowScrolling: "touch",
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                      width: "100%",
+                      maskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
+                      WebkitMaskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)"
+                    }}>
+                      {stay.addons.map((item, i) => {
+                        const addon = item.addon || item;
+                        const addonId = addon.addonId || addon.id;
+                        const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                        const isSelected = selectedAddOns.some(a => String(a.addonId || a.id || a) === String(addonId));
+                        const quantity = addOnQuantities[addonId] || 1;
+                        const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+
+                        const handleCardClick = () => {
+                          if (!onAddOnQuantityChange) return;
+                          if (!isSelected) {
+                            onAddOnQuantityChange(addonId, 1, addon);
+                          } else if (pricingType === "Group") {
+                            onAddOnQuantityChange(addonId, 0, addon);
+                          }
+                        };
+
+                        const priceLabel = addon.price > 0 ? `₹${addon.price}` : "Free";
+                        const typeLabel = pricingType === "Group" ? "Group" : "Per Item";
+
+                        return (
+                          <div
+                            key={i}
+                            onClick={handleCardClick}
+                            className="stay-modal-addon-item"
+                            style={{
+                              background: isSelected ? AL : S,
+                              border: `1.5px solid ${isSelected ? A : B}`,
+                            }}
+                          >
+                            {addonImage && (
+                              <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}88` }}>
+                                <img src={addonImage} alt={addon.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                              <p style={{ fontSize: 12, fontWeight: 700, color: isSelected ? A : FG, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {addon.title}
+                              </p>
+                              <p style={{ fontSize: 11, fontWeight: 800, color: isSelected ? A : M, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                <span>{priceLabel}</span>
+                                <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  • {typeLabel}
+                                </span>
+                              </p>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                              {isSelected ? (
+                                pricingType === "Group" ? (
+                                  <button
+                                    onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, 0, addon)}
+                                    className="stay-modal-action-btn"
+                                    style={{ background: A, color: "#fff" }}
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  </button>
+                                ) : (
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: BG, padding: "4px", borderRadius: 100, border: `1px solid ${B}` }}>
+                                    <button
+                                      onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, quantity - 1, addon)}
+                                      className="stay-modal-action-btn"
+                                      style={{ width: 24, height: 24, background: S, color: FG }}
+                                    >
+                                      -
+                                    </button>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: FG, minWidth: 16, textAlign: "center" }}>{quantity}</span>
+                                    <button
+                                      onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, quantity + 1, addon)}
+                                      className="stay-modal-action-btn"
+                                      style={{ width: 24, height: 24, background: S, color: FG }}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                )
+                              ) : (
+                                <button
+                                  onClick={handleCardClick}
+                                  className="stay-modal-action-btn"
+                                  style={{ background: BG, border: `1px solid ${B}`, color: A }}
+                                >
+                                  +
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <button
+                      className="stay-addon-scroll-btn"
+                      onClick={() => {
+                        const container = document.getElementById("stay-header-addons-scroll");
+                        if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
+                      }}
+                      style={{ right: -18 }}
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
                 <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
