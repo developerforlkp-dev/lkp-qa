@@ -973,6 +973,25 @@ export const getEventDetails = async (eventId) => {
   }
 };
 
+export const getEventAddons = async (eventId) => {
+  try {
+    if (!eventId) throw new Error("eventId is required");
+    const eventIdNum = Number(eventId);
+    const eventIdStr = (!isNaN(eventIdNum) && eventIdNum > 0) ? String(eventIdNum) : String(eventId);
+    const response = await ListingsAPI.get(`/events/${eventIdStr}/public-addons`);
+    const payload = response.data;
+    console.log("✅ Event addons fetched (raw):", payload);
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.addons)) return payload.addons;
+    if (Array.isArray(payload?.assignments)) return payload.assignments;
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching event addons:", error.response?.data || error.message);
+    return [];
+  }
+};
+
 // Get completed and expired orders count
 export const getCompleteExpiredOrders = async () => {
   try {

@@ -5,7 +5,7 @@ import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, M
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getEventReviews, getHost, getHostContent } from "../../../utils/api";
+import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
 import Loader from "../../../components/Loader";
@@ -1727,6 +1727,47 @@ function HostDetails({ event, hostName, reviews = [] }) {
 }
 
 function EventBookingPopup({ event }) {
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+
+  const handleUpdateAddonQuantity = (addon, delta) => {
+    const addonId = addon.addonId || addon.id;
+    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+
+    setSelectedAddOns((prev) => {
+      const existing = prev.find((a) => (a.addonId || a.id) === addonId);
+      if (existing) {
+        if (delta < 0) {
+          if (existing.quantity > 1) {
+            return prev.map((a) =>
+              (a.addonId || a.id) === addonId
+                ? { ...a, quantity: a.quantity - 1 }
+                : a
+            );
+          } else {
+            return prev.filter((a) => (a.addonId || a.id) !== addonId);
+          }
+        } else {
+          return prev.map((a) =>
+            (a.addonId || a.id) === addonId
+              ? { ...a, quantity: a.quantity + 1 }
+              : a
+          );
+        }
+      } else {
+        if (delta > 0) {
+          if (pricingType === "Group") {
+            const otherGroupItem = prev.find((a) => a.pricingType === "Group" && (a.addonId || a.id) !== addonId);
+            if (otherGroupItem) {
+              return [...prev.filter(a => (a.addonId || a.id) !== (otherGroupItem.addonId || otherGroupItem.id)), { ...addon, quantity: 1, pricingType }];
+            }
+          }
+          return [...prev, { ...addon, quantity: 1, pricingType }];
+        }
+      }
+      return prev;
+    });
+  };
+
   const ticketTypes = (Array.isArray(event?.ticketTypes) ? event.ticketTypes :
     Array.isArray(event?.ticketTiers) ? event.ticketTiers :
       Array.isArray(event?.tickets) ? event.tickets : []).map((ticket, index) => ({
@@ -1786,6 +1827,7 @@ function EventBookingPopup({ event }) {
       ...(event?.pricing || {}),
       basePrice: ticketPrice
     },
+    addons: Array.isArray(event?.addons) ? event.addons : (Array.isArray(event?.addOns) ? event.addOns : []),
     ticketTypes,
     eventSlots: timeSlots,
     slots: timeSlots,
@@ -1793,7 +1835,7 @@ function EventBookingPopup({ event }) {
     host: event?.hostProfile?.host || event?.host || {}
   };
 
-  return <BookingSystem listing={listing} type="event" triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" />;
+  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" />;
 }
 
 function Tickets({ event }) {
@@ -2211,6 +2253,12 @@ export default function EventDetails() {
         setLoading(true);
         const data = await getEventDetails(eventId);
         console.log("DEBUG: Event Details Data:", data);
+        let eventAddons = [];
+        try {
+          eventAddons = await getEventAddons(eventId);
+        } catch (addonErr) {
+          console.error("Failed to load event addons:", addonErr);
+        }
         let fetchedHostName = "";
         let hostProfile = null;
 
@@ -2231,7 +2279,7 @@ export default function EventDetails() {
           if (mounted) setReviews([]);
         });
 
-        if (mounted) { setEvent({ ...data, hostProfile }); setHostName(fetchedHostName); setError(null); }
+        if (mounted) { setEvent({ ...data, hostProfile, addons: eventAddons }); setHostName(fetchedHostName); setError(null); }
       } catch (err) {
         if (mounted) setError("Failed to load event details.");
       } finally {
