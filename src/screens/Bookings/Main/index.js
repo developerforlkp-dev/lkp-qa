@@ -2188,7 +2188,7 @@ const Main = ({
                     {/* Taxes */}
                     {selectedBookingForPayment?.bookingData?.taxAmount > 0 && (
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#777E90" }}>Taxes (paid by you):</span>
+                        <span style={{ color: "#777E90" }}>Taxes:</span>
                         <span>{formatMoney(selectedBookingForPayment?.bookingData?.taxAmount, selectedBookingForPayment?.bookingData?.currency)}</span>
                       </div>
                     )}

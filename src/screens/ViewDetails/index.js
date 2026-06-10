@@ -2358,7 +2358,7 @@ const ViewDetails = () => {
               )}
               {booking.pricing.taxAmount && parseFloat(booking.originalData?.taxAmount || 0) > 0 && (
                 <div className={styles.paymentRow}>
-                  <span>Taxes (paid by you)</span>
+                  <span>Taxes</span>
                   <span>{booking.pricing.taxAmount}</span>
                 </div>
               )}
