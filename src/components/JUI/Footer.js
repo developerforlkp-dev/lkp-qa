@@ -37,16 +37,7 @@ export function Footer() {
               Discover handpicked experiences, unique stays, local food, cultural events and hidden places across World.
             </p>
 
-            <div className={styles.newsletter}>
-              <input 
-                type="email" 
-                placeholder="Get updates on experiences, events & hidden destinations" 
-                className={styles.newsInput}
-              />
-              <button className={styles.newsBtn}>
-                Join The Journey
-              </button>
-            </div>
+
 
             <div className={styles.socials}>
               <span className={styles.socialText}>Follow the adventure</span>
