@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Globe, ArrowUp, Star, Home, Ticket, Users } from "lucide-react";
 import styles from "./Footer.module.sass";
 
@@ -68,45 +69,45 @@ export function Footer() {
             <div className={styles.linkCol}>
               <h4>Explore</h4>
               <ul>
-                <li><a href="#">Experiences</a></li>
-                <li><a href="#">Stays</a></li>
-                <li><a href="#">Food</a></li>
-                <li><a href="#">Events</a></li>
-                <li><a href="#">Places</a></li>
+                <li><Link to="/experiences">Experiences</Link></li>
+                <li><Link to="/events">Events</Link></li>
+                <li><Link to="/stays">Stays</Link></li>
+                <li><Link to="/food">Food</Link></li>
+                <li><Link to="/places">Places</Link></li>
               </ul>
             </div>
 
             <div className={styles.linkCol}>
               <h4>Discover</h4>
               <ul>
-                <li><a href="#">Trending Experiences</a></li>
-                <li><a href="#">Featured Stays</a></li>
-                <li><a href="#">Local Food Trails</a></li>
-                <li><a href="#">Upcoming Events</a></li>
-                <li><a href="#">Travel Stories</a></li>
-                <li><a href="#">Collections</a></li>
+                <li><Link to="/experiences">Trending Experiences</Link></li>
+                <li><Link to="/events">Upcoming Events</Link></li>
+                <li><Link to="/stays">Featured Stays</Link></li>
+                <li><Link to="/food">Local Food Trails</Link></li>
+                <li><Link to="/places">Travel Stories</Link></li>
+                <li><Link to="/experiences">Collections</Link></li>
               </ul>
             </div>
 
             <div className={styles.linkCol}>
               <h4>Company</h4>
               <ul>
-                <li><a href="#">About Little Known Planet</a></li>
-                <li><a href="#">Become a Host</a></li>
-                <li><a href="#">Partner With Us</a></li>
-                <li><a href="#">Careers</a></li>
-                <li><a href="#">Contact Us</a></li>
+                <li><Link to="/">About Little Known Planet</Link></li>
+                <li><Link to="/host-profile">Become a Host</Link></li>
+                <li><Link to="/">Partner With Us</Link></li>
+                <li><Link to="/">Careers</Link></li>
+                <li><a href="mailto:support@littleknownplanet.com">Contact Us</a></li>
               </ul>
             </div>
             
             <div className={styles.linkCol}>
               <h4>Support</h4>
               <ul>
-                <li><a href="#">Help Center</a></li>
-                <li><a href="#">Bookings</a></li>
-                <li><a href="#">Cancellation Policy</a></li>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms & Conditions</a></li>
+                <li><Link to="/support">Help Center</Link></li>
+                <li><Link to="/bookings">Bookings</Link></li>
+                <li><Link to="/terms-of-service">Cancellation Policy</Link></li>
+                <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service">Terms & Conditions</Link></li>
               </ul>
             </div>
           </div>
