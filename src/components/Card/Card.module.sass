@@ -5,18 +5,20 @@
     flex-direction: column
     border-radius: 24px
     overflow: hidden
-    background: $n8
-    border: 1px solid $n6
+    background: #ffffff
+    border: none
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04)
     color: $n1
-    transition: border-color .2s
+    transition: all .3s ease
     &:hover
-        border-color: $n5
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08)
+        transform: translateY(-4px)
         .preview
             img
-                transform: scale(1.03) translateZ(0)
+                transform: scale(1.05) translateZ(0)
     +dark
         background: $n1
-        border-color: $n3
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2)
         color: $n8
     &.row
         flex-direction: row
@@ -72,11 +74,12 @@
     position: relative
     overflow: hidden
     background: #eef2f7
-    border-radius: inherit
+    border-radius: 20px
+    margin: 8px 8px 0 8px
     &:before
         content: ""
         display: block
-        padding-bottom: 68.6%
+        padding-bottom: 125%
     &:after
         content: ""
         position: absolute
@@ -138,7 +141,7 @@
 
 .body
     flex-grow: 1
-    padding: 24px 22px
+    padding: 16px 16px 20px
 
 .line
     display: flex

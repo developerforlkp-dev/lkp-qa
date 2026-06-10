@@ -12,20 +12,20 @@
 
 .heroSection
     position: relative
-    width: calc(100vw - 64px)
+    width: 100vw
     left: 50%
     right: 50%
-    margin-left: calc(-50vw + 32px)
-    margin-right: calc(-50vw + 32px)
+    margin-left: -50vw
+    margin-right: -50vw
     margin-bottom: 0
     overflow: hidden
-    border-radius: 20px
+    border-radius: 0
     z-index: 50
     +t
-        width: calc(100vw - 48px)
-        margin-left: calc(-50vw + 24px)
-        margin-right: calc(-50vw + 24px)
-        border-radius: 16px
+        width: 100vw
+        margin-left: -50vw
+        margin-right: -50vw
+        border-radius: 0
     +m
         width: 100vw
         margin-left: -50vw
@@ -50,43 +50,42 @@
         padding-top: 52px
 
 .glassContainer
-    max-width: 900px
+    max-width: 950px
     width: 100%
-    margin: 0 auto 48px
-    padding: 20px
-    background: $n8
-    border-radius: 20px
-    border: 1px solid $n6
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
+    height: 64px
+    margin: -40px auto 0
+    padding: 0 20px
+    background: #ffffff
+    border-radius: 999px
+    border: none
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08)
     overflow: visible
     position: relative
     z-index: 50
-    // Overlap hero section - only half of container overlaps for better visual consistency
-    margin-top: -100px
+    margin-top: -32px
+    display: flex
+    align-items: center
     +dark
         background: $n1
-        border: 1px solid $n3
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3)
-    // On tablet and mobile, hide entirely — cinematic pill + bottom sheet handles search instead
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3)
     +t
         display: none !important
 
 .searchBar
     display: flex
     align-items: center
+    flex: 1
     gap: 0
     max-width: 100%
-    margin: 0 auto 20px
+    margin: 0
     background: transparent
-    border-radius: 12px
-    padding: 14px
-    border: 1px solid rgba(0, 0, 0, 0.1)
+    border-radius: 999px
+    padding: 0
+    border: none
     box-shadow: none
     overflow: visible
     position: relative
     z-index: 100
-    +dark
-        border: 1px solid rgba(255, 255, 255, 0.15)
     +m
         flex-direction: column
         gap: 12px
@@ -130,7 +129,7 @@
 .searchLabel
     +caption-2
     font-weight: 600
-    font-size: 11px
+    font-size: 10px
     line-height: 1.2
     color: $n3
     +dark
@@ -140,7 +139,7 @@
     border: none
     background: transparent
     +body-2
-    font-size: 14px
+    font-size: 13px
     line-height: 1.4
     color: $n2
     outline: none
@@ -202,7 +201,7 @@
 
 .searchDivider
     width: 1px
-    height: 28px
+    height: 24px
     background: $n6
     +dark
         background: $n3
@@ -210,25 +209,29 @@
         display: none
 
 .searchButton
-    padding: 10px 24px
-    border-radius: 10px
+    width: 48px
+    height: 48px
+    flex-shrink: 0
+    border-radius: 50%
     background: #0097B2
     border: none
-    +body-bold-2
-    font-size: 14px
-    line-height: 1.4
+    display: flex
+    align-items: center
+    justify-content: center
     color: $n8
     cursor: pointer
     transition: all .2s ease
-    white-space: nowrap
+    margin-left: 8px
     +m
         width: 100%
-        padding: 10px 20px
+        height: 48px
+        border-radius: 24px
+        margin-left: 0
     &:hover
         background: darken(#0097B2, 5%)
-        transform: translateY(-2px)
+        transform: scale(1.05)
     &:active
-        transform: translateY(0)
+        transform: scale(0.95)
 
 .datePicker
     position: absolute
@@ -256,7 +259,7 @@
 
 .filtersContainer
     width: 100%
-    margin: 0 auto
+    margin: 40px auto 0
     padding: 0
     box-sizing: border-box
     position: relative
@@ -280,11 +283,11 @@
     display: flex
     flex-wrap: wrap
     justify-content: center
-    gap: 10px
+    gap: 48px
     +d
-        gap: 10px
+        gap: 32px
     +t
-        gap: 10px
+        gap: 24px
     +m
         position: absolute
         bottom: 0

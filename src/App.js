@@ -97,7 +97,7 @@ function App() {
               }
               // Default to Homepage with appropriate section
               return (
-                <Page>
+                <Page separatorHeader={false}>
                   <FleetHome />
                 </Page>
               );
