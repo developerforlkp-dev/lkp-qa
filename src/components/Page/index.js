@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import cn from "classnames";
 import styles from "./Page.module.sass";
 import Header from "../Header";
+import { Footer } from "../JUI/Footer";
 import { useTheme } from "../JUI/Theme";
 
 const Page = ({
@@ -128,6 +129,8 @@ const Page = ({
       <div className={styles.inner}>
         {children}
       </div>
+
+      {!fooferHide && <Footer />}
 
       <style>{`
         .slim-header-wrapper > div { padding: 4px 0 !important; }

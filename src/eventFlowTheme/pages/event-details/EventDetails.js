@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSp
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star } from "lucide-react";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
+import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
@@ -3237,6 +3238,7 @@ export default function EventDetails() {
         currentListingId={currentListingId}
         title="More Events You Might Like"
       />
+      <Footer />
     </ScopedThemeProvider>
   );
 }

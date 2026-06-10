@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
+import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
@@ -2303,6 +2304,8 @@ const FoodDetails = () => {
         currentListingId={currentListingId}
         title="More Food Experiences"
       />
+
+      <Footer />
 
     </ScopedThemeProvider>
   );

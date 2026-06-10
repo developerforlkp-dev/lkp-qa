@@ -10,6 +10,7 @@ import cn from "classnames";
 import Loader from "../../components/Loader";
 import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
+import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getPlaceDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
@@ -2906,6 +2907,7 @@ function MobilePlaceDetails({
       </div>
 
       {/* 10. Footer */}
+      <Footer />
     </>
   );
 }
@@ -3127,6 +3129,8 @@ const PlaceDetails = () => {
         currentListingId={currentListingId}
         title="More Places To Explore"
       />
+
+      <Footer />
 
     </ScopedThemeProvider>
   );
