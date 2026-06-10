@@ -545,11 +545,32 @@ const Checkout = () => {
         : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
 
       if (totalDiscount > 0) {
-        const discountRate = subtotalBeforeDiscountAndTax > 0
-          ? (Number(totalDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
-          : 0;
-        const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
-        rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(totalDiscount)}` });
+        let remainingDiscount = totalDiscount;
+        let earlyBirdToDisplay = 0;
+
+        if (earlyBirdDiscount > 0 && remainingDiscount >= earlyBirdDiscount) {
+          earlyBirdToDisplay = earlyBirdDiscount;
+          remainingDiscount -= earlyBirdDiscount;
+        } else if (earlyBirdDiscount > 0 && remainingDiscount > 0) {
+          earlyBirdToDisplay = remainingDiscount;
+          remainingDiscount = 0;
+        }
+
+        if (remainingDiscount > 0) {
+          const discountRate = subtotalBeforeDiscountAndTax > 0
+            ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
+            : 0;
+          const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
+          rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(remainingDiscount)}` });
+        }
+
+        if (earlyBirdToDisplay > 0) {
+          const ebRate = subtotalBeforeDiscountAndTax > 0
+            ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
+            : 0;
+          const ebRateLabel = ebRate > 0 ? ` (${ebRate.toFixed(2)}%)` : "";
+          rows.push({ title: `Early Bird Discount${ebRateLabel}`, value: `- ${fmt(earlyBirdToDisplay)}` });
+        }
       }
 
       if (displayTax > 0) {
