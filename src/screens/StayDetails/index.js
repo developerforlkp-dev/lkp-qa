@@ -18,7 +18,6 @@ import RoomCards from "./RoomCards";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
-import { Footer } from "../../components/JUI/Footer";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import ShareButton from "../../components/ShareButton";
