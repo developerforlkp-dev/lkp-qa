@@ -280,7 +280,8 @@ const transformListingToBrowse = (listing, section) => {
     url: getEntityUrl(listing, id, section),
     categoryText: null, // Remove location/address from carousel cards
     category: null,
-    counter: listing.totalReviews || 0,
+    counter: listing.totalReviews || listing.reviewCount || 0,
+    rating: listing.averageRating ?? listing.rating ?? 0,
   };
 };
 
