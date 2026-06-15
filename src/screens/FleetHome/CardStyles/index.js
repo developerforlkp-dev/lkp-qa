@@ -306,16 +306,29 @@ const transformListingToDestinationHorizontal = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
+  // Location formatting
+  const city = listing.city || listing.cityArea || listing.meetingCity || listing.district || listing.state || listing.location;
+  const country = listing.country || listing.meetingCountry;
+  let locationText = [city, country].filter(Boolean).join(", ");
+  
+  if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
+      locationText = listing.cityArea || listing.state || listing.address || "India";
+  }
+
   return {
     id: `listing-${id}`,
     listingId: id,
     title: listing.title || listing.propertyName || listing.menuName || listing.placeName || "Destination",
-    content: "", // Not displayed - matches other card styles
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
     url: getEntityUrl(listing, id, section),
     categoryText: null, // Optional category badge
     category: null,
+    rating: listing.averageRating ?? listing.rating ?? 0,
+    reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
+    hasPrice: false,
+    cost: null,
+    location: locationText || null,
   };
 };
 
@@ -607,10 +620,11 @@ export const CardDestinationHorizontal = ({ section, listings, className }) => {
       <div className={styles.horizontalScrollWrapper}>
         <HorizontalScroll className={styles.horizontalScroll} gap={24}>
           {destinationItems.map((item) => (
-            <Destination
+            <Card
               className={styles.destinationCardHorizontal}
               item={item}
               key={item.id}
+              hidePrice={true}
             />
           ))}
         </HorizontalScroll>
