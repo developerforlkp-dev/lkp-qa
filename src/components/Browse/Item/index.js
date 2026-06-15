@@ -15,6 +15,10 @@ const Item = ({ className, item }) => {
     setImageLoaded(true);
   };
 
+  const rating = typeof item.rating === "number" && !Number.isInteger(item.rating)
+    ? item.rating.toFixed(1)
+    : (item.rating || 0);
+
   return (
     <Link className={cn(className, styles.item)} to={item.url}>
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
@@ -25,19 +29,23 @@ const Item = ({ className, item }) => {
           onLoad={() => setImageLoaded(true)}
           onError={handleImageError}
         />
-        <div
-          className={cn(
-            { "status-black": item.category === "black" },
-            styles.category
-          )}
-        >
-          {item.categoryText}
+        {item.categoryText && (
+          <div
+            className={cn(
+              { "status-black": item.category === "black" },
+              styles.category
+            )}
+          >
+            {item.categoryText}
+          </div>
+        )}
+        <div className={styles.overlay}>
+          <div className={styles.title}>{item.title}</div>
+          <div className={styles.counter}>
+            <Icon name="star" size="14" />
+            <span className={styles.ratingNumber}>{rating} ({item.counter || 0})</span>
+          </div>
         </div>
-      </div>
-      <div className={styles.title}>{item.title}</div>
-      <div className={styles.counter}>
-        <Icon name="home" size="16" />
-        {item.counter}
       </div>
     </Link>
   );

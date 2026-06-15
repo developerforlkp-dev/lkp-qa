@@ -31,7 +31,32 @@ export const normalizePublicImageUrl = (url) => {
 
 
 
-const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL) || "/api";
+const resolveRuntimeApiBaseUrl = () => {
+  const runtimeEnv = String(
+    process.env.REACT_APP_RUNTIME_ENV || process.env.NODE_ENV || "development"
+  )
+    .trim()
+    .toLowerCase();
+
+  if (runtimeEnv === "development") {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL_DEV);
+  }
+
+  if (runtimeEnv === "qa") {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL_QA);
+  }
+
+  if (runtimeEnv === "production" || runtimeEnv === "prod") {
+    return normalizeBaseUrl(process.env.REACT_APP_API_URL_PROD);
+  }
+
+  return null;
+};
+
+const API_BASE_URL =
+  normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
+  resolveRuntimeApiBaseUrl() ||
+  "/api";
 
 export const DEFAULT_API_BASE_URL = (() => {
   return API_BASE_URL;
@@ -47,7 +72,6 @@ export const DEFAULT_API_BASE_URL = (() => {
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
     return normalizeBaseUrl(process.env.REACT_APP_API_URL);
-
   }
 
   return DEFAULT_API_BASE_URL;
@@ -1009,6 +1033,25 @@ export const getEventDetails = async (eventId) => {
   }
 };
 
+export const getEventAddons = async (eventId) => {
+  try {
+    if (!eventId) throw new Error("eventId is required");
+    const eventIdNum = Number(eventId);
+    const eventIdStr = (!isNaN(eventIdNum) && eventIdNum > 0) ? String(eventIdNum) : String(eventId);
+    const response = await ListingsAPI.get(`/events/${eventIdStr}/public-addons`);
+    const payload = response.data;
+    console.log("✅ Event addons fetched (raw):", payload);
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.addons)) return payload.addons;
+    if (Array.isArray(payload?.assignments)) return payload.assignments;
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching event addons:", error.response?.data || error.message);
+    return [];
+  }
+};
+
 // Get completed and expired orders count
 export const getCompleteExpiredOrders = async () => {
   try {
@@ -1752,3 +1795,26 @@ export const getLeadDetails = async (leadId) => {
   }
 };
 
+export const sendOrderMessage = async (orderId, messageText) => {
+  try {
+    const response = await ListingsAPI.post(`/orders/${orderId}/messages`, { messageText });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error sending order message:", error);
+    throw error;
+  }
+};
+
+export const getCancellationReasons = async () => {
+  try {
+    const response = await ListingsAPI.get("/listing-admin-config/cancellation-reasons");
+    const data = response.data;
+    if (data && Array.isArray(data.reasons)) return data.reasons;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching cancellation reasons:", error);
+    return [];
+  }
+};

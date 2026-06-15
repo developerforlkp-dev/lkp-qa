@@ -1503,12 +1503,49 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [baseTimeSlots, dateFilteredSlots, isEventBooking, listing]);
 
   const hasTodayValidSlots = useMemo(() => {
-    if (isEventBooking) return false;
     const today = new Date();
     const todayKey = getDateKey(today);
-    const weekday = today.getDay();
     const currentMinutes = today.getHours() * 60 + today.getMinutes();
     const todayFullyBookedSlotIds = collectFullyBookedSlotIdsForDate(listing, todayKey);
+
+    if (isEventBooking) {
+      const validEventSlots = eventSlots.filter((slot, index) => {
+        if (!slot || typeof slot !== "object") return false;
+
+        const slotKeys = new Set();
+        addDateRangeKeys(
+          slotKeys,
+          slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate,
+          slot.slotEndDate || slot.endDate || slot.end_date
+        );
+
+        if (slotKeys.size > 0 && !slotKeys.has(todayKey)) return false;
+
+        const slotId = getSlotId(slot);
+        if (slotId != null && todayFullyBookedSlotIds.has(String(slotId))) return false;
+
+        const isUnavailable = asOptionalBoolean(slot?.isAvailable ?? slot?.is_available) === false;
+        if (isUnavailable) return false;
+
+        const availableSeats = asNumber(slot?.availableSeats ?? slot?.available_seats);
+        if (availableSeats != null && availableSeats <= 0) return false;
+
+        const startTime = slot.startTime || slot.start_time || slot.slotStartTime || slot.time;
+        if (startTime) {
+          const [h, m] = String(startTime).split(":").map(Number);
+          if (Number.isFinite(h) && Number.isFinite(m)) {
+            const slotMinutes = h * 60 + m;
+            if (slotMinutes <= currentMinutes) return false;
+          }
+        }
+
+        return true;
+      });
+
+      return validEventSlots.length > 0;
+    }
+
+    const weekday = today.getDay();
 
     const schedules = [
       ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
@@ -1578,7 +1615,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     });
 
     return validSlots.length > 0;
-  }, [baseTimeSlots, dateFilteredSlots, listing, isEventBooking, privateBookedSlotIds]);
+  }, [baseTimeSlots, dateFilteredSlots, eventSlots, listing, isEventBooking, privateBookedSlotIds]);
 
 
 
@@ -1920,10 +1957,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
   const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
   const subtotalBeforeAdjustments = rawBaseTotal + addOnsTotal;
-  const totalDiscountAmount = subtotalBeforeAdjustments * (appliedDiscountRate / 100);
-  const totalPromoDiscountAmount = subtotalBeforeAdjustments * ((activeGuestPricing?.promoDiscountRate || 0) / 100);
-  const totalEarlyBirdDiscountAmount = subtotalBeforeAdjustments * ((activeGuestPricing?.earlyBirdDiscountRate || 0) / 100);
-  const taxableSubtotal = Math.max(0, subtotalBeforeAdjustments - totalDiscountAmount);
+  // Discounts should only apply to the base ticket price, not add-ons
+  const totalDiscountAmount = rawBaseTotal * (appliedDiscountRate / 100);
+  const totalPromoDiscountAmount = rawBaseTotal * ((activeGuestPricing?.promoDiscountRate || 0) / 100);
+  const totalEarlyBirdDiscountAmount = rawBaseTotal * ((activeGuestPricing?.earlyBirdDiscountRate || 0) / 100);
+  
+  const taxableBase = Math.max(0, rawBaseTotal - totalDiscountAmount);
+  const taxableSubtotal = taxableBase + addOnsTotal;
   const totalTaxAmount = taxableSubtotal * (appliedTaxRate / 100);
   const finalTotal = taxableSubtotal + totalTaxAmount;
 
@@ -2169,6 +2209,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         return;
       }
 
+      const eventAddonsPayload = selectedAddOns.map((item) => {
+        const addon = item.addon || item;
+        const addonId = addon.addonId || addon.id;
+        if (!addonId) return null;
+        return {
+          addonId,
+          addonName: addon.title || addon.name || addon.addonName || "Add-on",
+          addonPrice: parseFloat(addon.price || addon.addonPrice || 0),
+          quantity: Number(item.quantity || addon.quantity || 1) || 1,
+        };
+      }).filter(Boolean);
+
       const payload = {
         eventId: eventIdNum,
         eventSlotId: eventSlotIdNum,
@@ -2182,6 +2234,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         customerDetails,
         paymentMethod: "razorpay",
         specialRequests: "",
+        addons: eventAddonsPayload,
         tickets: [{
           ticketTypeId,
           ticketTypeName,
@@ -2192,6 +2245,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         appliedDiscountCode: null,
         notes: null,
       };
+
 
       try {
         if (isMountedRef.current) setBookingLoading(true);
@@ -2285,6 +2339,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             guestCount: totalGuests,
           },
           guests,
+          selectedAddOns: selectedAddOns.map(a => (a.addon?.addonId || a.addonId || a.id)),
+          addOnQuantities: selectedAddOns.reduce((acc, a) => {
+            const id = a.addon?.addonId || a.addonId || a.id;
+            if (id) acc[id] = a.quantity || 1;
+            return acc;
+          }, {}),
           priceDetails: {
             pricePerPerson: eventGuestPricing.finalUnitPrice,
             basePricePerTicket: pricePerTicket,
@@ -2329,6 +2389,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             ...(eventTaxTotal > 0 ? [{
               title: `Taxes & Fees (${appliedTaxRate}%)`,
               content: `+ ${currency} ${eventTaxTotal.toFixed(2)}`,
+            }] : []),
+            ...(addOnsTotal > 0 ? [{
+              title: "Add-ons",
+              content: `+ ${currency} ${addOnsTotal.toFixed(2)}`,
+              kind: "addons",
+              showInCheckout: true
             }] : []),
             {
               title: "Total",
@@ -2377,12 +2443,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
           history.replace("/experience-checkout-complete", {
             bookingData,
-            paymentSuccess: freePaymentSuccess
+            paymentSuccess: freePaymentSuccess,
+            addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
           });
         } else {
           history.replace("/experience-checkout", {
             bookingData,
             paymentData,
+            addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
           });
         }
       } catch (e) {
@@ -3250,6 +3318,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               availableDateKeys={eventAvailableDateKeys}
                               tokens={{ A, AL, BG, FG, M, B, S, W }}
                               emptyMessage="No available dates for this event."
+                              hasTodayValidSlots={hasTodayValidSlots}
                             />
                           ) : (
                             <EventInlineCalendar

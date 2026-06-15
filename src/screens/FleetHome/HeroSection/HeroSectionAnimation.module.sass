@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500&display=swap")
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap")
 @import ../../../styles/helpers
 
 .cardsContainer
@@ -13,7 +13,13 @@
     top: 0
     background-position: center
     background-size: cover
-    box-shadow: 6px 6px 10px 2px rgba(0, 0, 0, 0.6)
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15)
+    transition: scale 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease, filter 0.3s ease
+    cursor: pointer
+    &:hover
+        scale: 1.05 // independent property, won't break GSAP transform
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25)
+        filter: brightness(1.1)
 
 :global(.hero-card-content)
     position: absolute
@@ -23,19 +29,21 @@
     padding-left: 16px
     pointer-events: none
 
-:global(.hero-content-title-1)
-    font-weight: 600
-    font-size: 20px
-    font-family: "Oswald", sans-serif
-    line-height: 1.2
-
 .details
     z-index: 22
     position: absolute
     top: 50%
     left: 60px
-    max-width: calc(100% - 120px)
+    max-width: 480px
+    width: 30%
+    min-width: 300px
     transform: translateY(-50%)
+    // Ensure text stands out
+    .hero-title-1, .hero-desc
+        color: #ffffff
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4)
+        +dark
+            color: $n8
     +m
         top: auto
         bottom: 20px
@@ -56,257 +64,154 @@
 
 .title1
     font-weight: 600
-    font-size: 48px
-    font-family: "Oswald", sans-serif
-    line-height: 1.15
-    color: white
+    font-size: 52px
+    font-family: "Cormorant Garamond", "Playfair Display", serif
+    letter-spacing: -0.03em
+    line-height: 1.05
+    color: #11284B
     opacity: 1
     padding-bottom: 2px
+    max-width: 500px
+    word-wrap: break-word
+    white-space: normal
+    +t
+        font-size: clamp(42px, 4vw, 64px)
     +m
-
-        font-size: 28px
-        line-height: 1.2
+        font-size: clamp(36px, 8vw, 52px)
+        line-height: 1.0
         padding-bottom: 4px
 
 // Global classes for GSAP selectors
 :global(.hero-title-1)
     font-weight: 600
-    font-size: 48px
-    font-family: "Oswald", sans-serif
-    line-height: 1.15
-    color: white
+    font-size: 52px
+    font-family: "Cormorant Garamond", "Playfair Display", serif
+    letter-spacing: -0.03em
+    line-height: 1.05
+    color: #11284B
     opacity: 1
     padding-bottom: 2px
+    max-width: 500px
+    word-wrap: break-word
+    white-space: normal
+    +t
+        font-size: clamp(42px, 4vw, 64px)
     +m
-
-        font-size: 28px
-        line-height: 1.2
+        font-size: clamp(36px, 8vw, 52px)
+        line-height: 1.0
         padding-bottom: 4px
+
+:global(.hero-accent-word)
+    font-style: italic
+    font-weight: 500
+    background: linear-gradient(135deg, #08B5D6, #45D8F2)
+    background-size: 200% 200%
+    -webkit-background-clip: text
+    -webkit-text-fill-color: transparent
+    background-clip: text
+    animation: gradientShift 8s ease infinite
+
+@keyframes gradientShift
+    0%
+        background-position: 0% 50%
+    50%
+        background-position: 100% 50%
+    100%
+        background-position: 0% 50%
 
 .desc
     margin-top: 16px
-    max-width: 500px
-    font-size: 16px
-    line-height: 1.5
-    color: rgba(255, 255, 255, 0.87)
+    max-width: 440px
+    font-family: "Inter", "Plus Jakarta Sans", sans-serif
+    font-size: 15px
+    line-height: 1.6
+    color: #4F5B73
     opacity: 1
+    +t
+        font-size: 14px
     +m
         margin-top: 12px
-        font-size: 13px
-        line-height: 1.4
+        font-size: 16px
+        line-height: 1.5
         max-width: 100%
         padding-right: 8px
 
 :global(.hero-desc)
     margin-top: 16px
-    max-width: 500px
-    font-size: 16px
-    line-height: 1.5
-    color: rgba(255, 255, 255, 0.87)
+    max-width: 440px
+    font-family: "Inter", "Plus Jakarta Sans", sans-serif
+    font-size: 15px
+    line-height: 1.6
+    color: #4F5B73
     opacity: 1
+    +t
+        font-size: 14px
     +m
         margin-top: 12px
-        font-size: 13px
-        line-height: 1.4
+        font-size: 16px
+        line-height: 1.5
         max-width: 100%
         padding-right: 8px
 
-.button
+.button, :global(.hero-button)
     margin-top: 24px
-    padding: 12px 32px
-    background: rgba(255, 255, 255, 0.7)
-    backdrop-filter: blur(10px)
-    -webkit-backdrop-filter: blur(10px)
-    border-radius: 12px
-    border: 1px solid rgba(255, 255, 255, 0.3)
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
+    display: inline-flex
+    align-items: center
+    justify-content: space-between
+    width: 160px
+    gap: 12px
+    padding: 8px 12px 8px 24px
+    background: #0097B2
+    border-radius: 999px
+    border: none
+    box-shadow: 0 8px 24px rgba(0, 151, 178, 0.3)
     font-weight: 600
     font-size: 16px
     font-family: "Inter", sans-serif
     line-height: 1.4
-    color: #1a1a1a
+    color: #ffffff
     cursor: pointer
-    transition: background 0.3s ease, box-shadow 0.3s ease
+    transition: all 0.3s ease
     white-space: nowrap
     opacity: 1
     will-change: transform, opacity
     +m
-        padding: 10px 24px
+        padding: 6px 10px 6px 20px
         font-size: 14px
         margin-top: 20px
+    span
+        flex-grow: 1
+        text-align: left
     &:hover
-        background: rgba(255, 255, 255, 0.85)
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15)
+        background: #008199
+        box-shadow: 0 12px 32px rgba(0, 151, 178, 0.4)
+        transform: translateY(-2px)
     &:active
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
+        transform: translateY(0)
+        box-shadow: 0 4px 16px rgba(0, 151, 178, 0.3)
 
-:global(.hero-button)
-    margin-top: 24px
-    padding: 12px 32px
-    background: rgba(255, 255, 255, 0.7)
-    backdrop-filter: blur(10px)
-    -webkit-backdrop-filter: blur(10px)
-    border-radius: 12px
-    border: 1px solid rgba(255, 255, 255, 0.3)
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-    font-weight: 600
-    font-size: 16px
-    font-family: "Inter", sans-serif
-    line-height: 1.4
-    color: #1a1a1a
-    cursor: pointer
-    transition: background 0.3s ease, box-shadow 0.3s ease
-    white-space: nowrap
-    opacity: 1
-    will-change: transform, opacity
-    +m
-        padding: 10px 24px
-        font-size: 14px
-        margin-top: 20px
-    &:hover
-        background: rgba(255, 255, 255, 0.85)
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15)
-    &:active
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
+.buttonIcon
+    width: 32px
+    height: 32px
+    border-radius: 50%
+    background: #ffffff
+    color: #0097B2
+    display: flex
+    align-items: center
+    justify-content: center
+    flex-shrink: 0
+    svg
+        width: 16px
+        height: 16px
 
-.button
-    margin-top: 24px
-    padding: 12px 32px
-    background: rgba(255, 255, 255, 0.7)
-    backdrop-filter: blur(10px)
-    -webkit-backdrop-filter: blur(10px)
-    border-radius: 12px
-    border: 1px solid rgba(255, 255, 255, 0.3)
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-    font-weight: 600
-    font-size: 16px
-    font-family: "Inter", sans-serif
-    line-height: 1.4
-    color: #1a1a1a
-    cursor: pointer
-    transition: background 0.3s ease, box-shadow 0.3s ease
-    white-space: nowrap
-    opacity: 1
-    will-change: transform, opacity
-    +m
-        padding: 10px 24px
-        font-size: 14px
-        margin-top: 20px
-    &:hover
-        background: rgba(255, 255, 255, 0.85)
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15)
-    &:active
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-
-:global(.hero-button)
-    margin-top: 24px
-    padding: 12px 32px
-    background: rgba(255, 255, 255, 0.7)
-    backdrop-filter: blur(10px)
-    -webkit-backdrop-filter: blur(10px)
-    border-radius: 12px
-    border: 1px solid rgba(255, 255, 255, 0.3)
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-    font-weight: 600
-    font-size: 16px
-    font-family: "Inter", sans-serif
-    line-height: 1.4
-    color: #1a1a1a
-    cursor: pointer
-    transition: background 0.3s ease, box-shadow 0.3s ease
-    white-space: nowrap
-    opacity: 1
-    will-change: transform, opacity
-    +m
-        padding: 10px 24px
-        font-size: 14px
-        margin-top: 20px
-    &:hover
-        background: rgba(255, 255, 255, 0.85)
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15)
-    &:active
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-
-.button
-    margin-top: 24px
-    padding: 12px 32px
-    background: rgba(255, 255, 255, 0.7)
-    backdrop-filter: blur(10px)
-    -webkit-backdrop-filter: blur(10px)
-    border-radius: 12px
-    border: 1px solid rgba(255, 255, 255, 0.3)
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-    font-weight: 600
-    font-size: 16px
-    font-family: "Inter", sans-serif
-    line-height: 1.4
-    color: #1a1a1a
-    cursor: pointer
-    transition: background 0.3s ease, box-shadow 0.3s ease
-    white-space: nowrap
-    opacity: 1
-    will-change: transform, opacity
-    +m
-        padding: 10px 24px
-        font-size: 14px
-        margin-top: 20px
-    &:hover
-        background: rgba(255, 255, 255, 0.85)
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15)
-    &:active
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-
-:global(.hero-button)
-    margin-top: 24px
-    padding: 12px 32px
-    background: rgba(255, 255, 255, 0.7)
-    backdrop-filter: blur(10px)
-    -webkit-backdrop-filter: blur(10px)
-    border-radius: 12px
-    border: 1px solid rgba(255, 255, 255, 0.3)
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-    font-weight: 600
-    font-size: 16px
-    font-family: "Inter", sans-serif
-    line-height: 1.4
-    color: #1a1a1a
-    cursor: pointer
-    transition: background 0.3s ease, box-shadow 0.3s ease
-    white-space: nowrap
-    opacity: 1
-    will-change: transform, opacity
-    +m
-        padding: 10px 24px
-        font-size: 14px
-        margin-top: 20px
-    &:hover
-        background: rgba(255, 255, 255, 0.85)
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15)
-    &:active
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-
-.cover
-    position: absolute
-    left: 0
-    top: 0
-    width: 100%
-    height: 100%
-    background-color: #fff
-    z-index: 100
-
-:global(.hero-cover)
-    position: absolute
-    left: 0
-    top: 0
-    width: 100%
-    height: 100%
-    background-color: #fff
-    z-index: 100
-
-// Ensure hero text remains white in both light and dark modes
+// Ensure hero text is dark for the white curve background
 .details .title1,
+:global(.hero-title-1)
+    color: #11284b !important
+    text-shadow: none !important
+
 .details .desc,
-:global(.hero-title-1),
 :global(.hero-desc)
-    color: #ffffff !important
+    color: #334155 !important
+    text-shadow: none !important
 

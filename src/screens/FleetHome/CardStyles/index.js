@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import Card from "../../../components/Card";
@@ -6,6 +6,7 @@ import BrowseItem from "../../../components/Browse/Item";
 import DestinationCard from "../DestinationCard";
 import Destination from "../../../components/Destination";
 import HorizontalScroll from "../../../components/HorizontalScroll";
+import Icon from "../../../components/Icon";
 import styles from "../FleetHome.module.sass";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
@@ -184,7 +185,6 @@ const getEntityUrl = (listing, id) => {
   return buildExperienceUrl(listing.title || "experience", resolvedId);
 };
 
-// Transform API listing to Card component format
 const transformListingToCard = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
@@ -192,9 +192,53 @@ const transformListingToCard = (listing, section) => {
     ? getPrimaryCategoryLabel(listing)
     : null;
 
+  const entityType = getEntityType(listing);
+
+  // Price formatting
   const price = listing.individualPrice ?? listing.startingPrice ?? 0;
   const hasPrice = price > 0;
-  const priceDisplay = hasPrice ? `₹${price.toLocaleString("en-IN")}` : null;
+  let suffix = "";
+  if (entityType === "experience" || entityType === "event") suffix = " / person";
+  if (entityType === "stay") suffix = " / night";
+  const priceDisplay = hasPrice ? `From ₹${price.toLocaleString("en-IN")}${suffix}` : null;
+
+  // Location formatting
+  const city = listing.city || listing.cityArea || listing.meetingCity || listing.district || listing.state || listing.location;
+  const country = listing.country || listing.meetingCountry;
+  let locationText = [city, country].filter(Boolean).join(", ");
+  
+  if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
+      locationText = listing.cityArea || listing.state || listing.address || "India";
+  }
+
+  // Date Badge formatting (for events)
+  let dateBadge = null;
+  const dateStr = listing.eventDate || listing.startDate || listing.date;
+  if (entityType === "event" && dateStr) {
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        dateBadge = {
+          day: d.getDate().toString().padStart(2, '0'),
+          month: d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+        };
+      }
+    } catch(e) {}
+  }
+
+  // Tags & Badges
+  const tags = listing.tags || [];
+  const normalizedTags = tags.map(t => typeof t === 'string' ? t.toUpperCase() : '');
+  let finalCategoryText = primaryCategoryLabel;
+  let badgeColor = "teal";
+
+  if (normalizedTags.includes("TOP PICK")) {
+    finalCategoryText = "TOP PICK";
+    badgeColor = "orange";
+  } else if (normalizedTags.includes("TRENDING")) {
+    finalCategoryText = "TRENDING";
+    badgeColor = "orange";
+  }
 
   return {
     id: `listing-${id}`,
@@ -203,19 +247,20 @@ const transformListingToCard = (listing, section) => {
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
     url: getEntityUrl(listing, id, section),
-    location: null, // Remove location/address from cards
-    priceActual: priceDisplay, // Only show price if individualPrice exists
+    location: locationText || null, 
+    priceActual: priceDisplay, 
     hasPrice: hasPrice,
     rating: listing.averageRating ?? listing.rating ?? 0,
     reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
     briefDescription: listing.briefDescription ?? listing.shortDescription,
-    tags: listing.tags || [],
+    tags: tags,
     host: listing.host,
-    // Card component expects these optional fields
     priceOld: null,
-    cost: priceDisplay, // Only show price if individualPrice exists
+    cost: priceDisplay,
     options: [],
-    categoryText: primaryCategoryLabel,
+    categoryText: finalCategoryText,
+    badgeColor: badgeColor,
+    dateBadge: dateBadge,
     comment: null,
     avatar: null,
   };
@@ -235,7 +280,8 @@ const transformListingToBrowse = (listing, section) => {
     url: getEntityUrl(listing, id, section),
     categoryText: null, // Remove location/address from carousel cards
     category: null,
-    counter: listing.totalReviews || 0,
+    counter: listing.totalReviews || listing.reviewCount || 0,
+    rating: listing.averageRating ?? listing.rating ?? 0,
   };
 };
 
@@ -260,16 +306,29 @@ const transformListingToDestinationHorizontal = (listing, section) => {
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
+  // Location formatting
+  const city = listing.city || listing.cityArea || listing.meetingCity || listing.district || listing.state || listing.location;
+  const country = listing.country || listing.meetingCountry;
+  let locationText = [city, country].filter(Boolean).join(", ");
+  
+  if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
+      locationText = listing.cityArea || listing.state || listing.address || "India";
+  }
+
   return {
     id: `listing-${id}`,
     listingId: id,
     title: listing.title || listing.propertyName || listing.menuName || listing.placeName || "Destination",
-    content: "", // Not displayed - matches other card styles
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
     url: getEntityUrl(listing, id, section),
     categoryText: null, // Optional category badge
     category: null,
+    rating: listing.averageRating ?? listing.rating ?? 0,
+    reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
+    hasPrice: false,
+    cost: null,
+    location: locationText || null,
   };
 };
 
@@ -437,32 +496,55 @@ export const CardCarousel = ({ section, listings, className }) => {
   );
 };
 
-/**
- * CARD_RECT_VERTICAL_DETAIL - Rectangular vertical cards with detailed information
- */
 export const CardGrid = ({ section, listings, className }) => {
+  const scrollRef = useRef(null);
   const cardItems = listings.map((listing) => transformListingToCard(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
+
+  let preTitle = "DISCOVER MORE";
+  let viewAllText = "View all";
+  const titleLower = section.sectionTitle?.toLowerCase() || "";
+  
+  if (titleLower.includes("curated") || titleLower.includes("experience")) {
+    preTitle = "HANDPICKED EXPERIENCES";
+    viewAllText = "View all experiences";
+  } else if (titleLower.includes("events")) {
+    preTitle = "UPCOMING EVENTS";
+    viewAllText = "View all events";
+  } else if (titleLower.includes("stays")) {
+    preTitle = "TOP STAYS FOR YOU";
+    viewAllText = "View all stays";
+  }
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <div className={styles.sectionTitleWrapper}>
-          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
-            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-          </Link>
-          {section.priceStartingFrom && (
-            <div className={styles.priceStarting}>
-              Starts from <span>₹{section.priceStartingFrom}</span>
-            </div>
+        <div className={styles.titleBlock}>
+          <div className={styles.sectionPreTitle}>{preTitle}</div>
+          <h2 className={cn("h2", styles.sectionTitle)}>
+            {section.sectionTitle}
+          </h2>
+          {section.description && (
+            <p className={styles.sectionSubtitle}>{section.description}</p>
           )}
         </div>
-        {section.description && (
-          <p className={styles.sectionSubtitle}>{section.description}</p>
-        )}
+        
+        <div className={styles.headerActions}>
+          <Link to={sectionListingsUrl} className={styles.viewAllLink}>
+            {viewAllText}
+          </Link>
+          <div className={styles.sliderArrows}>
+            <button onClick={() => scrollRef.current?.scrollLeft()} className={styles.sliderArrow} aria-label="Previous">
+              <Icon name="arrow-prev" size="14" />
+            </button>
+            <button onClick={() => scrollRef.current?.scrollRight()} className={styles.sliderArrow} aria-label="Next">
+              <Icon name="arrow-next" size="14" />
+            </button>
+          </div>
+        </div>
       </div>
       <div className={styles.horizontalScrollWrapper}>
-        <HorizontalScroll className={styles.horizontalScroll} gap={24}>
+        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} className={styles.horizontalScroll} gap={24}>
           {cardItems.map((item) => (
             <Card className={styles.gridCardHorizontal} item={item} key={item.id} />
           ))}
@@ -538,10 +620,11 @@ export const CardDestinationHorizontal = ({ section, listings, className }) => {
       <div className={styles.horizontalScrollWrapper}>
         <HorizontalScroll className={styles.horizontalScroll} gap={24}>
           {destinationItems.map((item) => (
-            <Destination
+            <Card
               className={styles.destinationCardHorizontal}
               item={item}
               key={item.id}
+              hidePrice={true}
             />
           ))}
         </HorizontalScroll>
