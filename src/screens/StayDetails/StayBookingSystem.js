@@ -82,8 +82,11 @@ const StayInlineCalendar = ({
               // Completely disable calendar interaction once range is complete
               disabled = true;
             } else if (selectionMode === "check-out") {
-              // In check-out mode, disable dates on or before check-in, and after next blocked date
-              disabled = (checkInKey && cell.key <= checkInKey) || (nextBlockedKey && cell.key > nextBlockedKey);
+              // In check-out mode, disable dates on or before check-in, and the blocked day itself and beyond.
+              disabled =
+                (checkInKey && cell.key <= checkInKey) ||
+                cell.isBlocked ||
+                (nextBlockedKey && cell.key >= nextBlockedKey);
             } else {
               // In check-in mode, only block globally blocked dates
               disabled = cell.isBlocked;
@@ -970,31 +973,80 @@ const StayBookingSystem = ({
   }, [guests, selectedRooms, stay, stayRoomsCatalog, resolvedSelectedRooms, pricing]);
 
   const blockedDateKeys = useMemo(() => {
-    const ranges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
-    if (!Array.isArray(ranges) || ranges.length === 0) return new Set();
-
     const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
-    // Room-based stays should not use historical booked ranges as hard blockers.
-    // Real-time room inventory is handled by the availability API + backend validation.
-    if (!isPropertyBased) return new Set();
-
     const keys = new Set();
-    ranges.forEach((range) => {
-      const start = moment(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
-      const end = moment(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
-      if (!start.isValid() || !end.isValid()) return;
+    const normalizeId = (value) => {
+      if (value === null || value === undefined) return "";
+      const raw = String(value).trim();
+      if (!raw) return "";
+      const numeric = Number(raw);
+      return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
+    };
+    const addBlockedEntry = (entry) => {
+      if (!entry) return;
 
-      // Block occupied nights: [check-in, checkout)
-      const cursor = start.clone().startOf("day");
-      const endDay = end.clone().startOf("day");
-      while (cursor.isBefore(endDay, "day")) {
-        keys.add(cursor.format("YYYY-MM-DD"));
-        cursor.add(1, "day");
+      if (typeof entry === "string" || entry instanceof Date) {
+        const singleDate = moment(entry).startOf("day");
+        if (singleDate.isValid()) {
+          keys.add(singleDate.format("YYYY-MM-DD"));
+        }
+        return;
       }
+
+      const start = moment(
+        entry?.checkInDate ||
+        entry?.check_in_date ||
+        entry?.startDate ||
+        entry?.start_date ||
+        entry?.date
+      ).startOf("day");
+      const end = moment(
+        entry?.checkOutDate ||
+        entry?.check_out_date ||
+        entry?.endDate ||
+        entry?.end_date
+      ).startOf("day");
+
+      if (start.isValid() && end.isValid()) {
+        const cursor = start.clone();
+        while (cursor.isBefore(end, "day")) {
+          keys.add(cursor.format("YYYY-MM-DD"));
+          cursor.add(1, "day");
+        }
+        return;
+      }
+
+      if (start.isValid()) {
+        keys.add(start.format("YYYY-MM-DD"));
+      }
+    };
+
+    if (isPropertyBased) {
+      const propertyRanges = stay?.bookedDateRanges || stay?.stay?.bookedDateRanges || [];
+      if (!Array.isArray(propertyRanges) || propertyRanges.length === 0) return new Set();
+      propertyRanges.forEach(addBlockedEntry);
+      return keys;
+    }
+
+    const selectedRoomIds = new Set(
+      (selectedRooms || [])
+        .map((room) => normalizeId(room?.roomId ?? room?.room_id ?? room?.id))
+        .filter(Boolean)
+    );
+
+    if (selectedRoomIds.size === 0) return new Set();
+
+    stayRoomsCatalog.forEach((room) => {
+      const roomId = normalizeId(room?.roomId ?? room?.room_id ?? room?.id);
+      if (!roomId || !selectedRoomIds.has(roomId)) return;
+
+      const roomRanges = room?.roomBookedDateRanges || [];
+      if (!Array.isArray(roomRanges) || roomRanges.length === 0) return;
+      roomRanges.forEach(addBlockedEntry);
     });
 
     return keys;
-  }, [stay]);
+  }, [stay, selectedRooms, stayRoomsCatalog]);
 
   const nextBlockedDate = useMemo(() => {
     if (!checkInDate || !blockedDateKeys || blockedDateKeys.size === 0) return null;
@@ -1915,7 +1967,7 @@ const StayBookingSystem = ({
                         >
                           <Info size={12} color={A} />
                           <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>
-                            Checkout available only until {nextBlockedDate.format("DD MMM, YYYY")}
+                            Checkout must be before {nextBlockedDate.format("DD MMM, YYYY")}
                           </span>
                         </motion.div>
                       )}
