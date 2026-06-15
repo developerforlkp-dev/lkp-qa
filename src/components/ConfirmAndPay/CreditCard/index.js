@@ -5,7 +5,6 @@ import styles from "./CreditCard.module.sass";
 import TextInput from "../../TextInput";
 import TextArea from "../../TextArea";
 import Checkbox from "../../Checkbox";
-import { sendOrderMessage } from "../../../utils/api";
 
 const cards = [
   {
@@ -18,7 +17,7 @@ const cards = [
   },
 ];
 
-const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null, messageText = "" }) => {
+const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null }) => {
   const [save, setSave] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -69,17 +68,6 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 
     if (!payment || payment.paymentMethod !== "razorpay") {
       console.log("⚠️ No razorpay payment method, navigating directly to:", buttonUrl);
-
-      // Send the message if it exists
-      const orderId = localStorage.getItem("pendingOrderId");
-      if (messageText && messageText.trim() !== "" && orderId) {
-        try {
-          await sendOrderMessage(orderId, messageText);
-        } catch (err) {
-          console.error("Failed to send message:", err);
-        }
-      }
-
       // No payment session; just navigate to completion
       history.push(buttonUrl);
       setIsProcessing(false);
@@ -133,19 +121,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           bookingTime: bookingData?.bookingSummary?.time || "",
           slotId: bookingData?.bookingSummary?.slotId || "",
         },
-        handler: async function (response) {
+        handler: function (response) {
           setIsProcessing(false);
           try {
-            // Send the message if it exists
-            const orderId = localStorage.getItem("pendingOrderId") || payment.razorpayOrderId;
-            if (messageText && messageText.trim() !== "" && orderId) {
-              try {
-                await sendOrderMessage(orderId, messageText);
-              } catch (err) {
-                console.error("Failed to send message:", err);
-              }
-            }
-
             localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(response));
             // Save the actual paid amount before removing pendingPayment
             const actualPaidAmount = payment.amount;
@@ -247,7 +225,15 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           />
         </>
       )}
-      {/* Hidden legacy message box inside CreditCard is removed since it's now in ConfirmAndPay */}
+      <div className={styles.message} style={{ display: "none" }}>
+        <div className={styles.category}>Message the host</div>
+        <TextArea
+          className={styles.field}
+          name="message"
+          placeholder="I will be late about 1 hour, please wait..."
+          required="required"
+        />
+      </div>
       <div 
         className={styles.stickyBottom}
         style={{

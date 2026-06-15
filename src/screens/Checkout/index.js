@@ -681,7 +681,6 @@ const Checkout = () => {
             title={tripTitle}
             items={items}
             table={table}
-            addOns={selectedAddOns}
             amountToPay={paymentData?.amount}
             amountInPaise={isAmountInPaise}
             currency={paymentData?.currency || "INR"}

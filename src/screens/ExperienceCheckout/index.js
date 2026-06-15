@@ -5,7 +5,7 @@ import styles from "./ExperienceCheckout.module.sass";
 import Control from "../../components/Control";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
-import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails, getEventAddons } from "../../utils/api";
+import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
@@ -223,9 +223,6 @@ const Checkout = () => {
                   earlyBirdDiscount: prevPricing.earlyBirdDiscount || serverPricing.earlyBirdDiscount || 0,
                   promoDiscount: prevPricing.promoDiscount || serverPricing.promoDiscount || 0,
                   couponDiscount: prevPricing.couponDiscount || serverPricing.couponDiscount || 0,
-                  addonsTotal: (Number(prevPricing.addonsTotal || 0) > 0)
-                    ? prevPricing.addonsTotal
-                    : (serverPricing.addonsTotal || 0),
                   // Prioritize local calculation (prevPricing) to ensure consistency with details page
                   // only fall back to server if local is missing.
                   tax: (Number(prevPricing.tax || 0) > 0)
@@ -304,8 +301,7 @@ const Checkout = () => {
   // Fallback: build addonDetails from selectedAddOns if server breakdown not yet loaded
   useEffect(() => {
     const listingId = bookingData?.listingId;
-    const eventId = bookingData?.eventId;
-    if (!listingId && !eventId) return;
+    if (!listingId) return;
     // Skip if server pricing already set addonDetails (via the payment check useEffect)
     if (addonDetails.length > 0) return;
 
@@ -313,32 +309,28 @@ const Checkout = () => {
     const fallbackAddons = bookingData?.selectedAddOns || selectedAddOns || [];
     if (!fallbackAddons.length) return;
 
-    const fetchAddons = listingId 
-      ? getListingAddons(listingId) 
-      : getEventAddons(eventId);
-
-    fetchAddons.then((allAddons) => {
+    getListingAddons(listingId).then((allAddons) => {
       const merged = fallbackAddons.map((oa) => {
-        const addonId = oa.addonId || oa.id || oa; // oa might be just an ID string if read from localStorage
+        const addonId = oa.addonId || oa.id;
         const full = allAddons.find(
           (a) => String(a.addonId || a.id) === String(addonId)
         );
         return {
           addonId,
           // Try all possible name fields
-          name: oa.addonName || oa.title || oa.name || full?.title || full?.name || full?.addonName || full?.addon?.title || full?.addon?.name || full?.addon?.addonName || "Add-on",
-          quantity: oa.quantity || bookingData?.addOnQuantities?.[addonId] || 1,
-          pricePerUnit: oa.pricePerUnit || oa.addonPrice || oa.price || full?.price || full?.addonPrice || full?.addon?.price || full?.addon?.addonPrice || 0,
+          name: oa.addonName || oa.title || full?.title || full?.name || full?.addonName || "Add-on",
+          quantity: oa.quantity || 1,
+          pricePerUnit: oa.pricePerUnit || oa.addonPrice || oa.price || 0,
           totalPrice:
             oa.totalPrice ||
-            (oa.pricePerUnit || oa.addonPrice || oa.price || full?.price || full?.addonPrice || full?.addon?.price || full?.addon?.addonPrice || 0) * (oa.quantity || bookingData?.addOnQuantities?.[addonId] || 1),
-          image: full?.imageUrl || full?.image || full?.coverImageUrl || full?.addon?.imageUrl || full?.addon?.image || oa.image || oa.imageUrl || null,
+            (oa.pricePerUnit || oa.addonPrice || oa.price || 0) * (oa.quantity || 1),
+          image: full?.imageUrl || full?.image || full?.coverImageUrl || null,
         };
       });
       setAddonDetails(merged);
     }).catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingData?.listingId, bookingData?.eventId]);
+  }, [bookingData?.listingId]);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
   useEffect(() => {
@@ -545,32 +537,11 @@ const Checkout = () => {
         : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
 
       if (totalDiscount > 0) {
-        let remainingDiscount = totalDiscount;
-        let earlyBirdToDisplay = 0;
-
-        if (earlyBirdDiscount > 0 && remainingDiscount >= earlyBirdDiscount) {
-          earlyBirdToDisplay = earlyBirdDiscount;
-          remainingDiscount -= earlyBirdDiscount;
-        } else if (earlyBirdDiscount > 0 && remainingDiscount > 0) {
-          earlyBirdToDisplay = remainingDiscount;
-          remainingDiscount = 0;
-        }
-
-        if (remainingDiscount > 0) {
-          const discountRate = subtotalBeforeDiscountAndTax > 0
-            ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
-            : 0;
-          const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
-          rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(remainingDiscount)}` });
-        }
-
-        if (earlyBirdToDisplay > 0) {
-          const ebRate = subtotalBeforeDiscountAndTax > 0
-            ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
-            : 0;
-          const ebRateLabel = ebRate > 0 ? ` (${ebRate.toFixed(2)}%)` : "";
-          rows.push({ title: `Early Bird Discount${ebRateLabel}`, value: `- ${fmt(earlyBirdToDisplay)}` });
-        }
+        const discountRate = subtotalBeforeDiscountAndTax > 0
+          ? (Number(totalDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
+          : 0;
+        const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
+        rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(totalDiscount)}` });
       }
 
       if (displayTax > 0) {
@@ -806,7 +777,6 @@ const Checkout = () => {
             items={items}
             table={table}
             addonDetails={addonDetails}
-            addOns={selectedAddOns}
             amountToPay={paymentData?.amount}
             amountInPaise={isAmountInPaise}
             currency={paymentData?.currency || "INR"}

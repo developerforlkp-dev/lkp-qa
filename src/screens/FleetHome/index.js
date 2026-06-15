@@ -4,7 +4,6 @@ import cn from "classnames";
 import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
-import CategoryCard from "../../components/CategoryCard";
 import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces, getBusinessInterests } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
@@ -19,36 +18,11 @@ const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const filterOptions = [
-  { 
-    id: "experience", 
-    label: "Experiences", 
-    description: "Live unforgettable moments",
-    image: "https://images.unsplash.com/photo-1533130061792-64b345e4a833?auto=format&fit=crop&w=400&q=80" 
-  },
-  { 
-    id: "events", 
-    label: "Events", 
-    description: "Join unique happenings",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80" 
-  },
-  { 
-    id: "stays", 
-    label: "Stays", 
-    description: "Spaces that feel like you",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80" 
-  },
-  { 
-    id: "food", 
-    label: "Food", 
-    description: "Flavors worth remembering",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80" 
-  },
-  { 
-    id: "places", 
-    label: "Places", 
-    description: "Discover hidden gems",
-    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=400&q=80" 
-  },
+  { id: "experience", label: "Experience", icon: "star" },
+  { id: "events", label: "Events", icon: "calendar" },
+  { id: "stays", label: "Stays", icon: "home" },
+  { id: "food", label: "Food", icon: "burger" },
+  { id: "places", label: "Places", icon: "marker" },
 ];
 
 
@@ -198,14 +172,15 @@ const FleetHome = () => {
 
   const formattedDate = selectedDate
     ? moment(selectedDate).format("MMM DD, YYYY")
-    : "Add dates";
+    : "Select date";
 
 
   // Format guest count for display
   const guestCountText = (() => {
     const total = guests.adults + guests.children;
     if (total === 0) return "Add guests";
-    return `${guests.adults} Adult${guests.adults !== 1 ? 's' : ''}, ${guests.children} Child${guests.children !== 1 ? 'ren' : ''}`;
+    if (total === 1) return "1 guest";
+    return `${total} guests`;
   })();
 
 
@@ -683,12 +658,12 @@ const FleetHome = () => {
         <div className={styles.glassContainer}>
           <div className={styles.searchBar}>
             <div className={styles.searchField} ref={destinationRef}>
-              <Icon name="location" size="20" />
+              <Icon name="arrow-right" size="16" />
               <div className={styles.searchFieldContent}>
-                <div className={styles.searchLabel}>What are you looking for?</div>
+                <div className={styles.searchLabel}>Where to?</div>
                 <input
                   type="text"
-                  placeholder="Experiences, events, stays..."
+                  placeholder="Search Destination"
                   className={styles.searchInput}
                   value={searchQuery}
                   onChange={(e) => {
@@ -764,17 +739,17 @@ const FleetHome = () => {
                   ref={dateItemRef}
                   style={{ position: "relative" }}
                 >
-                  <Icon name="calendar" size="20" />
+                  <Icon name="calendar" size="16" />
                   <div
                     className={styles.searchFieldContent}
                     onClick={() => setShowDatePicker(!showDatePicker)}
                     style={{ cursor: "pointer" }}
                   >
                     <div className={styles.searchLabel}>
-                      When?
+                      {activeFilter === "stays" ? "Check-in" : "Date"}
                     </div>
                     <div className={styles.searchInput}>
-                      {formattedDate === "Add dates" ? "Add dates" : formattedDate}
+                      {formattedDate}
                     </div>
                   </div>
                   <InlineDatePicker
@@ -795,13 +770,13 @@ const FleetHome = () => {
                   ref={guestItemRef}
                   style={{ position: "relative" }}
                 >
-                  <Icon name="user" size="20" />
+                  <Icon name="user" size="16" />
                   <div
                     className={styles.searchFieldContent}
                     onClick={() => setShowGuestPicker(!showGuestPicker)}
                     style={{ cursor: "pointer" }}
                   >
-                    <div className={styles.searchLabel}>Who?</div>
+                    <div className={styles.searchLabel}>Guest Count</div>
                     <div className={styles.searchInput}>{guestCountText}</div>
                   </div>
                   <GuestPicker
@@ -814,27 +789,39 @@ const FleetHome = () => {
                 </div>
               </>
             )}
-            <button className={styles.searchButton} onClick={handleSearch}><Icon name="search" size="24" color="#fff" /></button>
+            <button className={styles.searchButton} onClick={handleSearch}>Search</button>
           </div>
-        </div>
 
-        <div className={cn(styles.filtersContainer, styles.desktopFilters)}>
-          <div className={styles.filtersGrid}>
-            {visibleFilterOptions.map((filter) => (
-              (() => {
-                const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
-                return (
-                  <CategoryCard
-                    key={filter.id}
-                    item={filter}
-                    isActive={activeFilter === filter.id}
-                    disabled={!isEnabledForListings}
-                    onClick={handleFilterClick}
-                  />
-                );
-              })()
-            ))}
+          <div className={cn(styles.filtersContainer, styles.desktopFilters)}>
+            <div className={styles.filtersGrid}>
+              {visibleFilterOptions.map((filter) => (
+                (() => {
+                  const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
+                  return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={cn(styles.filterCard, {
+                    [styles.filterCardActive]: activeFilter === filter.id,
+                    [styles.filterCardDisabled]: !isEnabledForListings,
+                  })}
+                  onClick={() => handleFilterClick(filter.id)}
+                  disabled={!isEnabledForListings}
+                >
+                  <div className={styles.filterCardContent}>
+                    <Icon name={filter.icon} size="18" />
+                    <span>{filter.label}</span>
+                  </div>
+                  {!isEnabledForListings && (
+                    <div className={styles.comingSoonBadge}>Coming Soon</div>
+                  )}
+                </button>
+                  );
+                })()
+              ))}
+            </div>
           </div>
+
         </div>
 
         {/* Dynamic Sections from API */}

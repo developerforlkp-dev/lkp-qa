@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star } from "lucide-react";
+import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, Share2, Sparkles } from "lucide-react";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent } from "../../../utils/api";
+import { getEventDetails, getEventReviews, getHost, getHostContent } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
 import Loader from "../../../components/Loader";
@@ -364,7 +364,7 @@ const E = [0.22, 1, 0.36, 1];
 const ScopedStyles = () => (
   <style>{`
     .event-details-premium {
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-inter, system-ui, sans-serif);
       overflow-x: hidden;
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
@@ -374,10 +374,8 @@ const ScopedStyles = () => (
     @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-16px) rotate(1deg)} }
     @keyframes spin-badge { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
     @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-    @keyframes live-pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.8); opacity: 0; } }
-    .event-details-premium .live-pulse { animation: live-pulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
     
-    .event-details-premium .font-display { font-family: 'Poppins', sans-serif; }
+    .event-details-premium .font-display { font-family: var(--font-fraunces, Georgia, serif); }
     .event-details-premium .font-mono { font-family: 'Courier New', Courier, monospace; }
     .event-details-premium .mq-l { display: flex; white-space: nowrap; animation: marquee-l 30s linear infinite; }
     .event-details-premium .mq-r { display: flex; white-space: nowrap; animation: marquee-r 34s linear infinite; }
@@ -413,22 +411,13 @@ const ScopedStyles = () => (
       -webkit-text-fill-color: #0097B2 !important;
     }
 
-    @keyframes spin-ring { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    @keyframes counter-spin-ring { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
-    .rotating-ring { animation: spin-ring 60s linear infinite; }
-    .counter-rotating-card { animation: counter-spin-ring 60s linear infinite; }
-    .image-ring-container:hover .rotating-ring,
-    .image-ring-container:hover .counter-rotating-card {
-      animation-play-state: paused !important;
-    }
-
 
     
     .gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: start; height: 850px; overflow: hidden; border-radius: 40px; }
-    .artist-row { display: grid; grid-template-columns: 80px 1fr 240px; gap: 12px; padding: 12px 24px 12px 0; border-bottom: 1px solid var(--B); align-items: center; cursor: default; transition: padding 0.3s, background 0.3s; }
-    .artist-image-tile { width: 240px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--S); border: 1px solid var(--B); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-    .artist-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(0.3); transition: filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
-    .artist-row:hover .artist-image-tile img { filter: grayscale(0); transform: scale(1.05); }
+    .artist-row { display: grid; grid-template-columns: 80px 1fr 150px; gap: 24px; padding: 26px 0; border-bottom: 1px solid var(--B); align-items: center; cursor: default; transition: padding 0.3s, background 0.3s; }
+    .artist-image-tile { width: 150px; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: var(--S); border: 1px solid var(--B); }
+    .artist-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1); transition: filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+    .artist-row:hover .artist-image-tile img { filter: grayscale(0); transform: scale(1.04); }
     
     .hero-ring-wrapper {
       position: absolute;
@@ -546,15 +535,6 @@ const ScopedStyles = () => (
 );
 
 /* ─── UTILS ──────────────────────────────────────── */
-const stripPinAndCountry = (str) => {
-  if (!str || typeof str !== "string") return "";
-  let clean = str.replace(/,\s*India/gi, "").replace(/\bIndia\b/gi, "");
-  clean = clean.replace(/\b\d{6}\b/g, "").replace(/\b\d{3}\s*\d{3}\b/g, "");
-  clean = clean.replace(/,\s*,/g, ",").replace(/\s+/g, " ").trim();
-  clean = clean.replace(/^,|,$/g, "").trim();
-  return clean;
-};
-
 const formatTime12h = (timeStr) => {
   if (!timeStr || typeof timeStr !== "string") return timeStr;
   const match = timeStr.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
@@ -578,7 +558,7 @@ function ProgressBar() {
   );
 }
 
-function HeroShareFab({ title, text, url, style = {} }) {
+function HeroShareFab({ title, text, url }) {
   const [copied, setCopied] = useState(false);
   const [ripple, setRipple] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -616,7 +596,7 @@ function HeroShareFab({ title, text, url, style = {} }) {
     <motion.button
       type="button"
       aria-label={`Share: ${title || "this event"}`}
-      className="premium-share-fab"
+      className="event-hero-share premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
@@ -651,7 +631,6 @@ function HeroShareFab({ title, text, url, style = {} }) {
         outline: "none",
         userSelect: "none",
         transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease",
-        ...style
       }}
     >
       <motion.span
@@ -772,45 +751,22 @@ function formatDurationMinutes(totalMinutes) {
 }
 
 function SpinBadge({ event }) {
-  const { tokens: { A, FG, M }, theme } = useTheme();
-  const participantCount = event?.participantCount || 180;
-  
+  const { tokens: { A } } = useTheme();
+  const title = event?.title || "SOLSTICE";
+  const dateStr = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
+  const timeStr = event?.startTime || "6:00 PM IST";
+  const t = `${title.toUpperCase()} · ${dateStr} · ${timeStr.toUpperCase()} · `;
   return (
-    <div style={{ 
-      position: "relative", 
-      width: 140, 
-      height: 140, 
-      borderRadius: "50%", 
-      background: theme === "dark" ? "rgba(15, 23, 42, 0.85)" : "rgba(255, 255, 255, 0.9)", 
-      border: `2px solid ${A}33`,
-      boxShadow: "0 10px 30px rgba(0,0,0,0.15), inset 0 0 20px rgba(0,151,178,0.1)",
-      backdropFilter: "blur(12px)",
-      WebkitBackdropFilter: "blur(12px)",
-      display: "flex", 
-      flexDirection: "column", 
-      alignItems: "center", 
-      justifyContent: "center" 
-    }}>
-      <motion.div 
-        animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.6, 0.3] }} 
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} 
-        style={{ 
-          position: "absolute", 
-          inset: -6, 
-          borderRadius: "50%", 
-          border: `1.5px solid ${A}20`,
-          pointerEvents: "none"
-        }} 
-      />
-      <span className="font-display" style={{ fontSize: "28px", fontWeight: 800, color: A, lineHeight: 1 }}>
-        {participantCount}
-      </span>
-      <span style={{ fontSize: "8px", letterSpacing: "0.15em", fontWeight: 700, color: FG, marginTop: 4, textTransform: "uppercase" }}>
-        Participants
-      </span>
-      <span style={{ fontSize: "7px", letterSpacing: "0.08em", fontWeight: 600, color: M, marginTop: 2, textTransform: "uppercase" }}>
-        Attending
-      </span>
+    <div style={{ position: "relative", width: 140, height: 140 }}>
+      <svg viewBox="0 0 140 140" className="spin" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+        <defs><path id="cp" d="M70,70 m-55,0 a55,55 0 1,1 110,0 a55,55 0 1,1 -110,0" /></defs>
+        <text fill={A} fontSize="8" fontFamily="Inter,sans-serif" letterSpacing="3.5" fontWeight="600">
+          <textPath href="#cp">{t}</textPath>
+        </text>
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: A }} />
+      </div>
     </div>
   );
 }
@@ -828,8 +784,8 @@ function ImageRing({ event }) {
 
   const R = 150;
   return (
-    <div className="image-ring-container" style={{ position: "relative", width: 440, height: 440, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div className="rotating-ring" style={{ position: "absolute", width: "100%", height: "100%" }}>
+    <div style={{ position: "relative", width: 440, height: 440, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} style={{ position: "absolute", width: "100%", height: "100%" }}>
         {ringImages.map((src, i) => {
           const ang = (i / ringImages.length) * Math.PI * 2;
           const x = (Math.cos(ang) * R).toFixed(3);
@@ -839,24 +795,15 @@ function ImageRing({ event }) {
           const finalSrc = src.startsWith('http') ? src : `https://picsum.photos/seed/${src}/200/300`;
 
           return (
-            <div 
-              key={i} 
-              style={{ position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`, zIndex: 5 }}
-            >
-              <div className="counter-rotating-card">
-                <motion.div 
-                  whileHover={{ scale: 1.6, zIndex: 100 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  style={{ width: 84, height: 110, borderRadius: 16, border: `1px solid ${B}`, overflow: "hidden", backgroundColor: "#000", boxShadow: "0 12px 40px -10px rgba(0,0,0,0.3)", cursor: "pointer" }}
-                >
-                  <img src={finalSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-                </motion.div>
-              </div>
+            <div key={i} style={{ position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}>
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} style={{ width: 84, height: 110, borderRadius: 16, border: `1px solid ${B}`, overflow: "hidden", backgroundColor: "#000", boxShadow: "0 12px 40px -10px rgba(0,0,0,0.3)" }}>
+                <img src={finalSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+              </motion.div>
             </div>
           );
         })}
-      </div>
-      <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 140, height: 140 }}>
+      </motion.div>
+      <div style={{ position: "relative", zIndex: 10 }}>
         <SpinBadge event={event} />
       </div>
     </div>
@@ -890,7 +837,7 @@ function Mq({ items, dir = "l", size = "sm", bg, accent = false }) {
 function SHdr({ idx, label }) {
   const { tokens: { A, B } } = useTheme();
   return (
-    <Rev style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
+    <Rev style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 52 }}>
       <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: A, whiteSpace: "nowrap" }}>{idx ? `${idx} — ` : ""}{label}</span>
       <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.2 }} style={{ flex: 1, height: 1, background: B, transformOrigin: "left" }} />
     </Rev>
@@ -911,31 +858,31 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
   if (!discounts || discounts.length === 0) return null;
 
   return (
-    <div style={{ display: "grid", height: 20, alignItems: "center", overflow: "hidden" }}>
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
       <AnimatePresence>
         <motion.span
           key={index}
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 15, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -20, opacity: 0 }}
+          exit={{ y: -15, opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
           style={{
             gridArea: "1 / 1",
-            fontSize: 11,
-            letterSpacing: "0.08em",
+            fontSize: 10,
+            letterSpacing: "0.3em",
             textTransform: "uppercase",
-            color: "#FFFFFF",
-            fontWeight: 700,
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
             whiteSpace: "nowrap",
             display: "block"
           }}
         >
-          <span style={{ opacity: 0.7 }}>Book</span>{" "}
-          <span style={{ color: "#38BDF8", fontWeight: 800 }}>
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
             {discounts[index].daysInAdvance} Days
           </span>{" "}
-          <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
-          <span style={{ color: "#4ADE80", fontWeight: 800 }}>
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
             {discounts[index].percentage}% OFF
           </span>
         </motion.span>
@@ -944,125 +891,13 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
   );
 };
 
-const HighlightCard = ({ children, A, B, FG, M, W, theme }) => {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      whileHover={{ y: -6, scale: 1.02, boxShadow: theme === "dark" ? `0 20px 40px -15px ${A}30` : `0 20px 40px -15px rgba(15, 23, 42, 0.12)` }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      style={{ 
-        background: hovered
-          ? (theme === "dark" ? "rgba(255,255,255,0.06)" : "#FFFFFF")
-          : (theme === "dark" ? "linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 100%)" : "linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%)"), 
-        border: `1px solid ${hovered ? A : B}`, 
-        borderRadius: "24px", 
-        padding: "24px 28px", 
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        display: "flex",
-        gap: 20,
-        alignItems: "center",
-        position: "relative",
-        overflow: "hidden",
-        cursor: "pointer",
-        transition: "border-color 0.3s, background-color 0.3s, box-shadow 0.3s"
-      }}
-    >
-      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "3px", background: `linear-gradient(90deg, ${A}55, ${hovered ? A : A + "aa"})`, transition: "all 0.3s" }} />
-      {children(hovered)}
-    </motion.div>
-  );
-};
-
-const SpecCard = ({ label, value, sub, index, A, B, FG, M, W, theme, isCount }) => {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ type: "spring", stiffness: 300, damping: 20, delay: index * 0.08 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      whileHover={{ y: -4, boxShadow: `0 10px 25px rgba(0, 0, 0, 0.02)` }}
-      style={{
-        border: `1px solid ${hovered ? A : B}`,
-        borderRadius: "20px",
-        height: "128px",
-        boxSizing: "border-box",
-        backgroundColor: hovered
-          ? (theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF")
-          : W,
-        transition: "all 0.3s",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        padding: "16px",
-        overflow: "hidden"
-      }}
-    >
-      <p style={{
-        fontSize: "15px",
-        fontWeight: 700,
-        color: hovered ? A : FG,
-        marginBottom: 4,
-        fontFamily: "Poppins, sans-serif",
-        transition: "color 0.3s",
-        margin: "0 0 4px 0"
-      }}>
-        {isCount ? <Count to={value} /> : value}
-      </p>
-      <p style={{
-        fontSize: "10px",
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        color: M,
-        margin: 0,
-        fontWeight: 600,
-        transition: "color 0.3s"
-      }}>
-        {label}
-      </p>
-      {sub && (
-        <p style={{
-          fontSize: "9px",
-          color: M,
-          marginTop: 4,
-          marginBottom: 0,
-          fontWeight: 500,
-          opacity: 0.8
-        }}>
-          {sub}
-        </p>
-      )}
-    </motion.div>
-  );
-};
-
 /* ─── SECTIONS ───────────────────────────────────── */
 function Hero({ event }) {
-  const { theme, tokens: { A, W, M, FG, B, S, AL } } = useTheme();
+  const { tokens: { A, W, M, FG }, theme } = useTheme();
   const history = useHistory();
   const title = event?.title || "SOLSTICE";
   const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
   const venueStr = event?.venueFullAddress || "Mumbai";
-  const getVenueParts = () => {
-    let cleanStr = stripPinAndCountry(venueStr);
-    const parts = cleanStr.split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length <= 1) return { main: cleanStr, sub: "Kerala" };
-    return {
-      main: parts[0],
-      sub: parts.slice(1).join(', ')
-    };
-  };
-  const { main: venueMain, sub: venueSub } = getVenueParts();
   const getCategoryDisplayName = (category, fallbackName) => {
     let name = "";
     if (category && typeof category === "object") {
@@ -1077,8 +912,8 @@ function Hero({ event }) {
     }
     return name;
   };
-  const titlePart1 = title;
   const splitTitle = (str) => {
+    if (!str) return ["", ""];
     if (str.includes("SOLSTICE")) return ["SOL", "STICE"];
     const words = str.split(" ");
     if (words.length === 1) {
@@ -1088,65 +923,24 @@ function Hero({ event }) {
     const middle = Math.ceil(words.length / 2);
     return [words.slice(0, middle).join(" "), words.slice(middle).join(" ")];
   };
-  const [titlePart1_dummy, titlePart2_dummy] = splitTitle(title);
+  const [titlePart1, titlePart2] = splitTitle(title);
   const heroTags = [
     getCategoryDisplayName(event?.primaryCategory, event?.primaryCategoryName || event?.category),
     getCategoryDisplayName(event?.subCategory, event?.subCategoryName),
   ].map((tag) => String(tag || "").trim()).filter(Boolean);
 
-  const ticketTypes = Array.isArray(event?.ticketTypes) ? event.ticketTypes : [];
-  const slots = event?.slots || event?.eventSlots || event?.timeSlots || ticketTypes.flatMap(ticket => (
-    ticket?.applicableSlots || ticket?.slots || ticket?.eventSlots || []
-  ));
-  const totalSlotDuration = Array.isArray(slots)
-    ? slots.reduce((sum, slot) => {
-      const durationValue = slot?.duration ?? slot?.durationMinutes ?? slot?.durationInMinutes ?? slot?.duration_minutes ?? slot?.schedule?.duration;
-      return sum + parseDurationMinutes(durationValue);
-    }, 0)
-    : 0;
-  const durationStr = formatDurationMinutes(totalSlotDuration);
-
-  // Helper function to format time
-  const displayTime = slots[0]?.startTime ? slots[0].startTime : (event?.startTime || "4:00 PM");
-
-  const getParsedDateParts = () => {
-    if (!event?.startDate) return { day: "21", month: "JUN" };
-    try {
-      const d = new Date(event.startDate);
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-      return { day, month };
-    } catch (err) {
-      return { day: "08", month: "JUN" };
-    }
-  };
-  const { day: dateDay, month: dateMonth } = getParsedDateParts();
-
   return (
-    <section className="hero-section" style={{
-      position: "relative",
-      minHeight: "520px",
-      width: "calc(100% - 80px)",
-      maxWidth: "1600px",
-      margin: "12px auto 0",
-      borderRadius: "32px",
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      zIndex: 50,
-      background: W,
-      boxShadow: "0 10px 40px rgba(0,0,0,0.03)"
-    }}>
-      {/* Background Orbs & Grid */}
+    <section className="hero-section-wrapper" style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
       <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.25, 0.4, 0.25] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-15%", left: "30%", width: 900, height: 900, borderRadius: "50%", background: `radial-gradient(circle, ${A}15 0%, transparent 60%)` }} />
-        <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }} style={{ position: "absolute", bottom: "-10%", right: "10%", width: 700, height: 700, borderRadius: "50%", background: `radial-gradient(circle, ${A}10 0%, transparent 60%)` }} />
-        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}06 1px, transparent 1px), linear-gradient(90deg, ${A}06 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 30%, ${W} 100%)` }} />
+        <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 800, height: 800, borderRadius: "50%", background: `radial-gradient(circle, ${A}12 0%, transparent 60%)` }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}08 1px, transparent 1px), linear-gradient(90deg, ${A}08 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 40%, ${W} 100%)` }} />
       </motion.div>
 
-      {/* Controls: Back & Share */}
+      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.6, ease: E }} className="hero-ring-wrapper">
+        <div className="float-anim"><ImageRing event={event} /></div>
+      </motion.div>
+
       <button
         type="button"
         className="premium-back-button"
@@ -1155,207 +949,83 @@ function Hero({ event }) {
       >
         <ChevronLeft size={20} />
       </button>
-      {/* Early Bird Ticker (Top Right Corner) */}
+      <HeroShareFab
+        title={title}
+        text={`Check out ${title} on Little Known Planet`}
+      />
       {event?.earlyBirdDiscounts?.some(d => d.isActive) && (
-        <div style={{
-          position: "absolute",
-          top: 32,
-          right: 40,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          background: "rgba(15, 23, 42, 0.9)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          padding: "10px 20px",
-          borderRadius: "100px",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
-          color: "#FFFFFF",
-          zIndex: 200
-        }}>
-          <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ flexShrink: 0 }} />
-          <EarlyBirdTicker discounts={event.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
-        </div>
+        <motion.div
+          className="early-bird-wrapper"
+          style={{ position: "absolute", bottom: 60, right: 60, zIndex: 100 }}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <motion.div
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              background: theme === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.03)",
+              backdropFilter: "blur(12px)",
+              padding: "12px 24px",
+              borderRadius: 100,
+              border: `1px solid ${A}33`,
+              boxShadow: `0 10px 30px rgba(0,0,0,0.2), inset 0 0 20px ${A}11`,
+              whiteSpace: "nowrap"
+            }}
+          >
+            <Sparkles color={A} size={14} />
+            <EarlyBirdTicker discounts={event.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
+          </motion.div>
+        </motion.div>
       )}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }} style={{ position: "relative", zIndex: 2, maxWidth: 1320, margin: "0 auto", padding: "64px 36px 0", width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 20 }}>
 
-      {/* Share Button (Bottom Right Corner) */}
-      <div style={{
-        position: "absolute",
-        bottom: 32,
-        right: 40,
-        zIndex: 200
-      }}>
-        <HeroShareFab
-          title={title}
-          text={`Check out ${title} on Little Known Planet`}
-          url={window.location.href}
-          style={{
-            position: "relative",
-            top: "auto",
-            right: "auto",
-            margin: 0,
-            zIndex: 200
-          }}
-        />
-      </div>
-
-      <div style={{ position: "relative", zIndex: 2, width: "100%", display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center", padding: "32px 40px" }}>
-        
-        {/* Asymmetric Split Layout Container */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 64, alignItems: "center" }} className="grid-2">
-          
-          {/* Left Column: General Info & Redesigned Card Details */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            
-
-            {/* Event Name Heading */}
-            <div style={{ overflow: "hidden", marginBottom: 12 }}>
-              <motion.h1 
-                initial={{ y: "100%" }} 
-                animate={{ y: 0 }} 
-                transition={{ duration: 1, ease: E }} 
-                className="font-display" 
-                style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", fontWeight: 800, lineHeight: 1.1, color: FG, margin: 0, letterSpacing: "-0.02em" }}
-              >
-                {title}
-              </motion.h1>
+          {heroTags.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {heroTags.map((t, i) => (
+                <motion.span key={t} className="hero-tag-pill" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.55 + i * 0.07 }} whileHover={{ scale: 1.04, transition: { duration: 0.35, ease: E } }} style={{ position: "relative", display: "inline-flex", alignItems: "center", fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", fontWeight: 600, color: A, border: `1px solid ${A}40`, padding: "5px 14px", cursor: "default", transformOrigin: "center", willChange: "transform", transition: "background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}>
+                  {t}
+                </motion.span>
+              ))}
             </div>
-
-
-            {/* REDESIGNED: Premium Editorial Highlights Panel (When & Where Split Cards) */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 20,
-              width: "100%",
-              marginBottom: 40
-            }} className="grid-2">
-              {/* WHEN Card */}
-              <HighlightCard A={A} B={B} FG={FG} M={M} W={W} theme={theme}>
-                {(hovered) => (
-                  <>
-                    {/* Custom Designer Calendar Slip Badge */}
-                    <div style={{ 
-                      background: theme === "dark" ? "rgba(15, 23, 42, 0.7)" : "#FFFFFF", 
-                      borderRadius: "16px", 
-                      width: "58px", 
-                      height: "62px", 
-                      display: "flex", 
-                      flexDirection: "column", 
-                      alignItems: "center", 
-                      overflow: "hidden", 
-                      boxShadow: hovered ? `0 8px 25px ${A}30` : `0 8px 20px ${A}15`,
-                      border: `1px solid ${hovered ? A : B}`,
-                      flexShrink: 0,
-                      transition: "all 0.3s"
-                    }}>
-                      <span style={{ 
-                        fontSize: "8px", 
-                        fontWeight: 900, 
-                        background: hovered ? `linear-gradient(90deg, ${A}, ${A})` : `linear-gradient(90deg, ${A}dd, ${A})`, 
-                        color: W,
-                        width: "100%", 
-                        textAlign: "center", 
-                        padding: "5px 0 4px", 
-                        letterSpacing: "0.15em",
-                        textTransform: "uppercase",
-                        transition: "all 0.3s"
-                      }}>
-                        {dateMonth}
-                      </span>
-                      <span style={{ 
-                        fontSize: "22px", 
-                        fontWeight: 850, 
-                        lineHeight: 1.1, 
-                        marginTop: 4, 
-                        color: hovered ? A : FG,
-                        fontFamily: "var(--font-fraunces, Georgia, serif)",
-                        transition: "color 0.3s"
-                      }}>
-                        {dateDay}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <span style={{ fontSize: "9px", letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: A }}>WHEN</span>
-                      <span style={{ fontSize: "16px", fontWeight: 800, color: hovered ? A : FG, display: "flex", alignItems: "center", gap: 6, letterSpacing: "-0.01em", transition: "color 0.3s" }}>
-                        {displayTime}
-                      </span>
-                      <span style={{ fontSize: "11px", color: M, fontWeight: 555 }}>
-                        {date}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </HighlightCard>
-
-              {/* WHERE Card */}
-              <HighlightCard A={A} B={B} FG={FG} M={M} W={W} theme={theme}>
-                {(hovered) => (
-                  <>
-                    {/* Location Icon Container */}
-                    <div style={{ 
-                      background: hovered ? `${A}24` : `${A}12`, 
-                      color: A, 
-                      borderRadius: "16px", 
-                      width: "58px", 
-                      height: "62px", 
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "center",
-                      border: hovered ? `1.5px solid ${A}48` : `1.5px solid ${A}24`,
-                      boxShadow: hovered ? `0 8px 25px ${A}15` : `0 8px 20px ${A}08`,
-                      flexShrink: 0,
-                      transition: "all 0.3s"
-                    }}>
-                      <MapPin size={24} strokeWidth={2.2} />
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: "9px", letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: A }}>WHERE</span>
-                      <span style={{ 
-                        fontSize: "16px", 
-                        fontWeight: 800, 
-                        color: hovered ? A : FG, 
-                        whiteSpace: "nowrap", 
-                        overflow: "hidden", 
-                        textOverflow: "ellipsis", 
-                        letterSpacing: "-0.01em",
-                        transition: "color 0.3s"
-                      }} title={venueMain}>
-                        {venueMain}
-                      </span>
-                      <span style={{ fontSize: "11px", color: M, lineHeight: 1.4, fontWeight: 555, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {venueSub}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </HighlightCard>
-            </div>
-
-          </div>
-
-          {/* Right Column: Visual Component Ring + Live Attendee Widget */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
-            {/* Soft Glow Ambient Backdrop */}
-            <div style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: `${A}10`, filter: "blur(50px)", zIndex: 0 }} />
-            
-            <div style={{ position: "relative", zIndex: 1 }} className="float-anim">
-              <ImageRing event={event} />
-            </div>
-          </div>
-
+          )}
         </div>
+      </motion.div>
 
+      <div style={{ position: "relative", zIndex: 2, maxWidth: 1320, margin: "0 auto", padding: "0 36px", width: "100%" }}>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.62 }} className="font-mono" style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: M, marginBottom: 12 }}>
+          <span style={{ color: A }}>▸</span> Edition 01 — {date} — {venueStr.split(',')[0]}
+        </motion.p>
+        <div style={{ overflow: "hidden", paddingBottom: "0.2em" }}>
+          <motion.h1 initial={{ y: "110%" }} animate={{ y: 0 }} transition={{ duration: 1.2, ease: E, delay: 0.65 }} className="font-display" style={{ fontSize: "clamp(3rem, 10vw, 8.5rem)", fontWeight: 700, lineHeight: 1.1, color: FG, margin: 0, letterSpacing: "-0.03em" }}>
+            {titlePart1}
+          </motion.h1>
+        </div>
+        <div style={{ overflow: "hidden", paddingBottom: "0.2em", marginTop: "-0.2em" }}>
+          <motion.h1 initial={{ y: "110%" }} animate={{ y: 0 }} transition={{ duration: 1.2, ease: E, delay: 0.79 }} className="font-display" style={{ fontSize: "clamp(3rem, 10vw, 8.5rem)", fontWeight: 700, lineHeight: 1.1, color: W, WebkitTextFillColor: W, WebkitTextStroke: `2px ${A}`, margin: 0, letterSpacing: "-0.03em" }}>
+            {titlePart2}
+          </motion.h1>
+        </div>
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 1.15, ease: E }} style={{ marginTop: 44, display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+          <p style={{ maxWidth: 400, color: M, fontSize: 14, lineHeight: 1.8 }}>
+            An immersive experience bringing together visionary minds for one unforgettable event.
+          </p>
+          <motion.a href="#about" whileHover={{ x: 6 }} style={{ display: "flex", alignItems: "center", gap: 8, color: A, fontSize: 10, letterSpacing: "0.24em", textTransform: "uppercase", fontWeight: 600, textDecoration: "none" }}>
+            Explore <ArrowDown size={13} />
+          </motion.a>
+        </motion.div>
       </div>
+
     </section>
   );
 }
 
 function About({ event }) {
-  const { theme, tokens: { A, BG, FG, M, W, B, S } } = useTheme();
+  const { tokens: { A, BG, FG, M, W, B, S } } = useTheme();
 
   const desc = event?.description || "SOLSTICE is not merely an event — it is a threshold. A gathering of the most luminous minds in music, art, and culture, converging for a single evening at the intersection of the timeless and the radically new.";
 
@@ -1393,32 +1063,31 @@ function About({ event }) {
   const duration = formatDurationMinutes(totalSlotDuration);
   const ageLimit = event?.minimumAge != null ? `${event.minimumAge}+` : (event?.ageLimit || "All ages");
 
-  const categoryName = event?.primaryCategoryName || event?.category || "Festival";
   const statsList = [
     { value: eventType, l: "Event Type", sub: "Program format" },
+    { value: duration, l: "Duration", sub: "Scheduled window" },
     { value: ageLimit, l: "Age Limit", sub: "Entry guidance" },
     { value: guestCount, l: "Guest Count", sub: "Total ticket capacity", isCount: true },
-    { value: categoryName, l: "Category", sub: "Genre & theme" },
   ];
 
   return (
     <>
-      <section id="about" style={{ background: BG, padding: "32px 80px" }}>
+      <section id="about" style={{ background: BG, padding: "130px 36px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 72, alignItems: "start" }} className="grid-2">
-            <div style={{ borderLeft: `3px solid ${A}44`, paddingLeft: 32, position: "relative" }}>
-              <div style={{ position: "absolute", left: -3, top: 0, width: 3, height: 40, background: A }} />
-              <Chars text="Where the ancient" cls="font-display" style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, overflow: "hidden" }} />
-              <Chars text="meets the avant-garde." cls="font-display" delay={0.12} style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: A, fontStyle: "italic", overflow: "hidden" }} />
+          <SHdr idx="01" label="Story" />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 72, alignItems: "start" }} className="grid-2">
+            <div>
+              <Chars text="Where the ancient" cls="font-display" style={{ fontSize: "clamp(2.2rem,4vw,3.6rem)", fontWeight: 700, lineHeight: 1.1, color: FG, overflow: "hidden" }} />
+              <Chars text="meets the avant-garde." cls="font-display" delay={0.12} style={{ fontSize: "clamp(2.2rem,4vw,3.6rem)", fontWeight: 700, lineHeight: 1.1, color: A, fontStyle: "italic", overflow: "hidden" }} />
               <Rev delay={0.25}>
-                <p style={{ color: M, fontSize: 15, lineHeight: 1.7, marginTop: 24, marginBottom: 36, fontWeight: 400 }}>{desc}</p>
+                <p style={{ color: M, fontSize: 14, lineHeight: 1.85, maxWidth: 480, marginTop: 28, marginBottom: 36 }}>{desc}</p>
 
                 {/* Tags Section */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {tags.map((t, i) => (
                     <motion.span key={t} initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
                       whileHover={{ color: "#FFF", backgroundColor: A, borderColor: A, scale: 1.05 }}
-                      style={{ fontSize: 10, fontWeight: 600, color: M, backgroundColor: W, border: `1px solid ${B}`, borderRadius: "100px", padding: "6px 16px", cursor: "default", transition: "all 0.2s" }}>
+                      style={{ fontSize: 10, fontWeight: 500, color: M, backgroundColor: W, border: `1px solid ${B}`, padding: "6px 12px", cursor: "default" }}>
                       {t}
                     </motion.span>
                   ))}
@@ -1427,89 +1096,22 @@ function About({ event }) {
             </div>
             <Rev delay={0.2}>
               {/* Stats Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {statsList.map((s, i) => (
-                  <SpecCard
-                    key={s.l}
-                    label={s.l}
-                    value={s.value}
-                    sub={s.sub}
-                    index={i}
-                    A={A}
-                    B={B}
-                    FG={FG}
-                    M={M}
-                    W={W}
-                    theme={theme}
-                    isCount={s.isCount}
-                  />
+                  <motion.div key={s.l} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 + i * 0.1 }} whileHover={{ y: -4, borderColor: `${A}60`, backgroundColor: W }} style={{ border: `1px solid ${B}`, padding: "28px 28px", backgroundColor: BG, transition: "all 0.3s", cursor: "default", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: FG, marginBottom: 14 }}>{s.l}</p>
+                    <p className="font-display" style={{ fontSize: "clamp(2rem,3.2vw,3rem)", fontWeight: 700, color: A, lineHeight: 1.05, marginBottom: 10, whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {s.isCount ? <Count to={s.value} /> : s.value}
+                    </p>
+                    <p style={{ fontSize: 11, color: M, lineHeight: 1.5 }}>{s.sub}</p>
+                  </motion.div>
                 ))}
               </div>
             </Rev>
           </div>
         </div>
       </section>
-      {(() => {
-        const rawTags = mqItems.length > 0 ? mqItems : ["Experience", "Premium", "Event", "Curated", "Editorial"];
-        // Duplicate to ensure infinite seamless scrolling loop
-        const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
-
-        const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-        const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50%
-        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-        return (
-          <div style={{
-            margin: "48px 0 0",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
-          }}>
-            {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-              style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-            >
-              {loopedTags.map((tag, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
-                      }}
-                    >
-                      {tag}
-                    </span>
-                    <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
-          </div>
-        );
-      })()}
+      <Mq items={mqItems.length > 0 ? mqItems : ["Experience", "Premium", "Event"]} dir="r" size="sm" bg={S} />
     </>
   );
 }
@@ -1568,7 +1170,7 @@ function Gallery({ event }) {
     return cols;
   };
 
-  const dynamicCols = chunkMedia(eventMedia, 4);
+  const dynamicCols = chunkMedia(eventMedia, 5);
 
   // Fallback to reference images if no media is provided
   const GALLERY_COLS = useMemo(() => dynamicCols || [
@@ -1576,6 +1178,7 @@ function Gallery({ event }) {
     [{ src: "https://picsum.photos/seed/b1/300/500", label: "Painting", h: 520 }, { src: "https://picsum.photos/seed/b2/300/400", label: "Venue", h: 380 }, { src: "https://picsum.photos/seed/b3/300/400", label: "Movement", h: 400 }],
     [{ src: "https://picsum.photos/seed/c1/300/400", label: "Guests", h: 380 }, { src: "https://picsum.photos/seed/c2/300/600", label: "Sonic", h: 540 }, { src: "https://picsum.photos/seed/c3/300/400", label: "Canvas", h: 420 }],
     [{ src: "https://picsum.photos/seed/d1/300/500", label: "Heritage", h: 480 }, { src: "https://picsum.photos/seed/d2/300/400", label: "Expression", h: 420 }, { src: "https://picsum.photos/seed/d3/300/300", label: "Energy", h: 360 }],
+    [{ src: "https://picsum.photos/seed/e1/300/400", label: "Exhibitions", h: 360 }, { src: "https://picsum.photos/seed/e2/300/500", label: "Visuals", h: 500 }, { src: "https://picsum.photos/seed/e3/300/400", label: "Sound", h: 460 }],
   ], [dynamicCols]);
 
   const allImageUrls = useMemo(() => {
@@ -1589,84 +1192,76 @@ function Gallery({ event }) {
   };
 
   return (
-    <section id="gallery" style={{ backgroundColor: BG, padding: "24px 80px 32px", overflow: "hidden" }}>
-      <div style={{ maxWidth: 1600, margin: "0 auto", padding: "0" }}>
+    <>
+      <Mq items={galleryMqItems.length > 0 ? galleryMqItems : ["SOLSTICE Ed.01", "Moments", "Curated Visuals"]} dir="l" size="sm" bg={BG} accent />
+      <section id="gallery" style={{ backgroundColor: BG, padding: "120px 0", overflow: "hidden" }}>
+        <div style={{ maxWidth: 1600, margin: "0 auto", padding: "0 36px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 48 }}>
+            <span style={{ fontSize: 10, letterSpacing: "0.35em", fontWeight: 600, textTransform: "uppercase", color: AH, whiteSpace: "nowrap" }}>02 — Visuals</span>
+            <div style={{ flex: 1, height: 1, backgroundColor: B }} />
+          </div>
 
-        <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <Chars text="See the Vibe" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 64, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
 
-        <div className="gallery-grid" style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 16,
-          height: 510,
-          overflow: "hidden"
-        }}>
-          <div style={{ width: "calc((100% - 48px) / 4)", flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[0]} direction="up" speed={28} onImageClick={handleImageClick} /></div>
-          <div style={{ width: "calc((100% - 48px) / 4)", flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[1]} direction="down" speed={36} onImageClick={handleImageClick} /></div>
-          <div style={{ width: "calc((100% - 48px) / 4)", flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[2]} direction="up" speed={32} onImageClick={handleImageClick} /></div>
-          <div style={{ width: "calc((100% - 48px) / 4)", flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[3]} direction="down" speed={40} onImageClick={handleImageClick} /></div>
+          <div className="gallery-grid" style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 16,
+            height: 850,
+            overflow: "hidden"
+          }}>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[0]} direction="up" speed={28} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[1]} direction="down" speed={36} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[2]} direction="up" speed={32} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[3]} direction="down" speed={40} onImageClick={handleImageClick} /></div>
+            <div style={{ width: 280, flexShrink: 0 }}><GalleryColumn images={GALLERY_COLS[4]} direction="up" speed={30} onImageClick={handleImageClick} /></div>
+          </div>
         </div>
-      </div>
 
-      <AnimatePresence>
-        {photoViewVisible && (
-          <FullScreenImage
-            src={allImageUrls[photoViewIndex]}
-            items={allImageUrls}
-            currentIndex={photoViewIndex}
-            onNavigate={setPhotoViewIndex}
-            onClose={() => setPhotoViewVisible(false)}
-          />
-        )}
-      </AnimatePresence>
-    </section>
+        <AnimatePresence>
+          {photoViewVisible && (
+            <FullScreenImage
+              src={allImageUrls[photoViewIndex]}
+              items={allImageUrls}
+              currentIndex={photoViewIndex}
+              onNavigate={setPhotoViewIndex}
+              onClose={() => setPhotoViewVisible(false)}
+            />
+          )}
+        </AnimatePresence>
+      </section>
+    </>
   );
 }
 
 function Artists({ event }) {
   const { tokens: { A, AL, FG, M, B, W } } = useTheme();
   const [hov, setHov] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Use actual artists from backend if available
   const eventArtists = Array.isArray(event?.artists) ? event.artists :
     Array.isArray(event?.lineup) ? event.lineup : [];
 
   const ARTISTS = eventArtists.length > 0 ? eventArtists.map((a, i) => ({
-    id: a.id || `artist-${i}`,
+    id: a.id || i,
     name: a.name || a.artistName || "Guest Artist",
     origin: a.origin || a.location || "INTL",
     bio: a.bio || a.description || "Performing live at Solstice.",
-    image: formatImageUrl(a.photoUrl || a.imageUrl || a.profileImage || a.avatar || a.photo || a.artistImage) || `https://picsum.photos/seed/artist-${a.name || i}/600/450`
+    image: formatImageUrl(a.photoUrl || a.imageUrl || a.profileImage || a.avatar || a.photo || a.artistImage)
   })) : [
-    { id: 1, name: "Aroha Ngata", origin: "NZL", bio: "A pioneer of immersive soundscapes blurring the boundary between music and architecture.", tags: ["Electronic", "Ambient", "Installation"], image: "https://picsum.photos/seed/aroha/600/450" },
-    { id: 2, name: "Ravi Khanna", origin: "IND", bio: "Tabla maestro meets modular synthesizer — live sets that are meditations in controlled chaos.", tags: ["Classical", "Electronic", "Tabla"], image: "https://picsum.photos/seed/ravi/600/450" },
-    { id: 3, name: "Lena Solberg", origin: "NOR", bio: "Creates monumental paintings in real-time, her canvas as large as the wall behind her.", tags: ["Live Art", "Abstract", "Performance"], image: "https://picsum.photos/seed/lena/600/450" },
+    { id: 1, name: "Aroha Ngata", origin: "NZL", bio: "A pioneer of immersive soundscapes blurring the boundary between music and architecture.", tags: ["Electronic", "Ambient", "Installation"], image: "" },
+    { id: 2, name: "Ravi Khanna", origin: "IND", bio: "Tabla maestro meets modular synthesizer — live sets that are meditations in controlled chaos.", tags: ["Classical", "Electronic", "Tabla"], image: "" },
+    { id: 3, name: "Lena Solberg", origin: "NOR", bio: "Creates monumental paintings in real-time, her canvas as large as the wall behind her.", tags: ["Live Art", "Abstract", "Performance"], image: "" },
   ];
-
-  const handleMouseMove = (e) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
-
   return (
     <>
-      <section id="artists" style={{ background: W, padding: "32px 80px", position: "relative" }}>
+      <section id="artists" style={{ background: W, padding: "130px 36px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <Chars text="The Artists" cls="font-display" style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <SHdr idx="03" label="Lineup" />
+          <Chars text="The Artists" cls="font-display" style={{ fontSize: "clamp(2rem,5vw,4.5rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
           <div style={{ borderTop: `1px solid ${B}` }}>
             {ARTISTS.map((a, i) => (
-              <motion.div
-                key={a.id}
-                initial={{ opacity: 0, x: -24 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: i * 0.07, ease: E }}
-                onHoverStart={() => setHov(a.id)}
-                onHoverEnd={() => setHov(null)}
-                onMouseMove={handleMouseMove}
-                whileHover={{ paddingLeft: 8, backgroundColor: AL }}
-                className="artist-row"
-              >
+              <motion.div key={a.id} initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: i * 0.07, ease: E }} onHoverStart={() => setHov(a.id)} onHoverEnd={() => setHov(null)} whileHover={{ paddingLeft: 20, backgroundColor: AL }} className="artist-row">
                 <div>
                   <motion.p animate={{ color: hov === a.id ? A : B }} style={{ fontFamily: "monospace", fontSize: 10 }}>{String(i + 1).padStart(2, "0")}</motion.p>
                 </div>
@@ -1689,37 +1284,6 @@ function Artists({ event }) {
             ))}
           </div>
         </div>
-
-        {/* Floating Photo Preview */}
-        <AnimatePresence>
-          {hov !== null && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              style={{
-                position: "fixed",
-                top: mousePos.y - 120,
-                left: mousePos.x + 30,
-                width: 320,
-                height: 180,
-                borderRadius: 20,
-                overflow: "hidden",
-                boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                border: `1px solid ${B}`,
-                zIndex: 99999,
-                pointerEvents: "none"
-              }}
-            >
-              <img
-                src={ARTISTS.find(a => a.id === hov)?.image}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                alt="Artist Preview"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </section>
     </>
   );
@@ -1737,118 +1301,76 @@ function Venue({ event, hostName }) {
   const mapQuery = hasVenueCoords ? `${venueLat},${venueLng}` : (event?.venueFullAddress || event?.venueName || "");
   const mapSrc = mapQuery ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=14&output=embed` : "";
 
-  const venueAddress = stripPinAndCountry(event?.venueFullAddress) || event?.venueFullAddress;
-  const venueLandmark = event?.landmark || event?.venueLandmark;
-  const venueDistrict = event?.district || event?.venueDistrict;
-  const venueState = event?.state || event?.venueState;
-  const venueCountry = event?.country || event?.venueCountry;
-  const venueInstructions = event?.checkInInstructions || event?.cancellationPolicySummary || event?.venueInstructions;
-
   return (
     <>
       <Mq items={tags} dir="r" size="sm" bg={S} accent />
-      <section id="venue" style={{ background: BG, padding: "32px 80px" }}>
+      <section id="venue" style={{ background: BG, padding: "130px 36px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
-            <Rev delay={0.1} style={{ height: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
+          <SHdr idx="04" label="Landscape" />
+          <Chars text="Where It's Happening" cls="font-display" style={{ fontSize: "clamp(1.8rem,4.5vw,4.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, marginBottom: 72, overflow: "hidden", letterSpacing: "-0.02em", paddingBottom: "0.15em" }} />
+          <div style={{ background: W, border: `1px solid ${B}`, borderRadius: 16, padding: 40, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
+            <Rev delay={0.1}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 24 }}>
+                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+                    <MapPin size={24} color={A} style={{ flexShrink: 0 }} />
+                  </motion.div>
+                  <h3 style={{ fontSize: "clamp(1.5rem,2.5vw,2rem)", fontWeight: 700, color: FG, margin: 0 }}>
+                    {event?.venueFullAddress?.split(',')[0] || "The Venue"}
+                  </h3>
+                </div>
+                <p style={{ fontSize: 14, color: M, lineHeight: 1.85, marginBottom: 32 }}>
+                  {event?.venueDescription || event?.description?.slice(0, 200) || "Join us at this premier location for an unforgettable experience."}
+                </p>
+
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                    <div style={{
-                      position: "absolute",
-                      bottom: 16,
-                      left: 16,
-                      zIndex: 10,
-                      background: W,
-                      padding: "10px 16px",
-                      borderRadius: "12px",
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                      border: `1px solid ${B}`,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      pointerEvents: "none"
-                    }}>
-                      <MapPin size={16} color={A} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{event?.venueName || "The Venue"}</span>
+                  {[
+                    event?.venueName ? { label: "Venue Name", value: event.venueName } : null,
+                    { label: "Address", value: event?.venueFullAddress || "Venue details to be updated" },
+                    event?.district ? { label: "District", value: event.district } : null,
+                    event?.state ? { label: "State", value: event.state } : null,
+                    displayHostName ? { label: "Host Name", value: displayHostName } : null,
+                  ].filter(Boolean).map((row, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 24, padding: "20px 0", borderBottom: `1px solid ${B}` }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: A, textTransform: "uppercase" }}>{row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: FG, lineHeight: 1.5 }}>{row.value}</span>
                     </div>
-                    {mapSrc ? (
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={mapSrc}
-                        allowFullScreen
-                        title="Venue Location"
-                      />
-                    ) : (
-                      <>
-                        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
-                          <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 40 }}>
+                  <motion.a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.venueFullAddress || "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ x: 8 }}
+                    style={{ fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700, color: A, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}
+                  >
+                    Get Directions <ArrowRight size={16} />
+                  </motion.a>
                 </div>
               </div>
             </Rev>
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
-                    {venueAddress && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                        <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{venueAddress}</span>
-                      </li>
-                    )}
-
-                    {venueLandmark && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                        <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{venueLandmark}</span>
-                      </li>
-                    )}
-
-                    {venueDistrict && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                        <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{venueDistrict}</span>
-                      </li>
-                    )}
-
-                    {venueState && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                        <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{venueState}</span>
-                      </li>
-                    )}
-
-                    {venueCountry && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                        <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{venueCountry}</span>
-                      </li>
-                    )}
-
-                    {venueInstructions && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                        <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{venueInstructions}</span>
-                      </li>
-                    )}
-                    {(!venueDistrict && !venueState && !venueCountry && !venueAddress && !venueLandmark) && (
-                      <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                        <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
-                      </li>
-                    )}
-                  </ul>
-                </div>
+              <div style={{ height: "100%", minHeight: 400, position: "relative", borderRadius: 16, overflow: "hidden", border: `1px solid ${B}` }}>
+                {mapSrc ? (
+                  <iframe
+                    className="venue-map-frame"
+                    title="Venue location map"
+                    src={mapSrc}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+                  />
+                ) : (
+                  <>
+                    <motion.div animate={{ backgroundPosition: ["0px 0px", "28px 28px"] }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }} style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "28px 28px" }} />
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+                      <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-8px", borderRadius: "50%", border: `1.5px solid ${A}`, transform: "translate(-50%,-50%)", top: "50%", left: "50%" }} />
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: A, position: "relative", zIndex: 1 }} />
+                    </div>
+                  </>
+                )}
               </div>
             </Rev>
           </div>
@@ -1858,210 +1380,127 @@ function Venue({ event, hostName }) {
   );
 }
 
-function PolicyItem({ req }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
-  const [op, setOp] = useState(false);
-
-  const title = req.setting?.title || req.title || "Requirement";
-  const description = req.setting?.description || req.description;
-  const questions = req.questions || [];
-
-  const getIcon = () => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes("cancellation")) {
-      return <Clock size={20} color={A} />;
-    }
-    if (lowerTitle.includes("age") || lowerTitle.includes("guest") || lowerTitle.includes("people") || lowerTitle.includes("infant") || lowerTitle.includes("id proof")) {
-      return <Users size={20} color={A} />;
-    }
-    if (lowerTitle.includes("health") || lowerTitle.includes("safety") || lowerTitle.includes("medical") || lowerTitle.includes("dress")) {
-      return <ShieldCheck size={20} color={A} />;
-    }
-    return <Sparkles size={20} color={A} />;
-  };
-
-  return (
-    <motion.div
-      layout
-      style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
-        borderRadius: "16px",
-        overflow: "hidden",
-        marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none"
-      }}
-      whileHover={{ borderColor: A }}
-    >
-      <div
-        onClick={() => setOp(!op)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          padding: "20px 24px",
-          cursor: "pointer",
-          textAlign: "left",
-          userSelect: "none"
-        }}
-      >
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s"
-        }}>
-          {getIcon()}
-        </div>
-        
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{title}</span>
-        </div>
-
-        <motion.div
-          animate={{ rotate: op ? 180 : 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: op ? W : "transparent" }}
-        >
-          <ChevronDown size={18} color={M} />
-        </motion.div>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {op && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: "hidden" }}
-          >
-            <div style={{ padding: "0 24px 24px 80px" }}>
-              {description && (
-                <p style={{ fontSize: 13, color: M, lineHeight: 1.6, whiteSpace: "pre-line", margin: "0 0 16px 0" }}>
-                  {description}
-                </p>
-              )}
-
-              {questions.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {questions.map((q, j) => {
-                    const questionTitle = q.title || q.question?.title || q.question;
-                    const answerText = q.answer?.valueText || q.valueText;
-
-                    return (
-                      <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "4px 0" }}>
-                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 8 }} />
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <span style={{ fontSize: 14, color: FG, lineHeight: 1.5, fontWeight: 500 }}>{questionTitle}</span>
-                          {answerText && (
-                            <span style={{ fontSize: 13, color: M, lineHeight: 1.4 }}>{answerText}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
 function Rules({ event }) {
   const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
 
-  const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions;
-  const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText;
-  
+  const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions || event?.checkInInstruction || "Check-in instructions will be shared before the event.";
+  const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText || "Cancellation policy will be shared before booking.";
+
   const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
 
-  const displayRequirements = [...guestRequirements].map(req => ({
-    setting: {
-      title: req.setting?.title || req.title || "Requirement",
-      description: req.setting?.description || req.description
-    },
-    questions: req.questions || []
-  }));
-
-  if (checkInInstructions) {
-    displayRequirements.push({
-      setting: {
-        title: "Check-in Instructions",
-        description: checkInInstructions
-      }
-    });
-  }
+  const displayRules = [
+    { id: 1, title: "Check-in Instructions", body: checkInInstructions },
+    { id: 2, title: "Cancellation Policy", body: cancellationPolicy },
+  ];
 
   if (event?.minimumAge != null && event.minimumAge !== "") {
-    displayRequirements.push({
-      setting: {
-        title: "Minimum Age Requirement",
-        description: `Minimum age for entry is ${event.minimumAge} years old.`
-      }
-    });
+    displayRules.push({ id: "min_age", title: "Minimum Age", body: `${event.minimumAge}+` });
   }
-
   if (event?.dressCode && event.dressCode.trim() !== "") {
-    displayRequirements.push({
-      setting: {
-        title: "Dress Code",
-        description: event.dressCode.trim()
-      }
-    });
+    displayRules.push({ id: "dress_code", title: "Dress Code", body: event.dressCode.trim() });
   }
+  displayRules.push({ id: "infants_allowed", title: "Infants Allowed", body: event?.infantsAllowed ? "Yes" : "No" });
+  displayRules.push({ id: "id_proof", title: "ID Proof Required", body: event?.idProofRequired ? "Yes" : "No" });
 
-  if (event?.idProofRequired) {
-    displayRequirements.push({
-      setting: {
-        title: "ID Proof Required",
-        description: "Valid government-issued physical ID card required for verification at check-in."
-      }
-    });
-  }
+  const dropdownRow = (item, index) => {
+    return (
+      <details key={item.id} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
+        <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(index + 1).padStart(2, "0")}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{item.title}</span>
+          </span>
+          <ChevronDown size={16} color={M} />
+        </summary>
+        <div style={{ padding: "0 0 20px 48px" }}>
+          <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: 0 }}>{item.body}</p>
+        </div>
+      </details>
+    );
+  };
 
-  if (cancellationPolicy) {
-    displayRequirements.push({
-      setting: {
-        title: "Cancellation Policy",
-        description: cancellationPolicy
-      }
-    });
-  }
+  const requirementDropdownRow = (req, index) => {
+    const reqId = req.id || req.settingId || `req-${index}`;
+    const reqTitle = req.setting?.title || req.title || "Guest Requirement";
+    const reqDescription = req.setting?.description || req.description;
+    const questions = req.questions || [];
+
+    return (
+      <details key={reqId} style={{ borderBottom: `1px solid ${B}`, padding: "0 16px" }}>
+        <summary style={{ listStyle: "none", cursor: "pointer", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span className="font-mono" style={{ fontSize: 10, color: A }}>{String(index + 1).padStart(2, "0")}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>{reqTitle}</span>
+          </span>
+          <ChevronDown size={16} color={M} />
+        </summary>
+        <div style={{ padding: "0 0 20px 48px" }}>
+          {reqDescription && (
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.85, margin: questions.length > 0 ? "0 0 16px 0" : "0" }}>
+              {reqDescription}
+            </p>
+          )}
+          {questions.length > 0 && (
+            <div style={{ padding: "20px", background: AL || BG, borderRadius: 16, border: `1px solid ${B}` }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {questions.map((q, j) => {
+                  const qTitle = q.title || q.question?.title || q.question || `Question ${j + 1}`;
+                  return (
+                    <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                      <span style={{ fontSize: 13, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{qTitle}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </details>
+    );
+  };
 
   return (
-    <section id="rules" style={{ background: BG, padding: "32px 80px" }}>
+    <section id="rules" style={{ background: W, padding: "130px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64, alignItems: "start" }} className="pol-grid">
+        <style>{`
+          #rules details summary::-webkit-details-marker {
+            display: none;
+          }
+          #rules details[open] summary svg {
+            transform: rotate(180deg);
+          }
+          #rules details summary svg {
+            transition: transform 0.25s ease;
+          }
+        `}</style>
+        <SHdr idx="05" label="Essentials" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "start" }} className="grid-2">
           <Rev delay={0.1}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 12, fontFamily: "Poppins, sans-serif" }}>
-                Things to Keep in Mind
-              </h3>
-              <p style={{ color: M, fontSize: "15px", lineHeight: "1.8", margin: 0, fontWeight: 400 }}>
-                Please review these guidelines and requirements carefully to ensure a safe, smooth, and enjoyable experience for everyone.
-              </p>
-            </div>
+            <Chars text="Things To" cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: FG, overflow: "hidden", letterSpacing: "-0.02em" }} />
+            <Chars text="Keep in Mind" delay={0.08} cls="font-display" style={{ fontSize: "clamp(3.5rem,8vw,7rem)", fontWeight: 700, lineHeight: 0.88, color: "transparent", WebkitTextStroke: `2px ${A}`, overflow: "hidden", letterSpacing: "-0.02em" }} />
           </Rev>
           <Rev delay={0.2}>
             <div>
-              {displayRequirements.length > 0 ? (
-                displayRequirements.map((req, i) => (
-                  <PolicyItem key={`req-${i}`} req={req} />
-                ))
-              ) : (
-                <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific guidelines listed for this event.</p>
-              )}
+              <h3 style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: A, fontWeight: 800, margin: "0 0 18px" }}>
+                Things To keep in Mind
+              </h3>
+              <div style={{ borderTop: `1px solid ${B}` }}>
+                {displayRules.map((rule, index) => dropdownRow(rule, index))}
+              </div>
+
+              <h3 style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: A, fontWeight: 800, margin: "44px 0 18px" }}>
+                Guest Requirements
+              </h3>
+              <div style={{ borderTop: `1px solid ${B}` }}>
+                {guestRequirements.length > 0 ? (
+                  guestRequirements.map((req, index) => requirementDropdownRow(req, index))
+                ) : (
+                  <div style={{ borderBottom: `1px solid ${B}`, padding: "20px 16px", fontSize: 13, color: M }}>
+                    No guest requirements have been added for this event.
+                  </div>
+                )}
+              </div>
             </div>
           </Rev>
         </div>
@@ -2070,8 +1509,8 @@ function Rules({ event }) {
   );
 }
 
-function HostDetails({ event, hostName }) {
-  const { tokens: { A, AL, BG, FG, M, S, B, W }, theme } = useTheme();
+function HostDetails({ event, hostName, reviews = [] }) {
+  const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
   const history = useHistory();
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
   const hostProfile = event?.hostProfile;
@@ -2084,555 +1523,203 @@ function HostDetails({ event, hostName }) {
     event?.hostId;
   const hostDescription = host?.bio || host?.description || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
   const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
-  const hostPhone = host?.phone || host?.phoneNumber || event?.host?.phone || event?.host?.phoneNumber || "";
-  const hostEmail = host?.email || event?.host?.email || "";
 
-  const navigateToHostProfile = () => {
-    if (!hostLeadUserId) return;
-    history.push(`/host-profile?id=${hostLeadUserId}`);
+  // Normalise reviews – API may return { ratingSummary, reviews:[...] } or a plain array
+  const normalizedReviews = Array.isArray(reviews)
+    ? reviews
+    : Array.isArray(reviews?.reviews)
+      ? reviews.reviews
+      : [];
+  const ratingSummaryRaw = !Array.isArray(reviews)
+    ? (reviews?.ratingSummary || reviews?.summary || reviews?.data?.ratingSummary || reviews?.data?.summary || null)
+    : null;
+  const parseNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
   };
-
-  return (
-    <section className="host-quality-section" style={{ background: W, padding: "32px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
-          
-          {/* Host Profile (40%) */}
-          <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <div 
-                style={{
-                  background: theme === "dark" 
-                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                    : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                  border: `1px solid ${B}`,
-                  borderRadius: "24px",
-                  height: "100%",
-                  minHeight: 250,
-                  overflow: "hidden",
-                  position: "relative",
-                  boxShadow: theme === "dark"
-                    ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                    : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                  display: "flex",
-                  flexDirection: "column",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.borderColor = A; 
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = theme === "dark"
-                    ? `0 24px 48px ${A}15`
-                    : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.borderColor = B; 
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = theme === "dark"
-                    ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                    : "0 20px 40px rgba(15, 23, 42, 0.04)";
-                }}
-              >
-                {/* Visual Accent Top Bar */}
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 3,
-                  background: `linear-gradient(90deg, ${A} 0%, #8B5CF6 100%)`
-                }} />
-
-                {/* Top Section: Avatar, Name & Metrics (With subtle tint background) */}
-                <div style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center", 
-                  gap: 16, 
-                  width: "100%",
-                  padding: "20px 20px 16px 20px",
-                  background: theme === "dark" ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.01)",
-                  borderBottom: `1px solid ${B}`
-                }}>
-                  
-                  {/* Avatar & Info */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {/* Profile Avatar with Custom Ring */}
-                    <div style={{
-                      position: "relative",
-                      width: 52,
-                      height: 52,
-                      borderRadius: "50%",
-                      padding: "2px",
-                      background: `linear-gradient(135deg, ${A} 0%, #8B5CF6 100%)`,
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                      flexShrink: 0
-                    }}>
-                      <div style={{
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: "50%",
-                        background: W,
-                        overflow: "hidden",
-                        padding: "1px"
-                      }}>
-                        <img
-                          src={formatImageUrl(hostProfile?.profileImageUrl || hostProfile?.host?.profileImageUrl || host?.profileImageUrl || host?.avatar || host?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
-                          style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                          alt={displayHostName}
-                          onError={(e) => { 
-                            e.target.onerror = null; 
-                            e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; 
-                          }}
-                        />
-                      </div>
-                      {/* Floating Verified Check badge */}
-                      <div style={{ 
-                        position: "absolute", 
-                        bottom: -1, 
-                        right: -1, 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: "50%", 
-                        background: "#10B981", 
-                        border: `1.5px solid ${W}`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 6px rgba(16, 185, 129, 0.3)"
-                      }}>
-                        <ShieldCheck size={9} color={W} style={{ fill: W, fillOpacity: 0.2 }} />
-                      </div>
-                    </div>
-
-                    {/* Name and Superhost Badge */}
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                      <h3
-                        onClick={navigateToHostProfile}
-                        style={{
-                          fontSize: "14.5px",
-                          fontWeight: 700,
-                          color: FG,
-                          margin: 0,
-                          cursor: hostLeadUserId ? "pointer" : "default",
-                          fontFamily: "Poppins, sans-serif",
-                          letterSpacing: "-0.01em",
-                          lineHeight: 1.2,
-                          transition: "color 0.2s"
-                        }}
-                        onMouseEnter={(e) => { if (hostLeadUserId) e.currentTarget.style.color = A; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = FG; }}
-                        title={hostLeadUserId ? "View host profile" : undefined}
-                      >
-                        {displayHostName}
-                      </h3>
-                      
-                      {/* Superhost Badge under the name */}
-                      <span style={{ 
-                        fontSize: "8.5px", 
-                        letterSpacing: "0.04em", 
-                        textTransform: "uppercase", 
-                        color: "#7C3AED", 
-                        background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
-                        border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
-                        borderRadius: "5px",
-                        padding: "1px 6px",
-                        fontWeight: 700,
-                        display: "inline-flex",
-                        alignItems: "center"
-                      }}>
-                        Superhost
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Redesigned Metrics Section - Only 2 Cards */}
-                  <div style={{
-                    display: "flex",
-                    gap: 6,
-                    alignItems: "center"
-                  }}>
-                    {/* Rating Pill */}
-                    <div style={{
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", lineHeight: 1 }}>
-                        ★ {hostProfile?.statistics?.averageRating || "4.9"}
-                      </span>
-                      <span style={{ fontSize: "7px", color: "#B45309", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Rating</span>
-                    </div>
-
-                    {/* Events Pill */}
-                    <div style={{
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: A, lineHeight: 1 }}>
-                        {hostProfile?.statistics?.totalEvents || hostProfile?.listings?.length || 8}
-                      </span>
-                      <span style={{ fontSize: "7px", color: A, textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Events</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Section: Quote-styled Bio */}
-                <div style={{ 
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                  borderLeft: `3px solid ${A}`,
-                  margin: "12px 20px"
-                }}>
-                  <p style={{
-                    fontSize: "12.5px",
-                    color: M,
-                    lineHeight: 1.55,
-                    margin: 0,
-                    fontWeight: 400,
-                    fontStyle: "italic",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical"
-                  }}>
-                    "{hostDescription}"
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Rev>
-
-          {/* Quality Index Card (60%) */}
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{
-                padding: "24px 32px",
-                background: theme === "dark" 
-                  ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                  : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                backdropFilter: "blur(25px) saturate(160%)",
-                border: `1px solid ${B}`,
-                borderRadius: "24px",
-                boxShadow: theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                alignItems: "center",
-                gap: 32,
-                height: "100%",
-                minHeight: 250,
-                position: "relative",
-                overflow: "hidden",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-              }}
-              onMouseEnter={(e) => { 
-                e.currentTarget.style.borderColor = A; 
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? `0 24px 48px ${A}15`
-                  : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-              }}
-              onMouseLeave={(e) => { 
-                e.currentTarget.style.borderColor = B; 
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)";
-              }}
-              >
-                {/* Visual Accent Top Bar */}
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 3,
-                  background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
-                }} />
-
-                {/* Background Ambient Glow under the circle */}
-                <div style={{
-                  position: "absolute",
-                  left: 20,
-                  top: 50,
-                  width: 140,
-                  height: 140,
-                  borderRadius: "50%",
-                  background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
-                  pointerEvents: "none"
-                }} />
-
-                {/* Left: Score Circle */}
-                {(() => {
-                  const displayScore = event?.lkpQualityIndex?.score || 9.2;
-                  const scoreInt = Math.floor(displayScore);
-                  const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
-
-                  return (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                      <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
-                        <defs>
-                          <linearGradient id="scoreGradEvent" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#8B5CF6" />
-                            <stop offset="100%" stopColor={A} />
-                          </linearGradient>
-                          <filter id="glowEvent" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="6" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                          </filter>
-                        </defs>
-                        <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
-                        <motion.circle
-                          cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGradEvent)" strokeWidth="6" strokeLinecap="round"
-                          style={{ filter: "url(#glowEvent)" }}
-                          initial={{ strokeDasharray: "0 346" }}
-                          whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
-                          transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                        />
-                      </svg>
-                      <div style={{ position: "absolute", textAlign: "center" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                          <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
-                          <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
-                        </div>
-                        <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Right: Narrative Details & Verification Checks */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-                  <div>
-                    <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                    <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
-                  </div>
-                  
-                  <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-                    This score is based on direct host verification, quality checks on equipment & safety, and past attendee ratings.
-                  </p>
-
-                  {/* Verification Criteria Pills */}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: A,
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ Verified Host
-                    </span>
-
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#10B981",
-                      background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ Safety Check
-                    </span>
-
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#D97706",
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ High Rated
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </Rev>
-
-        </div>
-      </div>
-    </section>
+  const derivedRatings = normalizedReviews
+    .map((rev) => parseNumber(rev?.rating ?? rev?.ratingScore ?? rev?.reviewRating ?? rev?.stars))
+    .filter((n) => n != null);
+  const derivedAverageRating = derivedRatings.length > 0
+    ? derivedRatings.reduce((sum, n) => sum + n, 0) / derivedRatings.length
+    : 0;
+  const rawAverageRating = parseNumber(
+    ratingSummaryRaw?.averageRating ??
+    ratingSummaryRaw?.average_rating ??
+    ratingSummaryRaw?.avgRating ??
+    ratingSummaryRaw?.avg_rating
   );
-}
+  const rawTotalReviews = parseNumber(
+    ratingSummaryRaw?.totalReviews ??
+    ratingSummaryRaw?.total_reviews ??
+    ratingSummaryRaw?.reviewCount ??
+    ratingSummaryRaw?.review_count
+  );
+  const ratingSummary = {
+    averageRating: rawAverageRating != null ? rawAverageRating : derivedAverageRating,
+    totalReviews: Math.max(rawTotalReviews || 0, normalizedReviews.length),
+    ratingDistribution: Array.isArray(ratingSummaryRaw?.ratingDistribution)
+      ? ratingSummaryRaw.ratingDistribution
+      : [],
+  };
+  const displayReviews = normalizedReviews.slice(0, 2);
+  const hasMore = normalizedReviews.length > 2;
 
-function EventReviews({ reviews = [] }) {
-  const { tokens: { A, FG, M, B, W, S, BG, AL }, theme } = useTheme();
-  const sliderRef = useRef(null);
-
-  const scrollSlider = (direction) => {
-    if (!sliderRef.current) return;
-    const cardWidth = 384; // width (360) + gap (24)
-    const scrollAmount = direction === "left" ? -cardWidth : cardWidth;
-    sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+  const formatReviewDate = (dateString) => {
+    if (!dateString) return "Recently";
+    try {
+      const date = new Date(dateString);
+      const diffDays = Math.floor((Date.now() - date) / 86400000);
+      if (diffDays < 1) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    } catch { return "Recently"; }
   };
 
-  const normalizedReviews = useMemo(() => {
-    if (Array.isArray(reviews)) return reviews;
-    if (Array.isArray(reviews?.reviews)) return reviews.reviews;
-    if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
-    if (Array.isArray(reviews?.data)) return reviews.data;
-    return [];
-  }, [reviews]);
-
-  const hasReviews = normalizedReviews.length > 0;
-  const displayReviews = hasReviews ? normalizedReviews : [
-    { customerName: "Aarav Sharma", comment: "An absolutely incredible experience. The host was warm, accommodating, and the attention to detail was unmatched.", rating: 5 },
-    { customerName: "Priya Patel", comment: "Highly curated trails, breathtaking views, and wonderful local insights. Can't wait to book this again!", rating: 5 },
-    { customerName: "Vikram Malhotra", comment: "Top tier service! The scheduling was seamless and the guides were exceptionally knowledgeable.", rating: 5 }
-  ];
-
   return (
-    <section className="testimonials-section" style={{ background: BG, padding: "32px 80px" }}>
+    <section id="host" style={{ background: BG, padding: "0 36px 160px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-          <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-            What people say
-          </h3>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              type="button"
-              onClick={() => scrollSlider("left")}
-              style={{
-                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                color: FG, transition: "0.3s", outline: "none"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollSlider("right")}
-              style={{
-                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                color: FG, transition: "0.3s", outline: "none"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
-
-        <div
-          ref={sliderRef}
-          style={{
-            position: "relative",
-            overflowX: "auto",
-            margin: "24px -80px 0",
-            padding: "20px 80px",
-            display: "flex",
-            gap: 24,
-            scrollBehavior: "smooth",
-            msOverflowStyle: "none",
-            scrollbarWidth: "none"
-          }}
-          className="no-scrollbar"
-        >
-          {displayReviews.map((rev, idx) => {
-            const name = rev.customerName || rev.reviewerName || rev.author || "Guest";
-            const rating = rev.rating || 5;
-            const text = rev.comment || rev.text || rev.reviewText || "";
-
-            return (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+        <SHdr idx="06" label="People" />
+        <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 1, background: B }} className="grid-3-2">
+          {/* Left: Meet Your Host */}
+          <Rev delay={0.1}>
+            <div style={{ background: W, padding: 52, minHeight: 300 }}>
+              <p className="host-presented-label" style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#0097B2", WebkitTextFillColor: "#0097B2", marginBottom: 36, fontWeight: 700 }}>Meet Your Host</p>
+              <h3
+                className="font-display"
                 style={{
-                  width: "360px",
-                  background: theme === "dark" 
-                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                    : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  border: `1px solid ${B}`,
-                  borderRadius: "24px",
-                  padding: "28px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexShrink: 0,
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
-              >
-                {/* Stylized background quote mark */}
-                <span style={{
-                  position: "absolute",
-                  top: -5,
-                  right: 20,
-                  fontSize: 90,
-                  color: `${A}15`,
-                  fontFamily: "Georgia, serif",
-                  pointerEvents: "none",
+                  fontSize: "clamp(2.4rem,5vw,4.2rem)",
+                  fontWeight: 700,
+                  color: FG,
                   lineHeight: 1,
-                  userSelect: "none"
-                }}>“</span>
+                  marginBottom: 22,
+                  cursor: hostLeadUserId ? "pointer" : "default",
+                  textDecoration: hostLeadUserId ? "underline" : "none",
+                  textUnderlineOffset: hostLeadUserId ? "8px" : undefined,
+                  textDecorationThickness: hostLeadUserId ? "1px" : undefined,
+                }}
+                onClick={() => {
+                  if (!hostLeadUserId) return;
+                  history.push(`/host-profile?id=${hostLeadUserId}`);
+                }}
+                title={hostLeadUserId ? "View host profile" : undefined}
+              >
+                {displayHostName || "Event Host"}
+              </h3>
+              <p style={{ color: M, fontSize: 14, fontStyle: "italic", lineHeight: 1.7, marginBottom: 28 }}>{hostSubtitle}</p>
+              <p style={{ color: M, fontSize: 14, lineHeight: 1.85, maxWidth: 620 }}>{hostDescription}</p>
+            </div>
+          </Rev>
+          {/* Right: Reviews (replaces More From This Host) */}
+          <Rev delay={0.18}>
+            <div style={{ background: S, padding: 52, minHeight: 300 }}>
+              {/* Section label */}
+              <p style={{ fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: M, marginBottom: 28, fontWeight: 500 }}>
+                Guest Reviews
+              </p>
 
-                <div style={{ position: "relative", zIndex: 2 }}>
-                  <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
+              {/* ── Rating summary – Matching brand teal ── */}
+              <div style={{ marginBottom: 28, padding: "16px 20px", border: `1.5px solid ${A}22`, background: AL, borderRadius: 6 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 8 }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: A, fontFamily: "Georgia, serif", lineHeight: 1 }}>
+                    {ratingSummary ? Number(ratingSummary.averageRating).toFixed(1) : "0.0"}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#FFC107", letterSpacing: 2 }}>
+                    {[...Array(5)].map((_, si) => (
+                      <span key={si} style={{ color: si < Math.round(ratingSummary?.averageRating || 0) ? "#FFC107" : `${A}30` }}>★</span>
+                    ))}
+                  </span>
+                </div>
+                <p style={{ fontSize: 12, color: A, fontWeight: 600, margin: 0 }}>
+                  {ratingSummary?.totalReviews ?? 0} {(ratingSummary?.totalReviews ?? 0) === 1 ? "review" : "reviews"} total
+                </p>
+                {/* Rating distribution */}
+                {Array.isArray(ratingSummary?.ratingDistribution) && ratingSummary.ratingDistribution.length > 0 && (
+                  <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {ratingSummary.ratingDistribution.map((item, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 10, color: "#FFC107", fontWeight: 600, width: 16 }}>{item.rating ?? item.stars ?? (5 - i)}★</span>
+                        <div style={{ flex: 1, height: 4, background: `${A}20`, borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", background: A, width: `${Math.min(100, ((item.count ?? 0) / Math.max(1, ratingSummary.totalReviews)) * 100)}%` }} />
+                        </div>
+                        <span style={{ fontSize: 10, color: A, minWidth: 18, textAlign: "right" }}>{item.count ?? 0}</span>
+                      </div>
                     ))}
                   </div>
-                  <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
-                    &ldquo;{text}&rdquo;
-                  </p>
+                )}
+              </div>
+
+              {/* ── Review list ── */}
+              {displayReviews.length === 0 ? (
+                <p style={{ fontSize: 13, color: M }}>No reviews yet.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {displayReviews.map((rev, i) => {
+                    const author =
+                      rev?.customerName ||
+                      rev?.reviewerName ||
+                      rev?.reviewer ||
+                      rev?.author ||
+                      rev?.customer?.fullName ||
+                      rev?.customer?.name ||
+                      rev?.user?.fullName ||
+                      rev?.user?.name ||
+                      rev?.createdByName ||
+                      "Guest";
+                    const comment = rev.comment || rev.content || rev.reviewText || "";
+                    const reviewRating = Number(rev.rating || rev.ratingScore || 0);
+                    const time = formatReviewDate(rev.createdAt || rev.reviewDate || rev.time);
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          padding: "18px 0",
+                          borderBottom: i < displayReviews.length - 1 ? `1px solid ${B}` : "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: comment ? 10 : 0 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: A, color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                            {author[0].toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: FG, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{author}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 11, letterSpacing: 1 }}>
+                                {[...Array(5)].map((_, si) => (
+                                  <span key={si} style={{ color: si < reviewRating ? "#FFC107" : `${A}30` }}>★</span>
+                                ))}
+                              </span>
+                              <span style={{ fontSize: 11, color: M }}>{time}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {comment && (
+                          <p style={{ fontSize: 13, color: M, lineHeight: 1.65, margin: 0, paddingLeft: 46 }}>{comment}</p>
+                        )}
+                        {rev?.vendorResponse && (
+                          <div style={{ marginTop: 12, marginLeft: 46, padding: "12px 16px", background: AL, borderLeft: `3px solid ${A}`, borderRadius: "0 8px 8px 0" }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Response from Host</div>
+                            <p style={{ fontSize: 13, color: M, margin: 0, lineHeight: 1.5 }}>{rev.vendorResponse}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
-                    {name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
-                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+              )}
+              {hasMore && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => history.push("/reviews")}
+                  style={{ marginTop: 24, width: "100%", padding: "11px 0", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700, border: `1px solid ${B}`, backgroundColor: "transparent", color: FG, cursor: "pointer" }}
+                >
+                  See More Reviews
+                </motion.button>
+              )}
+            </div>
+          </Rev>
         </div>
       </div>
     </section>
@@ -2640,47 +1727,6 @@ function EventReviews({ reviews = [] }) {
 }
 
 function EventBookingPopup({ event }) {
-  const [selectedAddOns, setSelectedAddOns] = useState([]);
-
-  const handleUpdateAddonQuantity = (addon, delta) => {
-    const addonId = addon.addonId || addon.id;
-    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-
-    setSelectedAddOns((prev) => {
-      const existing = prev.find((a) => (a.addonId || a.id) === addonId);
-      if (existing) {
-        if (delta < 0) {
-          if (existing.quantity > 1) {
-            return prev.map((a) =>
-              (a.addonId || a.id) === addonId
-                ? { ...a, quantity: a.quantity - 1 }
-                : a
-            );
-          } else {
-            return prev.filter((a) => (a.addonId || a.id) !== addonId);
-          }
-        } else {
-          return prev.map((a) =>
-            (a.addonId || a.id) === addonId
-              ? { ...a, quantity: a.quantity + 1 }
-              : a
-          );
-        }
-      } else {
-        if (delta > 0) {
-          if (pricingType === "Group") {
-            const otherGroupItem = prev.find((a) => a.pricingType === "Group" && (a.addonId || a.id) !== addonId);
-            if (otherGroupItem) {
-              return [...prev.filter(a => (a.addonId || a.id) !== (otherGroupItem.addonId || otherGroupItem.id)), { ...addon, quantity: 1, pricingType }];
-            }
-          }
-          return [...prev, { ...addon, quantity: 1, pricingType }];
-        }
-      }
-      return prev;
-    });
-  };
-
   const ticketTypes = (Array.isArray(event?.ticketTypes) ? event.ticketTypes :
     Array.isArray(event?.ticketTiers) ? event.ticketTiers :
       Array.isArray(event?.tickets) ? event.tickets : []).map((ticket, index) => ({
@@ -2740,7 +1786,6 @@ function EventBookingPopup({ event }) {
       ...(event?.pricing || {}),
       basePrice: ticketPrice
     },
-    addons: Array.isArray(event?.addons) ? event.addons : (Array.isArray(event?.addOns) ? event.addOns : []),
     ticketTypes,
     eventSlots: timeSlots,
     slots: timeSlots,
@@ -2748,7 +1793,7 @@ function EventBookingPopup({ event }) {
     host: event?.hostProfile?.host || event?.host || {}
   };
 
-  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" />;
+  return <BookingSystem listing={listing} type="event" triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" />;
 }
 
 function Tickets({ event }) {
@@ -2920,7 +1965,7 @@ function Tickets({ event }) {
   );
 
   return (
-    <section id="tickets" style={{ background: BG, padding: "32px 80px" }}>
+    <section id="tickets" style={{ background: BG, padding: "130px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="05" label="Booking" />
 
@@ -3166,12 +2211,6 @@ export default function EventDetails() {
         setLoading(true);
         const data = await getEventDetails(eventId);
         console.log("DEBUG: Event Details Data:", data);
-        let eventAddons = [];
-        try {
-          eventAddons = await getEventAddons(eventId);
-        } catch (addonErr) {
-          console.error("Failed to load event addons:", addonErr);
-        }
         let fetchedHostName = "";
         let hostProfile = null;
 
@@ -3192,7 +2231,7 @@ export default function EventDetails() {
           if (mounted) setReviews([]);
         });
 
-        if (mounted) { setEvent({ ...data, hostProfile, addons: eventAddons }); setHostName(fetchedHostName); setError(null); }
+        if (mounted) { setEvent({ ...data, hostProfile }); setHostName(fetchedHostName); setError(null); }
       } catch (err) {
         if (mounted) setError("Failed to load event details.");
       } finally {
@@ -3229,8 +2268,7 @@ export default function EventDetails() {
       <Artists event={event} />
       <Venue event={event} hostName={hostName} />
       <Rules event={event} />
-      <HostDetails event={event} hostName={hostName} />
-      <EventReviews reviews={reviews} />
+      <HostDetails event={event} hostName={hostName} reviews={reviews} />
       <EventBookingPopup event={event} />
       <RelatedListingsStrip
         businessInterestId={2}

@@ -384,6 +384,8 @@ const BookingSidebar = ({
   );
   const stayDisabledDateKeys = useMemo(() => {
     if (!stay) return [];
+    const ranges = stay?.bookedDateRanges || [];
+    if (!Array.isArray(ranges) || ranges.length === 0) return [];
 
     const normalizeId = (value) => {
       if (value === null || value === undefined) return "";
@@ -392,53 +394,6 @@ const BookingSidebar = ({
       const numeric = Number(raw);
       return Number.isFinite(numeric) ? String(numeric) : raw.toLowerCase();
     };
-    const keys = new Set();
-    const addBlockedEntry = (entry) => {
-      if (!entry) return;
-
-      if (typeof entry === "string" || entry instanceof Date) {
-        const singleDate = moment(entry).startOf("day");
-        if (singleDate.isValid()) {
-          keys.add(singleDate.format("YYYY-MM-DD"));
-        }
-        return;
-      }
-
-      const start = moment(
-        entry?.checkInDate ||
-        entry?.check_in_date ||
-        entry?.startDate ||
-        entry?.start_date ||
-        entry?.date
-      ).startOf("day");
-      const end = moment(
-        entry?.checkOutDate ||
-        entry?.check_out_date ||
-        entry?.endDate ||
-        entry?.end_date
-      ).startOf("day");
-
-      if (start.isValid() && end.isValid()) {
-        const cursor = start.clone();
-        while (cursor.isBefore(end, "day")) {
-          keys.add(cursor.format("YYYY-MM-DD"));
-          cursor.add(1, "day");
-        }
-        return;
-      }
-
-      if (start.isValid()) {
-        keys.add(start.format("YYYY-MM-DD"));
-      }
-    };
-
-    if (isPropertyBased) {
-      const propertyRanges = stay?.bookedDateRanges || [];
-      if (!Array.isArray(propertyRanges) || propertyRanges.length === 0) return [];
-      propertyRanges.forEach(addBlockedEntry);
-      return Array.from(keys);
-    }
-
     const selectedRoomId = normalizeId(
       selectedRoom?.roomId ??
       selectedRoom?.room_id ??
@@ -447,25 +402,35 @@ const BookingSidebar = ({
       selectedRoom?.id ??
       selectedRoom?.code
     );
-    if (!selectedRoomId) return [];
+    const keys = new Set();
 
-    const roomCatalog = availableRooms?.length > 0
-      ? availableRooms
-      : (stay?.rooms || stay?.roomTypes || []);
-    const matchedRoom = roomCatalog.find((room) => normalizeId(
-      room?.roomId ??
-      room?.room_id ??
-      room?.roomTypeId ??
-      room?.room_type_id ??
-      room?.id ??
-      room?.code
-    ) === selectedRoomId);
-    const roomRanges = selectedRoom?.roomBookedDateRanges || matchedRoom?.roomBookedDateRanges || [];
-    if (!Array.isArray(roomRanges) || roomRanges.length === 0) return [];
-    roomRanges.forEach(addBlockedEntry);
+    ranges.forEach((range) => {
+      const rangeRoomId = normalizeId(
+        range?.roomId ??
+        range?.room_id ??
+        range?.roomTypeId ??
+        range?.room_type_id ??
+        range?.id
+      );
+      if (!isPropertyBased) {
+        if (!selectedRoomId) return;
+        if (!rangeRoomId || rangeRoomId !== selectedRoomId) return;
+      }
+
+      const start = moment(range?.checkInDate || range?.check_in_date || range?.startDate || range?.start_date);
+      const end = moment(range?.checkOutDate || range?.check_out_date || range?.endDate || range?.end_date);
+      if (!start.isValid() || !end.isValid()) return;
+
+      const cursor = start.clone().startOf("day");
+      const endDay = end.clone().startOf("day");
+      while (cursor.isBefore(endDay, "day")) {
+        keys.add(cursor.format("YYYY-MM-DD"));
+        cursor.add(1, "day");
+      }
+    });
 
     return Array.from(keys);
-  }, [stay, isPropertyBased, selectedRoom, availableRooms]);
+  }, [stay, isPropertyBased, selectedRoom]);
 
   // ─── Price resolution ────────────────────────────────────────────────────
   // For property-based: use fullPropertyB2cPrice.

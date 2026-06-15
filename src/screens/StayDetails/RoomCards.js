@@ -8,8 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { lockBodyScroll } from "../../utils/scrollLock";
 import {
   Wifi, Waves, Sparkles, Dumbbell, Umbrella, Utensils,
-  Tv, Coffee, Car, AirVent, CheckCircle, Building, Home, Plus, ChevronLeft,
-  Users, Bed, Maximize, Check, ChevronDown
+  Tv, Coffee, Car, AirVent, CheckCircle, Building, Home, Plus, ChevronLeft
 } from "lucide-react";
 import moment from "moment";
 
@@ -204,7 +203,7 @@ const CustomDropdown = ({ options, value, onChange }) => {
     <div ref={ref} className={styles.dropdown}>
       <div onClick={() => setOpen((p) => !p)} className={cn(styles.dropdownTrigger, { [styles.open]: open })}>
         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{selected ? selected.label : "Select…"}</span>
-        <span className={cn(styles.dropdownArrow, { [styles.open]: open })}><ChevronDown size={14} /></span>
+        <span className={cn(styles.dropdownArrow, { [styles.open]: open })}>▼</span>
       </div>
       {open && (
         <div className={styles.dropdownList}>
@@ -536,7 +535,6 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   const { tokens: { FG, B, A, AL, S } } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const [showDesc, setShowDesc] = useState(false);
 
   const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
   if (!allPlans.length) {
@@ -581,150 +579,113 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
   return (
     <div className={cn(styles.card, { [styles.cardSelected]: isSelected })}>
-      {/* Left: Mosaic Photo Collage */}
+      {/* Left: Image */}
       <div 
-        className={styles.collageWrap} 
+        className={styles.imgWrap} 
+        style={{ position: "relative", cursor: "pointer" }}
         onClick={() => setShowModal(true)}
       >
-        {allImages.length >= 3 ? (
-          <>
-            <img src={allImages[0]} alt={name} className={styles.mainImg} />
-            <div className={styles.subImgCol}>
-              <img src={allImages[1]} alt={name} className={styles.subImg} />
-              <img src={allImages[2]} alt={name} className={styles.subImg} />
-            </div>
-          </>
-        ) : (
-          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} className={styles.singleImg} />
-        )}
+        {coverImage
+          ? <img src={coverImage} alt={name} className={styles.img} />
+          : <div className={styles.imgPlaceholder}><Icon name="home" size="48" /></div>
+        }
         {totalRooms != null && <span className={styles.badge}>{totalRooms} ROOMS</span>}
         {isSelected && <span className={styles.selectedBadge}>✓ Selected</span>}
         
-        <div className={styles.viewPhotosOverlay}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          <span>{totalPhotos} Photos</span>
+
+        {/* View Photos button */}
+        <div style={{
+          position: "absolute", bottom: 12, left: 12,
+          background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
+          color: "#000", fontSize: 13, fontWeight: 700,
+          padding: "8px 12px", borderRadius: 8,
+          display: "flex", alignItems: "center", gap: 6,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          transition: "all 0.2s ease",
+          zIndex: 2
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          View Photos
         </div>
       </div>
 
-      {/* Right: Content details */}
+      {/* Right: Content */}
       <div className={styles.body}>
-        <div className={styles.infoCol}>
-          {/* Split Header: Left has title/amenities, Right has guest count/price */}
-          <div className={styles.splitHeader}>
-            <div className={styles.leftHeader}>
-              <h4 className={styles.roomName}>{name}</h4>
-              
-              {/* Amenities Row below Room Name */}
-              <div className={styles.amenitiesRow}>
-                {room.bedType && <span className={styles.amenityTag}>{room.bedType}</span>}
-                {room.roomSize && <span className={styles.amenityTag}>{room.roomSize} sq ft</span>}
-                {features.slice(0, 3).map((f, i) => (
-                  <span key={i} className={styles.amenityTag}>{f}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.rightHeader}>
-              {capacity != null && (
-                <span className={styles.guestCount}>
-                  <Users size={14} className={styles.guestIcon} />
-                  {capacity} Guests
-                </span>
-              )}
-
-              {/* Starting From Block below guest count */}
-              <div className={styles.priceBlock}>
-                <span className={styles.priceLabel}>STARTING FROM</span>
-                <div className={styles.amount}>
-                  {displayPrice
-                    ? (
-                      <>
-                        {discountRate > 0 && discountedDisplayPrice && (
-                          <span className={styles.strikePrice}>
-                            {"\u20B9"}{displayPrice}
-                          </span>
-                        )}
-                        {"\u20B9"}{discountRate > 0 && discountedDisplayPrice ? discountedDisplayPrice : displayPrice}
-                        <span className={styles.perNight}> / night</span>
-                      </>
-                    )
-                    : <span className={styles.priceOnRequest}>Price on request</span>
-                  }
-                </div>
-              </div>
+        {/* Top row: name + price */}
+        <div className={styles.topRow}>
+          <h4 className={styles.roomName}>{name}</h4>
+          <div className={styles.priceBlock}>
+            <span className={styles.priceLabel}>STARTING FROM</span>
+            <div className={styles.amount}>
+              {displayPrice
+                ? (
+                  <>
+                    {discountRate > 0 && discountedDisplayPrice && (
+                      <span style={{ fontSize: 16, color: "#8b94aa", textDecoration: "line-through", marginRight: 8 }}>
+                        {"\u20B9"}{displayPrice}
+                      </span>
+                    )}
+                    {"\u20B9"}{discountRate > 0 && discountedDisplayPrice ? discountedDisplayPrice : displayPrice}
+                    <span className={styles.perNight}> / night</span>
+                  </>
+                )
+                : <span className={styles.priceOnRequest}>Price on request</span>
+              }
             </div>
           </div>
-
-          {/* Description & Expandable Toggle */}
-          {description && (
-            <div className={styles.descBlock}>
-              <AnimatePresence initial={false}>
-                {showDesc && (
-                  <motion.p 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 0.8 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    className={styles.descText}
-                  >
-                    {description}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-              <button 
-                className={styles.moreBtn} 
-                onClick={() => setShowDesc(!showDesc)}
-              >
-                {showDesc ? "Less details" : "More details"}
-                <ChevronDown size={14} className={cn(styles.chevron, { [styles.chevronRotate]: showDesc })} />
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Right side: Meal Plan and Selection stacked vertically */}
-        <div className={styles.actionCol}>
-          {/* Meal Plan selector */}
-          {allPlans.length > 0 ? (
-            <div className={styles.planSection}>
-              <div className={styles.planLabel}>Meal Plan</div>
-              {allPlans.length > 1 ? (
-                <CustomDropdown
-                  options={allPlans.map((c) => ({ value: c, label: getMealPlanLabel(c) }))}
-                  value={plan}
-                  onChange={handlePlanChange}
-                />
-              ) : (
-                <div className={styles.singlePlan}>{getMealPlanLabel(allPlans[0])}</div>
-              )}
-            </div>
-          ) : <div />}
+        {/* Guest capacity */}
+        {capacity != null && (
+          <p className={styles.capacity}>
+            Max {capacity} Guest{capacity !== 1 ? "s" : ""}
+            {room.maxAdults > 0 && <> · {room.maxAdults} adults{room.maxChildren > 0 ? `, ${room.maxChildren} children` : ""}</>}
+          </p>
+        )}
 
-          {/* Selection controls */}
-          <div className={styles.actionWrap}>
-            {isSelected ? (
-              <div className={styles.selectedControl}>
-                <div className={styles.countSelectWrapper}>
-                  <CustomDropdown
-                    options={Array.from({ length: Math.min(Number(totalRooms || 10), 10) }, (_, i) => ({
-                      value: i + 1,
-                      label: String(i + 1)
-                    }))}
-                    value={roomsCount}
-                    onChange={(count) => onRoomsCountChange(count)}
-                  />
-                </div>
-                <button className={cn(styles.bookBtn, styles.selectedBtn)} onClick={handleSelect}>
-                  ✓ Selected
+        {/* Description */}
+        {description && <p className={styles.desc}>{description}</p>}
+
+        {/* Meal plan selector */}
+        {allPlans.length > 0 && (
+          <div className={styles.planSection}>
+            <div className={styles.planLabel}>Meal Plan</div>
+            {allPlans.length > 1
+              ? <CustomDropdown options={allPlans.map(c => ({ value: c, label: getMealPlanLabel(c) }))} value={plan} onChange={handlePlanChange} />
+              : <div className={styles.singlePlan}>{getMealPlanLabel(allPlans[0])}</div>
+            }
+          </div>
+        )}
+
+        {/* Feature tags */}
+        {features.length > 0 && (
+          <div className={styles.tagsRow}>
+            {features.map((f, i) => <span key={i} className={styles.tag}>{f}</span>)}
+          </div>
+        )}
+
+        {/* CTA */}
+        <div className={styles.foot} style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", justifyContent: "flex-end" }}>
+
+          {isSelected ? (
+            <div className={styles.counterRow} style={{ flex: 1, justifyContent: "flex-end", gap: 12 }}>
+              <div className={styles.counterWrap}>
+                <button className={styles.counterBtn} onClick={() => onRoomsCountChange(Math.max(1, roomsCount - 1))} disabled={roomsCount <= 1}>
+                  <Icon name="minus" size="16" />
+                </button>
+                <span className={styles.countValue}>{roomsCount}</span>
+                <button className={styles.counterBtn} onClick={() => onRoomsCountChange(Math.min(Number(totalRooms || 99), roomsCount + 1))} disabled={roomsCount >= Number(totalRooms || 99)}>
+                  <Icon name="plus" size="16" />
                 </button>
               </div>
-            ) : (
-              <button className={styles.bookBtn} onClick={handleSelect}>SELECT ROOM</button>
-            )}
-          </div>
+              <button className={cn(styles.bookBtn, styles.selectedBtn)} onClick={handleSelect}>✓ Selected</button>
+            </div>
+          ) : (
+            <button className={styles.bookBtn} onClick={handleSelect} style={{ flex: 1, maxWidth: 160 }}>SELECT ROOM</button>
+          )}
         </div>
       </div>
-
+      
       <ModalPortal>
         <AnimatePresence>
           {showModal && (

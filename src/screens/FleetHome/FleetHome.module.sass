@@ -12,20 +12,20 @@
 
 .heroSection
     position: relative
-    width: 100vw
+    width: calc(100vw - 64px)
     left: 50%
     right: 50%
-    margin-left: -50vw
-    margin-right: -50vw
+    margin-left: calc(-50vw + 32px)
+    margin-right: calc(-50vw + 32px)
     margin-bottom: 0
     overflow: hidden
-    border-radius: 0
+    border-radius: 20px
     z-index: 50
     +t
-        width: 100vw
-        margin-left: -50vw
-        margin-right: -50vw
-        border-radius: 0
+        width: calc(100vw - 48px)
+        margin-left: calc(-50vw + 24px)
+        margin-right: calc(-50vw + 24px)
+        border-radius: 16px
     +m
         width: 100vw
         margin-left: -50vw
@@ -50,42 +50,43 @@
         padding-top: 52px
 
 .glassContainer
-    max-width: 950px
+    max-width: 900px
     width: 100%
-    height: 64px
-    margin: -40px auto 0
-    padding: 0 20px
-    background: #ffffff
-    border-radius: 999px
-    border: none
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08)
+    margin: 0 auto 48px
+    padding: 20px
+    background: $n8
+    border-radius: 20px
+    border: 1px solid $n6
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
     overflow: visible
     position: relative
     z-index: 50
-    margin-top: -32px
-    display: flex
-    align-items: center
+    // Overlap hero section - only half of container overlaps for better visual consistency
+    margin-top: -100px
     +dark
         background: $n1
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3)
+        border: 1px solid $n3
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3)
+    // On tablet and mobile, hide entirely — cinematic pill + bottom sheet handles search instead
     +t
         display: none !important
 
 .searchBar
     display: flex
     align-items: center
-    flex: 1
     gap: 0
     max-width: 100%
-    margin: 0
+    margin: 0 auto 20px
     background: transparent
-    border-radius: 999px
-    padding: 0
-    border: none
+    border-radius: 12px
+    padding: 14px
+    border: 1px solid rgba(0, 0, 0, 0.1)
     box-shadow: none
     overflow: visible
     position: relative
     z-index: 100
+    +dark
+        border: 1px solid rgba(255, 255, 255, 0.15)
     +m
         flex-direction: column
         gap: 12px
@@ -129,7 +130,7 @@
 .searchLabel
     +caption-2
     font-weight: 600
-    font-size: 10px
+    font-size: 11px
     line-height: 1.2
     color: $n3
     +dark
@@ -139,7 +140,7 @@
     border: none
     background: transparent
     +body-2
-    font-size: 13px
+    font-size: 14px
     line-height: 1.4
     color: $n2
     outline: none
@@ -201,7 +202,7 @@
 
 .searchDivider
     width: 1px
-    height: 24px
+    height: 28px
     background: $n6
     +dark
         background: $n3
@@ -209,29 +210,25 @@
         display: none
 
 .searchButton
-    width: 48px
-    height: 48px
-    flex-shrink: 0
-    border-radius: 50%
+    padding: 10px 24px
+    border-radius: 10px
     background: #0097B2
     border: none
-    display: flex
-    align-items: center
-    justify-content: center
+    +body-bold-2
+    font-size: 14px
+    line-height: 1.4
     color: $n8
     cursor: pointer
     transition: all .2s ease
-    margin-left: 8px
+    white-space: nowrap
     +m
         width: 100%
-        height: 48px
-        border-radius: 24px
-        margin-left: 0
+        padding: 10px 20px
     &:hover
         background: darken(#0097B2, 5%)
-        transform: scale(1.05)
+        transform: translateY(-2px)
     &:active
-        transform: scale(0.95)
+        transform: translateY(0)
 
 .datePicker
     position: absolute
@@ -259,7 +256,7 @@
 
 .filtersContainer
     width: 100%
-    margin: 40px auto 0
+    margin: 0 auto
     padding: 0
     box-sizing: border-box
     position: relative
@@ -283,11 +280,11 @@
     display: flex
     flex-wrap: wrap
     justify-content: center
-    gap: 48px
+    gap: 10px
     +d
-        gap: 32px
+        gap: 10px
     +t
-        gap: 24px
+        gap: 10px
     +m
         position: absolute
         bottom: 0
@@ -470,29 +467,10 @@
     margin-bottom: 0
 
 .sectionHeader
-    display: flex
-    justify-content: space-between
-    align-items: flex-end
-    margin-bottom: 24px
+    margin-bottom: 0
     text-align: left
     +m
-        flex-direction: column
-        align-items: flex-start
-        gap: 16px
-        margin-bottom: 16px
-
-.titleBlock
-    display: flex
-    flex-direction: column
-    align-items: flex-start
-
-.sectionPreTitle
-    font-size: 10px
-    font-weight: 800
-    letter-spacing: 0.1em
-    text-transform: uppercase
-    color: #0097B2
-    margin-bottom: 8px
+        margin-bottom: 0
 
 .sectionTitleLink
     display: inline-block
@@ -506,61 +484,12 @@
         opacity: 0.5
 
 .sectionTitle
-    font-size: 32px
-    font-weight: 700
-    line-height: 1.2
+    font-size: 36px
+    line-height: (44/36)
     margin-bottom: 0
-    color: $n2
-    +dark
-        color: $n8
     +m
         font-size: 24px
         line-height: 1.3
-
-.viewAllLink
-    font-size: 14px
-    font-weight: 600
-    color: #0097B2
-    text-decoration: none
-    display: flex
-    align-items: center
-    gap: 4px
-    transition: color 0.2s ease
-    &:hover
-        color: darken(#0097B2, 10%)
-
-.headerActions
-    display: flex
-    align-items: center
-    gap: 16px
-
-.sliderArrows
-    display: flex
-    align-items: center
-    gap: 8px
-
-.sliderArrow
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 32px
-    height: 32px
-    border-radius: 50%
-    border: 1px solid $n6
-    background: transparent
-    cursor: pointer
-    transition: all 0.2s ease
-    +dark
-        border-color: $n3
-    svg
-        fill: $n4
-        transition: fill 0.2s ease
-        +dark
-            fill: $n5
-    &:hover
-        border-color: #0097B2
-        svg
-            fill: #0097B2
 
 .sectionTitleWrapper
     display: flex
@@ -706,8 +635,6 @@
             text-overflow: ellipsis
             white-space: nowrap
         div[class*="content"]
-            display: none !important
-        div[class*="foot"]
             display: none !important
 
 .desktopFilters

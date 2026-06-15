@@ -141,123 +141,6 @@ const ScopedStyles = () => (
       scrollbar-width: none !important;
     }
     
-    .place-details-premium .ticket-container {
-      display: flex;
-      flex-direction: row;
-      width: 100%;
-      border-radius: 28px;
-      position: relative;
-      overflow: hidden;
-      box-sizing: border-box;
-      transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    }
-    .place-details-premium .ticket-container:hover {
-      transform: translateY(-4px);
-    }
-    .place-details-premium .ticket-main {
-      flex: 1;
-      padding: 48px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 36px;
-      z-index: 2;
-      position: relative;
-    }
-    .place-details-premium .ticket-stub {
-      width: 28%;
-      min-width: 320px;
-      padding: 48px 36px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-sizing: border-box;
-      position: relative;
-      z-index: 2;
-    }
-    .place-details-premium .ticket-separator {
-      width: 2px;
-      position: relative;
-      height: auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 5;
-    }
-    .place-details-premium .ticket-notch-top,
-    .place-details-premium .ticket-notch-bottom {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      position: absolute;
-      z-index: 10;
-      box-sizing: border-box;
-    }
-    .place-details-premium .ticket-notch-top {
-      top: -13px;
-      left: -13px;
-    }
-    .place-details-premium .ticket-notch-bottom {
-      bottom: -13px;
-      left: -13px;
-    }
-    .place-details-premium .ticket-notch-left,
-    .place-details-premium .ticket-notch-right {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10;
-      box-sizing: border-box;
-    }
-    .place-details-premium .ticket-notch-left {
-      left: -13px;
-    }
-    .place-details-premium .ticket-notch-right {
-      right: -13px;
-    }
-    @media(max-width: 1024px) {
-      .place-details-premium .ticket-container {
-        flex-direction: column;
-      }
-      .place-details-premium .ticket-main,
-      .place-details-premium .ticket-stub {
-        width: 100%;
-        padding: 32px 24px;
-      }
-      .place-details-premium .ticket-separator {
-        width: 100%;
-        height: 2px;
-        border-left: none;
-      }
-      .place-details-premium .ticket-notch-top {
-        left: auto;
-        right: -13px;
-        top: -13px;
-      }
-      .place-details-premium .ticket-notch-bottom {
-        left: -13px;
-        bottom: auto;
-        top: -13px;
-      }
-      .place-details-premium .ticket-notch-left,
-      .place-details-premium .ticket-notch-right {
-        top: auto;
-        transform: none;
-      }
-      .place-details-premium .ticket-notch-left {
-        bottom: -13px;
-        left: -13px;
-      }
-      .place-details-premium .ticket-notch-right {
-        bottom: -13px;
-        right: -13px;
-      }
-    }
-
     @media(max-width:768px){
       .place-details-premium .desk-only { display: none !important; }
       .about-grid, .log-grid, .info-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
@@ -460,114 +343,38 @@ function HeroShareFab({ title, text, url }) {
 
 /* ─── PLACE SECTIONS ─────────── */
 function PlaceHero({ place, galleryItems }) {
-  const { tokens: { A, FG, M, W, B, S } } = useTheme();
+  const { tokens: { A, FG, M, W, B } } = useTheme();
   const r = useRef(null);
-  const sliderRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: r, offset: ["start start", "end start"] });
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
-  const scale = useTransform(smoothProgress, [0, 0.5], [1, 1.3]);
-  const rotate = useTransform(smoothProgress, [0, 0.5], [0, 3]);
-  const [hoveredImage, setHoveredImage] = useState(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [showArrows, setShowArrows] = useState(false);
-  const [isSliderHovered, setIsSliderHovered] = useState(false);
-  const arrowTimeoutRef = useRef(null);
 
-  const handleMouseMove = () => {
-    setShowArrows(true);
-    if (arrowTimeoutRef.current) clearTimeout(arrowTimeoutRef.current);
-    arrowTimeoutRef.current = setTimeout(() => {
-      setShowArrows(false);
-    }, 1500);
+  // Split gallery items into two rows
+  const row1 = galleryItems.slice(0, Math.ceil(galleryItems.length / 2));
+  const row2 = galleryItems.slice(Math.ceil(galleryItems.length / 2));
+
+  const itemWidth1 = 440, itemWidth2 = 520, gap = 40;
+
+  // Build a true infinite loop by repeating rowItems to exceed viewport width, and then doubling it
+  const buildMarqueeRow = (rowItems) => {
+    if (!rowItems || rowItems.length === 0) return [];
+    const repeatCount = Math.ceil(8 / rowItems.length);
+    const baseSet = Array(repeatCount).fill(rowItems).flat();
+    return [...baseSet, ...baseSet];
   };
 
-  // Take unique gallery items
-  const baseItems = useMemo(() => {
-    if (!galleryItems || galleryItems.length === 0) {
-      return ["https://picsum.photos/seed/place/800/1000"];
-    }
-    return galleryItems;
-  }, [galleryItems]);
-
-  // Duplicate items multiple times to ensure seamless looping without getting stuck
-  const scrolledItems = useMemo(() => {
-    if (baseItems.length === 0) return [];
-    const repeats = Math.max(4, Math.ceil(15 / baseItems.length));
-    const items = [];
-    for (let i = 0; i < repeats; i++) {
-      items.push(...baseItems);
-    }
-    return items;
-  }, [baseItems]);
+  const trackItems1 = useMemo(() => buildMarqueeRow(row1), [row1]);
+  const trackItems2 = useMemo(() => buildMarqueeRow(row2), [row2]);
 
   const placeName = place?.placeName || place?.title || "COASTAL GEM";
 
-  const fullDescription = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
-  const isDescriptionLong = fullDescription.length > 160;
-  const displayDescription = isDescriptionLong && !isExpanded 
-    ? `${fullDescription.slice(0, 160)}...` 
-    : fullDescription;
-
-  // Continuous smooth auto-scrolling loop (pauses completely when hovered or interacting)
-  useEffect(() => {
-    const el = sliderRef.current;
-    if (!el || lightboxOpen || isSliderHovered || showArrows) return;
-
-    let frameId;
-    const speed = 0.8; // Smooth scrolling speed in pixels/frame
-
-    const step = () => {
-      if (baseItems.length === 0) return;
-      const repeats = Math.max(4, Math.ceil(15 / baseItems.length));
-      const oneSetWidth = el.scrollWidth / repeats;
-      
-      // Seamlessly wrap scroll position back once we pass one full set
-      if (el.scrollLeft >= oneSetWidth) {
-        el.scrollLeft = el.scrollLeft - oneSetWidth;
-      } else {
-        el.scrollLeft += speed;
-      }
-      frameId = requestAnimationFrame(step);
-    };
-
-    frameId = requestAnimationFrame(step);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
-  }, [lightboxOpen, isSliderHovered, showArrows, baseItems]);
-
-  const scrollSlider = (direction) => {
-    if (sliderRef.current) {
-      const scrollAmount = direction === "left" ? -300 : 300;
-      sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  };
-
-  const openLightbox = (index) => {
-    setActiveIdx(index);
-    setLightboxOpen(true);
-  };
-
-  const nextImg = () => {
-    setActiveIdx((prev) => (prev + 1) % baseItems.length);
-  };
-
-  const prevImg = () => {
-    setActiveIdx((prev) => (prev - 1 + baseItems.length) % baseItems.length);
-  };
-
   return (
-    <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.02, overflow: "hidden", zIndex: 1 }}>
+    <section ref={r} style={{ position: "relative", minHeight: "100vh", background: W, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.03, overflow: "hidden" }}>
         <motion.h1
           className="font-display"
           style={{
-            scale,
-            rotate,
-            fontSize: "40vw",
+            scale: useTransform(scrollYProgress, [0, 0.5], [1, 1.5]),
+            rotate: useTransform(scrollYProgress, [0, 0.5], [0, 5]),
+            fontSize: "45vw",
             fontWeight: 900,
             color: FG,
             whiteSpace: "nowrap"
@@ -577,390 +384,48 @@ function PlaceHero({ place, galleryItems }) {
         </motion.h1>
       </div>
 
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        width: "100%",
-        height: "100%",
-        padding: "0 80px",
-        gap: 60,
-        position: "relative",
-        zIndex: 10,
-        boxSizing: "border-box",
-        alignItems: "center"
-      }}>
-        
-        <div style={{
-          width: "30%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          alignItems: "flex-start",
-          textAlign: "left",
-          paddingTop: "60px",
-          boxSizing: "border-box"
-        }}>
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.9, ease: E }}
-          >
-            <p className="font-mono" style={{
-              fontSize: 11,
-              letterSpacing: "0.4em",
-              textTransform: "uppercase",
-              color: A,
-              fontWeight: 800,
-              marginBottom: 16
-            }}>
-              {toDisplayString(place?.category) || "DESTINATION"}
-            </p>
-            <h1 className="font-display" style={{
-              fontSize: "clamp(2.5rem, 4vw, 4.2rem)",
-              fontWeight: 800,
-              color: FG,
-              lineHeight: 1.1,
-              letterSpacing: "-0.03em",
-              margin: "0 0 20px 0",
-              textTransform: "uppercase"
-            }}>
-              {placeName}
-            </h1>
-            {/* Description removed and placed below hero section */}
-            <div style={{ marginBottom: 20 }} />
-            <div style={{ display: "flex", gap: 10 }}>
-              {[place?.city, place?.placeType].filter(Boolean).map(tag => (
-                <span
-                  key={toDisplayString(tag)}
-                  style={{
-                    fontSize: 9,
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: FG,
-                    border: `1px solid ${B}`,
-                    padding: "8px 18px",
-                    borderRadius: 30,
-                    background: W,
-                    fontWeight: 600,
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.02)"
-                  }}
-                >
-                  {toDisplayString(tag)}
-                </span>
+      <div style={{ display: "flex", flexDirection: "column", gap, position: "relative", zIndex: 10 }}>
+        {/* Row 1 - moves right to left (0 to -50%) */}
+        <motion.div style={{ y: useTransform(scrollYProgress, [0, 0.3], [0, -40]), display: "flex", width: "100vw", overflow: "hidden" }}>
+          <div className="marquee-hero-track-l" style={{ paddingLeft: gap }}>
+            {trackItems1.map((img, i) => (
+              <motion.div key={i} whileHover={{ scale: 1.05, rotate: 1, zIndex: 100 }} style={{ flexShrink: 0, width: itemWidth1, height: itemWidth1 * 1.25, borderRadius: 24, overflow: "hidden", border: `1px solid ${B}`, boxShadow: "0 30px 60px -15px rgba(0,0,0,0.1)", transition: "transform 0.4s" }}>
+                <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Floating Destination Card in center */}
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 50, pointerEvents: "none" }}>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, ease: E }} style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(40px)", padding: "50px 80px", borderRadius: 40, border: `1px solid ${B}`, textAlign: "center", boxShadow: "0 60px 120px -20px rgba(0,0,0,0.15)" }}>
+            <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 16 }}>{toDisplayString(place?.category) || "DESTINATION"}</p>
+            <Chars text={placeName.toUpperCase()} cls="font-display" style={{ fontSize: "clamp(3rem, 9vw, 6.5rem)", fontWeight: 700, color: FG, lineHeight: 1, letterSpacing: "-0.04em", margin: 0 }} />
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 32, pointerEvents: "auto" }}>
+              {[place?.city, place?.placeType, "Discovery"].filter(Boolean).map(tag => (
+                <motion.span key={toDisplayString(tag)} whileHover={{ background: A, color: W, borderColor: A }} style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: M, border: `1px solid ${B}`, padding: "8px 20px", borderRadius: 40, background: W, transition: "all 0.3s" }}>{toDisplayString(tag)}</motion.span>
               ))}
             </div>
           </motion.div>
         </div>
 
-        <div 
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => setIsSliderHovered(true)}
-          onMouseLeave={() => {
-            setIsSliderHovered(false);
-            setShowArrows(false);
-          }}
-          style={{
-            width: "70%",
-            height: "100%",
-            overflow: "hidden",
-            position: "relative",
-            display: "flex",
-            alignItems: "center"
-          }}
-        >
-          {/* Navigation Left Arrow */}
-          <AnimatePresence>
-            {showArrows && (
-              <motion.button
-                key="left-arrow"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => scrollSlider("left")}
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  zIndex: 20,
-                  background: "rgba(255, 255, 255, 0.75)",
-                  backdropFilter: "blur(8px)",
-                  border: `1px solid ${B}`,
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: FG,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  transition: "background-color 0.2s"
-                }}
-              >
-                <ChevronLeft size={20} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Navigation Right Arrow */}
-          <AnimatePresence>
-            {showArrows && (
-              <motion.button
-                key="right-arrow"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => scrollSlider("right")}
-                style={{
-                  position: "absolute",
-                  right: 16,
-                  zIndex: 20,
-                  background: "rgba(255, 255, 255, 0.75)",
-                  backdropFilter: "blur(8px)",
-                  border: `1px solid ${B}`,
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: FG,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  transition: "background-color 0.2s"
-                }}
-              >
-                <ChevronRight size={20} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Images Slider Container */}
-          <div 
-            ref={sliderRef}
-            className="no-scrollbar"
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 16,
-              height: "100%",
-              width: "100%",
-              overflowX: "auto",
-              scrollBehavior: "smooth",
-              padding: "0 8px"
-            }}
-          >
-            {scrolledItems.map((img, i) => {
-              const uniqueKey = `${img}-${i}`;
-              const isHovered = hoveredImage === uniqueKey;
-              const isAnyHovered = hoveredImage !== null;
-
-              return (
-                <div
-                  key={uniqueKey}
-                  onMouseEnter={() => setHoveredImage(uniqueKey)}
-                  onMouseLeave={() => setHoveredImage(null)}
-                  onClick={() => openLightbox(i % baseItems.length)}
-                  style={{
-                    position: "relative",
-                    height: "100%",
-                    width: isHovered ? 480 : 160,
-                    borderRadius: 24,
-                    overflow: "hidden",
-                    border: `1px solid ${B}`,
-                    boxShadow: isHovered 
-                      ? "0 40px 80px -20px rgba(0,0,0,0.2)" 
-                      : "0 20px 40px -15px rgba(0,0,0,0.05)",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                    transition: "width 0.5s cubic-bezier(0.25, 1, 0.5, 1)"
-                  }}
-                >
-                  <motion.img
-                    src={img}
-                    animate={{ 
-                      scale: isHovered ? 1.06 : 1,
-                      filter: isAnyHovered && !isHovered ? "brightness(0.7) grayscale(0.1)" : "brightness(1) grayscale(0)"
-                    }}
-                    transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover"
-                    }}
-                    alt=""
-                  />
-                  
-                  <div style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.4) 100%)",
-                    opacity: isHovered ? 1 : 0.3,
-                    transition: "opacity 0.4s",
-                    pointerEvents: "none"
-                  }} />
-                </div>
-              );
-            })}
+        {/* Row 2 - moves left to right (-50% to 0) */}
+        <motion.div style={{ y: useTransform(scrollYProgress, [0, 0.3], [0, 40]), display: "flex", width: "100vw", overflow: "hidden" }}>
+          <div className="marquee-hero-track-r" style={{ paddingLeft: 100 }}>
+            {trackItems2.map((img, i) => (
+              <motion.div key={i} whileHover={{ scale: 1.05, rotate: -1, zIndex: 100 }} style={{ flexShrink: 0, width: itemWidth2, height: itemWidth2 * 0.75, borderRadius: 24, overflow: "hidden", border: `1px solid ${B}`, boxShadow: "0 30px 60px -15px rgba(0,0,0,0.1)", transition: "transform 0.4s" }}>
+                <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+              </motion.div>
+            ))}
           </div>
-
-          {/* View All Badge */}
-          <button
-            onClick={() => openLightbox(0)}
-            style={{
-              position: "absolute",
-              bottom: 24,
-              right: 24,
-              zIndex: 20,
-              background: "rgba(0, 0, 0, 0.6)",
-              backdropFilter: "blur(12px)",
-              border: `1px solid rgba(255,255,255,0.25)`,
-              color: "#FFF",
-              borderRadius: 30,
-              padding: "10px 20px",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: "0.1em",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-              transition: "all 0.2s"
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.85)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)"; }}
-          >
-            <Star size={12} fill="#FFF" color="#FFF" />
-            <span>VIEW ALL ({baseItems.length})</span>
-          </button>
-        </div>
-
+        </motion.div>
       </div>
 
-      {/* Desktop Lightbox Modal */}
-      <AnimatePresence>
-        {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.95)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              zIndex: 10000,
-              padding: "24px 36px",
-              boxSizing: "border-box"
-            }}
-          >
-            {/* Top Bar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#FFF", width: "100%" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.05em" }}>
-                {activeIdx + 1} / {baseItems.length}
-              </span>
-              <button
-                onClick={() => setLightboxOpen(false)}
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  outline: "none"
-                }}
-              >
-                <XCircle size={22} />
-              </button>
-            </div>
-
-            {/* Main Image */}
-            <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <button
-                onClick={prevImg}
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 50,
-                  height: 50,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10,
-                  outline: "none"
-                }}
-              >
-                <ChevronLeft size={28} />
-              </button>
-
-              <motion.img
-                key={activeIdx}
-                src={baseItems[activeIdx]}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                style={{ maxWidth: "85%", maxHeight: "75vh", objectFit: "contain", borderRadius: 16 }}
-                alt=""
-              />
-
-              <button
-                onClick={nextImg}
-                style={{
-                  position: "absolute",
-                  right: 16,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 50,
-                  height: 50,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10,
-                  outline: "none"
-                }}
-              >
-                <ChevronRight size={28} />
-              </button>
-            </div>
-
-            {/* Indicator dots */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-              {baseItems.map((_, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: idx === activeIdx ? A : "rgba(255,255,255,0.3)",
-                    transition: "all 0.3s",
-                    cursor: "pointer"
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Scroll to discover removed */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
+        style={{ position: "absolute", bottom: 40, left: "50%", x: "-50%", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 60 }}>
+        <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M }}>Discover more</span>
+        <ArrowDown size={14} color={A} />
+      </motion.div>
       <HeroShareFab
         title={placeName}
         text={place?.description || ""}
@@ -970,114 +435,35 @@ function PlaceHero({ place, galleryItems }) {
   );
 }
 
-function PlaceDescription({ place }) {
-  const { tokens: { A, B, FG, M, W, S } } = useTheme();
-  const { isMobile } = useWindowSize();
-  const description = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
-  
+function QuickFacts({ place }) {
+  const { tokens: { A, B, FG, M, S, W } } = useTheme();
   const facts = [
     { label: "Timings", val: place?.timings || place?.openingHours || "06:00 - 20:00", icon: Clock },
     { label: "Entry Fee", val: place?.entryFee || "Free Entry", icon: Ticket },
     { label: "Best Time", val: place?.bestTimeToVisit || "Year Round", icon: Star },
-    { label: "Rating", val: `${place?.rating || place?.averageRating || "4.8"} Rating`, icon: Check },
+    { label: "Rating", val: `${place?.rating || place?.averageRating || "4.8"} User Rating`, icon: Check },
   ];
 
-  if (isMobile) {
-    return (
-      <section className="place-description-section" style={{ background: W, padding: "32px 16px", borderBottom: `1px solid ${B}` }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {/* Quick Facts Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {facts.map((f, i) => {
-              const IconComp = f.icon;
-              return (
-                <div key={f.label} style={{
-                  background: S,
-                  border: `1px solid ${B}`,
-                  borderRadius: 16,
-                  padding: "12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <IconComp size={14} color={A} />
-                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", color: M, fontWeight: 700 }}>{f.label}</span>
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: FG }}>{f.val}</span>
-                </div>
-              );
-            })}
-          </div>
-          
-          {/* Description Text */}
-          <p style={{
-            fontSize: 14,
-            lineHeight: 1.8,
-            color: FG,
-            margin: 0,
-            fontWeight: 450,
-            fontFamily: "Poppins, sans-serif"
-          }}>
-            {description}
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="place-description-section" style={{ background: W, padding: "60px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 48 }}>
-        
-        {/* Horizontal facts row */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(4, 1fr)", 
-          gap: 20, 
-          background: S, 
-          borderRadius: 24, 
-          padding: "24px 40px",
-          border: `1px solid ${B}`
-        }}>
-          {facts.map((f, i) => {
-            const IconComp = f.icon;
-            return (
-              <div key={f.label} style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 16,
-                borderRight: i < 3 ? `1px solid ${B}` : "none",
-                paddingRight: i < 3 ? 20 : 0
-              }}>
-                <div style={{ background: W, padding: 10, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${B}` }}>
-                  <IconComp size={18} color={A} />
+    <section style={{ background: S, borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}`, padding: "60px 36px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <Soul y={50} s={0.02}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 48 }}>
+            {facts.map((f, i) => (
+              <Rev key={f.label} delay={i * 0.1}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ background: W, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${B}` }}>
+                    <f.icon size={20} color={A} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 4 }}>{f.label}</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>{f.val}</p>
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: M, fontWeight: 700, marginBottom: 2 }}>{f.label}</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: FG }}>{f.val}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Two-column Editorial text */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: A, fontWeight: 800 }}>About this place</span>
-          <div style={{ 
-            columnCount: 2, 
-            columnGap: 60,
-            fontSize: 16,
-            lineHeight: 1.9,
-            color: FG,
-            fontFamily: "Poppins, sans-serif",
-            fontWeight: 400
-          }}>
-            {description}
+              </Rev>
+            ))}
           </div>
-        </div>
-
+        </Soul>
       </div>
     </section>
   );
@@ -1209,9 +595,9 @@ function Itinerary({ place }) {
     { title: "Sunset Perspective", desc: "End your journey with breathtaking panoramic views as the day transitions to night." }
   ];
   return (
-    <section style={{ background: S, padding: "48px 80px" }}>
+    <section style={{ background: S, padding: "120px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Curated Experience Plan</h3>
+        <SHdr idx="01" label="Highlights & Itinerary" />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 32 }}>
           {steps.map((s, i) => (
             <Soul key={i} delay={i * 0.15} y={80} r={i % 2 === 0 ? 3 : -3}>
@@ -1232,681 +618,43 @@ function Itinerary({ place }) {
   );
 }
 
-function VisitorInformation({ place }) {
-  const { tokens: { A, B, FG, M, W, S } } = useTheme();
-  const { isMobile } = useWindowSize();
-
-  const formattedTown = place?.nearestTown?.split('/')[0]?.trim() || "MUNNAR";
-  const formattedAirport = place?.nearestAirport ? place.nearestAirport.split('(')[0].replace("International Airport", "").trim().toUpperCase() : "COCHIN";
-  const formattedRailway = place?.nearestRailway ? place.nearestRailway.split('(')[0].replace("Railway Station", "").trim() : "ALUVA";
-
-  const suitabilityTags = useMemo(() => {
-    const raw = place?.suitableFor;
-    if (!raw) return ["Couples", "Families", "Solo"];
-    if (Array.isArray(raw)) return raw.map(item => toDisplayString(item));
-    if (typeof raw === "string") return raw.split(',').map(t => t.trim());
-    const disp = toDisplayString(raw);
-    return disp ? disp.split(',').map(t => t.trim()) : ["Couples", "Families", "Solo"];
-  }, [place?.suitableFor]);
-
-  // Ticket notch decoration styles helper
-  const ticketNotchStyle = (side) => ({
-    width: 20,
-    height: 20,
-    background: W,
-    border: `1px solid ${B}`,
-    borderRadius: "50%",
-    position: "absolute",
-    top: "70%",
-    transform: "translateY(-50%)",
-    [side]: -11,
-    zIndex: 4,
-    boxSizing: "border-box"
-  });
-
-  return (
-    <section style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <h3 style={{ 
-          fontSize: isMobile ? 24 : "clamp(1.8rem, 2.5vw, 2.2rem)", 
-          fontWeight: 700, 
-          color: FG, 
-          marginBottom: 32, 
-          fontFamily: "Poppins, sans-serif" 
-        }}>Visitor Guide</h3>
-        
-        <Soul y={30}>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)",
-            gap: 32,
-            width: "100%",
-            boxSizing: "border-box"
-          }}>
-            {/* Card 1: Official & Administrative Permit */}
-            <motion.div 
-              whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
-              transition={{ duration: 0.4 }}
-              style={{
-                background: W,
-                border: `1px solid ${B}`,
-                borderRadius: 24,
-                position: "relative",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 480,
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-              }}
-            >
-              {/* Ticket Top Barber Stripe */}
-              <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-              
-              {/* Ticket Notches */}
-              <div style={ticketNotchStyle("left")} />
-              <div style={ticketNotchStyle("right")} />
-
-              {/* Watermark Suitcase Clipart */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <rect x="2" y="7" width="20" height="14" rx="2"/>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-              </svg>
-
-              {/* Card content top */}
-              <div style={{ padding: "32px 28px 20px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Pass Category</span>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>Permit & Admin</h4>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div>
-                      <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Managed By</span>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: FG, margin: 0 }}>{place?.managedBy || "Government Tourism Dept."}</p>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Support Hotline</span>
-                      <a href={`tel:${place?.phone || "+914842567890"}`} style={{ fontSize: 14, fontWeight: 750, color: A, textDecoration: "none" }}>
-                        {place?.phone || "+91 484 256 7890"}
-                      </a>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Suitability</span>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                        {suitabilityTags.map(tag => (
-                          <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: FG, background: S, padding: "2px 8px", borderRadius: 30 }}>
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dashed Separator */}
-              <div style={{ borderTop: `2px dashed ${B}`, width: "100%", height: 0 }} />
-
-              {/* Card content bottom (Detached Stamp Stub) */}
-              <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em" }}>Log Status</span>
-                  <span style={{ fontWeight: 800, color: FG, fontSize: 12 }}>VERIFIED PERMIT</span>
-                </div>
-                
-                {/* Stamp Clipart */}
-                <div style={{
-                  border: `2px double ${A}`,
-                  color: A,
-                  fontFamily: "monospace",
-                  fontSize: 7,
-                  fontWeight: 900,
-                  width: 58,
-                  height: 58,
-                  borderRadius: "50%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: "rotate(-8deg)",
-                  background: W,
-                  boxShadow: `0 4px 10px rgba(0, 0, 0, 0.02)`
-                }}>
-                  <div>OFFICIAL</div>
-                  <div style={{ fontSize: 8, fontWeight: 950 }}>PERMIT</div>
-                  <div>OK</div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 2: Transit & Connectors */}
-            <motion.div 
-              whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
-              transition={{ duration: 0.4 }}
-              style={{
-                background: W,
-                border: `1px solid ${B}`,
-                borderRadius: 24,
-                position: "relative",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 480,
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-              }}
-            >
-              {/* Ticket Top Barber Stripe */}
-              <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-              
-              {/* Ticket Notches */}
-              <div style={ticketNotchStyle("left")} />
-              <div style={ticketNotchStyle("right")} />
-
-              {/* Watermark Plane Clipart */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l8 2.5z" />
-              </svg>
-
-              {/* Card content top */}
-              <div style={{ padding: "32px 28px 20px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 2.6-2.6 2-2.6 2 2-2.6 2.6-2 2.6-2z"/></svg>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Transit Ticket</span>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>Access & Terminals</h4>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div style={{ color: A, marginTop: 2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: 9, color: M, display: "block" }}>Nearest Town</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedTown}</span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div style={{ color: A, marginTop: 2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="3" width="16" height="18" rx="2"/><rect x="8" y="7" width="8" height="4"/><circle cx="10" cy="16" r="1"/><circle cx="14" cy="16" r="1"/></svg>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: 9, color: M, display: "block" }}>Railway Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedRailway} Station</span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div style={{ color: A, marginTop: 2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l8 2.5z"/></svg>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: 9, color: M, display: "block" }}>Airport Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedAirport} Airport</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dashed Separator */}
-              <div style={{ borderTop: `2px dashed ${B}`, width: "100%", height: 0 }} />
-
-              {/* Card content bottom (Detached Stamp Stub) */}
-              <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 9, color: M, display: "block" }}>Vehicle Access</span>
-                  <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.accessByVehicle || "All Vehicles"}</span>
-                </div>
-                
-                {/* Stamp Clipart */}
-                <div style={{
-                  border: `1.5px dashed ${A}`,
-                  color: A,
-                  fontFamily: "monospace",
-                  fontSize: 7,
-                  fontWeight: 900,
-                  width: 76,
-                  height: 38,
-                  borderRadius: 6,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: "rotate(6deg)",
-                  opacity: 0.8,
-                  background: W,
-                  boxShadow: `0 4px 10px rgba(0, 0, 0, 0.02)`
-                }}>
-                  <div style={{ fontSize: 5 }}>TRANSIT OK</div>
-                  <div style={{ fontSize: 7, fontWeight: 950 }}>APPROVED</div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 3: Admission & Specifications */}
-            <motion.div 
-              whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
-              transition={{ duration: 0.4 }}
-              style={{
-                background: W,
-                border: `1px solid ${B}`,
-                borderRadius: 24,
-                position: "relative",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 480,
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-              }}
-            >
-              {/* Ticket Top Barber Stripe */}
-              <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-              
-              {/* Ticket Notches */}
-              <div style={ticketNotchStyle("left")} />
-              <div style={ticketNotchStyle("right")} />
-
-              {/* Watermark Compass Clipart */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <circle cx="12" cy="12" r="10"/>
-                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-              </svg>
-
-              {/* Card content top */}
-              <div style={{ padding: "32px 28px 20px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Entry Permits</span>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>Rules & Specifications</h4>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
-                      <span style={{ fontSize: 12, color: M }}>Permit Category</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.entryFee || "Paid Entry"}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
-                      <span style={{ fontSize: 12, color: M }}>Parking Place</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.parking || "Available"}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
-                      <span style={{ fontSize: 12, color: M }}>Wheelchair</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.wheelchair || "Accessible"}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
-                      <span style={{ fontSize: 12, color: M }}>Age Restriction</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.minAge || "All Ages"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dashed Separator */}
-              <div style={{ borderTop: `2px dashed ${B}`, width: "100%", height: 0 }} />
-
-              {/* Card content bottom (Detached Stamp Stub) */}
-              <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 9, color: M, display: "block" }}>Best Visit Season</span>
-                  <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.bestTimeToVisit || "Year Round"}</span>
-                </div>
-                
-                {/* Stamp Clipart */}
-                <div style={{
-                  border: `2px double ${A}`,
-                  color: A,
-                  fontFamily: "monospace",
-                  fontSize: 7,
-                  fontWeight: 900,
-                  width: 58,
-                  height: 58,
-                  borderRadius: "50%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: "rotate(10deg)",
-                  background: W,
-                  boxShadow: `0 4px 10px rgba(0, 0, 0, 0.02)`
-                }}>
-                  <div>RULES</div>
-                  <div style={{ fontSize: 8, fontWeight: 950 }}>PASSED</div>
-                  <div>DEPT</div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 4: Operating Hours & Official Stamp Detached Stub */}
-            <motion.div 
-              whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
-              transition={{ duration: 0.4 }}
-              style={{
-                background: W,
-                border: `1px solid ${B}`,
-                borderRadius: 24,
-                position: "relative",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 480,
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-              }}
-            >
-              {/* Ticket Top Barber Stripe */}
-              <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-
-              {/* Ticket Notches */}
-              <div style={ticketNotchStyle("left")} />
-              <div style={ticketNotchStyle("right")} />
-
-              {/* Watermark Hourglass Clipart */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <path d="M5 2h14v2H5V2zM5 22h14v-2H5v2zM19 4l-7 7-7-7M5 20l7-7 7 7"/>
-              </svg>
-
-              {/* Card content top */}
-              <div style={{ padding: "32px 28px 20px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Coupon validity</span>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>Permit Timings</h4>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: M }}>Opening Hour</span>
-                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.openingTime || "08:30 AM"}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: M }}>Closing Hour</span>
-                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.closeTime || "04:30 PM"}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: M }}>Closed On</span>
-                      <span style={{ fontWeight: 850, color: A, fontSize: 13, textTransform: "uppercase" }}>{place?.closedDays || "None"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dashed Separator */}
-              <div style={{ borderTop: `2px dashed ${B}`, width: "100%", height: 0 }} />
-
-              {/* Card content bottom (Detached Stamp Stub) */}
-              <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ 
-                    width: 90, 
-                    height: 24, 
-                    background: FG, 
-                    opacity: 0.1, 
-                    backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 1px, ${FG} 1px, ${FG} 3px, transparent 3px, transparent 4px, ${FG} 4px, ${FG} 5px)` 
-                  }} />
-                  <span className="font-mono" style={{ fontSize: 7, color: M }}>LKP-{place?.id || "99812"}</span>
-                </div>
-
-                {/* Stamp Clipart */}
-                <div style={{
-                  border: `2px solid ${A}`,
-                  color: A,
-                  fontFamily: "monospace",
-                  fontSize: 7,
-                  fontWeight: 900,
-                  width: 58,
-                  height: 58,
-                  borderRadius: "50%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: "rotate(-10deg)",
-                  background: W,
-                  boxShadow: `0 4px 10px rgba(0, 0, 0, 0.02)`
-                }}>
-                  <div style={{ fontSize: 5, borderBottom: `1px solid ${A}`, paddingBottom: 1 }}>PASSED</div>
-                  <div style={{ fontSize: 7, fontWeight: 950 }}>GATEWAY</div>
-                  <div style={{ fontSize: 5 }}>TOURISM</div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </Soul>
-      </div>
-    </section>
-  );
-}
-
 function GoodToKnow({ place }) {
-  const { tokens: { A, B, FG, M, W, S, AL } } = useTheme();
-
-  const warningBg = A === "#0097B2" ? "#fff5f5" : "rgba(239, 68, 68, 0.05)";
-  const warningBorder = A === "#0097B2" ? "#fee2e2" : "rgba(239, 68, 68, 0.2)";
-  const warningText = A === "#0097B2" ? "#b91c1c" : "#fca5a5";
-  const warningHeader = A === "#0097B2" ? "#991b1b" : "#f87171";
-
-  const carryItems = ["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"];
-  const avoidItems = ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"];
-
-  const feedbackBg = A === "#0097B2" ? "#f8f8f8" : S;
-
+  const { tokens: { A, B, FG, M, W, AL } } = useTheme();
   return (
-    <section style={{ background: S, padding: "48px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
-        <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, fontFamily: "Poppins, sans-serif" }}>Good To Know</h3>
-        
-        {/* Row 1: Good to Know Title & Two side-by-side cards */}
+    <section style={{ background: W, padding: "120px 36px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 100 }} className="info-grid">
         <Rev>
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
-            gap: 32, 
-            marginTop: 8 
-          }}>
-            
-            {/* What to Carry - Premium Luggage Tag design */}
-            <div style={{ position: "relative" }}>
-              
-              <motion.div
-                whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,151,178,0.12)" }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                style={{
-                  background: W,
-                  border: `1px solid ${B}`,
-                  borderRadius: 24,
-                  padding: "24px 24px 20px 24px",
-                  position: "relative",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.01)",
-                  height: "100%",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
-                }}
-              >
-
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                    <div>
-                      <span style={{ fontSize: 9, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 800 }}>Luggage Check</span>
-                      <h4 style={{ fontSize: 17, fontWeight: 800, color: FG, margin: "2px 0 0 0", fontFamily: "Poppins, sans-serif" }}>What to Carry</h4>
-                    </div>
-                    <div style={{ background: AL, padding: 8, borderRadius: 10 }}>
-                      <Briefcase size={16} color={A} />
-                    </div>
-                  </div>
-
-                  {/* Flight Label Details */}
-                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px dashed ${B}`, paddingBottom: 6, marginBottom: 12, fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.05em" }}>
-                    <div>DEP: LKP-GATEWAY</div>
-                    <div>CLASS: FIRST</div>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    {carryItems.map(item => (
-                      <div
-                        key={item}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "8px 10px",
-                          background: `${S}80`,
-                          borderRadius: 10
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: W, border: `1px solid ${B}`, flexShrink: 0 }}>
-                          <Check size={8} color={A} strokeWidth={3} />
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Baggage Barcode Illustration */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: 20 }}>
-                  <div style={{ display: "flex", gap: 2, alignItems: "center", height: 16, opacity: 0.8 }}>
-                    {[2, 4, 1, 3, 1, 4, 2, 1, 3, 2, 4, 1, 2, 1, 3, 4, 1, 2, 3, 1, 4, 2].map((w, idx) => (
-                      <div key={idx} style={{ width: w, height: "100%", background: FG, opacity: idx % 3 === 0 ? 0.3 : 0.8 }} />
-                    ))}
-                  </div>
-                  <span style={{ fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.2em" }}>*LKP-{place?.id || "CURATOR"}*</span>
-                </div>
-              </motion.div>
+          <SHdr idx="02" label="Good To Know" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+            <div>
+              <h4 style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 700, color: FG, marginBottom: 20 }}>
+                <Briefcase size={16} color={A} /> What to Carry
+              </h4>
+              <ul style={{ listStyle: "none", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"].map(item => (
+                  <li key={item} style={{ fontSize: 13, color: M, display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: A }} /> {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            {/* Things to Avoid - Customs Restricted Goods Slip design */}
-            <div style={{ position: "relative" }}>
-              <motion.div
-                whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(239,68,68,0.15)" }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                style={{
-                  background: warningBg,
-                  border: `1.5px solid ${warningBorder}`,
-                  borderRadius: 24,
-                  padding: "28px 24px 20px 24px",
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.01)",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  boxSizing: "border-box",
-                  height: "100%"
-                }}
-              >
-                {/* Warning Barber Stripe border top */}
-                <div style={{ 
-                  height: 4, 
-                  background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 6px, transparent 6px, transparent 12px)`, 
-                  width: "100%", 
-                  position: "absolute", 
-                  top: 0, 
-                  left: 0 
-                }} />
-
-                {/* Rotated Restricted Stamp Overlay */}
-                <div style={{
-                  border: `3px double #ef4444`,
-                  color: "#ef4444",
-                  fontFamily: "monospace",
-                  fontSize: 8,
-                  fontWeight: 900,
-                  padding: "4px 8px",
-                  borderRadius: 2,
-                  position: "absolute",
-                  top: 10,
-                  right: 14,
-                  transform: "rotate(-12deg) scale(1)",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  background: warningBg,
-                  boxShadow: "0 0 10px rgba(239,68,68,0.05)",
-                  zIndex: 5
-                }}>
-                  RESTRICTED
-                </div>
-
-                <div>
-                  <div style={{ marginBottom: 14 }}>
-                    <span style={{ fontSize: 9, color: warningText, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 800 }}>Customs Declaration</span>
-                    <h4 style={{ fontSize: 17, fontWeight: 800, color: warningHeader, margin: "2px 0 0 0", fontFamily: "Poppins, sans-serif" }}>Things to Avoid</h4>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {avoidItems.map(item => (
-                      <div
-                        key={item}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "8px 12px",
-                          background: "rgba(239, 68, 68, 0.03)",
-                          borderRadius: 10,
-                          border: `1px dashed ${warningBorder}`
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: W, flexShrink: 0 }}>
-                          <XCircle size={10} color="#ef4444" />
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: warningText }}>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bottom Barber Stripe to frame it */}
-                <div style={{ 
-                  height: 4, 
-                  background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 6px, transparent 6px, transparent 12px)`, 
-                  width: "100%", 
-                  position: "absolute", 
-                  bottom: 0, 
-                  left: 0,
-                  opacity: 0.7
-                }} />
-              </motion.div>
+            <div style={{ background: "#fff5f5", border: "1px solid #fee2e2", padding: 32, borderRadius: 20 }}>
+              <h4 style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 700, color: "#991b1b", marginBottom: 16 }}>
+                <XCircle size={16} color="#ef4444" /> Things to Avoid
+              </h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+                {["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"].map(item => (
+                  <li key={item} style={{ fontSize: 12, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
+                    <XCircle size={10} /> {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-
           </div>
         </Rev>
-      </div>
-    </section>
-  );
-}
 
-function CommunityFeedback() {
-  const { tokens: { A, B, FG, M, W, S } } = useTheme();
-  return (
-    <section className="community-feedback-section" style={{ background: S, padding: "48px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <Rev delay={0.1}>
-          <div style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: 48 }}>
+        <Rev delay={0.2}>
+          <div style={{ background: "#f8f8f8", border: `1px solid ${B}`, borderRadius: 32, padding: 48 }}>
             <h3 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: FG, marginBottom: 12 }}>Community Feedback</h3>
             <p style={{ fontSize: 12, color: M, marginBottom: 24 }}>Share your recent experience or suggest updates for this location.</p>
             <textarea
@@ -1919,141 +667,6 @@ function CommunityFeedback() {
             </motion.button>
           </div>
         </Rev>
-      </div>
-    </section>
-  );
-}
-
-function LocationSection({ place }) {
-  const { tokens: { A, B, FG, M, W, S }, theme } = useTheme();
-  const { isMobile } = useWindowSize();
-  const latitude = place?.latitude;
-  const longitude = place?.longitude;
-  const address = place?.address || place?.meetingAddress;
-  const landmark = place?.landmark || place?.meetingLandmark;
-  const city = place?.city || place?.nearestTown;
-  const district = place?.district || place?.meetingDistrict;
-  const state = place?.state || place?.region || place?.meetingState;
-  const country = place?.country || place?.meetingCountry;
-  const instructions = place?.instructions || place?.meetingInstructions;
-
-  return (
-    <section className="location-section" style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
-          <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                  <div style={{
-                    position: "absolute",
-                    bottom: 16,
-                    left: 16,
-                    zIndex: 10,
-                    background: W,
-                    padding: "10px 16px",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                    border: `1px solid ${B}`,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    pointerEvents: "none"
-                  }}>
-                    <MapPin size={16} color={A} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{place?.placeName || "Location"}</span>
-                  </div>
-                  {latitude && longitude ? (
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      style={{ border: 0 }}
-                      src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=en&z=14&output=embed`}
-                      allowFullScreen
-                      title="Location Map"
-                    />
-                  ) : (
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      style={{ border: 0 }}
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(place?.placeName || "")}&hl=en&z=14&output=embed`}
-                      allowFullScreen
-                      title="Location Map"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </Rev>
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, margin: 0, padding: 0 }}>
-                  {address && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{address}</span>
-                    </li>
-                  )}
-
-                  {landmark && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{landmark}</span>
-                    </li>
-                  )}
-
-                  {city && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>City/Town</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{city}</span>
-                    </li>
-                  )}
-
-                  {district && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{district}</span>
-                    </li>
-                  )}
-
-                  {state && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State/Region</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{state}</span>
-                    </li>
-                  )}
-
-                  {country && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{country}</span>
-                    </li>
-                  )}
-
-                  {instructions && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{instructions}</span>
-                    </li>
-                  )}
-
-                  {(!address && !city && !state && !landmark && !district && !country && !instructions) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                      <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details are available on the map.</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </Rev>
-        </div>
       </div>
     </section>
   );
@@ -2105,7 +718,7 @@ function MobileHero({ place, galleryItems }) {
             style={{
               flexShrink: 0,
               width: "calc(100vw - 64px)", // leaves space on left/right for peeking next/prev images
-              height: "70vh",
+              height: "45vh",
               borderRadius: 28,
               overflow: "hidden",
               border: `1.5px solid ${B}`,
@@ -2194,6 +807,52 @@ function MobileHero({ place, galleryItems }) {
           ))}
         </div>
       </motion.div>
+    </section>
+  );
+}
+
+function MobileQuickFacts({ place }) {
+  const { tokens: { A, B, FG, M, S, W } } = useTheme();
+  const facts = [
+    { label: "Timings", val: place?.timings || place?.openingHours || "06:00 - 20:00", icon: Clock },
+    { label: "Entry Fee", val: place?.entryFee || "Free Entry", icon: Ticket },
+    { label: "Best Time", val: place?.bestTimeToVisit || "Year Round", icon: Star },
+    { label: "Rating", val: `${place?.rating || place?.averageRating || "4.8"} Rating`, icon: Star },
+  ];
+
+  return (
+    <section style={{ background: S, borderBottom: `1px solid ${B}`, padding: "24px 16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {facts.map((f, i) => (
+          <div key={f.label} style={{
+            background: W,
+            border: `1.5px solid ${B}`,
+            borderRadius: 20,
+            padding: "14px 12px",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10
+          }}>
+            <div style={{
+              background: `${A}12`,
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0
+            }}>
+              <f.icon size={14} color={A} fill={f.icon === Star ? A : "none"} />
+            </div>
+            <div>
+              <p style={{ fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: M, margin: "0 0 2px 0" }}>{f.label}</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: FG, margin: 0 }}>{f.val}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -2466,7 +1125,7 @@ function MobileItinerary({ place }) {
   ];
 
   return (
-    <section style={{ background: S, padding: "40px 16px" }}>
+    <section style={{ background: W, padding: "40px 16px" }}>
       <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 6 }}>
         HIGHLIGHTS & ITINERARY
       </p>
@@ -2526,16 +1185,7 @@ function MobileItinerary({ place }) {
 }
 
 function MobileGoodToKnow({ place }) {
-  const { tokens: { A, B, FG, M, W, S, AL } } = useTheme();
-
-  const warningBg = A === "#0097B2" ? "#fff5f5" : "rgba(239, 68, 68, 0.05)";
-  const warningBorder = A === "#0097B2" ? "#fee2e2" : "rgba(239, 68, 68, 0.2)";
-  const warningText = A === "#0097B2" ? "#b91c1c" : "#fca5a5";
-  const warningHeader = A === "#0097B2" ? "#991b1b" : "#f87171";
-
-  const carryItems = ["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"];
-  const avoidItems = ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"];
-
+  const { tokens: { A, B, FG, M, W, S } } = useTheme();
   return (
     <section style={{ background: S, padding: "40px 16px", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
       <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 6 }}>
@@ -2545,133 +1195,44 @@ function MobileGoodToKnow({ place }) {
         Good To Know
       </h3>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 32, marginBottom: 32 }}>
-        
-        {/* What to Carry - Mobile Luggage Tag */}
-        <div style={{ position: "relative" }}>
-          
-          <div style={{
-            background: W,
-            border: `1px solid ${B}`,
-            borderRadius: 24,
-            padding: "20px 20px 20px 20px",
-            position: "relative",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.01)"
-          }}>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h4 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, color: FG, margin: 0 }}>
-                <Briefcase size={16} color={A} /> What to Carry
-              </h4>
-              <span style={{ fontSize: 8, color: M, letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 700 }}>Luggage Check</span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {carryItems.map(item => (
-                <div
-                  key={item}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "8px 0",
-                    borderBottom: `1px dashed ${B}`
-                  }}
-                >
-                  <Check size={14} color={A} strokeWidth={3} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: FG }}>{item}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Baggage Barcode */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: 18, opacity: 0.7 }}>
-              <div style={{ 
-                width: 110, 
-                height: 20, 
-                color: FG,
-                opacity: 0.15, 
-                backgroundImage: `repeating-linear-gradient(90deg, currentColor, currentColor 1px, transparent 1px, transparent 3px, currentColor 3px, currentColor 4px, transparent 4px, transparent 6px)` 
-              }} />
-              <span style={{ fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.1em" }}>*BAG-LKP-${place?.id || "PACK"}*</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Things to Avoid - Mobile Customs Declaration Slip */}
-        <div style={{
-          background: warningBg,
-          border: `1.5px solid ${warningBorder}`,
-          borderRadius: 24,
-          padding: "24px 20px 20px 20px",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.01)"
-        }}>
-          {/* Warning Barber Stripe border top */}
-          <div style={{ 
-            height: 5, 
-            background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 5px, transparent 5px, transparent 10px)`, 
-            width: "100%", 
-            position: "absolute", 
-            top: 0, 
-            left: 0 
-          }} />
-
-          {/* Rotated Restricted Stamp Overlay */}
-          <div style={{
-            border: `1.5px dashed ${warningHeader}`,
-            color: warningHeader,
-            fontFamily: "monospace",
-            fontSize: 7,
-            fontWeight: 900,
-            padding: "2px 6px",
-            borderRadius: 3,
-            position: "absolute",
-            top: 14,
-            right: 14,
-            transform: "rotate(-10deg)",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            opacity: 0.8
-          }}>
-            Restricted
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <h4 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, color: warningHeader, margin: 0 }}>
-              <XCircle size={16} color="#ef4444" /> Things to Avoid
-            </h4>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {avoidItems.map(item => (
-              <div
-                key={item}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 0",
-                  borderBottom: `1px dashed ${warningBorder}`
-                }}
-              >
-                <XCircle size={14} color="#ef4444" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: warningText }}>{item}</span>
-              </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 32 }}>
+        {/* What to Carry */}
+        <div style={{ background: W, padding: 18, borderRadius: 20, border: `1.5px solid ${B}` }}>
+          <h4 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: FG, marginBottom: 12, margin: "0 0 12px 0" }}>
+            <Briefcase size={14} color={A} /> What to Carry
+          </h4>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"].map(item => (
+              <span key={item} style={{
+                fontSize: 10,
+                color: M,
+                background: S,
+                padding: "5px 10px",
+                borderRadius: 10,
+                border: `1px solid ${B}`,
+                fontWeight: 500
+              }}>
+                {item}
+              </span>
             ))}
           </div>
         </div>
 
+        {/* Things to Avoid */}
+        <div style={{ background: "#fff5f5", border: "1.5px solid #fee2e2", padding: 18, borderRadius: 20 }}>
+          <h4 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "#991b1b", marginBottom: 10, margin: "0 0 10px 0" }}>
+            <XCircle size={14} color="#ef4444" /> Things to Avoid
+          </h4>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"].map(item => (
+              <li key={item} style={{ fontSize: 11, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8, fontWeight: 500 }}>
+                <XCircle size={10} color="#ef4444" /> {item}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </section>
-  );
-}
 
-function MobileCommunityFeedback() {
-  const { tokens: { A, B, FG, M, W, S } } = useTheme();
-  return (
-    <section style={{ background: S, padding: "40px 16px", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
       {/* Community Feedback */}
       <div style={{ background: W, border: `1.5px solid ${B}`, borderRadius: 20, padding: 20 }}>
         <h4 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 4, margin: "0 0 4px 0" }}>Community Feedback</h4>
@@ -2872,8 +1433,11 @@ function MobilePlaceDetails({
       {/* 1. Hero Image with floating content */}
       <MobileHero place={place} galleryItems={galleryItems} />
 
-      {/* Place Description */}
-      <PlaceDescription place={place} />
+      {/* 2. Quick Info Chips */}
+      <MobileQuickFacts place={place} />
+
+      {/* 3. About Place */}
+      <MobileAbout place={place} hostData={hostData} hostAvatar={hostAvatar} />
 
       {/* 4. Gallery with Lightbox */}
       <MobileGallery galleryItems={galleryItems} />
@@ -2881,17 +1445,11 @@ function MobilePlaceDetails({
       {/* 5. Highlights & Itinerary */}
       <MobileItinerary place={place} />
 
-      {/* Visitor Information */}
-      <VisitorInformation place={place} />
-
       {/* 6. Good to Know */}
       <MobileGoodToKnow place={place} />
 
-      {/* Location Map Section */}
-      <LocationSection place={place} />
-
-      {/* Community Feedback */}
-      <MobileCommunityFeedback />
+      {/* 7. Logistics */}
+      <MobileLogistics place={place} hostData={hostData} />
 
       {/* 8. Booking / CTA */}
       <MobileCTA place={place} />
@@ -3068,7 +1626,7 @@ const PlaceDetails = () => {
   const primaryCategoryId = place?.primaryCategoryId || place?.primaryCategory?.id || place?.categoryId || place?.category?.id;
   const currentListingId = place?.placeId || place?.id || id;
 
-  if (!place && !unavailablePopupOpen) {
+  if (loading && !place && !unavailablePopupOpen) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
         <Loader />
@@ -3111,17 +1669,25 @@ const PlaceDetails = () => {
 
       <PlaceHero place={place} galleryItems={galleryItems} />
 
-      <PlaceDescription place={place} />
+      <Mq items={["Discovery", "Heritage", "Landscape", "Perspective"]} size="sm" bg={THEMES.light.S} accent />
+
+      <QuickFacts place={place} />
+
+      <Mq items={["Coastal Gem", "Urban Heart", "Historical Echo"]} bg={THEMES.light.S} />
+
+      <DestAbout place={place} hostData={hostData} hostAvatar={hostAvatar} />
+
+      <Mq items={["Journey Blueprint", "Daily Rhythm", "The Itinerary"]} size="sm" bg={THEMES.light.S} accent />
 
       <Itinerary place={place} />
 
-      <VisitorInformation place={place} />
+      <Mq items={["Community Pulse", "Visitor Wisdom", "Safety Net"]} bg={THEMES.light.S} />
 
       <GoodToKnow place={place} />
 
-      <LocationSection place={place} />
+      <Mq items={["Location Access", "Arrival Logic", "Journey Blueprint"]} size="sm" bg={THEMES.light.S} accent />
 
-      <CommunityFeedback />
+      <Logistics place={place} hostData={hostData} />
 
       <RelatedListingsStrip
         businessInterestId={4}

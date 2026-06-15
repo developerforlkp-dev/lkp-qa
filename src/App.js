@@ -97,7 +97,7 @@ function App() {
               }
               // Default to Homepage with appropriate section
               return (
-                <Page separatorHeader={false}>
+                <Page>
                   <FleetHome />
                 </Page>
               );
@@ -292,7 +292,7 @@ function App() {
             exact
             path="/place-details"
             render={() => (
-              <Page separatorHeader fooferHide>
+              <Page separatorHeader>
                 <PlaceDetails />
               </Page>
             )}

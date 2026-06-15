@@ -5,8 +5,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSp
 import {
   Utensils, Star, Clock, MapPin, ChefHat, Award, Leaf, Globe,
   Coffee, Info, ChevronRight, ChevronDown, Phone, Instagram, Check, ArrowRight, ArrowDown,
-  Calendar, Zap, CheckCircle, ChevronLeft, UtensilsCrossed, Share2, Search, Sparkles,
-  Users, DollarSign, GlassWater, CloudSun, Tag
+  Calendar, Zap, CheckCircle, ChevronLeft, UtensilsCrossed, Share2, Search
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -107,13 +106,6 @@ const ScopedStyles = () => (
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
     }
-
-    .food-details-premium h1.hero-title {
-      color: #FFFFFF !important;
-      -webkit-text-fill-color: #FFFFFF !important;
-      text-shadow: none !important;
-      -webkit-text-stroke: none !important;
-    }
     
     /* Header Blending */
     [class*="Header_header"] {
@@ -145,187 +137,6 @@ const ScopedStyles = () => (
       clip-path: circle(85% at 85% 50%);
     }
 
-    .bento-grid-container {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      height: calc(100vh - 180px);
-      gap: 12px;
-      width: 100%;
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 0 20px;
-      box-sizing: border-box;
-    }
-    .bento-card {
-      position: relative;
-      border-radius: 24px;
-      overflow: visible !important;
-      perspective: 1000px;
-      background: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-    }
-    .bento-card::-webkit-scrollbar {
-      display: none; /* Hide scrollbars in Chrome/Safari */
-    }
-    .flip-card-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-      transform-style: preserve-3d;
-    }
-    .bento-card:hover .flip-card-inner {
-      transform: rotateY(180deg);
-    }
-    .flip-card-front, .flip-card-back {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      border-radius: 24px;
-      overflow: auto;
-      scrollbar-width: none;
-      border: 1px solid var(--B);
-      background: var(--S);
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 24px;
-    }
-    .flip-card-front::-webkit-scrollbar, .flip-card-back::-webkit-scrollbar {
-      display: none;
-    }
-    .flip-card-front.image-card, .flip-card-back.image-card {
-      overflow: hidden;
-      padding: 0;
-    }
-    .flip-card-front.image-card img, .flip-card-back.image-card img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .flip-card-front.text-overlay, .flip-card-back.text-overlay {
-      justify-content: flex-end;
-      color: #fff;
-    }
-    .flip-card-front.text-overlay .overlay-content, .flip-card-back.text-overlay .overlay-content {
-      position: relative;
-      z-index: 2;
-    }
-    .flip-card-front.text-overlay .gradient-overlay, .flip-card-back.text-overlay .gradient-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%);
-      z-index: 1;
-    }
-    .flip-card-back {
-      transform: rotateY(180deg);
-    }
-    
-    /* Bento Card Spans */
-    .bento-span-2-2 {
-      grid-column: span 2;
-      grid-row: span 2;
-    }
-    .bento-span-2-1 {
-      grid-column: span 2;
-      grid-row: span 1;
-    }
-    .bento-span-1-2 {
-      grid-column: span 1;
-      grid-row: span 2;
-    }
-    .bento-span-1-1 {
-      grid-column: span 1;
-      grid-row: span 1;
-    }
-    
-    /* Custom colored card backgrounds matching project theme colors */
-    .bento-card.colored-accent-1 {
-      background: var(--AL);
-      color: var(--FG);
-      border-color: var(--B);
-    }
-    .bento-card.colored-accent-1 h3 {
-      color: var(--A);
-    }
-    .bento-card.colored-accent-2 {
-      background: var(--A);
-      color: #FFFFFF;
-      border-color: var(--A);
-    }
-    .bento-card.colored-accent-2 h3, .bento-card.colored-accent-2 p {
-      color: #FFFFFF !important;
-    }
-    .bento-card.colored-accent-3 {
-      background: var(--S);
-      color: var(--FG);
-      border-color: var(--B);
-    }
-    .bento-card.colored-accent-3 h3 {
-      color: var(--A);
-    }
-    .bento-card.colored-accent-1 h3, .bento-card.colored-accent-2 h3, .bento-card.colored-accent-3 h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-    .bento-card.colored-accent-1 p, .bento-card.colored-accent-2 p, .bento-card.colored-accent-3 p {
-      margin: 0;
-      font-size: 13.5px;
-      line-height: 1.6;
-      opacity: 0.9;
-    }
-    
-    /* Responsive tweaks */
-    @media(max-width: 1024px) {
-      .bento-grid-container {
-        grid-template-columns: repeat(2, 1fr);
-        grid-auto-rows: minmax(160px, auto);
-      }
-      .bento-span-2-2 {
-        grid-column: span 2;
-        grid-row: span 2;
-      }
-      .bento-span-1-2 {
-        grid-column: span 1;
-        grid-row: span 2;
-      }
-      .narrative-section, .prep-section, .reservation-section-wrapper {
-        padding: 32px 40px !important;
-      }
-    }
-    @media(max-width: 768px) {
-      .bento-grid-container {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 0 16px;
-      }
-      .bento-card {
-        grid-column: auto !important;
-        grid-row: auto !important;
-        height: auto !important;
-        min-height: 140px;
-        padding: 24px;
-      }
-      .bento-card.image-card {
-        height: 240px !important;
-      }
-      .bento-card.bento-span-2-2.image-card {
-        height: 280px !important;
-      }
-    }
-
-
     /* ─── PREMIUM MOBILE RESPONSIVE OVERRIDES ─── */
     @media(max-width:768px){
       .food-details-premium .desk-only { display: none !important; }
@@ -334,12 +145,24 @@ const ScopedStyles = () => (
       .hero-section-wrapper {
         height: auto !important;
         min-height: 100vh;
-        padding: 120px 24px 60px !important;
+        padding: 120px 20px 60px !important;
         display: flex !important;
         align-items: center !important;
       }
-      .narrative-section, .prep-section, .reservation-section-wrapper {
-        padding: 32px 24px !important;
+      .chef-section-wrapper {
+        padding: 80px 20px !important;
+      }
+      .dish-gallery-wrapper {
+        padding: 60px 0 !important;
+      }
+      .availability-section-wrapper {
+        padding: 80px 20px !important;
+      }
+      .location-section-wrapper {
+        padding: 80px 20px !important;
+      }
+      .reservation-section-wrapper {
+        padding: 80px 20px !important;
       }
 
       /* Grid & Layout Adjustments */
@@ -952,11 +775,6 @@ function CulinaryHero({ food, galleryItems }) {
           }}>
             {food?.shortDescription || "Authentic Taste Experience"}
           </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-            <Star size={14} fill="#F59E0B" color="#F59E0B" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{food?.googleRating || food?.rating || "4.8"}</span>
-            <span style={{ fontSize: 11, color: M }}>(Google Rating)</span>
-          </div>
           <p style={{
             fontSize: "13px",
             color: M,
@@ -1004,14 +822,13 @@ function CulinaryHero({ food, galleryItems }) {
   }
 
   return (
-    <section className="hero-section-wrapper" style={{ background: BG, height: "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", padding: "120px 0 60px", boxSizing: "border-box" }}>
+    <section className="hero-section-wrapper" style={{ background: BG, height: isMobile ? "auto" : "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", paddingTop: isMobile ? 120 : 80 }}>
       {/* Hero Back Button */}
       <button
         type="button"
         className="premium-back-button"
         onClick={() => history.goBack()}
         aria-label="Go back"
-        style={{ zIndex: 10 }}
       >
         <ChevronLeft size={20} />
       </button>
@@ -1025,246 +842,88 @@ function CulinaryHero({ food, galleryItems }) {
 
       {/* Header Blending Gradient */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
-      
-      <div className="bento-grid-container" style={{ position: "relative", zIndex: 6 }}>
-        {/* Card 1: Signature Dish Main Card (2x2) */}
-        <div className="bento-card bento-span-2-2">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: isMobile ? "0 20px" : "0 60px", width: "100%", height: isMobile ? "auto" : "100%", display: "flex", alignItems: "center" }}>
+        <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 32 : 60, alignItems: "center", width: "100%" }}>
+          <Rev delay={0.1}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+              <div>
+                <h1 className="font-display" style={{ fontSize: isMobile ? "clamp(2rem, 7vw, 3rem)" : "clamp(2.5rem, 5vw, 4.2rem)", fontWeight: 800, color: FG, lineHeight: 1.1, margin: 0, textTransform: "capitalize" }}>
+                  {title}
+                </h1>
+                <h2 className="font-cursive" style={{ fontSize: isMobile ? "clamp(1.6rem, 5vw, 2.2rem)" : "clamp(1.8rem, 3vw, 2.8rem)", color: A, marginTop: -5, marginBottom: 16, fontWeight: 400 }}>
+                  {food?.shortDescription || "Authentic Taste Experience"}
+                </h2>
+                <p style={{ fontSize: 14, color: M, lineHeight: 1.6, maxWidth: 450, margin: 0 }}>
+                  {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
+                </p>
+              </div>
+
+              <div className="info-badges-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: isMobile ? 16 : 20, padding: "16px 0", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
+                <InfoBadge icon={Utensils} label={cuisine} sublabel="Cuisine" tokens={tokens} />
+                <InfoBadge icon={Globe} label={source} sublabel="Source" tokens={tokens} />
+                <InfoBadge icon={Zap} label={serveMode} sublabel="Service" tokens={tokens} />
+                <InfoBadge icon={Leaf} label={dietary} sublabel="Dietary" tokens={tokens} />
+              </div>
+
+              <div className="hero-stats-card" style={{ background: W, borderRadius: 20, padding: isMobile ? "12px" : "16px 0", border: `1px solid ${B}`, display: "flex", flexDirection: isMobile ? "column" : "row", boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+                <div style={{ flex: 1 }}><HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} /></div>
+                <div style={{ flex: 1 }}><HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} /></div>
+                <div style={{ flex: isMobile ? 1 : 1.5 }}><HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder /></div>
+              </div>
+
+            </div>
+          </Rev>
+
+          <Rev delay={0.3} style={{ position: "relative" }}>
+            <div className="hero-img-curve" style={{ width: "100%", aspectRatio: isMobile ? "4/3" : "4/5", maxHeight: isMobile ? "45vh" : "75vh", position: "relative", overflow: "hidden", borderRadius: isMobile ? "24px" : "30px 30px 200px 30px" }}>
               <AnimatePresence mode="wait">
                 <motion.img
                   key={idx}
                   src={items[idx]}
-                  initial={{ opacity: 0, scale: 1.05 }}
+                  initial={{ opacity: 0, scale: 1.1 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                  alt={title}
                   style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
+                  alt={title}
                 />
               </AnimatePresence>
-              
-              {/* Linear dark gradient overlay for white text visibility */}
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.85) 100%)",
-                zIndex: 1,
-                pointerEvents: "none"
-              }} />
+            </div>
 
-              {/* Category in top left */}
-              <div style={{
-                position: "absolute",
-                top: 24,
-                left: 24,
-                color: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif",
-                zIndex: 2
-              }}>
-                {category}
+            {/* Badges moved outside overflow: hidden for visibility */}
+            {(food?.isFamilyFriendly || food?.familyFriendly) && (
+              <div style={{ position: "absolute", top: "5%", right: "2%", zIndex: 10 }} className="float-anim">
+                <div style={{ width: isMobile ? 70 : 85, height: isMobile ? 70 : 85, borderRadius: "50%", background: W, boxShadow: "0 15px 35px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 8 }}>
+                  <div style={{ color: A, marginBottom: 2 }}><Star size={isMobile ? 16 : 20} /></div>
+                  <p style={{ fontSize: isMobile ? 7 : 8, fontWeight: 800, color: FG, margin: 0, textTransform: "uppercase" }}>Family Friendly</p>
+                </div>
               </div>
+            )}
 
-              {/* Title & Cuisine in bottom left */}
-              <div style={{
-                position: "absolute",
-                bottom: 24,
-                left: 24,
-                right: 24,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                zIndex: 2
-              }}>
-                <Rev>
-                  <h1 className="hero-title" style={{
-                    fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                    color: "#FFFFFF",
-                    WebkitTextFillColor: "#FFFFFF",
-                    margin: 0,
-                    letterSpacing: "-0.01em",
-                    fontFamily: "Poppins, sans-serif"
-                  }}>
-                    {title}
-                  </h1>
-                </Rev>
-                <Rev delay={0.15}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
-                    <Globe size={15} color={A || "#0097B2"} />
-                    <span>{source}</span>
-                  </div>
-                </Rev>
-                <Rev delay={0.2}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#FFFFFF", fontSize: "13px", fontWeight: 700 }}>
-                    <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                    <span>{food?.googleRating || food?.rating || "4.8"} Google Rating</span>
-                  </div>
-                </Rev>
+            {(food?.isParkingAvailable || food?.parkingAvailable) && (
+              <div style={{ position: "absolute", bottom: "15%", right: isMobile ? "-2%" : "-5%", zIndex: 10, animationDelay: "1s" }} className="float-anim">
+                <div style={{ width: isMobile ? 70 : 85, height: isMobile ? 70 : 85, borderRadius: "50%", background: A, boxShadow: `0 15px 35px ${AL}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 8, color: "#fff" }}>
+                  <div style={{ marginBottom: 2 }}><MapPin size={isMobile ? 18 : 22} /></div>
+                  <p style={{ fontSize: isMobile ? 7 : 8, fontWeight: 800, margin: 0, textTransform: "uppercase" }}>Parking Available</p>
+                </div>
               </div>
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[(idx + 1) % items.length] || items[0]} alt="Signature alternative view" />
-              
-              {/* Linear dark gradient overlay for white text visibility */}
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.85) 100%)",
-                zIndex: 1,
-                pointerEvents: "none"
-              }} />
+            )}
 
-              {/* Category in top left */}
-              <div style={{
-                position: "absolute",
-                top: 24,
-                left: 24,
-                color: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif",
-                zIndex: 2
-              }}>
-                {category}
+            {!isMobile && (
+              <div className="font-cursive" style={{ position: "absolute", bottom: "10%", left: "-5%", color: FG, fontSize: 32, transform: "rotate(-12deg)", opacity: 0.8, zIndex: 10 }}>
+                Signature <br /> {title.split(' ')[0]}
               </div>
+            )}
 
-              {/* Title & Cuisine in bottom left */}
-              <div style={{
-                position: "absolute",
-                bottom: 24,
-                left: 24,
-                right: 24,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                zIndex: 2
-              }}>
-                <Rev>
-                  <h1 className="hero-title" style={{
-                    fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                    color: "#FFFFFF",
-                    WebkitTextFillColor: "#FFFFFF",
-                    margin: 0,
-                    letterSpacing: "-0.01em",
-                    fontFamily: "Poppins, sans-serif"
-                  }}>
-                    {title}
-                  </h1>
-                </Rev>
-                <Rev delay={0.15}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
-                    <Globe size={15} color={A || "#0097B2"} />
-                    <span>{source}</span>
-                  </div>
-                </Rev>
-                <Rev delay={0.2}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#FFFFFF", fontSize: "13px", fontWeight: 700 }}>
-                    <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                    <span>{food?.googleRating || food?.rating || "4.8"} Google Rating</span>
-                  </div>
-                </Rev>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Cuisine Explore (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[1] || items[0]} alt="Explore cuisine view" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[2] || items[0]} alt="Cuisine layout detail" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Cost & Dietary (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[2] || items[0]} alt="Cost and dietary preview" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[3] || items[0]} alt="Dietary view details" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Horizontal Story Card (2x1) */}
-        <div className="bento-card bento-span-2-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[3] || items[0]} alt="Story behind the dish" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[4] || items[0]} alt="Gourmet detail" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 5: Gallery Image 4 (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[4] || items[0]} alt="Culinary composition" />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[5] || items[0]} alt="Preparation detail" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 6: Operating Hours & Days (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[5] || items[1] || items[0]} alt="Operating hours backdrop" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[6] || items[0]} alt="Seating environment details" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 7: Gallery Image 5 (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[6] || items[2] || items[0]} alt="Gourmet detail" />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[7] || items[0]} alt="Close-up crop presentation" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 8: Service & Origin (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[7] || items[3] || items[0]} alt="Service option details" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[0]} alt="Origin representation backdrop" />
-            </div>
-          </div>
+            {/* Curved shapes background */}
+            <div style={{ position: "absolute", top: "-5%", right: "-5%", width: "110%", height: "110%", background: "radial-gradient(circle, var(--AL) 0%, transparent 70%)", zIndex: -1, borderRadius: "50%" }} />
+          </Rev>
         </div>
       </div>
 
       {/* Decorative Background Patterns */}
-      <div style={{ position: "absolute", top: "8%", left: "1%", opacity: 0.08, zIndex: 1 }}>
+      <div style={{ position: "absolute", top: "8%", left: "1%", opacity: 0.08, zIndex: -1 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 6px)", gap: 12 }}>
           {Array(25).fill(0).map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: FG }} />)}
         </div>
@@ -1273,178 +932,447 @@ function CulinaryHero({ food, galleryItems }) {
   );
 }
 
-function CulinaryNarrative({ food, hostData, hostAvatar }) {
+function ChefSection({ food, hostData, hostAvatar, galleryItems }) {
   const { isMobile } = useWindowSize();
-  const { tokens } = useTheme();
-  const { A, FG, M, BG, S, B, AL } = tokens;
+  const { tokens: { A, FG, M, W, B, S, BG, AL } } = useTheme();
+  const r = useRef(null);
+  const { scrollYProgress } = useScroll({ target: r, offset: ["start end", "end start"] });
+  const x = useTransform(scrollYProgress, [0, 1], ["30%", "-30%"]);
 
-  const chefName = hostData?.host?.firstName 
-    ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() 
-    : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Master Chef");
+  const [idx, setIdx] = useState(0);
+  const items = galleryItems?.length ? galleryItems : [hostAvatar || "https://picsum.photos/seed/chef/600/800"];
 
-  const chefStory = hostData?.host?.bio || hostData?.bio || food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in heritage and innovation.";
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const timer = setInterval(() => {
+      setIdx(prev => (prev + 1) % items.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [items.length]);
+
+  const chefName = hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Master Chef");
+  const chefStory = hostData?.host?.bio || hostData?.bio || food?.chefOwnerStory || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in the belief that a meal is more than just sustenance; it is a narrative of heritage, innovation, and biological response.";
 
   return (
-    <section className="narrative-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px", borderTop: `1px solid ${B}` }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        
-        {/* Short Description as Heading */}
-        <div style={{ textAlign: "center", maxWidth: 900, margin: "0 auto 60px auto" }}>
-          <span style={{ fontSize: 9, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, display: "block", marginBottom: 16 }}>The Philosophy</span>
-          <h2 className="font-cursive" style={{ fontSize: isMobile ? "36px" : "54px", color: FG, lineHeight: 1.2, margin: 0, fontStyle: "italic" }}>
-            "{food?.shortDescription || "A curated preview of the palate notes."}"
-          </h2>
-          <div style={{ width: 60, height: 2, background: A, margin: "24px auto 0 auto" }} />
-        </div>
+    <section ref={r} className="chef-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 0" : "180px 0", overflow: "hidden", position: "relative", borderTop: `1px solid ${B}` }}>
+      <motion.div style={{ x, position: "absolute", top: "40%", left: 0, whiteSpace: "nowrap", opacity: 0.05, pointerEvents: "none" }}>
+        <h2 className="font-display" style={{ fontSize: "25vw", color: FG, fontWeight: 900 }}>GASTRONOMY</h2>
+      </motion.div>
 
-        {/* 2-Column Grid: Detailed Description & Chef's Story */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-          gap: isMobile ? "32px" : "48px",
-          alignItems: "stretch"
-        }}>
-          
-          {/* Detailed Description: The Alchemy */}
-          <Rev delay={0.1} style={{ display: "flex" }}>
-            <motion.div
-              whileHover={{
-                scale: 1.015,
-                borderColor: A,
-                boxShadow: `0 20px 48px ${AL}`
-              }}
-              transition={{ duration: 0.35, ease: E }}
-              style={{
-                background: AL,
-                border: `1.5px solid ${A}33`,
-                borderRadius: 28,
-                padding: 36,
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: `0 12px 30px ${AL}`,
-                cursor: "pointer",
-                transition: "border-color 0.3s ease, box-shadow 0.3s ease"
-              }}
-            >
-              <div>
-                <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 800 }}>The Alchemy</span>
-                <h4 className="font-display" style={{ fontSize: 22, color: FG, marginTop: 12, marginBottom: 20 }}>Detailed Description</h4>
-                <p style={{ fontSize: 14.5, color: FG, lineHeight: 1.85, margin: 0, opacity: 0.9 }}>
-                  {food?.detailedDescription || food?.description || "Experience the perfect harmony of seasonal ingredients, local spices, and refined culinary design."}
-                </p>
-              </div>
-              <Sparkles size={20} color={A} style={{ opacity: 0.3, marginTop: 24 }} />
-            </motion.div>
-          </Rev>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 20px" : "0 36px", position: "relative", zIndex: 2 }}>
+        <SHdr idx="01" label="Culinary Visionary" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.1fr", gap: isMobile ? 40 : 100, alignItems: "center" }} className="chef-grid">
+          <Soul r={-5} s={0.1}>
+            <div className="chef-image-wrapper" style={{ background: S, borderRadius: 40, height: isMobile ? 380 : 650, overflow: "hidden", border: `1px solid ${B}`, position: "relative" }}>
+              <motion.div
+                animate={{ x: `-${idx * 100}%` }}
+                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: "flex", width: "100%", height: "100%", willChange: "transform" }}
+              >
+                {items.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", flexShrink: 0, filter: "brightness(0.9)" }}
+                    alt={chefName}
+                  />
+                ))}
+              </motion.div>
 
-          {/* Chef's Story: The Creator */}
-          <Rev delay={0.2} style={{ display: "flex" }}>
-            <motion.div
-              whileHover={{
-                scale: 1.015,
-                borderColor: A,
-                boxShadow: `0 20px 48px ${AL}`
-              }}
-              transition={{ duration: 0.35, ease: E }}
-              style={{
-                background: S,
-                border: `1.5px solid ${B}`,
-                borderRadius: 28,
-                padding: 36,
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                position: "relative",
-                cursor: "pointer",
-                transition: "border-color 0.3s ease, box-shadow 0.3s ease"
-              }}
-            >
-              <div style={{ position: "absolute", top: 16, right: 32, fontSize: 80, color: A, opacity: 0.12, fontFamily: "serif" }}>&ldquo;</div>
-              <div>
-                <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 800 }}>The Creator</span>
-                <h4 className="font-display" style={{ fontSize: 22, color: FG, marginTop: 12, marginBottom: 20 }}>Chef's Story</h4>
-                <p style={{ fontSize: 13.5, color: M, lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
-                  {chefStory}
-                </p>
-              </div>
-              <div style={{ marginTop: 24, borderTop: `1px solid ${B}`, paddingTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
-                {hostAvatar && (
-                  <img src={hostAvatar} alt={chefName} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: `1.5px solid ${A}` }} />
-                )}
-                <div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: FG, display: "block" }}>{chefName}</span>
-                  <span className="font-cursive" style={{ fontSize: 18, color: A, display: "block", marginTop: 2 }}>- Chef Owner</span>
+              {items.length > 1 && (
+                <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8, zIndex: 10 }}>
+                  {items.map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: i === idx ? 32 : 8,
+                        height: 4,
+                        borderRadius: 2,
+                        background: i === idx ? A : "#FFF",
+                        opacity: i === idx ? 1 : 0.4,
+                        transition: "all 0.6s cubic-bezier(0.22, 1, 0.36, 1)"
+                      }}
+                    />
+                  ))}
                 </div>
-              </div>
-            </motion.div>
-          </Rev>
+              )}
 
+              <div style={{ position: "absolute", top: isMobile ? 20 : 40, right: isMobile ? 20 : 40, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", padding: "12px 20px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)" }}>
+                <p style={{ color: "#FFF", fontSize: 10, fontWeight: 700, margin: 0, letterSpacing: "0.1em" }}>EXPERT CURATOR</p>
+              </div>
+            </div>
+          </Soul>
+
+          <div>
+            <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: isMobile ? 16 : 32 }}>Behind the Craft</p>
+            <h2 className="font-display" style={{ fontSize: isMobile ? "clamp(2rem, 7vw, 3rem)" : "clamp(3rem, 5vw, 4.2rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: isMobile ? 24 : 44 }}>
+              {(() => {
+                const words = chefName.trim().split(" ");
+                const mid = Math.ceil(words.length / 2);
+                return (
+                  <>
+                    {words.slice(0, mid).join(" ")} <br />
+                    <span style={{ color: A }}>{words.slice(mid).join(" ") || "Experience."}</span>
+                  </>
+                );
+              })()}
+            </h2>
+
+            <div style={{ position: "relative", marginBottom: isMobile ? 32 : 48 }}>
+              <div style={{ position: "absolute", top: -20, left: -20, fontSize: 80, color: A, opacity: 0.1, fontFamily: "serif" }}>&ldquo;</div>
+              <p style={{ fontSize: 17, color: FG, lineHeight: 1.85, fontWeight: 500, fontStyle: "italic", marginBottom: isMobile ? 24 : 32 }}>
+                {chefStory}
+              </p>
+              <div style={{ width: 60, height: 2, background: A, marginBottom: isMobile ? 24 : 32 }} />
+            </div>
+
+            <div className="chef-boxes-wrapper" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 24, alignItems: "stretch" }}>
+              <div className="chef-box-item" style={{ background: AL, padding: isMobile ? "18px 24px" : "24px 32px", borderRadius: 20, border: `1px solid ${B}`, flex: 1 }}>
+                <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 700 }}>Profile Role</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>Executive Chef & Owner</p>
+              </div>
+              <div className="chef-box-item" style={{ background: AL, padding: isMobile ? "18px 24px" : "24px 32px", borderRadius: 20, border: `1px solid ${B}`, flex: 1 }}>
+                <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 700 }}>Experience</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: FG }}>12+ Years Culinary Arts</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
+function DishGallery({ galleryItems, food }) {
+  const { isMobile } = useWindowSize();
+  const { tokens: { A, FG, M, BG, S, B, AL } } = useTheme();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const categories = ["All", "Veg", "Non-Veg", "Desserts", "Drinks"];
+  const cuisine = Array.isArray(food?.cuisineTypeNames) ? food.cuisineTypeNames.join(", ") : (food?.cuisineTypeNames || toDisplayString(food?.cuisineType) || "Signature");
+
+  const dishes = useMemo(() => {
+    if (!galleryItems || galleryItems.length === 0) return [];
+    const cats = ["Veg", "Non-Veg", "Desserts", "Drinks"];
+    return galleryItems.map((img, i) => {
+      const category = cats[i % cats.length];
+      const isVeg = category === "Veg" || category === "Desserts" || category === "Drinks";
+      
+      const dishTitles = [
+        "Chef's Signature Platter",
+        "Gourmet Spiced Selection",
+        "Artisanal Sweet Craft",
+        "Handcrafted Elixir Pair",
+        "Savoury Herb Plate",
+        "Botanical Medley Salad"
+      ];
+      const title = dishTitles[i % dishTitles.length];
+      const priceVal = food?.price || (food?.averageCostForOne ? `₹${Math.round(food.averageCostForOne * (0.8 + i * 0.15))}` : "");
+      
+      return {
+        id: i,
+        image: img,
+        title: i === 0 ? (food?.menuName || title) : title,
+        category,
+        isVeg,
+        price: priceVal || `₹${350 + i * 75}`,
+        description: i === 0 ? (food?.detailedDescription || food?.shortDescription || "Curated taste experience featuring organic ingredients and custom seasonings.") : "Crafted with local farm-fresh selections, seasonal spices, and modern culinary design.",
+        rating: (4.4 + (i % 3) * 0.2).toFixed(1),
+        reviews: 12 + i * 4,
+        tags: i === 0 ? ["Must Try", "Signature"] : i % 2 === 0 ? ["House Special"] : ["Trending"]
+      };
+    });
+  }, [galleryItems, food]);
+
+  const filteredDishes = useMemo(() => {
+    return dishes.filter(dish => {
+      let matchesCategory = true;
+      if (activeCategory === "Veg") {
+        matchesCategory = dish.isVeg;
+      } else if (activeCategory === "Non-Veg") {
+        matchesCategory = !dish.isVeg;
+      } else if (activeCategory !== "All") {
+        matchesCategory = dish.category === activeCategory;
+      }
+      
+      const matchesSearch = dish.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            dish.description.toLowerCase().includes(searchQuery.toLowerCase());
+                             
+      return matchesCategory && matchesSearch;
+    });
+  }, [dishes, activeCategory, searchQuery]);
+
+  return (
+    <section className="dish-gallery-wrapper" style={{ background: BG, padding: isMobile ? "60px 0" : "150px 0", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 20px" : "0 36px", marginBottom: isMobile ? 32 : 64 }}>
+        <SHdr idx="02" label="Culinary Expressions" />
+      </div>
+
+      {isMobile && (
+        <div className="dish-filter-container">
+          <div className="dish-search-wrapper">
+            <Search size={18} className="dish-search-icon" />
+            <input
+              type="text"
+              className="dish-search-input"
+              placeholder="Search dishes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="dish-chips-row">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={cn("dish-chip", { active: activeCategory === cat })}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: isMobile ? 20 : 32, overflowX: "auto", padding: isMobile ? "0 20px 24px" : "0 5vw 64px", scrollbarWidth: "none" }} className="dish-scroll">
+        {filteredDishes.map((dish, i) => (
+          <Soul key={dish.id} delay={i * 0.1} y={40} r={3} style={{ flexShrink: 0, width: isMobile ? "290px" : "clamp(280px, 35vw, 450px)" }}>
+            <motion.div whileHover={{ scale: 1.02 }} style={{ background: S, border: `1px solid ${B}`, borderRadius: isMobile ? 20 : 28, overflow: "hidden" }}>
+              <div className="dish-card-img-wrapper" style={{ height: isMobile ? 200 : 480, overflow: "hidden", position: "relative" }}>
+                <img src={dish.image} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.9)" }} alt={dish.title} />
+                <div className="dish-card-overlay" style={{ position: "absolute", bottom: isMobile ? 16 : 28, left: isMobile ? 16 : 28, right: isMobile ? 16 : 28, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div>
+                    <p style={{ fontSize: isMobile ? 7 : 8, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 8 }}>{isMobile ? `${dish.category} • ${cuisine}` : cuisine}</p>
+                    <h4 className="font-display" style={{ fontSize: isMobile ? 18 : 24, fontWeight: 700, color: FG, margin: 0 }}>{dish.title}</h4>
+                  </div>
+                  <span style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: A, whiteSpace: "nowrap" }}>{dish.price}</span>
+                </div>
+              </div>
+              <div className="dish-card-body" style={{ padding: isMobile ? 16 : 32 }}>
+                {isMobile && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <Star size={13} fill={A} color={A} />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{dish.rating}</span>
+                      <span style={{ fontSize: 11, color: M }}>({dish.reviews})</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {dish.tags.map(t => (
+                        <span key={t} style={{ fontSize: 9, fontWeight: 700, background: AL, color: A, padding: "3px 8px", borderRadius: 6, textTransform: "uppercase" }}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <p style={{ fontSize: 12, color: M, lineHeight: 1.7, margin: 0 }}>
+                  {dish.description}
+                </p>
+
+                {isMobile && (
+                  <button
+                    className="dish-card-cta"
+                    onClick={() => {
+                      const contactSection = document.getElementById("reservation-inquiries");
+                      if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Inquire Now
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </Soul>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AvailabilitySection({ food }) {
+  const { isMobile } = useWindowSize();
+  const { tokens: { A, FG, M, BG, W, B, S, AL } } = useTheme();
+
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const activeDays = Array.isArray(food?.openingDays) ? food.openingDays : days;
+
+  return (
+    <section className="availability-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 16px" : "180px 36px", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SHdr idx="03" label="Availability & Pricing" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 0.8fr", gap: isMobile ? 32 : 64, marginTop: isMobile ? 32 : 64 }} className="chef-grid">
+          <Rev delay={0.1}>
+            <div className="availability-operating-card" style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? "28px" : "56px", borderRadius: isMobile ? 28 : 44, display: "flex", flexDirection: "column", height: "100%" }}>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.4rem)" : "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: isMobile ? 32 : 56, lineHeight: 1.1 }}>Operating <br /><span style={{ color: A }}>Architecture.</span></h3>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 48, flex: 1, justifyContent: "center" }}>
+                <div className="availability-detail-item" style={{ display: "flex", gap: isMobile ? 16 : 32, alignItems: "center" }}>
+                  <div style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, borderRadius: isMobile ? 14 : 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Clock size={isMobile ? 20 : 28} color={A} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 800, margin: 0 }}>Service Hours</p>
+                    <p className="availability-hours-text" style={{ fontSize: isMobile ? "1.45rem" : "2.2rem", fontWeight: 700, color: FG, letterSpacing: "-0.02em", margin: 0 }}>{food?.openingTime || food?.startTime || "07:32"} — {food?.closingTime || food?.endTime || "17:55"}</p>
+                  </div>
+                </div>
+
+                <div className="availability-detail-item" style={{ display: "flex", gap: isMobile ? 16 : 32, alignItems: "flex-start" }}>
+                  <div style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, borderRadius: isMobile ? 14 : 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Calendar size={isMobile ? 20 : 28} color={A} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 12, fontWeight: 800, margin: 0 }}>Opening Days</p>
+                    <div style={{ display: "flex", gap: isMobile ? 6 : 12, flexWrap: "wrap", marginTop: 8 }}>
+                      {days.map(d => {
+                        const isActive = activeDays.some(ad => ad.toLowerCase().includes(d.toLowerCase()));
+                        return (
+                          <div key={d} style={{
+                            width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? 10 : 14,
+                            background: isActive ? A : W,
+                            color: isActive ? "#FFF" : M,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: isMobile ? 11 : 13, fontWeight: 800,
+                            border: `1px solid ${isActive ? A : B}`,
+                            transition: "all 0.4s ease"
+                          }}>
+                            {d[0]}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="availability-detail-item" style={{ display: "flex", gap: isMobile ? 16 : 32, alignItems: "center" }}>
+                  <div style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, borderRadius: isMobile ? 14 : 20, background: AL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Zap size={isMobile ? 20 : 28} color={A} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: M, marginBottom: 8, fontWeight: 800, margin: 0 }}>Serve Mode</p>
+                    <p style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: FG, margin: 0 }}>{Array.isArray(food?.serveModeNames) ? food.serveModeNames.join(" & ") : (food?.serveModeNames || food?.serveMode || food?.serviceMode || "Dine-In")}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Rev>
+
+          <Rev delay={0.2}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 24, height: "100%" }}>
+              <div style={{ background: W, border: `1px solid ${B}`, padding: isMobile ? "24px" : "40px", borderRadius: isMobile ? 28 : 40, display: "flex", flexDirection: "column", gap: isMobile ? 28 : 40 }}>
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Dietary Specification</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                    {(() => {
+                      const dietary = Array.isArray(food?.dietaryOptionNames) ? food.dietaryOptionNames : (food?.dietaryOptionNames || food?.dietaryOptions || (food?.isVeg ? ["Vegetarian"] : food?.isNonVeg ? ["Non-Vegetarian"] : ["Vegetarian & Non-Vegetarian"]));
+                      const items = Array.isArray(dietary) ? dietary : [dietary];
+                      return items.map((opt, i) => (
+                        <div key={i} style={{ padding: "10px 20px", borderRadius: 12, background: AL, border: `1px solid ${B}`, display: "flex", alignItems: "center", gap: 10 }}>
+                          <Leaf size={14} color={A} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{opt}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+
+                {food?.signatureDishes && (
+                  <div>
+                    <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Signature Recommendations</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                      {(Array.isArray(food.signatureDishes) ? food.signatureDishes : food.signatureDishes.split(",")).map((dish, i) => (
+                        <div key={i} style={{ padding: "10px 20px", borderRadius: 12, background: A, color: "#fff", display: "flex", alignItems: "center", gap: 10, boxShadow: `0 8px 20px ${AL}` }}>
+                          <Star size={14} fill="#fff" />
+                          <span style={{ fontSize: 13, fontWeight: 800 }}>{dish.trim()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="availability-specs-container" style={{ background: W, border: `1px solid ${B}`, padding: isMobile ? "24px" : "40px", borderRadius: isMobile ? 28 : 40, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: isMobile ? 24 : 32 }}>
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Advanced Booking</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <CheckCircle size={20} color={food?.advancedBookingRequired ? A : M} />
+                    <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: FG }}>{food?.advancedBookingRequired ? "Required" : "Not Required"}</span>
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Seasonal</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <CheckCircle size={20} color={food?.seasonalAvailability ? A : M} />
+                    <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: FG }}>{food?.seasonalAvailability ? "Yes" : "No"}</span>
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 16, fontWeight: 800 }}>Alcohol</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <CheckCircle size={20} color={food?.alcoholServed ? A : M} />
+                    <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: FG }}>{food?.alcoholServed ? "Served" : "None"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? "28px" : "40px", borderRadius: isMobile ? 28 : 40, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 32 }}>Pricing Architecture</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 20, marginBottom: 20 }}>
+                  <span style={{ fontSize: 14, color: M, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Tier Strategy</span>
+                  <span className="font-display" style={{ fontSize: isMobile ? "1.5rem" : "1.8rem", fontWeight: 700, color: FG, letterSpacing: "-0.02em" }}>{food?.priceRange || "Budget"}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: 14, color: M, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Avg. Investment</span>
+                  <span style={{ fontSize: isMobile ? "2.2rem" : "3rem", fontWeight: 800, color: A, letterSpacing: "-0.04em" }}>₹{food?.averageCostForOne || food?.price || "450"}</span>
+                </div>
+              </div>
+            </div>
+          </Rev>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function LocationSection({ food }) {
   const { isMobile } = useWindowSize();
-  const { tokens: { A, FG, M, B, W } } = useTheme();
+  const { tokens: { A, AL, FG, M, BG, W, B, S } } = useTheme();
 
   return (
-    <section className="prep-section" style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
+    <section className="location-section-wrapper" style={{ background: W, padding: isMobile ? "80px 16px" : "130px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 32 : 64 }} className="prep-grid">
-          <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                  <div style={{
-                    position: "absolute",
-                    bottom: 16,
-                    left: 16,
-                    zIndex: 10,
-                    background: W,
-                    padding: "10px 16px",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                    border: `1px solid ${B}`,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    pointerEvents: "none"
-                  }}>
-                    <MapPin size={16} color={A} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{food?.meetingLocationName || "The Grand Atrium"}</span>
-                  </div>
+        <SHdr idx="04" label="Location & Access" />
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 32 : 64, marginTop: isMobile ? 32 : 64 }} className="chef-grid">
+          <Rev delay={0.1}>
+            <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.4rem)" : "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: isMobile ? 24 : 56, lineHeight: 1.1 }}>Restaurant <br /><span style={{ color: A }}>Location.</span></h3>
+              <div style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? "16px" : "40px", borderRadius: isMobile ? 24 : 40, display: "flex", flexDirection: "column", gap: 24, flex: 1 }}>
+                <div style={{ background: W, border: `1px solid ${B}`, height: isMobile ? 260 : 320, marginTop: 12, borderRadius: isMobile ? 20 : 28, position: "relative", overflow: "hidden" }}>
                   {(() => {
                     const lat = food?.meetingLatitude || food?.latitude;
                     const lng = food?.meetingLongitude || food?.longitude;
                     const address = food?.meetingAddress || food?.address;
-                    const srcUrl = (lat && lng)
-                      ? `https://maps.google.com/maps?ll=${lat},${lng}&hl=en&z=14&output=embed`
-                      : (address ? `https://maps.google.com/maps?q=${encodeURIComponent(address)}&hl=en&z=14&output=embed` : null);
+                    const query = (lat && lng) ? `${lat},${lng}` : (address ? encodeURIComponent(address) : null);
 
+                    if (query) {
+                      return (
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          frameBorder="0"
+                          style={{ border: 0 }}
+                          src={`https://maps.google.com/maps?q=${query}&hl=en&z=14&output=embed`}
+                          allowFullScreen
+                          title="Meeting Location"
+                        />
+                      );
+                    }
                     return (
                       <>
-                        {srcUrl ? (
-                          <iframe
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            style={{ border: 0 }}
-                            src={srcUrl}
-                            allowFullScreen
-                            title="Meeting Location"
-                          />
-                        ) : (
-                          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                        )}
-                        {/* Radar pulse animation overlaid on top of the map background */}
-                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%", pointerEvents: "none", zIndex: 5 }}>
+                        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
                           <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
                         </div>
                       </>
@@ -1454,59 +1382,50 @@ function LocationSection({ food }) {
               </div>
             </div>
           </Rev>
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
-                  {(food?.meetingAddress || food?.address) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingAddress || food.address}</span>
-                    </li>
-                  )}
 
-                  {(food?.meetingLandmark || food?.nearestLandmark || food?.landmark) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingLandmark || food.nearestLandmark || food.landmark}</span>
+          <Rev delay={0.2}>
+            <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.4rem)" : "clamp(2.4rem, 4.5vw, 3.6rem)", fontWeight: 700, color: FG, marginBottom: isMobile ? 24 : 56, lineHeight: 1.1 }}>Location <br /><span style={{ color: A }}>Details.</span></h3>
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 0, padding: 0 }}>
+                  {[
+                    { label: "Address", val: food?.meetingAddress || food?.address },
+                    { label: "District", val: food?.meetingDistrict || food?.district },
+                    { label: "State", val: food?.meetingState || food?.state || food?.city },
+                    { label: "Landmark", val: food?.nearestLandmark || food?.meetingLandmark || food?.landmark || "Near City Center" },
+                    { label: "Directions", val: food?.meetingInstructions || food?.directions }
+                  ].filter(x => x.val).map((item, i) => (
+                    <li key={i} className="location-list-item" style={{ display: "flex", gap: isMobile ? 8 : 32, alignItems: isMobile ? "flex-start" : "baseline", flexDirection: isMobile ? "column" : "row", borderBottom: `1px solid ${B}`, padding: isMobile ? "16px 0" : "24px 0" }}>
+                      <span className="location-label" style={{ fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 130, flexShrink: 0, fontWeight: 800 }}>{item.label}</span>
+                      <span className="location-value" style={{ fontSize: isMobile ? 16 : 20, color: FG, fontWeight: 700, lineHeight: 1.4, letterSpacing: "-0.01em" }}>{item.val}</span>
                     </li>
-                  )}
-
-                  {(food?.meetingDistrict || food?.district) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingDistrict || food.district}</span>
-                    </li>
-                  )}
-
-                  {(food?.meetingState || food?.state || food?.city) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingState || food.state || food.city}</span>
-                    </li>
-                  )}
-
-                  {(food?.meetingCountry || food?.country) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingCountry || food.country}</span>
-                    </li>
-                  )}
-
-                  {(food?.meetingInstructions || food?.directions) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingInstructions || food.directions}</span>
-                    </li>
-                  )}
-                  {(!food?.meetingDistrict && !food?.meetingState && !food?.meetingCountry && !food?.meetingAddress && !food?.meetingLandmark && !food?.address && !food?.nearestLandmark && !food?.landmark) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                      <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
-                    </li>
-                  )}
+                  ))}
                 </ul>
+                <div style={{ marginTop: isMobile ? 32 : 40 }}>
+                  <motion.a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${(food?.meetingLatitude && food?.meetingLongitude) ? `${food.meetingLatitude},${food.meetingLongitude}` : encodeURIComponent(food?.meetingAddress || food?.address || "Restaurant")}`}
+                    target="_blank"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 12,
+                      background: A,
+                      color: "#FFF",
+                      padding: "16px 36px",
+                      borderRadius: 14,
+                      textDecoration: "none",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      boxShadow: `0 15px 30px ${AL}`
+                    }}
+                  >
+                    Get Directions <ArrowRight size={18} />
+                  </motion.a>
+                </div>
               </div>
             </div>
           </Rev>
@@ -1518,184 +1437,154 @@ function LocationSection({ food }) {
 
 
 
-
-function ReservationNoir({ food, hostData, hostAvatar }) {
-  const { isMobile } = useWindowSize();
-  const { tokens, theme } = useTheme();
-  const { A, FG, M, W, B, S, AL } = tokens;
-
-  const chefName = hostData?.host?.firstName
-    ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim()
-    : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Owner");
-
-  const phoneNum = hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || food?.host?.phone;
-
-  const websiteUrl = food?.website;
-  const instaHandle = food?.instagramHandle || food?.instagram || food?.host?.instagram;
+function ReqItem({ item, tokens }) {
+  const [open, setOpen] = useState(false);
+  const { A, FG, M, B, AL, S } = tokens;
+  const title = item?.setting?.title || item?.title || "Requirement";
+  const desc = item?.setting?.description || item?.description;
+  const questions = item?.questions || [];
 
   return (
-    <section id="reservation-inquiries" className="reservation-section-wrapper" style={{ background: tokens.BG, padding: isMobile ? "32px 24px" : "32px 80px", borderTop: `1px solid ${B}` }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <Soul y={80}>
-          <div style={{
-            background: S,
-            border: `1px solid ${B}`,
-            borderRadius: 36,
-            padding: isMobile ? "32px 20px" : "48px 56px",
-            boxShadow: theme === "dark" ? "0 20px 48px rgba(0, 0, 0, 0.3)" : "0 20px 48px rgba(0, 0, 0, 0.04)"
-          }}>
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 36 : 56, alignItems: "center", justifyContent: "space-between" }}>
-              {/* Profile details */}
-              <div style={{ display: "flex", gap: 24, alignItems: "center", flex: 1, flexDirection: isMobile ? "column" : "row", textAlign: isMobile ? "center" : "left" }}>
-                <div style={{
-                  width: 96,
-                  height: 96,
-                  borderRadius: "50%",
-                  border: `3px solid ${A}`,
-                  boxShadow: `0 8px 24px ${AL}`,
-                  overflow: "hidden",
-                  flexShrink: 0
-                }}>
-                  <img
-                    src={hostAvatar || "https://picsum.photos/seed/host/200/200"}
-                    alt={chefName}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </div>
-                <div>
-                  <span style={{ fontSize: 9, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, display: "block", marginBottom: 6 }}>Managed By</span>
-                  <h3 className="font-display" style={{ fontSize: "24px", fontWeight: 700, color: FG, margin: "0 0 6px 0" }}>{chefName}</h3>
-                  <p style={{ fontSize: 13, color: M, margin: "0 0 16px 0", lineHeight: 1.5 }}>
-                    Connect directly to request custom menu options, dietary modifications, or private culinary experiences.
-                  </p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12, borderTop: `1px solid ${B}`, paddingTop: 12 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                      <ChefHat size={14} color={A} />
-                      <span style={{ color: M, fontWeight: 600 }}>Manager:</span>
-                      <span>{chefName}</span>
-                    </div>
-                    {phoneNum && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                        <Phone size={14} color={A} />
-                        <span style={{ color: M, fontWeight: 600 }}>Phone:</span>
-                        <span>{phoneNum}</span>
+    <div style={{ borderBottom: `1px solid ${B}`, paddingBottom: 24 }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", gap: 20 }}
+      >
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 16, fontWeight: 700, color: open ? A : FG, margin: 0, textTransform: "capitalize", marginBottom: 4 }}>{title}</p>
+          {desc && !open && <p style={{ fontSize: 13, color: M, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "90%" }}>{desc}</p>}
+        </div>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.3 }} style={{ marginTop: 4 }}>
+          <ChevronDown size={20} color={M} />
+        </motion.div>
+      </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ marginTop: 16 }}>
+              {desc && <p style={{ fontSize: 15, color: M, lineHeight: 1.6, marginBottom: 24, whiteSpace: "pre-line" }}>{desc}</p>}
+              
+              {questions.length > 0 && (
+                <div style={{ padding: "20px", background: AL, borderRadius: 20, border: `1px solid ${B}` }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {questions.map((q, j) => (
+                      <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 0" }}>
+                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                        <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.title || q.question?.title}</span>
                       </div>
-                    )}
-                    {websiteUrl && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                        <Globe size={14} color={A} />
-                        <span style={{ color: M, fontWeight: 600 }}>Website:</span>
-                        <a href={websiteUrl} target="_blank" rel="noreferrer" style={{ color: A, textDecoration: "none" }}>{websiteUrl}</a>
-                      </div>
-                    )}
-                    {instaHandle && instaHandle !== "@culinary_craft" && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                        <Instagram size={14} color={A} />
-                        <span style={{ color: M, fontWeight: 600 }}>Instagram:</span>
-                        <a href={`https://instagram.com/${instaHandle.replace("@", "")}`} target="_blank" rel="noreferrer" style={{ color: A, textDecoration: "none" }}>{instaHandle}</a>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
-              {/* Action Buttons */}
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
-                minWidth: isMobile ? "100%" : "300px",
-                flexShrink: 0
-              }}>
-                {phoneNum && (
+function ReservationNoir({ food, hostData }) {
+  const { isMobile } = useWindowSize();
+  const { tokens } = useTheme();
+  const { A, FG, M, BG, S, B, AL } = tokens;
+
+  return (
+    <section id="reservation-inquiries" className="reservation-section-wrapper" style={{ background: BG, padding: isMobile ? "80px 16px" : "150px 36px", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <Soul y={100}>
+          <div style={{ background: S, border: `1px solid ${B}`, borderRadius: 40, padding: isMobile ? "40px 20px" : "80px 64px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 48 : 80 }} className="res-grid">
+            {/* Left Column: Contact Details */}
+            <div>
+              <p style={{ fontSize: 10, letterSpacing: "0.45em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>Inquiries</p>
+              <h3 className="font-display" style={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.6rem)" : "clamp(2rem, 4vw, 3.2rem)", fontWeight: 700, color: FG, marginBottom: 16 }}>Contact & <br /><span style={{ color: A }}>Additional Info.</span></h3>
+              <p style={{ fontSize: 15, color: M, lineHeight: 1.6, marginBottom: isMobile ? 32 : 56 }}>
+                Contact details and dietary information
+              </p>
+
+              <div className="res-contact-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 24 : 40, rowGap: isMobile ? 24 : 40 }}>
+                <div>
+                  <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 12 }}>Managed By</p>
+                  <p style={{ fontSize: 15, color: FG, fontWeight: 600 }}>{hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Owner")}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 12 }}>Contact Phone</p>
+                  <p style={{ fontSize: 15, color: FG, fontWeight: 700 }}>{hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || food?.host?.phone || "Contact via App"}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 16 }}>Website or Social Link</p>
                   <motion.a
-                    whileHover={{ scale: 1.02, borderColor: A }}
-                    whileTap={{ scale: 0.98 }}
-                    href={`tel:${phoneNum}`}
+                    whileHover={{ scale: 1.05, background: A, color: "#fff" }}
+                    href={food?.website || "#"}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 14,
-                      padding: "14px 20px",
-                      borderRadius: 14,
-                      border: `1.5px solid ${B}`,
-                      background: AL,
-                      color: FG,
-                      textDecoration: "none",
-                      fontSize: 13,
+                      display: "inline-block",
+                      fontSize: 10,
+                      color: A,
                       fontWeight: 700,
-                      transition: "border-color 0.25s ease"
+                      textDecoration: "none",
+                      border: `1.5px solid ${A}`,
+                      padding: "8px 16px",
+                      borderRadius: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
                     }}
                   >
-                    <Phone size={18} color={A} />
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                      <span style={{ fontSize: 9, letterSpacing: "0.05em", textTransform: "uppercase", color: M, fontWeight: 700, lineHeight: 1 }}>Call Host</span>
-                      <span style={{ marginTop: 2 }}>{phoneNum}</span>
-                    </div>
+                    Visit Website
                   </motion.a>
-                )}
-
-                <div style={{ display: "flex", gap: 12 }}>
-                  {websiteUrl && (
-                    <motion.a
-                      whileHover={{ scale: 1.02, backgroundColor: A, color: "#fff", borderColor: A }}
-                      whileTap={{ scale: 0.98 }}
-                      href={websiteUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: "12px",
-                        borderRadius: 12,
-                        border: `1.5px solid ${A}`,
-                        color: A,
-                        textDecoration: "none",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        textAlign: "center",
-                        transition: "all 0.25s ease"
-                      }}
-                    >
-                      <Globe size={15} /> Website
-                    </motion.a>
-                  )}
-
-                  {instaHandle && instaHandle !== "@culinary_craft" && (
-                    <motion.a
-                      whileHover={{ scale: 1.02, backgroundColor: A, color: "#fff", borderColor: A }}
-                      whileTap={{ scale: 0.98 }}
-                      href={`https://instagram.com/${instaHandle.replace("@", "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: "12px",
-                        borderRadius: 12,
-                        border: `1.5px solid ${A}`,
-                        color: A,
-                        textDecoration: "none",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        textAlign: "center",
-                        transition: "all 0.25s ease"
-                      }}
-                    >
-                      <Instagram size={15} /> Instagram
-                    </motion.a>
-                  )}
                 </div>
+                <div>
+                  <p style={{ fontSize: 8, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 16 }}>Instagram Handle</p>
+                  {(() => {
+                    const insta = food?.instagramHandle || food?.instagram || food?.host?.instagram;
+                    if (!insta || insta === "@culinary_craft") return <p style={{ fontSize: 15, color: FG, fontWeight: 600, margin: 0 }}>-</p>;
+                    return (
+                      <motion.a
+                        whileHover={{ scale: 1.05, background: A, color: "#fff" }}
+                        href={`https://instagram.com/${insta.replace("@", "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-block",
+                          fontSize: 10,
+                          color: A,
+                          fontWeight: 700,
+                          textDecoration: "none",
+                          border: `1.5px solid ${A}`,
+                          padding: "8px 16px",
+                          borderRadius: 10,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.1em",
+                        }}
+                      >
+                        Visit Instagram
+                      </motion.a>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Guest Requirements Accordion */}
+            <div className="res-accordion-wrapper" style={{ background: AL, borderRadius: 32, padding: isMobile ? 24 : 48, border: `1px solid ${B}` }}>
+              <p style={{ fontSize: 8, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 32 }}>Guest Requirements</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {food?.guestRequirements?.length > 0 ? (
+                  food.guestRequirements.map((req, i) => (
+                    <ReqItem key={i} item={req} tokens={tokens} />
+                  ))
+                ) : (
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <p style={{ fontSize: 15, color: M, fontStyle: "italic" }}>No specific guest requirements have been listed for this experience.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1705,348 +1594,8 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
   );
 }
 
-/* ─── METADATA DETAILS CARD ─────────── */
-function FoodMetadataCard({ food }) {
-  const { tokens, theme } = useTheme();
-  const { isMobile } = useWindowSize();
-  
-  const cuisine = Array.isArray(food?.cuisineTypeNames) ? food.cuisineTypeNames.join(", ") : (food?.cuisineTypeNames || food?.cuisineType?.displayName || "Gourmet");
-  const category = toDisplayString(food?.category) || "Main Course";
-  const dietary = Array.isArray(food?.dietaryOptionNames) ? food.dietaryOptionNames.join(", ") : (food?.dietaryOptionNames || (food?.isVeg ? "Vegetarian" : "Non-Vegetarian"));
-  const serveModeNames = food?.serveModeNames || food?.serviceModeNames || [];
-  const serveMode = Array.isArray(serveModeNames) && serveModeNames.length > 0
-    ? serveModeNames.join(", ")
-    : (food?.serviceMode || food?.serveMode || "Dine-In");
-
-  const openDays = useMemo(() => {
-    const dayMap = { "Mon": 1, "Tue": 2, "Wed": 3, "Thu": 4, "Fri": 5, "Sat": 6, "Sun": 7 };
-    const rawDays = Array.isArray(food?.openingDays) ? [...food.openingDays].sort((a, b) => (dayMap[a] || 0) - (dayMap[b] || 0)) : [];
-
-    if (rawDays.length === 0) return "Daily Service";
-    if (rawDays.length === 7) return "Everyday";
-
-    const indices = rawDays.map(d => dayMap[d] || 0).filter(i => i > 0);
-    let isConsecutive = true;
-    for (let i = 0; i < indices.length - 1; i++) {
-      if (indices[i + 1] !== indices[i] + 1) {
-        isConsecutive = false;
-        break;
-      }
-    }
-
-    if (isConsecutive && rawDays.length >= 3) {
-      return `${rawDays[0]} - ${rawDays[rawDays.length - 1]}`;
-    }
-
-    return rawDays.join(", ");
-  }, [food?.openingDays]);
-
-  const getPriceTier = (priceRange) => {
-    const pr = String(priceRange || "").toLowerCase();
-    if (pr.includes("budget") || pr.includes("low") || pr.includes("cheap")) return 1;
-    if (pr.includes("premium") || pr.includes("high") || pr.includes("luxury") || pr.includes("expensive")) return 3;
-    return 2; // Gourmet / Medium Default
-  };
-
-  const tier = getPriceTier(food?.priceRange);
-  const priceTierLabel = tier === 1 ? "Budget Friendly" : tier === 3 ? "Premium Dining" : "Gourmet Standard";
-
-  return (
-    <div style={{ maxWidth: 1320, margin: isMobile ? "24px auto 16px" : "36px auto 20px", padding: isMobile ? "0 24px" : "0 80px" }}>
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        whileHover={{
-          scale: 1.002,
-          borderColor: tokens.A,
-          boxShadow: `0 20px 40px ${tokens.AL}`
-        }}
-        style={{
-          background: tokens.S,
-          border: `1px solid ${tokens.B}`,
-          borderRadius: "20px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.02)",
-          position: "relative",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          transition: "border-color 0.3s ease, box-shadow 0.3s ease"
-        }}
-      >
-        {/* Left Side: Main Ticket Body (3x2 horizontal grid flow) */}
-        <div style={{ flex: 1.9, padding: isMobile ? "20px 16px" : "28px 36px", display: "flex", flexDirection: "column", gap: "24px" }}>
-          
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? "16px" : "20px 24px" }}>
-            
-            {/* Card 1: Category */}
-            <motion.div
-              whileHover={{ scale: 1.02, borderColor: tokens.A, boxShadow: `0 8px 16px ${tokens.AL}` }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "16px",
-                borderRadius: "14px",
-                border: `1px solid ${tokens.B}`,
-                background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
-                <ChefHat size={18} />
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Category</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{category}</span>
-              </div>
-            </motion.div>
-
-            {/* Card 2: Cuisine */}
-            <motion.div
-              whileHover={{ scale: 1.02, borderColor: tokens.A, boxShadow: `0 8px 16px ${tokens.AL}` }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "16px",
-                borderRadius: "14px",
-                border: `1px solid ${tokens.B}`,
-                background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
-                <Utensils size={18} />
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Cuisine</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{cuisine}</span>
-              </div>
-            </motion.div>
-
-            {/* Card 3: Dietary Options */}
-            <motion.div
-              whileHover={{ scale: 1.02, borderColor: tokens.A, boxShadow: `0 8px 16px ${tokens.AL}` }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "16px",
-                borderRadius: "14px",
-                border: `1px solid ${tokens.B}`,
-                background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
-                <Leaf size={18} />
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Dietary Options</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{dietary}</span>
-              </div>
-            </motion.div>
-
-            {/* Card 4: Service Mode */}
-            <motion.div
-              whileHover={{ scale: 1.02, borderColor: tokens.A, boxShadow: `0 8px 16px ${tokens.AL}` }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "16px",
-                borderRadius: "14px",
-                border: `1px solid ${tokens.B}`,
-                background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
-                <Zap size={18} />
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Service Mode</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{serveMode}</span>
-              </div>
-            </motion.div>
-
-            {/* Card 5: Alcohol Served */}
-            <motion.div
-              whileHover={{ scale: 1.02, borderColor: tokens.A, boxShadow: `0 8px 16px ${tokens.AL}` }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "16px",
-                borderRadius: "14px",
-                border: `1px solid ${tokens.B}`,
-                background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
-                <GlassWater size={18} />
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Alcohol Served</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{food?.alcoholServed || food?.isAlcoholServed ? "Alcohol Served" : "No Alcohol"}</span>
-              </div>
-            </motion.div>
-
-            {/* Card 6: Parking Available */}
-            <motion.div
-              whileHover={{ scale: 1.02, borderColor: tokens.A, boxShadow: `0 8px 16px ${tokens.AL}` }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                padding: "16px",
-                borderRadius: "14px",
-                border: `1px solid ${tokens.B}`,
-                background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
-                <MapPin size={18} />
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Parking Slot</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{food?.isParkingAvailable || food?.parkingAvailable ? "Parking Available" : "Street Parking"}</span>
-              </div>
-            </motion.div>
-
-          </div>
-
-          {/* Barcode / Ticket Bottom Accent */}
-          <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", borderTop: `1px solid ${tokens.M}`, paddingTop: "14px", marginTop: "auto" }}>
-            <div style={{ display: "flex", gap: "2.5px", height: "16px", opacity: 0.45, alignItems: "center" }}>
-              {[2, 1, 3, 1, 1, 4, 2, 1, 2, 3, 1, 2, 4, 1, 2, 1, 3, 1, 2, 1, 3, 2, 1].map((w, i) => (
-                <div key={i} style={{ width: w, height: "100%", background: tokens.FG }} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Perforated Divider */}
-        {!isMobile && (
-          <div style={{
-            width: "1px",
-            borderLeft: `2px dashed ${tokens.M}`,
-            position: "relative",
-            margin: "20px 0"
-          }}>
-            {/* Top Cutout */}
-            <div style={{
-              position: "absolute",
-              top: -32,
-              left: -13,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: tokens.BG,
-              borderBottom: `1px solid ${tokens.B}`,
-              zIndex: 10
-            }} />
-            {/* Bottom Cutout */}
-            <div style={{
-              position: "absolute",
-              bottom: -32,
-              left: -13,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: tokens.BG,
-              borderTop: `1px solid ${tokens.B}`,
-              zIndex: 10
-            }} />
-          </div>
-        )}
-
-        {/* Right Side: Access Stub */}
-        <div style={{
-          flex: 1.1,
-          padding: isMobile ? "24px 16px" : "28px 32px",
-          background: theme === "dark" ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.012)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          gap: "24px",
-          borderTop: isMobile ? `2px dashed ${tokens.M}` : "none"
-        }}>
-          <div>
-            <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", color: tokens.A, letterSpacing: "0.15em" }}>Access Stub</span>
-            
-            {/* Pricing Group */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: tokens.M, textTransform: "uppercase", letterSpacing: "0.05em" }}>Price Range</span>
-                <div style={{ display: "flex", gap: "3px" }}>
-                  {[1, 2, 3].map((tIdx) => (
-                    <span
-                      key={tIdx}
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 800,
-                        color: tIdx <= tier ? tokens.A : tokens.M + "33"
-                      }}
-                    >
-                      ₹
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <span style={{ display: "block", fontSize: "12px", fontWeight: 700, color: tokens.FG }}>{priceTierLabel}</span>
-              </div>
-              
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: tokens.M, textTransform: "uppercase", letterSpacing: "0.05em" }}>Avg Cost / One</span>
-                <span style={{ fontSize: "24px", fontWeight: 800, color: tokens.A, letterSpacing: "-0.02em" }}>
-                  {food?.averageCostForOne ? `₹${food.averageCostForOne}` : "₹450"}
-                </span>
-              </div>
-            </div>
-
-            {/* Divider between Pricing and Schedule */}
-            <div style={{ height: "1px", borderTop: `1px solid ${tokens.B}`, margin: "20px 0" }} />
-
-            {/* Scheduling Group */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {/* Days */}
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <Calendar size={16} color={tokens.A} style={{ flexShrink: 0 }} />
-                <div>
-                  <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Service Days</span>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: tokens.FG, lineHeight: 1.2 }}>{openDays}</span>
-                </div>
-              </div>
-
-              {/* Hours */}
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <Clock size={16} color={tokens.A} style={{ flexShrink: 0 }} />
-                <div>
-                  <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Hours of Service</span>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: tokens.FG, lineHeight: 1.2 }}>
-                    {food?.openingTime || "11:00 AM"} - {food?.closingTime || "08:30 PM"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 /* ─── MAIN COMPONENT ─────────── */
 const FoodDetails = () => {
-  const { theme, tokens } = useTheme();
-  const { A, FG, M, BG, W, B, AL } = tokens;
-
   const location = useLocation();
   const history = useHistory();
   const params = new URLSearchParams(location.search);
@@ -2225,78 +1774,38 @@ const FoodDetails = () => {
 
       <CulinaryHero food={food} galleryItems={galleryItems} />
 
-      <CulinaryNarrative food={food} hostData={hostData} hostAvatar={hostAvatar} />
+      {(() => {
+        const tagsRaw = food?.tagNames || food?.tags || [];
+        const tags = Array.isArray(tagsRaw)
+          ? tagsRaw.map(t => typeof t === 'string' ? t : (t?.name || t?.tag || t?.label || t?.value)).filter(Boolean)
+          : [];
+        const curated = Array.isArray(food?.curatedContent)
+          ? food.curatedContent.map(c => typeof c === 'string' ? c : (c?.name || c?.title || c?.value)).filter(Boolean)
+          : [];
+        const items = curated.length > 0 ? curated : tags.length > 0 ? tags : ["Avant Cuisine", "Molecular Art", "Sonic Plating", "Epicurean Odyssey"];
+        return <Mq items={items} size="sm" bg="var(--S)" accent />;
+      })()}
 
-      <FoodMetadataCard food={food} />
+      <ChefSection food={food} hostData={hostData} hostAvatar={hostAvatar} galleryItems={galleryItems} />
 
       {(() => {
-        const sigRaw = food?.signatureDishes || "";
-        const dishes = Array.isArray(sigRaw) 
-          ? sigRaw 
-          : (typeof sigRaw === "string" ? sigRaw.split(",") : []);
-        const items = dishes.map(d => typeof d === "string" ? d.trim() : d?.name || d?.title || "").filter(Boolean);
-        const marqueeItems = items.length > 0 ? items : ["Heritage Taste", "Liquid Alchemy", "Curated Palette", "Biological Response"];
-        
-        const loopedDishes = Array(12).fill(marqueeItems).flat();
-        const estimatedDishWidth = (dish) => dish.length * 9.5 + 75;
-        const dishesDistance = marqueeItems.reduce((sum, dish) => sum + estimatedDishWidth(dish), 0) * 6;
-        const dishesDuration = dishesDistance / 60;
-
-        return (
-          <div style={{
-            margin: "0 -80px",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
-          }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: dishesDuration }}
-              style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-            >
-              {loopedDishes.map((dish, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
-                      }}
-                    >
-                      {dish}
-                    </span>
-                    <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
-          </div>
-        );
+        const tagsRaw = food?.tagNames || food?.tags || [];
+        const tags = Array.isArray(tagsRaw)
+          ? tagsRaw.map(t => typeof t === 'string' ? t : (t?.name || t?.tag || t?.label || t?.value)).filter(Boolean)
+          : [];
+        const items = tags.length > 0 ? tags : ["Heritage Taste", "Liquid Alchemy", "Curated Palette", "Biological Response"];
+        return <Mq items={items} bg="var(--S)" />;
       })()}
+
+      <DishGallery galleryItems={galleryItems} food={food} />
+
+      <Mq items={["Bespoke Reservations", "Finite Tables", "Infinite Experience"]} size="sm" bg="var(--S)" accent />
+
+      <AvailabilitySection food={food} />
 
       <LocationSection food={food} />
 
-      <ReservationNoir food={food} hostData={hostData} hostAvatar={hostAvatar} />
+      <ReservationNoir food={food} hostData={hostData} />
 
       <RelatedListingsStrip
         businessInterestId={5}

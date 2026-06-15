@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import cn from "classnames";
 import styles from "./HorizontalScroll.module.sass";
 import Icon from "../Icon";
@@ -7,13 +7,12 @@ import Icon from "../Icon";
  * Reusable Horizontal Scroll Component with Arrow Controls
  * Provides consistent horizontal scrolling behavior across all homepage sections
  */
-const HorizontalScroll = forwardRef(({ 
+const HorizontalScroll = ({ 
   children, 
   className, 
   gap = 24,
-  itemWidth = null,
-  hideDefaultArrows = false
-}, ref) => {
+  itemWidth = null // If provided, will use this for scroll calculation
+}) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -21,13 +20,6 @@ const HorizontalScroll = forwardRef(({
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeftPosition = useRef(0);
-
-  useImperativeHandle(ref, () => ({
-    scrollLeft: (e) => scrollLeft(e),
-    scrollRight: (e) => scrollRight(e),
-    canScrollLeft: showLeftArrow,
-    canScrollRight: showRightArrow
-  }));
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -175,7 +167,7 @@ const HorizontalScroll = forwardRef(({
       >
         {children}
       </div>
-      {!hideDefaultArrows && showLeftArrow && (
+      {showLeftArrow && (
         <button
           type="button"
           className={cn(styles.arrowButton, styles.arrowLeft, {
@@ -188,7 +180,7 @@ const HorizontalScroll = forwardRef(({
           <Icon name="arrow-prev" size="20" />
         </button>
       )}
-      {!hideDefaultArrows && showRightArrow && (
+      {showRightArrow && (
         <button
           type="button"
           className={cn(styles.arrowButton, styles.arrowRight, {
@@ -203,7 +195,7 @@ const HorizontalScroll = forwardRef(({
       )}
     </div>
   );
-});
+};
 
 export default HorizontalScroll;
 

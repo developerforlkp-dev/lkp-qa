@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus
+  Tv, Coffee, ChevronLeft, Plus, Minus
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -18,6 +18,7 @@ import RoomCards from "./RoomCards";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
+import { Footer } from "../../components/JUI/Footer";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import ShareButton from "../../components/ShareButton";
@@ -141,271 +142,10 @@ const ScopedStyles = () => (
       50% { transform: scale(1.015) translateY(-2px); }
     }
 
-    /* Redesigned Premium Gallery Layout */
-    .premium-hero-grid {
-      position: relative;
-      height: 100%;
-      width: 100%;
-      padding: 24px;
-      box-sizing: border-box;
-    }
-    .hero-spotlight {
-      position: relative;
-      border-radius: 28px;
-      overflow: hidden;
-      height: 100%;
-      width: 100%;
-      background: #0B0B0B;
-      box-shadow: 0 20px 48px rgba(0,0,0,0.15);
-      border: 1px solid var(--B);
-    }
-    
-    /* Overlay Thumbnails and Action Buttons */
-    .hero-thumbnail-strip {
-      position: absolute;
-      bottom: 24px;
-      right: 24px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 45;
-      background: rgba(11, 11, 11, 0.45);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      padding: 8px 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    .hero-mini-thumb {
-      width: 56px;
-      height: 42px;
-      border-radius: 10px;
-      overflow: hidden;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-      opacity: 0.6;
-    }
-    .hero-mini-thumb:hover {
-      opacity: 0.9;
-      transform: translateY(-2px);
-    }
-    .hero-mini-thumb.active {
-      opacity: 1;
-      border-color: var(--A, #0097B2);
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    }
-    .hero-mini-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .premium-view-all-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 8px 14px;
-      border-radius: 10px;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .premium-view-all-btn:hover {
-      background: #fff;
-      color: #000;
-      border-color: #fff;
-      transform: translateY(-2px);
-    }
-
-
-    /* Refactored Sequential Amenities Layout */
-    .editorial-narrative-block {
-      max-width: 900px;
-      margin: 0 auto 40px auto;
-      text-align: center;
-    }
-    .premium-editorial-tag {
-      font-size: 10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--A);
-      margin-bottom: 12px;
-      display: inline-block;
-    }
-    .editorial-headline {
-      font-family: var(--font-fraunces, Georgia, serif);
-      font-size: clamp(2rem, 4.5vw, 2.8rem);
-      font-weight: 700;
-      line-height: 1.25;
-      margin: 0 0 20px 0;
-      color: var(--FG);
-    }
-    .editorial-divider {
-      width: 40px;
-      height: 1.5px;
-      background: var(--B);
-      margin: 16px auto 24px auto;
-    }
-    
-    /* Highlights Banner Strip */
-    .highlights-banner {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 24px;
-      padding: 28px 20px;
-      border-top: 1px solid var(--B);
-      border-bottom: 1px solid var(--B);
-      margin-bottom: 56px;
-      background: var(--S);
-      border-radius: 16px;
-    }
-    .highlight-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-      min-width: 180px;
-      justify-content: center;
-    }
-    .highlight-item:not(:last-child) {
-      border-right: 1px solid var(--B);
-    }
-    .highlight-icon-box {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: rgba(0, 151, 178, 0.06);
-      color: var(--A);
-      flex-shrink: 0;
-    }
-    .highlight-info {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    .highlight-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--M);
-      font-weight: 600;
-    }
-    .highlight-value {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: var(--FG);
-      font-family: "Poppins", sans-serif;
-    }
-
-    /* Amenities Grid and Tabs Section */
-    .amenities-section-container {
-      margin-top: 32px;
-    }
-    .professional-amenities-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-top: 16px;
-    }
-    @media (max-width: 1024px) {
-      .professional-amenities-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-    @media (max-width: 768px) {
-      .professional-amenities-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    .professional-amenity-card {
-      background: var(--S);
-      border: 1px solid var(--B);
-      padding: 16px 20px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-      cursor: default;
-    }
-    .professional-amenity-card:hover {
-      background: var(--W);
-      border-color: var(--A);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 151, 178, 0.08);
-    }
-    .professional-amenity-card-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: rgba(0, 151, 178, 0.05);
-      border: 1px solid var(--B);
-      color: var(--A);
-      flex-shrink: 0;
-      transition: all 0.28s ease;
-    }
-    .professional-amenity-card:hover .professional-amenity-card-icon {
-      background: rgba(0, 151, 178, 0.12);
-      border-color: var(--A);
-      transform: scale(1.05);
-    }
-    .professional-amenity-card-label {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--FG);
-      font-family: "Poppins", sans-serif;
-    }
-    .amenities-view-toggle-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin: 24px auto 0 auto;
-      background: none;
-      border: 1px solid var(--B);
-      padding: 10px 24px;
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--FG);
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .amenities-view-toggle-btn:hover {
-      border-color: var(--A);
-      color: var(--A);
-      background: var(--S);
-      transform: translateY(-1px);
-    }
-
-     @media(max-width:768px){
+    @media(max-width:768px){
       .stay-details-premium .desk-only { display: none !important; }
       .pol-contact-grid, .amenities-grid, .location-grid, .reviews-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
       .property-stay-card { grid-template-columns: 1fr !important; }
-      .premium-hero-grid { padding: 12px; }
-      .hero-thumbnail-strip { bottom: 16px; right: 16px; padding: 6px 8px; gap: 6px; border-radius: 12px; }
-      .hero-mini-thumb { width: 44px; height: 33px; border-radius: 6px; }
-      .premium-view-all-btn { padding: 6px 10px; font-size: 10px; border-radius: 8px; }
-      .highlight-item:not(:last-child) { border-right: none !important; }
-      .highlights-banner { flex-direction: column !important; align-items: stretch !important; border-radius: 12px !important; padding: 16px !important; }
-      .highlight-item { justify-content: flex-start !important; padding-bottom: 12px !important; border-bottom: 1px solid var(--B) !important; }
-      .highlight-item:last-child { border-bottom: none !important; padding-bottom: 0 !important; }
     }
     
     @media(max-width:480px){
@@ -726,240 +466,102 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
   const history = useHistory();
   const { width, isMobile } = useWindowSize();
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
-  const title = stay?.propertyName || stay?.title || stay?.name || "STAY EXPERIENCE";
+  const title = stay?.propertyName || stay?.title || "STAY EXPERIENCE";
+  const items = galleryItems.slice(0, 5);
   const { heroText } = getStayLocationParts(stay);
-  const locationText = heroText || stay?.locationName || stay?.location || stay?.fullAddress || stay?.address || "Location not available";
 
-  const [[page, direction], setPage] = useState([0, 0]);
-  const activeIdx = page;
-  const [showFsViewer, setShowFsViewer] = useState(false);
+  // Infinite Loop Logic for images only
+  const x = useMotionValue(0);
+  const speed = isMobile ? 0.015 : 0.03;
 
-  const allImages = useMemo(() => {
-    const collected = [];
-    const cover = stay?.coverPhotoUrl || stay?.coverImageUrl || stay?.coverPhoto || stay?.coverImage || stay?.imageUrl || "";
-    if (cover) collected.push(fixImageUrl(cover));
-    
-    if (Array.isArray(galleryItems) && galleryItems.length > 0) {
-      galleryItems.forEach(img => {
-        const url = fixImageUrl(img);
-        if (url && !collected.includes(url)) collected.push(url);
-      });
-    }
-    
-    if (collected.length === 0) {
-      collected.push("/images/content/card-pic-13.jpg");
-    }
-    return collected;
-  }, [galleryItems, stay]);
+  useAnimationFrame((t, delta) => {
+    const moveBy = (delta || 16) * speed;
+    x.set(x.get() - moveBy);
+  });
 
-  const thumbnailItems = useMemo(() => allImages.slice(0, 5), [allImages]);
+  const BentoGridImages = () => (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: isMobile
+        ? "repeat(3, 300px)"
+        : "minmax(500px, 1.2fr) minmax(300px, 0.8fr) minmax(400px, 1fr)",
+      gridTemplateRows: "1fr 1fr",
+      gap: isMobile ? 12 : 24,
+      height: "100%",
+      width: isMobile ? "fit-content" : "100vw",
+      padding: "0 12px",
+      flexShrink: 0
+    }}>
+      <div style={{ gridArea: isMobile ? "1 / 1 / 3 / 2" : "1 / 1 / 3 / 2", borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}`, position: "relative" }}>
+        <img src={fixImageUrl(items[0] || stay?.coverPhotoUrl)} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+        <div style={{ position: "absolute", inset: 0, background: theme === 'dark' ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.05)" }} />
+      </div>
+      <div style={{ borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
+        <img src={fixImageUrl(items[1])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+      </div>
+      <div style={{ borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
+        <img src={fixImageUrl(items[2])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+      </div>
+      <div style={{ gridArea: isMobile ? "1 / 3 / 3 / 4" : "1 / 3 / 3 / 4", borderRadius: isMobile ? 16 : 24, overflow: "hidden", border: `1px solid ${B}` }}>
+        <img src={fixImageUrl(items[3] || items[0])} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+      </div>
+    </div>
+  );
 
-  useEffect(() => {
-    if (showFsViewer || allImages.length <= 1) return;
-    const interval = setInterval(() => {
-      setPage(prev => [(prev[0] + 1) % allImages.length, 1]);
-    }, 4500);
-    return () => clearInterval(interval);
-  }, [allImages.length, showFsViewer]);
-
-  const handlePrev = (e) => {
-    e.stopPropagation();
-    setPage(prev => [(prev[0] - 1 + allImages.length) % allImages.length, -1]);
-  };
-
-  const handleNext = (e) => {
-    e.stopPropagation();
-    setPage(prev => [(prev[0] + 1) % allImages.length, 1]);
-  };
-
-  const handleThumbnailClick = (idx) => {
-    if (idx === activeIdx) return;
-    const dir = idx > activeIdx ? 1 : -1;
-    setPage([idx, dir]);
-  };
-
-  const openFullscreen = (idx) => {
-    setPage([idx, 0]);
-    setShowFsViewer(true);
-  };
-
-  const slideVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? "100%" : direction < 0 ? "-100%" : 0,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction) => ({
-      x: direction < 0 ? "100%" : direction > 0 ? "-100%" : 0,
-      opacity: 0,
-    }),
-  };
+  const wrappedX = useTransform(x, (v) => {
+    const W = isMobile ? 900 : window.innerWidth;
+    return `${v % W}px`;
+  });
 
   return (
-    <section style={{ position: "relative", height: isMobile ? "60vh" : "75vh", background: BG, overflow: "hidden", padding: "0", zIndex: 50 }}>
-      <div className="premium-hero-grid">
-        
-        {/* Main Cover Image View */}
-        <div className="hero-spotlight" onClick={() => openFullscreen(activeIdx)} style={{ cursor: "pointer" }}>
-          {/* Main Visual */}
-          <AnimatePresence initial={false} custom={direction}>
-            <motion.img
-              key={activeIdx}
-              src={allImages[activeIdx] || allImages[0]}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.25 },
-              }}
-              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-              alt={title}
-            />
-          </AnimatePresence>
+    <section style={{ position: "relative", height: isMobile ? "70vh" : "85vh", background: BG, overflow: "hidden", padding: "0", zIndex: 50 }}>
+      {/* Looping Image Track */}
+      <motion.div style={{ x: wrappedX, display: "flex", height: "100%", width: "fit-content" }}>
+        <BentoGridImages />
+        <BentoGridImages />
+        <BentoGridImages />
+      </motion.div>
 
-          {/* Dark visual gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.05) 100%)", pointerEvents: "none" }} />
-
-          {/* Left/Right Arrow Overlays */}
-          {allImages.length > 1 && (
-            <>
-              <button
-                onClick={handlePrev}
-                style={{
-                  position: "absolute", left: 20, top: "50%", transform: "translateY(-50%)",
-                  width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.15)",
-                  backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.25)",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", zIndex: 30, transition: "all 0.3s ease"
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.25)"; e.currentTarget.style.transform = "translateY(-50%) scale(1.05)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.transform = "translateY(-50%) scale(1)"; }}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={handleNext}
-                style={{
-                  position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)",
-                  width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.15)",
-                  backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.25)",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", zIndex: 30, transition: "all 0.3s ease"
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.25)"; e.currentTarget.style.transform = "translateY(-50%) scale(1.05)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.transform = "translateY(-50%) scale(1)"; }}
-              >
-                <ChevronLeft size={20} style={{ transform: "rotate(180deg)" }} />
-              </button>
-            </>
-          )}
-
-          {/* Thumbnails & View button in right bottom corner */}
-          <div className="hero-thumbnail-strip">
-            {thumbnailItems.map((imgUrl, idx) => (
-              <div
-                key={idx}
-                className={cn("hero-mini-thumb", { active: activeIdx === idx })}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleThumbnailClick(idx);
-                }}
-              >
-                <img src={imgUrl} alt="" />
-              </div>
-            ))}
-            {allImages.length > 0 && (
-              <button
-                type="button"
-                className="premium-view-all-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openFullscreen(activeIdx);
-                }}
-              >
-                <Plus size={14} />
-                <span>View Photos</span>
-              </button>
-            )}
-          </div>
-
-          {/* Redesigned Premium Overlay Details */}
+      {/* Static Fixed Text Overlay */}
+      <div style={{
+        position: "absolute",
+        bottom: isMobile ? 20 : 80,
+        left: isMobile ? 20 : 80,
+        right: isMobile ? 20 : "auto",
+        zIndex: 40,
+        pointerEvents: "none"
+      }}>
+        <Rev delay={0.2}>
           <div style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: isMobile ? "24px 20px" : "48px 48px",
-            background: "linear-gradient(to top, rgba(11, 11, 11, 0.85) 0%, rgba(11, 11, 11, 0.4) 60%, rgba(11, 11, 11, 0) 100%)",
-            zIndex: 40,
-            pointerEvents: "none",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            height: "60%"
+            background: theme === 'dark' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(20px)",
+            padding: isMobile ? "20px 20px" : "40px 60px",
+            borderRadius: isMobile ? 20 : 32,
+            border: theme === 'dark' ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${B}`,
+            boxShadow: theme === 'dark' ? "0 20px 50px rgba(0,0,0,0.3)" : `0 20px 50px ${M}22`,
+            boxSizing: "border-box",
+            width: "100%"
           }}>
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-              style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}
-            >
-              
-              {/* Category / Property Type */}
-              <div style={{
-                color: "#FFFFFF",
-                WebkitTextFillColor: "#FFFFFF",
-                fontSize: isMobile ? "11px" : "14px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif",
-                textShadow: "0 2px 8px rgba(0, 0, 0, 0.4)"
-              }}>
-                {toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}
-              </div>
-
-              {/* Stay Name/Title */}
-              <h1 className="hero-title" style={{
-                fontSize: isMobile ? "clamp(1.8rem, 5.5vw, 2.4rem)" : "3.5rem",
-                fontWeight: 800,
-                lineHeight: 1.2,
-                color: "#FFFFFF",
-                WebkitTextFillColor: "#FFFFFF",
-                margin: "4px 0 8px 0",
-                letterSpacing: "-0.015em",
-                fontFamily: "Poppins, sans-serif",
-                textShadow: "0 4px 24px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)",
-                wordBreak: "break-word"
-              }}>
-                {title}
-              </h1>
-
-              {/* Location */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", WebkitTextFillColor: "#E0E0E0", fontSize: isMobile ? "12px" : "14px", fontWeight: 500 }}>
-                <MapPin size={15} color={A || "#0097B2"} style={{ filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45))" }} />
-                <span style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.55)", WebkitTextFillColor: "#E0E0E0" }}>{locationText}</span>
-              </div>
-
-            </motion.div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isMobile ? 8 : 16 }}>
+              <div style={{ width: isMobile ? 24 : 40, height: 1, background: A }} />
+              <span style={{ fontSize: isMobile ? 8 : 10, letterSpacing: "0.4em", textTransform: "uppercase", color: A, fontWeight: 800 }}>{toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}</span>
+            </div>
+            <h1 className="font-display" style={{ fontSize: isMobile ? "clamp(1.5rem, 6.5vw, 2rem)" : "clamp(2rem, 5vw, 5rem)", fontWeight: 800, color: theme === 'dark' ? "#FFF" : FG, lineHeight: 0.9, letterSpacing: "-0.03em", wordBreak: "break-word" }}>{title.toUpperCase()}</h1>
+            <div style={{ marginTop: isMobile ? 12 : 24, display: "flex", alignItems: "center", gap: 8, color: theme === 'dark' ? "#FFF" : FG }}>
+              <MapPin size={isMobile ? 14 : 18} />
+              <span style={{ fontSize: isMobile ? 12 : 16, fontWeight: 700, letterSpacing: "0.1em" }}>{heroText || "Location not available"}</span>
+            </div>
           </div>
-        </div>
-
+        </Rev>
       </div>
 
-      {/* Floating Badges & Back/Share Controls */}
+      {/* Static Overlays: Luxury Badge */}
       {!isMobile && (
-        <div style={{ position: "absolute", top: 44, left: 44, zIndex: 60, pointerEvents: "none" }}>
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ width: 80, height: 80 }}>
+        <div style={{ position: "absolute", top: 60, left: 60, zIndex: 30, pointerEvents: "none" }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ width: 90, height: 90 }}>
             <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%" }}>
               <path id="badgePath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" fill="transparent" />
-              <text style={{ fontSize: 7, fontWeight: 900, fill: A, textTransform: "uppercase", letterSpacing: "2.4px" }}>
+              <text style={{ fontSize: 7.5, fontWeight: 800, fill: A, textTransform: "uppercase", letterSpacing: "2.5px" }}>
                 <textPath xlinkHref="#badgePath">Luxury Retreat — Premium Stay —</textPath>
               </text>
             </svg>
@@ -994,7 +596,6 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
         className="premium-back-button"
         onClick={() => history.goBack()}
         aria-label="Go back"
-        style={{ zIndex: 70 }}
       >
         <ChevronLeft size={20} />
       </button>
@@ -1005,20 +606,6 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
         url={window.location.href}
       />
 
-      {ReactDOM.createPortal(
-        <AnimatePresence>
-          {showFsViewer && (
-            <FullScreenImage
-              src={allImages[activeIdx]}
-              items={allImages}
-              currentIndex={activeIdx}
-              onNavigate={handleThumbnailClick}
-              onClose={() => setShowFsViewer(false)}
-            />
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
     </section>
   );
 }
@@ -1026,7 +613,6 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
 function StayAmenities({ stay }) {
   const { isMobile } = useWindowSize();
   const { tokens: { A, FG, M, S, B, W } } = useTheme();
-  const [expanded, setExpanded] = useState(false);
 
   const iconMap = {
     "wifi": Wifi, "internet": Wifi, "broadband": Wifi,
@@ -1055,117 +641,86 @@ function StayAmenities({ stay }) {
     if (!Array.isArray(arr) || arr.length === 0) return [];
     return arr.map(item => {
       if (typeof item === "string") return item;
+      // Search for any common text-bearing key in the object
       return item?.name || item?.amenityName || item?.facilityName || item?.amenity || item?.facility || item?.label || item?.title || item?.value || "";
     }).filter(Boolean);
   };
 
-  const dynamicFacilities = useMemo(() => {
-    const list = stay?.facilities || stay?.propertyFacilities || stay?.stayFacilities || stay?.facilityList || stay?.amenities || stay?.propertyAmenities || stay?.stayAmenities || [];
+  const dynamicAmenities = useMemo(() => {
+    const list = stay?.amenities || stay?.propertyAmenities || stay?.stayAmenities || stay?.amenityList || [];
     return extractList(list);
   }, [stay]);
 
-  const short = stay?.shortDescription || "A sanctuary redefined at the water's edge.";
-  const description = stay?.detailedDescription || stay?.description || "Experience the pinnacle of hospitality where architecture meets the raw beauty of nature.";
-
-  const descSentences = description.split(/(?<=\.)\s+/);
-  const leadParagraph = descSentences.slice(0, 2).join(" ");
-  const bodyParagraph = descSentences.slice(2).join(" ");
-
-  const highlights = useMemo(() => {
-    return [
-      { label: "Accommodation", value: toDisplayString(stay?.propertyType) || "Bespoke Retreat", icon: Building },
-      { label: "Max Capacity", value: stay?.maxGuests ? `${stay.maxGuests} Guests` : "Flexible Occupancy", icon: Users },
-      { label: "House Rules", value: stay?.coupleFriendly ? "Couple Friendly" : "Standard Rules", icon: ShieldCheck },
-      { label: "Pet Policy", value: stay?.petAllowed ? "Pets Welcomed" : "No Pets", icon: Sparkles }
-    ];
+  const dynamicFacilities = useMemo(() => {
+    const list = stay?.facilities || stay?.propertyFacilities || stay?.stayFacilities || stay?.facilityList || [];
+    return extractList(list);
   }, [stay]);
 
   return (
-    <section style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px", boxSizing: "border-box", overflow: "hidden" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        
-        <Soul y={isMobile ? 30 : 60} s={0.03}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            
-            {/* 1. Full-Width Highlights Banner (Moved to top) */}
-            <Rev className="highlights-banner">
-              {highlights.map((h, i) => {
-                const IconComp = h.icon;
-                return (
-                  <div key={i} className="highlight-item">
-                    <div className="highlight-icon-box">
-                      <IconComp size={18} />
-                    </div>
-                    <div className="highlight-info">
-                      <span className="highlight-label">{h.label}</span>
-                      <span className="highlight-value">{h.value}</span>
-                    </div>
-                  </div>
+    <section style={{ background: W, padding: isMobile ? "80px 16px" : "140px 36px", boxSizing: "border-box", overflow: "hidden" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SHdr idx="02" label="Facilities & Services" />
+        <Soul y={isMobile ? 40 : 100} s={0.08}>
+          <div className="amenities-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 40 : 80 }}>
+            {/* Left Column: Descriptions */}
+            <Rev>
+              {(() => {
+                const short = stay?.shortDescription || "";
+                const baseTitleCls = "font-display";
+                const baseTitleStyle = { fontSize: isMobile ? "clamp(1.6rem, 7vw, 2.2rem)" : "clamp(2.5rem, 5.5vw, 5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, paddingBottom: "0.1em", marginBottom: 12, display: "block", overflow: "hidden", wordBreak: "break-word" };
+
+                if (!short) return (
+                  <>
+                    <Chars text="A sanctuary redefined" cls={baseTitleCls} style={baseTitleStyle} />
+                    <Chars text="at the water's edge." delay={0.12} cls={baseTitleCls} style={{ ...baseTitleStyle, color: A }} />
+                  </>
                 );
-              })}
+                const words = short.trim().split(" ");
+                const mid = Math.ceil(words.length / 2);
+                const line1 = words.slice(0, mid).join(" ");
+                const line2 = words.slice(mid).join(" ");
+                return (
+                  <>
+                    <Chars text={line1} cls={baseTitleCls} style={baseTitleStyle} />
+                    {line2 && <Chars text={line2} delay={0.12} cls={baseTitleCls} style={{ ...baseTitleStyle, color: A }} />}
+                  </>
+                );
+              })()}
+              <p style={{ fontSize: 16, color: M, lineHeight: 1.85, marginTop: 24 }}>
+                {stay?.detailedDescription || stay?.description || "Experience the pinnacle of hospitality where architecture meets the raw beauty of nature."}
+              </p>
             </Rev>
 
-            {/* 2. Full-Width Editorial Narrative (Detailed Description) */}
-            <Rev className="editorial-narrative-block">
-              <span className="premium-editorial-tag">Overview</span>
-              <h2 className="editorial-headline">{short}</h2>
-              <div className="editorial-divider" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 16, maxW: 800, margin: "0 auto" }}>
-                <p style={{ fontSize: "16px", color: FG, lineHeight: 1.75, fontWeight: 500, opacity: 0.95, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-                  {leadParagraph}
-                </p>
-                {bodyParagraph && (
-                  <p style={{ fontSize: "14px", color: M, lineHeight: 1.7, margin: 0, fontWeight: 400, opacity: 0.85 }}>
-                    {bodyParagraph}
-                  </p>
-                )}
-              </div>
-            </Rev>
-
-            {/* 3. Full-Width Amenities Grid Section (Facilities & Services) */}
-            <div className="amenities-section-container">
-              {dynamicFacilities.length > 0 ? (
-                <Rev delay={0.1}>
-                  <div className="professional-amenities-grid">
-                    {(expanded ? dynamicFacilities : dynamicFacilities.slice(0, 8)).map((label) => {
+            {/* Right Column: Amenities & Facilities */}
+            <div>
+              {dynamicFacilities.length > 0 && (
+                <Rev delay={0.2}>
+                  <div style={{ paddingBottom: 16, borderBottom: `1px solid ${B}`, marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+                    <Building size={18} color={A} />
+                    <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: FG, fontWeight: 700 }}>Facilities & Services</p>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "24px 32px" }}>
+                    {dynamicFacilities.map((label, i) => {
                       const IconComp = getIcon(label);
                       return (
-                        <div key={label} className="professional-amenity-card">
-                          <div className="professional-amenity-card-icon">
-                            <IconComp size={15} />
+                        <motion.div key={i} whileHover={{ x: 6 }} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <IconComp size={16} color={A} />
                           </div>
-                          <span className="professional-amenity-card-label">{label}</span>
-                        </div>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: FG }}>{label}</span>
+                        </motion.div>
                       );
                     })}
                   </div>
-                  {dynamicFacilities.length > 8 && (
-                    <button
-                      onClick={() => setExpanded(!expanded)}
-                      className="amenities-view-toggle-btn"
-                    >
-                      {expanded ? "View Less" : "View More"}
-                    </button>
-                  )}
                 </Rev>
-              ) : (
-                <div style={{ padding: "40px", background: S, borderRadius: 16, border: `1px solid ${B}`, textAlign: "center" }}>
-                  <p style={{ fontSize: 14, color: M, margin: 0 }}>No dynamic facilities available for this property.</p>
-                </div>
               )}
             </div>
-
           </div>
         </Soul>
-
       </div>
     </section>
   );
 }
-
-
-
-
 
 function ImgParallax({ src, alt }) {
   const r = useRef(null);
@@ -1178,249 +733,38 @@ function ImgParallax({ src, alt }) {
   );
 }
 
-function PolicyItem({ rule }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+function PolicyItem({ rule, A, FG, M, B, S }) {
   const [op, setOp] = useState(false);
-
-  const title = rule.title || "Requirement";
-  const description = rule.body;
-  const questions = rule.questions || [];
-
-  const getIcon = () => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes("cancellation")) {
-      return <Clock size={20} color={A} />;
-    }
-    if (
-      lowerTitle.includes("age") ||
-      lowerTitle.includes("guest") ||
-      lowerTitle.includes("people") ||
-      lowerTitle.includes("id required") ||
-      lowerTitle.includes("minimum age")
-    ) {
-      return <Users size={20} color={A} />;
-    }
-    if (
-      lowerTitle.includes("health") ||
-      lowerTitle.includes("safety") ||
-      lowerTitle.includes("medical") ||
-      lowerTitle.includes("rule") ||
-      lowerTitle.includes("pet") ||
-      lowerTitle.includes("couple")
-    ) {
-      return <ShieldCheck size={20} color={A} />;
-    }
-    return <Sparkles size={20} color={A} />;
-  };
+  const hasQuestions = Array.isArray(rule.questions) && rule.questions.length > 0;
 
   return (
-    <motion.div
-      layout
-      style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
-        borderRadius: "16px",
-        overflow: "hidden",
-        marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none",
-      }}
-      whileHover={{ borderColor: A }}
-    >
-      <div
-        onClick={() => setOp(!op)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          padding: "20px 24px",
-          cursor: "pointer",
-          textAlign: "left",
-          userSelect: "none",
-        }}
-      >
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s",
-        }}>
-          {getIcon()}
+    <motion.div key={rule.id} style={{ borderBottom: `1px solid ${B}` }}>
+      <button onClick={() => setOp(!op)}
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "30px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <FileText size={20} color={op ? A : M} />
+          <motion.span animate={{ color: op ? A : FG }} style={{ fontSize: 16, fontWeight: 700 }}>{rule.title}</motion.span>
         </div>
-
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{title}</span>
-        </div>
-
-        <motion.div
-          animate={{ rotate: op ? 180 : 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: op ? W : "transparent" }}
-        >
+        <motion.div animate={{ rotate: op ? 180 : 0 }} transition={{ duration: 0.4 }}>
           <ChevronDown size={18} color={M} />
         </motion.div>
-      </div>
-
+      </button>
       <AnimatePresence initial={false}>
         {op && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: "hidden" }}
-          >
-            <div style={{ padding: "0 24px 24px 80px" }}>
-              {description && (
-                <p style={{ fontSize: 13, color: M, lineHeight: 1.6, whiteSpace: "pre-line", margin: "0 0 16px 0" }}>
-                  {description}
-                </p>
-              )}
-
-              {questions.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {questions.map((q, j) => {
-                    const questionTitle = q.title || q.question?.title;
-                    const answerText = q.answer?.valueText || q.valueText;
-
-                    return (
-                      <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "4px 0" }}>
-                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 8 }} />
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <span style={{ fontSize: 14, color: FG, lineHeight: 1.5, fontWeight: 500 }}>{questionTitle}</span>
-                          {answerText && (
-                            <span style={{ fontSize: 13, color: M, lineHeight: 1.4 }}>{answerText}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function PolicyCategoryItem({ category }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
-  const [op, setOp] = useState(false);
-
-  const getIcon = () => {
-    const lowerTitle = category.title.toLowerCase();
-    if (lowerTitle.includes("cancellation")) {
-      return <Clock size={20} color={A} />;
-    }
-    if (lowerTitle.includes("guest") || lowerTitle.includes("requirements")) {
-      return <Users size={20} color={A} />;
-    }
-    return <ShieldCheck size={20} color={A} />;
-  };
-
-  return (
-    <motion.div
-      layout
-      style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
-        borderRadius: "16px",
-        overflow: "hidden",
-        marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none",
-      }}
-      whileHover={{ borderColor: A }}
-    >
-      <div
-        onClick={() => setOp(!op)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          padding: "20px 24px",
-          cursor: "pointer",
-          textAlign: "left",
-          userSelect: "none",
-        }}
-      >
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s",
-        }}>
-          {getIcon()}
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{category.title}</span>
-        </div>
-
-        <motion.div
-          animate={{ rotate: op ? 180 : 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: op ? W : "transparent" }}
-        >
-          <ChevronDown size={18} color={M} />
-        </motion.div>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {op && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            style={{ overflow: "hidden" }}
-          >
-            <div style={{ padding: "0 24px 24px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
-              {category.items.map((item, idx) => (
-                <div key={item.id || idx} style={{ borderBottom: idx === category.items.length - 1 ? "none" : `1px solid ${B}`, paddingBottom: idx === category.items.length - 1 ? 0 : 16, paddingTop: idx === 0 ? 0 : 16 }}>
-                  {item.title && item.title !== item.body && (
-                    <span style={{ fontSize: "14px", fontWeight: 700, color: FG, display: "block", marginBottom: 6 }}>{item.title}</span>
-                  )}
-                  {item.body && (
-                    <p style={{ fontSize: 13, color: M, lineHeight: 1.6, whiteSpace: "pre-line", margin: 0 }}>
-                      {item.body}
-                    </p>
-                  )}
-                  {item.questions && item.questions.length > 0 && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
-                      {item.questions.map((q, j) => {
-                        const questionTitle = q.title || q.question?.title;
-                        const answerText = q.answer?.valueText || q.valueText;
-                        return (
-                          <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                            <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                              <span style={{ fontSize: 13, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{questionTitle}</span>
-                              {answerText && (
-                                <span style={{ fontSize: 12, color: M, lineHeight: 1.4 }}>{answerText}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.4, ease: E }} style={{ overflow: "hidden" }}>
+            <div style={{ padding: "0 20px 40px 64px", maxWidth: 640 }}>
+              {hasQuestions ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {rule.questions.map((q, i) => (
+                    <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                      <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{q.title || q.question?.title}</span>
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p style={{ fontSize: 14, color: M, lineHeight: 1.85, whiteSpace: "pre-wrap" }}>{rule.body}</p>
+              )}
             </div>
           </motion.div>
         )}
@@ -1429,10 +773,18 @@ function PolicyCategoryItem({ category }) {
   );
 }
 
-  function StayPolicies({ stay }) {
-  const { tokens: { FG, W, B, A, M, BG }, theme } = useTheme();
+function StayPoliciesAndContact({ stay, hostData, hostAvatar }) {
+  const history = useHistory();
   const { isMobile } = useWindowSize();
-
+  const { tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
+  const hostProfileId =
+    hostData?.host?.hostId ||
+    hostData?.hostId ||
+    stay?.hostId ||
+    stay?.host?.hostId ||
+    stay?.leadUserId ||
+    stay?.userId ||
+    null;
   const policies = useMemo(() => {
     const categories = [];
 
@@ -1464,7 +816,7 @@ function PolicyCategoryItem({ category }) {
       return null;
     };
 
-    // Property Rules
+    // 1. Property Rules
     const propItems = [];
     if (stay?.privacyAndPolicy?.propertyRulesTemplate && stay.privacyAndPolicy.propertyRulesTemplate !== "No property rules defined.") {
       const lines = stay.privacyAndPolicy.propertyRulesTemplate.split('\n').map(l => l.trim()).filter(Boolean);
@@ -1501,7 +853,7 @@ function PolicyCategoryItem({ category }) {
       categories.push({ id: 'cat-prop', title: "Property Rules", items: propItems });
     }
 
-    // Guest Requirements
+    // 2. Guest Requirements
     const guestItems = [];
     if (Array.isArray(stay?.guestRequirements) && stay.guestRequirements.length > 0) {
       stay.guestRequirements.forEach((req, i) => {
@@ -1517,7 +869,7 @@ function PolicyCategoryItem({ category }) {
       categories.push({ id: 'cat-guest', title: "Guest Requirements", items: guestItems });
     }
 
-    // Cancellation Policy
+    // 3. Cancellation Policy
     const cancelItems = [];
     const summaryText = stay?.cancellationPolicySummary ||
       stay?.privacyAndPolicy?.cancellationPolicySummary ||
@@ -1550,49 +902,13 @@ function PolicyCategoryItem({ category }) {
       categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
     }
 
+    const privacy = stay?.privacyPolicy || stay?.privacyPolicyRules || stay?.privacyRules;
+    if (privacy) {
+      categories.push({ id: 'cat-priv', title: "Privacy Policy", items: [{ id: 'priv-1', title: "Details", body: privacy }] });
+    }
+
     return categories;
   }, [stay]);
-
-  return (
-    <section className="policies-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 40 : 64, alignItems: "start" }} className="pol-grid">
-          <Rev delay={0.1}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 12, fontFamily: "Poppins, sans-serif" }}>
-                Things to Keep in Mind
-              </h3>
-              <p style={{ color: M, fontSize: "15px", lineHeight: "1.8", margin: 0, fontWeight: 400 }}>
-                Please review these guidelines, requirements, and policies carefully to ensure a safe, smooth, and enjoyable stay.
-              </p>
-            </div>
-          </Rev>
-          <Rev delay={0.2}>
-            <div>
-              {policies.map((category) => (
-                <PolicyCategoryItem key={category.id} category={category} />
-              ))}
-            </div>
-          </Rev>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StayHostQuality({ stay, hostData, hostAvatar }) {
-  const history = useHistory();
-  const { isMobile } = useWindowSize();
-  const { tokens: { A, AL, BG, FG, M, S, B, W }, theme } = useTheme();
-
-  const hostProfileId =
-    hostData?.host?.hostId ||
-    hostData?.hostId ||
-    stay?.hostId ||
-    stay?.host?.hostId ||
-    stay?.leadUserId ||
-    stay?.userId ||
-    null;
 
   const getPhone = () => {
     const p = hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.host?.mobileNumber || hostData?.host?.businessContact || hostData?.phone || hostData?.phoneNumber || hostData?.mobileNumber || hostData?.businessContact || stay?.host?.phone || stay?.contactNumber || stay?.phone || stay?.contactPhone || stay?.businessContact;
@@ -1615,383 +931,107 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
   const primaryPhoneNum = stay?.contactInformation?.primaryPhone || stay?.primaryPhone || stay?.primaryContactNumber || stay?.primaryContact?.phone || phone;
   const primaryEmailAddress = stay?.contactInformation?.primaryEmail || stay?.primaryEmail || stay?.primaryContactEmail || stay?.primaryContact?.email || email;
 
+  const salesName = stay?.contactInformation?.salesContactName || stay?.salesContactName || stay?.salesContact?.name || stay?.salesName;
+  const salesPhoneNum = stay?.contactInformation?.salesPhone || stay?.salesPhone || stay?.salesContactNumber || stay?.salesContact?.phone;
+  const salesEmailAddress = stay?.contactInformation?.salesEmail || stay?.salesEmail || stay?.salesContactEmail || stay?.salesContact?.email;
+
   const frontOffice = stay?.contactInformation?.frontOfficePhone || stay?.frontOfficePhone || stay?.frontOfficeContact;
 
   return (
-    <section className="host-quality-section" style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
+    <section style={{ background: BG, padding: isMobile ? "80px 16px" : "140px 36px", boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "4fr 6fr", gap: isMobile ? 40 : 64 }} className="host-quality-grid">
-          
-          {/* Host Profile (40%) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 24, width: "100%" }}>
-            <Rev delay={0.1}>
-              <div 
-                style={{
-                  background: theme === "dark" 
-                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                    : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                  border: `1px solid ${B}`,
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  position: "relative",
-                  boxShadow: theme === "dark"
-                    ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                    : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: 250,
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.borderColor = A; 
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = theme === "dark"
-                    ? `0 24px 48px ${A}15`
-                    : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.borderColor = B; 
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = theme === "dark"
-                    ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                    : "0 20px 40px rgba(15, 23, 42, 0.04)";
-                }}
-              >
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 3,
-                  background: `linear-gradient(90deg, ${A} 0%, #8B5CF6 100%)`
-                }} />
 
-                <div style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center", 
-                  gap: 16, 
-                  width: "100%",
-                  padding: "20px 20px 16px 20px",
-                  background: theme === "dark" ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.01)",
-                  borderBottom: `1px solid ${B}`
-                }}>
-                  
-                  {/* Avatar & Info */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{
-                      position: "relative",
-                      width: 52,
-                      height: 52,
-                      borderRadius: "50%",
-                      padding: "2px",
-                      background: `linear-gradient(135deg, ${A} 0%, #8B5CF6 100%)`,
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                      flexShrink: 0
-                    }}>
-                      <div style={{
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: "50%",
-                        background: W,
-                        overflow: "hidden",
-                        padding: "1px"
-                      }}>
-                        <img
-                          src={hostAvatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(primaryName)}&backgroundColor=0097B2&color=ffffff`}
-                          style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                          alt={primaryName}
-                          onError={(e) => { 
-                            e.target.onerror = null; 
-                            e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(primaryName)}&backgroundColor=0097B2&color=ffffff`; 
-                          }}
-                        />
-                      </div>
-                      <div style={{ 
-                        position: "absolute", 
-                        bottom: -1, 
-                        right: -1, 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: "50%", 
-                        background: "#10B981", 
-                        border: `1.5px solid ${W}`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 6px rgba(16, 185, 129, 0.3)"
-                      }}>
-                        <ShieldCheck size={9} color={W} style={{ fill: W, fillOpacity: 0.2 }} />
-                      </div>
-                    </div>
+        <SHdr idx="06" label="Guidelines & Contact" />
 
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                      <h3
-                        onClick={() => { if (hostProfileId) history.push(`/host-profile?id=${hostProfileId}`); }}
-                        style={{
-                          fontSize: "14.5px",
-                          fontWeight: 700,
-                          color: FG,
-                          margin: 0,
-                          cursor: hostProfileId ? "pointer" : "default",
-                          fontFamily: "Poppins, sans-serif",
-                          letterSpacing: "-0.01em",
-                          lineHeight: 1.2,
-                          transition: "color 0.2s"
-                        }}
-                        onMouseEnter={(e) => { if (hostProfileId) e.currentTarget.style.color = A; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = FG; }}
-                        title={hostProfileId ? "View host profile" : undefined}
-                      >
-                        {primaryName}
-                      </h3>
-                      <span style={{ 
-                        fontSize: "8.5px", 
-                        letterSpacing: "0.04em", 
-                        textTransform: "uppercase", 
-                        color: "#7C3AED", 
-                        background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
-                        border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
-                        borderRadius: "5px",
-                        padding: "1px 6px",
+        <div className="pol-contact-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.5fr", gap: isMobile ? 60 : 100, alignItems: "start", marginTop: 40 }}>
+
+          {/* Left Column: Host Details */}
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 40 }}>
+            <div>
+              <p style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>Property Host</p>
+              <Rev>
+                <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 16 : 24, marginBottom: 32 }}>
+                  <div style={{ width: isMobile ? 60 : 80, height: isMobile ? 60 : 80, borderRadius: "50%", overflow: "hidden", border: `1px solid ${B}`, background: S }}>
+                    {hostAvatar ? (
+                      <img src={hostAvatar} alt={primaryName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? 20 : 24, fontWeight: 700, color: M }}>
+                        {primaryName.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3
+                      className="font-display"
+                      onClick={() => {
+                        if (hostProfileId) history.push(`/host-profile?id=${hostProfileId}`);
+                      }}
+                      style={{
+                        fontSize: isMobile ? 24 : 32,
                         fontWeight: 700,
-                        display: "inline-flex",
-                        alignItems: "center"
-                      }}>
-                        Superhost
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Metrics */}
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <div style={{
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", lineHeight: 1 }}>
-                        ★ {hostData?.statistics?.averageRating || "4.9"}
-                      </span>
-                      <span style={{ fontSize: "7px", color: "#B45309", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Rating</span>
-                    </div>
-
-                    <div style={{
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: A, lineHeight: 1 }}>
-                        {hostData?.statistics?.totalEvents || hostData?.listings?.length || 8}
-                      </span>
-                      <span style={{ fontSize: "7px", color: A, textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Events</span>
-                    </div>
+                        color: FG,
+                        marginBottom: 4,
+                        wordBreak: "break-word",
+                        lineHeight: 1.2,
+                        cursor: hostProfileId ? "pointer" : "default",
+                      }}
+                    >
+                      {primaryName}
+                    </h3>
+                    <p style={{ fontSize: 14, color: M }}>Property Representative</p>
+                    {(hostData?.host?.bio || hostData?.bio) && (
+                      <p style={{ fontSize: 13, color: M, lineHeight: 1.8, marginTop: 12, fontStyle: "italic" }}>{hostData?.host?.bio || hostData?.bio}</p>
+                    )}
                   </div>
                 </div>
 
-                {/* Bio */}
-                <div style={{ 
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                  borderLeft: `3px solid ${A}`,
-                  margin: "12px 20px"
-                }}>
-                  <p style={{
-                    fontSize: "12.5px",
-                    color: M,
-                    lineHeight: 1.55,
-                    margin: 0,
-                    fontWeight: 400,
-                    fontStyle: "italic",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical"
-                  }}>
-                    "{hostData?.host?.bio || hostData?.bio || "Experienced host dedicated to providing memorable, curated journeys and sharing local culture, history, and secrets."}"
-                  </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: isMobile ? "24px" : "32px", background: W, border: `1px solid ${B}`, borderRadius: 2 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>Phone</span>
+                    <a href={`tel:${primaryPhoneNum}`} style={{ fontSize: 16, fontWeight: 600, color: FG, textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+                      <Phone size={16} color={A} />
+                      {primaryPhoneNum}
+                    </a>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>Email</span>
+                    <a href={`mailto:${primaryEmailAddress}`} style={{ fontSize: 16, fontWeight: 600, color: FG, textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+                      <Mail size={16} color={A} />
+                      {primaryEmailAddress}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </Rev>
+              </Rev>
+            </div>
 
+            {frontOffice && (
+              <Rev delay={0.1}>
+                <div style={{ padding: isMobile ? "24px" : "32px", background: S, border: `1px solid ${B}`, borderRadius: 2 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Front Office</p>
+                  <a href={`tel:${frontOffice}`} style={{ fontSize: 16, fontWeight: 600, color: FG, textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+                    <Building size={16} color={A} />
+                    {frontOffice}
+                  </a>
+                </div>
+              </Rev>
+            )}
           </div>
 
-          {/* Quality Index Card (60%) */}
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{
-                padding: "24px 32px",
-                background: theme === "dark" 
-                  ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                  : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                backdropFilter: "blur(25px) saturate(160%)",
-                border: `1px solid ${B}`,
-                borderRadius: "24px",
-                boxShadow: theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                alignItems: "center",
-                gap: 32,
-                height: "100%",
-                minHeight: 250,
-                position: "relative",
-                overflow: "hidden",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-              }}
-              onMouseEnter={(e) => { 
-                e.currentTarget.style.borderColor = A; 
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? `0 24px 48px ${A}15`
-                  : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-              }}
-              onMouseLeave={(e) => { 
-                e.currentTarget.style.borderColor = B; 
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)";
-              }}
-              >
-                {/* Visual Accent Top Bar */}
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 3,
-                  background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
-                }} />
-
-                {/* Background Ambient Glow under the circle */}
-                <div style={{
-                  position: "absolute",
-                  left: 20,
-                  top: 50,
-                  width: 140,
-                  height: 140,
-                  borderRadius: "50%",
-                  background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
-                  pointerEvents: "none"
-                }} />
-
-                {/* Left: Score Circle */}
-                {(() => {
-                  const displayScore = stay?.lkpQualityIndex?.score || 9.2;
-                  const scoreInt = Math.floor(displayScore);
-                  const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
-
-                  return (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                      <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
-                        <defs>
-                          <linearGradient id="scoreGradStay" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#8B5CF6" />
-                            <stop offset="100%" stopColor={A} />
-                          </linearGradient>
-                          <filter id="glowStay" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="6" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                          </filter>
-                        </defs>
-                        <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
-                        <motion.circle
-                          cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGradStay)" strokeWidth="6" strokeLinecap="round"
-                          style={{ filter: "url(#glowStay)" }}
-                          initial={{ strokeDasharray: "0 346" }}
-                          whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
-                          transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                        />
-                      </svg>
-                      <div style={{ position: "absolute", textAlign: "center" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                          <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
-                          <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
-                        </div>
-                        <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Right: Narrative Details & Verification Checks */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-                  <div>
-                    <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                    <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
-                  </div>
-                  
-                  <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-                    {stay?.lkpQualityIndex?.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
-                  </p>
-
-                  {/* Verification Criteria Pills */}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: A,
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ Verified Host
-                    </span>
-
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#10B981",
-                      background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ Safety Check
-                    </span>
-
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#D97706",
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ High Rated
-                    </span>
+          {/* Right Column: Rules Categories & Accordions */}
+          <div>
+            <Rev delay={0.2}>
+              {policies.map((category) => (
+                <div key={category.id} style={{ marginBottom: 48 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 24, letterSpacing: "-0.01em" }}>{category.title}</h3>
+                  <div style={{ borderTop: `1px solid ${B}` }}>
+                    {category.items.map((rule) => (
+                      <PolicyItem key={rule.id} rule={rule} A={A} FG={FG} M={M} B={B} S={S} />
+                    ))}
                   </div>
                 </div>
-              </div>
-            </div>
-          </Rev>
-
+              ))}
+            </Rev>
+          </div>
 
         </div>
       </div>
@@ -2160,7 +1200,7 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
 /* ─── MAIN COMPONENT ─────────── */
 const StayDetails = () => {
   const { width, isMobile } = useWindowSize();
-  const { theme, tokens: { BG, FG, W, B, S, M, A } } = useTheme();
+  const { tokens: { BG, FG, W, B, S, M } } = useTheme();
   const history = useHistory();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -2461,7 +1501,15 @@ const StayDetails = () => {
 
       <StayAmenities stay={stay} />
 
-      <div style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
+      <StayAddons 
+        stay={stay} 
+        selectedAddOns={selectedAddOns} 
+        onToggleAddOn={handleToggleAddOn} 
+        addOnQuantities={addOnQuantities} 
+        onAddOnQuantityChange={handleAddOnQuantityChange} 
+      />
+
+      <div style={{ background: W, padding: "80px 36px 140px", borderTop: `1px solid ${B}` }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
           <SHdr idx="04" label="Accommodations" />
           <p style={{ fontSize: 16, color: M, marginBottom: 56, maxWidth: 600, lineHeight: 1.7 }}>
@@ -2481,75 +1529,16 @@ const StayDetails = () => {
       </div>
 
       {(() => {
-        const rawTags = Array.isArray(stay?.tags) && stay.tags.length > 0
-          ? stay.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-          : ["Bespoke Service", "Privacy Guaranteed", "Direct Connection", "Luxury Accommodations", "Stunning Views", "Premium Amenities"];
-        
-        // Duplicate to ensure infinite seamless scrolling loop
-        const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
-
-        const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-        const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
-        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-        return (
-          <div style={{
-            margin: "24px 0 48px",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
-          }}>
-            {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-              style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-            >
-              {loopedTags.map((tag, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
-                      }}
-                    >
-                      {tag}
-                    </span>
-                    <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
-          </div>
-        );
+        const tags = Array.isArray(stay?.tags)
+          ? stay.tags.map(t => typeof t === 'string' ? t : (t?.name || t?.tag || t?.label || t?.value)).filter(Boolean)
+          : [];
+        const items = tags.length > 0 ? tags : ["Bespoke Service", "Privacy Guaranteed", "Direct Connection"];
+        return <Mq items={items} size="sm" bg={S} accent />;
       })()}
 
       <StayLocation stay={stay} />
 
-      <StayPolicies stay={stay} />
-
-      <StayHostQuality stay={stay} hostData={hostData} hostAvatar={hostAvatar} />
+      <StayPoliciesAndContact stay={stay} hostData={hostData} hostAvatar={hostAvatar} />
 
       <StayReviews
         reviews={reviews}
@@ -3702,21 +2691,13 @@ function PropertyStayCard({ stay }) {
 
 function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubmitted }) {
   const { isMobile } = useWindowSize();
-  const { tokens: { A, FG, M, B, W, S, BG, AL }, theme } = useTheme();
+  const { tokens: { A, FG, M, B, W, S, BG } } = useTheme();
   const routerHistory = useHistory();
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  const sliderRef = useRef(null);
-  const scrollSlider = (direction) => {
-    if (!sliderRef.current) return;
-    const cardWidth = 384; // width (360) + gap (24)
-    const scrollAmount = direction === "left" ? -cardWidth : cardWidth;
-    sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -3751,163 +2732,77 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
     return [];
   }, [reviews]);
 
+  const ratingSummary = useMemo(() => {
+    if (!reviews || Array.isArray(reviews)) return null;
+    const s = reviews.ratingSummary || reviews.summary || reviews.data?.ratingSummary || reviews.data?.summary || null;
+    if (!s) return null;
+
+    // Normalize ratingDistribution if it's an object
+    if (s.ratingDistribution && typeof s.ratingDistribution === "object" && !Array.isArray(s.ratingDistribution)) {
+      const distArray = Object.entries(s.ratingDistribution).map(([rating, count]) => ({
+        rating: Number(rating),
+        count: Number(count)
+      }));
+      return { ...s, ratingDistribution: distArray };
+    }
+    return s;
+  }, [reviews]);
+
+  const avgRating = ratingSummary?.averageRating || 0;
+  const totalReviews = ratingSummary?.totalReviews || normalizedReviews.length;
   const hasReviews = normalizedReviews.length > 0;
-  const displayReviews = hasReviews ? normalizedReviews : [
-    { customerName: "Aarav Sharma", comment: "An absolutely incredible stay. The host was warm, accommodating, and the attention to detail was unmatched.", rating: 5 },
-    { customerName: "Priya Patel", comment: "Highly curated interiors, breathtaking views, and wonderful local insights. Can't wait to book this again!", rating: 5 },
-    { customerName: "Vikram Malhotra", comment: "Top tier service! The scheduling was seamless and the guides were exceptionally knowledgeable.", rating: 5 }
-  ];
 
   return (
-    <section className="testimonials-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px", overflow: "hidden" }}>
+    <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        
-        {/* Header and Scroll Buttons */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-end", gap: 24, marginBottom: 52 }}>
+          <SHdr idx="07" label="GUEST REVIEWS" />
+          {eligibleBookings.length > 0 && (
+            <button
+              onClick={() => {
+                const el = document.getElementById("review-form-anchor");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+                setShowForm(true);
+              }}
+              style={{
+                background: A, color: W, border: "none", padding: "14px 32px", borderRadius: 100,
+                fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer"
+              }}
+            >
+              Write a Review
+            </button>
+          )}
+        </div>
+
+        <div className="reviews-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: isMobile ? 60 : 100, marginTop: 40 }}>
+          {/* Left: Summary */}
           <div>
-            <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Guest Reviews</span>
-            <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-              What people say
-            </h3>
+            <Rev>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+                <span style={{ fontSize: isMobile ? 60 : 80, fontWeight: 900, color: FG, lineHeight: 1, letterSpacing: "-0.05em" }}>
+                  {avgRating > 0 ? avgRating.toFixed(1) : (hasReviews ? "4.8" : "0.0")}
+                </span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: A }}>★</span>
+              </div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                {totalReviews} {totalReviews === 1 ? "Guest Review" : "Guest Reviews"}
+              </p>
+              <p style={{ fontSize: 13, color: M, lineHeight: 1.6, maxWidth: 300 }}>
+                Average rating based on recent stays. Our guests consistently highlight the exceptional service and attention to detail.
+              </p>
+            </Rev>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              type="button"
-              onClick={() => scrollSlider("left")}
-              style={{
-                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                color: FG, transition: "0.3s", outline: "none"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollSlider("right")}
-              style={{
-                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                color: FG, transition: "0.3s", outline: "none"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
 
-        {/* Reviews Slider */}
-        <div
-          ref={sliderRef}
-          style={{
-            position: "relative",
-            overflowX: "auto",
-            margin: isMobile ? "24px -24px 0" : "24px -80px 0",
-            padding: isMobile ? "20px 24px" : "20px 80px",
-            display: "flex",
-            gap: 24,
-            scrollBehavior: "smooth",
-            msOverflowStyle: "none",
-            scrollbarWidth: "none"
-          }}
-          className="no-scrollbar"
-        >
-          {displayReviews.map((rev, idx) => {
-            const name = rev.customerName || rev.author || "Guest";
-            const rating = rev.rating || 5;
-            const text = rev.comment || rev.text || "";
-
-            return (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                style={{
-                  width: "360px",
-                  background: theme === "dark" 
-                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                    : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  border: `1px solid ${B}`,
-                  borderRadius: "24px",
-                  padding: "28px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexShrink: 0,
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
-              >
-                {/* Stylized background quote mark */}
-                <span style={{
-                  position: "absolute",
-                  top: -5,
-                  right: 20,
-                  fontSize: 90,
-                  color: `${A}15`,
-                  fontFamily: "Georgia, serif",
-                  pointerEvents: "none",
-                  lineHeight: 1,
-                  userSelect: "none"
-                }}>“</span>
-
-                <div style={{ position: "relative", zIndex: 2 }}>
-                  <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
-                    &ldquo;{text}&rdquo;
-                  </p>
-                </div>
-                
-                <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
-                    {name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
-                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Submit Review Button & Form Container */}
-        {eligibleBookings.length > 0 && (
-          <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 24, alignItems: "center" }}>
-            {!showForm && (
-              <button
-                onClick={() => setShowForm(true)}
-                style={{
-                  background: A, color: W, border: "none", padding: "14px 32px", borderRadius: 100,
-                  fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer"
-                }}
-              >
-                Write a Review
-              </button>
-            )}
-
+          {/* Right: Review List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 48 }}>
+            <div id="review-form-anchor" />
             <AnimatePresence>
               {showForm && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? 24 : 40, borderRadius: 24, width: "100%", maxWidth: 640 }}
+                  style={{ background: S, border: `1px solid ${B}`, padding: isMobile ? 24 : 40, borderRadius: 4, marginBottom: 40 }}
                 >
                   <h3 className="font-display" style={{ fontSize: isMobile ? 24 : 28, fontWeight: 700, color: FG, marginBottom: 8 }}>Share your stay</h3>
                   <p style={{ fontSize: 14, color: M, marginBottom: 32 }}>How was your time at the property? Your feedback is valuable.</p>
@@ -3927,7 +2822,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                         required
                         style={{
                           width: "100%", height: 120, background: W, border: `1px solid ${B}`,
-                          borderRadius: 12, padding: 20, fontSize: 15, color: FG, resize: "none", outline: "none"
+                          borderRadius: 2, padding: 20, fontSize: 15, color: FG, resize: "none", outline: "none"
                         }}
                       />
                     </div>
@@ -3958,9 +2853,74 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        )}
 
+            {!hasReviews && !showForm ? (
+              <div style={{ padding: "40px 0" }}>
+                <p style={{ fontSize: 16, color: M, fontStyle: "italic" }}>
+                  No reviews have been submitted for this stay yet. Be the first to share your thoughts after your visit.
+                </p>
+              </div>
+            ) : (
+              normalizedReviews.slice(0, 2).map((rev, i) => (
+                <Rev key={i} delay={i * 0.1}>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 32, alignItems: "flex-start" }}>
+                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18, fontWeight: 700, color: A }}>
+                      {(rev.customerName || rev.author || "G")[0].toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                        <div>
+                          <h4 style={{ fontSize: 18, fontWeight: 700, color: FG, marginBottom: 4 }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
+                          <div style={{ display: "flex", gap: 4, color: "#FFC107", fontSize: 12 }}>
+                            {[...Array(5)].map((_, si) => (
+                              <span key={si}>{si < (rev.rating || 5) ? "★" : "☆"}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 12, color: M, fontWeight: 500 }}>
+                          {rev.createdAt ? moment(rev.createdAt).format("MMM YYYY") : "Recently"}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 15, color: FG, lineHeight: 1.8, fontStyle: "italic", opacity: 0.9 }}>
+                        &ldquo;{rev.comment || rev.text || "An absolutely wonderful stay. Everything was perfectly arranged and the host was incredibly helpful throughout our visit."}&rdquo;
+                      </p>
+                      {rev?.vendorResponse && (
+                        <div style={{ marginTop: 16, padding: "12px 16px", background: S, borderLeft: `3px solid ${A}`, borderRadius: "0 8px 8px 0" }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Response from Host</div>
+                          <p style={{ fontSize: 13, color: M, margin: 0, lineHeight: 1.5 }}>{rev.vendorResponse}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Rev>
+              ))
+            )}
+
+            {normalizedReviews.length > 2 && (
+              <Rev delay={0.4}>
+                <button
+                  onClick={() => routerHistory.push(`/reviews/stay/${stayId}`)}
+                  style={{
+                    background: "none",
+                    border: `1px solid ${B}`,
+                    padding: "16px 40px",
+                    borderRadius: 100,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: FG,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.2em",
+                    cursor: "pointer",
+                    transition: "0.3s",
+                    width: isMobile ? "100%" : "auto"
+                  }}
+                >
+                  See More
+                </button>
+              </Rev>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -3971,118 +2931,69 @@ function StayLocation({ stay }) {
   const { tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const { city, district, state } = getStayLocationParts(stay);
 
-  // Coordinates
+  // Robustly extract coordinates
   const lat = stay?.latitude || stay?.latitude_decimal || stay?.lat || stay?.meetingLatitude || stay?.listingLatitude;
   const lng = stay?.longitude || stay?.longitude_decimal || stay?.lng || stay?.meetingLongitude || stay?.listingLongitude;
 
-  // Fields
+  // Robustly extract the full address from various possible backend fields
   const address = stay?.address || stay?.fullAddress || stay?.location || stay?.meetingAddress || [stay?.city, stay?.state, stay?.country].filter(Boolean).join(", ");
-  const landmark = stay?.landmark || stay?.meetingLandmark;
-  const country = stay?.country || "India";
-  const instructions = stay?.checkInInstructions || stay?.instructions || stay?.meetingInstructions;
-  const locationName = stay?.locationName || stay?.meetingLocationName || (address ? address.split(',')[0] : null) || city || stay?.propertyName || stay?.title || stay?.name || "The Property";
+  const country = stay?.country || "N/A";
 
+  // Build the query: Prefer coordinates for pinpoint accuracy, fallback to address
   const hasCoords = lat && lng;
   const mapQuery = hasCoords ? `${lat},${lng}` : (address || city);
   const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=m&z=15&output=embed&iwloc=near`;
 
+  if (!address && !stay?.city && !hasCoords) return null;
+
+  const detailRows = [
+    { label: "ADDRESS", value: address },
+    { label: "CITY", value: city },
+    { label: "DISTRICT", value: district || city || "N/A" },
+    { label: "STATE", value: state || "N/A" },
+    { label: "COUNTRY", value: country },
+  ].filter((row) => row.value);
+
   return (
-    <section className="prep-section" style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
+    <section style={{ background: W, padding: isMobile ? "80px 24px" : "120px 36px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 40 : 64 }} className="prep-grid">
-          <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                  <div style={{
-                    position: "absolute",
-                    bottom: 16,
-                    left: 16,
-                    zIndex: 10,
-                    background: W,
-                    padding: "10px 16px",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                    border: `1px solid ${B}`,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    pointerEvents: "none"
-                  }}>
-                    <MapPin size={16} color={A} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{locationName}</span>
-                  </div>
-                  <iframe
-                    title="Property Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    src={embedUrl}
-                  />
+        <SHdr idx="05" label="PREPARATION" />
+
+        <div className="location-grid" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(400px, 1fr))", gap: isMobile ? 60 : 100, marginTop: 40 }}>
+          {/* Left Column: Location Card */}
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 32 }}>
+            <h2 className="font-display" style={{ fontSize: isMobile ? 32 : 48, fontWeight: 700, color: FG }}>Location</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <MapPin size={24} color={A} />
+                <p style={{ fontSize: 18, fontWeight: 700, color: FG, margin: 0 }}>{stay?.locationName || (address ? address.split(',')[0] : null) || city || stay?.propertyName || stay?.title || stay?.name || "Location"}</p>
+              </div>
+              <div style={{ background: W, border: `1px solid ${B}`, height: isMobile ? 320 : 400, position: "relative", overflow: "hidden", borderRadius: 16 }}>
+                <iframe
+                  title="Property Location Map"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  src={embedUrl}
+                ></iframe>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Location Details Table */}
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 24 : 32 }}>
+            <h2 className="font-display" style={{ fontSize: isMobile ? 32 : 48, fontWeight: 700, color: FG }}>Location Details</h2>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {detailRows.map((row, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: isMobile ? "100px 1fr" : "140px 1fr", gap: isMobile ? 16 : 32, padding: isMobile ? "20px 0" : "28px 0", borderBottom: `1px solid ${B}` }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: A, textTransform: "uppercase" }}>{row.label}</span>
+                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, color: FG, lineHeight: 1.5 }}>{row.value}</span>
                 </div>
-              </div>
+              ))}
             </div>
-          </Rev>
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 280, margin: 0, padding: 0 }}>
-                  {address && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{address}</span>
-                    </li>
-                  )}
-
-                  {landmark && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{landmark}</span>
-                    </li>
-                  )}
-
-                  {(district || city) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{district || city}</span>
-                    </li>
-                  )}
-
-                  {state && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{state}</span>
-                    </li>
-                  )}
-
-                  {country && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{country}</span>
-                    </li>
-                  )}
-
-                  {instructions && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{instructions}</span>
-                    </li>
-                  )}
-
-                  {(!district && !state && !country && !address && !landmark) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                      <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </Rev>
+          </div>
         </div>
       </div>
     </section>

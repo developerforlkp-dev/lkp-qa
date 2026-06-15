@@ -5,16 +5,13 @@ import cn from 'classnames';
 import styles from './HeroSectionAnimation.module.sass';
 
 // Constants
-const THUMB_CONFIGS = [
-  { size: 56, opacity: 1, zIndex: 33 },
-  { size: 44, opacity: 0.75, zIndex: 32 },
-  { size: 32, opacity: 0.5, zIndex: 31 },
-];
-const OVERLAP_GAP = -16;
+const CARD_WIDTH = 60;
+const CARD_HEIGHT = 60;
+const CARD_GAP = 12;
 const SIDE_MARGIN_DESKTOP = 60;
 const SIDE_MARGIN_MOBILE = 20;
 const MOBILE_BREAKPOINT = 768;
-const ANIMATION_DURATION = 5000;
+const ANIMATION_DURATION = 3100;
 const RESIZE_DEBOUNCE = 250;
 const EASE_TYPE = "sine.inOut";
 
@@ -137,21 +134,10 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         const activeDesc = document.querySelector(`${detailsActive} .hero-desc`);
         const activeButton = document.querySelector(`${detailsActive} .hero-button`);
 
-        const formatTitleWithAccent = (title) => {
-          if (!title) return '';
-          const words = title.trim().split(/\s+/);
-          if (words.length >= 4) {
-            const lastWord = words.pop();
-            return `${words.join(' ')} <span class="hero-accent-word">${lastWord}</span>`;
-          }
-          return title;
-        };
-
-        if (activeElement && destinations[newOrder[0]]) activeElement.innerHTML = formatTitleWithAccent(destinations[newOrder[0]].title);
+        if (activeElement && destinations[newOrder[0]]) activeElement.textContent = destinations[newOrder[0]].title;
         if (activeDesc && destinations[newOrder[0]]) activeDesc.textContent = destinations[newOrder[0]].description;
         if (activeButton && destinations[newOrder[0]]) {
-          const btnSpan = activeButton.querySelector('span');
-          if (btnSpan) btnSpan.textContent = destinations[newOrder[0]].buttonText;
+          activeButton.textContent = destinations[newOrder[0]].buttonText;
           if (destinations[newOrder[0]].buttonLink) {
             activeButton.setAttribute('data-button-link', destinations[newOrder[0]].buttonLink);
           } else {
@@ -162,18 +148,9 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
         const { width: containerWidth, height: containerHeight } = getContainerDimensions();
         const sideMargin = containerWidth <= MOBILE_BREAKPOINT ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
-        const thumbnailsY = containerWidth <= MOBILE_BREAKPOINT 
-          ? containerHeight - THUMB_CONFIGS[0].size - sideMargin
-          : containerHeight - THUMB_CONFIGS[0].size - 16; // Bottom of the hero section
-
-        const getThumbX = (index) => {
-          const startX = sideMargin;
-          if (index === 2) return startX;
-          if (index === 1) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP;
-          if (index === 0) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP + THUMB_CONFIGS[1].size + OVERLAP_GAP;
-          return startX;
-        };
-
+        const totalCardsHeight = (newOrder.length - 1) * CARD_HEIGHT + (newOrder.length - 2) * CARD_GAP;
+        const cardX = containerWidth - CARD_WIDTH - sideMargin;
+        const offsetTop = Math.max(10, (containerHeight - totalCardsHeight) / 2);
         const [active, ...rest] = newOrder;
         const prv = rest[rest.length - 1];
 
@@ -189,18 +166,16 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
         gsap.set(getCard(prv), { zIndex: 10 });
         gsap.set(getCard(active), { zIndex: 20 });
-        gsap.to(getCard(prv), { scale: 1.1, ease: EASE_TYPE });
-        gsap.to(getCardContent(active), { y: thumbnailsY + 100, opacity: 0, duration: 0.3, ease: EASE_TYPE });
+        gsap.to(getCard(prv), { scale: 1.5, ease: EASE_TYPE });
+        gsap.to(getCardContent(active), { y: offsetTop + CARD_HEIGHT - 10, opacity: 0, duration: 0.3, ease: EASE_TYPE });
 
         gsap.to(getCard(active), {
-          x: 0, y: 0, ease: EASE_TYPE, width: containerWidth, height: containerHeight, borderRadius: 0, scale: 1,
+          x: 0, y: 0, ease: EASE_TYPE, width: containerWidth, height: containerHeight, borderRadius: 0,
           onComplete: () => {
-            const prvIndexInRest = rest.length - 1;
-            const config = THUMB_CONFIGS[Math.min(prvIndexInRest, 2)];
-            const prvCardX = getThumbX(Math.min(prvIndexInRest, 2));
-            const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2; // vertically center smaller thumbnails
-            gsap.set(getCard(prv), { x: prvCardX, y: thumbnailsY + yOffset, width: config.size, height: config.size, zIndex: config.zIndex, borderRadius: 12, scale: 0.9 });
-            gsap.set(getCardContent(prv), { x: prvCardX, y: thumbnailsY + yOffset + config.size + 10, opacity: 1, zIndex: 40 });
+            const yNew = offsetTop + (rest.length - 1) * (CARD_HEIGHT + CARD_GAP);
+            const boundedY = Math.max(10, Math.min(yNew, containerHeight - CARD_HEIGHT - 10));
+            gsap.set(getCard(prv), { x: cardX, y: boundedY, width: CARD_WIDTH, height: CARD_HEIGHT, zIndex: 30, borderRadius: 10, scale: 1 });
+            gsap.set(getCardContent(prv), { x: cardX, y: boundedY + CARD_HEIGHT - 50, opacity: 1, zIndex: 40 });
             gsap.set(detailsInactive, { opacity: 0, yPercent: -50 });
             gsap.set(`${detailsInactive} .hero-title-1`, { y: 50, opacity: 0 });
             gsap.set(`${detailsInactive} .hero-desc`, { y: 50, opacity: 0 });
@@ -212,22 +187,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
         rest.forEach((cardIndex, index) => {
           if (cardIndex !== prv) {
-            const visualIndex = Math.min(index, 2);
-            const config = THUMB_CONFIGS[visualIndex];
-            const cardX = getThumbX(visualIndex);
-            const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2;
-            gsap.set(getCard(cardIndex), { zIndex: config.zIndex });
-            gsap.to(getCard(cardIndex), { 
-              x: cardX, 
-              y: thumbnailsY + yOffset, 
-              width: config.size, 
-              height: config.size, 
-              opacity: config.opacity,
-              scale: index === 0 ? 1.1 : 0.9, // Active thumbnail (index 0) scales up
-              ease: EASE_TYPE, 
-              delay: 0.1 * (index + 1) 
-            });
-            gsap.to(getCardContent(cardIndex), { x: cardX, y: thumbnailsY + yOffset + config.size + 10, opacity: 1, zIndex: 40, ease: EASE_TYPE, delay: 0.1 * (index + 1) });
+            const cardY = offsetTop + index * (CARD_HEIGHT + CARD_GAP);
+            const boundedY = Math.max(10, Math.min(cardY, containerHeight - CARD_HEIGHT - 10));
+            gsap.set(getCard(cardIndex), { zIndex: 30 });
+            gsap.to(getCard(cardIndex), { x: cardX, y: boundedY, width: CARD_WIDTH, height: CARD_HEIGHT, ease: EASE_TYPE, delay: 0.1 * (index + 1) });
+            gsap.to(getCardContent(cardIndex), { x: cardX, y: boundedY + CARD_HEIGHT - 50, opacity: 1, zIndex: 40, ease: EASE_TYPE, delay: 0.1 * (index + 1) });
           }
         });
       });
@@ -269,45 +233,18 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
       const [active, ...rest] = order;
       const sideMargin = containerWidth <= MOBILE_BREAKPOINT ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
-      const thumbnailsY = containerWidth <= MOBILE_BREAKPOINT 
-        ? containerHeight - THUMB_CONFIGS[0].size - sideMargin
-        : containerHeight - THUMB_CONFIGS[0].size - 16; // Bottom of the hero section
-
-      const getThumbX = (index) => {
-        const startX = sideMargin;
-        if (index === 2) return startX;
-        if (index === 1) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP;
-        if (index === 0) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP + THUMB_CONFIGS[1].size + OVERLAP_GAP;
-        return startX;
-      };
+      const totalCardsHeight = rest.length * CARD_HEIGHT + (rest.length - 1) * CARD_GAP;
+      const cardX = containerWidth - CARD_WIDTH - sideMargin;
+      const offsetTop = Math.max(10, (containerHeight - totalCardsHeight) / 2);
 
       gsap.set(getCard(active), { x: 0, y: 0, width: containerWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 1, scale: 1 });
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
 
       rest.forEach((cardIndex, index) => {
-        const visualIndex = Math.min(index, 2);
-        const config = THUMB_CONFIGS[visualIndex];
-        const cardX = getThumbX(visualIndex);
-        const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2; // Center vertically
-        
-        // Hide anything beyond the 3rd thumbnail completely
-        if (index > 2) {
-            gsap.set(getCard(cardIndex), { opacity: 0, scale: 0, x: cardX, y: thumbnailsY + yOffset });
-            gsap.set(getCardContent(cardIndex), { opacity: 0 });
-            return;
-        }
-
-        gsap.set(getCard(cardIndex), { 
-            x: cardX, 
-            y: thumbnailsY + yOffset, 
-            width: config.size, 
-            height: config.size, 
-            zIndex: config.zIndex, 
-            borderRadius: 12, 
-            opacity: config.opacity, 
-            scale: index === 0 ? 1.1 : 0.9 // active is 1.1, inactive is 0.9
-        });
-        gsap.set(getCardContent(cardIndex), { x: cardX, zIndex: 40, y: thumbnailsY + yOffset + config.size + 10, opacity: 1 });
+        const cardY = offsetTop + index * (CARD_HEIGHT + CARD_GAP);
+        const boundedY = Math.max(10, Math.min(cardY, containerHeight - CARD_HEIGHT - 10));
+        gsap.set(getCard(cardIndex), { x: cardX, y: boundedY, width: CARD_WIDTH, height: CARD_HEIGHT, zIndex: 30, borderRadius: 10, opacity: 1, scale: 1 });
+        gsap.set(getCardContent(cardIndex), { x: cardX, zIndex: 40, y: boundedY + CARD_HEIGHT - 50, opacity: 1 });
       });
 
       const detailsActive = detailsEven ? "#details-even" : "#details-odd";
@@ -317,26 +254,10 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       const activeDesc = document.querySelector(`${detailsActive} .hero-desc`);
       const activeButton = document.querySelector(`${detailsActive} .hero-button`);
 
-      const formatTitleWithAccent = (title) => {
-        if (!title) return '';
-        const words = title.trim().split(/\s+/);
-        if (words.length >= 4) {
-          const lastWord = words.pop();
-          return `${words.join(' ')} <span class="hero-accent-word">${lastWord}</span>`;
-        }
-        return title;
-      };
-
-      if (activeElement && destinations[active]) activeElement.innerHTML = formatTitleWithAccent(destinations[active].title);
+      if (activeElement && destinations[active]) activeElement.textContent = destinations[active].title;
       if (activeDesc && destinations[active]) activeDesc.textContent = destinations[active].description;
       if (activeButton && destinations[active]) {
-        const btnSpan = activeButton.querySelector('span');
-        if (btnSpan) btnSpan.textContent = destinations[active].buttonText;
-        if (destinations[active].buttonLink) {
-          activeButton.setAttribute('data-button-link', destinations[active].buttonLink);
-        } else {
-          activeButton.removeAttribute('data-button-link');
-        }
+        activeButton.textContent = destinations[active].buttonText;
         currentActiveIndexRef.current = active;
       }
 
@@ -369,23 +290,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
     const cardContentsHTML = destinations.map((_, index) =>
       `<div class="hero-card-content" id="hero-card-content-${index}"></div>`
     ).join('');
-    const svgOverlay = `
-      <div class="hero-curve-overlay" style="
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 21;
-        pointer-events: none;
-      ">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d="M 0,0 L 28,0 C 25,25 32,30 32,50 C 32,70 25,75 28,100 L 0,100 Z" fill="#ffffff" />
-          <path d="M 100,75 C 96,80 98,92 88,100 L 100,100 Z" fill="#ffffff" />
-        </svg>
-      </div>
-    `;
-    if (demoRef.current) demoRef.current.innerHTML = cardsHTML + cardContentsHTML + svgOverlay;
+    if (demoRef.current) demoRef.current.innerHTML = cardsHTML + cardContentsHTML;
 
     // ── Show static first card immediately ────────────────────────────────────
 
@@ -526,31 +431,21 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
       <div className={cn(styles.details, "details")} id="details-even" ref={detailsEvenRef}>
         <div className={styles.titleBox1}>
-          <div className={cn(styles.title1, "hero-title-1")} dangerouslySetInnerHTML={{ __html: destinations[0]?.title ? destinations[0].title.split(/\s+/).length >= 4 ? `${destinations[0].title.split(/\s+/).slice(0, -1).join(' ')} <span class="hero-accent-word">${destinations[0].title.split(/\s+/).pop()}</span>` : destinations[0].title : '' }}></div>
+          <div className={cn(styles.title1, "hero-title-1")}>{destinations[0]?.title}</div>
         </div>
         <div className={cn(styles.desc, "hero-desc")}>{destinations[0]?.description}</div>
         <button className={cn(styles.button, "hero-button")} data-button-link={destinations[0]?.buttonLink || ''}>
-          <span>{destinations[0]?.buttonText}</span>
-          <div className={styles.buttonIcon}>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          {destinations[0]?.buttonText}
         </button>
       </div>
 
       <div className={cn(styles.details, "details")} id="details-odd" ref={detailsOddRef}>
         <div className={styles.titleBox1}>
-          <div className={cn(styles.title1, "hero-title-1")} dangerouslySetInnerHTML={{ __html: destinations[0]?.title ? destinations[0].title.split(/\s+/).length >= 4 ? `${destinations[0].title.split(/\s+/).slice(0, -1).join(' ')} <span class="hero-accent-word">${destinations[0].title.split(/\s+/).pop()}</span>` : destinations[0].title : '' }}></div>
+          <div className={cn(styles.title1, "hero-title-1")}>{destinations[0]?.title}</div>
         </div>
         <div className={cn(styles.desc, "hero-desc")}>{destinations[0]?.description}</div>
         <button className={cn(styles.button, "hero-button")} data-button-link={destinations[0]?.buttonLink || ''}>
-          <span>{destinations[0]?.buttonText}</span>
-          <div className={styles.buttonIcon}>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+          {destinations[0]?.buttonText}
         </button>
       </div>
     </>

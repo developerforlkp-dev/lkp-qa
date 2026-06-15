@@ -3,7 +3,7 @@ import { useLocation, useParams, useHistory } from "react-router-dom";
 import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2 } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, Sparkles, Star, Compass, Share2 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -75,7 +75,7 @@ function ExperienceBg({ progress, src }) {
 }
 
 /* ─── HERO SHARE FAB ─────────────────────────── */
-function HeroShareFab({ title, text, url, style = {} }) {
+function HeroShareFab({ title, text, url }) {
   const [copied, setCopied] = useState(false);
   const [ripple, setRipple] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -137,7 +137,6 @@ function HeroShareFab({ title, text, url, style = {} }) {
         outline: "none",
         userSelect: "none",
         transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
-        ...style
       }}
     >
       {/* Radial ripple on click */}
@@ -496,31 +495,31 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
   if (!discounts || discounts.length === 0) return null;
 
   return (
-    <div style={{ display: "grid", height: 20, alignItems: "center", overflow: "hidden" }}>
+    <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
       <AnimatePresence>
         <motion.span
           key={index}
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 15, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -20, opacity: 0 }}
+          exit={{ y: -15, opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
           style={{
             gridArea: "1 / 1",
-            fontSize: 11,
-            letterSpacing: "0.08em",
+            fontSize: 10,
+            letterSpacing: "0.3em",
             textTransform: "uppercase",
-            color: "#FFFFFF",
-            fontWeight: 700,
+            color: FG || "#FFFFFF",
+            fontWeight: 800,
             whiteSpace: "nowrap",
             display: "block"
           }}
         >
-          <span style={{ opacity: 0.7 }}>Book</span>{" "}
-          <span style={{ color: "#38BDF8", fontWeight: 800 }}>
+          <span style={{ opacity: 0.8 }}>Book</span>{" "}
+          <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
             {discounts[index].daysInAdvance} Days
           </span>{" "}
-          <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
-          <span style={{ color: "#4ADE80", fontWeight: 800 }}>
+          <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
             {discounts[index].percentage}% OFF
           </span>
         </motion.span>
@@ -564,22 +563,6 @@ const ExperienceProduct = () => {
     return [];
   }, [reviews]);
 
-  const sliderRef = useRef(null);
-  const scrollSlider = (direction) => {
-    if (!sliderRef.current) return;
-    const cardWidth = 384; // width (360) + gap (24)
-    const scrollAmount = direction === "left" ? -cardWidth : cardWidth;
-    sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-  };
-
-  const addonsSliderRef = useRef(null);
-  const scrollAddonsSlider = (direction) => {
-    if (!addonsSliderRef.current) return;
-    const container = addonsSliderRef.current;
-    const scrollAmount = direction === "left" ? -container.clientWidth : container.clientWidth;
-    container.scrollBy({ left: scrollAmount, behavior: "smooth" });
-  };
-
 
 
   const [loading, setLoading] = useState(true);
@@ -587,10 +570,6 @@ const ExperienceProduct = () => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [activityPhotoVisible, setActivityPhotoVisible] = useState(false);
   const [activityPhotoIndex, setActivityPhotoIndex] = useState(0);
-  const [flowTab, setFlowTab] = useState("itinerary");
-  const [narrativeExpanded, setNarrativeExpanded] = useState(false);
-  const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [langPopoverOpen, setLangPopoverOpen] = useState(false);
 
   const activityImages = useMemo(() => {
     return (listing?.keyActivities || [])
@@ -857,104 +836,29 @@ const ExperienceProduct = () => {
     <Page>
       <main style={{ background: BG }}>
         {/* HERO SECTION */}
-        <section ref={heroRef} className="hero-section" style={{
-          position: "relative",
-          height: "47vh",
-          minHeight: "360px",
-          width: "calc(100% - 80px)",
-          maxWidth: "1600px",
-          margin: "12px auto 0",
-          borderRadius: "32px",
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          zIndex: 50
-        }}>
+        <section ref={heroRef} className="hero-section" style={{ position: "relative", minHeight: "110vh", overflow: "hidden", display: "flex", alignItems: "center", zIndex: 50 }}>
           <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
-          <div className="hero-container" style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            height: "100%",
-            padding: "32px 40px",
-            position: "relative",
-            zIndex: 10,
-            width: "100%"
-          }}>
-            {/* Top Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-              <div style={{
-                color: "#FFFFFF",
-                fontSize: "14px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif"
-              }}>
-                {listing?.primaryCategory?.name || listing?.primaryCategory?.title || (typeof listing?.primaryCategory === "string" ? listing?.primaryCategory : null) || listing?.category?.name || listing?.category?.title || (typeof listing?.category === "string" ? listing?.category : null) || "Experience"}
-              </div>
-
-              {/* Early Bird Ticker */}
-              {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: "rgba(15, 23, 42, 0.9)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  padding: "10px 20px",
-                  borderRadius: "100px",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
-                  color: "#FFFFFF",
-                  zIndex: 200
-                }}>
-                  <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ flexShrink: 0 }} />
-                  <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", marginTop: "auto", gap: 24 }}>
-              <motion.div style={{ opacity: fade, y: textY, display: "flex", flexDirection: "column", gap: 10 }}>
-                <Rev>
-                  <h1 className="hero-title" style={{
-                    fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                    color: "#FFFFFF",
-                    margin: 0,
-                    letterSpacing: "-0.01em",
-                    fontFamily: "Poppins, sans-serif"
-                  }}>
-                    {listing?.title}
-                  </h1>
-                </Rev>
-                <Rev delay={0.15}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
-                    <MapPin size={15} color={A || "#0097B2"} />
-                    <span>{listing?.locationName || fallbackLocationValues[0] || "Valparai, Western Ghats"}</span>
-                  </div>
-                </Rev>
-              </motion.div>
-
-              <Rev delay={0.2} style={{ flexShrink: 0 }}>
-                <HeroShareFab
-                  title={listing?.title}
-                  text={listing?.description || listing?.aboutListing || ""}
-                  url={window.location.href}
-                  style={{
-                    position: "relative",
-                    top: "auto",
-                    right: "auto",
-                    margin: 0,
-                    zIndex: 200
-                  }}
-                />
+          <div className="hero-container" style={{ maxWidth: 1400, margin: "0 auto", padding: "0 60px", position: "relative", zIndex: 10, width: "100%" }}>
+            <motion.div style={{ opacity: fade, y: textY }}>
+              <p className="hero-subtitle" style={{ fontSize: 12, letterSpacing: "1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 40, fontFamily: 'monospace' }}>The Narrative Experience</p>
+              <Rev>
+                <h1 style={{ fontSize: "clamp(4.5rem, 12vw, 10rem)", fontWeight: 900, lineHeight: 0.85, color: "#FFFFFF", marginBottom: 40, letterSpacing: "-0.04em" }} className="font-display">
+                  {listing?.title}
+                </h1>
               </Rev>
-            </div>
+              <Rev delay={0.2}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }} className="hero-stats">
+                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }} className="hero-stat-box">
+                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }} className="hero-stat-num">01. Atmospherics</p>
+                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }} className="hero-stat-desc">{listing?.experienceType || "A multisensory odyssey that blurs the line between perception and possibility."}</p>
+                  </div>
+                  <div style={{ borderLeft: "2px solid #0097B2", paddingLeft: 24 }} className="hero-stat-box">
+                    <p style={{ fontSize: 10, letterSpacing: "0.4em", textTransform: "uppercase", color: "#0097B2", marginBottom: 20, fontWeight: 700 }} className="hero-stat-num">02. Interaction</p>
+                    <p style={{ fontSize: 18, color: "#D4D4D4", lineHeight: 1.6, fontWeight: 400 }} className="hero-stat-desc">{listing?.activityType || "High-fidelity touchpoints that respond to your presence in real-time."}</p>
+                  </div>
+                </div>
+              </Rev>
+            </motion.div>
           </div>
           <button
             type="button"
@@ -964,100 +868,108 @@ const ExperienceProduct = () => {
           >
             <ChevronLeft size={20} />
           </button>
+          <HeroShareFab
+            title={listing?.title}
+            text={listing?.description || listing?.aboutListing || ""}
+            url={window.location.href}
+          />
+          {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
+            <motion.div
+              className="early-bird-wrapper"
+              style={{ position: "absolute", bottom: 60, right: 60, opacity: fade }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <motion.div
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  background: theme === "light" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.03)",
+                  backdropFilter: "blur(12px)",
+                  padding: "12px 24px",
+                  borderRadius: 100,
+                  border: `1px solid ${A}33`,
+                  boxShadow: `0 10px 30px rgba(0,0,0,0.2), inset 0 0 20px ${A}11`,
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <Sparkles color={A} size={14} />
+                <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
+              </motion.div>
+            </motion.div>
+          )}
         </section>
 
 
 
         {/* GALLERY SECTION */}
-        <section className="gallery-section" style={{ background: W, padding: "24px 80px 32px", overflow: "hidden" }}>
-          <div style={{ maxWidth: 1440, margin: "0 auto", position: "relative", overflow: "hidden" }}>
-            {/* Left and Right Fade Overlays */}
-            <div style={{
+        <section className="gallery-section" style={{ background: W, padding: "80px 0 60px", overflow: "hidden", display: "flex", position: "relative" }}>
+          {(() => {
+            const baseItemsLocal = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
+            let filledItems = [...baseItemsLocal];
+            while (filledItems.length < 8) {
+              filledItems = [...filledItems, ...baseItemsLocal];
+            }
+            const doubledItems = [...filledItems, ...filledItems];
+
+            return (
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+                style={{ display: "flex", gap: 16, width: "max-content", paddingLeft: 16 }}
+              >
+                {doubledItems.map((img, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 0.98 }}
+                    onClick={() => {
+                      setPhotoIndex(i % (galleryItems.length || 1));
+                      setPhotoVisible(true);
+                    }}
+                    style={{ width: "clamp(300px, 25vw, 450px)", height: 400, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}`, cursor: "pointer" }}
+                    className="gallery-item"
+                  >
+                    <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Gallery" />
+                  </motion.div>
+                ))}
+              </motion.div>
+            );
+          })()}
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setPhotoIndex(0);
+              setPhotoVisible(true);
+            }}
+            style={{
               position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: "60px",
-              background: `linear-gradient(to right, ${W} 10%, transparent 100%)`,
-              pointerEvents: "none",
-              zIndex: 5
-            }} />
-            <div style={{
-              position: "absolute",
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: "60px",
-              background: `linear-gradient(to left, ${W} 10%, transparent 100%)`,
-              pointerEvents: "none",
-              zIndex: 5
-            }} />
+              bottom: "80px",
+              right: "40px",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: W,
+              color: FG,
+              border: `1px solid ${B}`,
+              padding: "12px 24px",
+              borderRadius: "100px",
+              fontSize: "13px",
+              fontWeight: 700,
+              boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+              cursor: "pointer"
+            }}
+          >
+            <Camera size={16} />
+            See all photos
+          </motion.button>
 
-            {(() => {
-              const baseItemsLocal = galleryItems.length > 0 ? galleryItems : ["/images/content/placeholder.jpg"];
-              let filledItems = [...baseItemsLocal];
-              while (filledItems.length < 8) {
-                filledItems = [...filledItems, ...baseItemsLocal];
-              }
-              const doubledItems = [...filledItems, ...filledItems];
 
-              const galleryDistance = filledItems.length * 316; // 300px width + 16px gap
-              const galleryDuration = galleryDistance / 60; // constant speed of 60px/s
-
-              return (
-                <motion.div
-                  animate={{ x: ["0%", "-50%"] }}
-                  transition={{ repeat: Infinity, ease: "linear", duration: galleryDuration }}
-                  style={{ display: "flex", gap: 16, width: "max-content", paddingLeft: 16 }}
-                >
-                  {doubledItems.map((img, i) => (
-                    <motion.div
-                      key={i}
-                      whileHover={{ scale: 0.98 }}
-                      onClick={() => {
-                        setPhotoIndex(i % (galleryItems.length || 1));
-                        setPhotoVisible(true);
-                      }}
-                      style={{ width: 300, height: 200, borderRadius: 24, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}`, cursor: "pointer" }}
-                      className="gallery-item"
-                    >
-                      <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Gallery" />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              );
-            })()}
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setPhotoIndex(0);
-                setPhotoVisible(true);
-              }}
-              style={{
-                position: "absolute",
-                bottom: "40px",
-                right: "40px",
-                zIndex: 10,
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: W,
-                color: FG,
-                border: `1px solid ${B}`,
-                padding: "12px 24px",
-                borderRadius: "100px",
-                fontSize: "13px",
-                fontWeight: 700,
-                boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
-                cursor: "pointer"
-              }}
-            >
-              <Camera size={16} />
-              See all photos
-            </motion.button>
-          </div>
 
           <AnimatePresence>
             {photoVisible && (
@@ -1075,329 +987,276 @@ const ExperienceProduct = () => {
 
 
         {/* DETAILS SECTION */}
-        <section className="details-section" style={{ background: BG, padding: "32px 80px" }}>
+        <section className="details-section" style={{ background: BG, padding: "48px 36px 80px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "stretch" }} className="details-grid-container">
-              {/* Narrative Block (Left-hand card) */}
-              <div className="narrative-card" style={{
-                background: W,
-                border: `1px solid ${B}`,
-                padding: "32px",
-                borderRadius: "24px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)",
-                height: narrativeExpanded ? "auto" : "272px",
-                boxSizing: "border-box"
-              }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
+            <div className="section-header-wrapper"><SHdr idx="01" label="Story" /></div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 20 }} className="details-grid">
+              <Soul delay={0.1} style={{ gridColumn: "span 2", gridRow: "span 2" }}>
+                <div className="what-we-do-card" style={{ background: W, border: `1px solid ${B}`, padding: 40, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
-                    <span style={{ fontSize: "11px", fontWeight: 600, color: A, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: "Poppins, sans-serif" }}>The Experience</span>
-                    <h3 style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", fontWeight: 700, color: FG, lineHeight: 1.2, marginBottom: "12px", fontFamily: "Poppins, sans-serif" }}>
-                      Your Journey Begins
-                    </h3>
-                    <div style={{ position: "relative", maxHeight: narrativeExpanded ? "none" : "110px", overflow: "hidden" }}>
-                      <p style={{ color: M, fontSize: "15px", lineHeight: "1.7", margin: 0, fontWeight: 400 }}>
-                        {description}
-                      </p>
-                      {!narrativeExpanded && (
-                        <div style={{
-                          position: "absolute",
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: "40px",
-                          background: `linear-gradient(to top, ${W}, transparent)`
-                        }} />
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setNarrativeExpanded(!narrativeExpanded)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: A,
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      padding: "8px 0 0 0",
-                      fontFamily: "Poppins, sans-serif",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      alignSelf: "flex-start",
-                      outline: "none"
-                    }}
-                  >
-                    {narrativeExpanded ? "Read Less" : "Read More"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Overview Cards (6-block flat facts grid) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="facts-grid">
-                  {/* Fact 1: Duration */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Clock size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>
-                      {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
-                    </p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Duration</p>
-                  </div>
-                  {/* Fact 2: Min Age */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <User size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>{listing?.minimumAge || "18+"}</p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Min Age</p>
-                  </div>
-                  {/* Fact 3: Difficulty */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Zap size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>{listing?.difficultyLevel || "Moderate"}</p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Difficulty</p>
-                  </div>
-
-                  {/* Fact 4: Infant Allowance */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Baby size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Infants</p>
-                  </div>
-                  {/* Fact 5: Languages */}
-                  <div className="fact-card" style={{ position: "relative", background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Languages size={22} color={A} style={{ marginBottom: 12 }} />
-                    {(() => {
-                      const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
-                        ? listing.languagesOffered
-                        : (typeof listing?.languages === "string" ? listing.languages.split(",").map(s => s.trim()) : ["English"]);
-                      
-                      const displayStr = list.slice(0, 2).join(", ");
-                      const hasMore = list.length > 2;
-                      
-                      return (
-                        <>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center", width: "90%", marginBottom: 4 }}>
-                            <span style={{ fontSize: "14px", fontWeight: 700, color: FG, fontFamily: "Poppins, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {displayStr}
-                            </span>
-                            {hasMore && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setLangPopoverOpen(!langPopoverOpen); }}
-                                style={{
-                                  background: AL,
-                                  color: A,
-                                  border: `1px solid ${B}`,
-                                  borderRadius: "50%",
-                                  width: "20px",
-                                  height: "20px",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "10px",
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                  padding: 0,
-                                  flexShrink: 0,
-                                  outline: "none"
-                                }}
-                              >
-                                +
-                              </button>
-                            )}
-                          </div>
-                          {hasMore && langPopoverOpen && (
-                            <div style={{
-                              position: "absolute",
-                              bottom: "105%",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              background: W,
-                              border: `1px solid ${B}`,
-                              borderRadius: "12px",
-                              padding: "10px 16px",
-                              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-                              zIndex: 100,
-                              minWidth: "160px",
-                              maxWidth: "240px",
-                              textAlign: "center"
-                            }}>
-                              <p style={{ fontSize: "10px", textTransform: "uppercase", color: M, margin: "0 0 6px 0", fontWeight: 600 }}>All Languages</p>
-                              <p style={{ fontSize: "13px", color: FG, margin: 0, fontWeight: 600, lineHeight: 1.4 }}>
-                                {list.join(", ")}
-                              </p>
-                              <div style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                width: 0,
-                                height: 0,
-                                borderLeft: "6px solid transparent",
-                                borderRight: "6px solid transparent",
-                                borderTop: `6px solid ${B}`
-                              }} />
-                              <div style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: "50%",
-                                transform: "translateX(-50%) translateY(-1px)",
-                                width: 0,
-                                height: 0,
-                                borderLeft: "5px solid transparent",
-                                borderRight: "5px solid transparent",
-                                borderTop: `5px solid ${W}`
-                              }} />
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Languages</p>
-                  </div>
-                  {/* Fact 6: Private Tour */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <ShieldCheck size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>
-                      {listing?.privateOptionAvailable ? "Yes" : "No"}
-                    </p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Private Tour</p>
+                    <h2 style={{ fontSize: "clamp(2rem,4vw,2.8rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 20 }}>Your Journey Begins</h2>
+                    <p style={{ color: M, fontSize: 14, lineHeight: 1.7 }}>{description}</p>
                   </div>
                 </div>
-              </div>
+              </Soul>
+              <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Clock size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
+                    {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
+                  </p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Duration</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <User size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.minimumAge || "18+"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Min Age</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Zap size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.difficultyLevel || "Moderate"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Difficulty</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Baby size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Infants</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={5} style={{ gridColumn: "span 1" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <Languages size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 4 }}>
+                    {Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
+                      ? listing.languagesOffered.join(", ")
+                      : (listing?.languages || "English")}
+                  </p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Languages</p>
+                </div>
+              </Soul>
+              <Soul y={40} r={-5} style={{ gridColumn: "span 1" }}>
+                <div className="overview-card" style={{ background: S, border: `1px solid ${B}`, padding: 32, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <ShieldCheck size={24} color={A} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 20, fontWeight: 700, color: FG, marginBottom: 4 }}>
+                    {listing?.privateOptionAvailable ? "Available" : "Not Available"}
+                  </p>
+                  <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M }}>Private Option</p>
+                </div>
+              </Soul>
             </div>
 
-            {/* Premium Editorial Typographic Marquee */}
-            {(() => {
-              const rawTags = Array.isArray(listing?.tags) && listing.tags.length > 0
-                ? listing.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-                : (Array.isArray(displayTags) && displayTags.length > 0
-                  ? displayTags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-                  : ["Valparai Trekking", "Nature & Wildlife", "Mountain Adventure", "Western Ghats Trails", "Scenic Tea Estates", "Eco Tourism India"]);
-              
-              // Duplicate to ensure infinite seamless scrolling loop
-              const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
+            <div style={{ margin: "40px -36px" }}>
+              <Mq items={listing?.tags || displayTags} bg={BG} />
+            </div>
 
-              const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-              const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
-              const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
-              return (
-                <div style={{
-                  margin: "48px -80px 0",
-                  overflow: "hidden",
-                  position: "relative",
-                  padding: "20px 0",
-                  background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-                  borderTop: `1px solid ${B}`,
-                  borderBottom: `1px solid ${B}`,
-                }}>
-                  {/* Left & Right Edge Fades */}
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-                  <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div className="section-header-wrapper" style={{ marginTop: 80 }}><SHdr idx="02" label="Flow" /></div>
+            <Rev delay={0.4} style={{ marginTop: 16 }}>
+              <div style={{ background: W, border: `1px solid ${B}`, padding: "64px", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 80 }} className="details-inner">
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: A, marginBottom: 32, fontWeight: 600 }}>Make it Yours</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                    {(listing?.addons || []).length > 0 ? (listing.addons.map((item, i) => {
+                      const addon = item.addon || item;
+                      const addonId = addon.addonId || addon.id;
+                      const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                      const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                      const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
 
-                  <motion.div
-                    animate={{ x: ["0%", "-50%"] }}
-                    transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-                    style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-                  >
-                    {loopedTags.map((tag, idx) => {
-                      const isEven = idx % 2 === 0;
                       return (
-                        <div
-                          key={idx}
+                        <motion.div
+                          key={i}
+                          whileHover={{ x: 10 }}
+                          transition={{ duration: 0.3 }}
+                          className="addon-item"
                           style={{
                             display: "flex",
+                            gap: 24,
                             alignItems: "center",
-                            gap: "24px",
-                            whiteSpace: "nowrap"
+                            padding: "20px",
+                            background: isSelected ? AL : "transparent",
+                            borderRadius: 24,
+                            border: `1px solid ${isSelected ? A : "transparent"}`,
+                            transition: "0.3s"
                           }}
                         >
-                          <span
-                            style={{
-                              fontSize: "18px",
-                              fontWeight: isEven ? 700 : 300,
-                              color: isEven ? FG : M,
-                              fontFamily: "Poppins, sans-serif",
-                              letterSpacing: "0.12em",
-                              textTransform: "uppercase",
-                              opacity: isEven ? 1 : 0.75
-                            }}
+                          <div className="addon-img" style={{ background: AL, width: 64, height: 64, borderRadius: 16, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${B}` }}>
+                            {addonImage ? (
+                              <img
+                                src={formatImageUrl(addonImage)}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                alt={addon.title}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "/images/content/placeholder.jpg";
+                                }}
+                              />
+                            ) : (
+                              <Plus size={24} color={A} />
+                            )}
+                          </div>
+                          <div className="addon-content" style={{ flex: 1 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }} className="addon-header">
+                              <div className="addon-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{addon.title}</p>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 12 }} className="addon-actions">
+                                <span className="addon-badge" style={{ fontSize: 10, fontWeight: 700, color: pricingType === "Group" ? "#d14343" : A, background: pricingType === "Group" ? "#d1434322" : AL, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" }}>{pricingType}</span>
+                                {isSelected ? (
+                                  pricingType === "Group" ? (
+                                    <button
+                                      className="addon-btn addon-btn-remove"
+                                      onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                      style={{
+                                        background: AL,
+                                        color: A,
+                                        border: `1px solid ${A}`,
+                                        borderRadius: 100,
+                                        padding: "0 20px",
+                                        height: "36px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.05em"
+                                      }}
+                                    >
+                                      Remove
+                                    </button>
+                                  ) : (
+                                    <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 16, background: S, borderRadius: 100, padding: "0 12px", height: "36px", border: `1px solid ${B}` }}>
+                                      <button
+                                        onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                        style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                                      >
+                                        <Minus size={14} />
+                                      </button>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: FG, minWidth: 20, textAlign: "center" }}>
+                                        {selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1}
+                                      </span>
+                                      <button
+                                        onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                        style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: A }}
+                                      >
+                                        <Plus size={14} />
+                                      </button>
+                                    </div>
+                                  )
+                                ) : (
+                                  <button
+                                    className="addon-btn addon-btn-add"
+                                    onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                    style={{
+                                      background: S,
+                                      color: FG,
+                                      border: `1px solid ${B}`,
+                                      borderRadius: 100,
+                                      padding: "0 20px",
+                                      height: "36px",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em"
+                                    }}
+                                  >
+                                    Add
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <p className="addon-desc" style={{ fontSize: 14, color: M, lineHeight: 1.6 }}>{addon.briefDescription || addon.description}</p>
+                            {addon.price > 0 && (
+                              <div className="addon-price" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: A }}>+ ₹{addon.price}</p>
+                                {isSelected && (selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1) > 1 && (
+                                  <p style={{ fontSize: 12, fontWeight: 500, color: M }}>
+                                    × {selectedAddOns.find(a => (a.addonId || a.id) === addonId).quantity} = ₹{(addon.price * selectedAddOns.find(a => (a.addonId || a.id) === addonId).quantity).toFixed(2)}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })) : (
+                      <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
+                    )}
+                  </div>
+
+                </div>
+
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.28em", textTransform: "uppercase", color: M, marginBottom: 32, fontWeight: 600 }}>How it Unfolds</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 40, position: "relative" }}>
+                    <div style={{ position: "absolute", left: 7, top: 10, bottom: 10, width: 1, background: B }} />
+
+                    {(listing?.keyActivities || []).map((it, i) => {
+                      const activityImageUrl = getActivityImageUrl(it);
+                      return (
+                        <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 + 0.4 }}
+                          className="activity-item"
+                          style={{ display: "flex", gap: 32, alignItems: "flex-start", zIndex: 1, cursor: "default", width: "100%" }}>
+                          {/* ── STATIC LAYER: circular node stays fixed, never receives hover transform ── */}
+                          <div style={{ width: 15, height: 15, borderRadius: "50%", background: W, border: `3px solid ${A}`, marginTop: 6, flexShrink: 0, position: "relative", zIndex: 2 }} />
+                          {/* ── ANIMATED LAYER: only the content card slides on hover ── */}
+                          <motion.div
+                            whileHover={{ x: 10 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1, willChange: "transform" }}
                           >
-                            {tag}
-                          </span>
-                          <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                        </div>
+                            {activityImageUrl && (
+                              <div
+                                style={{ width: 120, height: 90, borderRadius: 16, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S, cursor: "pointer" }}
+                                onClick={() => { 
+                                  const idx = activityImages.indexOf(activityImageUrl);
+                                  setActivityPhotoIndex(idx !== -1 ? idx : 0);
+                                  setActivityPhotoVisible(true); 
+                                }}
+                              >
+                                <img
+                                  src={activityImageUrl}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  alt={it.name}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "";
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                              <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
+                                <span style={{ fontSize: 12, fontWeight: 800, color: A, fontFamily: "monospace", textTransform: "uppercase" }}>Activity {i + 1}</span>
+                                <span className="font-display" style={{ fontSize: "clamp(1.1rem, 2vw, 1.4rem)", fontWeight: 700, color: FG }}>{it.name}</span>
+                              </div>
+                              <p style={{ fontSize: 13, color: "#000", marginTop: 8, lineHeight: 1.6, maxWidth: 480, fontWeight: 500 }}>
+                                {it.description}
+                              </p>
+                              {it.pilot && (
+                                <div style={{ fontSize: 11, color: M, marginTop: 4, opacity: 0.9 }}>
+                                  {it.pilot}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        </motion.div>
                       );
                     })}
-                  </motion.div>
-                </div>
-              );
-            })()}
-          </div>
-        </section>
-
-
-        {/* TIMELINE SECTION */}
-        <section className="timeline-section" style={{ background: W, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <Rev delay={0.4}>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 40, fontFamily: "Poppins, sans-serif" }}>
-                  How It Unfolds
-                </h3>
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                  {(listing?.keyActivities || []).map((it, i) => {
-                    const activityImageUrl = getActivityImageUrl(it);
-                    const numStr = String(i + 1).padStart(2, "0");
-                    return (
-                      <div
-                        key={i}
-                        className="activity-item"
-                        style={{
-                          display: "flex",
-                          gap: "10%",
-                          alignItems: "flex-start",
-                          justifyContent: "flex-start",
-                          paddingBottom: 24,
-                          borderBottom: i === (listing.keyActivities.length - 1) ? "none" : `1px solid ${B}`
-                        }}
-                      >
-                        {activityImageUrl && (
-                          <div
-                            style={{ width: "30%", height: "120px", borderRadius: 12, overflow: "hidden", border: `1px solid ${B}`, flexShrink: 0, background: S, cursor: "pointer" }}
-                            onClick={() => { 
-                              const idx = activityImages.indexOf(activityImageUrl);
-                              setActivityPhotoIndex(idx !== -1 ? idx : 0);
-                              setActivityPhotoVisible(true); 
-                            }}
-                          >
-                            <img
-                              src={activityImageUrl}
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              alt={it.name}
-                            />
-                          </div>
-                        )}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-                          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, fontFamily: "Poppins, sans-serif" }}>
-                            <span style={{ color: A }}>{numStr}. </span>{it.name}
-                          </span>
-                          <p style={{ color: FG, fontSize: "14px", lineHeight: "1.8", margin: 0, fontWeight: 400, fontFamily: "Poppins, sans-serif" }}>
-                            {it.description}
-                          </p>
-                          {it.pilot && (
-                            <span style={{ fontSize: "12px", color: A, fontWeight: 700, marginTop: 4 }}>{it.pilot}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {(!listing?.keyActivities || listing.keyActivities.length === 0) && (
-                    <p style={{ color: M, fontSize: 14 }}>Itinerary details are being finalized for this experience.</p>
-                  )}
+                    {(!listing?.keyActivities || listing.keyActivities.length === 0) && (
+                      <p style={{ color: M, fontSize: 14, marginLeft: 48 }}>Itinerary details are being finalized for this experience.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </Rev>
@@ -1405,335 +1264,62 @@ const ExperienceProduct = () => {
         </section>
 
 
-        {/* ADDONS SECTION */}
-        <section className="addons-section" style={{ background: BG, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-                Make it Yours
-              </h3>
-              {(listing?.addons || []).length > 2 && (
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => scrollAddonsSlider("left")}
-                    style={{
-                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      color: FG, transition: "0.3s", outline: "none"
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollAddonsSlider("right")}
-                    style={{
-                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      color: FG, transition: "0.3s", outline: "none"
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {(() => {
-              const addonsList = listing?.addons || [];
-              const showScroll = addonsList.length > 2;
 
-              return (
-                <div
-                  ref={addonsSliderRef}
-                  className={showScroll ? "no-scrollbar" : ""}
-                  style={showScroll ? {
-                    display: "flex",
-                    gap: "20px",
-                    overflowX: "auto",
-                    overflowY: "hidden",
-                    paddingBottom: "12px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                    scrollBehavior: "smooth"
-                  } : {
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                    gap: "20px"
-                  }}
-                >
-                  {addonsList.length > 0 ? (addonsList.map((item, i) => {
-                    const addon = item.addon || item;
-                    const addonId = addon.addonId || addon.id;
-                    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                    const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
-                    const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
-
-                    return (
-                      <motion.div
-                        key={i}
-                        className="addon-item"
-                        whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
-                        transition={{ duration: 0.2 }}
-                        style={{
-                          display: "flex",
-                          flexDirection: "row",
-                          height: "130px",
-                          width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
-                          flexShrink: 0,
-                          background: isSelected ? AL : S,
-                          borderRadius: "16px",
-                          border: `1px solid ${isSelected ? A : B}`,
-                          transition: "background 0.3s, border-color 0.3s",
-                          overflow: "hidden",
-                          boxSizing: "border-box"
-                        }}
-                      >
-                        {/* Left side: ONLY image */}
-                        <div style={{ width: "130px", height: "100%", flexShrink: 0, overflow: "hidden", background: W, borderRight: `1px solid ${B}` }}>
-                          {addonImage ? (
-                            <img
-                              src={formatImageUrl(addonImage)}
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              alt={addon.title}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/images/content/placeholder.jpg";
-                              }}
-                            />
-                          ) : (
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: AL }}>
-                              <Plus size={24} color={A} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right side: Content info columns */}
-                        <div style={{ flex: 1, minWidth: 0, padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between", boxSizing: "border-box" }}>
-                          <div>
-                            <span style={{ fontSize: "14px", fontWeight: 700, color: FG, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                              {addon.title}
-                            </span>
-                            <p style={{ fontSize: "11px", color: M, lineHeight: "1.4", margin: "4px 0 0 0", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                              {addon.briefDescription || addon.description}
-                            </p>
-                          </div>
-
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, borderTop: `1px solid ${B}`, paddingTop: "8px", marginTop: "4px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <span style={{ fontSize: "9px", fontWeight: 800, color: "#FFFFFF", background: pricingType === "Group" ? "#EF4444" : A, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0 }}>
-                                {pricingType}
-                              </span>
-                              {addon.price > 0 && (
-                                <span style={{ fontSize: "13px", fontWeight: 700, color: FG, whiteSpace: "nowrap" }}>₹{addon.price}</span>
-                              )}
-                            </div>
-
-                            <div className="addon-actions" style={{ flexShrink: 0 }}>
-                              {isSelected ? (
-                                pricingType === "Group" ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdateAddonQuantity(addon, -1)}
-                                    style={{
-                                      background: `${A}15`,
-                                      color: A,
-                                      border: `1px solid ${A}50`,
-                                      borderRadius: 100,
-                                      padding: "0 12px",
-                                      height: "28px",
-                                      fontSize: 9,
-                                      fontWeight: 800,
-                                      cursor: "pointer",
-                                      textTransform: "uppercase",
-                                      letterSpacing: "0.05em",
-                                      transition: "all 0.2s",
-                                      outline: "none"
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
-                                  >
-                                    Remove
-                                  </button>
-                                ) : (
-                                  <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "0 8px", height: "28px", border: `1px solid ${A}` }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateAddonQuantity(addon, -1)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
-                                    >
-                                      <Minus size={10} />
-                                    </button>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: FG, minWidth: 12, textAlign: "center" }}>
-                                      {selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateAddonQuantity(addon, 1)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
-                                    >
-                                      <Plus size={10} />
-                                    </button>
-                                  </div>
-                                )
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateAddonQuantity(addon, 1)}
-                                  style={{
-                                    background: A,
-                                    color: W,
-                                    border: `1px solid ${A}`,
-                                    borderRadius: 100,
-                                    padding: "0 14px",
-                                    height: "28px",
-                                    fontSize: 9,
-                                    fontWeight: 800,
-                                    cursor: "pointer",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.05em",
-                                    transition: "all 0.2s",
-                                    outline: "none"
-                                  }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.background = AH; e.currentTarget.style.borderColor = AH; }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.borderColor = A; }}
-                                >
-                                  Add
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })) : (
-                    <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this experience.</p>
-                  )}
-                </div>
-              );
-            })()}
-
-            {selectedAddOns.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ marginTop: 24, padding: "16px 20px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
-              >
-                <div>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 2 }}>Add-ons Summary</p>
-                  <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 800, marginBottom: 2 }}>Subtotal</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: A, margin: 0 }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </section>
         {/* PREPARATION SECTION */}
-        <section className="prep-section" style={{ background: W, padding: "32px 80px" }}>
+        <section className="prep-section" style={{ background: W, padding: "80px 36px" }}>
           <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
-              <Rev delay={0.1} style={{ height: "100%" }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                  <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                      <div style={{
-                        position: "absolute",
-                        bottom: 16,
-                        left: 16,
-                        zIndex: 10,
-                        background: W,
-                        padding: "10px 16px",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                        border: `1px solid ${B}`,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        pointerEvents: "none"
-                      }}>
-                        <MapPin size={16} color={A} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
-                      </div>
-                      {listing?.meetingLatitude && listing?.meetingLongitude ? (
-                        <iframe
-                           width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          style={{ border: 0 }}
-                          src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
-                          allowFullScreen
-                          title="Meeting Location"
-                        />
-                      ) : (
-                        <>
-                          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
-                            <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
-                          </div>
-                        </>
-                      )}
-                    </div>
+            <div className="section-header-wrapper"><SHdr idx="03" label="Landscape" /></div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64 }} className="prep-grid">
+              <Rev delay={0.1}>
+                <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 32 }}>Where it All Happens</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <MapPin size={24} color={A} />
+                    <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</p>
+                  </div>
+                  <div style={{ background: W, border: `1px solid ${B}`, height: 320, position: "relative", overflow: "hidden", borderRadius: 16 }}>
+                    {listing?.meetingLatitude && listing?.meetingLongitude ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
+                        allowFullScreen
+                        title="Meeting Location"
+                      />
+                    ) : (
+                      <>
+                        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
+                          <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </Rev>
-              <Rev delay={0.2} style={{ height: "100%" }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                  <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
-                      {listing?.meetingAddress && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingAddress}</span>
+              <Rev delay={0.2}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                  <div>
+                    <h3 style={{ fontSize: "clamp(2rem,3vw,2.5rem)", fontWeight: 700, color: FG, marginBottom: 24 }}>Where it is</h3>
+                    <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, padding: 0 }}>
+                      {[
+                        { label: "Address", val: listing?.meetingAddress },
+                        { label: "District", val: listing?.meetingDistrict },
+                        { label: "State", val: listing?.meetingState },
+                        { label: "Country", val: listing?.meetingCountry },
+                        { label: "Landmark", val: listing?.meetingLandmark },
+                        { label: "Instructions", val: listing?.meetingInstructions }
+                      ].filter(x => x.val).map((item, i) => (
+                        <li key={i} style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>{item.label}</span>
+                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.6 }}>{item.val}</span>
                         </li>
-                      )}
-
-                      {listing?.meetingLandmark && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingLandmark}</span>
-                        </li>
-                      )}
-
-                      {listing?.meetingDistrict && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingDistrict}</span>
-                        </li>
-                      )}
-
-                      {listing?.meetingState && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingState}</span>
-                        </li>
-                      )}
-
-                      {listing?.meetingCountry && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingCountry}</span>
-                        </li>
-                      )}
-
-                      {listing?.meetingInstructions && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingInstructions}</span>
-                        </li>
-                      )}
-                      {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress && !listing?.meetingLandmark) && (
+                      ))}
+                      {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry) && (
                         <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
+                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 100, flexShrink: 0, fontWeight: 600 }}>Region</span>
                           <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
                         </li>
                       )}
@@ -1745,613 +1331,56 @@ const ExperienceProduct = () => {
           </div>
         </section>
 
-        {(() => {
-          const getCatName = (c) => {
-            if (!c) return "";
-            if (typeof c === "string") return c;
-            return c.name || c.title || "";
-          };
-          const rawCats = [listing?.category, listing?.subCategory].filter(Boolean).map(getCatName).filter(Boolean);
-          const displayCats = rawCats.length > 0 ? rawCats : ["Nature", "Adventure"];
-          const loopedCats = Array(12).fill(displayCats).flat();
-
-          const estimatedCatWidth = (cat) => cat.length * 9.5 + 75; // text width + gap + icon + margin
-          const catsDistance = displayCats.reduce((sum, cat) => sum + estimatedCatWidth(cat), 0) * 6; // offset 50% is displayCats * 6
-          const catsDuration = catsDistance / 60; // constant speed of 60px/s
-
-          return (
-            <div style={{
-              margin: "0 -80px",
-              overflow: "hidden",
-              position: "relative",
-              padding: "20px 0",
-              background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-              borderTop: `1px solid ${B}`,
-              borderBottom: `1px solid ${B}`,
-            }}>
-              {/* Left & Right Edge Fades */}
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-              <motion.div
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ repeat: Infinity, ease: "linear", duration: catsDuration }}
-                style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-              >
-                {loopedCats.map((cat, idx) => {
-                  const isEven = idx % 2 === 0;
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "24px",
-                        whiteSpace: "nowrap"
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "18px",
-                          fontWeight: isEven ? 700 : 300,
-                          color: isEven ? FG : M,
-                          fontFamily: "Poppins, sans-serif",
-                          letterSpacing: "0.12em",
-                          textTransform: "uppercase",
-                          opacity: isEven ? 1 : 0.75
-                        }}
-                      >
-                        {cat}
-                      </span>
-                      <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                    </div>
-                  );
-                })}
-              </motion.div>
-            </div>
-          );
-        })()}
+        <Mq items={[listing?.category, listing?.subCategory].filter(Boolean).length > 0 ? [listing.category, listing.subCategory].filter(Boolean) : ["Nature", "Adventure"]} size="sm" bg={BG} />
 
         <ExperiencePolicies listing={listing} />
+        <QualityIndexSection qualityIndex={listing?.lkpQualityIndex} />
 
-        {/* HOST & QUALITY ROW (40% / 60%) */}
-        {listing && (
-          <section className="host-quality-section" style={{ background: W, padding: "32px 80px" }}>
-            <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
-                
-                {/* Host Profile (40%) */}
-                <Rev delay={0.1} style={{ height: "100%" }}>
-                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                    <div 
-                      style={{
-                        background: theme === "dark" 
-                          ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                          : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                        border: `1px solid ${B}`,
-                        borderRadius: "24px",
-                        height: "100%",
-                        minHeight: 250,
-                        overflow: "hidden",
-                        position: "relative",
-                        boxShadow: theme === "dark"
-                          ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                          : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                        display: "flex",
-                        flexDirection: "column",
-                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                      }}
-                      onMouseEnter={(e) => { 
-                        e.currentTarget.style.borderColor = A; 
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = theme === "dark"
-                          ? `0 24px 48px ${A}15`
-                          : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-                      }}
-                      onMouseLeave={(e) => { 
-                        e.currentTarget.style.borderColor = B; 
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = theme === "dark"
-                          ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                          : "0 20px 40px rgba(15, 23, 42, 0.04)";
-                      }}
-                    >
-                      {/* Visual Accent Top Bar */}
-                      <div style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 3,
-                        background: `linear-gradient(90deg, ${A} 0%, #8B5CF6 100%)`
-                      }} />
 
-                      {/* Top Section: Avatar, Name & Metrics (With subtle tint background) */}
-                      <div style={{ 
-                        display: "flex", 
-                        justifyContent: "space-between", 
-                        alignItems: "center", 
-                        gap: 16, 
-                        width: "100%",
-                        padding: "20px 20px 16px 20px",
-                        background: theme === "dark" ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.01)",
-                        borderBottom: `1px solid ${B}`
-                      }}>
-                        
-                        {/* Avatar & Info */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          {/* Profile Avatar with Custom Ring */}
-                          <div style={{
-                            position: "relative",
-                            width: 52,
-                            height: 52,
-                            borderRadius: "50%",
-                            padding: "2px",
-                            background: `linear-gradient(135deg, ${A} 0%, #8B5CF6 100%)`,
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                            flexShrink: 0
-                          }}>
-                            <div style={{
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: "50%",
-                              background: W,
-                              overflow: "hidden",
-                              padding: "1px"
-                            }}>
-                              <img
-                                src={formatImageUrl(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
-                                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                                alt={displayHostName}
-                                onError={(e) => { 
-                                  e.target.onerror = null; 
-                                  e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; 
-                                }}
-                              />
-                            </div>
-                            {/* Floating Verified Check badge */}
-                            <div style={{ 
-                              position: "absolute", 
-                              bottom: -1, 
-                              right: -1, 
-                              width: 16, 
-                              height: 16, 
-                              borderRadius: "50%", 
-                              background: "#10B981", 
-                              border: `1.5px solid ${W}`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              boxShadow: "0 2px 6px rgba(16, 185, 129, 0.3)"
-                            }}>
-                              <ShieldCheck size={9} color={W} style={{ fill: W, fillOpacity: 0.2 }} />
-                            </div>
-                          </div>
 
-                          {/* Name and Superhost Badge */}
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                            <h3
-                              onClick={navigateToHostProfile}
-                              style={{
-                                fontSize: "14.5px",
-                                fontWeight: 700,
-                                color: FG,
-                                margin: 0,
-                                cursor: (leadIdForProfile || hostLeadUserId) ? "pointer" : "default",
-                                fontFamily: "Poppins, sans-serif",
-                                letterSpacing: "-0.01em",
-                                lineHeight: 1.2,
-                                transition: "color 0.2s"
-                              }}
-                              onMouseEnter={(e) => { if (leadIdForProfile || hostLeadUserId) e.currentTarget.style.color = A; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.color = FG; }}
-                              title={(leadIdForProfile || hostLeadUserId) ? "View host profile" : undefined}
-                            >
-                              {displayHostName}
-                            </h3>
-                            
-                            {/* Superhost Badge under the name */}
-                            <span style={{ 
-                              fontSize: "8.5px", 
-                              letterSpacing: "0.04em", 
-                              textTransform: "uppercase", 
-                              color: "#7C3AED", 
-                              background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
-                              border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
-                              borderRadius: "5px",
-                              padding: "1px 6px",
-                              fontWeight: 700,
-                              display: "inline-flex",
-                              alignItems: "center"
-                            }}>
-                              Superhost
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Redesigned Metrics Section - Only 2 Cards */}
-                        <div style={{
-                          display: "flex",
-                          gap: 6,
-                          alignItems: "center"
-                        }}>
-                          {/* Rating Pill */}
-                          <div style={{
-                            background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                            borderRadius: "10px",
-                            padding: "6px 10px",
-                            textAlign: "center",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: 46
-                          }}>
-                            <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", lineHeight: 1 }}>
-                              ★ {hostData?.statistics?.averageRating || "4.9"}
-                            </span>
-                            <span style={{ fontSize: "7px", color: "#B45309", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Rating</span>
-                          </div>
-
-                          {/* Events Pill */}
-                          <div style={{
-                            background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                            borderRadius: "10px",
-                            padding: "6px 10px",
-                            textAlign: "center",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: 46
-                          }}>
-                            <span style={{ fontSize: "12px", fontWeight: 800, color: A, lineHeight: 1 }}>
-                              {hostData?.statistics?.totalEvents || hostData?.listings?.length || 8}
-                            </span>
-                            <span style={{ fontSize: "7px", color: A, textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Events</span>
-                          </div>
-                        </div>
+        {/* HOST SECTION */}
+        <section className="host-section" style={{ background: BG, padding: "80px 36px 160px" }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="host-grid">
+            <Rev delay={0.1} style={{ height: "100%" }}>
+              <div className="section-header-wrapper"><SHdr idx="05" label="Peoples" /></div>
+              <div style={{ padding: 48, background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" }}>
+                <h3
+                  onClick={navigateToHostProfile}
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    color: FG,
+                    marginBottom: 8,
+                    cursor: (leadIdForProfile || hostLeadUserId) ? "pointer" : "default",
+                    textDecoration: (leadIdForProfile || hostLeadUserId) ? "underline" : "none",
+                    textDecorationThickness: "2px",
+                    textUnderlineOffset: "5px"
+                  }}
+                  title={(leadIdForProfile || hostLeadUserId) ? "View host profile" : undefined}
+                >
+                  {displayHostName}
+                </h3>
+                <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, marginBottom: 24 }}>Host</p>
+                <p style={{ fontSize: 13, color: M, lineHeight: 1.8, flex: 1 }}>{hostData?.host?.bio || hostData?.bio || hostData?.about || ""}</p>
+                {(hostPhone || hostEmail) && (
+                  <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 24 }}>
+                    {hostPhone ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}>
+                        <Phone size={14} color={A} /> {hostPhone}
                       </div>
-
-                      {/* Bottom Section: Quote-styled Bio */}
-                      <div style={{ 
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "16px 20px",
-                        borderLeft: `3px solid ${A}`,
-                        margin: "12px 20px"
-                      }}>
-                        <p style={{
-                          fontSize: "12.5px",
-                          color: M,
-                          lineHeight: 1.55,
-                          margin: 0,
-                          fontWeight: 400,
-                          fontStyle: "italic",
-                          overflow: "hidden",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: "vertical"
-                        }}>
-                          "{hostData?.host?.bio || hostData?.bio || hostData?.about || "Experienced host dedicated to providing memorable, curated journeys and sharing local culture, history, and secrets."}"
-                        </p>
+                    ) : null}
+                    {hostEmail ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, color: FG, fontSize: 13 }}>
+                        <Mail size={14} color={A} /> {hostEmail}
                       </div>
-                    </div>
+                    ) : null}
                   </div>
-                </Rev>
-
-                {/* Quality Index Card (60%) */}
-                <Rev delay={0.2} style={{ height: "100%" }}>
-                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                    <div style={{
-                      padding: "24px 32px",
-                      background: theme === "dark" 
-                        ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                        : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                      backdropFilter: "blur(25px) saturate(160%)",
-                      border: `1px solid ${B}`,
-                      borderRadius: "24px",
-                      boxShadow: theme === "dark"
-                        ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                        : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 32,
-                      height: "100%",
-                      minHeight: 250,
-                      position: "relative",
-                      overflow: "hidden",
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                    }}
-                    onMouseEnter={(e) => { 
-                      e.currentTarget.style.borderColor = A; 
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = theme === "dark"
-                        ? `0 24px 48px ${A}15`
-                        : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-                    }}
-                    onMouseLeave={(e) => { 
-                      e.currentTarget.style.borderColor = B; 
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = theme === "dark"
-                        ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                        : "0 20px 40px rgba(15, 23, 42, 0.04)";
-                    }}
-                    >
-                      {/* Visual Accent Top Bar */}
-                      <div style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 3,
-                        background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
-                      }} />
-
-                      {/* Background Ambient Glow under the circle */}
-                      <div style={{
-                        position: "absolute",
-                        left: 20,
-                        top: 50,
-                        width: 140,
-                        height: 140,
-                        borderRadius: "50%",
-                        background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
-                        pointerEvents: "none"
-                      }} />
-
-                      {/* Left: Score Circle */}
-                      {(() => {
-                        const displayScore = listing?.lkpQualityIndex?.score || 9.2;
-                        const scoreInt = Math.floor(displayScore);
-                        const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
-
-                        return (
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                            <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
-                              <defs>
-                                <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#8B5CF6" />
-                                  <stop offset="100%" stopColor={A} />
-                                </linearGradient>
-                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                  <feGaussianBlur stdDeviation="6" result="blur" />
-                                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                </filter>
-                              </defs>
-                              <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
-                              <motion.circle
-                                cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGrad)" strokeWidth="6" strokeLinecap="round"
-                                style={{ filter: "url(#glow)" }}
-                                initial={{ strokeDasharray: "0 346" }}
-                                whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
-                                transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                              />
-                            </svg>
-                            <div style={{ position: "absolute", textAlign: "center" }}>
-                              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                                <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
-                                <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
-                              </div>
-                              <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Right: Narrative Details & Verification Checks */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-                        <div>
-                          <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                          <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
-                        </div>
-                        
-                        <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-                          {listing?.lkpQualityIndex?.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
-                        </p>
-
-                        {/* Verification Criteria Pills */}
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-                          <span style={{
-                            fontSize: "9px",
-                            fontWeight: 700,
-                            color: A,
-                            background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                            padding: "3px 8px",
-                            borderRadius: "6px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4
-                          }}>
-                            ✓ Verified Host
-                          </span>
-
-                          <span style={{
-                            fontSize: "9px",
-                            fontWeight: 700,
-                            color: "#10B981",
-                            background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                            padding: "3px 8px",
-                            borderRadius: "6px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4
-                          }}>
-                            ✓ Safety Check
-                          </span>
-
-                          <span style={{
-                            fontSize: "9px",
-                            fontWeight: 700,
-                            color: "#D97706",
-                            background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                            padding: "3px 8px",
-                            borderRadius: "6px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4
-                          }}>
-                            ✓ High Rated
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Rev>
-
+                )}
               </div>
-            </div>
-          </section>
-        )}
-
-        {/* TESTIMONIALS / REVIEWS SLIDER SECTION */}
-        <section className="testimonials-section" style={{ background: BG, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-                What people say
-              </h3>
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => scrollSlider("left")}
-                  style={{
-                    width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    color: FG, transition: "0.3s", outline: "none"
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollSlider("right")}
-                  style={{
-                    width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    color: FG, transition: "0.3s", outline: "none"
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
-            
-            {(() => {
-              const normalizedReviews = (() => {
-                if (Array.isArray(reviews)) return reviews;
-                if (Array.isArray(reviews?.reviews)) return reviews.reviews;
-                if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
-                if (Array.isArray(reviews?.data)) return reviews.data;
-                return [];
-              })();
-
-              const hasReviews = normalizedReviews.length > 0;
-              const displayReviews = hasReviews ? normalizedReviews : [
-                { customerName: "Aarav Sharma", comment: "An absolutely incredible experience. The host was warm, accommodating, and the attention to detail was unmatched.", rating: 5 },
-                { customerName: "Priya Patel", comment: "Highly curated trails, breathtaking views, and wonderful local insights. Can't wait to book this again!", rating: 5 },
-                { customerName: "Vikram Malhotra", comment: "Top tier service! The scheduling was seamless and the guides were exceptionally knowledgeable.", rating: 5 }
-              ];
-
-              return (
-                <div
-                  ref={sliderRef}
-                  style={{
-                    position: "relative",
-                    overflowX: "auto",
-                    margin: "24px -80px 0",
-                    padding: "20px 80px",
-                    display: "flex",
-                    gap: 24,
-                    scrollBehavior: "smooth",
-                    msOverflowStyle: "none",
-                    scrollbarWidth: "none"
-                  }}
-                  className="no-scrollbar"
-                >
-                  {displayReviews.map((rev, idx) => {
-                    const name = rev.customerName || rev.author || "Guest";
-                    const rating = rev.rating || 5;
-                    const text = rev.comment || rev.text || "";
-
-                    return (
-                      <motion.div
-                        key={idx}
-                        whileHover={{ y: -8, scale: 1.02 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                        style={{
-                          width: "360px",
-                          background: theme === "dark" 
-                            ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                            : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
-                          backdropFilter: "blur(20px)",
-                          WebkitBackdropFilter: "blur(20px)",
-                          border: `1px solid ${B}`,
-                          borderRadius: "24px",
-                          padding: "28px",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          gap: 16,
-                          flexShrink: 0,
-                          position: "relative",
-                          overflow: "hidden",
-                          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
-                      >
-                        {/* Stylized background quote mark */}
-                        <span style={{
-                          position: "absolute",
-                          top: -5,
-                          right: 20,
-                          fontSize: 90,
-                          color: `${A}15`,
-                          fontFamily: "Georgia, serif",
-                          pointerEvents: "none",
-                          lineHeight: 1,
-                          userSelect: "none"
-                        }}>“</span>
-
-                        <div style={{ position: "relative", zIndex: 2 }}>
-                          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
-                            ))}
-                          </div>
-                          <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
-                            &ldquo;{text}&rdquo;
-                          </p>
-                        </div>
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
-                            {name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
-                            <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-
-            {/* Submitting Reviews Container */}
-            {eligibleBookings.length > 0 && (
-              <div style={{ marginTop: 48, display: "flex", justifyContent: "center" }}>
+            </Rev>
+            <Rev delay={0.2} style={{ height: "100%" }}>
+              <div className="section-header-wrapper"><SHdr idx="06" label="What Others Are Saying" /></div>
+              <div style={{ padding: "40px 32px", background: W, border: `1px solid ${B}`, height: "calc(100% - 56px)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
                 <ReviewsSection
                   reviews={reviews}
                   summary={reviewSummary}
@@ -2362,7 +1391,8 @@ const ExperienceProduct = () => {
                   }}
                 />
               </div>
-            )}
+            </Rev>
+
           </div>
         </section>
 
@@ -2373,19 +1403,15 @@ const ExperienceProduct = () => {
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
         />
 
-        <div className="related-listings-wrapper" style={{ padding: "32px 80px", background: W }}>
-          <RelatedListingsStrip
-            businessInterestId={1}
-            primaryCategoryId={primaryCategoryId}
-            currentListingId={currentListingId}
-            fallbackLocationValues={fallbackLocationValues}
-            fallbackTagValues={fallbackTagValues}
-            fallbackSpecialLabelValues={fallbackSpecialLabelValues}
-            title="More Experiences You May Like"
-            sectionStyle={{ padding: "0px", background: "transparent" }}
-            titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontFamily: "Poppins, sans-serif", fontWeight: 700 }}
-          />
-        </div>
+        <RelatedListingsStrip
+          businessInterestId={1}
+          primaryCategoryId={primaryCategoryId}
+          currentListingId={currentListingId}
+          fallbackLocationValues={fallbackLocationValues}
+          fallbackTagValues={fallbackTagValues}
+          fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+          title="More Experiences You May Like"
+        />
       </main>
       <AnimatePresence>
         {unavailablePopupOpen && (
@@ -2460,36 +1486,17 @@ const ExperienceProduct = () => {
         )}
       </AnimatePresence>
       <style>{`
-        .activity-item p, .activity-item p * {
-          color: ${FG} !important;
-          font-weight: 400 !important;
-        }
-
-        .no-scrollbar::-webkit-scrollbar {
-          display: none !important;
-        }
-
-        @media(max-width: 900px) {
-          .addon-item {
-            width: 320px !important;
-          }
-        }
-        @media(max-width: 600px) {
-          .addon-item {
-            width: 280px !important;
-          }
-        }
-        
         /* Premium readability and visibility overrides for the Hero Section */
         .hero-section {
           background-color: var(--BG, #080808) !important;
         }
 
-        .hero-section h1.hero-title {
-          color: #FFFFFF !important;
-          -webkit-text-fill-color: #FFFFFF !important;
+        /* LIGHT THEME SPECIFIC STYLES */
+        [data-theme='light'] .hero-section h1.font-display {
+          color: #20242C !important;
+          -webkit-text-fill-color: #20242C !important;
           text-shadow: none !important;
-          -webkit-text-stroke: none !important;
+          -webkit-text-stroke: 1px #FFFFFF !important;
         }
         [data-theme='light'] .hero-section .hero-subtitle {
           color: #008CA5 !important;
@@ -2537,10 +1544,10 @@ const ExperienceProduct = () => {
         }
 
         @media(max-width: 1024px) {
-          .hero-section { min-height: 80vh !important; }
-          .details-section, .timeline-section, .prep-section, .policies-section, .host-quality-section, .testimonials-section, .addons-section, .related-listings-wrapper { padding: 32px 40px !important; }
-          .gallery-section { padding: 24px 40px 32px !important; }
-          .details-inner-split { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .hero-container { padding: 0 40px !important; }
+          .details-section, .prep-section, .policies-section { padding: 60px 24px !important; }
+          .host-section { padding: 60px 24px 140px !important; }
+          .details-inner { grid-template-columns: 1fr !important; gap: 48px !important; padding: 40px !important; }
           .pol-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
           .early-bird-wrapper { bottom: 40px !important; right: 40px !important; }
         }
@@ -2552,18 +1559,18 @@ const ExperienceProduct = () => {
           .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
           .details-grid > div:first-child { grid-column: span 2 !important; }
           .prep-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
-          .host-grid, .host-quality-grid { grid-template-columns: 1fr !important; }
+          .host-grid { grid-template-columns: 1fr !important; }
           .quality-card { flex-direction: column !important; gap: 40px !important; padding: 60px 32px !important; }
           .quality-score-unit { transform: scale(0.8) translateZ(80px) !important; }
-          .gallery-item { height: 180px !important; width: 270px !important; }
+          .gallery-item { height: 300px !important; width: 260px !important; }
         }
 
         @media(max-width: 600px) {
           .hero-section { min-height: 90vh !important; }
           .hero-container { padding: 0 24px !important; }
           .hero-section h1 { font-size: 3.5rem !important; }
-          .details-section, .timeline-section, .prep-section, .policies-section, .host-quality-section, .testimonials-section, .addons-section, .related-listings-wrapper { padding: 32px 24px !important; }
-          .gallery-section { padding: 24px 24px 32px !important; }
+          .details-section, .prep-section, .policies-section { padding: 40px 16px !important; }
+          .host-section { padding: 40px 16px 120px !important; }
           .section-header-wrapper > div { margin-bottom: 20px !important; }
           .details-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
           .details-grid > div:first-child { grid-column: span 2 !important; }
@@ -2627,7 +1634,7 @@ const ExperienceProduct = () => {
           .quality-card { padding: 48px 20px !important; border-radius: 32px !important; }
           .quality-score-unit { transform: scale(0.7) translateZ(50px) !important; }
           .quality-card h3 { font-size: 32px !important; }
-          .gallery-item { height: 130px !important; width: 195px !important; }
+          .gallery-item { height: 240px !important; width: 200px !important; }
           .early-bird-wrapper { bottom: 20px !important; right: 20px !important; }
           
           /* Global bottom safe area for sticky Reserve button removed from here, applied to main */
@@ -2726,117 +1733,81 @@ const ExperienceProduct = () => {
 
 
 function PolicyItem({ req }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+  const { tokens: { FG, A, M, AL, B, S } } = useTheme();
   const [op, setOp] = useState(false);
 
-  const title = req.setting?.title || "Requirement";
+  const title = req.setting?.title;
   const description = req.setting?.description;
   const questions = req.questions || [];
-
-  const getIcon = () => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes("cancellation")) {
-      return <Clock size={20} color={A} />;
-    }
-    if (lowerTitle.includes("age") || lowerTitle.includes("guest") || lowerTitle.includes("people")) {
-      return <Users size={20} color={A} />;
-    }
-    if (lowerTitle.includes("health") || lowerTitle.includes("safety") || lowerTitle.includes("medical")) {
-      return <ShieldCheck size={20} color={A} />;
-    }
-    return <Sparkles size={20} color={A} />;
-  };
 
   return (
     <motion.div
       layout
-      style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
-        borderRadius: "16px",
-        overflow: "hidden",
-        marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none"
-      }}
-      whileHover={{ borderColor: A }}
+      style={{ borderBottom: `1px solid ${B}`, overflow: "hidden" }}
+      whileHover={{ backgroundColor: AL }}
     >
       <div
         onClick={() => setOp(!op)}
         style={{
           width: "100%",
           display: "flex",
-          alignItems: "center",
-          gap: 16,
-          padding: "20px 24px",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          padding: "24px 16px",
+          background: "none",
+          border: "none",
           cursor: "pointer",
           textAlign: "left",
           userSelect: "none"
         }}
       >
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s"
-        }}>
-          {getIcon()}
-        </div>
-        
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{title}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: op ? A : FG, display: "block", marginBottom: 8, transition: "color 0.3s" }}>{title}</span>
+          {description && (
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.5, whiteSpace: "pre-line", margin: 0 }}>
+              {description}
+            </p>
+          )}
         </div>
-
         <motion.div
           animate={{ rotate: op ? 180 : 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: op ? W : "transparent" }}
+          style={{ marginTop: 4, flexShrink: 0, display: "flex", alignItems: "center" }}
         >
           <ChevronDown size={18} color={M} />
         </motion.div>
       </div>
 
       <AnimatePresence initial={false}>
-        {op && (
+        {op && questions.length > 0 && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
             style={{ overflow: "hidden" }}
           >
-            <div style={{ padding: "0 24px 24px 80px" }}>
-              {description && (
-                <p style={{ fontSize: 13, color: M, lineHeight: 1.6, whiteSpace: "pre-line", margin: "0 0 16px 0" }}>
-                  {description}
-                </p>
-              )}
-
-              {questions.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ padding: "0 16px 24px" }}>
+              <div style={{ padding: "20px", background: AL, borderRadius: 16, border: `1px solid ${B}` }}>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
                   {questions.map((q, j) => {
                     const questionTitle = q.title || q.question?.title;
                     const answerText = q.answer?.valueText || q.valueText;
 
                     return (
-                      <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "4px 0" }}>
-                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 8 }} />
+                      <li key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
                         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <span style={{ fontSize: 14, color: FG, lineHeight: 1.5, fontWeight: 500 }}>{questionTitle}</span>
+                          <span style={{ fontSize: 14, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{questionTitle}</span>
                           {answerText && (
-                            <span style={{ fontSize: 13, color: M, lineHeight: 1.4 }}>{answerText}</span>
+                            <span style={{ fontSize: 14, color: M, lineHeight: 1.4 }}>{answerText}</span>
                           )}
                         </div>
-                      </div>
+                      </li>
                     );
                   })}
-                </div>
-              )}
+                </ul>
+              </div>
             </div>
           </motion.div>
         )}
@@ -3231,24 +2202,52 @@ function QualityIndexSection({ qualityIndex }) {
 
 
 function ExperiencePolicies({ listing }) {
-  const { tokens: { FG, W, B, A, M, BG } } = useTheme();
+  const { tokens: { FG, W, B, A, M } } = useTheme();
 
   return (
-    <section className="policies-section" style={{ background: BG, padding: "32px 80px" }}>
+    <section className="policies-section" style={{ background: W, padding: "80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64, alignItems: "start" }} className="pol-grid">
+        <div className="section-header-wrapper"><SHdr idx="04" label="Essentials" /></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.5fr", gap: 80, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 12, fontFamily: "Poppins, sans-serif" }}>
-                Things to Keep in Mind
-              </h3>
-              <p style={{ color: M, fontSize: "15px", lineHeight: "1.8", margin: 0, fontWeight: 400 }}>
-                Please review these guidelines and requirements carefully to ensure a safe, smooth, and enjoyable experience for everyone.
-              </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <Chars
+                text="Things To"
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
+                  letterSpacing: "-0.02em"
+                }}
+              />
+              <Chars
+                text="Keep In"
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
+                  letterSpacing: "-0.02em"
+                }}
+              />
+              <Chars
+                text="Mind"
+                cls="font-display"
+                style={{
+                  fontSize: "clamp(3.5rem, 8vw, 5.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 0.95,
+                  color: FG,
+                  letterSpacing: "-0.02em"
+                }}
+              />
             </div>
           </Rev>
           <Rev delay={0.2}>
-            <div>
+            <div style={{ borderTop: `1px solid ${B}` }}>
               {listing?.guestRequirements?.length > 0 ? (
                 listing.guestRequirements.map((req, i) => (
                   <PolicyItem key={`req-${i}`} req={req} />
