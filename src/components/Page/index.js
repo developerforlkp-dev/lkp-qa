@@ -42,7 +42,6 @@ const Page = ({
   const autoHideEnabled = shouldAutoHideHeader(pathname);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
     clearAllBodyScrollLocks();
     setHeaderVisible(true);
   }, [pathname]);
