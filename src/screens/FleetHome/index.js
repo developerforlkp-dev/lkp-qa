@@ -13,6 +13,7 @@ import MobileCinematicSearch from "./MobileCinematicSearch";
 import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -852,9 +853,7 @@ const FleetHome = () => {
 
         {/* Dynamic Sections from API */}
         {loading && (
-          <div style={{ padding: "3rem", textAlign: "center" }}>
-            <p>Loading homepage sections...</p>
-          </div>
+          <LoadingSkeleton variant="homepage" sections={3} count={4} />
         )}
 
 

@@ -7,6 +7,7 @@ import styles from "./StayProduct.module.sass";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -2272,8 +2273,10 @@ const StayProduct = () => {
 
   if (loading) {
     return (
-      <div className={styles.loadingContainer}>
-        <Loader />
+      <div className={styles.outer}>
+        <div className={styles.container}>
+          <LoadingSkeleton variant="stay" />
+        </div>
       </div>
     );
   }

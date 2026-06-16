@@ -645,7 +645,19 @@ const ScheduleOne = () => {
                     </div>
 
                     {loading ? (
-                        <p style={{ color: '#aaa', padding: '20px 0' }}>Loading ticket types...</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "20px 0" }}>
+                            {[0, 1, 2].map((i) => (
+                                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 28px", borderRadius: "16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ height: "20px", width: "45%", borderRadius: "6px", background: "linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 37%, rgba(255,255,255,0.06) 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite", marginBottom: "12px" }} />
+                                        <div style={{ height: "14px", width: "30%", borderRadius: "4px", background: "linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 37%, rgba(255,255,255,0.06) 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite", marginBottom: "8px" }} />
+                                        <div style={{ height: "14px", width: "55%", borderRadius: "4px", background: "linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 37%, rgba(255,255,255,0.06) 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite" }} />
+                                    </div>
+                                    <div style={{ height: "44px", width: "120px", borderRadius: "22px", background: "linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 37%, rgba(255,255,255,0.06) 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite" }} />
+                                </div>
+                            ))}
+                            <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+                        </div>
                     ) : ticketTypes.length === 0 ? (
                         <p style={{ color: '#aaa', padding: '20px 0' }}>No ticket types available.</p>
                     ) : (
