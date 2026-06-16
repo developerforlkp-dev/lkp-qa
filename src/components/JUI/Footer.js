@@ -53,6 +53,10 @@ export function Footer() {
                 </a>
               </div>
             </div>
+
+            <div className={styles.upperCopyrightText}>
+              © 2026 Little Known Planet. All Rights Reserved.
+            </div>
           </div>
 
           {/* Links Sections */}
@@ -106,72 +110,7 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Bottom Info Bar */}
-      <div className={styles.bottomBar}>
-        <div className={styles.bottomContainer}>
-          
-          {/* Icons Grid */}
-          <div className={styles.featuresGrid}>
-            <div className={styles.featureItem}>
-              <div className={styles.featureIcon}><Star size={24} strokeWidth={1.5} /></div>
-              <div>
-                <p className={styles.featureTitle}>Handpicked Experiences</p>
-                <p className={styles.featureDesc}>Curated and verified<br/>by our team</p>
-              </div>
-            </div>
-            
-            <div className={`${styles.featureItem} ${styles.borderLeft}`}>
-              <div className={styles.featureIcon}><Home size={24} strokeWidth={1.5} /></div>
-              <div>
-                <p className={styles.featureTitle}>Unique Local Stays</p>
-                <p className={styles.featureDesc}>Authentic places<br/>across World</p>
-              </div>
-            </div>
 
-            <div className={`${styles.featureItem} ${styles.borderLeft}`}>
-              <div className={styles.featureIcon}><Ticket size={24} strokeWidth={1.5} /></div>
-              <div>
-                <p className={styles.featureTitle}>Easy Booking</p>
-                <p className={styles.featureDesc}>Secure and seamless<br/>reservations</p>
-              </div>
-            </div>
-
-            <div className={`${styles.featureItem} ${styles.borderLeft}`}>
-              <div className={styles.featureIcon}><Users size={24} strokeWidth={1.5} /></div>
-              <div>
-                <p className={styles.featureTitle}>Local Communities</p>
-                <p className={styles.featureDesc}>Supporting local<br/>hosts and creators</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Stamp and Back to top */}
-          <div className={styles.bottomActions}>
-            <div className={styles.stamp}>
-               <p>Discover</p>
-               <p>The</p>
-               <p>Hidden</p>
-               <p>World</p>
-            </div>
-            <div className={styles.backToTop} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <p>Back to<br/>top</p>
-              <div className={styles.iconWrap}>
-                <ArrowUp size={14} />
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Very Bottom */}
-        <div className={styles.copyright}>
-          <Link to="/">
-            <img src="/images/littleplanet-logo.svg" alt="Little Known Planet" className={styles.copyrightLogo} />
-          </Link>
-          <div className={styles.copyrightText}>
-            © 2026 Little Known Planet. All Rights Reserved.
-          </div>
-        </div>
-      </div>
     </footer>
   );
 }

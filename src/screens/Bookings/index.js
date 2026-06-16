@@ -3,6 +3,7 @@ import Page from "../../components/Page";
 import Main from "./Main";
 import { getCustomerOrders, getCompleteExpiredOrders } from "../../utils/api";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 
 const Bookings = ({ bookingData = null }) => {
   const [orders, setOrders] = useState(null);
@@ -105,8 +106,8 @@ const Bookings = ({ bookingData = null }) => {
   return (
     <Page separatorHeader fooferHide={loading}>
       {loading ? (
-        <div style={{ padding: "8rem 2rem", textAlign: "center", minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ fontSize: "1.2rem", fontWeight: "500" }}>Loading bookings...</p>
+        <div style={{ padding: "4rem 2rem", minHeight: "80vh" }}>
+          <LoadingSkeleton variant="bookings" count={3} />
         </div>
       ) : (
         <>

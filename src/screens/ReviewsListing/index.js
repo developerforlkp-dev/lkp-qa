@@ -14,6 +14,7 @@ import {
   getStayReviews,
 } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 
 const asNum = (value) => {
   const n = Number(value);
@@ -200,7 +201,7 @@ const ReviewsListing = () => {
             </div>
           </div>
 
-          {loading && <div className={styles.message}>Loading reviews...</div>}
+          {loading && <LoadingSkeleton variant="reviews" count={4} />}
           {error && <div className={styles.error}>{error}</div>}
           {!loading && !error && reviews.length === 0 && (
             <div className={styles.message}>No reviews yet for this listing.</div>

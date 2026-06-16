@@ -6,6 +6,7 @@ import Icon from "../../../components/Icon";
 import Details from "./Details";
 import List from "./List";
 import Loader from "../../../components/Loader";
+import LoadingSkeleton from "../../../components/LoadingSkeleton";
 import {
   getHost,
   getHostContent,
@@ -208,20 +209,9 @@ const Main = ({ hostId, onLoadingChange }) => {
   // Loading state
   if (loading && hostId) {
     return (
-      <div 
-        className={cn("section", styles.section)} 
-        style={{ 
-          minHeight: "80vh", 
-          display: "flex", 
-          flexDirection: "column",
-          alignItems: "center", 
-          justifyContent: "center",
-          gap: "24px"
-        }}
-      >
-        <Loader />
-        <div style={{ fontSize: "16px", fontWeight: "500", color: "#777E90" }}>
-          Loading host profile...
+      <div className={cn("section", styles.section)}>
+        <div className={cn("container", styles.container)}>
+          <LoadingSkeleton variant="host" />
         </div>
       </div>
     );

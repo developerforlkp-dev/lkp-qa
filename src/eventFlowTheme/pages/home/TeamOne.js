@@ -102,9 +102,18 @@ export default function TeamOne() {
         </div>
 
         {loading ? (
-          <p style={{ color: "#aaa", textAlign: "center", padding: "20px 0" }}>
-            Loading artists...
-          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "30px", padding: "20px 0" }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ borderRadius: "16px", overflow: "hidden", background: "#f8f8f8" }}>
+                <div style={{ width: "100%", height: "455px", background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite" }} />
+                <div style={{ padding: "20px" }}>
+                  <div style={{ height: "20px", width: "60%", borderRadius: "6px", background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite", marginBottom: "10px" }} />
+                  <div style={{ height: "14px", width: "40%", borderRadius: "4px", background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s ease-in-out infinite" }} />
+                </div>
+              </div>
+            ))}
+            <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+          </div>
         ) : (
           <div
             className="row"

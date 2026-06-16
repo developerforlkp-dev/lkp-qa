@@ -9,6 +9,7 @@ import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import Receipt from "../../components/Receipt";
 import html2pdf from "html2pdf.js";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 
 // Helper function to format image URLs
 const formatImageUrl = (url) => {
@@ -1905,9 +1906,7 @@ const ViewDetails = () => {
     return (
       <div className={cn("section", styles.section)}>
         <div className={cn("container", styles.container)}>
-          <div className={styles.notFound}>
-            <p style={{ fontSize: "1.2rem", fontWeight: "500" }}>Loading booking details...</p>
-          </div>
+          <LoadingSkeleton variant="detail" />
         </div>
       </div>
     );
