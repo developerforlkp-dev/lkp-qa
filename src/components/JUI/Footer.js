@@ -66,94 +66,102 @@ export function Footer() {
             <span className="bottom-footer-text">Call Us: +91 8104 954 254</span>
           </div>
           
-          {/* Newsletter & Left Section */}
-          <div className={styles.leftSection}>
-            <div className={styles.brandTitle}>
-              <div className={styles.brandIcon}>
-                <Globe size={32} strokeWidth={2} />
-              </div>
-              <div>
-                <h3 className={styles.brandHeading}>Explore World.<br />Experience More.</h3>
-              </div>
-            </div>
-            <p className={styles.brandDesc}>
-              Discover handpicked experiences, unique stays, local food, cultural events and hidden places across World.
-            </p>
-
-
-
-            <div className={styles.socials}>
-              <span className={styles.socialText}>Follow the adventure</span>
-              <div className={styles.socialIcons}>
-                <a href="#" className={styles.socialIcon}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-                </a>
-                <a href="#" className={styles.socialIcon}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                </a>
-                <a href="#" className={styles.socialIcon}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-                </a>
-              </div>
-            </div>
-
-            <div className={styles.upperCopyrightText}>
-              © 2026 Little Known Planet. All Rights Reserved.
-            </div>
+          <div className="bottom-footer-socials">
+            <a href="#" className="social-icon-link"><WhatsAppIcon size={18} /></a>
+            <a href="#" className="social-icon-link"><Instagram size={18} strokeWidth={2} /></a>
+            <a href="#" className="social-icon-link"><PinterestIcon size={18} /></a>
+            <a href="#" className="social-icon-link"><Facebook size={18} strokeWidth={2} /></a>
+            <a href="#" className="social-icon-link"><Youtube size={18} strokeWidth={2} /></a>
+            <a href="#" className="social-icon-link"><Linkedin size={18} strokeWidth={2} /></a>
           </div>
-
-          {/* Links Sections */}
-          <div className={styles.rightSection}>
-            <div className={styles.linkCol}>
-              <h4>Explore</h4>
-              <ul>
-                <li><Link to="/experiences">Experiences</Link></li>
-                <li><Link to="/events">Events</Link></li>
-                <li><Link to="/stays">Stays</Link></li>
-                <li><Link to="/food">Food</Link></li>
-                <li><Link to="/places">Places</Link></li>
-              </ul>
-            </div>
-
-            <div className={styles.linkCol}>
-              <h4>Discover</h4>
-              <ul>
-                <li><Link to="/experiences">Trending Experiences</Link></li>
-                <li><Link to="/events">Upcoming Events</Link></li>
-                <li><Link to="/stays">Featured Stays</Link></li>
-                <li><Link to="/food">Local Food Trails</Link></li>
-                <li><Link to="/places">Travel Stories</Link></li>
-                <li><Link to="/experiences">Collections</Link></li>
-              </ul>
-            </div>
-
-            <div className={styles.linkCol}>
-              <h4>Company</h4>
-              <ul>
-                <li><Link to="/">About Little Known Planet</Link></li>
-                <li><Link to="/host-profile">Become a Host</Link></li>
-                <li><Link to="/">Partner With Us</Link></li>
-                <li><Link to="/">Careers</Link></li>
-                <li><a href="mailto:support@littleknownplanet.com">Contact Us</a></li>
-              </ul>
-            </div>
-            
-            <div className={styles.linkCol}>
-              <h4>Support</h4>
-              <ul>
-                <li><Link to="/support">Help Center</Link></li>
-                <li><Link to="/bookings">Bookings</Link></li>
-                <li><Link to="/terms-of-service">Cancellation Policy</Link></li>
-                <li><Link to="/privacy-policy">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service">Terms & Conditions</Link></li>
-              </ul>
-            </div>
-          </div>
-
         </div>
       </div>
 
-
+      <style>{`
+        body .cinematic-footer h1, 
+        body .cinematic-footer h2, 
+        body .cinematic-footer h3,
+        body .cinematic-footer a,
+        body .cinematic-footer button,
+        body .cinematic-footer input {
+          color: #FFFFFF !important;
+          -webkit-text-fill-color: #FFFFFF !important;
+        }
+        body .cinematic-footer p, 
+        body .cinematic-footer span,
+        body .cinematic-footer label {
+          color: #8C8C88 !important;
+          -webkit-text-fill-color: #8C8C88 !important;
+        }
+        @media (max-width: 1024px) {
+          .footer-grid { grid-template-columns: 1fr !important; gap: 80px !important; }
+        }
+        .bottom-footer-bar {
+          background: #111111;
+          border-top: 1px solid #222222;
+          padding: 16px 36px;
+        }
+        .bottom-footer-inner {
+          max-width: 1320px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 24px;
+        }
+        .bottom-footer-links {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+        .bottom-footer-link, .bottom-footer-text {
+          font-size: 13px;
+          font-weight: 500;
+          color: #E0E0E0 !important;
+          text-decoration: none;
+          transition: color 0.2s ease;
+          letter-spacing: 0.02em;
+        }
+        .bottom-footer-link:hover {
+          color: #FFFFFF !important;
+        }
+        .bottom-footer-dot {
+          color: #555555 !important;
+          font-size: 12px;
+        }
+        .bottom-footer-socials {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        .social-icon-link {
+          color: #E0E0E0 !important;
+          transition: transform 0.2s ease, color 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .social-icon-link:hover {
+          color: #FFFFFF !important;
+          transform: translateY(-2px);
+        }
+        @media (max-width: 768px) {
+          .bottom-footer-bar {
+            padding: 24px 20px;
+          }
+          .bottom-footer-inner {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 24px;
+          }
+          .bottom-footer-socials {
+            width: 100%;
+            justify-content: flex-start;
+          }
+        }
+      `}</style>
     </footer>
   );
 }

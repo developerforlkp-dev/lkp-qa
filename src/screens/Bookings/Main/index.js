@@ -7,7 +7,6 @@ import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
 import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails } from "../../../utils/api";
 import Rating from "../../../components/Rating";
-import LoadingSkeleton from "../../../components/LoadingSkeleton";
 
 // Helper function to format image URLs
 const formatImageUrl = (url) => {
@@ -1482,8 +1481,8 @@ const Main = ({
   // Show loading if: (1) currently loading, OR (2) no data provided yet (null)
   if ((loading && transformedBookings.length === 0) || (propBookingData === null && transformedBookings.length === 0)) {
     return (
-      <div style={{ padding: "4rem 2rem", minHeight: "80vh" }}>
-        <LoadingSkeleton variant="bookings" count={3} />
+      <div style={{ padding: "8rem 2rem", textAlign: "center", minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontSize: "1.2rem", fontWeight: "500" }}>Loading bookings...</p>
       </div>
     );
   }
@@ -1523,8 +1522,8 @@ const Main = ({
           })}
         >
           {loadingCompleted && displayedTab === "completed" ? (
-            <div style={{ padding: "1rem 0" }}>
-              <LoadingSkeleton variant="completed" count={3} />
+            <div style={{ padding: "3rem", textAlign: "center" }}>
+              <p>Loading completed orders...</p>
             </div>
           ) : bookingsForTab.length > 0 ? (
             <div className={styles.list}>
