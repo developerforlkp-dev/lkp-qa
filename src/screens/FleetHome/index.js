@@ -464,7 +464,8 @@ const FleetHome = () => {
 
             // Handle different response structures
             let listings = sectionData?.listings || sectionData?.data?.listings || [];
-            const sectionInfoRaw = sectionData?.section || section;
+            // Merge both so we don't lose fields like description that might only be in the parent list
+            const sectionInfoRaw = { ...section, ...(sectionData?.section || {}) };
             const fallbackBusinessInterestId = getBusinessInterestId(activeFilter) || businessInterestId || 1;
             const fallbackBusinessInterestCode = getBusinessInterestCode(activeFilter);
             const sectionInfo = {
