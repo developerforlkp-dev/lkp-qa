@@ -18,11 +18,36 @@ const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const filterOptions = [
-  { id: "experience", label: "Experience", icon: "star" },
-  { id: "events", label: "Events", icon: "calendar" },
-  { id: "stays", label: "Stays", icon: "home" },
-  { id: "food", label: "Food", icon: "burger" },
-  { id: "places", label: "Places", icon: "marker" },
+  { 
+    id: "experience", 
+    label: "Experiences", 
+    description: "Live unforgettable moments",
+    image: "/images/categories/experience.webp" 
+  },
+  { 
+    id: "events", 
+    label: "Events", 
+    description: "Join unique happenings",
+    image: "/images/categories/events.webp" 
+  },
+  { 
+    id: "stays", 
+    label: "Stays", 
+    description: "Spaces that feel like you",
+    image: "/images/categories/stays.webp" 
+  },
+  { 
+    id: "food", 
+    label: "Food", 
+    description: "Flavors worth remembering",
+    image: "/images/categories/food.webp" 
+  },
+  { 
+    id: "places", 
+    label: "Places", 
+    description: "Discover hidden gems",
+    image: "/images/categories/places.webp" 
+  },
 ];
 
 
