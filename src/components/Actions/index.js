@@ -5,8 +5,9 @@ import { useHistory } from "react-router-dom";
 import Icon from "../Icon";
 import Map from "../Map";
 import Share from "../Share";
+import Favorite from "../Favorite";
 
-const Actions = ({ className, mapLocation }) => {
+const Actions = ({ className, mapLocation, wishlistItemType, wishlistItemId, wishlistSaved }) => {
   const history = useHistory();
 
   const handleClose = (e) => {
@@ -25,6 +26,16 @@ const Actions = ({ className, mapLocation }) => {
       <div className={styles.list}>
         <Map location={mapLocation} />
         <Share />
+        {wishlistItemType && wishlistItemId != null && (
+          <Favorite
+            className={styles.favorite}
+            itemType={wishlistItemType}
+            itemId={wishlistItemId}
+            initialSaved={wishlistSaved}
+            variant="icon"
+            showText={false}
+          />
+        )}
         <button
           type="button"
           className={cn("button-circle-stroke button-small", styles.button)}

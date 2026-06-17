@@ -10,6 +10,9 @@
     overflow: hidden
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1)
     border: 1px solid rgba(255, 255, 255, 0.2)
+    display: inline-flex
+    align-items: center
+    justify-content: center
     &:hover
         background: darken(#0097B2, 5%)
         transform: scale(1.05)
@@ -20,7 +23,35 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15)
         svg
             fill: #0097B2
-            
+    &.iconOnly
+        width: 40px
+        height: 40px
+        padding: 0
+        border-radius: 50%
+    &.hero
+        min-width: 44px
+        height: 44px
+        padding: 0 13px
+        background: rgba(0, 151, 178, 0.13)
+        border: 1.5px solid rgba(0, 151, 178, 0.35)
+        backdrop-filter: blur(22px)
+        -webkit-backdrop-filter: blur(22px)
+        box-shadow: 0 0 10px rgba(0, 151, 178, 0.3), 0 4px 14px rgba(0, 0, 0, 0.28)
+        color: #ffffff
+        &:hover
+            background: rgba(0, 151, 178, 0.22)
+        svg
+            fill: #ffffff
+    &.hero.active
+        background: rgba(255, 255, 255, 0.94)
+        color: #0097B2
+        border-color: rgba(255, 255, 255, 0.9)
+        svg
+            fill: #0097B2
+    &.loading
+        opacity: .75
+        cursor: wait
+
 .inner
     display: flex
     align-items: center
@@ -33,6 +64,8 @@
     line-height: 1
     white-space: nowrap
     padding-top: 1px
+    .hero &
+        font-size: 11px
 
 svg
     fill: #ffffff

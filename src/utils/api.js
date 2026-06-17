@@ -638,6 +638,84 @@ export const uploadCustomerAvatar = async (file) => {
   }
 };
 
+const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay"]);
+
+export const normalizeWishlistItemType = (itemType) => {
+  const normalized = String(itemType || "").trim().toLowerCase();
+  return VALID_WISHLIST_ITEM_TYPES.has(normalized) ? normalized : null;
+};
+
+export const isSupportedWishlistItemType = (itemType) => (
+  Boolean(normalizeWishlistItemType(itemType))
+);
+
+export const getCustomerWishlistItems = async () => {
+  try {
+    const response = await ListingsAPI.get("/customers/wishlist/items");
+    return Array.isArray(response?.data?.items) ? response.data.items : [];
+  } catch (error) {
+    console.error("Failed to fetch wishlist items:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getCustomerWishlistStatus = async (itemType, itemId) => {
+  const normalizedType = normalizeWishlistItemType(itemType);
+  if (!normalizedType || itemId == null || itemId === "") {
+    return { saved: false };
+  }
+
+  try {
+    const response = await ListingsAPI.get("/customers/wishlist/status", {
+      params: {
+        itemType: normalizedType,
+        itemId,
+      },
+    });
+    return {
+      saved: Boolean(response?.data?.saved),
+    };
+  } catch (error) {
+    console.error("Failed to fetch wishlist status:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const saveCustomerWishlistItem = async (itemType, itemId) => {
+  const normalizedType = normalizeWishlistItemType(itemType);
+  if (!normalizedType || itemId == null || itemId === "") {
+    throw new Error("Invalid wishlist item");
+  }
+
+  try {
+    const response = await ListingsAPI.post("/customers/wishlist/items", {
+      itemType: normalizedType,
+      itemId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to save wishlist item:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const removeCustomerWishlistItem = async (itemType, itemId) => {
+  const normalizedType = normalizeWishlistItemType(itemType);
+  if (!normalizedType || itemId == null || itemId === "") {
+    throw new Error("Invalid wishlist item");
+  }
+
+  try {
+    const response = await ListingsAPI.delete(
+      `/customers/wishlist/items/${encodeURIComponent(normalizedType)}/${encodeURIComponent(itemId)}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Failed to remove wishlist item:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Get billing configuration for a listing
 export const getBillingConfiguration = async (listingId) => {
   try {

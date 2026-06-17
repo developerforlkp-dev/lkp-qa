@@ -23,6 +23,7 @@ import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import ShareButton from "../../components/ShareButton";
 import { lockBodyScroll } from "../../utils/scrollLock";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import Favorite from "../../components/Favorite";
 
 const fixImageUrl = (url) => {
   if (!url) return "";
@@ -1003,6 +1004,19 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
         title={title}
         text={stay?.shortDescription || stay?.description || ""}
         url={window.location.href}
+      />
+
+      <Favorite
+        itemType="stay"
+        itemId={id}
+        variant="hero"
+        showText={false}
+        style={{
+          position: "absolute",
+          top: 96,
+          right: 116,
+          zIndex: 70,
+        }}
       />
 
       {ReactDOM.createPortal(

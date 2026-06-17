@@ -26,6 +26,7 @@ import PhotoView from "../../components/PhotoView";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../utils/scrollLock";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import Favorite from "../../components/Favorite";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -941,18 +942,33 @@ const ExperienceProduct = () => {
               </motion.div>
 
               <Rev delay={0.2} style={{ flexShrink: 0 }}>
-                <HeroShareFab
-                  title={listing?.title}
-                  text={listing?.description || listing?.aboutListing || ""}
-                  url={window.location.href}
-                  style={{
-                    position: "relative",
-                    top: "auto",
-                    right: "auto",
-                    margin: 0,
-                    zIndex: 200
-                  }}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Favorite
+                    itemType="listing"
+                    itemId={id}
+                    variant="hero"
+                    showText={false}
+                    style={{
+                      position: "relative",
+                      top: "auto",
+                      right: "auto",
+                      margin: 0,
+                      zIndex: 200,
+                    }}
+                  />
+                  <HeroShareFab
+                    title={listing?.title}
+                    text={listing?.description || listing?.aboutListing || ""}
+                    url={window.location.href}
+                    style={{
+                      position: "relative",
+                      top: "auto",
+                      right: "auto",
+                      margin: 0,
+                      zIndex: 200
+                    }}
+                  />
+                </div>
               </Rev>
             </div>
           </div>

@@ -4,8 +4,36 @@ import { Link } from "react-router-dom";
 import styles from "./Card.module.sass";
 import Icon from "../Icon";
 import Favorite from "../Favorite";
+
+const getWishlistConfig = (item) => {
+  const explicitType = String(item?.wishlistItemType || item?.itemType || "").trim().toLowerCase();
+  const explicitId = item?.wishlistItemId ?? item?.itemId ?? item?.listingId ?? item?.eventId ?? item?.stayId;
+
+  if (explicitType && explicitId != null && explicitId !== "") {
+    return {
+      itemType: explicitType,
+      itemId: explicitId,
+      initialSaved: Boolean(item?.wishlistSaved),
+    };
+  }
+
+  const url = String(item?.url || "").toLowerCase();
+  if (explicitId != null && explicitId !== "") {
+    if (url.includes("/event")) {
+      return { itemType: "event", itemId: explicitId, initialSaved: Boolean(item?.wishlistSaved) };
+    }
+    if (url.includes("/stay-details")) {
+      return { itemType: "stay", itemId: explicitId, initialSaved: Boolean(item?.wishlistSaved) };
+    }
+    return { itemType: "listing", itemId: explicitId, initialSaved: Boolean(item?.wishlistSaved) };
+  }
+
+  return null;
+};
+
 const Item = ({ className, item, row, car, hidePrice }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const wishlistConfig = getWishlistConfig(item);
   
   const defaultImage = "/images/content/card-pic-13.jpg";
   const hasSasToken = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && 
@@ -42,7 +70,14 @@ const Item = ({ className, item, row, car, hidePrice }) => {
             setImageLoaded(true);
           }}
         />
-        <Favorite className={styles.favorite} />
+        {wishlistConfig && (
+          <Favorite
+            className={styles.favorite}
+            itemType={wishlistConfig.itemType}
+            itemId={wishlistConfig.itemId}
+            initialSaved={wishlistConfig.initialSaved}
+          />
+        )}
       </div>
       <div className={styles.body}>
         {item.categoryText && (
@@ -86,19 +121,21 @@ const Item = ({ className, item, row, car, hidePrice }) => {
 
         <div className={styles.foot}>
           <div className={styles.flex}>
-            <div className={styles.rating}>
-              <div className={styles.ratingTop}>
-                <Icon name="star" />
-                <span className={styles.number}>
-                  {typeof item.rating === "number" && !Number.isInteger(item.rating)
-                    ? item.rating.toFixed(1)
-                    : (item.rating || 0)}
+            {!item.hideRating && (
+              <div className={styles.rating}>
+                <div className={styles.ratingTop}>
+                  <Icon name="star" />
+                  <span className={styles.number}>
+                    {typeof item.rating === "number" && !Number.isInteger(item.rating)
+                      ? item.rating.toFixed(1)
+                      : (item.rating || 0)}
+                  </span>
+                </div>
+                <span className={styles.review}>
+                  ({item.reviews || 0})
                 </span>
               </div>
-              <span className={styles.review}>
-                ({item.reviews || 0})
-              </span>
-            </div>
+            )}
 
             {!shouldHidePrice && item.hasPrice && item.cost && (
               <div className={styles.price}>
