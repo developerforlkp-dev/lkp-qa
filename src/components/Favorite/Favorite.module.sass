@@ -2,35 +2,33 @@
 
 .button
     position: relative
-    background: rgba(255, 255, 255, 0.25)
-    backdrop-filter: blur(12px)
-    -webkit-backdrop-filter: blur(12px)
-    border: 1px solid rgba(255, 255, 255, 0.4)
+    background: #0097B2
     border-radius: 32px
-    padding: 6px 12px
+    padding: 4px 10px
     color: #ffffff
     transition: all .3s ease
     overflow: hidden
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1)
+    border: 1px solid rgba(255, 255, 255, 0.2)
     &:hover
-        background: rgba(255, 255, 255, 0.4)
+        background: darken(#0097B2, 5%)
         transform: scale(1.05)
     &.active
-        background: rgba(255, 255, 255, 0.95)
-        color: $n1
-        border-color: rgba(255, 255, 255, 1)
+        background: #ffffff
+        color: #0097B2
+        border-color: #ffffff
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15)
         svg
-            fill: $n1
+            fill: #0097B2
             
 .inner
     display: flex
     align-items: center
     justify-content: center
-    gap: 6px
+    gap: 4px
 
 .text
-    font-size: 12px
+    font-size: 10px
     font-weight: 700
     line-height: 1
     white-space: nowrap

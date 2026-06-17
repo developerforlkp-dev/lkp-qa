@@ -20,7 +20,7 @@ const Favorite = ({ className }) => {
       }}
     >
       <div className={styles.inner}>
-        <Icon name={visible ? "check" : "star"} size="14" />
+        <Icon name={visible ? "check" : "star"} size="12" />
         <span className={styles.text}>{visible ? "Saved" : "Save"}</span>
       </div>
     </button>

@@ -43,6 +43,8 @@ const Item = ({ className, item, row, car, hidePrice }) => {
           }}
         />
         <Favorite className={styles.favorite} />
+      </div>
+      <div className={styles.body}>
         {item.categoryText && (
           <div
             className={cn(
@@ -60,8 +62,6 @@ const Item = ({ className, item, row, car, hidePrice }) => {
             <span className={styles.month}>{item.dateBadge.month}</span>
           </div>
         )}
-      </div>
-      <div className={styles.body}>
         <div className={styles.line}>
           <div className={styles.title}>{item.title}</div>
           {item.location && (
