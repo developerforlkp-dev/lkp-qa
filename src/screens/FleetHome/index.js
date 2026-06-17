@@ -11,6 +11,7 @@ import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import HeroSection from "./HeroSection";
 import MobileCinematicSearch from "./MobileCinematicSearch";
+import StickyHeaderController from "./StickyHeaderController";
 import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -138,6 +139,7 @@ const FleetHome = () => {
   const autocompleteServiceRef = useRef(null);
   const autocompleteSessionTokenRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const heroRef = useRef(null);
 
 
   // Map path to filter ID
@@ -641,8 +643,43 @@ const FleetHome = () => {
 
   return (
     <div className={cn("section", styles.section)}>
+      {/* Sticky Header — appears on scroll past hero (desktop only) */}
+      {!isMobileOrTablet && (
+        <StickyHeaderController
+          heroRef={heroRef}
+          visibleFilterOptions={visibleFilterOptions}
+          activeFilter={activeFilter}
+          handleFilterClick={handleFilterClick}
+          businessInterestAvailability={businessInterestAvailability}
+          businessInterestActiveMap={businessInterestActiveMap}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedDestination={selectedDestination}
+          setSelectedDestination={setSelectedDestination}
+          selectedDate={selectedDate}
+          guests={guests}
+          showCalendar={showCalendar}
+          formattedDate={formattedDate}
+          guestCountText={guestCountText}
+          showDatePicker={showDatePicker}
+          setShowDatePicker={setShowDatePicker}
+          showGuestPicker={showGuestPicker}
+          setShowGuestPicker={setShowGuestPicker}
+          handleSearch={handleSearch}
+          handleDateSelect={handleDateSelect}
+          handleGuestChange={handleGuestChange}
+          destinationSuggestions={destinationSuggestions}
+          showDestinationSuggestions={showDestinationSuggestions}
+          setShowDestinationSuggestions={setShowDestinationSuggestions}
+          activeSuggestionIndex={activeSuggestionIndex}
+          setActiveSuggestionIndex={setActiveSuggestionIndex}
+          selectDestinationSuggestion={selectDestinationSuggestion}
+          destinationRef={destinationRef}
+        />
+      )}
+
       {/* Hero Section */}
-      <div className={styles.heroSection} style={{ position: "relative" }}>
+      <div ref={heroRef} className={styles.heroSection} style={{ position: "relative" }}>
         <HeroSection />
         {/* Mobile-only: floating search pill + bottom sheet */}
         {isMobileOrTablet && (
