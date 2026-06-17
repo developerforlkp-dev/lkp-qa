@@ -25,7 +25,7 @@ const items = [
   },
 ];
 
-const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
+const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled }) => {
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
   const darkMode = useDarkMode(false);
@@ -50,7 +50,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
           { [styles.hideOnMobile]: hideOnMobile }
         )}
       >
-        <div className={cn("container", styles.container)}>
+        <div className={cn("container", styles.container, { [styles.floatingPill]: isHomepage && hasScrolled })}>
           <Link className={styles.logo} to="/">
             <Image
               className={styles.pic}
@@ -61,43 +61,52 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile }) => {
           </Link>
 
           {/* Desktop nav wrapper — hidden on mobile */}
-          <div className={styles.wrapper}>
+          <div className={styles.wrapper} id="header-center-portal">
             {/* Desktop nav links can go here */}
           </div>
 
-          <button
-            type="button"
-            className={styles.themeToggle}
-            onClick={darkMode.toggle}
-            aria-label={darkMode.value ? "Switch to light mode" : "Switch to dark mode"}
-            title={darkMode.value ? "Light mode" : "Dark mode"}
-          >
-            <Icon name={darkMode.value ? "sun" : "moon"} size="24" />
-          </button>
-          {!shouldShowLogin && (
+          <div className={cn(styles.rightMenu, { [styles.glassmorphic]: isHomepage && !hasScrolled })}>
+            <button
+              type="button"
+              className={styles.themeToggle}
+              onClick={darkMode.toggle}
+              aria-label={darkMode.value ? "Switch to light mode" : "Switch to dark mode"}
+              title={darkMode.value ? "Light mode" : "Dark mode"}
+            >
+              <Icon name={darkMode.value ? "sun" : "moon"} size="24" />
+            </button>
+            {!shouldShowLogin && (
+              <NavLink
+                className={cn(styles.link, styles.bookingsLink)}
+                to="/bookings"
+                activeClassName={styles.active}
+              >
+                Bookings
+              </NavLink>
+            )}
             <NavLink
-              className={cn(styles.link, styles.bookingsLink)}
-              to="/bookings"
+              className={cn(styles.link, styles.wishlistLink)}
+              to="/wishlist"
               activeClassName={styles.active}
             >
-              Bookings
+              Wishlist
             </NavLink>
-          )}
-          <Notification className={styles.notification} />
-          {shouldShowLogin ? (
-            <button className={styles.login} onClick={() => setVisible(true)}>
-              <Icon name="user" size="24" />
-            </button>
-          ) : (
-            <User className={styles.user} items={items} />
-          )}
+            <Notification className={styles.notification} />
+            {shouldShowLogin ? (
+              <button className={styles.login} onClick={() => setVisible(true)}>
+                <Icon name="user" size="24" />
+              </button>
+            ) : (
+              <User className={styles.user} items={items} />
+            )}
 
-          {/* Burger — mobile only, opens the slide-in drawer */}
-          <button
-            className={cn(styles.burger, { [styles.active]: visibleNav })}
-            onClick={() => setVisibleNav(true)}
-            aria-label="Open menu"
-          ></button>
+            {/* Burger — mobile only, opens the slide-in drawer */}
+            <button
+              className={cn(styles.burger, { [styles.active]: visibleNav })}
+              onClick={() => setVisibleNav(true)}
+              aria-label="Open menu"
+            ></button>
+          </div>
         </div>
       </div>
 

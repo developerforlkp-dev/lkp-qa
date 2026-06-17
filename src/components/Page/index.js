@@ -97,7 +97,7 @@ const Page = ({
           height: (scrolled || separatorHeader) ? "72px" : "0px",
           zIndex: (scrolled || separatorHeader) ? 99 : 5, 
           transition: "all 0.4s", 
-          background: (scrolled || separatorHeader) ? BG : "transparent", 
+          background: (scrolled && pathname !== "/" || separatorHeader) ? BG : "transparent", 
           backdropFilter: "none", 
           borderBottom: "none" 
         }}
@@ -105,16 +105,17 @@ const Page = ({
 
       {/* Header Content Layer (Above the Hero) */}
       <motion.div
-        className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light", "auto-hide": autoHideEnabled && !headerVisible })}
+        className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && pathname !== "/", "auto-hide": autoHideEnabled && !headerVisible && pathname !== "/" })}
         initial={{ y: -72, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
         transition={{ duration: 0.85, ease: E }}
         style={{ 
           position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, 
           zIndex: 100, 
+          background: (scrolled && pathname !== "/") ? BG : "transparent",
+          boxShadow: (scrolled && pathname !== "/") ? "0px 2px 10px rgba(0,0,0,0.05)" : "none",
           transition: "all 0.4s", 
           marginTop: separatorHeader ? "-72px" : "0", // Account for the background div in sticky mode
-          background: "transparent",
         }}
       >
         <Header
@@ -122,6 +123,8 @@ const Page = ({
           wide={wide}
           notAuthorized={notAuthorized}
           hideOnMobile={hideHeaderOnMobile}
+          isHomepage={pathname === "/"}
+          hasScrolled={scrolled}
         />
       </motion.div>
       
@@ -137,8 +140,10 @@ const Page = ({
         
         .force-dark [class*="Header_link"], 
         .force-dark [class*="Header_bookingsLink"],
+        .force-dark [class*="Header_wishlistLink"],
         .force-dark [class*="Header_themeToggle"] svg,
-        .force-dark [class*="Header_user"] svg {
+        .force-dark [class*="Header_user"] svg,
+        .force-dark [class*="Header_login"] svg {
           color: #FCFCFD !important;
           fill: #FCFCFD !important;
         }
