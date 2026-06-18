@@ -6,7 +6,12 @@ import styles from "./DestinationCard.module.sass";
 const DestinationCard = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   return (
-    <Link className={cn(className, styles.card)} to={item.url || "/experience-category"}>
+    <Link 
+      className={cn(className, styles.card)} 
+      to={item.url || "/experience-category"}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       <div className={cn(styles.imageWrapper, { [styles.loaded]: imageLoaded })}>
         <img
           srcSet={item.srcSet ? `${item.srcSet} 2x` : undefined}

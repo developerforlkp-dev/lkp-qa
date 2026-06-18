@@ -54,6 +54,8 @@ const Item = ({ className, item, row, car, hidePrice }) => {
         { [styles.car]: car }
       )}
       to={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 

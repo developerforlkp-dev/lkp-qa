@@ -20,7 +20,12 @@ const Item = ({ className, item }) => {
     : (item.rating || 0);
 
   return (
-    <Link className={cn(className, styles.item)} to={item.url}>
+    <Link 
+      className={cn(className, styles.item)} 
+      to={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 
           srcSet={`${item.srcSet} 2x`} 
