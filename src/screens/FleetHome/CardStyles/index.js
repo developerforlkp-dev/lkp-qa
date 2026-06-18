@@ -457,6 +457,35 @@ const getRenderListings = (section, listings) => {
   return selectedCategories.map((category) => transformCategoryToListing(category, section));
 };
 
+// Helper to format section descriptions with an accent color on the second line
+const formatSectionDescription = (text) => {
+  if (!text) return { __html: "" };
+  const words = text.trim().split(/\s+/);
+  
+  if (words.length <= 1) {
+    return { __html: text };
+  }
+  
+  // Ensure the first row always has fewer words than the second row
+  // e.g. 5 words -> 2 and 3. 6 words -> 2 and 4. 7 words -> 3 and 4. 8 words -> 3 and 5.
+  const splitIndex = Math.max(1, Math.floor((words.length - 1) / 2));
+  
+  // Determine how many words to accent at the end
+  const accentCount = words.length > 5 ? 3 : 2;
+  // Ensure accentIndex is at or after the splitIndex
+  const accentIndex = Math.max(splitIndex, words.length - accentCount);
+  
+  const firstRow = words.slice(0, splitIndex).join(' ');
+  const secondRowNormal = words.slice(splitIndex, accentIndex).join(' ');
+  const secondRowAccent = words.slice(accentIndex).join(' ');
+  
+  const secondRowHtml = secondRowNormal 
+    ? `${secondRowNormal} <span class="${styles.accentWord}">${secondRowAccent}</span>`
+    : `<span class="${styles.accentWord}">${secondRowAccent}</span>`;
+  
+  return { __html: `${firstRow}<br />${secondRowHtml}` };
+};
+
 /**
  * CARD_SQUARE_HORIZONTAL_NODETAIL - Square image cards with horizontal scrolling, no detailed info
  */
@@ -520,9 +549,10 @@ export const CardGrid = ({ section, listings, className }) => {
             <div className={styles.sectionPreTitle}>{section.sectionTitle}</div>
           )}
           {section.description && (
-            <h2 className={cn("h2", styles.sectionTitle)}>
-              {section.description}
-            </h2>
+            <h2 
+              className={cn("h2", styles.sectionTitle)}
+              dangerouslySetInnerHTML={formatSectionDescription(section.description)}
+            />
           )}
         </div>
         
