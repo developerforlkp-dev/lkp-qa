@@ -31,8 +31,8 @@
     top: 70%
     left: 60px
     max-width: 480px
-    width: 30%
-    min-width: 300px
+    width: 28%
+    min-width: 280px
     transform: translateY(-50%)
     // Ensure text stands out
     .hero-title-1, .hero-desc
@@ -40,12 +40,24 @@
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4)
         +dark
             color: $n8
+    +d
+        left: 40px
+        max-width: 340px
+        width: 26%
+        min-width: 240px
+    +t
+        left: 30px
+        max-width: 280px
+        width: 30%
+        min-width: 220px
     +m
         top: auto
         bottom: 20px
         left: 20px
         right: 20px
+        width: auto
         max-width: calc(100% - 40px)
+        min-width: unset
         transform: none
 
 .titleBox1
@@ -70,8 +82,10 @@
     max-width: 500px
     word-wrap: break-word
     white-space: normal
+    +d
+        font-size: 36px
     +t
-        font-size: clamp(38px, 4vw, 56px)
+        font-size: clamp(28px, 3.5vw, 36px)
     +m
         font-size: clamp(32px, 8vw, 46px)
         line-height: 0.9
@@ -90,8 +104,10 @@
     max-width: 500px
     word-wrap: break-word
     white-space: normal
+    +d
+        font-size: 36px
     +t
-        font-size: clamp(38px, 4vw, 56px)
+        font-size: clamp(28px, 3.5vw, 36px)
     +m
         font-size: clamp(32px, 8vw, 46px)
         line-height: 0.9
@@ -124,8 +140,12 @@
     line-height: 1.4
     color: #4F5B73
     opacity: 1
+    +d
+        font-size: 12px
+        max-width: 300px
     +t
-        font-size: 13px
+        font-size: 11px
+        max-width: 240px
     +m
         margin-top: 8px
         font-size: 15px
@@ -142,8 +162,12 @@
     line-height: 1.4
     color: #4F5B73
     opacity: 1
+    +d
+        font-size: 12px
+        max-width: 300px
     +t
-        font-size: 13px
+        font-size: 11px
+        max-width: 240px
     +m
         margin-top: 8px
         font-size: 15px
@@ -156,7 +180,7 @@
     display: inline-flex
     align-items: center
     justify-content: space-between
-    width: 180px
+    width: 210px
     gap: 12px
     padding: 8px 12px 8px 24px
     background: #0097B2

@@ -391,21 +391,20 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
           <!-- Primary Solid Fill -->
           <path 
             class="hero-curve-fill"
-            d="M0 0 L250 0 C 300 200, 320 350, 320 500 C 320 650, 280 800, 220 1000 L0 1000 Z" 
+            d="M0 0 L320 0 C 370 350, 320 700, 240 1000 L0 1000 Z" 
           />
 
           <!-- Random Stroke Effect 1 -->
           <path 
-            d="M255 0 C 305 180, 325 320, 325 460" 
+            d="M320 0 C 370 350, 320 700, 240 1000" 
             fill="none" 
-            stroke="rgba(255, 255, 255, 0.6)" 
-            stroke-width="2" 
-            stroke-linecap="round"
+            stroke="rgba(255, 255, 255, 0.4)" 
+            stroke-width="1.5" 
           />
           
           <!-- Random Stroke Effect 2 -->
           <path 
-            d="M265 0 C 315 150, 335 280, 330 410" 
+            d="M310 0 C 350 300, 310 550, 250 800" 
             fill="none" 
             stroke="rgba(255, 255, 255, 0.3)" 
             stroke-width="4" 
@@ -414,7 +413,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
           
           <!-- Random Stroke Effect 3 -->
           <path 
-            d="M245 0 C 295 220, 315 360, 310 500" 
+            d="M300 0 C 340 280, 305 600, 235 900" 
             fill="none" 
             stroke="rgba(255, 255, 255, 0.4)" 
             stroke-width="1" 
