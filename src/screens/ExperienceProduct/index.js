@@ -2225,162 +2225,161 @@ const ExperienceProduct = () => {
         )}
 
         {/* TESTIMONIALS / REVIEWS SLIDER SECTION */}
-        <section className="testimonials-section" style={{ background: BG, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-                What people say
-              </h3>
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => scrollSlider("left")}
-                  style={{
-                    width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    color: FG, transition: "0.3s", outline: "none"
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollSlider("right")}
-                  style={{
-                    width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    color: FG, transition: "0.3s", outline: "none"
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                >
-                  <ChevronRight size={18} />
-                </button>
+        {(() => {
+          const normalizedReviews = (() => {
+            if (Array.isArray(reviews)) return reviews;
+            if (Array.isArray(reviews?.reviews)) return reviews.reviews;
+            if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
+            if (Array.isArray(reviews?.data)) return reviews.data;
+            return [];
+          })();
+
+          if (normalizedReviews.length === 0 && eligibleBookings.length === 0) return null;
+
+          return (
+            <section className="testimonials-section" style={{ background: BG, padding: "32px 80px" }}>
+              <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+                {normalizedReviews.length > 0 && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+                      <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
+                        What people say
+                      </h3>
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => scrollSlider("left")}
+                          style={{
+                            width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                            color: FG, transition: "0.3s", outline: "none"
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollSlider("right")}
+                          style={{
+                            width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                            color: FG, transition: "0.3s", outline: "none"
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div
+                      ref={sliderRef}
+                      style={{
+                        position: "relative",
+                        overflowX: "auto",
+                        margin: "24px -80px 0",
+                        padding: "20px 80px",
+                        display: "flex",
+                        gap: 24,
+                        scrollBehavior: "smooth",
+                        msOverflowStyle: "none",
+                        scrollbarWidth: "none"
+                      }}
+                      className="no-scrollbar"
+                    >
+                      {normalizedReviews.map((rev, idx) => {
+                        const name = rev.customerName || rev.author || "Guest";
+                        const rating = rev.rating || 5;
+                        const text = rev.comment || rev.text || "";
+
+                        return (
+                          <motion.div
+                            key={idx}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            style={{
+                              width: "360px",
+                              background: theme === "dark" 
+                                ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
+                                : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
+                              backdropFilter: "blur(20px)",
+                              WebkitBackdropFilter: "blur(20px)",
+                              border: `1px solid ${B}`,
+                              borderRadius: "24px",
+                              padding: "28px",
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "space-between",
+                              gap: 16,
+                              flexShrink: 0,
+                              position: "relative",
+                              overflow: "hidden",
+                              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
+                          >
+                            {/* Stylized background quote mark */}
+                            <span style={{
+                              position: "absolute",
+                              top: -5,
+                              right: 20,
+                              fontSize: 90,
+                              color: `${A}15`,
+                              fontFamily: "Georgia, serif",
+                              pointerEvents: "none",
+                              lineHeight: 1,
+                              userSelect: "none"
+                            }}>“</span>
+
+                            <div style={{ position: "relative", zIndex: 2 }}>
+                              <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
+                                ))}
+                              </div>
+                              <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
+                                &ldquo;{text}&rdquo;
+                              </p>
+                            </div>
+                            
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
+                              <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
+                                {name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
+                                <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Submitting Reviews Container */}
+                {eligibleBookings.length > 0 && (
+                  <div style={{ marginTop: normalizedReviews.length > 0 ? 48 : 0, display: "flex", justifyContent: "center" }}>
+                    <ReviewsSection
+                      reviews={reviews}
+                      summary={reviewSummary}
+                      listingId={id}
+                      eligibleBookings={eligibleBookings}
+                      onReviewSubmitted={() => {
+                        getListingReviews(id).then(resp => setReviews(resp)).catch(e => console.warn(e));
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-            
-            {(() => {
-              const normalizedReviews = (() => {
-                if (Array.isArray(reviews)) return reviews;
-                if (Array.isArray(reviews?.reviews)) return reviews.reviews;
-                if (Array.isArray(reviews?.data?.reviews)) return reviews.data.reviews;
-                if (Array.isArray(reviews?.data)) return reviews.data;
-                return [];
-              })();
-
-              const hasReviews = normalizedReviews.length > 0;
-              const displayReviews = hasReviews ? normalizedReviews : [
-                { customerName: "Aarav Sharma", comment: "An absolutely incredible experience. The host was warm, accommodating, and the attention to detail was unmatched.", rating: 5 },
-                { customerName: "Priya Patel", comment: "Highly curated trails, breathtaking views, and wonderful local insights. Can't wait to book this again!", rating: 5 },
-                { customerName: "Vikram Malhotra", comment: "Top tier service! The scheduling was seamless and the guides were exceptionally knowledgeable.", rating: 5 }
-              ];
-
-              return (
-                <div
-                  ref={sliderRef}
-                  style={{
-                    position: "relative",
-                    overflowX: "auto",
-                    margin: "24px -80px 0",
-                    padding: "20px 80px",
-                    display: "flex",
-                    gap: 24,
-                    scrollBehavior: "smooth",
-                    msOverflowStyle: "none",
-                    scrollbarWidth: "none"
-                  }}
-                  className="no-scrollbar"
-                >
-                  {displayReviews.map((rev, idx) => {
-                    const name = rev.customerName || rev.author || "Guest";
-                    const rating = rev.rating || 5;
-                    const text = rev.comment || rev.text || "";
-
-                    return (
-                      <motion.div
-                        key={idx}
-                        whileHover={{ y: -8, scale: 1.02 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                        style={{
-                          width: "360px",
-                          background: theme === "dark" 
-                            ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                            : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
-                          backdropFilter: "blur(20px)",
-                          WebkitBackdropFilter: "blur(20px)",
-                          border: `1px solid ${B}`,
-                          borderRadius: "24px",
-                          padding: "28px",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          gap: 16,
-                          flexShrink: 0,
-                          position: "relative",
-                          overflow: "hidden",
-                          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
-                      >
-                        {/* Stylized background quote mark */}
-                        <span style={{
-                          position: "absolute",
-                          top: -5,
-                          right: 20,
-                          fontSize: 90,
-                          color: `${A}15`,
-                          fontFamily: "Georgia, serif",
-                          pointerEvents: "none",
-                          lineHeight: 1,
-                          userSelect: "none"
-                        }}>“</span>
-
-                        <div style={{ position: "relative", zIndex: 2 }}>
-                          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
-                            ))}
-                          </div>
-                          <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
-                            &ldquo;{text}&rdquo;
-                          </p>
-                        </div>
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
-                            {name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
-                            <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-
-            {/* Submitting Reviews Container */}
-            {eligibleBookings.length > 0 && (
-              <div style={{ marginTop: 48, display: "flex", justifyContent: "center" }}>
-                <ReviewsSection
-                  reviews={reviews}
-                  summary={reviewSummary}
-                  listingId={id}
-                  eligibleBookings={eligibleBookings}
-                  onReviewSubmitted={() => {
-                    getListingReviews(id).then(resp => setReviews(resp)).catch(e => console.warn(e));
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        </section>
+            </section>
+          );
+        })()}
 
 
         <BookingSystem
