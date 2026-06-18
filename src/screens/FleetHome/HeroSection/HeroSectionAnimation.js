@@ -192,8 +192,12 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         gsap.to(getCard(prv), { scale: 1.1, ease: EASE_TYPE });
         gsap.to(getCardContent(active), { y: thumbnailsY + 100, opacity: 0, duration: 0.3, ease: EASE_TYPE });
 
+        const isMobile = containerWidth <= MOBILE_BREAKPOINT;
+        const imageLeft = isMobile ? 0 : containerWidth * 0.2;
+        const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
+
         gsap.to(getCard(active), {
-          x: 0, y: 0, ease: EASE_TYPE, width: containerWidth, height: containerHeight, borderRadius: 0, scale: 1,
+          x: imageLeft, y: 0, ease: EASE_TYPE, width: imageWidth, height: containerHeight, borderRadius: 0, scale: 1,
           onComplete: () => {
             const prvIndexInRest = rest.length - 1;
             const config = THUMB_CONFIGS[Math.min(prvIndexInRest, 2)];
@@ -281,7 +285,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         return startX;
       };
 
-      gsap.set(getCard(active), { x: 0, y: 0, width: containerWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 1, scale: 1 });
+      const isMobile = containerWidth <= MOBILE_BREAKPOINT;
+      const imageLeft = isMobile ? 0 : containerWidth * 0.2;
+      const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
+
+      gsap.set(getCard(active), { x: imageLeft, y: 0, width: imageWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 1, scale: 1 });
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
 
       rest.forEach((cardIndex, index) => {
@@ -379,9 +387,42 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         z-index: 21;
         pointer-events: none;
       ">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d="M 0,0 L 28,0 C 25,25 32,30 32,50 C 32,70 25,75 28,100 L 0,100 Z" fill="#ffffff" />
-          <path d="M 100,75 C 96,80 98,92 88,100 L 100,100 Z" fill="#ffffff" />
+        <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+          <!-- Primary Solid Fill -->
+          <path 
+            d="M0 0 L250 0 C 300 200, 320 350, 320 500 C 320 650, 280 800, 220 1000 L0 1000 Z" 
+            fill="#ffffff" 
+          />
+
+          <!-- Random Stroke Effect 1 -->
+          <path 
+            d="M255 0 C 305 180, 325 320, 325 460" 
+            fill="none" 
+            stroke="rgba(255, 255, 255, 0.6)" 
+            stroke-width="2" 
+            stroke-linecap="round"
+          />
+          
+          <!-- Random Stroke Effect 2 -->
+          <path 
+            d="M265 0 C 315 150, 335 280, 330 410" 
+            fill="none" 
+            stroke="rgba(255, 255, 255, 0.3)" 
+            stroke-width="4" 
+            stroke-linecap="round"
+          />
+          
+          <!-- Random Stroke Effect 3 -->
+          <path 
+            d="M245 0 C 295 220, 315 360, 310 500" 
+            fill="none" 
+            stroke="rgba(255, 255, 255, 0.4)" 
+            stroke-width="1" 
+            stroke-linecap="round"
+          />
+
+          <!-- Small bottom corner element -->
+          <path d="M1000 750 C960 800, 980 920, 880 1000 L1000 1000 Z" fill="#ffffff" />
         </svg>
       </div>
     `;
@@ -398,8 +439,12 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       const detailsActive = detailsEvenRef_state.current ? "#details-even" : "#details-odd";
       const detailsInactive = detailsEvenRef_state.current ? "#details-odd" : "#details-even";
 
+      const isMobile = containerWidth <= MOBILE_BREAKPOINT;
+      const imageLeft = isMobile ? 0 : containerWidth * 0.2;
+      const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
+
       // Smoothly fade in active banner image once fully decoded to mask progressive loading sliced states
-      gsap.set(getCard(active), { x: 0, y: 0, width: containerWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 0 });
+      gsap.set(getCard(active), { x: imageLeft, y: 0, width: imageWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 0 });
       loadImage(destinations[active].image).then(() => {
         if (isMountedRef.current) {
           gsap.to(getCard(active), { opacity: 1, duration: 0.6, ease: "power2.out" });
