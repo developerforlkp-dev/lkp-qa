@@ -21,6 +21,15 @@ const formatImageUrl = (url) => {
 };
 
 const formatMoneyLabel = (currency, amount) => `${currency} ${Number(amount || 0).toFixed(2)}`;
+const toPositiveNumber = (...values) => {
+  for (const value of values) {
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue) && numericValue > 0) {
+      return numericValue;
+    }
+  }
+  return 0;
+};
 
 
 const Checkout = () => {
@@ -557,17 +566,26 @@ const Checkout = () => {
         }
 
         if (remainingDiscount > 0) {
-          const discountRate = subtotalBeforeDiscountAndTax > 0
-            ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
-            : 0;
+          const discountRate = toPositiveNumber(
+            pricing.promoDiscountRate,
+            pricing.couponDiscountRate,
+            earlyBirdToDisplay > 0 ? 0 : pricing.discountPercentage,
+            earlyBirdToDisplay > 0 ? 0 : pricing.discountRate,
+            subtotalBeforeDiscountAndTax > 0
+              ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
+              : 0
+          );
           const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
           rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(remainingDiscount)}` });
         }
 
         if (earlyBirdToDisplay > 0) {
-          const ebRate = subtotalBeforeDiscountAndTax > 0
-            ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
-            : 0;
+          const ebRate = toPositiveNumber(
+            pricing.earlyBirdDiscountRate,
+            subtotalBeforeDiscountAndTax > 0
+              ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
+              : 0
+          );
           const ebRateLabel = ebRate > 0 ? ` (${ebRate.toFixed(2)}%)` : "";
           rows.push({ title: `Early Bird Discount${ebRateLabel}`, value: `- ${fmt(earlyBirdToDisplay)}` });
         }
