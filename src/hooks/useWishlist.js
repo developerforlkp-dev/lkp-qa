@@ -80,12 +80,13 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       setSaved(nextSaved);
       return nextSaved;
     } catch (error) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if (error?.response?.status === 401 || error?.response?.status === 403 || error?.response?.status === 400) {
         wishlistCache.delete(key);
         setSaved(false);
         return false;
       }
-      throw error;
+      console.warn("Failed to sync wishlist status:", error);
+      return false;
     } finally {
       setLoading(false);
     }
