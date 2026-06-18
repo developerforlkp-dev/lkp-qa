@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import styles from "./Header.module.sass";
 import { Link, NavLink } from "react-router-dom";
@@ -10,6 +10,7 @@ import Modal from "../Modal";
 import Login from "../Login";
 import useDarkMode from "use-dark-mode";
 import MobileNavDrawer from "./MobileDrawer/MobileNavDrawer";
+import { getCustomerWishlistItems } from "../../utils/api";
 
 
 
@@ -39,6 +40,34 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
 
   // Determine if we should show login button (if notAuthorized prop is true OR user is not authenticated)
   const shouldShowLogin = notAuthorized || !isAuthenticated();
+
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    if (shouldShowLogin) return;
+
+    // Fetch initial count
+    getCustomerWishlistItems()
+      .then(items => {
+        if (Array.isArray(items)) {
+          setWishlistCount(items.length);
+        }
+      })
+      .catch(() => {});
+
+    const handleWishlistChange = (e) => {
+      if (e.detail?.saved === true) {
+        setWishlistCount(prev => prev + 1);
+      } else if (e.detail?.saved === false) {
+        setWishlistCount(prev => Math.max(0, prev - 1));
+      }
+    };
+
+    window.addEventListener("lkp:wishlist-changed", handleWishlistChange);
+    return () => {
+      window.removeEventListener("lkp:wishlist-changed", handleWishlistChange);
+    };
+  }, [shouldShowLogin]);
 
   return (
     <>
@@ -90,6 +119,9 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
               activeClassName={styles.active}
             >
               Wishlist
+              {wishlistCount > 0 && (
+                <span className={styles.wishlistBadge}>{wishlistCount > 99 ? "99+" : wishlistCount}</span>
+              )}
             </NavLink>
             <Notification className={styles.notification} />
             {shouldShowLogin ? (

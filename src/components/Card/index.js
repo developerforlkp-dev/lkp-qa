@@ -76,6 +76,7 @@ const Item = ({ className, item, row, car, hidePrice }) => {
             itemType={wishlistConfig.itemType}
             itemId={wishlistConfig.itemId}
             initialSaved={wishlistConfig.initialSaved}
+            variant="icon"
           />
         )}
       </div>
