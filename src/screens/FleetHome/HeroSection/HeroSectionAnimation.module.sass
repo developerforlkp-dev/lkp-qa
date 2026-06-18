@@ -28,7 +28,7 @@
 .details
     z-index: 22
     position: absolute
-    top: 50%
+    top: 70%
     left: 60px
     max-width: 480px
     width: 30%
@@ -202,14 +202,23 @@
         width: 16px
         height: 16px
 
-// Ensure hero text is dark for the white curve background
+// Ensure hero text is dark for the white curve background, and white for the dark curve
 .details .title1,
 :global(.hero-title-1)
     color: #11284b !important
     text-shadow: none !important
+    +dark
+        color: $n8 !important
 
 .details .desc,
 :global(.hero-desc)
     color: #334155 !important
     text-shadow: none !important
+    +dark
+        color: $n6 !important
 
+:global(.hero-curve-fill)
+    fill: #ffffff
+    transition: fill 0.3s ease
+    +dark
+        fill: #070B14

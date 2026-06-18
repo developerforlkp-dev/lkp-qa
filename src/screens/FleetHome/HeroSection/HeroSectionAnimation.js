@@ -390,8 +390,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
           <!-- Primary Solid Fill -->
           <path 
+            class="hero-curve-fill"
             d="M0 0 L250 0 C 300 200, 320 350, 320 500 C 320 650, 280 800, 220 1000 L0 1000 Z" 
-            fill="#ffffff" 
           />
 
           <!-- Random Stroke Effect 1 -->
@@ -422,7 +422,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
           />
 
           <!-- Small bottom corner element -->
-          <path d="M1000 750 C960 800, 980 920, 880 1000 L1000 1000 Z" fill="#ffffff" />
+          <path class="hero-curve-fill" d="M1000 750 C960 800, 980 920, 880 1000 L1000 1000 Z" />
         </svg>
       </div>
     `;
