@@ -41,6 +41,43 @@ const asNonEmptyString = (value) => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const toTitleCase = (value) => {
+  const text = asNonEmptyString(value);
+  if (!text) return null;
+
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const formatPersonName = (value) => {
+  const text = asNonEmptyString(value);
+  if (!text) return null;
+
+  return text
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => {
+      if (part.length === 1) return part.toUpperCase();
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
+    .join(" ");
+};
+
+const formatPaymentMethod = (value) => {
+  const text = asNonEmptyString(value);
+  if (!text) return null;
+
+  if (text.trim().toLowerCase() === "upi") {
+    return "UPI";
+  }
+
+  return toTitleCase(text);
+};
+
 // Determine payment status mapping - handle case-insensitive matching
 const getPaymentStatus = (paymentStatus) => {
   if (!paymentStatus) return "Pending";
@@ -130,6 +167,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
         customerObj?.customerName,
         customerObj?.guestName
       );
+  const formattedCustomerName = formatPersonName(customerName);
 
   const customerPhone = useProfileInfo
     ? (profileData.phone || profileData.mobile || "")
@@ -573,12 +611,12 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       alt: title,
     },
     guest: {
-      name: customerName || "Guest",
+      name: formattedCustomerName || customerName || "Guest",
       phone: customerPhone || "",
       email: customerEmail || "",
     },
     pricing: pricing,
-    paymentMethod: apiBooking.paymentMethod || apiBooking.payment_method || null,
+    paymentMethod: formatPaymentMethod(apiBooking.paymentMethod || apiBooking.payment_method) || null,
     paymentStatus: apiBooking.paymentStatus || "PENDING",
     specialRequests: apiBooking.specialRequests,
     addons: addonsList,
@@ -2194,10 +2232,11 @@ const ViewDetails = () => {
               <div className={styles.summaryLabel}>Payment Method</div>
               <div className={styles.summaryValue}>
                 {(() => {
-                  const paymentMethod = booking.paymentMethod ||
+                  const paymentMethod = formatPaymentMethod(
+                    booking.paymentMethod ||
                     booking.originalData?.paymentMethod ||
-                    booking.originalData?.payment_method ||
-                    null;
+                    booking.originalData?.payment_method
+                  );
                   console.log("✅ Displaying payment method:", {
                     bookingPaymentMethod: booking.paymentMethod,
                     originalPaymentMethod: booking.originalData?.paymentMethod,
