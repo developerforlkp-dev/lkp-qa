@@ -14,7 +14,7 @@ const Bookings = ({ bookingData = null }) => {
 
   // Static browser tab title
   useDocumentTitle("My Bookings");
-
+  // test
   useEffect(() => {
     // If bookingData is provided as prop, use it directly
     if (bookingData) {
