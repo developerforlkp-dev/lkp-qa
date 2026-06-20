@@ -30,6 +30,40 @@ const normalizeTaxTitle = (title, taxRate = null) => {
   return `Taxes${rateLabel}`;
 };
 
+const getStayEarlyBirdDiscount = (stayDetails, checkInDate) => {
+  const earlyBirdDiscounts = stayDetails?.earlyBirdDiscounts || stayDetails?.early_bird_discounts || [];
+  if (!checkInDate || !Array.isArray(earlyBirdDiscounts) || earlyBirdDiscounts.length === 0) {
+    return { percent: 0, amount: 0 };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const stayDate = new Date(checkInDate);
+  if (Number.isNaN(stayDate.getTime())) {
+    return { percent: 0, amount: 0 };
+  }
+  stayDate.setHours(0, 0, 0, 0);
+
+  const daysInAdvance = Math.floor((stayDate - today) / (1000 * 60 * 60 * 24));
+  const eligibleTiers = earlyBirdDiscounts.filter((tier) => (
+    tier?.isActive && daysInAdvance >= Number(tier?.daysInAdvance || 0)
+  ));
+
+  if (eligibleTiers.length === 0) {
+    return { percent: 0, amount: 0 };
+  }
+
+  const bestTier = eligibleTiers.sort(
+    (a, b) => Number(b?.percentage || 0) - Number(a?.percentage || 0)
+  )[0];
+
+  return {
+    percent: Number(bestTier?.percentage || 0),
+    amount: 0,
+  };
+};
+
 const reorderPriceRows = (rows, computedTotal = null) => {
   const primaryRows = [];
   const addOnRows = [];
@@ -460,6 +494,15 @@ const Checkout = () => {
       const longStayDiscountAmount = discountableAmount > 0 && tierDiscountPercent > 0
         ? (discountableAmount * tierDiscountPercent) / 100
         : 0;
+      const existingEarlyBirdRow = rows.find((r) => /early[\s-]?bird/i.test(String(r.title || "")));
+      const existingEarlyBirdPercentMatch = String(existingEarlyBirdRow?.title || "").match(/(\d+(?:\.\d+)?)\s*%/);
+      const existingEarlyBirdPercent = existingEarlyBirdPercentMatch ? Number(existingEarlyBirdPercentMatch[1]) : 0;
+      const existingEarlyBirdAmount = existingEarlyBirdRow ? Math.abs(parseAmount(existingEarlyBirdRow.value)) : 0;
+      const computedEarlyBird = getStayEarlyBirdDiscount(stayDetails, bookingData?.checkInDate);
+      const earlyBirdDiscountPercent = computedEarlyBird.percent || existingEarlyBirdPercent;
+      const earlyBirdDiscountAmount = discountableAmount > 0 && earlyBirdDiscountPercent > 0
+        ? (discountableAmount * earlyBirdDiscountPercent) / 100
+        : existingEarlyBirdAmount;
       const additionalDiscountAmount = discountableAmount > 0 && pricingDiscountPercent > 0
         ? (discountableAmount * pricingDiscountPercent) / 100
         : 0;
@@ -481,6 +524,13 @@ const Checkout = () => {
         }
       }
 
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        const title = String(rows[i]?.title || "");
+        if (/early[\s-]?bird/i.test(title)) {
+          rows.splice(i, 1);
+        }
+      }
+
       // Remove existing long-stay rows too (to avoid duplicates), then reinsert once
       for (let i = rows.length - 1; i >= 0; i -= 1) {
         const title = String(rows[i]?.title || "");
@@ -498,6 +548,14 @@ const Checkout = () => {
         rows.splice(nextInsertIndex, 0, {
           title: `Discount (${pricingDiscountPercent.toFixed(2)}%)`,
           value: `- INR ${additionalDiscountAmount.toFixed(2)}`,
+        });
+        nextInsertIndex += 1;
+      }
+
+      if (earlyBirdDiscountAmount > 0) {
+        rows.splice(nextInsertIndex, 0, {
+          title: `Early Bird Discount (${earlyBirdDiscountPercent.toFixed(2)}%)`,
+          value: `- INR ${earlyBirdDiscountAmount.toFixed(2)}`,
         });
         nextInsertIndex += 1;
       }
