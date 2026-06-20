@@ -2254,11 +2254,19 @@ const StayDetails = () => {
     return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodeURI(url.replaceAll("%2F", "/"))}`;
   };
 
-  const handleRoomSelect = useCallback((roomId, mealPlan) => {
+  const handleRoomSelect = useCallback((roomId, mealPlan, action = "toggle") => {
     const rid = String(roomId);
     setSelectedRooms(prev => {
       const exists = prev.find(r => r.roomId === rid);
       if (exists) {
+        if (action === "update") {
+          return prev.map((room) => (
+            room.roomId === rid
+              ? { ...room, mealPlan: mealPlan || room.mealPlan || "EP" }
+              : room
+          ));
+        }
+
         const filtered = prev.filter(r => r.roomId !== rid);
         if (filtered.length === 0) {
           const stayRoomsCatalog = stay?.rooms || stay?.roomTypes || stay?.room_types || [];

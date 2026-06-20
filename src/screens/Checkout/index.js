@@ -30,6 +30,21 @@ const normalizeTaxTitle = (title, taxRate = null) => {
   return `Taxes${rateLabel}`;
 };
 
+const getAddOnAmount = (addOn) => {
+  if (!addOn) return 0;
+  const quantity = Number(addOn?.quantity || 1);
+  const totalPrice = Number(addOn?.totalPrice);
+  if (Number.isFinite(totalPrice) && totalPrice >= 0) return totalPrice;
+
+  const priceValue = Number(addOn?.priceValue);
+  if (Number.isFinite(priceValue) && priceValue >= 0) return priceValue;
+
+  const pricePerUnit = Number(addOn?.pricePerUnit ?? addOn?.price);
+  if (Number.isFinite(pricePerUnit) && pricePerUnit >= 0) return pricePerUnit * quantity;
+
+  return 0;
+};
+
 const getStayEarlyBirdDiscount = (stayDetails, checkInDate) => {
   const earlyBirdDiscounts = stayDetails?.earlyBirdDiscounts || stayDetails?.early_bird_discounts || [];
   if (!checkInDate || !Array.isArray(earlyBirdDiscounts) || earlyBirdDiscounts.length === 0) {
@@ -181,7 +196,7 @@ const Checkout = () => {
 
       // Add add-ons
       const addOnsTotal = selectedAddOns.reduce(
-        (sum, addOn) => sum + (addOn?.priceValue || addOn?.price || 0),
+        (sum, addOn) => sum + getAddOnAmount(addOn),
         0
       );
 
@@ -416,7 +431,7 @@ const Checkout = () => {
 
 
   // Build price table from receipt if provided
-  const { table } = useMemo(() => {
+  const { table, computedFinalAmount } = useMemo(() => {
     const parseAmount = (val) => {
       if (val === null || val === undefined) return 0;
       const raw = String(val).replace(/,/g, "");
@@ -489,7 +504,7 @@ const Checkout = () => {
         }
       }
 
-      const discountableAmount = Math.max(0, baseAmount + extraAmount);
+      const discountableAmount = Math.max(0, baseAmount + extraAmount + addOnsAmount);
 
       const longStayDiscountAmount = discountableAmount > 0 && tierDiscountPercent > 0
         ? (discountableAmount * tierDiscountPercent) / 100
@@ -527,6 +542,13 @@ const Checkout = () => {
       for (let i = rows.length - 1; i >= 0; i -= 1) {
         const title = String(rows[i]?.title || "");
         if (/early[\s-]?bird/i.test(title)) {
+          rows.splice(i, 1);
+        }
+      }
+
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        const title = String(rows[i]?.title || "");
+        if (/final guest price|stay total|grand total/i.test(title)) {
           rows.splice(i, 1);
         }
       }
@@ -569,6 +591,7 @@ const Checkout = () => {
       }
 
       const taxRowIndex = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
+      let correctedTax = 0;
       if (taxRate > 0) {
         // Recalculate tax based on discounted subtotal and ensure the row exists.
         const discountRows = rows.filter((r) => /discount/i.test(String(r.title || "")));
@@ -577,8 +600,8 @@ const Checkout = () => {
           0
         );
 
-        const subtotalForTax = baseAmount + extraAmount - currentDiscountAmount;
-        const correctedTax = Math.max(0, subtotalForTax * (taxRate / 100));
+        const subtotalForTax = discountableAmount - currentDiscountAmount;
+        correctedTax = Math.max(0, subtotalForTax * (taxRate / 100));
         const taxRow = {
           title: normalizeTaxTitle("Tax", taxRate),
           value: formatInr(correctedTax),
@@ -590,6 +613,15 @@ const Checkout = () => {
           rows.push(taxRow);
         }
       }
+
+      const totalDiscountAmount = rows
+        .filter((r) => /discount/i.test(String(r.title || "")))
+        .reduce((sum, r) => sum + Math.abs(parseAmount(r.value)), 0);
+      const correctedFinalAmount = Math.max(0, discountableAmount - totalDiscountAmount + correctedTax);
+      rows.push({
+        title: "Final Guest Price",
+        value: formatInr(correctedFinalAmount),
+      });
 
       const normalizedRows = rows.map((row) => {
         const title = String(row?.title || "");
@@ -607,6 +639,7 @@ const Checkout = () => {
           normalizedRows,
           Math.max(0, baseAmount + extraAmount + addOnsAmount)
         ),
+        computedFinalAmount: correctedFinalAmount,
       };
     }
 
@@ -617,12 +650,13 @@ const Checkout = () => {
       }));
       return {
         table: reorderPriceRows(rows),
+        computedFinalAmount: null,
       };
     }
 
     // Fallback: compute a minimal table from selectedAddOns only
     const addOnsPrice = selectedAddOns.reduce(
-      (sum, addOn) => sum + (addOn?.priceValue || addOn?.price || 0),
+      (sum, addOn) => sum + getAddOnAmount(addOn),
       0
     );
     return {
@@ -632,12 +666,44 @@ const Checkout = () => {
           value: formatInr(addOnsPrice),
         },
       ],
+      computedFinalAmount: addOnsPrice,
     };
   }, [bookingData, selectedAddOns, stayDetails]);
+
+  useEffect(() => {
+    if (computedFinalAmount == null || !paymentData) return;
+
+    const adjustedAmount = paymentData?.paymentMethod === "razorpay"
+      ? Math.round(computedFinalAmount * 100)
+      : computedFinalAmount;
+
+    if (Number(paymentData.amount) === Number(adjustedAmount)) return;
+
+    const nextPaymentData = {
+      ...paymentData,
+      amount: adjustedAmount,
+    };
+
+    setPaymentData(nextPaymentData);
+    try {
+      localStorage.setItem("pendingPayment", JSON.stringify(nextPaymentData));
+    } catch (e) {
+      console.error("Error updating payment data:", e);
+    }
+  }, [computedFinalAmount, paymentData]);
 
   const isStayBooking = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
   const tripTitle = isStayBooking ? "Your stay" : "Your trip";
   const isAmountInPaise = paymentData?.paymentMethod === "razorpay";
+  const effectivePaymentData = computedFinalAmount != null && paymentData
+    ? {
+        ...paymentData,
+        amount: isAmountInPaise ? Math.round(computedFinalAmount * 100) : computedFinalAmount,
+      }
+    : paymentData;
+  const resolvedAmountToPay = computedFinalAmount != null
+    ? (isAmountInPaise ? Math.round(computedFinalAmount * 100) : computedFinalAmount)
+    : paymentData?.amount;
 
   // Get first image
   const getListingImage = () => {
@@ -702,10 +768,10 @@ const Checkout = () => {
             title={tripTitle}
             buttonUrl="/checkout-complete"
             guests={!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate)}
-            amountToPay={paymentData?.amount}
+            amountToPay={resolvedAmountToPay}
             amountInPaise={isAmountInPaise}
             currency={paymentData?.currency || "INR"}
-            paymentData={paymentData}
+            paymentData={effectivePaymentData}
             dateValue={items[0]?.title}
             guestValue={items[2]?.title}
             onEditDate={() => setShowDatePicker(true)}
@@ -740,7 +806,8 @@ const Checkout = () => {
             items={items}
             table={table}
             addOns={selectedAddOns}
-            amountToPay={paymentData?.amount}
+            addonDetails={selectedAddOns}
+            amountToPay={resolvedAmountToPay}
             amountInPaise={isAmountInPaise}
             currency={paymentData?.currency || "INR"}
             hostName={hostName}

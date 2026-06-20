@@ -1128,25 +1128,44 @@ const StayBookingSystem = ({
       const customerName = userInfo.name || (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || userInfo.customerName || "Guest User";
       const customerEmail = userInfo.email || userInfo.customerEmail || "guest@example.com";
       const customerPhone = userInfo.customerPhone || (userInfo.phone ? (userInfo.countryCode || "+91") + userInfo.phone : "") || userInfo.phoneNumber || "";
+      const backendAddOns = Array.isArray(selectedAddOns)
+        ? selectedAddOns.map((selectedAddOnId) => {
+            const addonData = Array.isArray(stay?.addons)
+              ? stay.addons.find((addon) => String(addon.addonId || addon.assignmentId || addon.id) === String(selectedAddOnId))
+              : null;
+            if (!addonData) return null;
 
-      const payload = {
+            return {
+              addonId: Number(addonData.addonId || addonData.assignmentId || addonData.id),
+              quantity: Number(addOnQuantities?.[selectedAddOnId] || 1),
+            };
+          }).filter(Boolean)
+        : [];
+
+      const payloadBase = {
         stayId: Number(stay.stayId || stay.id),
         checkInDate: checkInDate.format("YYYY-MM-DD"),
         checkOutDate: checkOutDate.format("YYYY-MM-DD"),
         numberOfGuests: (guests.adults || 1) + (guests.children || 0),
         adults: guests.adults || 1,
         children: guests.children || 0,
-        extraAdults: extraAdultsCount,
-        extraChildren: extraChildrenCount,
         customerName,
         customerEmail,
         customerPhone,
         specialRequests: "",
-        amount: pricing.finalTotal,
         paymentMethod: "razorpay",
-        rooms: isPropertyBased
-          ? [] // Property-based: no individual rooms, extras tracked at top level
-          : (() => {
+        addons: backendAddOns,
+      };
+
+      const payload = isPropertyBased
+        ? {
+            ...payloadBase,
+            extraAdults: extraAdultsCount,
+            extraChildren: extraChildrenCount,
+          }
+        : {
+            ...payloadBase,
+            rooms: (() => {
               const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
               const grouped = {};
               if (distribution.success) {
@@ -1183,13 +1202,14 @@ const StayBookingSystem = ({
                   roomsBooked: r.count,
                   adults: grp.adults,
                   children: grp.children,
+                  mealPlanCode: r.mealPlan || "EP",
+                  extraBeds: Number(r.extraBeds || 0),
                   extraAdults: grp.extraAdults,
                   extraChildren: grp.extraChildren,
-                  mealPlanCode: r.mealPlan || "EP"
                 };
               });
             })()
-      };
+          };
 
       const response = await createStayOrder(payload);
       const paymentResponse = response?.payment || response?.data?.payment || response;
@@ -1321,13 +1341,17 @@ const StayBookingSystem = ({
         
         const isIndividual = addonData.pricingType === "Individual";
         const quantity = isIndividual ? (addOnQuantities[id] || 1) : 1;
-        const priceValue = parseFloat(addonData.price || 0) * quantity;
+        const unitPrice = parseFloat(addonData.price || 0);
+        const priceValue = unitPrice * quantity;
         
         return {
           id: addonData.addonId || addonData.assignmentId || addonData.id,
           title: addonData.title || addonData.name || "Addon",
-          price: `${addonData.currency || "INR"} ${priceValue.toFixed(2)}`,
+          name: addonData.title || addonData.name || "Addon",
+          price: unitPrice,
+          pricePerUnit: unitPrice,
           priceValue: priceValue,
+          totalPrice: priceValue,
           currency: addonData.currency || "INR",
           quantity: quantity,
           pricingType: addonData.pricingType || "Individual",
@@ -1344,9 +1368,11 @@ const StayBookingSystem = ({
         Math.round(pricing.finalTotal * 100)
       );
 
-      // Add frontend calculated addons total if not zero
       if (addOnsTotalRupees > 0) {
-        amountInPaise += Math.round(addOnsTotalRupees * 100);
+        amountInPaise = Math.max(
+          amountInPaise,
+          Math.round(pricing.finalTotal * 100)
+        );
       }
 
       const appOrderId = orderResponse?.orderId || response?.orderId || response?.data?.orderId || null;
@@ -1461,8 +1487,9 @@ const StayBookingSystem = ({
         )
       );
 
-      const subtotalBeforeTax = Math.max(0, grossBeforeDiscount - discountToShow);
+      const subtotalBeforeTax = Math.max(0, grossBeforeDiscount + addOnsTotalRupees - discountToShow);
       const combinedFrontendTax = Math.max(0, subtotalBeforeTax * (taxRate / 100));
+      const frontendFinalGuestPrice = subtotalBeforeTax + combinedFrontendTax;
 
       if (discountToShow > 0) {
         if (pricing.earlyBirdDiscountAmount > 0) {
@@ -1481,7 +1508,7 @@ const StayBookingSystem = ({
       if (addOnsTotalRupees > 0) {
         frontendReceipt.push({ title: "Add-ons Total", content: `+ ${currency} ${Number(addOnsTotalRupees).toFixed(2)}` });
       }
-      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(totalFromOrder + addOnsTotalRupees).toFixed(2)}` });
+      frontendReceipt.push({ title: "Final Guest Price", content: `${currency} ${Number(frontendFinalGuestPrice).toFixed(2)}` });
 
       // Frontend-calculated breakdown should be shown in Confirm & Pay.
       // Keep backend breakdown only as a fallback.
@@ -1504,7 +1531,7 @@ const StayBookingSystem = ({
         extraAdults: extraAdultsCount,
         extraChildren: extraChildrenCount,
         receipt: finalReceipt,
-        totalAmount: (backendTotalRupees ?? pricing.finalTotal) + addOnsTotalRupees,
+        totalAmount: frontendFinalGuestPrice,
         selectedAddOns: selectedAddOnsData,
       };
       localStorage.setItem("pendingBooking", JSON.stringify(bookingData));

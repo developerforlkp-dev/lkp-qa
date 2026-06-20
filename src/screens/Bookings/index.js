@@ -23,6 +23,7 @@ const Bookings = ({ bookingData = null }) => {
       setOrders(bookingsArray);
       setCompletedOrders([]); // Empty for prop-based data
       setLoading(false);
+      
       return;
     }
 

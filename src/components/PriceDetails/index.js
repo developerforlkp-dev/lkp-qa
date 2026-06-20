@@ -32,6 +32,13 @@ const PriceDetails = ({
     alert();
   };
 
+  const parseNumericAmount = (value) => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    const match = String(value).replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+    return match ? Number(match[0]) : 0;
+  };
+
   // Format amount - Razorpay amounts are in paise (smallest currency unit), so divide by 100 for INR
   const formatAmount = (amount) => {
     if (!amount) return null;
@@ -95,8 +102,8 @@ const PriceDetails = ({
               {displayAddons.map((addon, index) => {
                 const addonName = addon.name || addon.addonName || addon.title || "Add-on";
                 const addonQty = addon.quantity || 1;
-                const unitPrice = addon.pricePerUnit || addon.price || 0;
-                const subtotal = addon.totalPrice || (unitPrice * addonQty);
+                const unitPrice = parseNumericAmount(addon.pricePerUnit ?? addon.price);
+                const subtotal = parseNumericAmount(addon.totalPrice ?? addon.priceValue) || (unitPrice * addonQty);
 
                 return (
                   <div className={styles.addOnItem} key={addon.addonId || index}>

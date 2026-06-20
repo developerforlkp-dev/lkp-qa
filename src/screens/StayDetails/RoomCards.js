@@ -532,7 +532,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
 
 
 /* ---------- RoomCard (Horizontal Layout) ------------------------------ */
-const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange }) => {
+const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan }) => {
   const { tokens: { FG, B, A, AL, S } } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -547,7 +547,10 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
     if (room.apPrice) allPlans.push("AP");
   }
 
-  const [plan, setPlan] = useState(allPlans[0] || null);
+  const [plan, setPlan] = useState(selectedMealPlan || allPlans[0] || null);
+  useEffect(() => {
+    setPlan(selectedMealPlan || allPlans[0] || null);
+  }, [selectedMealPlan, allPlans]);
   const rawPrice = plan ? getPriceForPlan(room, plan) : room.b2cPrice || room.price;
   const discountRate = getBillingConfigDiscountRate(listing);
   const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
@@ -572,11 +575,11 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
   const handlePlanChange = (code) => {
     setPlan(code);
-    if (isSelected && onRoomSelect) onRoomSelect(room.roomId ?? room.id, code);
+    if (isSelected && onRoomSelect) onRoomSelect(room.roomId ?? room.id, code, "update");
   };
 
   const handleSelect = () => {
-    if (onRoomSelect) onRoomSelect(room.roomId ?? room.id, plan);
+    if (onRoomSelect) onRoomSelect(room.roomId ?? room.id, plan, isSelected ? "toggle" : "select");
   };
 
   return (
@@ -759,6 +762,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
             listing={listing}
             onRoomSelect={onRoomSelect}
             isSelected={!!selection}
+            selectedMealPlan={selection?.mealPlan}
             roomsCount={selection?.count || 1}
             onRoomsCountChange={(count) => onRoomsCountChange(roomId, count)}
           />
