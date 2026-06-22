@@ -517,6 +517,7 @@ const CheckoutComplete = () => {
             className={styles.control}
             urlHome="/"
             breadcrumbs={breadcrumbs}
+            backUrl="/"
           />
           <div className={styles.row}>
             <div className={styles.col}>
