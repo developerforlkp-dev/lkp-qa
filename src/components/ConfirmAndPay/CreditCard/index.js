@@ -81,7 +81,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       }
 
       // No payment session; just navigate to completion
-      history.push(buttonUrl);
+      history.replace(buttonUrl);
       setIsProcessing(false);
       return;
     }
@@ -169,7 +169,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
             }
           } catch { }
           localStorage.removeItem("pendingPayment");
-          history.push(buttonUrl);
+          history.replace(buttonUrl);
         },
 
         modal: {

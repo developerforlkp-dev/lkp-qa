@@ -166,7 +166,7 @@ const Checkout = () => {
           if (normalizedStatus === "FAILED" || normalizedStatus === "FAILURE") {
             localStorage.setItem("paymentFailed", "true");
             localStorage.setItem("paymentFailureOrderId", String(order.orderId || pendingOrderId));
-            history.push("/experience-checkout-complete");
+            history.replace("/experience-checkout-complete");
             return;
           }
 

@@ -33,7 +33,7 @@ const PayPal = ({ className, buttonUrl }) => {
         />
       </div>
       <div className={styles.control}>
-        <Link className={cn("button", styles.button)} to={buttonUrl}>
+        <Link className={cn("button", styles.button)} to={buttonUrl} replace>
           Confirm and pay
         </Link>
         <div className={styles.verified}>
