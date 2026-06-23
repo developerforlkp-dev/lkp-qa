@@ -15,6 +15,7 @@ import Page from "../../components/Page";
 import Loader from "../../components/Loader";
 import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
+import roomStyles from "./RoomCards.module.sass";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
@@ -3472,236 +3473,80 @@ function PropertyStayCard({ stay }) {
   const totalPhotos = Math.max(1, allImages.length);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "1fr" : "320px 1fr",
-        gap: isMobile ? 16 : 24,
-        background: W,
-        border: `1px solid ${B}`,
-        borderRadius: 12,
-        padding: isMobile ? 16 : 20,
-        marginBottom: 24,
-      }}
-      className="property-stay-card"
-    >
-      <motion.div
+    <div className={roomStyles.card} style={{ marginBottom: 24 }}>
+      <div 
+        className={roomStyles.collageWrap} 
         onClick={() => setShowModal(true)}
-        whileHover={{ scale: 1.02, y: -2 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          borderRadius: 10,
-          overflow: "hidden",
-          background: "linear-gradient(120deg, rgba(230,236,246,0.9), rgba(242,246,252,0.9))",
-          minHeight: 200,
-          position: "relative",
-          cursor: "pointer"
-        }}
-        onHoverStart={() => setIsHoveringCover(true)}
-        onHoverEnd={() => setIsHoveringCover(false)}
       >
-        {!coverLoaded && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 80%)",
-              transform: "translateX(-120%)",
-              animation: "propertyCoverShimmer 1.4s infinite",
-              zIndex: 2
-            }}
-          />
+        {allImages.length >= 3 ? (
+          <>
+            <img src={allImages[0]} alt={propertyName} className={roomStyles.mainImg} />
+            <div className={roomStyles.subImgCol}>
+              <img src={allImages[1]} alt={propertyName} className={roomStyles.subImg} />
+              <img src={allImages[2]} alt={propertyName} className={roomStyles.subImg} />
+            </div>
+          </>
+        ) : (
+          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={propertyName} className={roomStyles.singleImg} />
         )}
-        <motion.div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(180deg, rgba(8,18,36,0.04) 0%, rgba(8,18,36,0.2) 100%)",
-            opacity: coverLoaded ? 1 : 0.2,
-            zIndex: 1,
-            pointerEvents: "none"
-          }}
-          animate={{ opacity: coverLoaded ? 1 : 0.2 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        />
-        <motion.img
-          src={fixImageUrl(coverPhoto)}
-          alt={propertyName}
-          initial={{ opacity: 0, scale: 1.06, filter: "blur(8px)" }}
-          animate={{
-            opacity: coverLoaded ? 1 : 0,
-            scale: coverLoaded ? (isHoveringCover ? 1.04 : 1.015) : 1.08,
-            filter: coverLoaded ? "blur(0px)" : "blur(8px)"
-          }}
-          transition={{ duration: coverLoaded ? 0.75 : 0.55, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            width: "100%",
-            height: "100%",
-            minHeight: 200,
-            objectFit: "cover",
-            display: "block",
-            animation: coverLoaded ? "propertyCoverFloat 7s ease-in-out infinite" : "none"
-          }}
-          onLoad={() => setCoverLoaded(true)}
-          onError={(e) => {
-            e.currentTarget.src = "";
-            setCoverLoaded(true);
-          }}
-        />
+        <span className={roomStyles.badge}>PROPERTY STAY</span>
         
-        {/* Total Photo Count */}
-        <div style={{
-          position: "absolute", top: 12, left: 12, zIndex: 10,
-          background: S, color: FG, padding: "4px 8px", borderRadius: 6,
-          fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)", border: `1px solid ${B}66`
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          1 / {totalPhotos}
+        <div className={roomStyles.viewPhotosOverlay}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>{totalPhotos} Photos</span>
         </div>
+      </div>
+      <div className={roomStyles.body}>
+        <div className={roomStyles.infoCol}>
+          <div className={roomStyles.splitHeader}>
+            <div className={roomStyles.leftHeader}>
+              <h4 className={roomStyles.roomName}>{propertyName}</h4>
+              
+              <div className={roomStyles.amenitiesRow}>
+                {amenities.map((amenity, idx) => (
+                  <span key={idx} className={roomStyles.amenityTag}>{amenity}</span>
+                ))}
+              </div>
+            </div>
 
-        {/* View Photos Button */}
-        <div style={{
-          position: "absolute", bottom: 12, left: 12, zIndex: 10
-        }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowModal(true);
-            }}
-            style={{
-              background: S, color: FG, border: `1px solid ${B}66`,
-              padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-              cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-            View Photos
-          </button>
-        </div>
-      </motion.div>
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <p style={{ fontSize: 11, letterSpacing: "0.14em", color: A, fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>
-            Property Stay
-          </p>
-          <h3 style={{ fontSize: 28, lineHeight: 1.2, color: FG, marginBottom: 8 }}>{propertyName}</h3>
-          <p style={{ fontSize: 14, color: M, lineHeight: 1.6, marginBottom: 0 }}>
-            Entire-property booking with curated comfort and premium amenities.
-          </p>
-        </div>
+            <div className={roomStyles.rightHeader}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", marginBottom: 8 }}>
+                <span className={roomStyles.guestCount}>
+                  <Clock size={14} className={roomStyles.guestIcon} />
+                  Check-in: {checkInText}
+                </span>
+                <span className={roomStyles.guestCount}>
+                  <Clock size={14} className={roomStyles.guestIcon} />
+                  Check-out: {checkOutText}
+                </span>
+              </div>
 
-        {amenities.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "4px 0" }}>
-            {amenities.map((amenity, idx) => {
-              const IconComp = getAmenityIcon(amenity);
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    background: S,
-                    border: `1px solid ${B}66`,
-                    borderRadius: 20,
-                    padding: "6px 12px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: FG,
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.02)",
-                    backdropFilter: "blur(4px)",
-                    transition: "all 0.2s ease"
-                  }}
-                >
-                  <IconComp size={12} color={A} />
-                  <span>{amenity}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
-          <div style={{ 
-            display: isMobile ? "grid" : "flex", 
-            gridTemplateColumns: isMobile ? "1fr 1fr" : "unset",
-            flexWrap: "wrap", 
-            gap: 12,
-            width: isMobile ? "100%" : "auto"
-          }}>
-            <motion.div
-              whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
-              transition={{ duration: 0.2 }}
-              style={{
-                border: `1px solid ${B}99`,
-                borderRadius: 10,
-                padding: "10px 14px",
-                background: S,
-                boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: isMobile ? 0 : 150
-              }}
-            >
-              <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-in</div>
-              <div style={{ fontSize: 14, color: FG, fontWeight: 700, marginTop: 4 }}>{checkInText}</div>
-            </motion.div>
-            <motion.div
-              whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
-              transition={{ duration: 0.2 }}
-              style={{
-                border: `1px solid ${B}99`,
-                borderRadius: 10,
-                padding: "10px 14px",
-                background: S,
-                boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: isMobile ? 0 : 150
-              }}
-            >
-              <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Check-out</div>
-              <div style={{ fontSize: 14, color: FG, fontWeight: 700, marginTop: 4 }}>{checkOutText}</div>
-            </motion.div>
-            <motion.div
-              whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
-              transition={{ duration: 0.2 }}
-              style={{
-                border: `1px solid ${B}99`,
-                borderRadius: 10,
-                padding: "10px 14px",
-                background: S,
-                boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                minWidth: isMobile ? 0 : 170,
-                gridColumn: isMobile ? "1 / -1" : "auto"
-              }}
-            >
-              <div style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Price</div>
-              {priceValue != null ? (
-                <div style={{ marginTop: 4, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                  {discountRate > 0 && (
-                    <span style={{ fontSize: 13, color: M, textDecoration: "line-through", opacity: 0.8 }}>
-                      {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
-                    </span>
+              <div className={roomStyles.priceBlock}>
+                <span className={roomStyles.priceLabel}>PRICE</span>
+                <div className={roomStyles.amount}>
+                  {priceValue != null ? (
+                    <>
+                      {discountRate > 0 && (
+                        <span className={roomStyles.strikePrice}>
+                          {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
+                        </span>
+                      )}
+                      {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")}
+                      <span className={roomStyles.perNight}> / night</span>
+                    </>
+                  ) : (
+                    <span className={roomStyles.priceOnRequest}>Price on request</span>
                   )}
-                  <span style={{ fontSize: 16, color: FG, fontWeight: 800 }}>
-                    {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")} / night
-                  </span>
                 </div>
-              ) : (
-                <div style={{ fontSize: 16, color: FG, fontWeight: 800, marginTop: 4 }}>Price on request</div>
-              )}
-              {showSeasonal && (
-                <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Seasonal B2C Price
-                </div>
-              )}
-            </motion.div>
+              </div>
+            </div>
           </div>
 
+          <div className={roomStyles.descBlock}>
+            <p className={roomStyles.descText}>
+              Entire-property booking with curated comfort and premium amenities.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -3719,7 +3564,7 @@ function PropertyStayCard({ stay }) {
         </AnimatePresence>,
         document.body
       )}
-    </motion.div>
+    </div>
   );
 }
 
