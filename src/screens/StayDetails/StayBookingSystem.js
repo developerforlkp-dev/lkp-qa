@@ -85,8 +85,8 @@ const StayInlineCalendar = ({
               // In check-out mode, disable dates on or before check-in, and the blocked day itself and beyond.
               disabled =
                 (checkInKey && cell.key <= checkInKey) ||
-                cell.isBlocked ||
-                (nextBlockedKey && cell.key >= nextBlockedKey);
+                (cell.isBlocked && cell.key !== nextBlockedKey) ||
+                (nextBlockedKey && cell.key > nextBlockedKey);
             } else {
               // In check-in mode, only block globally blocked dates
               disabled = cell.isBlocked;
