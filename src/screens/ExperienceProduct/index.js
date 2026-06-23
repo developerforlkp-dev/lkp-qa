@@ -2294,6 +2294,7 @@ const ExperienceProduct = () => {
                         const name = rev.customerName || rev.author || "Guest";
                         const rating = rev.rating || 5;
                         const text = rev.comment || rev.text || "";
+                        const vendorResponse = rev.vendorResponse || rev.hostResponse || rev.reply || "";
 
                         return (
                           <motion.div
@@ -2341,9 +2342,19 @@ const ExperienceProduct = () => {
                                   <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
                                 ))}
                               </div>
-                              <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
+                              <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: vendorResponse ? 3 : 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
                                 &ldquo;{text}&rdquo;
                               </p>
+                              {vendorResponse && (
+                                <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${B}`, opacity: 0.96 }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                                    Response from Host
+                                  </div>
+                                  <p style={{ fontSize: 12.5, color: FG, margin: 0, lineHeight: 1.6 }}>
+                                    {vendorResponse}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                             
                             <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>

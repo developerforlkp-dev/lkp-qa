@@ -61,6 +61,7 @@ const List = ({ reviews = [] }) => {
       rating: review.rating || review.ratingScore || "5",
       time: formatDate(review.createdAt || review.reviewDate || review.time),
       content: review.comment || review.content || review.reviewText || "",
+      vendorResponse: review.vendorResponse || review.hostResponse || review.reply || "",
     }));
   }, [reviews]);
 
@@ -136,6 +137,12 @@ const List = ({ reviews = [] }) => {
               </div>
               {review.content && (
                 <div className={styles.content}>{review.content}</div>
+              )}
+              {review.vendorResponse && (
+                <div className={styles.vendorResponse}>
+                  <div className={styles.vendorLabel}>Response from Host</div>
+                  <div className={styles.vendorText}>{review.vendorResponse}</div>
+                </div>
               )}
               <div className={styles.foot}>
                 <div className={styles.time}>{review.time}</div>
