@@ -45,6 +45,24 @@ const Item = ({ className, item, row, car, hidePrice }) => {
 
   const shouldHidePrice = hidePrice;
 
+  const isClosedEvent = (() => {
+    // Only apply to events
+    const isEvent = wishlistConfig?.itemType === "event" || (item.url && item.url.includes("/event"));
+    if (!isEvent) return false;
+
+    const now = new Date();
+    
+    // Explicit status check
+    if (item.status && String(item.status).toLowerCase() === "closed") return true;
+    
+    // Check various end dates to see if booking/ticketing is closed
+    if (item.bookingCutoffTime && new Date(item.bookingCutoffTime) < now) return true;
+    if (item.bookingEndDate && new Date(item.bookingEndDate) < now) return true;
+    if (item.endDate && new Date(item.endDate) < now) return true;
+
+    return false;
+  })();
+
   return (
     <Link
       className={cn(
@@ -92,6 +110,14 @@ const Item = ({ className, item, row, car, hidePrice }) => {
             )}
           >
             {item.categoryText}
+          </div>
+        )}
+        {isClosedEvent && (
+          <div
+            className={cn(styles.category, styles.closedBadge)}
+            style={item.categoryText ? { right: 12, left: 'auto', top: 32 } : { right: 12, left: 'auto', top: 0 }}
+          >
+            Closed
           </div>
         )}
         {item.dateBadge && (
