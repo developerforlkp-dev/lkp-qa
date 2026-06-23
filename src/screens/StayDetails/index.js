@@ -690,17 +690,17 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
   if (!discounts || discounts.length === 0) return null;
 
   return (
-    <div style={{ display: "grid", height: 14, alignItems: "center", overflow: "hidden" }}>
+    <div style={{ display: "grid", height: 16, width: 220, alignItems: "center", overflow: "hidden", justifyItems: "flex-start" }}>
       <AnimatePresence>
         <motion.span
           key={index}
-          initial={{ y: 14, opacity: 0 }}
+          initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -14, opacity: 0 }}
+          exit={{ y: -16, opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
           style={{
             gridArea: "1 / 1",
-            fontSize: 9,
+            fontSize: 10,
             letterSpacing: "0.15em",
             textTransform: "uppercase",
             color: FG || "#FFFFFF",
@@ -710,11 +710,11 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
           }}
         >
           <span style={{ opacity: 0.8 }}>Book</span>{" "}
-          <span style={{ color: A, fontSize: 10, fontWeight: 800 }}>
+          <span style={{ color: A, fontSize: 11, fontWeight: 800 }}>
             {discounts[index].daysInAdvance} Days
           </span>{" "}
           <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
-          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 10, fontWeight: 800, letterSpacing: "0.05em" }}>
+          <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 11, fontWeight: 800, letterSpacing: "0.05em" }}>
             {discounts[index].percentage}% OFF
           </span>
         </motion.span>
@@ -979,7 +979,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
           zIndex: 60,
           background: theme === 'dark' ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.9)",
           backdropFilter: "blur(20px)",
-          padding: isMobile ? "6px 12px" : "8px 16px",
+          padding: isMobile ? "8px 14px" : "10px 20px",
           borderRadius: 16,
           border: theme === 'dark' ? "1px solid rgba(255,255,255,0.15)" : `1px solid ${B}`,
           boxShadow: theme === 'dark' ? "0 10px 30px rgba(0,0,0,0.4)" : `0 10px 30px ${M}33`,
@@ -988,7 +988,7 @@ function StayHeroCarousel({ stay, galleryItems = [] }) {
           gap: isMobile ? 6 : 8,
           maxWidth: isMobile ? "calc(100vw - 32px)" : "auto"
         }}>
-          <Sparkles size={isMobile ? 12 : 14} color={A} />
+          <Sparkles size={isMobile ? 14 : 16} color={A} />
           <EarlyBirdTicker discounts={stay.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={theme === 'dark' ? "#FFF" : FG} isDark={theme === "dark"} />
         </div>
       )}
