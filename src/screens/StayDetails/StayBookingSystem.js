@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
@@ -865,6 +865,7 @@ const StayBookingSystem = ({
       nightsCount,
       discount: discountAmount,
       discountPercent: appliedDiscountPercent,
+      longStayDiscountAmount,
       earlyBirdDiscountAmount,
       earlyBirdDiscountPercent,
       warning,
@@ -1492,14 +1493,17 @@ const StayBookingSystem = ({
       const frontendFinalGuestPrice = subtotalBeforeTax + combinedFrontendTax;
 
       if (discountToShow > 0) {
+        let remainingDiscount = discountToShow;
         if (pricing.earlyBirdDiscountAmount > 0) {
           frontendReceipt.push({ title: `Early Bird Discount (${pricing.earlyBirdDiscountPercent}%)`, content: `- ${currency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
-          const remainingDiscount = discountToShow - pricing.earlyBirdDiscountAmount;
-          if (remainingDiscount > 0.01) {
-            frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(remainingDiscount).toFixed(2)}` });
-          }
-        } else {
-          frontendReceipt.push({ title: "Total Discount", content: `- ${currency} ${Number(discountToShow).toFixed(2)}` });
+          remainingDiscount -= pricing.earlyBirdDiscountAmount;
+        }
+        if (pricing.longStayDiscountAmount > 0 && remainingDiscount >= pricing.longStayDiscountAmount - 0.01) {
+          frontendReceipt.push({ title: `Long Stay Discount (${pricing.discountPercent}%)`, content: `- ${currency} ${Number(pricing.longStayDiscountAmount).toFixed(2)}` });
+          remainingDiscount -= pricing.longStayDiscountAmount;
+        }
+        if (remainingDiscount > 0.01) {
+          frontendReceipt.push({ title: "Other Discounts", content: `- ${currency} ${Number(remainingDiscount).toFixed(2)}` });
         }
       }
       if (combinedFrontendTax > 0) {
@@ -2134,6 +2138,13 @@ const StayBookingSystem = ({
                               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: AL, border: `1px solid ${A}33`, borderRadius: 100, width: "fit-content", marginTop: 4 }}>
                                 <Sparkles size={14} color={A} />
                                 <span style={{ fontSize: 11, fontWeight: 700, color: A }}>EARLY BIRD DISCOUNT APPLIED</span>
+                              </div>
+                            )}
+
+                            {pricing.longStayDiscountAmount > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: AL, border: `1px solid ${A}33`, borderRadius: 100, width: "fit-content", marginTop: 4 }}>
+                                <Tag size={14} color={A} />
+                                <span style={{ fontSize: 11, fontWeight: 700, color: A }}>LONG STAY DISCOUNT APPLIED ({pricing.discountPercent}%)</span>
                               </div>
                             )}
                           </div>
