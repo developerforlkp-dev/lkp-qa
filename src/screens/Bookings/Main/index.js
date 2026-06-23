@@ -5,7 +5,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, getCancellationReasons } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, getCancellationReasons, sendOrderMessage } from "../../../utils/api";
 import Rating from "../../../components/Rating";
 import LoadingSkeleton from "../../../components/LoadingSkeleton";
 
@@ -479,6 +479,7 @@ const tabs = [
 const actionsByStatus = {
   Upcoming: [
     { label: "View Details", variant: "primary" },
+    { label: "Message Host", variant: "secondary" },
     { label: "Cancel Booking", variant: "secondary" },
   ],
   Completed: [
@@ -567,6 +568,37 @@ const Main = ({
   const [confirmPayModalVisible, setConfirmPayModalVisible] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState(null);
   const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
+
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [bookingToMessage, setBookingToMessage] = useState(null);
+  const [hostMessageText, setHostMessageText] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [messageStatus, setMessageStatus] = useState(null);
+
+  const handleMessageHostClick = (booking) => {
+    setBookingToMessage(booking);
+    setHostMessageText("");
+    setMessageModalVisible(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!hostMessageText || hostMessageText.trim() === "") return;
+    if (!bookingToMessage?.orderId) return;
+
+    setIsSendingMessage(true);
+    try {
+      await sendOrderMessage(bookingToMessage.orderId, hostMessageText);
+      setMessageStatus('success');
+      setTimeout(() => setMessageStatus(null), 3000);
+      setMessageModalVisible(false);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      setMessageStatus('error');
+      setTimeout(() => setMessageStatus(null), 3000);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
 
   const mapValidationFailureToFriendlyMessage = (failure) => {
     const code = String(failure?.code || "UNKNOWN").toUpperCase();
@@ -1556,6 +1588,18 @@ const Main = ({
                               </button>
                             );
                           }
+                          if (action.label === "Message Host") {
+                            return (
+                              <button
+                                type="button"
+                                key={`${booking.id}-${action.label}`}
+                                className={getButtonClassName(action.variant)}
+                                onClick={() => handleMessageHostClick(booking)}
+                              >
+                                {action.label}
+                              </button>
+                            );
+                          }
                           if (action.label === "Cancel Booking") {
                             return (
                               <button
@@ -2119,6 +2163,78 @@ const Main = ({
           </div>
         </div>
       </Modal>
+
+      <Modal 
+        visible={messageModalVisible} 
+        onClose={() => !isSendingMessage && setMessageModalVisible(false)}
+        outerClassName={styles.confirmCancelModalOuter}
+      >
+        <div className={styles.confirmCancelModalContent}>
+          <div className={styles.cancelModalHeader} style={{ paddingBottom: '16px', borderBottom: '1px solid #E6E8EC' }}>
+            <h2 className={styles.cancelModalTitle} style={{ fontSize: '24px', marginBottom: '8px' }}>Message Host</h2>
+            <p className={styles.cancelModalDescription} style={{ color: '#777E90', fontSize: '14px' }}>
+              {bookingToMessage?.title}
+            </p>
+          </div>
+          
+          <div className={styles.cancelModalBody} style={{ padding: '24px 32px' }}>
+            <div style={{ marginBottom: "0" }}>
+              <label className={styles.cancelModalLabel} style={{ fontWeight: '600', marginBottom: '12px', display: 'block', fontSize: '14px' }}>
+                Your message
+              </label>
+              <textarea
+                className={styles.cancelModalTextarea}
+                placeholder="Write your message here..."
+                value={hostMessageText}
+                onChange={(e) => setHostMessageText(e.target.value)}
+                disabled={isSendingMessage}
+                style={{ minHeight: '120px', resize: 'none', padding: '16px', borderRadius: '12px', border: '1px solid #E6E8EC', width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
+
+          <div className={styles.cancelModalFooter} style={{ padding: '24px 32px', borderTop: '1px solid #E6E8EC', display: 'flex', gap: '16px', justifyContent: 'flex-end', background: '#F4F5F6' }}>
+            <button 
+              className={cn("button-stroke")} 
+              style={{ flex: 1, borderRadius: '24px', height: '48px', margin: 0 }}
+              onClick={() => setMessageModalVisible(false)}
+              disabled={isSendingMessage}
+            >
+              Cancel
+            </button>
+            <button 
+              className={cn("button")} 
+              style={{ flex: 1, borderRadius: '24px', height: '48px', backgroundColor: '#0097B2', color: 'white', border: 'none', margin: 0 }}
+              onClick={handleSendMessage}
+              disabled={isSendingMessage || !hostMessageText.trim()}
+            >
+              {isSendingMessage ? "Sending..." : "Send Message"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {messageStatus && (
+        <div style={{
+          position: "fixed",
+          bottom: "32px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: messageStatus === 'error' ? "#FF5A5F" : "#222222",
+          color: "#FFFFFF",
+          padding: "12px 24px",
+          borderRadius: "100px",
+          fontSize: "14px",
+          fontWeight: "500",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px"
+        }}>
+          {messageStatus === 'success' ? "Message sent successfully!" : "Failed to send message. Please try again."}
+        </div>
+      )}
     </div>
   );
 };
