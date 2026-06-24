@@ -68,7 +68,7 @@ const ListCard = ({ item, listing }) => {
                   <span className={styles.reviewsCount}>({item.reviews} reviews)</span>
                 </>
               ) : (
-                <span className={styles.ratingVal}>New</span>
+                <span className={styles.ratingVal}>Newly Featured</span>
               )}
             </div>
           </div>
@@ -80,7 +80,7 @@ const ListCard = ({ item, listing }) => {
           {item.briefDescription && (
             <p className={styles.description}>{item.briefDescription}</p>
           )}
-          
+
           <div className={styles.middleFooter}>
             {maxGuests && (
               <div className={styles.capacityInfo}>
@@ -110,7 +110,7 @@ const ListCard = ({ item, listing }) => {
               <span className={styles.pricePeriod}>{pricePeriod}</span>
             </div>
           )}
-          
+
           <div className={styles.ctaButton}>
             {isStay ? "Reserve" : "View Details"}
           </div>
@@ -182,14 +182,14 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
           );
         })}
       </div>
-      
+
       {loading && listings.length > 0 && (
         <div className={styles.loadingMore}>
           <Loader />
           <span>Loading more listings...</span>
         </div>
       )}
-      
+
       {hasMore && !loading && (
         <div className={styles.loadMore}>
           <button className={cn("button-stroke", styles.loadMoreButton)} onClick={onLoadMore}>
