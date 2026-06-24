@@ -539,6 +539,8 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [showDesc, setShowDesc] = useState(false);
 
+  const isBedBased = room.isBedConfig || (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0));
+
   const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
   if (!allPlans.length) {
     if (room.epPrice) allPlans.push("EP");
@@ -601,7 +603,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         ) : (
           <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} className={styles.singleImg} />
         )}
-        {totalRooms != null && <span className={styles.badge}>{totalRooms} ROOMS</span>}
+        {totalRooms != null && <span className={styles.badge}>{totalRooms} {isBedBased ? "BEDS" : "ROOMS"}</span>}
         {isSelected && <span className={styles.selectedBadge}>✓ Selected</span>}
         
         <div className={styles.viewPhotosOverlay}>
@@ -629,7 +631,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             </div>
 
             <div className={styles.rightHeader}>
-              {capacity != null && (
+              {capacity != null && !isBedBased && (
                 <span className={styles.guestCount}>
                   <Users size={14} className={styles.guestIcon} />
                   {capacity} Guests
@@ -723,7 +725,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                 </button>
               </div>
             ) : (
-              <button className={styles.bookBtn} onClick={handleSelect}>SELECT ROOM</button>
+              <button className={styles.bookBtn} onClick={handleSelect}>SELECT {isBedBased ? "BED" : "ROOM"}</button>
             )}
           </div>
         </div>
@@ -750,8 +752,8 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onRoomsCountChange }) => {
   let rooms = listing?.rooms || listing?.roomTypes || listing?.room_types || listing?.stay?.rooms || [];
 
-  if (listing?.inventorySetupType === "Bed-Based" || listing?.bedConfigs?.length > 0) {
-    rooms = (listing?.bedConfigs || []).map((b, idx) => ({
+  if (listing?.bedConfigs?.length > 0) {
+    const bedRooms = listing.bedConfigs.map((b, idx) => ({
       ...b,
       roomId: b.id || b.bedConfigId || `bed-${idx}`,
       roomName: b.bedType || b.name || "Bed",
@@ -763,8 +765,16 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
       maxChildren: 0,
       maxExtraAdults: 0,
       description: b.description || b.bedDescription,
-      roomAmenities: b.amenities || []
+      roomAmenities: b.amenities || [],
+      isBedConfig: true
     }));
+    
+    // Append beds to existing rooms
+    if (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0)) {
+      rooms = bedRooms;
+    } else {
+      rooms = [...rooms, ...bedRooms];
+    }
   }
 
   if (!Array.isArray(rooms) || rooms.length === 0) return null;
