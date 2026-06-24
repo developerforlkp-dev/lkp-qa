@@ -110,7 +110,8 @@ const fixImageUrl = (url) => {
       const fixedPath = decodeURI(parts[0]);
       return fixedPath + (parts.length > 1 ? '?' + parts.slice(1).join('?') : '');
     }
-    return decodeURI(urlStr);
+    if (urlStr.startsWith("/")) return decodeURI(urlStr);
+    return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodeURI(urlStr.replaceAll("%2F", "/"))}`;
   } catch (e) {
     return u;
   }
@@ -121,10 +122,10 @@ const resolveCoverImage = (room) => {
   const coverUrl = room.coverImageUrl || room.coverPhotoUrl || room.coverImage;
   if (coverUrl && typeof coverUrl === "string") return fixImageUrl(coverUrl);
 
-  const media = room.media || [];
+  const media = room.media || room.bedGalleryMedia || [];
   const first = media[0];
   if (first) {
-    const u = typeof first === "string" ? first : first.url || first.src;
+    const u = typeof first === "string" ? first : first.url || first.src || first.mediaUrl || first.imageUrl || first.blobName;
     if (u) return fixImageUrl(u);
   }
   return null;
@@ -538,6 +539,8 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [showDesc, setShowDesc] = useState(false);
 
+  const isBedBased = room.isBedConfig || (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0));
+
   const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
   if (!allPlans.length) {
     if (room.epPrice) allPlans.push("EP");
@@ -600,7 +603,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         ) : (
           <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} className={styles.singleImg} />
         )}
-        {totalRooms != null && <span className={styles.badge}>{totalRooms} ROOMS</span>}
+        {totalRooms != null && <span className={styles.badge}>{totalRooms} {isBedBased ? "BEDS" : "ROOMS"}</span>}
         {isSelected && <span className={styles.selectedBadge}>✓ Selected</span>}
         
         <div className={styles.viewPhotosOverlay}>
@@ -628,7 +631,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             </div>
 
             <div className={styles.rightHeader}>
-              {capacity != null && (
+              {capacity != null && !isBedBased && (
                 <span className={styles.guestCount}>
                   <Users size={14} className={styles.guestIcon} />
                   {capacity} Guests
@@ -709,7 +712,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
               <div className={styles.selectedControl}>
                 <div className={styles.countSelectWrapper}>
                   <CustomDropdown
-                    options={Array.from({ length: Math.min(Number(totalRooms || 10), 10) }, (_, i) => ({
+                    options={Array.from({ length: totalRooms ? Number(totalRooms) : 10 }, (_, i) => ({
                       value: i + 1,
                       label: String(i + 1)
                     }))}
@@ -722,7 +725,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                 </button>
               </div>
             ) : (
-              <button className={styles.bookBtn} onClick={handleSelect}>SELECT ROOM</button>
+              <button className={styles.bookBtn} onClick={handleSelect}>SELECT {isBedBased ? "BED" : "ROOM"}</button>
             )}
           </div>
         </div>
@@ -747,7 +750,33 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
 /* ---------- RoomCards section ---------------------------------------- */
 const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onRoomsCountChange }) => {
-  const rooms = listing?.rooms || listing?.roomTypes || listing?.room_types || listing?.stay?.rooms || [];
+  let rooms = listing?.rooms || listing?.roomTypes || listing?.room_types || listing?.stay?.rooms || [];
+
+  if (listing?.bedConfigs?.length > 0) {
+    const bedRooms = listing.bedConfigs.map((b, idx) => ({
+      ...b,
+      roomId: b.id || b.bedConfigId || `bed-${idx}`,
+      roomName: b.bedType || b.name || "Bed",
+      totalRooms: b.bedCount || listing?.bedCount,
+      coverImageUrl: b.bedCoverImageUrl || listing?.bedCoverImageUrl,
+      media: b.bedGalleryMedia || listing?.bedGalleryMedia || [],
+      price: b.b2cPrice || b.price || listing?.b2cPrice,
+      maxAdults: 1,
+      maxChildren: 0,
+      maxExtraAdults: 0,
+      description: b.description || b.bedDescription,
+      roomAmenities: b.amenities || [],
+      isBedConfig: true
+    }));
+    
+    // Append beds to existing rooms
+    if (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0)) {
+      rooms = bedRooms;
+    } else {
+      rooms = [...rooms, ...bedRooms];
+    }
+  }
+
   if (!Array.isArray(rooms) || rooms.length === 0) return null;
 
   const content = (
