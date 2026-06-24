@@ -446,7 +446,26 @@ const StayBookingSystem = ({
   const [availabilityData, setAvailabilityData] = useState(null);
   const [fetchingAvailability, setFetchingAvailability] = useState(false);
   const stayRoomsCatalog = useMemo(
-    () => (stay?.rooms || stay?.roomTypes || stay?.room_types || []),
+    () => {
+      if (stay?.inventorySetupType === "Bed-Based" || stay?.bedConfigs?.length > 0) {
+        return (stay?.bedConfigs || []).map((b, idx) => ({
+          ...b,
+          roomId: b.id || b.bedConfigId || `bed-${idx}`,
+          roomName: b.bedType || b.name || "Bed",
+          units: b.bedCount || stay?.bedCount,
+          maxAdults: 1,
+          maxChildren: 0,
+          maxExtraAdults: 0,
+          maxExtraChildren: 0,
+          b2cPrice: b.b2cPrice || b.price || stay?.b2cPrice,
+          price: b.b2cPrice || b.price || stay?.b2cPrice,
+          coverImageUrl: b.bedCoverImageUrl || stay?.bedCoverImageUrl,
+          media: b.bedGalleryMedia || stay?.bedGalleryMedia || [],
+          roomAmenities: b.amenities || []
+        }));
+      }
+      return (stay?.rooms || stay?.roomTypes || stay?.room_types || []);
+    },
     [stay]
   );
 
@@ -521,8 +540,7 @@ const StayBookingSystem = ({
   const resolvedSelectedRooms = useMemo(() => {
     if (!stay || !Array.isArray(selectedRooms)) return [];
     
-    // Prioritize rooms from availabilityData as they have real-time pricing for the selected dates
-    const rawRoomsSource = (availabilityData?.roomAvailability || availabilityData?.rooms || stay.rooms || stay.roomTypes || stay.room_types || []);
+    const rawRoomsSource = (availabilityData?.roomAvailability || availabilityData?.rooms || stayRoomsCatalog || []);
     const catalogById = new Map(
       stayRoomsCatalog.map((r) => [
         String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
@@ -2101,38 +2119,43 @@ const StayBookingSystem = ({
                       {(() => {
                         const allowedAdults = (pricing.baseAdultsLimit || 0) + (pricing.extraAdultsLimit || 0);
                         const allowedChildren = (pricing.baseChildrenLimit || 0) + (pricing.extraChildrenLimit || 0);
+                        const isBedBased = stay?.inventorySetupType === "Bed-Based";
 
                         return (
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div>
-                                  <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</p>
-                                  <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.adults}</p>
+                            {!isBedBased && (
+                              <>
+                                <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div>
+                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</p>
+                                      <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.adults}</p>
+                                    </div>
+                                    <Counter 
+                                      value={guests.adults} 
+                                      setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
+                                      min={1} 
+                                      max={allowedAdults}
+                                    />
+                                  </div>
                                 </div>
-                                <Counter 
-                                  value={guests.adults} 
-                                  setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
-                                  min={1} 
-                                  max={allowedAdults}
-                                />
-                              </div>
-                            </div>
 
-                            <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div>
-                                  <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</p>
-                                  <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.children}</p>
+                                <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div>
+                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</p>
+                                      <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.children}</p>
+                                    </div>
+                                    <Counter 
+                                      value={guests.children} 
+                                      setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
+                                      min={0} 
+                                      max={allowedChildren}
+                                    />
+                                  </div>
                                 </div>
-                                <Counter 
-                                  value={guests.children} 
-                                  setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
-                                  min={0} 
-                                  max={allowedChildren}
-                                />
-                              </div>
-                            </div>
+                              </>
+                            )}
 
                             {pricing.earlyBirdDiscountPercent > 0 && (
                               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: AL, border: `1px solid ${A}33`, borderRadius: 100, width: "fit-content", marginTop: 4 }}>
@@ -2217,7 +2240,7 @@ const StayBookingSystem = ({
                           }}
                         >
                           <Plus size={14} />
-                          Add Another Room
+                          {stay?.inventorySetupType === "Bed-Based" ? "Add Another Bed" : "Add Another Room"}
                         </motion.button>
                       )}
 
@@ -2286,13 +2309,13 @@ const StayBookingSystem = ({
 
                       // Build compact room-type chips: "[1x RoomName]"
                       const roomTypeChips = resolvedSelectedRooms.map((r) => {
-                        const label = r.roomName || r.name || "Room";
+                        const label = r.roomName || r.name || (stay?.inventorySetupType === "Bed-Based" ? "Bed" : "Room");
                         return `${r.count}x ${label}`;
                       });
 
                       // Full room name(s) for tooltip
                       const fullRoomNamesTitle = resolvedSelectedRooms
-                        .map((r) => `${r.count}x ${r.roomName || r.name || "Room"}`)
+                        .map((r) => `${r.count}x ${r.roomName || r.name || (stay?.inventorySetupType === "Bed-Based" ? "Bed" : "Room")}`)
                         .join(", ");
 
                       return (
@@ -2326,15 +2349,19 @@ const StayBookingSystem = ({
 
                             {/* Rooms Required */}
                             <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Rooms Required</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>
+                                {stay?.inventorySetupType === "Bed-Based" ? "Beds Required" : "Rooms Required"}
+                              </span>
                               <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>
-                                {totalRoomsCount} {totalRoomsCount === 1 ? "Room" : "Rooms"}
+                                {totalRoomsCount} {stay?.inventorySetupType === "Bed-Based" ? (totalRoomsCount === 1 ? "Bed" : "Beds") : (totalRoomsCount === 1 ? "Room" : "Rooms")}
                               </span>
                             </div>
 
                             {/* Room Capacity — compact chips */}
                             <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Capacity</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>
+                                {stay?.inventorySetupType === "Bed-Based" ? "Bed Capacity" : "Room Capacity"}
+                              </span>
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}>
                                 {capacityChips.map((chip, i) => (
                                   <span key={i} style={chipStyle}>{chip}</span>
@@ -2344,7 +2371,9 @@ const StayBookingSystem = ({
 
                             {/* Room Type — compact chips with truncation */}
                             <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Room Type</span>
+                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>
+                                {stay?.inventorySetupType === "Bed-Based" ? "Bed Type" : "Room Type"}
+                              </span>
                               <div
                                 style={{ display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}
                                 title={fullRoomNamesTitle}
