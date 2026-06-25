@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useLocation, useParams, useHistory, Link } from "react-router-dom";
+import { useLocation, useParams, useHistory } from "react-router-dom";
 import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2, Heart, Sun, Moon, ArrowRight } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -27,7 +27,6 @@ import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../utils/scrollLock";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import Favorite from "../../components/Favorite";
-import useWishlist from "../../hooks/useWishlist";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -71,8 +70,7 @@ function ExperienceBg({ progress, src }) {
         <motion.div animate={{ opacity: [0.1, 0.3, 0.1] }} transition={{ duration: 5, repeat: Infinity }} style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 30% 40%, ${A}44 0%, transparent 60%)` }} />
         <motion.div animate={{ opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 7, repeat: Infinity, delay: 2 }} style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 70% 60%, ${A}33 0%, transparent 50%)` }} />
       </motion.div>
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 40%, transparent 80%)` }} />
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.5) 100%)` }} />
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 40%, #000000CC 70%, #000000 100%)` }} />
     </div>
   );
 }
@@ -532,83 +530,6 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
   );
 };
 
-function ExpandableAction({ icon: IconComponent, label, onClick, active, activeColor }) {
-  const [hovered, setHovered] = useState(false);
-  const [ripple, setRipple] = useState(false);
-
-  const handleClick = (e) => {
-    setRipple(true);
-    setTimeout(() => setRipple(false), 700);
-    if (onClick) onClick(e);
-  };
-
-  return (
-    <motion.div
-      onClick={handleClick}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        height: 48,
-        maxWidth: hovered ? 220 : 48,
-        overflow: "hidden",
-        paddingLeft: 13,
-        paddingRight: hovered ? 20 : 13,
-        background: active ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        border: "1px solid rgba(255,255,255,0.4)",
-        borderRadius: 50,
-        cursor: "pointer",
-        color: "#FFFFFF",
-        fontFamily: "Poppins, sans-serif",
-        fontSize: 15,
-        fontWeight: 600,
-        boxShadow: hovered
-          ? `0 4px 14px rgba(0,0,0,0.4)`
-          : `0 2px 8px rgba(0,0,0,0.2)`,
-        userSelect: "none",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), background 0.3s ease",
-        position: "relative",
-      }}
-    >
-      <motion.span
-        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        style={{ position: "absolute", inset: -2, borderRadius: 60, background: "rgba(255,255,255,0.5)", pointerEvents: "none" }}
-      />
-      <motion.span
-        animate={{
-          y: hovered ? 0 : [0, -2, 0, 2, 0],
-          rotate: hovered ? (active ? [0, -10, 10, 0] : 360) : 0,
-          scale: hovered ? 1.15 : 1
-        }}
-        transition={{
-          y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
-          rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-          scale: { duration: 0.3, ease: "easeOut" }
-        }}
-        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 22, position: "relative" }}
-      >
-        <IconComponent size={20} color={active && activeColor ? activeColor : "#FFFFFF"} fill={active && activeColor ? activeColor : "none"} strokeWidth={1.5} />
-      </motion.span>
-      <span style={{
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        maxWidth: hovered ? 160 : 0,
-        opacity: hovered ? 1 : 0,
-        marginLeft: hovered ? 10 : 0,
-        position: "relative",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
-      }}>
-        {label}
-      </span>
-    </motion.div>
-  );
-}
-
 const ExperienceProduct = () => {
   const location = useLocation();
   const history = useHistory();
@@ -618,7 +539,7 @@ const ExperienceProduct = () => {
   const idParam = params.get("id");
   const id = idFromPath || idParam || "1";
 
-  const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme, toggleTheme } = useTheme();
+  const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const [listing, setListing] = useState(null);
   const [hostData, setHostData] = useState(null);
   const [leadData, setLeadData] = useState(null);
@@ -628,22 +549,6 @@ const ExperienceProduct = () => {
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-
-  const { saved, toggleSaved } = useWishlist({
-    itemType: "listing",
-    itemId: id,
-    initialSaved: Boolean(listing?.wishlistSaved),
-  });
-
-  const handleShareClick = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: listing?.title || "LittlePlanet Experience", url: window.location.href });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-      }
-    } catch (_) {}
-  };
 
   // Normalize reviews data for consistent usage
   const normalizedReviews = useMemo(() => {
@@ -687,8 +592,6 @@ const ExperienceProduct = () => {
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const [langPopoverOpen, setLangPopoverOpen] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [heroScrolledPast, setHeroScrolledPast] = useState(false);
 
   const activityImages = useMemo(() => {
     return (listing?.keyActivities || [])
@@ -913,19 +816,6 @@ const ExperienceProduct = () => {
   const textY = useTransform(heroProgress, [0, 1], [0, -200]);
   const fade = useTransform(heroProgress, [0, 0.6], [1, 0]);
 
-  // Detect when hero section scrolls out of view
-  useEffect(() => {
-    if (!heroRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setHeroScrolledPast(!entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(heroRef.current);
-    return () => observer.disconnect();
-  }, [heroRef.current]);
-
   if (loading && !listing) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}><Loader /></div>;
   }
@@ -965,144 +855,131 @@ const ExperienceProduct = () => {
   };
 
   return (
-    <Page 
-      separatorHeader={false} 
-      hideBookings={true}
-    >
+    <Page>
       <main style={{ background: BG }}>
-        <style>{`
-          div[class*="Header_floatingPill"] {
-            margin-top: 32px !important;
-          }
-        `}</style>
         {/* HERO SECTION */}
         <section ref={heroRef} className="hero-section" style={{
           position: "relative",
-          height: "75vh",
-          minHeight: "600px",
-          width: "100%",
-          maxWidth: "100%",
-          margin: "0",
-          borderRadius: "0",
+          height: "47vh",
+          minHeight: "360px",
+          width: "calc(100% - 80px)",
+          maxWidth: "1600px",
+          margin: "12px auto 0",
+          borderRadius: "32px",
           overflow: "hidden",
           display: "flex",
           alignItems: "center",
           zIndex: 50
         }}>
-          <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl) || "/gallery/concert.png"} />
-          
+          <ExperienceBg progress={heroProgress} src={formatImageUrl(listing?.coverPhotoUrl)} />
           <div className="hero-container" style={{
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
             height: "100%",
-            padding: "48px 64px",
+            padding: "32px 40px",
             position: "relative",
             zIndex: 10,
-            width: "100%",
-            boxSizing: "border-box"
+            width: "100%"
           }}>
-            {/* Top Row: Experience badge moved to header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
+            {/* Top Row */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+              <div style={{
+                color: "#FFFFFF",
+                fontSize: "14px",
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                fontFamily: "Poppins, sans-serif"
+              }}>
+                {listing?.primaryCategory?.name || listing?.primaryCategory?.title || (typeof listing?.primaryCategory === "string" ? listing?.primaryCategory : null) || listing?.category?.name || listing?.category?.title || (typeof listing?.category === "string" ? listing?.category : null) || "Experience"}
+              </div>
 
-              {/* Actions removed from here, global header handles it */}
+              {/* Early Bird Ticker */}
+              {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "rgba(15, 23, 42, 0.9)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  padding: "10px 20px",
+                  borderRadius: "100px",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+                  color: "#FFFFFF",
+                  zIndex: 200
+                }}>
+                  <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ flexShrink: 0 }} />
+                  <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
+                </div>
+              )}
             </div>
 
-            {/* Bottom Content */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", marginTop: "auto" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
-                
-                {/* Breadcrumbs */}
-                <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px", fontWeight: 400, fontFamily: "Poppins, sans-serif", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Link to="/" style={{ color: "inherit", textDecoration: "none", cursor: "pointer", transition: "opacity 0.2s ease" }} onMouseOver={(e) => e.currentTarget.style.opacity = "0.7"} onMouseOut={(e) => e.currentTarget.style.opacity = "1"}>Home</Link>
-                  <ChevronRight size={14} color="rgba(255,255,255,0.6)" />
-                  <Link to="/experiences" style={{ color: "inherit", textDecoration: "none", cursor: "pointer", transition: "opacity 0.2s ease" }} onMouseOver={(e) => e.currentTarget.style.opacity = "0.7"} onMouseOut={(e) => e.currentTarget.style.opacity = "1"}>Experiences</Link>
-                  <ChevronRight size={14} color="rgba(255,255,255,0.6)" />
-                  <span style={{ color: "#FFFFFF" }}>{listing?.title || "Alleppey Houseboats"}</span>
-                </div>
-
-                {/* Title */}
-                <h1 className="hero-title" style={{
-                  fontSize: "clamp(2rem, 3.5vw, 3.5rem)",
-                  fontWeight: 700,
-                  lineHeight: 1.1,
-                  color: "#FFFFFF",
-                  margin: 0,
-                  letterSpacing: "-0.02em",
-                  fontFamily: "'Playfair Display', serif"
-                }}>
-                  {listing?.title || "Alleppey Houseboats"}
-                </h1>
-
-                {/* Location */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "15px", fontWeight: 500, fontFamily: "Poppins, sans-serif" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="transparent" stroke="#0097B2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ fill: "transparent" }}>
-                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="transparent" />
-                      <circle cx="12" cy="10" r="3" fill="transparent" />
-                    </svg>
-                    <span>{[listing?.district || listing?.city, listing?.state].filter(Boolean).join(", ") || listing?.locationName || fallbackLocationValues[0] || "Alleppey, Kerala"}</span>
-                  </div>
-
-                  {/* Rating Row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#FFFFFF", fontSize: "14px", fontWeight: 500, fontFamily: "Poppins, sans-serif", marginTop: "4px" }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#FFB800" xmlns="http://www.w3.org/2000/svg" style={{ fill: "#FFB800" }}>
-                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FFB800"/>
-                    </svg>
-                    {(reviewSummary?.totalReviews > 0 || listing?.reviewCount > 0) && (
-                      <span style={{ fontWeight: 600 }}>{typeof (reviewSummary?.averageRating || listing?.rating) === 'number' && !Number.isInteger(reviewSummary?.averageRating || listing?.rating) ? (reviewSummary?.averageRating || listing?.rating).toFixed(1) : (reviewSummary?.averageRating || listing?.rating || 0)}</span>
-                    )}
-                    <span style={{ fontWeight: 400, opacity: 0.8, marginLeft: "4px" }}>
-                      ({reviewSummary?.totalReviews || listing?.reviewCount || 0} reviews)
-                    </span>
-                  </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", alignItems: "center", gap: "32px", marginTop: "16px" }}>
-                  <button style={{
-                    background: "#0097B2",
+            {/* Bottom Row */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", marginTop: "auto", gap: 24 }}>
+              <motion.div style={{ opacity: fade, y: textY, display: "flex", flexDirection: "column", gap: 10 }}>
+                <Rev>
+                  <h1 className="hero-title" style={{
+                    fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
+                    fontWeight: 700,
+                    lineHeight: 1.2,
                     color: "#FFFFFF",
-                    padding: "16px 36px",
-                    borderRadius: "12px",
-                    fontSize: "18px",
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    boxShadow: "0 8px 24px rgba(0, 151, 178, 0.4)",
-                    fontFamily: "Poppins, sans-serif",
-                    transition: "transform 0.2s ease"
-                  }}
-                  onClick={() => setBookingOpen(true)}
-                  onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.02)"}
-                  onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-                  >
-                    Reserve Now <ArrowRight size={20} strokeWidth={2} />
-                  </button>
+                    margin: 0,
+                    letterSpacing: "-0.01em",
+                    fontFamily: "Poppins, sans-serif"
+                  }}>
+                    {listing?.title}
+                  </h1>
+                </Rev>
+                <Rev delay={0.15}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
+                    <MapPin size={15} color={A || "#0097B2"} />
+                    <span>{listing?.locationName || fallbackLocationValues[0] || "Valparai, Western Ghats"}</span>
+                  </div>
+                </Rev>
+              </motion.div>
 
-                  <ExpandableAction 
-                    icon={Share2}
-                    label="Share Experience"
-                    onClick={handleShareClick}
-                  />
-
-                  {/* Save Button */}
-                  <ExpandableAction 
-                    icon={Heart}
-                    label={saved ? "Saved" : "Save"}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleSaved();
+              <Rev delay={0.2} style={{ flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Favorite
+                    itemType="listing"
+                    itemId={id}
+                    variant="hero"
+                    showText={false}
+                    style={{
+                      position: "relative",
+                      top: "auto",
+                      right: "auto",
+                      margin: 0,
+                      zIndex: 200,
                     }}
-                    active={saved}
-                    activeColor="#FF5A5F"
+                  />
+                  <HeroShareFab
+                    title={listing?.title}
+                    text={listing?.description || listing?.aboutListing || ""}
+                    url={window.location.href}
+                    style={{
+                      position: "relative",
+                      top: "auto",
+                      right: "auto",
+                      margin: 0,
+                      zIndex: 200
+                    }}
                   />
                 </div>
-
-              </div>
+              </Rev>
             </div>
           </div>
+          <button
+            type="button"
+            className="premium-back-button"
+            onClick={() => history.goBack()}
+            aria-label="Go back"
+          >
+            <ChevronLeft size={20} />
+          </button>
         </section>
 
 
@@ -2520,11 +2397,6 @@ const ExperienceProduct = () => {
           listing={listing}
           selectedAddOns={selectedAddOns}
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
-          externalOpen={bookingOpen}
-          onExternalOpenChange={(isOpen) => {
-            if (!isOpen) setBookingOpen(false);
-          }}
-          hideTrigger={!heroScrolledPast}
         />
 
         <div className="related-listings-wrapper" style={{ padding: "32px 80px", background: W }}>
