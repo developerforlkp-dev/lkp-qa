@@ -209,8 +209,8 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
     setGuests(newGuests);
   };
 
-  const formattedDate = selectedDate && selectedDate[0]
-    ? `${moment(selectedDate[0]).format("MMM D")}${selectedDate[1] ? ` - ${moment(selectedDate[1]).format("MMM D")}` : ""}`
+  const formattedDate = selectedDate
+    ? moment(selectedDate).format("MMM DD, YYYY")
     : "Add dates";
 
   const totalGuests = (guests.adults || 0) + (guests.children || 0);
@@ -220,25 +220,23 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
 
   const executeSearch = () => {
     const params = new URLSearchParams();
-    if (searchQuery.trim()) {
-      params.append("destination", searchQuery.trim());
-    }
-    if (selectedDestination?.place_id) {
-      params.append("placeId", selectedDestination.place_id);
-    }
-    if (selectedDate && selectedDate[0]) {
-      params.append("startDate", moment(selectedDate[0]).format("YYYY-MM-DD"));
-      if (selectedDate[1]) {
-        params.append("endDate", moment(selectedDate[1]).format("YYYY-MM-DD"));
-      }
-    }
-    if (totalGuests > 1) {
-      params.append("adults", guests.adults || 1);
-      if (guests.children) params.append("children", guests.children);
-    }
+    if (searchQuery.trim()) params.append("search", searchQuery.trim());
+    if (selectedDestination?.place_id) params.append("placeId", selectedDestination.place_id);
+    if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
     
+    if (totalGuests > 0) params.append("guests", totalGuests);
+
+    const interestMap = {
+      experience: "EXPERIENCE",
+      events: "EVENT",
+      stays: "STAY",
+      food: "FOOD",
+      places: "PLACE"
+    };
+    params.append("businessInterest", interestMap[activeCategory] || "EXPERIENCE");
+
     setIsSearchPanelOpen(false);
-    history.push(`/${activeCategory}?${params.toString()}`);
+    history.push(`/listings?${params.toString()}`);
   };
 
   if (!portalTarget) return null;
