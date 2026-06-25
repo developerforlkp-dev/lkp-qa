@@ -50,26 +50,7 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
   }, []);
 
   // ─── Intersection Observer ─────────────────────────────────────────────
-  useEffect(() => {
-    if (!heroRef?.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsSticky(!entry.isIntersecting);
-        if (entry.isIntersecting) {
-          setIsSearchPanelOpen(false);
-        }
-      },
-      {
-        root: null,
-        threshold: 0,
-        rootMargin: "-72px 0px 0px 0px",
-      }
-    );
-
-    observer.observe(heroRef.current);
-    return () => observer.disconnect();
-  }, [heroRef]);
+  // (Removed since we want the search pill visible at all times)
 
   const autocompleteServiceRef = useRef(null);
   const autocompleteSessionTokenRef = useRef(null);
@@ -243,11 +224,7 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
 
   const content = (
     <>
-      <div
-        className={cn(styles.portalContainer, {
-          [styles.visible]: isSticky,
-        })}
-      >
+      <div className={cn(styles.portalContainer, styles.visible)}>
         {/* Airbnb-style Search Pill */}
         <button
           ref={searchPillRef}
@@ -287,8 +264,7 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
       </div>
 
       {/* Expanding Search Panel Dropdown */}
-      {isSticky && (
-        <div className={styles.searchPanelOverlay}>
+      <div className={styles.searchPanelOverlay}>
           <div 
             ref={searchPanelRef}
             className={cn(styles.searchPanel, {
@@ -402,7 +378,6 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
             </button>
           </div>
         </div>
-      )}
     </>
   );
 
