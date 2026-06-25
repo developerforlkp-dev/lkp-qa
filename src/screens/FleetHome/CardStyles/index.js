@@ -186,6 +186,7 @@ const getEntityUrl = (listing, id) => {
 };
 
 const transformListingToCard = (listing, section) => {
+  console.log("Listing Object for Card:", listing);
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
   const primaryCategoryLabel = isShowListingMode(section)
@@ -203,9 +204,13 @@ const transformListingToCard = (listing, section) => {
   const priceDisplay = hasPrice ? `From ₹${price.toLocaleString("en-IN")}${suffix}` : null;
 
   // Location formatting
-  const city = listing.city || listing.cityArea || listing.meetingCity || listing.district || listing.state || listing.location;
-  const country = listing.country || listing.meetingCountry;
-  let locationText = [city, country].filter(Boolean).join(", ");
+  const district = listing.district || listing.city || listing.location || listing.cityArea || listing.meetingCity;
+  const state = listing.state || listing.country || listing.meetingCountry;
+  let locationParts = [district, state].filter(Boolean);
+  if (locationParts.length === 2 && locationParts[0] === locationParts[1]) {
+      locationParts = [locationParts[0]];
+  }
+  let locationText = locationParts.join(", ") || listing.locationName;
   
   if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
       locationText = listing.cityArea || listing.state || listing.address || "India";
@@ -307,9 +312,13 @@ const transformListingToDestinationHorizontal = (listing, section) => {
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
   // Location formatting
-  const city = listing.city || listing.cityArea || listing.meetingCity || listing.district || listing.state || listing.location;
-  const country = listing.country || listing.meetingCountry;
-  let locationText = [city, country].filter(Boolean).join(", ");
+  const district = listing.district || listing.city || listing.location || listing.cityArea || listing.meetingCity;
+  const state = listing.state || listing.country || listing.meetingCountry;
+  let locationParts = [district, state].filter(Boolean);
+  if (locationParts.length === 2 && locationParts[0] === locationParts[1]) {
+      locationParts = [locationParts[0]];
+  }
+  let locationText = locationParts.join(", ") || listing.locationName;
   
   if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
       locationText = listing.cityArea || listing.state || listing.address || "India";
