@@ -1024,8 +1024,8 @@ const ExperienceProduct = () => {
 
 
         {/* GALLERY SECTION */}
-        <section className="gallery-section" style={{ background: W, padding: "24px 80px 32px", overflow: "hidden" }}>
-          <div style={{ maxWidth: 1440, margin: "0 auto", position: "relative", overflow: "hidden" }}>
+        <section className="gallery-section" style={{ background: W, padding: "24px 0 32px", overflow: "hidden" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto", position: "relative", overflow: "hidden" }}>
             {/* Left and Right Fade Overlays */}
             <div style={{
               position: "absolute",
@@ -1134,30 +1134,40 @@ const ExperienceProduct = () => {
 
 
         {/* DETAILS SECTION */}
-        <section className="details-section" style={{ background: BG, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "stretch" }} className="details-grid-container">
-              {/* Narrative Block (Left-hand card) */}
+        <section className="details-section" style={{ background: BG, padding: "32px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "1.2fr 1fr", 
+              gap: 0, 
+              alignItems: "stretch",
+              background: W,
+              borderRadius: "24px",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
+              border: `1px solid ${B}`,
+              overflow: "hidden"
+            }} className="details-grid-container">
+              
+              {/* Narrative Block (Left-hand section) */}
               <div className="narrative-card" style={{
-                background: W,
-                border: `1px solid ${B}`,
-                padding: "32px",
-                borderRadius: "24px",
+                padding: "36px 48px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)",
-                height: narrativeExpanded ? "auto" : "272px",
-                boxSizing: "border-box"
+                borderRight: `1px solid ${B}`,
+                boxSizing: "border-box",
+                height: narrativeExpanded ? "auto" : "280px",
               }}>
                 <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
                   <div>
-                    <span style={{ fontSize: "11px", fontWeight: 600, color: A, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: "Poppins, sans-serif" }}>The Experience</span>
-                    <h3 style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", fontWeight: 700, color: FG, lineHeight: 1.2, marginBottom: "12px", fontFamily: "Poppins, sans-serif" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#007B8F", letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                      The Experience
+                    </span>
+                    <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: "#0A1F3B", lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                       Your Journey Begins
                     </h3>
-                    <div style={{ position: "relative", maxHeight: narrativeExpanded ? "none" : "110px", overflow: "hidden" }}>
-                      <p style={{ color: M, fontSize: "15px", lineHeight: "1.7", margin: 0, fontWeight: 400 }}>
+                    <div style={{ position: "relative", maxHeight: narrativeExpanded ? "none" : "80px", overflow: "hidden" }}>
+                      <p style={{ color: "#4F5B73", fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif' }}>
                         {description}
                       </p>
                       {!narrativeExpanded && (
@@ -1177,84 +1187,100 @@ const ExperienceProduct = () => {
                     style={{
                       background: "none",
                       border: "none",
-                      color: A,
-                      fontSize: "11px",
+                      color: "#007B8F",
+                      fontSize: "15px",
                       fontWeight: 700,
                       cursor: "pointer",
-                      padding: "8px 0 0 0",
-                      fontFamily: "Poppins, sans-serif",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      padding: "16px 0 0 0",
+                      fontFamily: '"Inter", sans-serif',
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
                       alignSelf: "flex-start",
                       outline: "none"
                     }}
                   >
                     {narrativeExpanded ? "Read Less" : "Read More"}
+                    <span style={{ fontSize: "18px", lineHeight: 1 }}>&rarr;</span>
                   </button>
                 </div>
               </div>
 
               {/* Overview Cards (6-block flat facts grid) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="facts-grid">
-                  {/* Fact 1: Duration */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Clock size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>
-                      {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
-                    </p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Duration</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridTemplateRows: "1fr 1fr" }} className="facts-grid">
+                
+                {/* Fact 1: Duration */}
+                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderBottom: `1px solid ${B}`, borderRight: `1px solid ${B}` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F0F9FA", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                    <Clock size={20} color="#007B8F" />
                   </div>
-                  {/* Fact 2: Min Age */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <User size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>{listing?.minimumAge || "18+"}</p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Min Age</p>
-                  </div>
-                  {/* Fact 3: Difficulty */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Zap size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>{listing?.difficultyLevel || "Moderate"}</p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Difficulty</p>
-                  </div>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0A1F3B", marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
+                    {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
+                  </p>
+                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#64748B", margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Duration</p>
+                </div>
 
-                  {/* Fact 4: Infant Allowance */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Baby size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Infants</p>
+                {/* Fact 2: Min Age */}
+                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderBottom: `1px solid ${B}`, borderRight: `1px solid ${B}` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F0F9FA", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                    <User size={20} color="#007B8F" />
                   </div>
-                  {/* Fact 5: Languages */}
-                  <div className="fact-card" style={{ position: "relative", background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <Languages size={22} color={A} style={{ marginBottom: 12 }} />
-                    {(() => {
-                      const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
-                        ? listing.languagesOffered
-                        : (typeof listing?.languages === "string" ? listing.languages.split(",").map(s => s.trim()) : ["English"]);
-                      
-                      const displayStr = list.slice(0, 2).join(", ");
-                      const hasMore = list.length > 2;
-                      
-                      return (
-                        <>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center", width: "90%", marginBottom: 4 }}>
-                            <span style={{ fontSize: "14px", fontWeight: 700, color: FG, fontFamily: "Poppins, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {displayStr}
-                            </span>
-                            {hasMore && (
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0A1F3B", marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.minimumAge || "12"}</p>
+                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#64748B", margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Min Age</p>
+                </div>
+
+                {/* Fact 3: Difficulty */}
+                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderBottom: `1px solid ${B}` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F0F9FA", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                    <Zap size={20} color="#007B8F" />
+                  </div>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0A1F3B", marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.difficultyLevel || "Moderate"}</p>
+                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#64748B", margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Difficulty</p>
+                </div>
+
+                {/* Fact 4: Infant Allowance */}
+                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRight: `1px solid ${B}` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F0F9FA", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                    <Baby size={20} color="#007B8F" />
+                  </div>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0A1F3B", marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
+                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#64748B", margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Infants</p>
+                </div>
+
+                {/* Fact 5: Languages */}
+                <div className="fact-card" style={{ position: "relative", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRight: `1px solid ${B}` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F0F9FA", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                    <Languages size={20} color="#007B8F" />
+                  </div>
+                  {(() => {
+                    const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
+                      ? listing.languagesOffered
+                      : (typeof listing?.languages === "string" ? listing.languages.split(",").map(s => s.trim()) : ["English"]);
+                    
+                    const displayStr = list.slice(0, 2).join(", ");
+                    const hasMore = list.length > 2;
+                    
+                    return (
+                      <>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%", marginBottom: 6 }}>
+                          <span style={{ fontSize: "16px", fontWeight: 700, color: "#0A1F3B", fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {displayStr}
+                          </span>
+                          {hasMore && (
+                            <div style={{ position: "relative", display: "inline-flex" }}>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setLangPopoverOpen(!langPopoverOpen); }}
                                 style={{
-                                  background: AL,
-                                  color: A,
-                                  border: `1px solid ${B}`,
+                                  background: "#FFFFFF",
+                                  color: "#007B8F",
+                                  border: `1px solid #007B8F`,
                                   borderRadius: "50%",
-                                  width: "20px",
-                                  height: "20px",
+                                  width: "18px",
+                                  height: "18px",
                                   display: "inline-flex",
                                   alignItems: "center",
                                   justifyContent: "center",
-                                  fontSize: "10px",
+                                  fontSize: "12px",
                                   fontWeight: 700,
                                   cursor: "pointer",
                                   padding: 0,
@@ -1264,69 +1290,77 @@ const ExperienceProduct = () => {
                               >
                                 +
                               </button>
-                            )}
-                          </div>
-                          {hasMore && langPopoverOpen && (
-                            <div style={{
-                              position: "absolute",
-                              bottom: "105%",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              background: W,
-                              border: `1px solid ${B}`,
-                              borderRadius: "12px",
-                              padding: "10px 16px",
-                              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-                              zIndex: 100,
-                              minWidth: "160px",
-                              maxWidth: "240px",
-                              textAlign: "center"
-                            }}>
-                              <p style={{ fontSize: "10px", textTransform: "uppercase", color: M, margin: "0 0 6px 0", fontWeight: 600 }}>All Languages</p>
-                              <p style={{ fontSize: "13px", color: FG, margin: 0, fontWeight: 600, lineHeight: 1.4 }}>
-                                {list.join(", ")}
-                              </p>
-                              <div style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                width: 0,
-                                height: 0,
-                                borderLeft: "6px solid transparent",
-                                borderRight: "6px solid transparent",
-                                borderTop: `6px solid ${B}`
-                              }} />
-                              <div style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: "50%",
-                                transform: "translateX(-50%) translateY(-1px)",
-                                width: 0,
-                                height: 0,
-                                borderLeft: "5px solid transparent",
-                                borderRight: "5px solid transparent",
-                                borderTop: `5px solid ${W}`
-                              }} />
+                              {langPopoverOpen && (
+                                <div style={{
+                                  position: "absolute",
+                                  bottom: "calc(100% + 14px)",
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  background: "#FFFFFF",
+                                  border: `1px solid #E2E8F0`,
+                                  borderRadius: "16px",
+                                  padding: "16px",
+                                  boxShadow: "0 12px 32px rgba(0, 0, 0, 0.08)",
+                                  zIndex: 100,
+                                  minWidth: "220px",
+                                  textAlign: "left"
+                                }}>
+                                  <p style={{ fontSize: "11px", letterSpacing: "0.05em", textTransform: "uppercase", color: "#64748B", margin: "0 0 12px 0", fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>All Languages</p>
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                    {list.map((lang, idx) => (
+                                      <span key={idx} style={{ background: "#F0F9FA", color: "#007B8F", padding: "6px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: 600, fontFamily: '"Inter", sans-serif', textTransform: "capitalize" }}>
+                                        {lang.trim().toLowerCase()}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {/* Tooltip Arrow */}
+                                  <div style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "8px solid transparent",
+                                    borderRight: "8px solid transparent",
+                                    borderTop: `8px solid #E2E8F0`
+                                  }} />
+                                  <div style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: "50%",
+                                    transform: "translateX(-50%) translateY(-1px)",
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "8px solid transparent",
+                                    borderRight: "8px solid transparent",
+                                    borderTop: `8px solid #FFFFFF`
+                                  }} />
+                                </div>
+                              )}
                             </div>
                           )}
-                        </>
-                      );
-                    })()}
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Languages</p>
-                  </div>
-                  {/* Fact 6: Private Tour */}
-                  <div className="fact-card" style={{ background: W, border: `1px solid ${B}`, height: "128px", boxSizing: "border-box", borderRadius: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", transition: "all 0.3s" }}>
-                    <ShieldCheck size={22} color={A} style={{ marginBottom: 12 }} />
-                    <p style={{ fontSize: "15px", fontWeight: 700, color: FG, marginBottom: 4, fontFamily: "Poppins, sans-serif" }}>
-                      {listing?.privateOptionAvailable ? "Yes" : "No"}
-                    </p>
-                    <p style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600 }}>Private Tour</p>
-                  </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#64748B", margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Languages</p>
                 </div>
+
+                {/* Fact 6: Private Tour */}
+                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#F0F9FA", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                    <ShieldCheck size={20} color="#007B8F" />
+                  </div>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0A1F3B", marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
+                    {listing?.privateOptionAvailable ? "Yes" : "No"}
+                  </p>
+                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#64748B", margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Private Tour</p>
+                </div>
+
               </div>
             </div>
-
+            
             {/* Premium Editorial Typographic Marquee */}
             {(() => {
               const rawTags = Array.isArray(listing?.tags) && listing.tags.length > 0
