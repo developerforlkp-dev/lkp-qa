@@ -46,6 +46,15 @@ const StickyHeaderController = ({
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   
+  // Automatically show suggestions when they arrive from the parent component
+  useEffect(() => {
+    if (destinationSuggestions && destinationSuggestions.length > 0) {
+      setShowDestinationSuggestions(true);
+    } else {
+      setShowDestinationSuggestions(false);
+    }
+  }, [destinationSuggestions]);
+
   const searchPanelRef = useRef(null);
   const searchIconBtnRef = useRef(null);
   const stickyDestinationRef = useRef(null);
