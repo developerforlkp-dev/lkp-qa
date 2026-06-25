@@ -96,6 +96,119 @@ export const OrdersAPI = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+const firstDefined = (...values) => {
+  for (const value of values) {
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
+  return null;
+};
+
+const firstFiniteNumber = (...values) => {
+  for (const value of values) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return numeric;
+    }
+  }
+  return null;
+};
+
+export const normalizeOrderPaymentSession = (payload, fallback = {}) => {
+  const data = payload?.data && typeof payload.data === "object" ? payload.data : null;
+  const order =
+    payload?.order ||
+    data?.order ||
+    (payload && typeof payload === "object" && !Array.isArray(payload) ? payload : null);
+  const payment =
+    payload?.payment ||
+    data?.payment ||
+    order?.payment ||
+    null;
+
+  const orderId = firstDefined(
+    fallback?.orderId,
+    payload?.orderId,
+    data?.orderId,
+    order?.orderId,
+    order?.id,
+    payload?.id,
+    data?.id
+  );
+
+  const holdExpiresAt = firstDefined(
+    payload?.holdExpiresAt,
+    payload?.seatHoldExpiresAt,
+    data?.holdExpiresAt,
+    data?.seatHoldExpiresAt,
+    payment?.holdExpiresAt,
+    payment?.seatHoldExpiresAt,
+    order?.holdExpiresAt,
+    order?.seatHoldExpiresAt,
+    fallback?.holdExpiresAt,
+    fallback?.seatHoldExpiresAt
+  );
+
+  return {
+    raw: payload,
+    orderId,
+    holdExpiresAt,
+    seatHoldExpiresAt: holdExpiresAt,
+    orderStatus: firstDefined(payload?.orderStatus, data?.orderStatus, order?.orderStatus, fallback?.orderStatus),
+    paymentStatus: firstDefined(
+      payload?.paymentStatus,
+      data?.paymentStatus,
+      payment?.paymentStatus,
+      order?.paymentStatus,
+      fallback?.paymentStatus
+    ),
+    payment: {
+      razorpayOrderId: firstDefined(
+        payment?.razorpayOrderId,
+        payment?.razorpay_order_id,
+        order?.razorpayOrderId,
+        order?.razorpay_order_id,
+        payload?.razorpayOrderId,
+        payload?.razorpay_order_id,
+        data?.razorpayOrderId,
+        data?.razorpay_order_id,
+        fallback?.razorpayOrderId
+      ),
+      razorpayKeyId: firstDefined(
+        payment?.razorpayKeyId,
+        payment?.razorpay_key_id,
+        payment?.keyId,
+        order?.razorpayKeyId,
+        order?.razorpay_key_id,
+        order?.keyId,
+        payload?.razorpayKeyId,
+        payload?.razorpay_key_id,
+        payload?.keyId,
+        data?.razorpayKeyId,
+        data?.razorpay_key_id,
+        data?.keyId,
+        fallback?.razorpayKeyId
+      ),
+      amount: firstFiniteNumber(
+        payment?.amount,
+        order?.amount,
+        payload?.amount,
+        data?.amount,
+        fallback?.amount
+      ),
+      currency: firstDefined(
+        payment?.currency,
+        order?.currency,
+        payload?.currency,
+        data?.currency,
+        fallback?.currency,
+        "INR"
+      ),
+    },
+  };
+};
+
 // ✅ Automatically attach JWT if available
 ListingsAPI.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
@@ -832,6 +945,23 @@ export const createOrder = async (orderData) => {
     throw error;
   }
 };
+
+// Initialize Razorpay payment for an order
+export const initializePayment = async (orderId) => {
+  try {
+    console.log(`📤 Initializing payment for order: ${orderId}`);
+    const response = await ListingsAPI.post(`/orders/${orderId}/initialize-payment`);
+    console.log("✅ Payment initialized successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error initializing payment:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
 //test
 export const createEventOrder = async (orderData) => {
   try {
@@ -990,6 +1120,7 @@ export const getOrderDetails = async (orderId) => {
     //   history: []
     // }
     if (payload && typeof payload === "object") {
+      payload.paymentSession = normalizeOrderPaymentSession(payload, { orderId: orderIdStr });
       // Return the full payload which contains order and related data
       return payload;
     }

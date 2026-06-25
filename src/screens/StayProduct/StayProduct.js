@@ -9,6 +9,7 @@ import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
+import { persistPendingCheckout } from "../../utils/paymentSession";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -2066,9 +2067,11 @@ const StayProduct = () => {
       const response = await createStayOrder(bookingPayload);
       console.log("✅ Stay order created:", response);
 
-      // Save Razorpay payment data (even if order ID is missing, so Razorpay can still trigger)
+      const orderId = response?.orderId || response?.id || response?.order?.orderId || response?.order?.id || response?.data?.orderId || response?.data?.id || null;
+      if (orderId) {
+        localStorage.setItem("pendingOrderId", String(orderId));
+      }
       const paymentResponse = response?.payment || response?.data?.payment || response?.order?.payment || response;
-      const rzpOrderId = paymentResponse?.razorpayOrderId || response?.razorpayOrderId || response?.order?.razorpayOrderId;
       const rzpKeyId = paymentResponse?.razorpayKeyId || response?.razorpayKeyId || response?.order?.razorpayKeyId || "rzp_test_RaBjdu0Ed3p1gN";
 
       const asNumber = (value) => {
@@ -2105,13 +2108,17 @@ const StayProduct = () => {
 
       const currency = paymentResponse?.currency || response?.currency || response?.order?.currency || "INR";
 
-      localStorage.setItem("pendingPayment", JSON.stringify({
-        paymentMethod: "razorpay",
-        razorpayOrderId: rzpOrderId,
-        razorpayKeyId: rzpKeyId,
-        amount: amountInPaise,
-        currency: currency,
-      }));
+      persistPendingCheckout({
+        session: {
+          orderId: orderId,
+          paymentMethod: "razorpay",
+          amount: amountInPaise,
+          currency: currency,
+        },
+      });
+      if (rzpKeyId) {
+        localStorage.setItem("lastRazorpayKeyId", rzpKeyId);
+      }
 
       // Save booking summary for the checkout page display
       const getMealLabel = (code) => ({
@@ -2242,7 +2249,15 @@ const StayProduct = () => {
           ] : [])),
         timestamp: new Date().toISOString(),
       };
-      localStorage.setItem("pendingBooking", JSON.stringify(stayBookingData));
+      persistPendingCheckout({
+        bookingData: stayBookingData,
+        session: {
+          orderId,
+          paymentMethod: "razorpay",
+          amount: amountInPaise,
+          currency,
+        },
+      });
 
 
 

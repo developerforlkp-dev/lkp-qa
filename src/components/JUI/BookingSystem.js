@@ -10,6 +10,7 @@ import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
+import { persistPendingCheckout } from "../../utils/paymentSession";
 
 
 const asNumber = (value) => {
@@ -1151,7 +1152,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [validationErrors, setValidationErrors] = useState({});
   const [showValidation, setShowValidation] = useState(false);
   const [showDateWarning, setShowDateWarning] = useState(false);
-  const [errorPopup, setErrorPopup] = useState({ visible: false, title: "", message: "" });
+  const [errorPopup, setErrorPopup] = useState({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" });
   const pendingRestoreRef = useRef(null);
 
 
@@ -1197,11 +1198,49 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return normalizedMessage || "Booking failed. Please try again.";
   }, [getBusinessInterestLabel]);
 
-  const showErrorPopup = useCallback((message, title = "Booking Error") => {
+  const getBookingErrorDetails = useCallback((error) => {
+    const rawMessage = getBookingErrorMessage(error);
+    const availabilityMatch = rawMessage.match(/only\s+(\d+)\s+seat\(s\)\s+available\s+for\s+"([^"]+)"\s+on\s+([0-9-]+)/i);
+    const requestedMatch = rawMessage.match(/you\s+requested\s+(\d+)\s+seat\(s\)/i);
+
+    if (availabilityMatch) {
+      const availableSeats = Number(availabilityMatch[1] || 0);
+      const slotName = availabilityMatch[2] || "this slot";
+      const bookingDate = availabilityMatch[3] || "the selected date";
+      const requestedSeats = Number(requestedMatch?.[1] || 0);
+
+      if (availableSeats <= 0) {
+        return {
+          title: "Seats Temporarily Unavailable",
+          message: `Sorry, requested seats are not available for "${slotName}" on ${bookingDate}.`,
+          reason: "These seats are currently on hold for another booking. Please try again after 10 - 15 minutes, or choose another slot now.",
+          ctaLabel: "Choose Another Slot",
+        };
+      }
+
+      return {
+        title: "Limited Availability",
+        message: `Only ${availableSeats} seat${availableSeats === 1 ? "" : "s"} are available for "${slotName}" on ${bookingDate}.${requestedSeats > 0 ? ` You requested ${requestedSeats} seat${requestedSeats === 1 ? "" : "s"}.` : ""}`,
+        reason: "Please reduce the guest count or choose a different slot to continue.",
+        ctaLabel: "Adjust Guests",
+      };
+    }
+
+    return {
+      title: "Booking Error",
+      message: rawMessage,
+      reason: "",
+      ctaLabel: "Adjust Now",
+    };
+  }, [getBookingErrorMessage]);
+
+  const showErrorPopup = useCallback((message, title = "Booking Error", options = {}) => {
     setErrorPopup({
       visible: true,
       title,
       message: String(message || "Unable to proceed with this booking right now."),
+      reason: String(options.reason || ""),
+      ctaLabel: String(options.ctaLabel || "Adjust Now"),
     });
   }, []);
 
@@ -2173,26 +2212,43 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setShowValidation(false);
 
     if (!isEventBooking && guestSeatLimit !== undefined && totalGuests > guestSeatLimit) {
-      alert(`Only ${guestSeatLimit} seat${guestSeatLimit === 1 ? "" : "s"} available for this slot.`);
+      showErrorPopup(
+        guestSeatLimit === 0
+          ? "Sorry, the requested seats are not available right now for this slot."
+          : `Only ${guestSeatLimit} seat${guestSeatLimit === 1 ? "" : "s"} available for this slot. Please reduce the guest count or choose another time.`,
+        guestSeatLimit === 0 ? "Seats Temporarily Unavailable" : "Availability Updated",
+        guestSeatLimit === 0
+          ? {
+            reason: "These seats may currently be on hold for another booking. Please try again after 10 - 15 minutes, or choose a different slot now.",
+            ctaLabel: "Choose Another Slot",
+          }
+          : undefined
+      );
       return;
     }
 
     if (isEventBooking) {
       if (selectedEventSlots.length === 0 || totalGuests < 1 || bookingLoading) return;
       if (!ticketSaleWindow.isOpen) {
-        alert(ticketSaleWindow.message);
+        showErrorPopup(ticketSaleWindow.message, "Ticket Window Closed");
         return;
       }
       if (selectedTicketSoldOut) {
-        alert("Ticket sold out.");
+        showErrorPopup("This ticket type is sold out for the selected slot. Please choose another ticket or slot.", "Sold Out");
         return;
       }
       if (selectedTicketMaxPerBooking !== undefined && totalGuests > selectedTicketMaxPerBooking) {
-        alert(`You can book a maximum of ${selectedTicketMaxPerBooking} ticket${selectedTicketMaxPerBooking === 1 ? "" : "s"} at a time.`);
+        showErrorPopup(
+          `You can book a maximum of ${selectedTicketMaxPerBooking} ticket${selectedTicketMaxPerBooking === 1 ? "" : "s"} at a time.`,
+          "Booking Limit"
+        );
         return;
       }
       if (selectedTicketRemainingTickets !== undefined && totalGuests > selectedTicketRemainingTickets) {
-        alert(`Only ${selectedTicketRemainingTickets} ticket${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining for this ticket type.`);
+        showErrorPopup(
+          `Only ${selectedTicketRemainingTickets} ticket${selectedTicketRemainingTickets === 1 ? "" : "s"} remaining for this ticket type.`,
+          "Low Availability"
+        );
         return;
       }
 
@@ -2329,10 +2385,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         const isFreeBooking = finalTotal === 0;
 
         if (!razorpayOrderId && !isFreeBooking) {
-          console.error("❌ Razorpay Order ID missing from response:", res);
-          alert("Payment initialization failed. Please contact support.");
-          if (isMountedRef.current) setBookingLoading(false);
-          return;
+          console.log("ℹ️ Razorpay Order ID not present on order creation; will be initialized on payment checkout.");
         }
 
         if (razorpayKeyId) {
@@ -2425,8 +2478,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
         const paymentData = {
           orderId,
-          razorpayOrderId,
-          razorpayKeyId,
           amount: amountInPaise,
           currency: payment?.currency || currency,
           paymentMethod: "razorpay",
@@ -2437,9 +2488,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           finalAmount: payment?.finalAmount || amountInPaise,
         };
 
-        localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-        localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
-        if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+        persistPendingCheckout({ bookingData, session: paymentData });
         localStorage.removeItem("frontendPendingBookingState");
         localStorage.removeItem("razorpayPaymentSuccess");
         localStorage.removeItem("paymentFailed");
@@ -2497,7 +2546,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           if (isMountedRef.current) setBookingLoading(false);
           return;
         }
-        alert(getBookingErrorMessage(e));
+        const errorDetails = getBookingErrorDetails(e);
+        showErrorPopup(errorDetails.message, errorDetails.title, {
+          reason: errorDetails.reason,
+          ctaLabel: errorDetails.ctaLabel,
+        });
       } finally {
         if (isMountedRef.current) setBookingLoading(false);
       }
@@ -2717,14 +2770,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const isFreeBooking = finalTotal === 0;
 
       if (!razorpayOrderId && !isFreeBooking) {
-        alert("Payment order was not created. Please try booking again.");
-        return;
+        console.log("ℹ️ Razorpay Order ID not present on order creation; will be initialized on payment checkout.");
       }
 
       const paymentData = {
         orderId,
-        razorpayOrderId,
-        razorpayKeyId,
         amount: amountInPaise,
         currency,
         paymentMethod: "razorpay",
@@ -2733,10 +2783,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         paidAmount: payment?.paidAmount || payment?.finalAmount || amountInPaise,
       };
 
-      localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-      localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
-      localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
-      if (orderId) localStorage.setItem("pendingOrderId", String(orderId));
+      persistPendingCheckout({ bookingData, session: paymentData, saveCheckoutBooking: true });
       localStorage.removeItem("frontendPendingBookingState");
       if (razorpayKeyId) localStorage.setItem("lastRazorpayKeyId", razorpayKeyId);
 
@@ -2796,7 +2843,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         if (isMountedRef.current) setBookingLoading(false);
         return;
       }
-      alert(getBookingErrorMessage(e));
+      const errorDetails = getBookingErrorDetails(e);
+      showErrorPopup(errorDetails.message, errorDetails.title, {
+        reason: errorDetails.reason,
+        ctaLabel: errorDetails.ctaLabel,
+      });
     } finally {
       if (isMountedRef.current) setBookingLoading(false);
     }
@@ -3895,53 +3946,103 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setErrorPopup({ visible: false, title: "", message: "" })}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
+              onClick={() => setErrorPopup({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" })}
+              style={{ position: "absolute", inset: 0, background: "rgba(7,10,18,0.58)", backdropFilter: "blur(8px)" }}
             />
             <motion.div
-              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              initial={{ opacity: 0, y: 22, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.97 }}
+              exit={{ opacity: 0, y: 22, scale: 0.96 }}
               style={{
                 position: "relative",
                 width: "100%",
-                maxWidth: 500,
-                background: BG,
-                borderRadius: 18,
-                border: `1px solid ${E}33`,
-                boxShadow: "0 24px 64px rgba(0,0,0,0.35)",
-                padding: "20px 20px 16px",
+                maxWidth: 540,
+                overflow: "hidden",
+                background: `linear-gradient(145deg, ${BG} 0%, ${S} 100%)`,
+                borderRadius: 28,
+                border: `1px solid ${E}26`,
+                boxShadow: "0 30px 90px rgba(0,0,0,0.32)",
                 zIndex: 1,
               }}
             >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: EL, border: `1px solid ${E}33`, display: "flex", alignItems: "center", justifyContent: "center", color: E, flexShrink: 0 }}>
-                  <AlertCircle size={18} />
+              <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(circle at top right, ${A}18 0%, transparent 38%), radial-gradient(circle at bottom left, ${E}12 0%, transparent 34%)` }} />
+              <div style={{ position: "relative", padding: "22px 22px 18px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 16, background: `linear-gradient(135deg, ${EL} 0%, ${A}22 100%)`, border: `1px solid ${E}22`, display: "flex", alignItems: "center", justifyContent: "center", color: E, flexShrink: 0, boxShadow: `inset 0 1px 0 ${W}33` }}>
+                      <AlertCircle size={22} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase", color: E, marginBottom: 4 }}>
+                        Availability Notice
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: 22, lineHeight: 1.05, fontWeight: 900, color: FG }}>
+                        {errorPopup.title}
+                      </h3>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Close popup"
+                    onClick={() => setErrorPopup({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" })}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 14,
+                      border: `1px solid ${B}`,
+                      background: `${W}B3`,
+                      color: FG,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 10px 24px rgba(15,23,42,0.08)",
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: FG }}>{errorPopup.title}</h3>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.55, color: M, fontWeight: 600 }}>
+
+                <div style={{ marginTop: 18, padding: "16px 16px 15px", borderRadius: 20, background: `${W}C7`, border: `1px solid ${B}`, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)" }}>
+                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: FG, fontWeight: 700 }}>
                     {errorPopup.message}
                   </p>
                 </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-                <button
-                  type="button"
-                  onClick={() => setErrorPopup({ visible: false, title: "", message: "" })}
-                  style={{
-                    border: "none",
-                    background: A,
-                    color: "#FFF",
-                    borderRadius: 10,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    padding: "9px 16px",
-                    cursor: "pointer",
-                  }}
-                >
-                  OK
-                </button>
+
+                {errorPopup.reason && (
+                  <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 18, background: `${A}10`, border: `1px solid ${A}22` }}>
+                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: A, marginBottom: 6 }}>
+                      Why This Happened
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: FG, fontWeight: 600 }}>
+                      {errorPopup.reason}
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginTop: 18 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: M }}>
+                    {errorPopup.reason ? "You can wait a few minutes or update your selection now." : "Update your selection to continue."}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setErrorPopup({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" })}
+                    style={{
+                      border: "none",
+                      background: `linear-gradient(135deg, ${A} 0%, ${AH} 100%)`,
+                      color: "#FFF",
+                      borderRadius: 14,
+                      fontSize: 13,
+                      fontWeight: 900,
+                      padding: "12px 18px",
+                      minWidth: 108,
+                      cursor: "pointer",
+                      boxShadow: `0 14px 30px ${A}33`,
+                    }}
+                  >
+                    {errorPopup.ctaLabel || "Adjust Now"}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

@@ -5,6 +5,7 @@ import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, I
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
+import { persistPendingCheckout } from "../../utils/paymentSession";
 import Counter from "../../components/Counter";
 import LoginPromptModal from "../../components/LoginPromptModal";
 
@@ -1333,14 +1334,10 @@ const StayBookingSystem = ({
 
       if (!razorpayOrderId) {
         const appOrderId = orderResponse?.orderId || response?.orderId || response?.data?.orderId || null;
-        console.error("❌ Razorpay Order ID missing from response:", {
+        console.log("ℹ️ Razorpay Order ID missing from response for stay order:", {
           appOrderId,
-          razorpayOrderId,
           razorpayKeyId,
-          response
         });
-        alert(`Payment initialization failed: Razorpay order was not generated${appOrderId ? ` (Order #${appOrderId})` : ""}.`);
-        return;
       }
 
       const asNumber = (value) => {
@@ -1413,9 +1410,8 @@ const StayBookingSystem = ({
       }
 
       localStorage.setItem("pendingPayment", JSON.stringify({
+        orderId: appOrderId,
         paymentMethod: "razorpay",
-        razorpayOrderId,
-        razorpayKeyId,
         amount: amountInPaise,
         currency: paymentResponse.currency || response?.currency || "INR"
       }));
@@ -1569,7 +1565,15 @@ const StayBookingSystem = ({
         totalAmount: frontendFinalGuestPrice,
         selectedAddOns: selectedAddOnsData,
       };
-      localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+      persistPendingCheckout({
+        bookingData,
+        session: {
+          orderId: appOrderId,
+          paymentMethod: "razorpay",
+          amount: amountInPaise,
+          currency: paymentResponse.currency || response?.currency || "INR",
+        },
+      });
       localStorage.removeItem("frontendPendingBookingState");
 
       history.push("/checkout");

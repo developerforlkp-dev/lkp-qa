@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronDown, FileText, Plus, Camera, Ticket, Share2, Spark
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../components/JUI/Theme";
 import { createEventOrder, getEventDetails, getEventReviews, getEligibleBookings, getListingReviews } from "../../utils/api";
+import { persistPendingCheckout } from "../../utils/paymentSession";
 import Modal from "../../components/Modal";
 import LoginPromptModal from "../../components/LoginPromptModal";
 import ShareButton from "../../components/ShareButton";
@@ -1482,8 +1483,6 @@ const EventProduct = () => {
       // Prepare payment data for Razorpay (same structure as experience checkout)
       const paymentData = {
         orderId: orderId,
-        razorpayOrderId: razorpayOrderId,
-        razorpayKeyId: razorpayKeyId,
         amount: amountInPaise,
         currency: payment?.currency || currency,
         paymentMethod: "razorpay", // Required to trigger Razorpay checkout
@@ -1495,9 +1494,7 @@ const EventProduct = () => {
       };
 
       // Save to localStorage for checkout page
-      localStorage.setItem("pendingBooking", JSON.stringify(bookingDataForCheckout));
-      localStorage.setItem("pendingPayment", JSON.stringify(paymentData));
-      localStorage.setItem("pendingOrderId", String(orderId));
+      persistPendingCheckout({ bookingData: bookingDataForCheckout, session: paymentData });
 
       // Clear any previous payment status
       localStorage.removeItem("razorpayPaymentSuccess");

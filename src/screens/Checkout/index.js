@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import cn from "classnames";
 import styles from "./Checkout.module.sass";
 import Control from "../../components/Control";
@@ -7,8 +7,16 @@ import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
-import { getStayDetails } from "../../utils/api";
+import { getOrderDetails, getStayDetails } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
+import {
+  getPendingOrderId,
+  getPendingPayment,
+  hydratePendingPaymentFromOrder,
+  isExpiredHold,
+  isFailedPaymentStatus,
+  isPendingCheckoutComplete,
+} from "../../utils/paymentSession";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -124,11 +132,13 @@ const reorderPriceRows = (rows, computedTotal = null) => {
 
 const Checkout = () => {
   const location = useLocation();
+  const history = useHistory();
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(null);
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [stayDetails, setStayDetails] = useState(null);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   // Edit functionality state
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -273,15 +283,63 @@ const Checkout = () => {
   // Read payment data from localStorage
   useEffect(() => {
     try {
-      const pendingPayment = localStorage.getItem("pendingPayment");
-      if (pendingPayment) {
-        const payment = JSON.parse(pendingPayment);
+      const payment = getPendingPayment();
+      if (payment) {
         setPaymentData(payment);
       }
     } catch (e) {
       console.error("Error reading payment data:", e);
     }
   }, []);
+
+  useEffect(() => {
+    const restorePendingCheckout = async () => {
+      const pendingOrderId = getPendingOrderId();
+      if (!pendingOrderId) return;
+
+      setCheckingPayment(true);
+      try {
+        const orderDetails = await getOrderDetails(pendingOrderId);
+        const order = orderDetails?.order || orderDetails || {};
+        const restoredPayment = hydratePendingPaymentFromOrder(orderDetails, {
+          orderId: order?.orderId || pendingOrderId,
+          amount: getPendingPayment()?.amount,
+          currency: getPendingPayment()?.currency || order?.currency || "INR",
+        });
+
+        setPaymentData(restoredPayment);
+
+        if (isPendingCheckoutComplete({
+          paymentStatus: restoredPayment?.paymentStatus || order?.paymentStatus,
+          orderStatus: restoredPayment?.orderStatus || order?.orderStatus,
+        })) {
+          history.replace("/checkout-complete");
+          return;
+        }
+
+        if (isFailedPaymentStatus(restoredPayment?.paymentStatus || order?.paymentStatus)) {
+          localStorage.setItem("paymentFailed", "true");
+          localStorage.setItem("paymentFailureOrderId", String(order?.orderId || pendingOrderId));
+          history.replace("/checkout-complete");
+          return;
+        }
+
+        if (isExpiredHold(restoredPayment?.holdExpiresAt)) {
+          setPaymentData((prev) => ({
+            ...(prev || {}),
+            ...restoredPayment,
+            holdExpired: true,
+          }));
+        }
+      } catch (error) {
+        console.error("Error restoring pending checkout payment:", error);
+      } finally {
+        setCheckingPayment(false);
+      }
+    };
+
+    restorePendingCheckout();
+  }, [history]);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
   useEffect(() => {
@@ -691,6 +749,18 @@ const Checkout = () => {
       console.error("Error updating payment data:", e);
     }
   }, [computedFinalAmount, paymentData]);
+
+  if (checkingPayment) {
+    return (
+      <div className={cn("section-mb80", styles.section)} style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className={cn("container", styles.container)}>
+          <div style={{ padding: "3rem", textAlign: "center" }}>
+            <p>Checking payment status...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isStayBooking = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
   const tripTitle = isStayBooking ? "Your stay" : "Your trip";

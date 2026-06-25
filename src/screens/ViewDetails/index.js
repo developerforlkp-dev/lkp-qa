@@ -5,6 +5,7 @@ import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
 import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons } from "../../utils/api";
+import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../utils/paymentSession";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import Receipt from "../../components/Receipt";
@@ -1078,31 +1079,27 @@ const ViewDetails = () => {
   const triggerRazorpayOpen = async (orderResponse, order, payment) => {
     setIsConfirmingBooking(true);
     try {
-      const amountInPaise =
+      const fallbackAmount =
         Number(payment?.amount) > 0
           ? Number(payment.amount)
           : Math.round(Number(order?.totalPrice || order?.finalAmount || booking?.originalData?.totalPrice || 0) * 100);
 
-      const razorpayOrderId =
-        payment?.razorpayOrderId ||
-        payment?.razorpay_order_id ||
-        order?.razorpayOrderId ||
-        order?.razorpay_order_id ||
-        booking?.originalData?.razorpayOrderId ||
-        booking?.originalData?.razorpay_order_id;
+      const session = await initializePendingOrderPayment(booking.orderId, {
+        amount: fallbackAmount,
+        currency: payment?.currency || order?.currency || booking?.originalData?.currency || "INR",
+      });
 
-      const razorpayKeyId =
-        payment?.razorpayKeyId ||
-        payment?.razorpay_key_id ||
-        payment?.keyId ||
-        order?.razorpayKeyId ||
-        order?.razorpay_key_id ||
-        order?.keyId ||
-        localStorage.getItem("lastRazorpayKeyId") ||
-        process.env.REACT_APP_RAZORPAY_KEY_ID;
+      if (isExpiredHold(session?.holdExpiresAt)) {
+        alert("Hold expired, recheck availability.");
+        return;
+      }
+
+      const amountInPaise = Number(session?.payment?.amount || fallbackAmount);
+      const razorpayOrderId = session?.payment?.razorpayOrderId;
+      const razorpayKeyId = session?.payment?.razorpayKeyId;
 
       if (!razorpayOrderId) {
-        alert("Unable to confirm booking: payment order is missing.");
+        alert("Unable to confirm booking: payment session is missing.");
         return;
       }
       if (!razorpayKeyId) {
@@ -1119,8 +1116,9 @@ const ViewDetails = () => {
         razorpayOrderId,
         razorpayKeyId,
         amount: amountInPaise,
-        currency: payment?.currency || order?.currency || booking?.originalData?.currency || "INR",
+        currency: session?.payment?.currency || payment?.currency || order?.currency || booking?.originalData?.currency || "INR",
         paymentMethod: "razorpay",
+        holdExpiresAt: session?.holdExpiresAt || null,
       };
 
       localStorage.setItem("pendingOrderId", String(booking.orderId));
@@ -1163,7 +1161,7 @@ const ViewDetails = () => {
       rzp.open();
     } catch (err) {
       console.error("Error confirming booking:", err);
-      alert(err?.message || "Failed to open payment gateway.");
+      alert(getInitializePaymentErrorMessage(err));
     } finally {
       setIsConfirmingBooking(false);
     }

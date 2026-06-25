@@ -7,6 +7,13 @@ import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails, getEventAddons } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
+import {
+  getPendingPayment,
+  hydratePendingPaymentFromOrder,
+  isExpiredHold,
+  isPendingCheckoutComplete,
+  isFailedPaymentStatus,
+} from "../../utils/paymentSession";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -71,9 +78,8 @@ const Checkout = () => {
   // Read payment data from order response
   useEffect(() => {
     try {
-      const pendingPayment = localStorage.getItem("pendingPayment");
-      if (pendingPayment) {
-        const payment = JSON.parse(pendingPayment);
+      const payment = getPendingPayment();
+      if (payment) {
         setPaymentData(payment);
 
         // Calculate and save the actual paid amount (after discount)
@@ -160,14 +166,35 @@ const Checkout = () => {
             return;
           }
 
-          const paymentStatus = order.paymentStatus || "PENDING";
-          const normalizedStatus = String(paymentStatus).toUpperCase().trim();
+          const restoredPayment = hydratePendingPaymentFromOrder(orderDetails, {
+            orderId: order?.orderId || pendingOrderId,
+            amount: getPendingPayment()?.amount,
+            currency: getPendingPayment()?.currency || order?.currency || "INR",
+          });
 
-          if (normalizedStatus === "FAILED" || normalizedStatus === "FAILURE") {
+          setPaymentData(restoredPayment);
+
+          if (isPendingCheckoutComplete({
+            paymentStatus: restoredPayment?.paymentStatus || order?.paymentStatus,
+            orderStatus: restoredPayment?.orderStatus || order?.orderStatus,
+          })) {
+            history.replace("/experience-checkout-complete");
+            return;
+          }
+
+          if (isFailedPaymentStatus(restoredPayment?.paymentStatus || order?.paymentStatus)) {
             localStorage.setItem("paymentFailed", "true");
             localStorage.setItem("paymentFailureOrderId", String(order.orderId || pendingOrderId));
             history.replace("/experience-checkout-complete");
             return;
+          }
+
+          if (isExpiredHold(restoredPayment?.holdExpiresAt)) {
+            setPaymentData((prev) => ({
+              ...(prev || {}),
+              ...restoredPayment,
+              holdExpired: true,
+            }));
           }
 
           // ✅ Always merge server-side pricing so commission/tax/discount always show

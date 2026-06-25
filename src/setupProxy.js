@@ -1,6 +1,6 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-const BACKEND = 'https://api.qa.littleknownplanet.com'
+const BACKEND = 'https://api.dev.littleknownplanet.com'
 module.exports = function (app) {
   // Event orders (legacy): /api/event-orders/* → BACKEND/api/event-orders/*
   app.use(

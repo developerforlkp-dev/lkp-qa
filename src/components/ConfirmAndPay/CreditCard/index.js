@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import { useHistory } from "react-router-dom";
 import styles from "./CreditCard.module.sass";
 import TextInput from "../../TextInput";
-import TextArea from "../../TextArea";
 import Checkbox from "../../Checkbox";
 import { sendOrderMessage } from "../../../utils/api";
+import {
+  getInitializePaymentErrorMessage,
+  getPendingOrderId,
+  initializePendingOrderPayment,
+  isExpiredHold,
+} from "../../../utils/paymentSession";
 
 const cards = [
   {
@@ -31,7 +36,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -51,44 +56,67 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
     if (isProcessing) return;
     setIsProcessing(true);
 
-    // Try to read pending payment info
     let payment = null;
     try {
       const raw = localStorage.getItem("pendingPayment");
       payment = raw ? JSON.parse(raw) : paymentData;
-    } catch (_) {
+    } catch (error) {
       payment = paymentData;
     }
 
-    // Debug log to help verify state
-    console.log("🔍 ConfirmAndPay: pendingPayment", payment);
-    console.log("🔍 paymentMethod:", payment?.paymentMethod);
-    console.log("🔍 razorpayKeyId:", payment?.razorpayKeyId);
-    console.log("🔍 razorpayOrderId:", payment?.razorpayOrderId);
-    console.log("🔍 amount:", payment?.amount);
-
     if (!payment || payment.paymentMethod !== "razorpay") {
-      console.log("⚠️ No razorpay payment method, navigating directly to:", buttonUrl);
-
-      // Send the message if it exists
-      const orderId = localStorage.getItem("pendingOrderId");
+      const orderId = getPendingOrderId();
       if (messageText && messageText.trim() !== "" && orderId) {
         try {
           await sendOrderMessage(orderId, messageText);
-        } catch (err) {
-          console.error("Failed to send message:", err);
+        } catch (error) {
+          console.error("Failed to send message:", error);
         }
       }
 
-      // No payment session; just navigate to completion
       history.replace(buttonUrl);
       setIsProcessing(false);
       return;
     }
 
-    // Check if razorpayKeyId exists
-    if (!payment.razorpayKeyId) {
-      console.error("❌ Missing razorpayKeyId in payment data");
+    const orderId = payment.orderId || getPendingOrderId();
+    if (!orderId) {
+      alert("Could not find a pending order for payment. Please book again.");
+      setIsProcessing(false);
+      return;
+    }
+
+    let session;
+    try {
+      session = await initializePendingOrderPayment(orderId, {
+        amount: payment.amount,
+        currency: payment.currency || "INR",
+      });
+    } catch (error) {
+      console.error("Failed to initialize payment:", error);
+      alert(getInitializePaymentErrorMessage(error));
+      setIsProcessing(false);
+      return;
+    }
+
+    if (isExpiredHold(session?.holdExpiresAt)) {
+      alert("Hold expired, recheck availability.");
+      setIsProcessing(false);
+      return;
+    }
+
+    const razorpayOrderId = session?.payment?.razorpayOrderId;
+    const razorpayKeyId = session?.payment?.razorpayKeyId;
+    const amount = session?.payment?.amount;
+    const currency = session?.payment?.currency || "INR";
+
+    if (!razorpayOrderId) {
+      alert("Could not initialize payment. Please try booking again.");
+      setIsProcessing(false);
+      return;
+    }
+
+    if (!razorpayKeyId) {
       alert("Payment configuration error. Please try booking again.");
       setIsProcessing(false);
       return;
@@ -99,27 +127,27 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 
       const userInfo = (() => {
         try {
-          const u = localStorage.getItem("userInfo");
-          return u ? JSON.parse(u) : {};
-        } catch {
+          const raw = localStorage.getItem("userInfo");
+          return raw ? JSON.parse(raw) : {};
+        } catch (error) {
           return {};
         }
       })();
 
       const bookingData = (() => {
         try {
-          const b = localStorage.getItem("pendingBooking");
-          return b ? JSON.parse(b) : null;
-        } catch {
+          const raw = localStorage.getItem("pendingBooking");
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
           return null;
         }
       })();
 
       const options = {
-        key: payment.razorpayKeyId,
-        amount: payment.amount,
-        currency: payment.currency || "INR",
-        order_id: payment.razorpayOrderId,
+        key: razorpayKeyId,
+        amount,
+        currency,
+        order_id: razorpayOrderId,
         name: bookingData?.listingTitle || "Booking Payment",
         description: "Complete your booking",
         prefill: {
@@ -128,53 +156,42 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           contact: userInfo.customerPhone || userInfo.phone || "",
         },
         notes: {
-          listingId: bookingData?.listingId || "",
-          bookingDate: bookingData?.bookingSummary?.date || bookingData?.selectedDate || "",
+          listingId: bookingData?.listingId || bookingData?.eventId || bookingData?.stayId || "",
+          bookingDate: bookingData?.bookingSummary?.date || bookingData?.selectedDate || bookingData?.checkInDate || "",
           bookingTime: bookingData?.bookingSummary?.time || "",
-          slotId: bookingData?.bookingSummary?.slotId || "",
+          slotId: bookingData?.bookingSummary?.slotId || bookingData?.eventSlotId || "",
         },
         handler: async function (response) {
           setIsProcessing(false);
           try {
-            // Send the message if it exists
-            const orderId = localStorage.getItem("pendingOrderId") || payment.razorpayOrderId;
-            if (messageText && messageText.trim() !== "" && orderId) {
+            const pendingOrderId = getPendingOrderId() || orderId;
+            if (messageText && messageText.trim() !== "" && pendingOrderId) {
               try {
-                await sendOrderMessage(orderId, messageText);
-              } catch (err) {
-                console.error("Failed to send message:", err);
+                await sendOrderMessage(pendingOrderId, messageText);
+              } catch (error) {
+                console.error("Failed to send message:", error);
               }
             }
 
             localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(response));
-            // Save the actual paid amount before removing pendingPayment
-            const actualPaidAmount = payment.amount;
-            try {
-              localStorage.setItem("actualPaidAmount", JSON.stringify({
-                amount: actualPaidAmount,
-                currency: payment.currency || "INR"
-              }));
-            } catch (e) {
-              console.error("Error saving actual paid amount:", e);
+            localStorage.setItem("actualPaidAmount", JSON.stringify({
+              amount,
+              currency,
+            }));
+
+            const currentBooking = localStorage.getItem("pendingBooking");
+            if (currentBooking) {
+              localStorage.setItem("checkoutBooking", currentBooking);
             }
-            // Copy current pendingBooking → checkoutBooking so that
-            // checkout-complete always reads the LATEST booking (not stale experience data)
-            try {
-              const currentBooking = localStorage.getItem("pendingBooking");
-              if (currentBooking) {
-                localStorage.setItem("checkoutBooking", currentBooking);
-              }
-            } catch (e) {
-              console.error("Error copying pendingBooking to checkoutBooking:", e);
-            }
-          } catch { }
+          } catch (error) {
+            console.error("Failed to persist payment success state:", error);
+          }
+
           localStorage.removeItem("pendingPayment");
           history.replace(buttonUrl);
         },
-
         modal: {
           ondismiss: function () {
-            // Leave user on the page; do not navigate
             setIsProcessing(false);
           },
         },
@@ -182,8 +199,8 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch (e) {
-      console.error("❌ Failed to open Razorpay checkout:", e);
+    } catch (error) {
+      console.error("Failed to open Razorpay checkout:", error);
       alert("Unable to start payment. Please check your internet connection and try again.");
       setIsProcessing(false);
     }
@@ -196,9 +213,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           <div className={styles.line}>
             <div className={styles.subtitle}>Credit Card</div>
             <div className={styles.cards}>
-              {cards.map((x, index) => (
+              {cards.map((card, index) => (
                 <div className={styles.card} key={index}>
-                  <img src={x.image} alt={x.alt} />
+                  <img src={card.image} alt={card.alt} />
                 </div>
               ))}
             </div>
@@ -247,18 +264,17 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           />
         </>
       )}
-      {/* Hidden legacy message box inside CreditCard is removed since it's now in ConfirmAndPay */}
-      <div 
+      <div
         className={styles.stickyBottom}
         style={{
           opacity: isAtBottom ? 0 : 1,
           visibility: isAtBottom ? "hidden" : "visible",
-          transition: "opacity 0.3s ease, visibility 0.3s ease"
+          transition: "opacity 0.3s ease, visibility 0.3s ease",
         }}
       >
-        <button 
-          className={cn("button", styles.button)} 
-          type="button" 
+        <button
+          className={cn("button", styles.button)}
+          type="button"
           onClick={handleConfirmClick}
           disabled={isProcessing}
           style={{ opacity: isProcessing ? 0.7 : 1, cursor: isProcessing ? "not-allowed" : "pointer" }}
@@ -271,5 +287,3 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 };
 
 export default CreditCard;
-
-
