@@ -21,13 +21,15 @@ const Counter = ({ className, value, setValue, iconPlus = "plus", iconMinus = "m
     event.stopPropagation();
   };
 
-  const handleDecrement = () => {
+  const handleDecrement = (event) => {
+    event.stopPropagation();
     if (value > normalizedMin) {
       setValue(value - 1);
     }
   };
 
-  const handleIncrement = () => {
+  const handleIncrement = (event) => {
+    event.stopPropagation();
     if (normalizedMax === undefined || value < normalizedMax) {
       setValue(value + 1);
     }

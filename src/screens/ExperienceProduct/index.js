@@ -856,7 +856,7 @@ const ExperienceProduct = () => {
   };
 
   return (
-    <Page>
+    <Page hideBookings>
       <DetailPageNavPortal heroRef={heroRef} activeCategory="experience" />
       <main style={{ background: BG }}>
         {/* HERO SECTION */}

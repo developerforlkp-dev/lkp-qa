@@ -30,24 +30,21 @@ const StickyHeaderController = ({
   showCalendar,
   formattedDate,
   guestCountText,
-  showDatePicker,
-  setShowDatePicker,
-  showGuestPicker,
-  setShowGuestPicker,
   handleSearch,
   handleDateSelect,
   handleGuestChange,
   destinationSuggestions,
-  showDestinationSuggestions,
-  setShowDestinationSuggestions,
-  activeSuggestionIndex,
-  setActiveSuggestionIndex,
   selectDestinationSuggestion,
   destinationRef,
 }) => {
   const [isSticky, setIsSticky] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState(null);
+  
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showGuestPicker, setShowGuestPicker] = useState(false);
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   
   const searchPanelRef = useRef(null);
   const searchIconBtnRef = useRef(null);
