@@ -1057,7 +1057,7 @@ const ExperienceProduct = () => {
               const doubledItems = [...filledItems, ...filledItems];
 
               const galleryDistance = filledItems.length * 316; // 300px width + 16px gap
-              const galleryDuration = galleryDistance / 60; // constant speed of 60px/s
+              const galleryDuration = galleryDistance / 35; // constant speed of 35px/s
 
               return (
                 <motion.div
