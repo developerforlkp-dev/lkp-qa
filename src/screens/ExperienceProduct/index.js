@@ -510,18 +510,18 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
             fontSize: 11,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
-            color: "#FFFFFF",
+            color: isDark ? "#FFFFFF" : "#000000",
             fontWeight: 700,
             whiteSpace: "nowrap",
             display: "block"
           }}
         >
           <span style={{ opacity: 0.7 }}>Book</span>{" "}
-          <span style={{ color: "#38BDF8", fontWeight: 800 }}>
+          <span style={{ color: isDark ? "#38BDF8" : "#0284C7", fontWeight: 800 }}>
             {discounts[index].daysInAdvance} Days
           </span>{" "}
           <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
-          <span style={{ color: "#4ADE80", fontWeight: 800 }}>
+          <span style={{ color: isDark ? "#4ADE80" : "#16A34A", fontWeight: 800 }}>
             {discounts[index].percentage}% OFF
           </span>
         </motion.span>
@@ -886,13 +886,19 @@ const ExperienceProduct = () => {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
               <div style={{
                 color: "#FFFFFF",
-                fontSize: "14px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif"
+                fontSize: "13px",
+                fontWeight: 500,
+                fontFamily: "Poppins, sans-serif",
+                opacity: 0.9,
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
               }}>
-                {listing?.primaryCategory?.name || listing?.primaryCategory?.title || (typeof listing?.primaryCategory === "string" ? listing?.primaryCategory : null) || listing?.category?.name || listing?.category?.title || (typeof listing?.category === "string" ? listing?.category : null) || "Experience"}
+                <span>Home</span>
+                <ChevronRight size={12} opacity={0.6} />
+                <span>Experiences</span>
+                <ChevronRight size={12} opacity={0.6} />
+                <span style={{ fontWeight: 700 }}>{listing?.title || "Experience"}</span>
               </div>
 
               {/* Early Bird Ticker */}
@@ -901,14 +907,11 @@ const ExperienceProduct = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  background: "rgba(15, 23, 42, 0.9)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
+                  background: theme === "dark" ? "#000000" : "#FFFFFF",
                   padding: "10px 20px",
                   borderRadius: "100px",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
-                  color: "#FFFFFF",
+                  border: `1px solid ${B}`,
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
                   zIndex: 200
                 }}>
                   <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ flexShrink: 0 }} />
@@ -935,7 +938,10 @@ const ExperienceProduct = () => {
                 </Rev>
                 <Rev delay={0.15}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
-                    <MapPin size={15} color={A || "#0097B2"} />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="transparent" stroke={A || "#0097B2"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ fill: "transparent" }}>
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="transparent" />
+                      <circle cx="12" cy="10" r="3" fill="transparent" />
+                    </svg>
                     <span>{listing?.locationName || fallbackLocationValues[0] || "Valparai, Western Ghats"}</span>
                   </div>
                 </Rev>
