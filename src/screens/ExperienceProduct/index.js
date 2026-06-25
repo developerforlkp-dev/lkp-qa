@@ -862,8 +862,8 @@ const ExperienceProduct = () => {
         {/* HERO SECTION */}
         <section ref={heroRef} className="hero-section" style={{
           position: "relative",
-          height: "65vh",
-          minHeight: "520px",
+          height: "50vh",
+          minHeight: "400px",
           width: "calc(100% - 80px)",
           maxWidth: "1600px",
           margin: "0 auto",
