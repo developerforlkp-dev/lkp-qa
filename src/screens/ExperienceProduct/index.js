@@ -1433,8 +1433,8 @@ const ExperienceProduct = () => {
 
 
         {/* TIMELINE SECTION */}
-        <section className="timeline-section" style={{ background: W, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <section className="timeline-section" style={{ background: W, padding: "32px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
             <Rev delay={0.4}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 40, fontFamily: "Poppins, sans-serif" }}>
@@ -1520,8 +1520,8 @@ const ExperienceProduct = () => {
 
 
         {/* ADDONS SECTION */}
-        <section className="addons-section" style={{ background: BG, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <section className="addons-section" style={{ background: BG, padding: "32px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
               <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
                 Make it Yours
@@ -1751,8 +1751,8 @@ const ExperienceProduct = () => {
           </div>
         </section>
         {/* PREPARATION SECTION */}
-        <section className="prep-section" style={{ background: W, padding: "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <section className="prep-section" style={{ background: W, padding: "32px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
             <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
               <Rev delay={0.1} style={{ height: "100%" }}>
                 <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -1930,8 +1930,8 @@ const ExperienceProduct = () => {
 
         {/* HOST & QUALITY ROW (40% / 60%) */}
         {listing && (
-          <section className="host-quality-section" style={{ background: W, padding: "32px 80px" }}>
-            <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+          <section className="host-quality-section" style={{ background: W, padding: "32px 0" }}>
+            <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
                 
                 {/* Host Profile (40%) */}
@@ -2335,8 +2335,8 @@ const ExperienceProduct = () => {
           if (normalizedReviews.length === 0 && eligibleBookings.length === 0) return null;
 
           return (
-            <section className="testimonials-section" style={{ background: BG, padding: "32px 80px" }}>
-              <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+            <section className="testimonials-section" style={{ background: BG, padding: "32px 0" }}>
+              <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
                 {normalizedReviews.length > 0 && (
                   <>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
@@ -3358,8 +3358,8 @@ function ExperiencePolicies({ listing }) {
   const { tokens: { FG, W, B, A, M, BG } } = useTheme();
 
   return (
-    <section className="policies-section" style={{ background: BG, padding: "32px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+    <section className="policies-section" style={{ background: BG, padding: "32px 0" }}>
+      <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
