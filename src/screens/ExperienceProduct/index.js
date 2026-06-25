@@ -27,6 +27,7 @@ import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../utils/scrollLock";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import Favorite from "../../components/Favorite";
+import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -856,6 +857,7 @@ const ExperienceProduct = () => {
 
   return (
     <Page>
+      <DetailPageNavPortal heroRef={heroRef} activeCategory="experience" />
       <main style={{ background: BG }}>
         {/* HERO SECTION */}
         <section ref={heroRef} className="hero-section" style={{
