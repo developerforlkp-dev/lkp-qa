@@ -7,6 +7,7 @@ import styles from "../../screens/FleetHome/StickyHeaderController.module.sass";
 import Icon from "../Icon";
 import InlineDatePicker from "../InlineDatePicker";
 import GuestPicker from "../GuestPicker";
+import { useTheme } from "../../components/JUI/Theme";
 
 /**
  * DetailPageNavPortal
@@ -16,6 +17,7 @@ import GuestPicker from "../GuestPicker";
  */
 
 const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
+  const { theme, tokens: { FG, W, B, A, M, BG } } = useTheme();
   const [isSticky, setIsSticky] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState(null);
@@ -232,8 +234,8 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
           style={{
             display: "flex",
             alignItems: "center",
-            background: "#FFFFFF",
-            border: "1px solid #DDDDDD",
+            background: W,
+            border: `1px solid ${B}`,
             borderRadius: "40px",
             padding: "8px 8px 8px 24px",
             boxShadow: "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
@@ -244,7 +246,7 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
           onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.18)")}
           onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)")}
         >
-          <span style={{ fontSize: "14px", fontWeight: "600", color: "#222222" }}>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: FG }}>
             {searchQuery || "Start your search"}
           </span>
           <div
