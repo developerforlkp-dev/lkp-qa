@@ -3487,7 +3487,7 @@ const ViewDetails = () => {
               className={cn("button-small", styles.downloadPdfButton)}
               onClick={handlePrintReceipt}
             >
-              <Icon name="download" size="16" />
+              <Icon name="download" size="18" />
               <span>Download PDF</span>
             </button>
           </div>
