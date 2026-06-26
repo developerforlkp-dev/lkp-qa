@@ -998,7 +998,8 @@
 
 // Receipt Modal - Unified Width for better fitting
 .receiptModalOuter
-    max-width: 640px !important
+    max-width: 1280px !important
+    width: min(1280px, calc(100vw - 48px)) !important
     backdrop-filter: blur(12px)
     +m
         max-width: 100% !important
@@ -1013,7 +1014,7 @@
     flex-direction: column
     background: $n8
     border-radius: 20px
-    overflow: hidden
+    overflow: visible
     +dark
         background: $n1
 
@@ -1047,6 +1048,8 @@
     height: 40px
     transition: all 0.2s ease
     margin-right: 36px // Avoid overlap with Modal's default absolute close button
+    svg
+        transform: translateX(2px)
     +dark
         background: $n8
         color: $n1
@@ -1063,184 +1066,548 @@
             background: black
 
 .receiptPrintArea
-    padding: 0
-    background: transparent
-    border-radius: 24px
-    +m
-        padding: 0
-
-
-.receiptTicket
-    background: $n8
-    border-radius: 0 0 20px 20px
-    position: relative
-    +dark
-        background: $n1
-
-.receiptBrand
-    display: flex
-    flex-direction: column
-    align-items: center
-    padding: 32px 0 24px
-    background: linear-gradient(180deg, rgba($p4, 0.08) 0%, rgba($p4, 0) 100%)
-    border-bottom: 2px dashed $n6
-    position: relative
-    border-radius: 24px 24px 0 0
-    // Side punches for ticket look
-    &:before, &:after
-        content: ""
-        position: absolute
-        bottom: -10px
-        width: 20px
-        height: 20px
-        border-radius: 50%
-        background: $n7
-        +dark
-            background: $n2
-    &:before
-        left: -10px
-    &:after
-        right: -10px
-    +dark
-        border-color: $n3
-
-.brandLogo
-    color: $p4
-    margin-bottom: 4px
-    svg
-        fill: $p4
-        width: 20px
-        height: 20px
-
-.brandName
-    +caption-bold-1
-    color: $n1
-    text-transform: uppercase
-    letter-spacing: 0.1em
-    +dark
-        color: $n8
-
-.receiptTicketBody
     padding: 24px
+    background: linear-gradient(180deg, #f7f9ff 0%, #ffffff 100%)
+    border-radius: 0 0 24px 24px
+    overflow-x: auto
     +m
         padding: 16px
 
-.receiptTitle
-    +body-bold-2
-    font-size: 18px
-    text-align: center
-    margin-bottom: 4px
-    color: $n2
-    +dark
-        color: $n8
+.receiptSheet
+    background: #ffffff
+    border-radius: 24px
+    padding: 18px
+    box-shadow: 0 24px 70px rgba(32, 66, 135, 0.12)
+    color: #14315b
+    width: 100%
+    max-width: 760px
+    min-height: 1040px
+    margin: 0 auto
+    +m
+        padding: 14px
+        width: 100%
+        min-height: auto
 
-.receiptBookingId
-    +caption-2
-    text-align: center
-    color: $n4
-    margin-bottom: 16px
+.receiptHero
+    display: grid
+    grid-template-columns: 92px minmax(0, 1fr) 196px
+    gap: 20px
+    align-items: center
+    padding: 18px 28px 18px 18px
+    background: linear-gradient(135deg, #0b66f0 0%, #2d8cff 52%, #0f77f7 100%)
+    border-radius: 20px
+    position: relative
+    overflow: hidden
+    &:after
+        content: ""
+        position: absolute
+        top: -42px
+        right: -32px
+        width: 150px
+        height: 150px
+        border-radius: 50%
+        background: rgba(255, 255, 255, 0.12)
+    +m
+        grid-template-columns: 1fr
+        justify-items: start
+        padding: 18px
 
-.dottedDivider
-    height: 1px
-    background-image: linear-gradient(to right, $n5 30%, transparent 30%)
-    background-size: 5px 1px
-    background-repeat: repeat-x
-    margin: 16px 0
-    +dark
-        background-image: linear-gradient(to right, $n4 20%, transparent 20%)
+.receiptLogoCard
+    width: 92px
+    height: 92px
+    border-radius: 16px
+    background: #ffffff
+    display: flex
+    align-items: center
+    justify-content: center
+    padding: 10px
+    position: relative
+    z-index: 1
 
-.pricingBreakdown
+.receiptLogoImage
+    width: 100%
+    height: auto
+    display: block
+
+.receiptHeroInfo
+    display: flex
+    flex-direction: column
+    gap: 10px
+    color: #ffffff
+    position: relative
+    z-index: 1
+
+.receiptBrandName
+    font-size: 24px
+    font-weight: 700
+    line-height: 1.1
+
+.receiptBrandMeta
     display: flex
     flex-direction: column
     gap: 6px
+    font-size: 13px
+    span
+        display: block
+        line-height: 14px
+    svg
+        display: inline-block
+        vertical-align: middle
+        fill: #ffffff
+        margin-right: 8px
+        flex: 0 0 auto
 
-.receiptPriceRow
-    display: flex
-    justify-content: space-between
-    +caption-1
-    color: $n4
-    +dark
-        color: $n5
-
-.priceValue
-    color: $n2
-    font-weight: 600
-    +dark
-        color: $n8
-
-.discountRow
-    color: $p4 !important
-    .priceValue
-        color: $p4
-
-.invoiceTotal
-    margin-top: 4px
-    padding: 8px 0
-    align-items: center
-
-.totalLabel
-    +body-bold-2
-    color: $n1
-    +dark
-        color: $n8
-
-.totalValue
-    font-size: 24px
+.receiptInvoicePill
+    align-self: center
+    justify-self: end
+    background: #ffffff
+    color: #0b66f0
+    border-radius: 999px
+    box-sizing: border-box
+    width: 176px
+    max-width: 100%
+    padding: 12px 16px
+    font-size: 13px
     font-weight: 700
-    line-height: 1.2
-    color: $p4
+    display: flex
+    align-items: center
+    justify-content: center
+    line-height: 1
+    white-space: nowrap
+    margin-right: 12px
+    position: relative
+    z-index: 1
+    +m
+        justify-self: start
+        margin-right: 0
 
-.receiptInfoSections
+.receiptMetaGrid
     display: grid
-    grid-template-columns: 1fr 1fr
-    gap: 16px
-    margin-top: 16px
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(220px, 0.82fr)
+    gap: 18px
+    margin-top: 20px
     +m
         grid-template-columns: 1fr
 
-.receiptLabel
-    +caption-bold-2
-    color: $n4
-    margin-bottom: 2px
-    text-transform: uppercase
-    letter-spacing: 0.05em
+.receiptMetaCard
+    background: #ffffff
+    border: 1px solid #e6edf9
+    border-radius: 18px
+    padding: 18px
+    min-height: 100%
+    min-height: 148px
 
-.infoText
-    +body-bold-2
+.receiptSectionTitle
+    display: block
+    margin-bottom: 12px
+    color: #0b66f0
+    font-size: 13px
+    font-weight: 700
+    line-height: 16px
+    svg
+        display: inline-block
+        vertical-align: middle
+        fill: #0b66f0
+        margin-right: 8px
+    span
+        display: inline-block
+        vertical-align: middle
+
+.receiptPrimaryText
+    font-size: 16px
+    font-weight: 700
+    color: #163763
+    margin-bottom: 8px
+
+.receiptSecondaryText
+    font-size: 13px
+    line-height: 1.6
+    color: #49627f
+
+.receiptBadge
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    line-height: 1
+    margin-top: 14px
+    padding: 8px 12px
+    border-radius: 999px
+    background: #eef5ff
+    color: #0b66f0
+    font-size: 12px
+    font-weight: 700
+
+.receiptMetaBlock + .receiptMetaBlock
+    margin-top: 18px
+
+.receiptFinanceGrid
+    display: grid
+    grid-template-columns: minmax(0, 1.55fr) minmax(180px, 0.78fr)
+    gap: 16px
+    margin-top: 20px
+    align-items: start
+    +m
+        grid-template-columns: 1fr
+
+.receiptTableCard
+    border: 1px solid #e6edf9
+    border-radius: 18px
+    overflow: hidden
+    background: #ffffff
+
+.receiptTableHeader
+    display: grid
+    grid-template-columns: minmax(0, 1fr) auto
+    gap: 12px
+    padding: 14px 18px
+    background: #eef5ff
+    color: #0b66f0
+    font-size: 13px
+    font-weight: 700
+
+.receiptTableBody
+    padding: 6px 18px
+
+.receiptTableRow
+    display: grid
+    grid-template-columns: minmax(0, 1fr) auto
+    gap: 12px
+    padding: 14px 0
+    border-bottom: 1px solid #edf2fb
     font-size: 14px
+    color: #294b76
+    &:last-child
+        border-bottom: 0
+    span:first-child
+        min-width: 0
+        word-break: break-word
+    span:last-child
+        white-space: nowrap
+
+.receiptTableRowNegative
+    color: #e5484d
+    span:last-child
+        font-weight: 700
+
+.receiptTableRowTotal
+    color: #0b66f0
+    font-weight: 700
+    font-size: 15px
+
+.receiptSummaryCard
+    border-radius: 18px
+    padding: 26px 22px
+    background: linear-gradient(180deg, #2383ff 0%, #0b66f0 100%)
+    color: #ffffff
+    display: flex
+    flex-direction: column
+    min-height: 270px
+
+.receiptSummaryLabel
+    font-size: 14px
+    color: rgba(255, 255, 255, 0.82)
+
+.receiptSummaryValue
+    margin-top: 10px
+    font-size: 34px
+    line-height: 1.1
+    font-weight: 800
+
+.receiptSummaryDivider
+    margin: 22px 0
+    height: 1px
+    background: rgba(255, 255, 255, 0.3)
+
+.receiptSummaryWordsLabel
+    font-size: 12px
+    font-weight: 700
+    text-transform: uppercase
+    letter-spacing: 0.06em
+
+.receiptSummaryWords
+    margin-top: 10px
+    font-size: 14px
+    line-height: 1.7
+    color: rgba(255, 255, 255, 0.92)
+
+.receiptSummaryMeta
+    margin-top: auto
+    padding-top: 22px
+    display: flex
+    flex-direction: column
+    gap: 8px
+    font-size: 12px
+    color: rgba(255, 255, 255, 0.82)
+
+.receiptPolicyCard
+    margin-top: 18px
+    border: 1px solid #e6edf9
+    border-radius: 18px
+    padding: 18px
+    background: linear-gradient(180deg, #f7faff 0%, #ffffff 100%)
+    min-height: 86px
+
+.receiptPolicyList
+    margin: 0
+    padding: 0
+    display: flex
+    flex-direction: column
+    gap: 8px
+
+.receiptPolicyItem
+    display: block
+    position: relative
+    padding-left: 14px
+
+.receiptPolicyBullet
+    position: absolute
+    left: 0
+    top: 6px
+    width: 5px
+    height: 5px
+    border-radius: 50%
+    background: #0b66f0
+
+.receiptPolicyText
+    display: block
+    color: #49627f
+    font-size: 13px
+    line-height: 1.5
+
+.receiptFooter
+    margin-top: 22px
+    padding-top: 18px
+    border-top: 1px solid #edf2fb
+
+.receiptFooterBrand
+    font-size: 16px
+    font-weight: 700
+    color: #163763
+
+.receiptFooterLinks
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    gap: 8px
+    margin-top: 10px
+    color: #49627f
+    font-size: 13px
+    span
+        display: block
+        line-height: 14px
+    svg
+        display: inline-block
+        vertical-align: middle
+        fill: #0b66f0
+        margin-right: 8px
+
+.receiptChecklist
+    padding: 18px 24px 24px
+    border-top: 1px solid $n6
+    background: #ffffff
+    +dark
+        background: $n1
+        border-color: $n3
+    +m
+        padding: 16px
+
+.receiptChecklistTitle
+    +body-bold-2
+    font-size: 15px
     color: $n2
     +dark
         color: $n8
 
-.infoSubtext
-    +caption-2
+.receiptChecklistList
+    margin: 10px 0 0
+    padding-left: 18px
     color: $n4
-
-.receiptFooterNote
-    margin-top: 24px
-    text-align: center
-    position: relative
-    p
-        +caption-2
-        font-size: 11px
+    font-size: 13px
+    line-height: 1.7
+    +dark
         color: $n5
-        line-height: 1.4
-        max-width: 200px
-        margin: 0 auto
 
-.stamp
-    position: absolute
-    top: -8px
-    right: -2px
-    border: 1px solid rgba($p4, 0.3)
-    color: rgba($p4, 0.4)
-    padding: 2px 8px
-    border-radius: 3px
-    font-weight: 900
-    font-size: 11px
-    transform: rotate(-10deg)
-    pointer-events: none
-    letter-spacing: 0.1em
+.receiptPdfMode
+    max-width: 680px !important
+    min-height: auto !important
+    padding: 24px !important
+    border-radius: 18px !important
+    .receiptHero
+        grid-template-columns: 80px minmax(0, 1fr) 140px !important
+        gap: 16px !important
+        padding: 16px 20px 16px 16px !important
+        border-radius: 16px !important
+        align-items: center !important
+    .receiptLogoCard
+        width: 80px !important
+        height: 80px !important
+        padding: 8px !important
+        border-radius: 12px !important
+    .receiptBrandName
+        font-size: 22px !important
+        span
+            transform: translateY(-10px) !important
+    .receiptBrandMeta
+        gap: 5px !important
+        font-size: 11px !important
+        span
+            display: block !important
+            line-height: 14px !important
+            transform: translateY(-4px) !important
+            svg
+                display: inline-block !important
+                vertical-align: middle !important
+                margin-right: 6px !important
+                transform: translateY(2px) !important
+    .receiptInvoicePill
+        align-self: center !important
+        width: 140px !important
+        padding: 8px 12px !important
+        font-size: 11px !important
+        display: flex !important
+        align-items: center !important
+        justify-content: center !important
+        line-height: 1 !important
+        span
+            transform: translateY(-4px) !important
+    .receiptMetaGrid
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(180px, 0.9fr) !important
+        gap: 16px !important
+        margin-top: 24px !important
+    .receiptMetaCard
+        padding: 16px !important
+        min-height: 144px !important
+        border-radius: 14px !important
+    .receiptMetaCard:nth-child(1) .receiptSectionTitle
+        margin-bottom: 10px !important
+        font-size: 12px !important
+        display: block !important
+        line-height: 16px !important
+        svg
+            display: inline-block !important
+            vertical-align: middle !important
+            margin-right: 6px !important
+        span
+            display: inline-block !important
+            vertical-align: middle !important
+            transform: translateY(-2px) !important
+
+    .receiptMetaCard:nth-child(2) .receiptSectionTitle
+        margin-bottom: 10px !important
+        font-size: 12px !important
+        display: block !important
+        line-height: 16px !important
+        svg
+            display: inline-block !important
+            vertical-align: middle !important
+            margin-right: 6px !important
+        span
+            display: inline-block !important
+            vertical-align: middle !important
+            transform: translateY(-3px) !important
+    .receiptMetaCard:nth-child(3) 
+        .receiptMetaBlock:nth-child(1) .receiptSectionTitle span
+            transform: translateY(-4px) !important
+        .receiptMetaBlock:nth-child(2) .receiptSectionTitle span
+            transform: translateY(-4px) !important
+        .receiptMetaBlock:nth-child(3) .receiptSectionTitle span
+            transform: translateY(-4px) !important
+    .receiptPrimaryText
+        font-size: 14.5px !important
+        margin-bottom: 6px !important
+    .receiptSecondaryText
+        font-size: 11px !important
+        line-height: 1.5 !important
+    .receiptBadge
+        display: inline-flex !important
+        align-items: center !important
+        justify-content: center !important
+        line-height: 1 !important
+        margin-top: 10px !important
+        padding: 6px 10px !important
+        font-size: 10px !important
+        span
+            transform: translateY(-3px) !important
+    .receiptMetaBlock + .receiptMetaBlock
+        margin-top: 16px !important
+    .receiptFinanceGrid
+        grid-template-columns: minmax(0, 1.52fr) minmax(160px, 0.88fr) !important
+        gap: 16px !important
+        margin-top: 24px !important
+        align-items: start !important
+    .receiptTableCard
+        border-radius: 14px !important
+    .receiptTableHeader
+        padding: 12px 16px !important
+        font-size: 11.5px !important
+    .receiptTableBody
+        padding: 6px 16px !important
+    .receiptTableRow
+        padding: 11px 0 !important
+        font-size: 11.5px !important
+    .receiptTableRowTotal
+        font-size: 12.5px !important
+    .receiptSummaryCard
+        padding: 20px 16px !important
+        min-height: 240px !important
+        border-radius: 14px !important
+    .receiptSummaryLabel,
+    .receiptSummaryWordsLabel,
+    .receiptSummaryMeta
+        font-size: 10px !important
+    .receiptSummaryValue
+        margin-top: 8px !important
+        font-size: 26px !important
+    .receiptSummaryDivider
+        margin: 14px 0 !important
+    .receiptSummaryWords
+        margin-top: 8px !important
+        font-size: 11px !important
+        line-height: 1.5 !important
+    .receiptPolicyCard
+        margin-top: 24px !important
+        padding: 16px !important
+        border-radius: 14px !important
+        min-height: 0 !important
+        .receiptSectionTitle span
+            transform: translateY(-4px) !important
+    .receiptPolicyList
+        padding-left: 0 !important
+        gap: 6px !important
+    .receiptPolicyItem
+        display: block !important
+        position: relative !important
+        padding-left: 12px !important
+    .receiptPolicyBullet
+        position: absolute !important
+        left: 0 !important
+        top: 5px !important
+        width: 4px !important
+        height: 4px !important
+        margin-top: 0 !important
+    .receiptPolicyText
+        display: block !important
+        font-size: 11.5px !important
+        line-height: 1.45 !important
+        transform: translateY(-5px) !important
+    .receiptFooter
+        margin-top: 28px !important
+        padding-top: 16px !important
+    .receiptFooterBrand
+        font-size: 14.5px !important
+    .receiptFooterLinks
+        gap: 8px !important
+        margin-top: 10px !important
+        font-size: 11.5px !important
+        span
+            display: block !important
+            line-height: 14px !important
+            transform: translateY(-3px) !important
+            svg
+                display: inline-block !important
+                vertical-align: middle !important
+                margin-right: 6px !important
+                transform: translateY(3px) !important
 
 .paymentActions
     display: flex
@@ -1267,6 +1634,10 @@
 
 // Robust Print Fix: Targeting the structure to avoid blank pages
 @media print
+    @page
+        size: A4 portrait
+        margin: 8mm
+
     html, body
         height: auto !important
         overflow: visible !important
@@ -1278,7 +1649,7 @@
     body *
         visibility: hidden !important
 
-    // Specifically show ONLY the receipt ticket and its contents
+    // Specifically show ONLY the receipt sheet and its contents
     .receiptPrintArea, .receiptPrintArea *
         visibility: visible !important
     
@@ -1288,51 +1659,139 @@
         top: 0 !important
         width: 100% !important
         margin: 0 !important
-        padding: 40px !important
+        padding: 0 !important
         display: block !important
         background: white !important
         max-height: none !important
         overflow: visible !important
         visibility: visible !important
+        text-align: center !important
 
-    .receiptTicket
+    .receiptSheet
         box-shadow: none !important
-        border: 1px solid #eee !important
+        border: 1px solid #e6edf9 !important
         background: white !important
         width: 100% !important
-        max-width: 500px !important
+        min-width: 0 !important
+        max-width: 680px !important
         margin: 0 auto !important
         border-radius: 20px !important
         visibility: visible !important
         overflow: visible !important
+        min-height: 0 !important
 
-    .receiptBrand
-        background: #fdfdfd !important
-        border-bottom: 2px dashed #eee !important
-        &:before, &:after
-            background: white !important
-            border: 1px solid #eee !important
-    
-    .brandName, .receiptTitle, .totalLabel, .infoText
-        color: black !important
-        visibility: visible !important
-    
-    .totalValue
-        color: #0097B2 !important
-        visibility: visible !important
-    
-    .receiptLabel, .infoSubtext, .receiptFooterNote p
-        color: #666 !important
-        visibility: visible !important
-    
-    .dottedDivider
-        background-image: linear-gradient(to right, #ddd 40%, transparent 40%) !important
-        visibility: visible !important
-    
-    .stamp
-        border-color: rgba(0, 151, 178, 0.3) !important
-        color: rgba(0, 151, 178, 0.4) !important
-        visibility: visible !important
+    .receiptHero
+        padding: 14px 18px 14px 14px !important
+        gap: 14px !important
+        grid-template-columns: 68px minmax(0, 1fr) 128px !important
+
+    .receiptHero,
+    .receiptMetaGrid,
+    .receiptFinanceGrid,
+    .receiptPolicyCard,
+    .receiptFooter
+        break-inside: avoid !important
+        page-break-inside: avoid !important
+
+    .receiptHero
+        background: linear-gradient(135deg, #0b66f0 0%, #2d8cff 52%, #0f77f7 100%) !important
+
+    .receiptLogoCard
+        width: 68px !important
+        height: 68px !important
+        padding: 8px !important
+
+    .receiptBrandName
+        font-size: 18px !important
+
+    .receiptBrandMeta,
+    .receiptInvoicePill,
+    .receiptSecondaryText,
+    .receiptFooterLinks
+        font-size: 11px !important
+
+    .receiptInvoicePill
+        width: 128px !important
+        padding: 8px 10px !important
+
+    .receiptMetaGrid
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(160px, 0.8fr) !important
+        gap: 12px !important
+        margin-top: 14px !important
+
+    .receiptMetaCard,
+    .receiptPolicyCard
+        padding: 12px !important
+        border-radius: 14px !important
+        min-height: 0 !important
+
+    .receiptSectionTitle
+        margin-bottom: 8px !important
+        font-size: 11px !important
+
+    .receiptPrimaryText
+        font-size: 13px !important
+        margin-bottom: 6px !important
+
+    .receiptBadge
+        margin-top: 10px !important
+        padding: 6px 10px !important
+        font-size: 10px !important
+
+    .receiptFinanceGrid
+        grid-template-columns: minmax(0, 1.45fr) minmax(150px, 0.72fr) !important
+        gap: 12px !important
+        margin-top: 14px !important
+
+    .receiptTableHeader
+        padding: 10px 12px !important
+        font-size: 11px !important
+
+    .receiptTableBody
+        padding: 4px 12px !important
+
+    .receiptTableRow
+        padding: 10px 0 !important
+        font-size: 11px !important
+
+    .receiptTableRowTotal
+        font-size: 12px !important
+
+    .receiptSummaryCard
+        padding: 16px 14px !important
+        min-height: 200px !important
+
+    .receiptSummaryLabel,
+    .receiptSummaryWordsLabel,
+    .receiptSummaryMeta
+        font-size: 10px !important
+
+    .receiptSummaryValue
+        margin-top: 8px !important
+        font-size: 22px !important
+
+    .receiptSummaryDivider
+        margin: 12px 0 !important
+
+    .receiptSummaryWords
+        margin-top: 8px !important
+        font-size: 11px !important
+        line-height: 1.5 !important
+
+    .receiptPolicyList
+        font-size: 11px !important
+        line-height: 1.5 !important
+        padding-left: 18px !important
+
+    .receiptFooter
+        margin-top: 14px !important
+        padding-top: 12px !important
+
+    .receiptFooterBrand
+        font-size: 13px !important
+
+    .receiptChecklist
+        display: none !important
 
 .cancelModalContentScrollable
     max-height: min(88vh, 760px)

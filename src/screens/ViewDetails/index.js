@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
@@ -8,7 +8,6 @@ import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, sub
 import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../utils/paymentSession";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
-import Receipt from "../../components/Receipt";
 import html2pdf from "html2pdf.js";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 
@@ -146,60 +145,60 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     null;
 
   // Use profile data if it belongs to the same customer to ensure sync
-  const useProfileInfo = profileData && 
-    (profileData.customerId === apiBooking.customerId || 
-     profileData.customerId === apiBooking.customer?.customerId ||
-     !apiBooking.customerId); // Fallback if customerId is missing in booking but it's the user's booking
+  const useProfileInfo = profileData &&
+    (profileData.customerId === apiBooking.customerId ||
+      profileData.customerId === apiBooking.customer?.customerId ||
+      !apiBooking.customerId); // Fallback if customerId is missing in booking but it's the user's booking
 
-  const customerName = useProfileInfo 
+  const customerName = useProfileInfo
     ? [profileData.firstName, profileData.lastName].filter(Boolean).join(" ")
     : pickText(
-        apiBooking?.customerName,
-        apiBooking?.customerFullName,
-        apiBooking?.guestName,
-        apiBooking?.userName,
-        apiBooking?.fullName,
-        apiBooking?.name,
-        [apiBooking?.firstName, apiBooking?.lastName].filter(Boolean).join(" "),
-        [apiBooking?.customerFirstName, apiBooking?.customerLastName].filter(Boolean).join(" "),
-        customerObj?.name,
-        customerObj?.fullName,
-        [customerObj?.firstName, customerObj?.lastName].filter(Boolean).join(" "),
-        customerObj?.customerName,
-        customerObj?.guestName
-      );
+      apiBooking?.customerName,
+      apiBooking?.customerFullName,
+      apiBooking?.guestName,
+      apiBooking?.userName,
+      apiBooking?.fullName,
+      apiBooking?.name,
+      [apiBooking?.firstName, apiBooking?.lastName].filter(Boolean).join(" "),
+      [apiBooking?.customerFirstName, apiBooking?.customerLastName].filter(Boolean).join(" "),
+      customerObj?.name,
+      customerObj?.fullName,
+      [customerObj?.firstName, customerObj?.lastName].filter(Boolean).join(" "),
+      customerObj?.customerName,
+      customerObj?.guestName
+    );
   const formattedCustomerName = formatPersonName(customerName);
 
   const customerPhone = useProfileInfo
     ? (profileData.phone || profileData.mobile || "")
     : pickText(
-        apiBooking?.customerPhone,
-        apiBooking?.phoneNumber,
-        apiBooking?.phone,
-        apiBooking?.mobile,
-        apiBooking?.mobileNumber,
-        apiBooking?.contactNumber,
-        apiBooking?.customerMobile,
-        customerObj?.phone,
-        customerObj?.phoneNumber,
-        customerObj?.mobile,
-        customerObj?.mobileNumber,
-        customerObj?.contactNumber
-      );
+      apiBooking?.customerPhone,
+      apiBooking?.phoneNumber,
+      apiBooking?.phone,
+      apiBooking?.mobile,
+      apiBooking?.mobileNumber,
+      apiBooking?.contactNumber,
+      apiBooking?.customerMobile,
+      customerObj?.phone,
+      customerObj?.phoneNumber,
+      customerObj?.mobile,
+      customerObj?.mobileNumber,
+      customerObj?.contactNumber
+    );
 
   const customerEmail = useProfileInfo
     ? (profileData.email || "")
     : pickText(
-        apiBooking?.customerEmail,
-        apiBooking?.email,
-        apiBooking?.emailId,
-        apiBooking?.emailAddress,
-        apiBooking?.mailId,
-        customerObj?.email,
-        customerObj?.emailId,
-        customerObj?.emailAddress,
-        customerObj?.mailId
-      );
+      apiBooking?.customerEmail,
+      apiBooking?.email,
+      apiBooking?.emailId,
+      apiBooking?.emailAddress,
+      apiBooking?.mailId,
+      customerObj?.email,
+      customerObj?.emailId,
+      customerObj?.emailAddress,
+      customerObj?.mailId
+    );
   // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -445,7 +444,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.latitude = parseFloat(stayData.latitude);
       location.longitude = parseFloat(stayData.longitude);
     }
-    
+
     // Map address
     location.address = pickText(
       stayData.address,
@@ -489,7 +488,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       location.city = lp[0] || "TBD";
       if (lp.length > 1) location.country = lp.slice(1).join(", ");
     }
-    
+
     if (listingData?.meetingInstructions && location.address === "TBD") {
       const instructions = listingData.meetingInstructions;
       if (instructions.length < 100) { // Only use if it looks like a short address
@@ -623,7 +622,18 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     addons: addonsList,
     discounts: discountsList,
     notes: {
-      cancellationPolicy: listingData?.cancellationPolicyText ? [listingData.cancellationPolicyText] : [],
+      cancellationPolicy: normalizePolicyTextList(
+        listingData?.cancellationPolicySummary,
+        listingData?.cancellationPolicyText,
+        listingData?.cancellationPolicy,
+        eventData?.cancellationPolicySummary,
+        eventData?.cancellationPolicyText,
+        eventData?.cancellationPolicy,
+        stayData?.cancellationPolicySummary,
+        stayData?.cancellationPolicyTemplate,
+        stayData?.cancellationPolicyText,
+        stayData?.cancellationPolicy
+      ),
       hostInstructions: [],
       requirements: [],
     },
@@ -668,8 +678,13 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
         ? stayData.houseRules
         : [stayData.houseRules];
     }
-    if (stayData.cancellationPolicy && !result.notes.cancellationPolicy.length) {
-      result.notes.cancellationPolicy = [stayData.cancellationPolicy];
+    if (!result.notes.cancellationPolicy.length) {
+      result.notes.cancellationPolicy = normalizePolicyTextList(
+        stayData.cancellationPolicySummary,
+        stayData.cancellationPolicyTemplate,
+        stayData.cancellationPolicyText,
+        stayData.cancellationPolicy
+      );
     }
   }
 
@@ -703,6 +718,212 @@ const formatRefundPolicyUsed = (percentage) => {
   if (!Number.isFinite(numericValue)) return "N/A";
   if (numericValue <= 0) return "No refund";
   return `${numericValue}% refund`;
+};
+
+const RECEIPT_SUPPORT_EMAIL = "support@littleknownplanet.com";
+const RECEIPT_SUPPORT_PHONE = "Available on request";
+
+const getReceiptDateLabel = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+};
+
+const getReceiptNumericAmount = (value) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (!value) return 0;
+  const normalized = String(value).replace(/[^0-9.-]/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatReceiptMoney = (value, currency = "INR") => {
+  const amount = getReceiptNumericAmount(value);
+  const currencyCode = currency || "INR";
+  return new Intl.NumberFormat(currencyCode === "INR" ? "en-IN" : "en-US", {
+    style: "currency",
+    currency: currencyCode,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
+const getReceiptPercent = (amount, base) => {
+  const numericAmount = getReceiptNumericAmount(amount);
+  const numericBase = getReceiptNumericAmount(base);
+  if (!numericAmount || !numericBase) return null;
+  return ((Math.abs(numericAmount) / numericBase) * 100).toFixed(2);
+};
+
+const numberToWordsBelowThousand = (value) => {
+  const ones = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  if (value < 20) return ones[value];
+  if (value < 100) {
+    const ten = tens[Math.floor(value / 10)];
+    const remainder = value % 10;
+    return remainder ? `${ten} ${ones[remainder]}` : ten;
+  }
+
+  const hundred = `${ones[Math.floor(value / 100)]} Hundred`;
+  const remainder = value % 100;
+  return remainder ? `${hundred} ${numberToWordsBelowThousand(remainder)}` : hundred;
+};
+
+const numberToWordsIndian = (value) => {
+  const numericValue = Math.floor(Math.abs(Number(value) || 0));
+  if (!numericValue) return "Zero";
+
+  const segments = [
+    { size: 10000000, label: "Crore" },
+    { size: 100000, label: "Lakh" },
+    { size: 1000, label: "Thousand" },
+  ];
+
+  let remaining = numericValue;
+  const words = [];
+
+  segments.forEach(({ size, label }) => {
+    if (remaining >= size) {
+      const segmentValue = Math.floor(remaining / size);
+      words.push(`${numberToWordsBelowThousand(segmentValue)} ${label}`);
+      remaining %= size;
+    }
+  });
+
+  if (remaining > 0) {
+    words.push(numberToWordsBelowThousand(remaining));
+  }
+
+  return words.join(" ").trim();
+};
+
+const formatAmountInWords = (value) => {
+  const numericValue = getReceiptNumericAmount(value);
+  const rupees = Math.floor(numericValue);
+  const paise = Math.round((numericValue - rupees) * 100);
+  const rupeesText = `${numberToWordsIndian(rupees)} Rupees`;
+  if (!paise) return `${rupeesText} Only`;
+  return `${rupeesText} and ${numberToWordsIndian(paise)} Paise Only`;
+};
+
+const normalizePolicyTextList = (...values) => {
+  const results = [];
+
+  const pushValue = (value) => {
+    if (!value) return;
+
+    if (Array.isArray(value)) {
+      value.forEach(pushValue);
+      return;
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) results.push(trimmed);
+      return;
+    }
+
+    if (typeof value === "object") {
+      const objectText =
+        value.cancellationPolicySummary ||
+        value.cancellationPolicyTemplate ||
+        value.cancellationPolicyText ||
+        value.cancellationPolicy ||
+        value.policySummary ||
+        value.policyText ||
+        value.text ||
+        value.description ||
+        value.value ||
+        value.title ||
+        value.name ||
+        value.policyRule ||
+        value.propertyRule ||
+        value.rule ||
+        value.content;
+
+      if (typeof objectText === "string" && objectText.trim()) {
+        results.push(objectText.trim());
+      }
+    }
+  };
+
+  values.forEach(pushValue);
+  return [...new Set(results)];
+};
+
+const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPreview }) => {
+  const listingData = booking?.listingData || booking?.originalData?.listingData || null;
+  const stayData = booking?.stayData || booking?.originalData?.stayData || null;
+  const eventData = booking?.eventData || booking?.originalData?.eventData || null;
+
+  return normalizePolicyTextList(
+    listingData?.cancellationPolicySummary,
+    listingData?.cancellationPolicyText,
+    listingData?.cancellationPolicy,
+    listingData?.cancellationPolicyTemplate,
+    listingData?.policySummary,
+    listingData?.policyText,
+    stayData?.cancellationPolicySummary,
+    stayData?.cancellationPolicyTemplate,
+    stayData?.cancellationPolicyText,
+    stayData?.cancellationPolicy,
+    stayData?.privacyAndPolicy?.cancellationPolicySummary,
+    stayData?.privacyAndPolicy?.cancellationPolicyTemplate,
+    stayData?.privacyAndPolicy?.cancellationPolicyText,
+    stayData?.privacyAndPolicy?.cancellationPolicy,
+    stayData?.listing?.cancellationPolicySummary,
+    stayData?.listing?.cancellationPolicyTemplate,
+    stayData?.listing?.cancellationPolicyText,
+    stayData?.listing?.cancellationPolicy,
+    stayData?.cancellationPolicyRules,
+    stayData?.cancellationPolicyRule,
+    stayData?.cancellationRules,
+    eventData?.cancellationPolicySummary,
+    eventData?.cancellationPolicyText,
+    eventData?.cancellationPolicy,
+    eventData?.refundPolicyText,
+    eventData?.refundPolicy,
+    eventData?.policyText,
+    refundDetails?.appliedRefundPolicy,
+    refundDetails?.appliedRefundPolicyName,
+    refundDetails?.appliedPolicy,
+    refundDetails?.refundPolicyName,
+    refundDetails?.policyName,
+    refundDetails?.policyLabel,
+    refundDetails?.refundPolicy,
+    refundDetails?.refundPolicyText,
+    cancelPreview?.policyUsed,
+    cancelPreview?.policyApplied,
+    booking?.notes?.cancellationPolicy
+  );
 };
 
 const ViewDetails = () => {
@@ -767,9 +988,147 @@ const ViewDetails = () => {
     booking?.statusTone === "completed";
   const canLeaveReview = booking?.orderId != null && orderIdsEligibleForReview.has(Number(booking.orderId));
 
+  const receiptViewModel = useMemo(() => {
+    if (!booking) return null;
+
+    const originalData = booking.originalData || {};
+    const currency = originalData.currency || "INR";
+    const invoiceSourceDate =
+      originalData.createdAt ||
+      originalData.orderDate ||
+      originalData.bookingDate ||
+      originalData.checkInDate ||
+      booking.bookingDate ||
+      booking.startDate;
+
+    const invoiceDateLabel = getReceiptDateLabel(invoiceSourceDate);
+    const isPending = booking.status === "Pending" || String(originalData.orderStatus || "").toUpperCase() === "PENDING";
+    const totalAmount = booking.pricing?.total || originalData.totalPrice || 0;
+    const baseAmount = booking.pricing?.basePrice || originalData.basePrice || 0;
+    const subtotalAmount = booking.pricing?.subtotal || originalData.subtotal || baseAmount;
+    const discountAmount = booking.pricing?.discountAmount || originalData.discountAmount || 0;
+    const taxAmount = booking.pricing?.taxAmount || originalData.taxAmount || 0;
+    const listingReference =
+      originalData.listingId ||
+      originalData.stayId ||
+      originalData.eventId ||
+      booking.listingData?.listingId ||
+      booking.stayData?.stayId ||
+      booking.orderId;
+    const propertyTitle =
+      booking.title ||
+      booking.stayData?.propertyName ||
+      booking.listingData?.title ||
+      booking.eventData?.title ||
+      "Booking";
+    const propertySubtitle =
+      originalData.roomType ||
+      originalData.stayOrderRooms?.[0]?.roomTypeName ||
+      originalData.stayOrderRooms?.[0]?.propertyName ||
+      booking.listingData?.categoryName ||
+      booking.stayData?.propertyType ||
+      booking.eventData?.venueName ||
+      "Confirmed booking";
+    const guestSummary = (() => {
+      const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
+      const children = booking.childrenCount || 0;
+      if (adults > 0 || children > 0) {
+        return [
+          adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : null,
+          children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : null,
+        ].filter(Boolean).join(", ");
+      }
+      return `${booking.guestCount || 0} Guest${booking.guestCount === 1 ? "" : "s"}`;
+    })();
+    const scheduleLabel = booking.startTime && booking.endTime
+      ? `${booking.startDate} | ${booking.startTime} - ${booking.endTime}`
+      : `${booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
+    const discountPercent = getReceiptPercent(discountAmount, subtotalAmount);
+    const taxPercent = getReceiptPercent(taxAmount, subtotalAmount);
+    const companyWebsite =
+      (typeof window !== "undefined" && window.location?.origin) ||
+      "https://www.littleknownplanet.com";
+    const companyEmail = RECEIPT_SUPPORT_EMAIL;
+    const companyPhone = RECEIPT_SUPPORT_PHONE;
+    const publicCancellationPolicies = getPublicCancellationPolicyTexts({ booking, refundDetails, cancelPreview });
+    const receiptRows = [
+      {
+        label: `Base price (${formatReceiptMoney(baseAmount, currency)}${booking.guestCount ? ` x ${booking.guestCount} guest${booking.guestCount > 1 ? "s" : ""}` : ""})`,
+        value: formatReceiptMoney(baseAmount, currency),
+      },
+      ...(booking.addons || []).map((addon) => ({
+        label: `${addon.name} (x${addon.quantity || 1})`,
+        value: addon.total || formatReceiptMoney(addon.price, currency),
+      })),
+      {
+        label: "Total",
+        value: formatReceiptMoney(subtotalAmount, currency),
+      },
+      ...(getReceiptNumericAmount(discountAmount) > 0 ? [{
+        label: `Discount${discountPercent ? ` (${discountPercent}%)` : ""}`,
+        value: `- ${formatReceiptMoney(discountAmount, currency)}`,
+        isNegative: true,
+      }] : []),
+      ...(getReceiptNumericAmount(taxAmount) > 0 ? [{
+        label: `Taxes${taxPercent ? ` (${taxPercent}%)` : ""}`,
+        value: formatReceiptMoney(taxAmount, currency),
+      }] : []),
+      {
+        label: isPending ? "Amount Payable" : "Total Paid",
+        value: formatReceiptMoney(totalAmount, currency),
+        isTotal: true,
+      },
+    ];
+
+    return {
+      companyWebsite,
+      companyEmail,
+      companyPhone,
+      invoiceId: `INV: ${String(booking.orderId || "").padStart(6, "0")}`,
+      invoiceDateLabel,
+      dueDateLabel: isPending ? invoiceDateLabel : "Paid on Receipt",
+      paymentTermsLabel: isPending
+        ? "Due on Receipt"
+        : `Paid${booking.paymentMethod ? ` via ${booking.paymentMethod}` : ""}`,
+      billTo: {
+        name: booking.guest?.name || "Guest",
+        line1: propertySubtitle,
+        line2: [booking.location?.address, booking.location?.city].filter(Boolean).join(", ") || "Address unavailable",
+        line3: booking.location?.country || "",
+        phone: booking.guest?.phone || "Phone unavailable",
+        email: booking.guest?.email || "Email unavailable",
+      },
+      property: {
+        title: propertyTitle,
+        line1: propertySubtitle,
+        line2: [booking.location?.address, booking.location?.city].filter(Boolean).join(", ") || "Location unavailable",
+        line3: booking.location?.country || "",
+        badge: `Listing ID: LKP-${listingReference}`,
+      },
+      scheduleLabel,
+      guestSummary,
+      rows: receiptRows,
+      totalAmountLabel: formatReceiptMoney(totalAmount, currency),
+      totalAmountWords: formatAmountInWords(totalAmount),
+      cancellationPolicies: publicCancellationPolicies.length
+        ? publicCancellationPolicies
+        : ["Cancellation policy will follow the booking confirmation and partner policy."],
+      requiredDetails: [
+        `Invoice number: ${String(booking.orderId || "").padStart(6, "0")}`,
+        `Guest details: ${booking.guest?.name || "Guest"}${booking.guest?.email ? `, ${booking.guest.email}` : ""}`,
+        `Property / listing: ${propertyTitle}`,
+        `Booking schedule: ${scheduleLabel}`,
+        `Guest count: ${guestSummary}`,
+        `Payment summary: ${formatReceiptMoney(totalAmount, currency)}${booking.paymentMethod ? ` via ${booking.paymentMethod}` : ""}`,
+        `Receipt breakdown: base fare, add-ons, discount, taxes, total`,
+        `Cancellation policy and support contacts`,
+      ],
+    };
+  }, [booking, cancelPreview, refundDetails]);
+
   const isPastStayCheckInTime = () => {
     if (!booking) return false;
-    
+
     // Only apply to Stays
     const businessInterestCode = String(booking?.originalData?.businessInterestCode || "").toUpperCase();
     const isStayOrder = businessInterestCode === "STAYS" ||
@@ -783,7 +1142,7 @@ const ViewDetails = () => {
     const status = booking.status?.toLowerCase() ||
       booking.statusTone ||
       (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
-      
+
     if (status === "cancelled" || status === "canceled" || status === "completed") {
       return false;
     }
@@ -792,15 +1151,15 @@ const ViewDetails = () => {
       booking?.originalData?.checkInDate ||
       booking?.originalData?.bookingDate ||
       booking?.stayData?.checkInDate;
-      
+
     if (!checkInDateStr) return false;
 
     const checkInDatetime = new Date(checkInDateStr);
-    
-    const checkInTimeStr = 
-      booking?.originalData?.checkInTime || 
-      booking?.originalData?.bookingTime || 
-      booking?.stayData?.checkInTime || 
+
+    const checkInTimeStr =
+      booking?.originalData?.checkInTime ||
+      booking?.originalData?.bookingTime ||
+      booking?.stayData?.checkInTime ||
       "14:00:00";
 
     if (checkInTimeStr && typeof checkInTimeStr === 'string' && checkInTimeStr.includes(':')) {
@@ -888,7 +1247,7 @@ const ViewDetails = () => {
         setCancelError("Please select or enter a reason for cancellation");
         return;
       }
-      finalReason = selectedReason 
+      finalReason = selectedReason
         ? (cancelReason.trim() ? `${selectedReason} - ${cancelReason.trim()}` : selectedReason)
         : cancelReason.trim();
     }
@@ -944,7 +1303,7 @@ const ViewDetails = () => {
       return;
     }
 
-    const finalReason = selectedReason 
+    const finalReason = selectedReason
       ? (cancelReason.trim() ? `${selectedReason} - ${cancelReason.trim()}` : selectedReason)
       : cancelReason.trim();
 
@@ -970,16 +1329,25 @@ const ViewDetails = () => {
   const handlePrintReceipt = () => {
     const element = document.getElementById("receipt-ticket-pdf");
     if (!element) return;
-    
+
+    element.classList.add(styles.receiptPdfMode);
+
     const opt = {
-      margin:       10,
-      filename:     `LKP_Receipt_${booking.orderId}.pdf`,
-      image:        { type: 'jpeg', quality: 1 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-      jsPDF:        { unit: 'px', format: [element.offsetWidth + 20, element.offsetHeight + 20], orientation: 'portrait' }
+      margin: [8, 8, 8, 8],
+      filename: `LKP_Receipt_${booking.orderId}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 1.7, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      pagebreak: { mode: ['avoid-all', 'css'] },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().from(element).set(opt).save();
+    html2pdf()
+      .from(element)
+      .set(opt)
+      .save()
+      .finally(() => {
+        element.classList.remove(styles.receiptPdfMode);
+      });
   };
 
   const ensureRazorpayScript = () =>
@@ -2792,7 +3160,7 @@ const ViewDetails = () => {
               You can proceed with payment to confirm your booking.
             </p>
           </div>
-          
+
 
 
           <div className={styles.cancelModalFooter}>
@@ -2831,7 +3199,7 @@ const ViewDetails = () => {
               Cancel Booking
             </h2>
             <p className={styles.cancelModalDescription} style={{ fontSize: "14px", color: "#777E90", lineHeight: "1.5" }}>
-              We're sorry to see you go. Please let us know<br/>why you're cancelling this booking.
+              We're sorry to see you go. Please let us know<br />why you're cancelling this booking.
             </p>
           </div>
           <div className={cn(styles.cancelModalBody, styles.cancelModalBodyScrollable)} style={{ padding: "0 32px" }}>
@@ -2844,45 +3212,45 @@ const ViewDetails = () => {
                   {[...cancellationReasons]
                     .sort((a, b) => (a?.sortOrder || 0) - (b?.sortOrder || 0))
                     .map((reason, idx) => {
-                    const reasonText = typeof reason === 'object' ? (reason.displayName || reason.reason || reason.name || JSON.stringify(reason)) : reason;
-                    const isSelected = selectedReason === reasonText;
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => setSelectedReason(reasonText)}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "18px 20px",
-                          border: `1px solid ${isSelected ? "#0097B2" : "#E6E8EC"}`,
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          backgroundColor: isSelected ? "#F2FBFC" : "#FFFFFF",
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <span style={{ fontSize: "15px", color: "#141416", fontFamily: "Playfair Display, Lora, Georgia, serif", fontWeight: isSelected ? "500" : "400" }}>
-                          {reasonText}
-                        </span>
-                        <div style={{
-                          width: "20px",
-                          height: "20px",
-                          borderRadius: "50%",
-                          border: `2px solid ${isSelected ? "#0097B2" : "#B1B5C3"}`,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: "#FFFFFF",
-                          flexShrink: 0
-                        }}>
-                          {isSelected && (
-                            <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#0097B2" }} />
-                          )}
+                      const reasonText = typeof reason === 'object' ? (reason.displayName || reason.reason || reason.name || JSON.stringify(reason)) : reason;
+                      const isSelected = selectedReason === reasonText;
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => setSelectedReason(reasonText)}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "18px 20px",
+                            border: `1px solid ${isSelected ? "#0097B2" : "#E6E8EC"}`,
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            backgroundColor: isSelected ? "#F2FBFC" : "#FFFFFF",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <span style={{ fontSize: "15px", color: "#141416", fontFamily: "Playfair Display, Lora, Georgia, serif", fontWeight: isSelected ? "500" : "400" }}>
+                            {reasonText}
+                          </span>
+                          <div style={{
+                            width: "20px",
+                            height: "20px",
+                            borderRadius: "50%",
+                            border: `2px solid ${isSelected ? "#0097B2" : "#B1B5C3"}`,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            backgroundColor: "#FFFFFF",
+                            flexShrink: 0
+                          }}>
+                            {isSelected && (
+                              <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#0097B2" }} />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className={styles.cancelPolicyText}>
@@ -2890,7 +3258,7 @@ const ViewDetails = () => {
                 </div>
               )}
             </div>
-            
+
             {selectedReason && selectedReason.toLowerCase().includes("other") && (
               <div className={styles.cancelModalFormGroup} style={{ marginTop: "24px" }}>
                 <label htmlFor="cancelReason" className={styles.cancelModalLabel} style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase", color: "#B1B5C3", marginBottom: "12px" }}>
@@ -3115,110 +3483,166 @@ const ViewDetails = () => {
         <div className={styles.receiptModalContent}>
           <div className={styles.receiptModalHeader}>
             <h2 className={styles.receiptModalTitle}>Booking Receipt</h2>
-            <button 
+            <button
               className={cn("button-small", styles.downloadPdfButton)}
               onClick={handlePrintReceipt}
             >
-              <Icon name="download" size="16" />
+              <Icon name="download" size="18" />
               <span>Download PDF</span>
             </button>
           </div>
-          <div className={styles.receiptPrintArea}>
-            <div id="receipt-ticket-pdf" className={styles.receiptTicket}>
-              <div className={styles.receiptBrand}>
-                <div className={styles.brandLogo}>
-                  <Icon name="star" size="24" />
-                </div>
-                <div className={styles.brandName}>LKP Experiences</div>
-              </div>
-              
-              <div className={styles.receiptTicketBody}>
-                <div className={styles.receiptTitle}>{booking.title}</div>
-                <div className={styles.receiptBookingId}>Order Reference: #LKP-{booking.orderId}</div>
-                
-                <div className={styles.dottedDivider}></div>
-                
-                <div className={styles.receiptInfoSections}>
-                  <div className={styles.infoCol}>
-                    <div className={styles.receiptLabel}>Date & Time</div>
-                    <div className={styles.infoText}>{booking.startDate}</div>
-                    <div className={styles.infoSubtext}>
-                      {booking.startTime && booking.endTime 
-                        ? `${booking.startTime} - ${booking.endTime}` 
-                        : (booking.bookingTime || "Confirmed Slot")}
+          {receiptViewModel && (
+            <>
+              <div className={styles.receiptPrintArea}>
+                <div id="receipt-ticket-pdf" className={styles.receiptSheet}>
+                  <div className={styles.receiptHero}>
+                    <div className={styles.receiptLogoCard}>
+                      <img
+                        src="/images/littleplanet-logo.svg"
+                        alt="Little Known Planet"
+                        className={styles.receiptLogoImage}
+                      />
                     </div>
-                  </div>
-                  <div className={styles.infoCol}>
-                    <div className={styles.receiptLabel}>Guests</div>
-                    <div className={styles.infoText}>
-                      {(() => {
-                        const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
-                        const children = booking.childrenCount || 0;
-                        if (adults > 0 || children > 0) {
-                          return (
-                            <>
-                              {adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : ""}
-                              {adults > 0 && children > 0 ? ", " : ""}
-                              {children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : ""}
-                            </>
-                          );
-                        }
-                        return `${booking.guestCount} ${booking.guestCount === 1 ? "Guest" : "Guests"}`;
-                      })()}
+                    <div className={styles.receiptHeroInfo}>
+                      <div className={styles.receiptBrandName}><span>Little Known Planet</span></div>
+                      <div className={styles.receiptBrandMeta}>
+                        <span><Icon name="globe" size="14" />{receiptViewModel.companyWebsite.replace(/^https?:\/\//, "")}</span>
+                        <span><Icon name="phone" size="14" />{receiptViewModel.companyPhone}</span>
+                        <span><Icon name="email" size="14" />{receiptViewModel.companyEmail}</span>
+                      </div>
                     </div>
+                    <div className={styles.receiptInvoicePill}><span>{receiptViewModel.invoiceId}</span></div>
                   </div>
-                </div>
 
-                <div className={styles.dottedDivider}></div>
-                
-                <div className={styles.pricingBreakdown}>
-                  <div className={styles.receiptPriceRow}>
-                    <span className={styles.priceLabel}>Base Fare</span>
-                    <span className={styles.priceValue}>{booking.pricing.basePrice}</span>
-                  </div>
-                  {booking.addons?.map((addon, index) => (
-                    <div key={index} className={styles.receiptPriceRow}>
-                      <span className={styles.priceLabel}>{addon.name} (x{addon.quantity})</span>
-                      <span className={styles.priceValue}>{addon.total}</span>
+                  <div className={styles.receiptMetaGrid}>
+                    <div className={styles.receiptMetaCard}>
+                      <div className={styles.receiptSectionTitle}>
+                        <Icon name="user" size="16" />
+                        <span>Bill To:</span>
+                      </div>
+                      <div className={styles.receiptPrimaryText}>{receiptViewModel.billTo.name}</div>
+                      <div className={styles.receiptSecondaryText}>{receiptViewModel.billTo.line1}</div>
+                      <div className={styles.receiptSecondaryText}>{receiptViewModel.billTo.line2}</div>
+                      {receiptViewModel.billTo.line3 && <div className={styles.receiptSecondaryText}>{receiptViewModel.billTo.line3}</div>}
+                      <div className={styles.receiptSecondaryText}>{receiptViewModel.billTo.phone}</div>
+                      <div className={styles.receiptSecondaryText}>{receiptViewModel.billTo.email}</div>
                     </div>
-                  ))}
-                  {booking.pricing.discountAmount && (
-                    <div className={cn(styles.receiptPriceRow, styles.discountRow)}>
-                      <span className={styles.priceLabel}>Privilege Discount</span>
-                      <span className={styles.priceValue}>-{booking.pricing.discountAmount}</span>
+
+                    <div className={styles.receiptMetaCard}>
+                      <div className={styles.receiptSectionTitle}>
+                        <Icon name="home" size="16" />
+                        <span>Property / Listing:</span>
+                      </div>
+                      <div className={styles.receiptPrimaryText}>{receiptViewModel.property.title}</div>
+                      <div className={styles.receiptSecondaryText}>{receiptViewModel.property.line1}</div>
+                      <div className={styles.receiptSecondaryText}>{receiptViewModel.property.line2}</div>
+                      {receiptViewModel.property.line3 && <div className={styles.receiptSecondaryText}>{receiptViewModel.property.line3}</div>}
+                      <div className={styles.receiptBadge}><span>{receiptViewModel.property.badge}</span></div>
                     </div>
-                  )}
-                  
-                  <div className={styles.dottedDivider}></div>
-                  
-                  <div className={cn(styles.receiptPriceRow, styles.invoiceTotal)}>
-                    <span className={styles.totalLabel}>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</span>
-                    <span className={styles.totalValue}>{booking.pricing.total}</span>
+
+                    <div className={styles.receiptMetaCard}>
+                      <div className={styles.receiptMetaBlock}>
+                        <div className={styles.receiptSectionTitle}>
+                          <Icon name="calendar" size="16" />
+                          <span>Invoice Date:</span>
+                        </div>
+                        <div className={styles.receiptSecondaryText}>{receiptViewModel.invoiceDateLabel}</div>
+                      </div>
+                      <div className={styles.receiptMetaBlock}>
+                        <div className={styles.receiptSectionTitle}>
+                          <Icon name="clock" size="16" />
+                          <span>Due Date:</span>
+                        </div>
+                        <div className={styles.receiptSecondaryText}>{receiptViewModel.dueDateLabel}</div>
+                      </div>
+                      <div className={styles.receiptMetaBlock}>
+                        <div className={styles.receiptSectionTitle}>
+                          <Icon name="wallet" size="16" />
+                          <span>Payment Terms:</span>
+                        </div>
+                        <div className={styles.receiptSecondaryText}>{receiptViewModel.paymentTermsLabel}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className={styles.dottedDivider}></div>
-                
-                <div className={styles.receiptInfoSections}>
-                  <div className={styles.infoCol}>
-                    <div className={styles.receiptLabel}>Guest Profile</div>
-                    <div className={styles.infoText}>{booking.guest.name}</div>
-                    <div className={styles.infoSubtext}>{booking.guest.email}</div>
+
+                  <div className={styles.receiptFinanceGrid}>
+                    <div className={styles.receiptTableCard}>
+                      <div className={styles.receiptTableHeader}>
+                        <span>Price details</span>
+                        <span>Amount (INR)</span>
+                      </div>
+                      <div className={styles.receiptTableBody}>
+                        {receiptViewModel.rows.map((row) => (
+                          <div
+                            key={`${row.label}-${row.value}`}
+                            className={cn(
+                              styles.receiptTableRow,
+                              row.isNegative && styles.receiptTableRowNegative,
+                              row.isTotal && styles.receiptTableRowTotal
+                            )}
+                          >
+                            <span>{row.label}</span>
+                            <span>{row.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.receiptSummaryCard}>
+                      <div className={styles.receiptSummaryLabel}>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</div>
+                      <div className={styles.receiptSummaryValue}>{receiptViewModel.totalAmountLabel}</div>
+                      <div className={styles.receiptSummaryDivider}></div>
+                      <div className={styles.receiptSummaryWordsLabel}>Amount in Words:</div>
+                      <div className={styles.receiptSummaryWords}>{receiptViewModel.totalAmountWords}</div>
+                      <div className={styles.receiptSummaryMeta}>
+                        <span>{receiptViewModel.scheduleLabel}</span>
+                        <span>{receiptViewModel.guestSummary}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className={styles.infoCol}>
-                    <div className={styles.receiptLabel}>Venue Location</div>
-                    <div className={styles.infoText}>{booking.location.city}</div>
-                    <div className={styles.infoSubtext}>{booking.location.address}</div>
+
+                  <div className={styles.receiptPolicyCard}>
+                    <div className={styles.receiptSectionTitle}>
+                      <Icon name="shield" size="16" />
+                      <span>Cancellation Policy:</span>
+                    </div>
+                    <div className={styles.receiptPolicyList}>
+                      {receiptViewModel.cancellationPolicies
+                        .flatMap((item) =>
+                          String(item)
+                            .split(", ")
+                            .map((part) => part.trim())
+                            .filter(Boolean)
+                        )
+                        .map((item) => (
+                          <div key={item} className={styles.receiptPolicyItem}>
+                            <span className={styles.receiptPolicyBullet} />
+                            <span className={styles.receiptPolicyText}>{item}</span>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                </div>
-                
-                <div className={styles.receiptFooterNote}>
-                  <p>Thank you for choosing Little Known Planet. We hope you have an extraordinary experience!</p>
-                  <div className={styles.stamp}>VERIFIED</div>
+
+                  <div className={styles.receiptFooter}>
+                    <div className={styles.receiptFooterBrand}>Little Known Planet</div>
+                    <div className={styles.receiptFooterLinks}>
+                      <span><Icon name="globe" size="14" />{receiptViewModel.companyWebsite.replace(/^https?:\/\//, "")}</span>
+                      <span><Icon name="email" size="14" />{receiptViewModel.companyEmail}</span>
+                      <span><Icon name="phone" size="14" />{receiptViewModel.companyPhone}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+              <div className={styles.receiptChecklist}>
+                <div className={styles.receiptChecklistTitle}>Required Details Included</div>
+                <ul className={styles.receiptChecklistList}>
+                  {receiptViewModel.requiredDetails.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
     </div>

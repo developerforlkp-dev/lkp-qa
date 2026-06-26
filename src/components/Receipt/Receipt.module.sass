@@ -1,9 +1,10 @@
 @import ../../styles/helpers
 
 .receipt
-    width: 480px
-    min-width: 480px
-    padding: 32px
+    width: 390px
+    min-width: 390px
+    min-height: 560px
+    padding: 28px 24px
     border: 1px solid $n6
     background: $n8
     box-shadow: 0px 64px 64px -48px rgba(15, 15, 15, 0.08)
@@ -11,18 +12,20 @@
     overflow: visible
     box-sizing: border-box
     +d
-        width: 460px
-        min-width: 460px
+        width: 370px
+        min-width: 370px
     +t
         width: 100%
         min-width: 100%
         max-width: 100%
+        min-height: auto
     +m
         padding: 20px 16px
         border-radius: 16px
         box-shadow: 0px 32px 32px -24px rgba(15, 15, 15, 0.08)
         width: 100%
         min-width: 100%
+        min-height: auto
     +dark
         border: 1px solid $n3
         background: $n2
@@ -30,9 +33,9 @@
 .head
     display: flex
     align-items: center
-    margin-bottom: 32px
+    margin-bottom: 24px
     +m
-        margin-bottom: 24px
+        margin-bottom: 20px
 
 .cost
     display: flex
@@ -41,8 +44,8 @@
 .old,
 .actual
     +dm-sans
-    font-size: 32px
-    line-height: 40px
+    font-size: 28px
+    line-height: 34px
     letter-spacing: -0.01em
     font-weight: 700
     +m
@@ -62,6 +65,7 @@
     align-self: flex-end
     margin-left: 9px
     +body-2
+    font-size: 13px
     color: $n2
     +dark
         color: $n8
@@ -118,6 +122,7 @@
 .rating
     display: flex
     align-items: center
+    font-size: 13px
     svg
         margin-right: 8px
         fill: $s3
@@ -132,8 +137,8 @@
         color: $n8
 
 .description
-    margin-bottom: 32px
-    padding: 8px
+    margin-bottom: 24px
+    padding: 6px
     border-radius: 20px
     background: $n7
     display: flex
@@ -237,7 +242,7 @@
 .item
     display: flex
     align-items: center
-    padding: 12px
+    padding: 10px
     transition: background-color .2s ease
     min-width: 0
     overflow: visible
@@ -275,9 +280,9 @@
     display: flex
     justify-content: center
     align-items: center
-    width: 32px
-    height: 32px
-    margin-right: 12px
+    width: 28px
+    height: 28px
+    margin-right: 10px
     flex-shrink: 0
     svg
         fill: $n2
@@ -291,12 +296,15 @@
     
 .category
     +caption-2
+    font-size: 11px
     color: $n2
     +dark
         color: $n8
 
 .subtitle
     +body-bold-2
+    font-size: 13px
+    line-height: 18px
     overflow: hidden
     text-overflow: ellipsis
     white-space: nowrap
