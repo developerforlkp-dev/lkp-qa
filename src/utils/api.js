@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
+const DEV_API_BASE_URL = "https://api.dev.littleknownplanet.com/api";
 
 export const normalizePublicImageUrl = (url) => {
   if (!url) return null;
@@ -56,7 +57,7 @@ const resolveRuntimeApiBaseUrl = () => {
 const API_BASE_URL =
   normalizeBaseUrl(process.env.REACT_APP_API_URL) ||
   resolveRuntimeApiBaseUrl() ||
-  "/api";
+  DEV_API_BASE_URL;
 
 export const DEFAULT_API_BASE_URL = (() => {
   return API_BASE_URL;
@@ -67,7 +68,6 @@ export const DEFAULT_API_BASE_URL = (() => {
 // Get API base URL from environment variable or use default
 // Priority:
 // 1. REACT_APP_API_URL environment variable
-
 // 2. Runtime environment-specific base URL
 const getApiBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
