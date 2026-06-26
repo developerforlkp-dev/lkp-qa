@@ -1,0 +1,937 @@
+/* ═══════════════════════════════════════════════════════════════
+   Mobile Experience Detail Page – Dedicated Styles
+   Only active at ≤768px via parent conditional render
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── CSS Variables (inherited from theme) ─── */
+.mob-exp {
+  --mob-radius: 20px;
+  --mob-radius-sm: 12px;
+  --mob-pad: 20px;
+  --mob-gap: 16px;
+  font-family: "Inter", "Plus Jakarta Sans", -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Animations ─── */
+@keyframes mobFadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mobFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes mobSlideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mobPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes mobShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ─── Hero Section ─── */
+.mob-hero {
+  position: relative;
+  width: 100%;
+  height: 45vh;
+  min-height: 320px;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.mob-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.mob-hero-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0) 60%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mob-hero-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px var(--mob-pad);
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
+.mob-hero-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.mob-hero-btn:active {
+  transform: scale(0.92);
+  background: rgba(0,0,0,0.5);
+}
+
+.mob-hero-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 24px var(--mob-pad);
+  padding-bottom: 28px;
+  animation: mobFadeInUp 0.6s ease-out 0.2s both;
+}
+
+.mob-hero-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.mob-hero-title {
+  font-family: "Cormorant Garamond", "Playfair Display", serif;
+  font-size: clamp(1.8rem, 8vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.08;
+  color: #fff;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.02em;
+}
+
+.mob-hero-loc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+}
+
+/* ─── Quick Facts Strip ─── */
+.mob-facts {
+  display: flex;
+  gap: 10px;
+  padding: 20px var(--mob-pad);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.mob-facts::-webkit-scrollbar {
+  display: none;
+}
+
+.mob-fact-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+}
+
+.mob-fact-pill:active {
+  transform: scale(0.96);
+}
+
+.mob-fact-pill svg {
+  flex-shrink: 0;
+}
+
+/* ─── Section Shared Styles ─── */
+.mob-section {
+  padding: 32px var(--mob-pad);
+  animation: mobFadeIn 0.5s ease-out both;
+}
+
+.mob-section-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.mob-section-title {
+  font-family: "Cormorant Garamond", "Playfair Display", serif;
+  font-size: clamp(1.6rem, 7vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
+}
+
+.mob-section-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* ─── Description / Narrative ─── */
+.mob-narrative {
+  position: relative;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mob-narrative-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.mob-readmore {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 12px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  outline: none;
+}
+
+/* ─── Gallery ─── */
+.mob-gallery {
+  padding: 0 0 24px 0;
+  position: relative;
+}
+
+.mob-gallery-scroll {
+  display: flex;
+  gap: 12px;
+  padding: 0 var(--mob-pad);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mob-gallery-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mob-gallery-item {
+  flex-shrink: 0;
+  width: 80vw;
+  max-width: 340px;
+  aspect-ratio: 4/3;
+  border-radius: var(--mob-radius);
+  overflow: hidden;
+  scroll-snap-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.mob-gallery-item:active {
+  transform: scale(0.98);
+}
+
+.mob-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mob-gallery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 16px;
+}
+
+.mob-gallery-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.mob-gallery-dot.active {
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* ─── Timeline ─── */
+.mob-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.mob-timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 2px;
+}
+
+.mob-tl-item {
+  display: flex;
+  gap: 20px;
+  padding: 16px 0;
+  position: relative;
+  animation: mobFadeInUp 0.4s ease-out both;
+}
+
+.mob-tl-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  margin-top: 4px;
+}
+
+.mob-tl-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mob-tl-card {
+  border-radius: var(--mob-radius);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mob-tl-card:active {
+  transform: scale(0.98);
+}
+
+.mob-tl-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.mob-tl-body {
+  padding: 16px;
+}
+
+.mob-tl-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.mob-tl-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mob-tl-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ─── Add-ons ─── */
+.mob-addons-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mob-gap);
+}
+
+.mob-addon-card {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  border-radius: var(--mob-radius);
+  border: 1px solid;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mob-addon-card:active {
+  transform: scale(0.98);
+}
+
+.mob-addon-img {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--mob-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mob-addon-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mob-addon-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.mob-addon-price {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.mob-addon-unit {
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.mob-addon-btn {
+  height: 36px;
+  min-width: 36px;
+  padding: 0 16px;
+  border-radius: 100px;
+  border: 1.5px solid;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.mob-addon-btn:active {
+  transform: scale(0.94);
+}
+
+.mob-addon-counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.mob-addon-counter button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.mob-addon-counter button:active {
+  transform: scale(0.9);
+}
+
+.mob-addon-counter span {
+  font-size: 15px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ─── Location / Map ─── */
+.mob-map-container {
+  width: 100%;
+  border-radius: var(--mob-radius);
+  overflow: hidden;
+  aspect-ratio: 16/10;
+  margin-bottom: var(--mob-gap);
+}
+
+.mob-map-container iframe,
+.mob-map-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+}
+
+.mob-detail-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mob-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid;
+}
+
+.mob-detail-row:last-child {
+  border-bottom: none;
+}
+
+.mob-detail-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mob-detail-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.mob-detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ─── Things to Keep in Mind ─── */
+.mob-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mob-tip-card {
+  border-radius: var(--mob-radius-sm);
+  border: 1px solid;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.mob-tip-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-family: inherit;
+}
+
+.mob-tip-header:active {
+  opacity: 0.7;
+}
+
+.mob-tip-chevron {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.mob-tip-chevron.open {
+  transform: rotate(180deg);
+}
+
+.mob-tip-body {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+  max-height: 0;
+  padding: 0 16px;
+  opacity: 0;
+}
+
+.mob-tip-body.open {
+  max-height: 300px;
+  padding: 0 16px 16px 16px;
+  opacity: 1;
+}
+
+.mob-tip-body p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ─── Host Section ─── */
+.mob-host-card {
+  border-radius: var(--mob-radius);
+  border: 1px solid;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.mob-host-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  margin: 0 auto 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.mob-host-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.mob-host-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.mob-host-contact {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.mob-host-contact-btn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 100px;
+  border: 1.5px solid;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.mob-host-contact-btn:active {
+  transform: scale(0.95);
+}
+
+/* ─── Quality Score ─── */
+.mob-quality-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--mob-gap);
+  margin-top: var(--mob-gap);
+}
+
+.mob-quality-item {
+  border-radius: var(--mob-radius-sm);
+  border: 1px solid;
+  padding: 16px;
+  text-align: center;
+}
+
+.mob-quality-score {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.mob-quality-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ─── Reviews ─── */
+.mob-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mob-gap);
+}
+
+.mob-review-card {
+  border-radius: var(--mob-radius);
+  border: 1px solid;
+  padding: 20px;
+}
+
+.mob-review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mob-review-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mob-review-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.mob-review-stars {
+  display: flex;
+  gap: 2px;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.mob-review-date {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mob-review-text {
+  font-size: 13px;
+  line-height: 1.65;
+  font-style: italic;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* ─── Policies ─── */
+.mob-policy-item {
+  border-radius: var(--mob-radius-sm);
+  border: 1px solid;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.mob-policy-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-family: inherit;
+}
+
+.mob-policy-header:active {
+  opacity: 0.7;
+}
+
+.mob-policy-body {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+  max-height: 0;
+  padding: 0 16px;
+  opacity: 0;
+}
+
+.mob-policy-body.open {
+  max-height: 500px;
+  padding: 0 16px 16px 16px;
+  opacity: 1;
+}
+
+/* ─── Sticky Bottom CTA ─── */
+.mob-sticky-cta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  padding: 12px var(--mob-pad);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid;
+  animation: mobSlideUp 0.4s ease-out 0.5s both;
+}
+
+.mob-cta-price {
+  display: flex;
+  flex-direction: column;
+}
+
+.mob-cta-from {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mob-cta-amount {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mob-cta-unit {
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.mob-cta-btn {
+  height: 48px;
+  padding: 0 32px;
+  border-radius: 100px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.mob-cta-btn:active {
+  transform: scale(0.96);
+}
+
+/* ─── Divider ─── */
+.mob-divider {
+  height: 1px;
+  margin: 0 var(--mob-pad);
+}
+
+/* ─── Marquee ─── */
+.mob-marquee {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 14px 0;
+  border-top: 1px solid;
+  border-bottom: 1px solid;
+}
+
+.mob-marquee-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: mobMarqueeScroll var(--marquee-duration, 20s) linear infinite;
+}
+
+@keyframes mobMarqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.mob-marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  white-space: nowrap;
+  margin-right: 24px;
+}
+
+.mob-marquee-text {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: "Poppins", sans-serif;
+}
+
+/* ─── Related Listings ─── */
+.mob-related {
+  padding: 32px 0;
+}
+
+.mob-related-header {
+  padding: 0 var(--mob-pad) 16px;
+}
+
+/* ─── Spacer for sticky CTA ─── */
+.mob-cta-spacer {
+  height: calc(76px + env(safe-area-inset-bottom, 0px));
+}

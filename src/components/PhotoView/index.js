@@ -13,10 +13,11 @@ const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
 );
 
-const PhotoView = ({ title, initialSlide, visible, items, onClose, listingId, options }) => {
+const PhotoView = ({ title, initialSlide, visible, items, onClose, listingId, options, variant }) => {
   const [current, setCurrent] = useState(initialSlide);
   const [direction, setDirection] = useState("next");
   const [transitionStep, setTransitionStep] = useState(0);
+  const isMinimal = variant === "minimal";
 
   const escFunction = useCallback(
     (e) => {
@@ -83,36 +84,39 @@ const PhotoView = ({ title, initialSlide, visible, items, onClose, listingId, op
   }
 
   return createPortal(
-    <div className={styles.modal} ref={scrollRef}>
+    <div className={cn(styles.modal, { [styles.minimalModal]: isMinimal })} ref={scrollRef} onClick={isMinimal ? onClose : undefined}>
       <div className={styles.outer}>
         <OutsideClickHandler onOutsideClick={onClose}>
-          <div className={styles.container}>
+          <div className={cn(styles.container, { [styles.minimalContainer]: isMinimal })} onClick={isMinimal ? (e) => e.stopPropagation() : undefined}>
             <div className={styles.control}>
-              <Link
-                to={{
-                  pathname: "/full-photo",
-                  state: {
-                    gallery: items,
-                    title,
-                    listingId,
-                    options: options || [],
-                  },
-                }}
-                className={cn("button-stroke button-small", styles.button)}
-                onClick={onClose}
-              >
-                <Icon name="image" size="16" />
-                <span>Show all photos</span>
-              </Link>
-              <div className={styles.counter}>
+              {!isMinimal && (
+                <Link
+                  to={{
+                    pathname: "/full-photo",
+                    state: {
+                      gallery: items,
+                      title,
+                      listingId,
+                      options: options || [],
+                    },
+                  }}
+                  className={cn("button-stroke button-small", styles.button)}
+                  onClick={onClose}
+                >
+                  <Icon name="image" size="16" />
+                  <span>Show all photos</span>
+                </Link>
+              )}
+              <div className={cn(styles.counter, { [styles.minimalCounter]: isMinimal })}>
                 {current + 1}/{items.length}
               </div>
               <div className={styles.btns}>
-                <Share className={styles.share} darkButton />
+                {!isMinimal && <Share className={styles.share} darkButton />}
                 <button
                   className={cn(
                     "button-circle-stroke button-small",
-                    styles.button
+                    styles.button,
+                    { [styles.minimalClose]: isMinimal }
                   )}
                   onClick={onClose}
                 >
@@ -120,27 +124,28 @@ const PhotoView = ({ title, initialSlide, visible, items, onClose, listingId, op
                 </button>
               </div>
             </div>
-            <div className={styles.wrapper}>
+            <div className={cn(styles.wrapper, { [styles.minimalWrapper]: isMinimal })}>
               <Slider
                 className={cn("photo-slider", styles.slider, {
                   [styles.prev]: direction === "prev",
                   [styles.next]: direction === "next",
                   [styles.motionA]: transitionStep % 2 === 0,
                   [styles.motionB]: transitionStep % 2 === 1,
+                  [styles.minimalSlider]: isMinimal
                 })}
                 afterChange={handleAfterChange}
                 {...settings}
               >
                 {items.map((x, index) => (
-                  <div className={styles.slide} key={index}>
+                  <div className={styles.slide} key={index} onClick={isMinimal ? onClose : undefined}>
                     <div className={styles.preview}>
-                      <img className={styles.image} src={x} alt="Gallery" />
+                      <img className={cn(styles.image, { [styles.minimalImage]: isMinimal })} src={x} alt="Gallery" onClick={isMinimal ? (e) => e.stopPropagation() : undefined} />
                     </div>
                   </div>
                 ))}
               </Slider>
             </div>
-            <div className={styles.title}>{title}</div>
+            {!isMinimal && <div className={styles.title}>{title}</div>}
           </div>
         </OutsideClickHandler>
       </div>

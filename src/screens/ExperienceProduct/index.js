@@ -28,6 +28,8 @@ import { lockBodyScroll } from "../../utils/scrollLock";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import Favorite from "../../components/Favorite";
 import DetailPageNavPortal from "../../components/DetailPageNavPortal";
+import useIsMobile from "../../hooks/useIsMobile";
+import MobileExperienceView from "./MobileExperienceView";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -669,12 +671,16 @@ const ExperienceProduct = () => {
   // Dynamic browser tab title
   useDocumentTitle(listing?.title, "Experiences");
 
-  const handleUpdateAddonQuantity = (addon, delta) => {
-    const addonId = addon.addonId || addon.id;
-    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+  const handleUpdateAddonQuantity = (rawAddon, delta) => {
+    const addonData = rawAddon.addon || rawAddon;
+    const addonId = addonData.addonId || addonData.id;
+    const pricingType = addonData.pricingType || (addonData.priceType === "per_booking" ? "Group" : "Individual");
 
     setSelectedAddOns((prev) => {
-      const existing = prev.find((a) => (a.addonId || a.id) === addonId);
+      const existing = prev.find((a) => {
+        const aData = a.addon || a;
+        return (aData.addonId || aData.id) === addonId;
+      });
 
       if (delta > 0) {
         // Enforcement: If it's a Group item, quantity is ALWAYS 1
@@ -683,35 +689,46 @@ const ExperienceProduct = () => {
           if (existing) return prev;
 
           // Only one Group item type allowed per booking
-          const otherGroupItem = prev.find(a =>
-            (a.pricingType === "Group" || (a.priceType === "per_booking"))
-          );
+          const otherGroupItem = prev.find(a => {
+            const aData = a.addon || a;
+            return aData.pricingType === "Group" || aData.priceType === "per_booking";
+          });
+          
           if (otherGroupItem) {
-            return [...prev.filter(a => (a.addonId || a.id) !== (otherGroupItem.addonId || otherGroupItem.id)), { ...addon, quantity: 1, pricingType }];
+            const otherData = otherGroupItem.addon || otherGroupItem;
+            return [...prev.filter(a => {
+              const aData = a.addon || a;
+              return (aData.addonId || aData.id) !== (otherData.addonId || otherData.id);
+            }), { ...rawAddon, quantity: 1, pricingType }];
           }
-          return [...prev, { ...addon, quantity: 1, pricingType }];
+          return [...prev, { ...rawAddon, quantity: 1, pricingType }];
         }
 
         // For Individual items, allow increasing quantity
         if (existing) {
-          return prev.map((a) =>
-            (a.addonId || a.id) === addonId
+          return prev.map((a) => {
+            const aData = a.addon || a;
+            return (aData.addonId || aData.id) === addonId
               ? { ...a, quantity: (a.quantity || 1) + delta }
-              : a
-          );
+              : a;
+          });
         }
-        return [...prev, { ...addon, quantity: 1, pricingType }];
+        return [...prev, { ...rawAddon, quantity: 1, pricingType }];
       } else {
         // Removal/Decrease logic
         if (existing) {
           if (existing.quantity > 1) {
-            return prev.map((a) =>
-              (a.addonId || a.id) === addonId
+            return prev.map((a) => {
+              const aData = a.addon || a;
+              return (aData.addonId || aData.id) === addonId
                 ? { ...a, quantity: a.quantity - 1 }
-                : a
-            );
+                : a;
+            });
           }
-          return prev.filter((a) => (a.addonId || a.id) !== addonId);
+          return prev.filter((a) => {
+            const aData = a.addon || a;
+            return (aData.addonId || aData.id) !== addonId;
+          });
         }
         return prev;
       }
@@ -829,6 +846,7 @@ const ExperienceProduct = () => {
   const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const textY = useTransform(heroProgress, [0, 1], [0, -200]);
   const fade = useTransform(heroProgress, [0, 0.6], [1, 0]);
+  const isMobile = useIsMobile();
 
   if (loading && !listing) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}><Loader /></div>;
@@ -867,6 +885,40 @@ const ExperienceProduct = () => {
     if (hostLeadUserId) query.set("leadUserId", String(hostLeadUserId));
     history.push(`/host-profile?${query.toString()}`);
   };
+
+  /* ── Mobile View ── */
+  if (isMobile) {
+    return (
+      <Page hideBookings>
+        <MobileExperienceView
+          listing={listing}
+          hostData={hostData}
+          leadData={leadData}
+          galleryItems={galleryItems}
+          selectedAddOns={selectedAddOns}
+          handleUpdateAddonQuantity={handleUpdateAddonQuantity}
+          reviews={reviews}
+          reviewSummary={reviewSummary}
+          eligibleBookings={eligibleBookings}
+          history={history}
+          id={id}
+          formatImageUrl={formatImageUrl}
+          description={description}
+          primaryCategoryId={primaryCategoryId}
+          currentListingId={currentListingId}
+          fallbackLocationValues={fallbackLocationValues}
+          fallbackTagValues={fallbackTagValues}
+          fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+          displayHostName={displayHostName}
+          hostPhone={hostPhone}
+          hostEmail={hostEmail}
+          displayTags={displayTags}
+          navigateToHostProfile={navigateToHostProfile}
+          normalizedReviews={normalizedReviews}
+        />
+      </Page>
+    );
+  }
 
   return (
     <Page hideBookings>

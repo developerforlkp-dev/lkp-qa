@@ -2982,14 +2982,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
               onClick={() => setShow(false)}
               style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)" }}
             />
 
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 40 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 40 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
               className="booking-modal-container"
               style={{
