@@ -1624,7 +1624,46 @@ const EventProduct = () => {
           <div className={styles.heroHeader}>
             <div className={styles.heroTitleBox}>
               <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 16 }}>
-                <h1 className={styles.heroTitle}>{event.title}</h1>
+                {(() => {
+                  const titleText = event?.title || "";
+                  const words = titleText.split(' ');
+                  let displayTitle;
+                  if (words.length >= 2) {
+                    const lastWord = words.pop();
+                    displayTitle = (
+                      <>
+                        {words.join(' ')}{' '}
+                        <span style={{
+                          fontStyle: "italic",
+                          fontWeight: 500,
+                          background: "linear-gradient(135deg, #08B5D6, #45D8F2)",
+                          backgroundSize: "200% 200%",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          backgroundClip: "text",
+                        }}>
+                          {lastWord}
+                        </span>
+                      </>
+                    );
+                  } else {
+                    displayTitle = titleText;
+                  }
+
+                  return (
+                    <h1 className={styles.heroTitle} style={{
+                      fontSize: "clamp(3.5rem, 6vw, 5.5rem)",
+                      fontWeight: 900,
+                      lineHeight: 1.1,
+                      color: "#FFFFFF",
+                      margin: 0,
+                      letterSpacing: "-0.01em",
+                      fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
+                    }}>
+                      {displayTitle}
+                    </h1>
+                  );
+                })()}
               </div>
 
             </div>

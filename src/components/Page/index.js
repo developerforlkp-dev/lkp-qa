@@ -44,7 +44,7 @@ const Page = ({
 
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
-  const isHomeRoute = homeRoutes.includes(pathname) || pathname.startsWith("/experience/");
+  const isHomeRoute = homeRoutes.includes(pathname) || pathname.startsWith("/experience/") || pathname.startsWith("/event");
 
   useEffect(() => {
     clearAllBodyScrollLocks();

@@ -12,6 +12,7 @@ import Loader from "../../../components/Loader";
 import RelatedListingsStrip from "../../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../../utils/scrollLock";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import DetailPageNavPortal from "../../../components/DetailPageNavPortal";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -1052,7 +1053,7 @@ const SpecCard = ({ label, value, sub, index, A, B, FG, M, W, theme, isCount }) 
 };
 
 /* ─── SECTIONS ───────────────────────────────────── */
-function Hero({ event }) {
+function Hero({ event, heroRef }) {
   const { theme, tokens: { A, W, M, FG, B, S, AL } } = useTheme();
   const history = useHistory();
   const title = event?.title || "SOLSTICE";
@@ -1128,7 +1129,7 @@ function Hero({ event }) {
   const { day: dateDay, month: dateMonth } = getParsedDateParts();
 
   return (
-    <section className="hero-section" style={{
+    <section ref={heroRef} className="hero-section" style={{
       position: "relative",
       minHeight: "520px",
       width: "calc(100% - 80px)",
@@ -1216,15 +1217,51 @@ function Hero({ event }) {
 
             {/* Event Name Heading */}
             <div style={{ overflow: "hidden", marginBottom: 12 }}>
-              <motion.h1 
-                initial={{ y: "100%" }} 
-                animate={{ y: 0 }} 
-                transition={{ duration: 1, ease: E }} 
-                className="font-display" 
-                style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", fontWeight: 800, lineHeight: 1.1, color: FG, margin: 0, letterSpacing: "-0.02em" }}
-              >
-                {title}
-              </motion.h1>
+              {(() => {
+                const words = title.split(' ');
+                let displayTitle;
+                if (words.length >= 2) {
+                  const lastWord = words.pop();
+                  displayTitle = (
+                    <>
+                      {words.join(' ')}{' '}
+                      <span style={{
+                        fontStyle: "italic",
+                        fontWeight: 500,
+                        background: "linear-gradient(135deg, #08B5D6, #45D8F2)",
+                        backgroundSize: "200% 200%",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}>
+                        {lastWord}
+                      </span>
+                    </>
+                  );
+                } else {
+                  displayTitle = title;
+                }
+                
+                return (
+                  <motion.h1 
+                    initial={{ y: "100%" }} 
+                    animate={{ y: 0 }} 
+                    transition={{ duration: 1, ease: E }} 
+                    className="hero-title" 
+                    style={{ 
+                      fontSize: "clamp(3.5rem, 6vw, 5.5rem)", 
+                      fontWeight: 900, 
+                      lineHeight: 1.1, 
+                      color: "#FFFFFF", 
+                      margin: 0, 
+                      letterSpacing: "-0.01em",
+                      fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
+                    }}
+                  >
+                    {displayTitle}
+                  </motion.h1>
+                );
+              })()}
             </div>
 
 
@@ -1410,16 +1447,35 @@ function About({ event }) {
     <>
       <section id="about" style={{ background: BG, padding: "32px 80px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 72, alignItems: "start" }} className="grid-2">
-            <div style={{ borderLeft: `3px solid ${A}44`, paddingLeft: 32, position: "relative" }}>
-              <div style={{ position: "absolute", left: -3, top: 0, width: 3, height: 40, background: A }} />
-              <Chars text="Where the ancient" cls="font-display" style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, overflow: "hidden" }} />
-              <Chars text="meets the avant-garde." cls="font-display" delay={0.12} style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: A, fontStyle: "italic", overflow: "hidden" }} />
-              <Rev delay={0.25}>
-                <p style={{ color: M, fontSize: 15, lineHeight: 1.7, marginTop: 24, marginBottom: 36, fontWeight: 400 }}>{desc}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, alignItems: "stretch" }} className="grid-2">
+            <div className="narrative-card" style={{
+              padding: "36px 48px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              background: W,
+              borderRadius: "24px",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
+              border: `1px solid ${B}`,
+              boxSizing: "border-box",
+              height: "100%"
+            }}>
+              <div>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                  The Event
+                </span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  Where the ancient <br/>
+                  <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
+                </h3>
+                <Rev delay={0.25}>
+                  <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, marginBottom: 36, fontWeight: 400, fontFamily: '"Inter", sans-serif' }}>{desc}</p>
+                </Rev>
+              </div>
 
+              <Rev delay={0.25}>
                 {/* Tags Section */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: "auto" }}>
                   {tags.map((t, i) => (
                     <motion.span key={t} initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
                       whileHover={{ color: "#FFF", backgroundColor: A, borderColor: A, scale: 1.05 }}
@@ -3159,6 +3215,7 @@ function Tickets({ event }) {
 /* ─── MAIN ───────────────────────────────────────── */
 export default function EventDetails() {
   const location = useLocation();
+  const heroRef = useRef(null);
   const history = useHistory();
   const queryParams = new URLSearchParams(location.search);
   const eventId = queryParams.get('id') || '3';
@@ -3238,8 +3295,9 @@ export default function EventDetails() {
   return (
     <ScopedThemeProvider>
       <ScopedStyles />
+      <DetailPageNavPortal heroRef={heroRef} activeCategory="event" />
       <ProgressBar />
-      <Hero event={event} />
+      <Hero event={event} heroRef={heroRef} />
       <About event={event} />
       <Gallery event={event} />
       <Artists event={event} />

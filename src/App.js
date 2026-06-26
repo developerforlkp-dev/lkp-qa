@@ -159,7 +159,7 @@ function App() {
             exact
             path="/event"
             render={() => (
-              <Page separatorHeader fooferHide>
+              <Page hideBookings fooferHide>
                 <EventFlowHome />
               </Page>
             )}
