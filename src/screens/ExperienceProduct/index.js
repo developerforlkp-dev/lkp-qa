@@ -1147,18 +1147,13 @@ const ExperienceProduct = () => {
 
 
         {/* DETAILS SECTION */}
-        <section className="details-section" style={{ background: BG, padding: "32px 0" }}>
-          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+        <section className="details-section" style={{ background: BG, padding: "64px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{ 
               display: "grid", 
               gridTemplateColumns: "1.2fr 1fr", 
-              gap: 0, 
-              alignItems: "stretch",
-              background: W,
-              borderRadius: "24px",
-              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
-              border: `1px solid ${B}`,
-              overflow: "hidden"
+              gap: "24px", 
+              alignItems: "stretch"
             }} className="details-grid-container">
               
               {/* Narrative Block (Left-hand section) */}
@@ -1167,9 +1162,12 @@ const ExperienceProduct = () => {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                borderRight: `1px solid ${B}`,
+                background: W,
+                borderRadius: "24px",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
+                border: `1px solid ${B}`,
                 boxSizing: "border-box",
-                height: narrativeExpanded ? "auto" : "280px",
+                height: narrativeExpanded ? "auto" : "100%",
               }}>
                 <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
                   <div>
@@ -1223,7 +1221,7 @@ const ExperienceProduct = () => {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }} className="facts-grid">
                 
                 {/* Fact 1: Duration */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Clock size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
                     {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
@@ -1232,28 +1230,28 @@ const ExperienceProduct = () => {
                 </div>
 
                 {/* Fact 2: Min Age */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <User size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.minimumAge || "12"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Min Age</p>
                 </div>
 
                 {/* Fact 3: Difficulty */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Zap size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.difficultyLevel || "Moderate"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Difficulty</p>
                 </div>
 
                 {/* Fact 4: Infant Allowance */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Baby size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Infants</p>
                 </div>
 
                 {/* Fact 5: Languages */}
-                <div className="fact-card" style={{ position: "relative", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ position: "relative", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Languages size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   {(() => {
                     const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
@@ -1265,7 +1263,7 @@ const ExperienceProduct = () => {
                     
                     return (
                       <>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%", marginBottom: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-start", width: "100%", marginBottom: 6 }}>
                           <span style={{ fontSize: "16px", fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {displayStr}
                           </span>
@@ -1350,7 +1348,7 @@ const ExperienceProduct = () => {
                 </div>
 
                 {/* Fact 6: Private Tour */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <ShieldCheck size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
                     {listing?.privateOptionAvailable ? "Yes" : "No"}
@@ -2087,8 +2085,8 @@ const ExperienceProduct = () => {
 
         {/* HOST & QUALITY ROW (40% / 60%) */}
         {listing && (
-          <section className="host-quality-section" style={{ background: W, padding: "32px 0" }}>
-            <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+          <section className="host-quality-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
+            <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
                 
                 {/* Host Profile (40%) */}
@@ -2654,18 +2652,27 @@ const ExperienceProduct = () => {
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
         />
 
-        <div className="related-listings-wrapper" style={{ padding: "32px 80px", background: W }}>
-          <RelatedListingsStrip
-            businessInterestId={1}
-            primaryCategoryId={primaryCategoryId}
-            currentListingId={currentListingId}
-            fallbackLocationValues={fallbackLocationValues}
-            fallbackTagValues={fallbackTagValues}
-            fallbackSpecialLabelValues={fallbackSpecialLabelValues}
-            title="More Experiences You May Like"
-            sectionStyle={{ padding: "0px", background: "transparent" }}
-            titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontFamily: "Poppins, sans-serif", fontWeight: 700 }}
-          />
+        <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <RelatedListingsStrip
+              businessInterestId={1}
+              primaryCategoryId={primaryCategoryId}
+              currentListingId={currentListingId}
+              fallbackLocationValues={fallbackLocationValues}
+              fallbackTagValues={fallbackTagValues}
+              fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+              title="More Experiences You May Like"
+              sectionStyle={{ padding: "0px", background: "transparent" }}
+              titleStyle={{ 
+                fontSize: "clamp(2.5rem, 4vw, 3.5rem)", 
+                fontWeight: 700, 
+                lineHeight: 1.1, 
+                fontFamily: '"Cormorant Garamond", "Playfair Display", serif', 
+                letterSpacing: "-0.02em",
+                color: FG
+              }}
+            />
+          </div>
         </div>
       </main>
       <AnimatePresence>
@@ -3007,7 +3014,7 @@ const ExperienceProduct = () => {
 
 
 function PolicyItem({ req }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+  const { theme, tokens: { FG, A, M, AL, B, W } } = useTheme();
   const [op, setOp] = useState(false);
 
   const title = req.setting?.title || "Requirement";
@@ -3032,15 +3039,15 @@ function PolicyItem({ req }) {
     <motion.div
       layout
       style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
+        background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF',
+        border: `1px solid ${B}`,
         borderRadius: "16px",
         overflow: "hidden",
         marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none"
+        transition: "all 0.3s",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
       }}
-      whileHover={{ borderColor: A }}
+      whileHover={{ borderColor: A, boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
     >
       <div
         onClick={() => setOp(!op)}
@@ -3061,16 +3068,15 @@ function PolicyItem({ req }) {
           justifyContent: "center",
           width: 40,
           height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s"
+          borderRadius: 8,
+          background: theme === 'dark' ? '#1E293B' : '#F0F9FA',
+          flexShrink: 0
         }}>
           {getIcon()}
         </div>
         
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{title}</span>
+          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, display: "block", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{title}</span>
         </div>
 
         <motion.div
@@ -3512,18 +3518,21 @@ function QualityIndexSection({ qualityIndex }) {
 
 
 function ExperiencePolicies({ listing }) {
-  const { tokens: { FG, W, B, A, M, BG } } = useTheme();
+  const { theme, tokens: { FG, W, B, A, M, BG } } = useTheme();
 
   return (
-    <section className="policies-section" style={{ background: BG, padding: "32px 0" }}>
-      <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64, alignItems: "start" }} className="pol-grid">
+    <section className="policies-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
+      <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 12, fontFamily: "Poppins, sans-serif" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
+                Essential Guidelines
+              </span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                 Things to Keep in Mind
               </h3>
-              <p style={{ color: M, fontSize: "15px", lineHeight: "1.8", margin: 0, fontWeight: 400 }}>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
                 Please review these guidelines and requirements carefully to ensure a safe, smooth, and enjoyable experience for everyone.
               </p>
             </div>
