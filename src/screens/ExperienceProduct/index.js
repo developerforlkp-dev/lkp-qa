@@ -1355,79 +1355,79 @@ const ExperienceProduct = () => {
                   </p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Private Tour</p>
                 </div>
-
               </div>
             </div>
-            
-            {/* Premium Editorial Typographic Marquee */}
-            {(() => {
-              const rawTags = Array.isArray(listing?.tags) && listing.tags.length > 0
-                ? listing.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-                : (Array.isArray(displayTags) && displayTags.length > 0
-                  ? displayTags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-                  : ["Valparai Trekking", "Nature & Wildlife", "Mountain Adventure", "Western Ghats Trails", "Scenic Tea Estates", "Eco Tourism India"]);
-              
-              // Duplicate to ensure infinite seamless scrolling loop
-              const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
-
-              const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-              const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
-              const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-              return (
-                <div style={{
-                  margin: "48px -80px 0",
-                  overflow: "hidden",
-                  position: "relative",
-                  padding: "20px 0",
-                  background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-                  borderTop: `1px solid ${B}`,
-                  borderBottom: `1px solid ${B}`,
-                }}>
-                  {/* Left & Right Edge Fades */}
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-                  <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-                  <motion.div
-                    animate={{ x: ["0%", "-50%"] }}
-                    transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-                    style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-                  >
-                    {loopedTags.map((tag, idx) => {
-                      const isEven = idx % 2 === 0;
-                      return (
-                        <div
-                          key={idx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "24px",
-                            whiteSpace: "nowrap"
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "18px",
-                              fontWeight: isEven ? 700 : 300,
-                              color: isEven ? FG : M,
-                              fontFamily: "Poppins, sans-serif",
-                              letterSpacing: "0.12em",
-                              textTransform: "uppercase",
-                              opacity: isEven ? 1 : 0.75
-                            }}
-                          >
-                            {tag}
-                          </span>
-                          <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                        </div>
-                      );
-                    })}
-                  </motion.div>
-                </div>
-              );
-            })()}
           </div>
         </section>
+
+        {/* Premium Editorial Typographic Marquee */}
+        {(() => {
+          const rawTags = Array.isArray(listing?.tags) && listing.tags.length > 0
+            ? listing.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
+            : (Array.isArray(displayTags) && displayTags.length > 0
+              ? displayTags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
+              : ["Valparai Trekking", "Nature & Wildlife", "Mountain Adventure", "Western Ghats Trails", "Scenic Tea Estates", "Eco Tourism India"]);
+          
+          // Duplicate to ensure infinite seamless scrolling loop
+          const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
+
+          const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
+          const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
+          const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
+
+          return (
+            <div style={{
+              width: "100%",
+              overflow: "hidden",
+              position: "relative",
+              padding: "20px 0",
+              background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+              borderTop: `1px solid ${B}`,
+              borderBottom: `1px solid ${B}`,
+            }}>
+              {/* Left & Right Edge Fades */}
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+                style={{ display: "flex", alignItems: "center", width: "max-content" }}
+              >
+                {loopedTags.map((tag, idx) => {
+                  const isEven = idx % 2 === 0;
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "24px",
+                        whiteSpace: "nowrap",
+                        marginRight: "32px"
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: isEven ? 700 : 300,
+                          color: isEven ? FG : M,
+                          fontFamily: "Poppins, sans-serif",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          opacity: isEven ? 1 : 0.75
+                        }}
+                      >
+                        {tag}
+                      </span>
+                      <Sparkles size={14} color={A} fill={A} style={{ opacity: 0.6 }} />
+                    </div>
+                  );
+                })}
+              </motion.div>
+            </div>
+          );
+        })()}
 
 
         {/* TIMELINE SECTION */}
@@ -1439,13 +1439,13 @@ const ExperienceProduct = () => {
                 {/* Header Area */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
                   <div>
-                    <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
                       The Experience Journey
                     </span>
-                    <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                    <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                       How It Unfolds
                     </h3>
-                    <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
+                    <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
                       A thoughtfully curated journey that brings you closer to the natural beauty and rich experiences of this destination.
                     </p>
                   </div>
@@ -1614,17 +1614,17 @@ const ExperienceProduct = () => {
 
 
         {/* ADDONS SECTION */}
-        <section className="addons-section" style={{ background: BG, padding: "32px 0" }}>
+        <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "4px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
                   Enhance Your Experience
                 </span>
                 <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                   Make it Yours
                 </h3>
-                <p style={{ color: M, fontSize: "14px", margin: "2px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
+                <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
                   Curated add-ons to make your experience even more special.
                 </p>
               </div>
@@ -1873,9 +1873,9 @@ const ExperienceProduct = () => {
             
             {/* Header Area */}
             <div style={{ marginBottom: 32 }}>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
-              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
-              <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>Find your way to the experience and get all the essential details for a smooth journey.</p>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>Find your way to the experience and get all the essential details for a smooth journey.</p>
             </div>
 
             {/* Main Card Container */}
@@ -2030,7 +2030,7 @@ const ExperienceProduct = () => {
 
           return (
             <div style={{
-              margin: "0 -80px",
+              width: "100%",
               overflow: "hidden",
               position: "relative",
               padding: "20px 0",
@@ -2045,7 +2045,7 @@ const ExperienceProduct = () => {
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
                 transition={{ repeat: Infinity, ease: "linear", duration: catsDuration }}
-                style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
+                style={{ display: "flex", alignItems: "center", width: "max-content" }}
               >
                 {loopedCats.map((cat, idx) => {
                   const isEven = idx % 2 === 0;
@@ -2056,7 +2056,8 @@ const ExperienceProduct = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: "24px",
-                        whiteSpace: "nowrap"
+                        whiteSpace: "nowrap",
+                        marginRight: "32px"
                       }}
                     >
                       <span
@@ -2072,7 +2073,7 @@ const ExperienceProduct = () => {
                       >
                         {cat}
                       </span>
-                      <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
+                      <Sparkles size={14} color={A} fill={A} style={{ opacity: 0.6 }} />
                     </div>
                   );
                 })}
@@ -2490,14 +2491,19 @@ const ExperienceProduct = () => {
           if (normalizedReviews.length === 0 && eligibleBookings.length === 0) return null;
 
           return (
-            <section className="testimonials-section" style={{ background: BG, padding: "32px 0" }}>
-              <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+            <section className="testimonials-section" style={{ background: BG, padding: "64px 0" }}>
+              <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
                 {normalizedReviews.length > 0 && (
                   <>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-                      <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-                        What people say
-                      </h3>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+                      <div>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                          Guest Reviews
+                        </span>
+                        <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                          What People Say
+                        </h3>
+                      </div>
                       <div style={{ display: "flex", gap: 12 }}>
                         <button
                           type="button"
