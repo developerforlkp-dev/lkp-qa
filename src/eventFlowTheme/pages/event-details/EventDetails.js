@@ -1447,16 +1447,35 @@ function About({ event }) {
     <>
       <section id="about" style={{ background: BG, padding: "32px 80px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 72, alignItems: "start" }} className="grid-2">
-            <div style={{ borderLeft: `3px solid ${A}44`, paddingLeft: 32, position: "relative" }}>
-              <div style={{ position: "absolute", left: -3, top: 0, width: 3, height: 40, background: A }} />
-              <Chars text="Where the ancient" cls="font-display" style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: FG, overflow: "hidden" }} />
-              <Chars text="meets the avant-garde." cls="font-display" delay={0.12} style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, lineHeight: 1.1, color: A, fontStyle: "italic", overflow: "hidden" }} />
-              <Rev delay={0.25}>
-                <p style={{ color: M, fontSize: 15, lineHeight: 1.7, marginTop: 24, marginBottom: 36, fontWeight: 400 }}>{desc}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, alignItems: "stretch" }} className="grid-2">
+            <div className="narrative-card" style={{
+              padding: "36px 48px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              background: W,
+              borderRadius: "24px",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
+              border: `1px solid ${B}`,
+              boxSizing: "border-box",
+              height: "100%"
+            }}>
+              <div>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                  The Event
+                </span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  Where the ancient <br/>
+                  <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
+                </h3>
+                <Rev delay={0.25}>
+                  <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, marginBottom: 36, fontWeight: 400, fontFamily: '"Inter", sans-serif' }}>{desc}</p>
+                </Rev>
+              </div>
 
+              <Rev delay={0.25}>
                 {/* Tags Section */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: "auto" }}>
                   {tags.map((t, i) => (
                     <motion.span key={t} initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}
                       whileHover={{ color: "#FFF", backgroundColor: A, borderColor: A, scale: 1.05 }}
