@@ -3,7 +3,7 @@ import { useLocation, useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2 } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2, Building, Map, Globe, Info } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -1147,18 +1147,13 @@ const ExperienceProduct = () => {
 
 
         {/* DETAILS SECTION */}
-        <section className="details-section" style={{ background: BG, padding: "32px 0" }}>
-          <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+        <section className="details-section" style={{ background: BG, padding: "64px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{ 
               display: "grid", 
               gridTemplateColumns: "1.2fr 1fr", 
-              gap: 0, 
-              alignItems: "stretch",
-              background: W,
-              borderRadius: "24px",
-              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
-              border: `1px solid ${B}`,
-              overflow: "hidden"
+              gap: "24px", 
+              alignItems: "stretch"
             }} className="details-grid-container">
               
               {/* Narrative Block (Left-hand section) */}
@@ -1167,9 +1162,12 @@ const ExperienceProduct = () => {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                borderRight: `1px solid ${B}`,
+                background: W,
+                borderRadius: "24px",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
+                border: `1px solid ${B}`,
                 boxSizing: "border-box",
-                height: narrativeExpanded ? "auto" : "280px",
+                height: narrativeExpanded ? "auto" : "100%",
               }}>
                 <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
                   <div>
@@ -1223,7 +1221,7 @@ const ExperienceProduct = () => {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }} className="facts-grid">
                 
                 {/* Fact 1: Duration */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Clock size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
                     {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
@@ -1232,28 +1230,28 @@ const ExperienceProduct = () => {
                 </div>
 
                 {/* Fact 2: Min Age */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <User size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.minimumAge || "12"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Min Age</p>
                 </div>
 
                 {/* Fact 3: Difficulty */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Zap size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.difficultyLevel || "Moderate"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Difficulty</p>
                 </div>
 
                 {/* Fact 4: Infant Allowance */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Baby size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Infants</p>
                 </div>
 
                 {/* Fact 5: Languages */}
-                <div className="fact-card" style={{ position: "relative", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ position: "relative", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <Languages size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   {(() => {
                     const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
@@ -1265,7 +1263,7 @@ const ExperienceProduct = () => {
                     
                     return (
                       <>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%", marginBottom: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-start", width: "100%", marginBottom: 6 }}>
                           <span style={{ fontSize: "16px", fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {displayStr}
                           </span>
@@ -1350,86 +1348,86 @@ const ExperienceProduct = () => {
                 </div>
 
                 {/* Fact 6: Private Tour */}
-                <div className="fact-card" style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
                   <ShieldCheck size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
                     {listing?.privateOptionAvailable ? "Yes" : "No"}
                   </p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Private Tour</p>
                 </div>
-
               </div>
             </div>
-            
-            {/* Premium Editorial Typographic Marquee */}
-            {(() => {
-              const rawTags = Array.isArray(listing?.tags) && listing.tags.length > 0
-                ? listing.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-                : (Array.isArray(displayTags) && displayTags.length > 0
-                  ? displayTags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
-                  : ["Valparai Trekking", "Nature & Wildlife", "Mountain Adventure", "Western Ghats Trails", "Scenic Tea Estates", "Eco Tourism India"]);
-              
-              // Duplicate to ensure infinite seamless scrolling loop
-              const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
-
-              const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-              const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
-              const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-              return (
-                <div style={{
-                  margin: "48px -80px 0",
-                  overflow: "hidden",
-                  position: "relative",
-                  padding: "20px 0",
-                  background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-                  borderTop: `1px solid ${B}`,
-                  borderBottom: `1px solid ${B}`,
-                }}>
-                  {/* Left & Right Edge Fades */}
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-                  <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-                  <motion.div
-                    animate={{ x: ["0%", "-50%"] }}
-                    transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-                    style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-                  >
-                    {loopedTags.map((tag, idx) => {
-                      const isEven = idx % 2 === 0;
-                      return (
-                        <div
-                          key={idx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "24px",
-                            whiteSpace: "nowrap"
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "18px",
-                              fontWeight: isEven ? 700 : 300,
-                              color: isEven ? FG : M,
-                              fontFamily: "Poppins, sans-serif",
-                              letterSpacing: "0.12em",
-                              textTransform: "uppercase",
-                              opacity: isEven ? 1 : 0.75
-                            }}
-                          >
-                            {tag}
-                          </span>
-                          <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
-                        </div>
-                      );
-                    })}
-                  </motion.div>
-                </div>
-              );
-            })()}
           </div>
         </section>
+
+        {/* Premium Editorial Typographic Marquee */}
+        {(() => {
+          const rawTags = Array.isArray(listing?.tags) && listing.tags.length > 0
+            ? listing.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
+            : (Array.isArray(displayTags) && displayTags.length > 0
+              ? displayTags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
+              : ["Valparai Trekking", "Nature & Wildlife", "Mountain Adventure", "Western Ghats Trails", "Scenic Tea Estates", "Eco Tourism India"]);
+          
+          // Duplicate to ensure infinite seamless scrolling loop
+          const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
+
+          const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
+          const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
+          const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
+
+          return (
+            <div style={{
+              width: "100%",
+              overflow: "hidden",
+              position: "relative",
+              padding: "20px 0",
+              background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+              borderTop: `1px solid ${B}`,
+              borderBottom: `1px solid ${B}`,
+            }}>
+              {/* Left & Right Edge Fades */}
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+                style={{ display: "flex", alignItems: "center", width: "max-content" }}
+              >
+                {loopedTags.map((tag, idx) => {
+                  const isEven = idx % 2 === 0;
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "24px",
+                        whiteSpace: "nowrap",
+                        marginRight: "32px"
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: isEven ? 700 : 300,
+                          color: isEven ? FG : M,
+                          fontFamily: "Poppins, sans-serif",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          opacity: isEven ? 1 : 0.75
+                        }}
+                      >
+                        {tag}
+                      </span>
+                      <Sparkles size={14} color={A} fill={A} style={{ opacity: 0.6 }} />
+                    </div>
+                  );
+                })}
+              </motion.div>
+            </div>
+          );
+        })()}
 
 
         {/* TIMELINE SECTION */}
@@ -1441,13 +1439,13 @@ const ExperienceProduct = () => {
                 {/* Header Area */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
                   <div>
-                    <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
                       The Experience Journey
                     </span>
-                    <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                    <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                       How It Unfolds
                     </h3>
-                    <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
+                    <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
                       A thoughtfully curated journey that brings you closer to the natural beauty and rich experiences of this destination.
                     </p>
                   </div>
@@ -1616,17 +1614,17 @@ const ExperienceProduct = () => {
 
 
         {/* ADDONS SECTION */}
-        <section className="addons-section" style={{ background: BG, padding: "32px 0" }}>
+        <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "4px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
                   Enhance Your Experience
                 </span>
                 <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                   Make it Yours
                 </h3>
-                <p style={{ color: M, fontSize: "14px", margin: "2px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
+                <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
                   Curated add-ons to make your experience even more special.
                 </p>
               </div>
@@ -1870,108 +1868,146 @@ const ExperienceProduct = () => {
           </div>
         </section>
         {/* PREPARATION SECTION */}
-        <section className="prep-section" style={{ background: W, padding: "32px 0" }}>
+        <section className="prep-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
+            
+            {/* Header Area */}
+            <div style={{ marginBottom: 32 }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>Find your way to the experience and get all the essential details for a smooth journey.</p>
+            </div>
+
+            {/* Main Card Container */}
+            <div style={{ 
+              background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', 
+              borderRadius: 24, 
+              border: `1px solid ${B}`, 
+              padding: 16, 
+              display: "grid", 
+              gridTemplateColumns: "1fr 1fr", 
+              gap: 32,
+              boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
+            }} className="prep-grid">
+              
+              {/* LEFT: Map */}
               <Rev delay={0.1} style={{ height: "100%" }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                  <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                      <div style={{
-                        position: "absolute",
-                        top: 16,
-                        left: 16,
-                        zIndex: 10,
-                        background: W,
-                        padding: "10px 16px",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                        border: `1px solid ${B}`,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        pointerEvents: "none"
-                      }}>
-                        <MapPin size={16} color={A} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
-                      </div>
-                      {listing?.meetingLatitude && listing?.meetingLongitude ? (
-                        <iframe
-                           width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          style={{ border: 0 }}
-                          src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
-                          allowFullScreen
-                          title="Meeting Location"
-                        />
-                      ) : (
-                        <>
-                          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
-                            <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
-                          </div>
-                        </>
-                      )}
-                    </div>
+                <div style={{ height: "100%", minHeight: 320, position: "relative", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+                  <div style={{
+                    position: "absolute",
+                    top: 16,
+                    left: 16,
+                    zIndex: 10,
+                    background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                    padding: "8px 16px",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+                    border: `1px solid ${B}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    pointerEvents: "none"
+                  }}>
+                    <MapPin size={16} color={A} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif' }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
                   </div>
+                  {listing?.meetingLatitude && listing?.meetingLongitude ? (
+                    <iframe
+                       width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
+                      allowFullScreen
+                      title="Meeting Location"
+                    />
+                  ) : (
+                    <>
+                      <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
+                        <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                      </div>
+                    </>
+                  )}
                 </div>
               </Rev>
+              
+              {/* RIGHT: Details List */}
               <Rev delay={0.2} style={{ height: "100%" }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                  <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
-                      {listing?.meetingAddress && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingAddress}</span>
-                        </li>
-                      )}
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
+                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
+                    {listing?.meetingAddress && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <MapPin size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingAddress}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingLandmark && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingLandmark}</span>
-                        </li>
-                      )}
+                    {listing?.meetingDistrict && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Building size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingDistrict}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingDistrict && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingDistrict}</span>
-                        </li>
-                      )}
+                    {listing?.meetingState && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Map size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingState}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingState && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingState}</span>
-                        </li>
-                      )}
+                    {listing?.meetingCountry && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Globe size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingCountry}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingCountry && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingCountry}</span>
-                        </li>
-                      )}
-
-                      {listing?.meetingInstructions && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingInstructions}</span>
-                        </li>
-                      )}
-                      {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress && !listing?.meetingLandmark) && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                          <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
+                    {listing?.meetingInstructions && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Info size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingInstructions}</span>
+                        </div>
+                      </li>
+                    )}
+                    
+                    {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress) && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Info size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
+                          <span style={{ fontSize: 16, color: M, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
                 </div>
               </Rev>
             </div>
@@ -1994,7 +2030,7 @@ const ExperienceProduct = () => {
 
           return (
             <div style={{
-              margin: "0 -80px",
+              width: "100%",
               overflow: "hidden",
               position: "relative",
               padding: "20px 0",
@@ -2009,7 +2045,7 @@ const ExperienceProduct = () => {
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
                 transition={{ repeat: Infinity, ease: "linear", duration: catsDuration }}
-                style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
+                style={{ display: "flex", alignItems: "center", width: "max-content" }}
               >
                 {loopedCats.map((cat, idx) => {
                   const isEven = idx % 2 === 0;
@@ -2020,7 +2056,8 @@ const ExperienceProduct = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: "24px",
-                        whiteSpace: "nowrap"
+                        whiteSpace: "nowrap",
+                        marginRight: "32px"
                       }}
                     >
                       <span
@@ -2036,7 +2073,7 @@ const ExperienceProduct = () => {
                       >
                         {cat}
                       </span>
-                      <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
+                      <Sparkles size={14} color={A} fill={A} style={{ opacity: 0.6 }} />
                     </div>
                   );
                 })}
@@ -2049,8 +2086,8 @@ const ExperienceProduct = () => {
 
         {/* HOST & QUALITY ROW (40% / 60%) */}
         {listing && (
-          <section className="host-quality-section" style={{ background: W, padding: "32px 0" }}>
-            <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+          <section className="host-quality-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
+            <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
                 
                 {/* Host Profile (40%) */}
@@ -2454,14 +2491,19 @@ const ExperienceProduct = () => {
           if (normalizedReviews.length === 0 && eligibleBookings.length === 0) return null;
 
           return (
-            <section className="testimonials-section" style={{ background: BG, padding: "32px 0" }}>
-              <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
+            <section className="testimonials-section" style={{ background: BG, padding: "64px 0" }}>
+              <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
                 {normalizedReviews.length > 0 && (
                   <>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-                      <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
-                        What people say
-                      </h3>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+                      <div>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                          Guest Reviews
+                        </span>
+                        <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                          What People Say
+                        </h3>
+                      </div>
                       <div style={{ display: "flex", gap: 12 }}>
                         <button
                           type="button"
@@ -2616,18 +2658,27 @@ const ExperienceProduct = () => {
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
         />
 
-        <div className="related-listings-wrapper" style={{ padding: "32px 80px", background: W }}>
-          <RelatedListingsStrip
-            businessInterestId={1}
-            primaryCategoryId={primaryCategoryId}
-            currentListingId={currentListingId}
-            fallbackLocationValues={fallbackLocationValues}
-            fallbackTagValues={fallbackTagValues}
-            fallbackSpecialLabelValues={fallbackSpecialLabelValues}
-            title="More Experiences You May Like"
-            sectionStyle={{ padding: "0px", background: "transparent" }}
-            titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontFamily: "Poppins, sans-serif", fontWeight: 700 }}
-          />
+        <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <RelatedListingsStrip
+              businessInterestId={1}
+              primaryCategoryId={primaryCategoryId}
+              currentListingId={currentListingId}
+              fallbackLocationValues={fallbackLocationValues}
+              fallbackTagValues={fallbackTagValues}
+              fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+              title="More Experiences You May Like"
+              sectionStyle={{ padding: "0px", background: "transparent" }}
+              titleStyle={{ 
+                fontSize: "clamp(2.5rem, 4vw, 3.5rem)", 
+                fontWeight: 700, 
+                lineHeight: 1.1, 
+                fontFamily: '"Cormorant Garamond", "Playfair Display", serif', 
+                letterSpacing: "-0.02em",
+                color: FG
+              }}
+            />
+          </div>
         </div>
       </main>
       <AnimatePresence>
@@ -2969,7 +3020,7 @@ const ExperienceProduct = () => {
 
 
 function PolicyItem({ req }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+  const { theme, tokens: { FG, A, M, AL, B, W } } = useTheme();
   const [op, setOp] = useState(false);
 
   const title = req.setting?.title || "Requirement";
@@ -2994,15 +3045,15 @@ function PolicyItem({ req }) {
     <motion.div
       layout
       style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
+        background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF',
+        border: `1px solid ${B}`,
         borderRadius: "16px",
         overflow: "hidden",
         marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none"
+        transition: "all 0.3s",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
       }}
-      whileHover={{ borderColor: A }}
+      whileHover={{ borderColor: A, boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
     >
       <div
         onClick={() => setOp(!op)}
@@ -3023,16 +3074,15 @@ function PolicyItem({ req }) {
           justifyContent: "center",
           width: 40,
           height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s"
+          borderRadius: 8,
+          background: theme === 'dark' ? '#1E293B' : '#F0F9FA',
+          flexShrink: 0
         }}>
           {getIcon()}
         </div>
         
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{title}</span>
+          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, display: "block", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{title}</span>
         </div>
 
         <motion.div
@@ -3474,18 +3524,21 @@ function QualityIndexSection({ qualityIndex }) {
 
 
 function ExperiencePolicies({ listing }) {
-  const { tokens: { FG, W, B, A, M, BG } } = useTheme();
+  const { theme, tokens: { FG, W, B, A, M, BG } } = useTheme();
 
   return (
-    <section className="policies-section" style={{ background: BG, padding: "32px 0" }}>
-      <div style={{ width: "calc(100% - 80px)", maxWidth: "1600px", margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64, alignItems: "start" }} className="pol-grid">
+    <section className="policies-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
+      <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 12, fontFamily: "Poppins, sans-serif" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
+                Essential Guidelines
+              </span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                 Things to Keep in Mind
               </h3>
-              <p style={{ color: M, fontSize: "15px", lineHeight: "1.8", margin: 0, fontWeight: 400 }}>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
                 Please review these guidelines and requirements carefully to ensure a safe, smooth, and enjoyable experience for everyone.
               </p>
             </div>
