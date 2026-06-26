@@ -3,7 +3,7 @@ import { useLocation, useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2 } from "lucide-react";
+import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2, Building, Map, Globe, Info } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -1870,108 +1870,146 @@ const ExperienceProduct = () => {
           </div>
         </section>
         {/* PREPARATION SECTION */}
-        <section className="prep-section" style={{ background: W, padding: "32px 0" }}>
+        <section className="prep-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
+            
+            {/* Header Area */}
+            <div style={{ marginBottom: 32 }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>Find your way to the experience and get all the essential details for a smooth journey.</p>
+            </div>
+
+            {/* Main Card Container */}
+            <div style={{ 
+              background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', 
+              borderRadius: 24, 
+              border: `1px solid ${B}`, 
+              padding: 16, 
+              display: "grid", 
+              gridTemplateColumns: "1fr 1fr", 
+              gap: 32,
+              boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
+            }} className="prep-grid">
+              
+              {/* LEFT: Map */}
               <Rev delay={0.1} style={{ height: "100%" }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                  <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                      <div style={{
-                        position: "absolute",
-                        top: 16,
-                        left: 16,
-                        zIndex: 10,
-                        background: W,
-                        padding: "10px 16px",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                        border: `1px solid ${B}`,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        pointerEvents: "none"
-                      }}>
-                        <MapPin size={16} color={A} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
-                      </div>
-                      {listing?.meetingLatitude && listing?.meetingLongitude ? (
-                        <iframe
-                           width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          style={{ border: 0 }}
-                          src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
-                          allowFullScreen
-                          title="Meeting Location"
-                        />
-                      ) : (
-                        <>
-                          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
-                            <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
-                          </div>
-                        </>
-                      )}
-                    </div>
+                <div style={{ height: "100%", minHeight: 320, position: "relative", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+                  <div style={{
+                    position: "absolute",
+                    top: 16,
+                    left: 16,
+                    zIndex: 10,
+                    background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                    padding: "8px 16px",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+                    border: `1px solid ${B}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    pointerEvents: "none"
+                  }}>
+                    <MapPin size={16} color={A} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif' }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
                   </div>
+                  {listing?.meetingLatitude && listing?.meetingLongitude ? (
+                    <iframe
+                       width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&hl=en&z=14&output=embed`}
+                      allowFullScreen
+                      title="Meeting Location"
+                    />
+                  ) : (
+                    <>
+                      <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%" }}>
+                        <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                      </div>
+                    </>
+                  )}
                 </div>
               </Rev>
+              
+              {/* RIGHT: Details List */}
               <Rev delay={0.2} style={{ height: "100%" }}>
-                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                  <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
-                      {listing?.meetingAddress && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingAddress}</span>
-                        </li>
-                      )}
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
+                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
+                    {listing?.meetingAddress && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <MapPin size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingAddress}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingLandmark && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingLandmark}</span>
-                        </li>
-                      )}
+                    {listing?.meetingDistrict && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Building size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingDistrict}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingDistrict && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingDistrict}</span>
-                        </li>
-                      )}
+                    {listing?.meetingState && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Map size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingState}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingState && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingState}</span>
-                        </li>
-                      )}
+                    {listing?.meetingCountry && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Globe size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingCountry}</span>
+                        </div>
+                      </li>
+                    )}
 
-                      {listing?.meetingCountry && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingCountry}</span>
-                        </li>
-                      )}
-
-                      {listing?.meetingInstructions && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                          <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{listing.meetingInstructions}</span>
-                        </li>
-                      )}
-                      {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress && !listing?.meetingLandmark) && (
-                        <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                          <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                          <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
+                    {listing?.meetingInstructions && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Info size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingInstructions}</span>
+                        </div>
+                      </li>
+                    )}
+                    
+                    {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress) && (
+                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Info size={20} color={A} fill="transparent" />
+                        </div>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
+                          <span style={{ fontSize: 16, color: M, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
                 </div>
               </Rev>
             </div>
