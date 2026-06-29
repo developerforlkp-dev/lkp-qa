@@ -189,12 +189,14 @@ const CheckoutComplete = () => {
     if (amount === undefined || amount === null || isNaN(amount)) return null;
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) return null;
-    // Razorpay amounts are always in paise. Anything over 100 that looks like paise:
-    // treat amounts > 100 and they came from Razorpay as paise → divide by 100
-    const amountInRupees = (alreadyInPaise || numAmount > 100000)
-      ? (numAmount / 100).toFixed(2)
-      : numAmount.toFixed(2);
-    return `${currency} ${amountInRupees}`;
+    
+    // If we explicitly know it's in paise (like from Razorpay paymentData)
+    if (alreadyInPaise) {
+      return `${currency} ${(numAmount / 100).toFixed(2)}`;
+    }
+    
+    // For normal values already in rupees
+    return `${currency} ${numAmount.toFixed(2)}`;
   };
 
 

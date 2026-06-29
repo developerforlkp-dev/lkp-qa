@@ -187,13 +187,18 @@ const ExperienceCheckoutComplete = () => {
   };
 
   // Format amount - Razorpay amounts are in paise (smallest currency unit), so divide by 100 for INR
-  const formatAmount = (amount, currency = "INR") => {
+  const formatAmount = (amount, currency = "INR", alreadyInPaise = false) => {
     if (amount === undefined || amount === null || isNaN(amount)) return null;
-    // If amount is in paise (typically > 1000 for reasonable prices), convert to rupees
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) return null;
-    const amountInRupees = numAmount > 1000 ? (numAmount / 100).toFixed(2) : numAmount.toFixed(2);
-    return `${currency} ${amountInRupees}`;
+    
+    // If we explicitly know it's in paise (like from Razorpay paymentData)
+    if (alreadyInPaise) {
+      return `${currency} ${(numAmount / 100).toFixed(2)}`;
+    }
+    
+    // For normal values already in rupees
+    return `${currency} ${numAmount.toFixed(2)}`;
   };
 
   const parameters = useMemo(() => {
@@ -252,7 +257,7 @@ const ExperienceCheckoutComplete = () => {
     // Priority 1: Use paidAmount from paymentData (passed from checkout page)
     // This is the actual amount that was paid (after discount)
     if (paymentData?.paidAmount !== undefined && paymentData.paidAmount !== null) {
-      const formatted = formatAmount(paymentData.paidAmount, paymentData.currency || "INR");
+      const formatted = formatAmount(paymentData.paidAmount, paymentData.currency || "INR", true);
       if (formatted) {
         amountPaid = formatted;
         console.log("✅ Using paidAmount from paymentData (passed from checkout):", paymentData.paidAmount);
@@ -261,7 +266,7 @@ const ExperienceCheckoutComplete = () => {
 
     // Priority 2: Check for finalAmount in paymentData
     if (amountPaid === "—" && paymentData?.finalAmount !== undefined && paymentData.finalAmount !== null) {
-      const formatted = formatAmount(paymentData.finalAmount, paymentData.currency || "INR");
+      const formatted = formatAmount(paymentData.finalAmount, paymentData.currency || "INR", true);
       if (formatted) {
         amountPaid = formatted;
         console.log("✅ Using finalAmount from paymentData:", paymentData.finalAmount);
@@ -272,7 +277,7 @@ const ExperienceCheckoutComplete = () => {
     if (amountPaid === "—" && paymentData?.amount !== undefined && paymentData?.discount !== undefined) {
       try {
         const paidAmount = paymentData.amount - paymentData.discount;
-        const formatted = formatAmount(paidAmount, paymentData.currency || "INR");
+        const formatted = formatAmount(paidAmount, paymentData.currency || "INR", true);
         if (formatted) {
           amountPaid = formatted;
           console.log("✅ Calculated from paymentData (amount - discount):", {
@@ -342,7 +347,7 @@ const ExperienceCheckoutComplete = () => {
             const discountInRupees = parseFloat(discountMatch[0].replace(/,/g, ''));
             const discountInPaise = discountInRupees * 100;
             const paidAmount = paymentData.amount - discountInPaise;
-            const formatted = formatAmount(paidAmount, paymentData.currency || "INR");
+            const formatted = formatAmount(paidAmount, paymentData.currency || "INR", true);
             if (formatted) {
               amountPaid = formatted;
               console.log("✅ Calculated from paymentData.amount and receipt discount:", {
@@ -360,7 +365,7 @@ const ExperienceCheckoutComplete = () => {
 
     // Priority 7: Use paymentData.amount as fallback (might be total, but better than nothing)
     if (amountPaid === "—" && paymentData?.amount) {
-      const formatted = formatAmount(paymentData.amount, paymentData.currency || "INR");
+      const formatted = formatAmount(paymentData.amount, paymentData.currency || "INR", true);
       if (formatted) {
         amountPaid = formatted;
         console.log("⚠️ Using paymentData.amount as fallback (might be total):", paymentData.amount);
