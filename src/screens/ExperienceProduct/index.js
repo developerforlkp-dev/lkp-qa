@@ -95,16 +95,26 @@ function ExperienceBg({ progress, src }) {
 }
 
 /* ─── HERO SHARE FAB ─────────────────────────── */
-function HeroShareFab({ title, text, url, style = {} }) {
+function HeroShareFab({ title, text, url, label = "Share Journey" }) {
   const [copied, setCopied] = useState(false);
-  const [ripple, setRipple] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const { tokens: { A } } = useTheme();
+  const { theme, tokens: { A, FG } } = useTheme();
   const glow = A || "#0097B2";
+  const isDark = theme === "dark";
+  const surface = isDark ? "#141414" : "#FFFFFF";
+  const surfaceHover = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? FG : A;
+  const borderColor = hovered ? glow : (isDark ? `${glow}66` : `${glow}4D`);
+  const shadow = hovered
+    ? isDark
+      ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 8px 28px rgba(0,0,0,0.5)`
+      : `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+    : isDark
+      ? `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.34)`
+      : "0 6px 18px rgba(15,15,15,0.12)";
 
-  const handleShare = async () => {
-    setRipple(true);
-    setTimeout(() => setRipple(false), 700);
+  const handleShare = async (e) => {
+    e.stopPropagation();
     try {
       if (navigator.share) {
         await navigator.share({ title, text, url });
@@ -118,55 +128,31 @@ function HeroShareFab({ title, text, url, style = {} }) {
 
   return (
     <motion.button
-      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       whileTap={{ scale: 0.86 }}
       style={{
-        position: "absolute",
-        top: 96,
-        right: 60,
-        zIndex: 200,
+        height: 44,
+        borderRadius: 22,
+        background: hovered ? surfaceHover : surface,
+        border: `1.5px solid ${borderColor}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
-        height: 44,
-        maxWidth: hovered ? 200 : 44,
-        overflow: "hidden",
-        paddingLeft: 13,
-        paddingRight: hovered ? 18 : 13,
-        background: "rgba(0,151,178,0.13)",
-        backdropFilter: "blur(22px)",
-        WebkitBackdropFilter: "blur(22px)",
-        border: `1.5px solid ${glow}55`,
-        borderRadius: 50,
+        boxShadow: shadow,
         cursor: "pointer",
-        color: "#FFFFFF",
-        fontFamily: "inherit",
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.13em",
-        textTransform: "uppercase",
-        boxShadow: hovered
-          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
-          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
-        outline: "none",
-        userSelect: "none",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
-        ...style
+        maxWidth: hovered ? 140 : 44,
+        overflow: "hidden",
+        paddingLeft: 12,
+        paddingRight: hovered ? 16 : 12,
+        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, background 0.35s ease, border-color 0.35s ease",
+        pointerEvents: "auto",
+        position: "relative",
+        zIndex: 200,
+        outline: "none"
       }}
     >
-      {/* Radial ripple on click */}
-      <motion.span
-        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
-      />
-      {/* Icon — always visible with unique animation */}
       <motion.span
         animate={{
           y: hovered ? 0 : [0, -2, 0, 2, 0],
@@ -178,21 +164,24 @@ function HeroShareFab({ title, text, url, style = {} }) {
           rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
           scale: { duration: 0.3, ease: "easeOut" }
         }}
-        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
+        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative" }}
       >
-        <Share2 size={17} strokeWidth={2.2} />
+        <Share2 size={20} color={textColor} />
       </motion.span>
-      {/* Expandable label */}
       <span style={{
         whiteSpace: "nowrap",
         overflow: "hidden",
-        maxWidth: hovered ? 140 : 0,
+        maxWidth: hovered ? 110 : 0,
         opacity: hovered ? 1 : 0,
-        marginLeft: hovered ? 9 : 0,
+        marginLeft: hovered ? 8 : 0,
         position: "relative",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
+        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+        color: textColor,
+        fontFamily: '"Inter", sans-serif',
+        fontSize: 13,
+        fontWeight: 600
       }}>
-        {copied ? "✓ Copied!" : "Share Journey"}
+        {copied ? "Copied!" : label}
       </span>
     </motion.button>
   );
@@ -1047,31 +1036,43 @@ const ExperienceProduct = () => {
 
               <Rev delay={0.2} style={{ flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <Favorite
-                    itemType="listing"
-                    itemId={id}
-                    variant="hero"
-                    showText={false}
-                    style={{
-                      position: "relative",
-                      top: "auto",
-                      right: "auto",
-                      margin: 0,
-                      zIndex: 200,
+                  <Favorite itemType="listing" itemId={id}>
+                    {({ saved, onClick }) => {
+                      const isDark = theme === "dark";
+                      const surface = isDark ? "#141414" : "#FFFFFF";
+                      const surfaceHover = isDark ? "#1A1A1A" : "#FFFFFF";
+                      const borderColor = isDark ? `${A || "#0097B2"}66` : `${A || "#0097B2"}4D`;
+                      const textColor = isDark ? FG : (A || "#0097B2");
+                      const shadow = isDark
+                        ? `0 0 10px ${A || "#0097B2"}30, 0 4px 14px rgba(0,0,0,0.34)`
+                        : "0 6px 18px rgba(15,15,15,0.12)";
+
+                      return (
+                        <motion.button 
+                          whileHover={{ scale: 1.05, background: surfaceHover }}
+                          whileTap={{ scale: 0.86 }}
+                          onClick={(e) => { e.stopPropagation(); onClick(e); }} 
+                          style={{ width: 44, height: 44, borderRadius: "50%", background: surface, border: `1.5px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, transition: "background 0.35s ease, border-color 0.35s ease" }}
+                        >
+                          <style>{`
+                            .mobile-save-icon-${id} svg {
+                              fill: ${saved ? (A || "#0097B2") : textColor};
+                              transition: fill 0.3s ease;
+                            }
+                            .mobile-save-icon-${id} svg path,
+                            .mobile-save-icon-${id} svg circle {
+                              stroke: ${saved ? (A || "#0097B2") : textColor} !important;
+                              transition: stroke 0.3s ease;
+                            }
+                          `}</style>
+                          <div className={`mobile-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", color: textColor }}>
+                            <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                          </div>
+                        </motion.button>
+                      );
                     }}
-                  />
-                  <HeroShareFab
-                    title={listing?.title}
-                    text={listing?.description || listing?.aboutListing || ""}
-                    url={window.location.href}
-                    style={{
-                      position: "relative",
-                      top: "auto",
-                      right: "auto",
-                      margin: 0,
-                      zIndex: 200
-                    }}
-                  />
+                  </Favorite>
+                  <HeroShareFab title={listing?.title} text={listing?.description || listing?.aboutListing || ""} url={window.location.href} label="Share Journey" />
                 </div>
               </Rev>
             </div>
