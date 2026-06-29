@@ -2187,7 +2187,7 @@ function PolicyItem({ req }) {
         </div>
         
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{title}</span>
+          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, display: "block", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{title}</span>
         </div>
 
         <motion.div

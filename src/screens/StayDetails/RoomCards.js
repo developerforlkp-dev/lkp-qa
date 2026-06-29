@@ -9,7 +9,7 @@ import { lockBodyScroll } from "../../utils/scrollLock";
 import {
   Wifi, Waves, Sparkles, Dumbbell, Umbrella, Utensils,
   Tv, Coffee, Car, AirVent, CheckCircle, Building, Home, Plus, ChevronLeft,
-  Users, Bed, Maximize, Check, ChevronDown
+  Users, Bed, Maximize, Check, ChevronDown, Minus
 } from "lucide-react";
 import moment from "moment";
 
@@ -532,12 +532,12 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
 
 
 
-/* ---------- RoomCard (Horizontal Layout) ------------------------------ */
 const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan }) => {
-  const { tokens: { FG, B, A, AL, S } } = useTheme();
+  const { tokens: { FG, B, A, AL, S, W, M, BG } } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [showDesc, setShowDesc] = useState(false);
+  const [isImgHovered, setIsImgHovered] = useState(false);
 
   const isBedBased = room.isBedConfig || (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0));
 
@@ -554,6 +554,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   useEffect(() => {
     setPlan(selectedMealPlan || allPlans[0] || null);
   }, [selectedMealPlan, allPlans]);
+  
   const rawPrice = plan ? getPriceForPlan(room, plan) : room.b2cPrice || room.price;
   const discountRate = getBillingConfigDiscountRate(listing);
   const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
@@ -586,149 +587,230 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   };
 
   return (
-    <div className={cn(styles.card, { [styles.cardSelected]: isSelected })}>
-      {/* Left: Mosaic Photo Collage */}
+    <motion.div 
+      whileHover={{ y: -1, boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}
+      transition={{ duration: 0.3 }}
+      className={cn(styles.card, { [styles.cardSelected]: isSelected })}
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "stretch",
+        background: W,
+        border: `1px solid ${isSelected ? A : B}`,
+        borderRadius: "20px",
+        padding: "0",
+        position: "relative",
+        gap: 0,
+        minHeight: "220px",
+        overflow: "hidden",
+        boxShadow: isSelected ? `0 8px 24px ${A}20` : "none",
+        boxSizing: "border-box",
+        marginBottom: "24px"
+      }}
+    >
+      {/* Left: Image Mosaic */}
       <div 
-        className={styles.collageWrap} 
+        onMouseEnter={() => setIsImgHovered(true)}
+        onMouseLeave={() => setIsImgHovered(false)}
         onClick={() => setShowModal(true)}
+        style={{
+          width: "280px",
+          flexShrink: 0,
+          display: "flex",
+          borderRight: `1px solid ${B}`,
+          background: W,
+          position: "relative",
+          cursor: "pointer",
+          overflow: "hidden"
+        }}
       >
         {allImages.length >= 3 ? (
           <>
-            <img src={allImages[0]} alt={name} className={styles.mainImg} />
-            <div className={styles.subImgCol}>
-              <img src={allImages[1]} alt={name} className={styles.subImg} />
-              <img src={allImages[2]} alt={name} className={styles.subImg} />
+            <img src={allImages[0]} alt={name} style={{ width: "65%", height: "100%", objectFit: "cover" }} />
+            <div style={{ width: "35%", display: "flex", flexDirection: "column", height: "100%" }}>
+              <img src={allImages[1]} alt={name} style={{ width: "100%", height: "50%", objectFit: "cover", borderLeft: "2px solid #FFF", borderBottom: "1px solid #FFF" }} />
+              <div style={{ width: "100%", height: "50%", position: "relative", overflow: "hidden", borderLeft: "2px solid #FFF", borderTop: "1px solid #FFF" }}>
+                <img src={allImages[2]} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                {totalPhotos > 3 && (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", fontSize: "14px", fontWeight: 700 }}>
+                    +{totalPhotos - 3}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} className={styles.singleImg} />
+          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
-        {totalRooms != null && <span className={styles.badge}>{totalRooms} {isBedBased ? "BEDS" : "ROOMS"}</span>}
-        {isSelected && <span className={styles.selectedBadge}>✓ Selected</span>}
-        
-        <div className={styles.viewPhotosOverlay}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          <span>{totalPhotos} Photos</span>
-        </div>
+
+        {/* Room Count Tag */}
+        {totalRooms != null && (
+          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+            {totalRooms} {isBedBased ? "BEDS" : "ROOMS"}
+          </div>
+        )}
+
+        {/* View Gallery Overlay Button */}
+        <AnimatePresence>
+          {isImgHovered && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.2)" }}
+            >
+              <div style={{ padding: "10px 20px", borderRadius: "100px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", color: FG, fontSize: "12px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", textTransform: "uppercase", letterSpacing: "0.05em", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                View Gallery
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Right: Content details */}
-      <div className={styles.body}>
-        <div className={styles.infoCol}>
-          {/* Split Header: Left has title/amenities, Right has guest count/price */}
-          <div className={styles.splitHeader}>
-            <div className={styles.leftHeader}>
-              <h4 className={styles.roomName}>{name}</h4>
-              
-              {/* Amenities Row below Room Name */}
-              <div className={styles.amenitiesRow}>
-                {room.bedType && <span className={styles.amenityTag}>{room.bedType}</span>}
-                {room.roomSize && <span className={styles.amenityTag}>{room.roomSize} sq ft</span>}
-                {features.slice(0, 3).map((f, i) => (
-                  <span key={i} className={styles.amenityTag}>{f}</span>
-                ))}
+      {/* Middle: Content details */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <h4 style={{ fontSize: "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
+            {name}
+          </h4>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "4px" }}>
+            {/* Guest Count prominent display */}
+            {capacity != null && !isBedBased && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: FG, fontFamily: '"Inter", sans-serif' }}>
+                <Users size={16} color={A} />
+                <span>Up to {capacity} Guests</span>
               </div>
-            </div>
-
-            <div className={styles.rightHeader}>
-              {capacity != null && !isBedBased && (
-                <span className={styles.guestCount}>
-                  <Users size={14} className={styles.guestIcon} />
-                  {capacity} Guests
-                </span>
-              )}
-
-              {/* Starting From Block below guest count */}
-              <div className={styles.priceBlock}>
-                <span className={styles.priceLabel}>STARTING FROM</span>
-                <div className={styles.amount}>
-                  {displayPrice
-                    ? (
-                      <>
-                        {discountRate > 0 && discountedDisplayPrice && (
-                          <span className={styles.strikePrice}>
-                            {"\u20B9"}{displayPrice}
-                          </span>
-                        )}
-                        {"\u20B9"}{discountRate > 0 && discountedDisplayPrice ? discountedDisplayPrice : displayPrice}
-                        <span className={styles.perNight}> / night</span>
-                      </>
-                    )
-                    : <span className={styles.priceOnRequest}>Price on request</span>
-                  }
-                </div>
-              </div>
+            )}
+            
+            {/* Amenities Row */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {room.bedType && <span style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{room.bedType}</span>}
+              {room.roomSize && <span style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{room.roomSize} sq ft</span>}
+              {features.map((f, i) => (
+                <span key={i} style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{f}</span>
+              ))}
             </div>
           </div>
-
-          {/* Description & Expandable Toggle */}
-          {description && (
-            <div className={styles.descBlock}>
-              <AnimatePresence initial={false}>
-                {showDesc && (
-                  <motion.p 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 0.8 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    className={styles.descText}
-                  >
-                    {description}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-              <button 
-                className={styles.moreBtn} 
-                onClick={() => setShowDesc(!showDesc)}
-              >
-                {showDesc ? "Less details" : "More details"}
-                <ChevronDown size={14} className={cn(styles.chevron, { [styles.chevronRotate]: showDesc })} />
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Right side: Meal Plan and Selection stacked vertically */}
-        <div className={styles.actionCol}>
-          {/* Meal Plan selector */}
-          {allPlans.length > 0 ? (
-            <div className={styles.planSection}>
-              <div className={styles.planLabel}>Meal Plan</div>
-              {allPlans.length > 1 ? (
-                <CustomDropdown
-                  options={allPlans.map((c) => ({ value: c, label: getMealPlanLabel(c) }))}
-                  value={plan}
-                  onChange={handlePlanChange}
-                />
-              ) : (
-                <div className={styles.singlePlan}>{getMealPlanLabel(allPlans[0])}</div>
+        {description && (
+          <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
+            <AnimatePresence initial={false}>
+              {showDesc && (
+                <motion.p 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 0.8 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  style={{ fontSize: "14px", color: M, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif' }}
+                >
+                  {description}
+                </motion.p>
               )}
-            </div>
-          ) : <div />}
+            </AnimatePresence>
+            <button 
+              onClick={() => setShowDesc(!showDesc)}
+              style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 700, color: A, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: '"Inter", sans-serif' }}
+            >
+              {showDesc ? "Less details" : "More details"}
+              <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showDesc ? "rotate(180deg)" : "none" }} />
+            </button>
+          </div>
+        )}
+      </div>
 
-          {/* Selection controls */}
-          <div className={styles.actionWrap}>
-            {isSelected ? (
-              <div className={styles.selectedControl}>
-                <div className={styles.countSelectWrapper}>
-                  <CustomDropdown
-                    options={Array.from({ length: totalRooms ? Number(totalRooms) : 10 }, (_, i) => ({
-                      value: i + 1,
-                      label: String(i + 1)
-                    }))}
-                    value={roomsCount}
-                    onChange={(count) => onRoomsCountChange(count)}
-                  />
-                </div>
-                <button className={cn(styles.bookBtn, styles.selectedBtn)} onClick={handleSelect}>
-                  ✓ Selected
-                </button>
-              </div>
+      {/* Right: Actions */}
+      <div style={{ width: "260px", flexShrink: 0, background: AL, padding: "24px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "20px" }}>
+        
+        {allPlans.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ marginBottom: "8px", fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: A }}>
+              Meal Plan
+            </div>
+            {allPlans.length > 1 ? (
+              <CustomDropdown
+                options={allPlans.map((c) => ({ value: c, label: getMealPlanLabel(c) }))}
+                value={plan}
+                onChange={handlePlanChange}
+              />
             ) : (
-              <button className={styles.bookBtn} onClick={handleSelect}>SELECT {isBedBased ? "BED" : "ROOM"}</button>
+              <div style={{ padding: "8px 12px", borderRadius: "8px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "13px", fontWeight: 600 }}>
+                {getMealPlanLabel(allPlans[0])}
+              </div>
+            )}
+          </div>
+        ) : <div />}
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: M, marginBottom: "4px" }}>
+            STARTING FROM
+          </span>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', lineHeight: 1 }}>
+            {displayPrice ? (
+              <>
+                {discountRate > 0 && discountedDisplayPrice && (
+                  <span style={{ fontSize: "14px", color: M, textDecoration: "line-through", marginRight: "8px" }}>
+                    {"\u20B9"}{displayPrice}
+                  </span>
+                )}
+                {"\u20B9"}{discountRate > 0 && discountedDisplayPrice ? discountedDisplayPrice : displayPrice}
+                <span style={{ fontSize: "12px", fontWeight: 500, color: M }}> / night</span>
+              </>
+            ) : (
+              <span style={{ fontSize: "16px", fontWeight: 600, color: M }}>Price on request</span>
             )}
           </div>
         </div>
+
+        <div style={{ width: "100%", marginTop: "auto" }}>
+          {isSelected ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: W, borderRadius: "8px", border: `1px solid ${A}`, padding: "6px 12px", height: "42px", boxSizing: "border-box" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: FG }}>
+                  {roomsCount} {isBedBased ? "Bed" : "Room"}{roomsCount === 1 ? "" : "s"}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <button
+                    type="button"
+                    disabled={roomsCount <= 1}
+                    onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount - 1); }}
+                    style={{ background: "none", border: "none", cursor: roomsCount <= 1 ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: roomsCount <= 1 ? M : A, opacity: roomsCount <= 1 ? 0.5 : 1, outline: "none" }}
+                  >
+                    <Minus size={16} strokeWidth={3} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={totalRooms != null && roomsCount >= Number(totalRooms)}
+                    onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount + 1); }}
+                    style={{ background: "none", border: "none", cursor: (totalRooms != null && roomsCount >= Number(totalRooms)) ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: (totalRooms != null && roomsCount >= Number(totalRooms)) ? M : A, opacity: (totalRooms != null && roomsCount >= Number(totalRooms)) ? 0.5 : 1, outline: "none" }}
+                  >
+                    <Plus size={16} strokeWidth={3} />
+                  </button>
+                </div>
+              </div>
+              <button 
+                onClick={handleSelect}
+                style={{ width: "100%", height: "42px", borderRadius: "8px", background: FG, color: BG, fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                <Check size={16} /> Selected
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleSelect}
+              style={{ width: "100%", height: "42px", borderRadius: "8px", background: A, color: "#FFF", fontSize: "12px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", border: "none", cursor: "pointer", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 16px ${A}40`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              Select {isBedBased ? "Bed" : "Room"}
+            </button>
+          )}
+        </div>
+
       </div>
 
       <ModalPortal>
@@ -744,7 +826,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
           )}
         </AnimatePresence>
       </ModalPortal>
-    </div>
+    </motion.div>
   );
 };
 
