@@ -1472,7 +1472,7 @@ const ExperienceProduct = () => {
                       >
                         {tag}
                       </span>
-                      <Sparkles size={14} color={A} fill={A} style={{ opacity: 0.6 }} />
+                      <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
                     </div>
                   );
                 })}
@@ -3728,9 +3728,14 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8, paddingBottom: 24, borderBottom: `1px solid ${B}` }}>
             <div style={{ fontSize: 48, fontWeight: 900, color: FG, lineHeight: 1 }}>{summary.averageRating.toFixed(1)}</div>
             <div>
-              <div style={{ display: "flex", color: "#FFC107", fontSize: 16, marginBottom: 4 }}>
+              <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
                 {[...Array(5)].map((_, i) => (
-                  <span key={i}>{i < Math.round(summary.averageRating) ? "★" : "☆"}</span>
+                  <Star 
+                    key={i} 
+                    size={16} 
+                    style={{ fill: i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent" }} 
+                    color={i < Math.round(summary.averageRating) ? "#F59E0B" : M} 
+                  />
                 ))}
               </div>
               <p style={{ fontSize: 10, color: M, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Average Guest Rating</p>
@@ -3753,9 +3758,14 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <div>
                       <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 2 }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
-                      <div style={{ display: "flex", gap: 2, color: "#FFC107", fontSize: 10 }}>
+                      <div style={{ display: "flex", gap: 4 }}>
                         {[...Array(5)].map((_, si) => (
-                          <span key={si}>{si < (rev.rating || 5) ? "★" : "☆"}</span>
+                          <Star 
+                            key={si} 
+                            size={14} 
+                            style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} 
+                            color={si < (rev.rating || 5) ? "#F59E0B" : M} 
+                          />
                         ))}
                       </div>
                     </div>

@@ -340,9 +340,9 @@ export default function RelatedListingsStrip({
           box-shadow: 0 0 0 6px rgba(0, 151, 178, 0.08);
         }
       `}</style>
-      <div style={{ maxWidth: 1440, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 24 }}>
-          <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--FG, #131313)", ...titleStyle }}>{title}</h3>
+          <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, color: "var(--FG, #131313)", margin: 0, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em", ...titleStyle }}>{title}</h3>
           <div style={{ display: "flex", gap: 10 }}>
             <button
               type="button"
