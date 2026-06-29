@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronDown, Clock, User, Zap, Baby, Languages,
-  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass
+  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart
 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import PhotoView from "../../components/PhotoView";
+import FullScreenImage from "../../components/FullScreenImage";
 import Favorite from "../../components/Favorite";
+import Icon from "../../components/Icon";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import "./MobileExperienceView.css";
@@ -80,6 +82,9 @@ export default function MobileExperienceView({
   const [activityPhotoVisible, setActivityPhotoVisible] = useState(false);
   const [activityPhotoIndex, setActivityPhotoIndex] = useState(0);
   const [selectedActivityImages, setSelectedActivityImages] = useState([]);
+  const [addonPhotoVisible, setAddonPhotoVisible] = useState(false);
+  const [selectedAddonImages, setSelectedAddonImages] = useState([]);
+  const [addonPhotoIndex, setAddonPhotoIndex] = useState(0);
   const galleryRef = useRef(null);
 
   /* ── gallery scroll handler ── */
@@ -146,15 +151,28 @@ export default function MobileExperienceView({
         <div className="mob-hero-gradient" />
 
         {/* Top controls */}
-        <div className="mob-hero-top">
-          <button className="mob-hero-btn" onClick={() => history.goBack()} aria-label="Go back" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "none", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: W }}>
-            <ChevronLeft size={20} />
+        <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 10 }}>
+          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <ChevronLeft size={22} color="#111" />
           </button>
-          <div style={{ display: "flex", gap: 10, flexShrink: 0, alignItems: "center" }}>
-            <Favorite itemType="listing" itemId={id} variant="hero" showText={false}
-              style={{ position: "relative", top: "auto", right: "auto", margin: 0, zIndex: 200 }} />
-            <button className="mob-hero-btn" onClick={handleShare} aria-label="Share" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "none", color: W, width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Share2 size={16} />
+          <div style={{ display: "flex", gap: 12 }}>
+            <Favorite itemType="listing" itemId={id}>
+              {({ saved, onClick }) => (
+                <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", flexShrink: 0 }}>
+                <style>{`
+                  .exp-save-icon-${id} svg {
+                    fill: ${saved ? "#0097B2" : "#111"};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`exp-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
+              </button>
+              )}
+            </Favorite>
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+              <Share2 size={20} color="#111" />
             </button>
           </div>
         </div>
@@ -362,7 +380,20 @@ export default function MobileExperienceView({
 
               return (
                 <div key={i} className="mob-addon-card" style={{ borderColor: selected ? A : B, background: isDark ? "#111" : W }}>
-                  {addonImg && <img className="mob-addon-img" src={addonImg} alt={addonName} loading="lazy" />}
+                  {addonImg && (
+                    <img
+                      className="mob-addon-img"
+                      src={addonImg}
+                      alt={addonName}
+                      loading="lazy"
+                      onClick={() => {
+                        const imgs = addon.imageUrls?.length > 0 ? addon.imageUrls.map(fmt) : [addonImg];
+                        setSelectedAddonImages(imgs);
+                        setAddonPhotoIndex(0);
+                        setAddonPhotoVisible(true);
+                      }}
+                    />
+                  )}
                   <div className="mob-addon-info">
                     <p className="mob-addon-name" style={{ color: FG }}>{addonName}</p>
                     <p className="mob-addon-price" style={{ color: A }}>
@@ -447,16 +478,36 @@ export default function MobileExperienceView({
               </div>
             </div>
           )}
-          {(listing?.meetingDistrict || listing?.meetingState || listing?.meetingCountry) && (
+          {listing?.meetingDistrict && (
             <div className="mob-detail-row" style={{ borderColor: B }}>
               <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                <Compass size={18} color={A} />
+                <MapPin size={18} color={A} />
               </div>
               <div>
-                <p className="mob-detail-label" style={{ color: A }}>Region</p>
-                <p className="mob-detail-value" style={{ color: FG }}>
-                  {[listing.meetingDistrict, listing.meetingState, listing.meetingCountry].filter(Boolean).join(", ")}
-                </p>
+                <p className="mob-detail-label" style={{ color: A }}>District</p>
+                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingDistrict}</p>
+              </div>
+            </div>
+          )}
+          {listing?.meetingState && (
+            <div className="mob-detail-row" style={{ borderColor: B }}>
+              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                <MapPin size={18} color={A} />
+              </div>
+              <div>
+                <p className="mob-detail-label" style={{ color: A }}>State</p>
+                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingState}</p>
+              </div>
+            </div>
+          )}
+          {listing?.meetingCountry && (
+            <div className="mob-detail-row" style={{ borderColor: B }}>
+              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                <MapPin size={18} color={A} />
+              </div>
+              <div>
+                <p className="mob-detail-label" style={{ color: A }}>Country</p>
+                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingCountry}</p>
               </div>
             </div>
           )}
@@ -593,8 +644,10 @@ export default function MobileExperienceView({
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, padding: "14px 16px", borderRadius: 12, border: `1px solid ${B}`, background: isDark ? "#111" : W }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: A }}>{Number(reviewSummary.averageRating).toFixed(1)}</span>
               <div>
-                <div style={{ display: "flex", gap: 2, color: "#FFC107", fontSize: 14 }}>
-                  {[...Array(5)].map((_, i) => <span key={i}>{i < Math.round(reviewSummary.averageRating) ? "★" : "☆"}</span>)}
+                <div style={{ display: "flex", gap: 2 }}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={14} color={i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "#CBD5E1"} style={{ fill: i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "transparent" }} />
+                  ))}
                 </div>
                 <p style={{ fontSize: 11, color: M, fontWeight: 600, margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   {reviewSummary.totalReviews || revs.length} reviews
@@ -612,8 +665,10 @@ export default function MobileExperienceView({
                   </div>
                   <div>
                     <p className="mob-review-name" style={{ color: FG }}>{rev.customerName || rev.author || "Verified Guest"}</p>
-                    <div className="mob-review-stars" style={{ color: "#FFC107" }}>
-                      {[...Array(5)].map((_, si) => <span key={si}>{si < (rev.rating || 5) ? "★" : "☆"}</span>)}
+                    <div className="mob-review-stars" style={{ display: "flex", gap: 2, marginTop: 4 }}>
+                      {[...Array(5)].map((_, si) => (
+                        <Star key={si} size={10} color={si < (rev.rating || 5) ? "#F59E0B" : "#CBD5E1"} style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} />
+                      ))}
                     </div>
                   </div>
                   <span className="mob-review-date" style={{ color: M }}>
@@ -640,9 +695,8 @@ export default function MobileExperienceView({
           ║      RELATED EXPERIENCES          ║
           ╚═══════════════════════════════════╝ */}
       <div className="mob-related" style={{ background: isDark ? BG : W }}>
-        <div className="mob-related-header">
+        <div className="mob-related-header" style={{ paddingBottom: 8 }}>
           <span className="mob-section-eyebrow" style={{ color: A }}>Discover More</span>
-          <h2 className="mob-section-title" style={{ color: FG }}>You May Also Like</h2>
         </div>
         <RelatedListingsStrip
           businessInterestId={1}
@@ -651,9 +705,9 @@ export default function MobileExperienceView({
           fallbackLocationValues={fallbackLocationValues}
           fallbackTagValues={fallbackTagValues}
           fallbackSpecialLabelValues={fallbackSpecialLabelValues}
-          title=""
+          title="You May Also Like"
           sectionStyle={{ padding: "0 0 0 20px", background: "transparent" }}
-          titleStyle={{ display: "none" }}
+          titleStyle={{ fontSize: "clamp(1.6rem, 7vw, 2.2rem)", fontWeight: 700, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, letterSpacing: "-0.02em" }}
         />
       </div>
 
@@ -695,23 +749,30 @@ export default function MobileExperienceView({
           ╚═══════════════════════════════════╝ */}
       <AnimatePresence>
         {photoVisible && imgs.length > 0 && (
-          <PhotoView
+          <FullScreenImage
+            src={imgs[photoIndex]}
             items={imgs}
-            visible={photoVisible}
-            initialSlide={photoIndex}
+            currentIndex={photoIndex}
             onNavigate={setPhotoIndex}
             onClose={() => setPhotoVisible(false)}
-            variant="minimal"
           />
         )}
         {activityPhotoVisible && selectedActivityImages.length > 0 && (
-          <PhotoView
+          <FullScreenImage
+            src={selectedActivityImages[activityPhotoIndex]}
             items={selectedActivityImages}
-            visible={activityPhotoVisible}
-            initialSlide={activityPhotoIndex}
+            currentIndex={activityPhotoIndex}
             onNavigate={setActivityPhotoIndex}
             onClose={() => setActivityPhotoVisible(false)}
-            variant="minimal"
+          />
+        )}
+        {addonPhotoVisible && selectedAddonImages.length > 0 && (
+          <FullScreenImage
+            src={selectedAddonImages[addonPhotoIndex]}
+            items={selectedAddonImages}
+            currentIndex={addonPhotoIndex}
+            onNavigate={setAddonPhotoIndex}
+            onClose={() => setAddonPhotoVisible(false)}
           />
         )}
       </AnimatePresence>

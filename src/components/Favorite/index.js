@@ -23,6 +23,7 @@ const Favorite = ({
   variant = "pill",
   showText = true,
   onToggle,
+  children,
 }) => {
   const [loginVisible, setLoginVisible] = useState(false);
   const [pendingAfterLogin, setPendingAfterLogin] = useState(false);
@@ -89,9 +90,12 @@ const Favorite = ({
 
   return (
     <>
-      <button
-        className={cn(
-          styles.button,
+      {typeof children === "function" ? (
+        children({ saved, loading, pending, onClick: handleClick, buttonText })
+      ) : (
+        <button
+          className={cn(
+            styles.button,
           {
             [styles.active]: saved,
             [styles.iconOnly]: variant === "icon",
@@ -114,6 +118,7 @@ const Favorite = ({
           )}
         </div>
       </button>
+      )}
 
       <Modal visible={loginVisible} onClose={handleLoginClose}>
         <Login onClose={handleLoginClose} />
