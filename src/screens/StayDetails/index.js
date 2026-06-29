@@ -1400,7 +1400,7 @@ function PolicyItem({ rule }) {
 }
 
 function PolicyCategoryItem({ category }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+  const { tokens: { FG, A, M, AL, B, W }, theme } = useTheme();
   const [op, setOp] = useState(false);
 
   const getIcon = () => {
@@ -1418,15 +1418,15 @@ function PolicyCategoryItem({ category }) {
     <motion.div
       layout
       style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
+        background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF',
+        border: `1px solid ${B}`,
         borderRadius: "16px",
         overflow: "hidden",
         marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none",
+        transition: "all 0.3s",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
       }}
-      whileHover={{ borderColor: A }}
+      whileHover={{ borderColor: A, boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
     >
       <div
         onClick={() => setOp(!op)}
@@ -1447,16 +1447,15 @@ function PolicyCategoryItem({ category }) {
           justifyContent: "center",
           width: 40,
           height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
+          borderRadius: 8,
+          background: theme === 'dark' ? '#1E293B' : '#F0F9FA',
           flexShrink: 0,
-          transition: "background 0.3s",
         }}>
           {getIcon()}
         </div>
 
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "15px", fontWeight: 700, color: FG, display: "block" }}>{category.title}</span>
+          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, display: "block", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{category.title}</span>
         </div>
 
         <motion.div
@@ -1642,15 +1641,18 @@ function PolicyCategoryItem({ category }) {
   }, [stay]);
 
   return (
-    <section className="policies-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 40 : 64, alignItems: "start" }} className="pol-grid">
+    <section className="policies-section" style={{ background: theme === 'dark' ? BG : W, padding: isMobile ? "48px 24px" : "64px 0" }}>
+      <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 64, alignItems: "start" }} className="pol-grid">
           <Rev delay={0.1}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 12, fontFamily: "Poppins, sans-serif" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
+                Essential Guidelines
+              </span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "16px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
                 Things to Keep in Mind
               </h3>
-              <p style={{ color: M, fontSize: "15px", lineHeight: "1.8", margin: 0, fontWeight: 400 }}>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.6", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>
                 Please review these guidelines, requirements, and policies carefully to ensure a safe, smooth, and enjoyable stay.
               </p>
             </div>
@@ -1706,9 +1708,9 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
   const frontOffice = stay?.contactInformation?.frontOfficePhone || stay?.frontOfficePhone || stay?.frontOfficeContact;
 
   return (
-    <section className="host-quality-section" style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "4fr 6fr", gap: isMobile ? 40 : 64 }} className="host-quality-grid">
+    <section className="host-quality-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
+      <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "4fr 6fr", gap: 64 }} className="host-quality-grid">
           
           {/* Host Profile (40%) */}
           <div style={{ display: "flex", flexDirection: "column", gap: 24, width: "100%" }}>
@@ -4023,14 +4025,16 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
   ];
 
   return (
-    <section className="testimonials-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px", overflow: "hidden" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+    <section className="testimonials-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0", overflow: "hidden" }}>
+      <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
         
         {/* Header and Scroll Buttons */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-          <div>
-            <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Guest Reviews</span>
-            <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+              Guest Feedback
+            </span>
+            <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, margin: 0, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
               What people say
             </h3>
           </div>
@@ -4082,7 +4086,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
         >
           {displayReviews.map((rev, idx) => {
             const name = rev.customerName || rev.author || "Guest";
-            const rating = rev.rating || 5;
+            const rating = Number(rev.rating) || 5;
             const text = rev.comment || rev.text || "";
             const vendorResponse = rev.vendorResponse || rev.hostResponse || rev.reply || "";
 
@@ -4129,7 +4133,12 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                 <div style={{ position: "relative", zIndex: 2 }}>
                   <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
+                      <Star 
+                        key={i} 
+                        size={14} 
+                        style={{ fill: i < rating ? "#F59E0B" : "transparent" }} 
+                        color={i < rating ? "#F59E0B" : M} 
+                      />
                     ))}
                   </div>
                   <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: vendorResponse ? 3 : 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
