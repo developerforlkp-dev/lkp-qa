@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus, Check
+  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus, Check, Camera
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -919,17 +919,36 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
               </div>
             ))}
             {allImages.length > 0 && (
-              <button
-                type="button"
-                className="premium-view-all-btn"
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   openFullscreen(activeIdx);
                 }}
+                style={{
+                  background: "rgba(0, 0, 0, 0.3)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  color: "#FFFFFF",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
+                  borderRadius: 24,
+                  padding: "8px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  fontFamily: '"Inter", sans-serif',
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                  cursor: "pointer",
+                  pointerEvents: "auto",
+                  transition: "all 0.3s ease"
+                }}
               >
-                <Plus size={14} />
-                <span>View Photos</span>
-              </button>
+                <Camera size={16} />
+                See all photos
+              </motion.button>
             )}
           </div>
 
@@ -948,46 +967,59 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
             justifyContent: "flex-end",
             height: "60%"
           }}>
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-              style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}
-            >
-              
-              {/* Category / Property Type */}
-              <div style={{
-                color: "#FFFFFF",
-                WebkitTextFillColor: "#FFFFFF",
-                fontSize: isMobile ? "11px" : "14px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif",
-                textShadow: "0 2px 8px rgba(0, 0, 0, 0.4)"
-              }}>
-                {toDisplayString(stay?.propertyType) || "EXCEPTIONAL"}
-              </div>
+            <motion.div style={{ opacity: 1, y: 0, display: "flex", flexDirection: "column", gap: 10 }}>
 
               {/* Stay Name/Title */}
-              <h1 className="hero-title" style={{
-                fontSize: isMobile ? "clamp(1.8rem, 5.5vw, 2.4rem)" : "3.5rem",
-                fontWeight: 800,
-                lineHeight: 1.2,
-                color: "#FFFFFF",
-                WebkitTextFillColor: "#FFFFFF",
-                margin: "4px 0 8px 0",
-                letterSpacing: "-0.015em",
-                fontFamily: "Poppins, sans-serif",
-                textShadow: "0 4px 24px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)",
-                wordBreak: "break-word"
-              }}>
-                {title}
-              </h1>
+              {(() => {
+                const titleText = title || "";
+                const words = titleText.trim().split(/\s+/);
+                let displayTitle;
+                
+                if (words.length >= 2) {
+                  const lastWord = words.pop();
+                  displayTitle = (
+                    <>
+                      <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>{words.join(' ')}</span>{' '}
+                      <span style={{
+                        fontStyle: "italic",
+                        fontWeight: 600,
+                        background: "linear-gradient(135deg, #08B5D6, #45D8F2)",
+                        backgroundSize: "200% 200%",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}>
+                        {lastWord}
+                      </span>
+                    </>
+                  );
+                } else {
+                  displayTitle = <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>{titleText}</span>;
+                }
+
+                return (
+                  <h1 className="hero-title" style={{
+                    fontSize: "clamp(3rem, 5vw, 4rem)",
+                    fontWeight: 800,
+                    lineHeight: 1.1,
+                    color: "#FFFFFF",
+                    margin: 0,
+                    letterSpacing: "-0.01em",
+                    fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+                    textShadow: "0 4px 24px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)",
+                    wordBreak: "break-word"
+                  }}>
+                    {displayTitle}
+                  </h1>
+                );
+              })()}
 
               {/* Location */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", WebkitTextFillColor: "#E0E0E0", fontSize: isMobile ? "12px" : "14px", fontWeight: 500 }}>
-                <MapPin size={15} color={A || "#0097B2"} style={{ filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45))" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", WebkitTextFillColor: "#E0E0E0", fontSize: "14px", fontWeight: 500, fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="transparent" stroke={A || "#0097B2"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ fill: "transparent", filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45))" }}>
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="transparent" />
+                  <circle cx="12" cy="10" r="3" fill="transparent" />
+                </svg>
                 <span style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.55)", WebkitTextFillColor: "#E0E0E0" }}>{locationText}</span>
               </div>
 
@@ -999,15 +1031,18 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
 
       {/* Floating Badges & Back/Share Controls */}
       {!isMobile && (
-        <div style={{ position: "absolute", top: 44, left: 44, zIndex: 60, pointerEvents: "none" }}>
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ width: 80, height: 80 }}>
+        <div style={{ position: "absolute", top: 44, left: 44, zIndex: 60, pointerEvents: "none", width: 90, height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ position: "absolute", width: "100%", height: "100%" }}>
             <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%" }}>
               <path id="badgePath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" fill="transparent" />
-              <text style={{ fontSize: 7, fontWeight: 900, fill: A, textTransform: "uppercase", letterSpacing: "2.4px" }}>
+              <text style={{ fontSize: 7, fontWeight: 900, fill: "#FFFFFF", textTransform: "uppercase", letterSpacing: "2.4px" }}>
                 <textPath xlinkHref="#badgePath">Luxury Retreat — Premium Stay —</textPath>
               </text>
             </svg>
           </motion.div>
+          <span style={{ fontSize: 10, fontWeight: 800, color: A || "#0097B2", textTransform: "uppercase", textAlign: "center", letterSpacing: "0.1em", lineHeight: 1.2, fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif' }}>
+            {toDisplayString(stay?.propertyType) || "LUXURY"}
+          </span>
         </div>
       )}
 

@@ -142,7 +142,7 @@ function HeroShareFab({ title, text, url, label = "Share Journey" }) {
         justifyContent: "flex-start",
         boxShadow: shadow,
         cursor: "pointer",
-        maxWidth: hovered ? 140 : 44,
+        maxWidth: hovered ? 160 : 44,
         overflow: "hidden",
         paddingLeft: 12,
         paddingRight: hovered ? 16 : 12,
@@ -171,7 +171,7 @@ function HeroShareFab({ title, text, url, label = "Share Journey" }) {
       <span style={{
         whiteSpace: "nowrap",
         overflow: "hidden",
-        maxWidth: hovered ? 110 : 0,
+        maxWidth: hovered ? 130 : 0,
         opacity: hovered ? 1 : 0,
         marginLeft: hovered ? 8 : 0,
         position: "relative",
