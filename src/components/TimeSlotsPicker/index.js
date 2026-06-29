@@ -69,6 +69,7 @@ const TimeSlotsPicker = ({
   timeSlots = [], // Array of timeSlot objects with startTime and endTime
   selectedDate,   // moment object, Date, or ISO string for the chosen date
   className,
+  plain,
 }) => {
   // Resolve the weekday index from selectedDate (null when no date chosen)
   const selectedDayIndex = useMemo(() => {
@@ -169,17 +170,20 @@ const TimeSlotsPicker = ({
     // Pass the slotName or the formatted display string
     onTimeSelect?.(slot.slotName || slot.display, slot.slot || slot);
     // Close the picker immediately after selection
-    onClose?.();
+    if (!plain) {
+      onClose?.();
+    }
   };
 
   if (!visible) return null;
 
-  return (
-    <OutsideClickHandler onOutsideClick={onClose}>
-      <div className={cn(styles.picker, className)}>
+  const content = (
+    <div className={cn(!plain && styles.picker, className)} style={plain ? { width: "100%" } : {}}>
+      {!plain && (
         <div className={styles.header}>
           <div className={styles.title}>Available times</div>
         </div>
+      )}
         <div className={styles.timesGrid}>
           {slots.length === 0 ? (
             <div className={styles.noSlots}>No time slots available for the selected date.</div>
@@ -205,7 +209,16 @@ const TimeSlotsPicker = ({
             ))
           )}
         </div>
-      </div>
+    </div>
+  );
+
+  if (plain) {
+    return content;
+  }
+
+  return (
+    <OutsideClickHandler onOutsideClick={onClose}>
+      {content}
     </OutsideClickHandler>
   );
 };

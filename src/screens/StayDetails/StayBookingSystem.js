@@ -9,7 +9,7 @@ import { persistPendingCheckout } from "../../utils/paymentSession";
 import Counter from "../../components/Counter";
 import LoginPromptModal from "../../components/LoginPromptModal";
 
-const StayInlineCalendar = ({ 
+export const StayInlineCalendar = ({ 
   checkInDate, 
   checkOutDate, 
   onDateSelect, 
@@ -320,6 +320,7 @@ const StayBookingSystem = ({
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
 
   const handleRoomCountChangeWithReset = (roomId, count) => {
@@ -405,12 +406,15 @@ const StayBookingSystem = ({
         if (checkOutDate && date.isSameOrAfter(checkOutDate, 'day')) {
           setCheckOutDate(null);
           setSelectionMode("check-out");
+          setShowCalendarModal(false);
         } else if (checkOutDate) {
           // If checkout is still valid after changing check-in, finalize again
           setSelectionMode("done");
+          setShowCalendarModal(false);
         } else {
-          // STEP 2: Automatic switch to Check-out mode
+          // STEP 2: Automatic switch to Check-out mode and close modal
           setSelectionMode("check-out");
+          setShowCalendarModal(false);
         }
       }
     } else {
@@ -434,6 +438,7 @@ const StayBookingSystem = ({
           if (nextBlockedDate && date.isAfter(nextBlockedDate, 'day')) return;
           setCheckOutDate(date);
           setSelectionMode("done");
+          setShowCalendarModal(false);
         } else {
           // If clicked date is before check-in, treat as new Check-in
           if (isBlocked) return;
@@ -803,7 +808,7 @@ const StayBookingSystem = ({
       }
 
       if (!isOver && (currentAdults > totalBaseAdultsLimit || currentChildren > totalBaseChildrenLimit)) {
-        warning = "Base occupants reached. Additional guests will incur extra charges.";
+        // Warning removed as requested by user
       }
     }
 
@@ -1791,13 +1796,14 @@ const StayBookingSystem = ({
                 borderRadius: 32,
                 overflow: "hidden",
                 width: "95%",
-                maxWidth: 950,
+                maxWidth: 480,
                 maxHeight: "calc(100vh - 40px)",
                 border: `1px solid ${B}`,
                 boxShadow: `0 30px 60px rgba(0,0,0,0.5), 0 0 100px ${A}11`,
                 position: "relative",
                 display: "flex",
-                flexDirection: "column"
+                flexDirection: "column",
+                fontFamily: "var(--font-sans, system-ui, -apple-system, sans-serif)"
               }}
             >
               {/* Header */}
@@ -1830,15 +1836,81 @@ const StayBookingSystem = ({
                     .stay-modal-addon-item {
                       flex: 0 0 auto;
                       width: 260px;
-                      border-radius: 16px;
-                      padding: 10px;
+                      border-radius: 12px;
+                      padding: 0;
                       display: flex;
-                      gap: 12px;
-                      align-items: center;
+                      align-items: stretch;
                       cursor: pointer;
-                      transition: all 0.2s;
+                      transition: all 0.2s ease;
+                      background: ${S};
+                      border: 1.5px solid ${B};
+                      overflow: hidden;
                     }
-                    .stay-modal-addon-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                    .stay-modal-addon-item:hover { 
+                      transform: translateY(-2px); 
+                      box-shadow: 0 6px 16px rgba(0,0,0,0.08); 
+                    }
+                    .stay-modal-addon-item[data-selected="true"] {
+                      background: ${AL};
+                      border-color: ${A};
+                    }
+                    .stay-modal-addon-image {
+                      width: 64px;
+                      flex-shrink: 0;
+                      border-right: 1px solid ${B}55;
+                    }
+                    .stay-modal-addon-image img {
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                    }
+                    .stay-modal-addon-content {
+                      flex: 1;
+                      min-width: 0;
+                      display: flex;
+                      flex-direction: column;
+                      justify-content: center;
+                      padding: 10px 12px;
+                    }
+                    .stay-modal-addon-title {
+                      font-size: 13px;
+                      font-weight: 700;
+                      color: ${FG};
+                      line-height: 1.3;
+                      white-space: nowrap;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      transition: color 0.2s;
+                    }
+                    .stay-modal-addon-item[data-selected="true"] .stay-modal-addon-title {
+                      color: ${A};
+                    }
+                    .stay-modal-addon-price-row {
+                      font-size: 11px;
+                      font-weight: 700;
+                      color: ${M};
+                      margin-top: 4px;
+                      display: flex;
+                      align-items: center;
+                      gap: 4px;
+                      transition: color 0.2s;
+                    }
+                    .stay-modal-addon-item[data-selected="true"] .stay-modal-addon-price-row {
+                      color: ${A};
+                    }
+                    .stay-modal-addon-type {
+                      font-size: 9px;
+                      opacity: 0.7;
+                      font-weight: 600;
+                      text-transform: uppercase;
+                      letter-spacing: 0.05em;
+                    }
+                    .stay-modal-addon-action {
+                      display: flex;
+                      align-items: center;
+                      flex-shrink: 0;
+                      padding-right: 10px;
+                    }
                     .stay-modal-action-btn {
                       width: 28px;
                       height: 28px;
@@ -1889,8 +1961,7 @@ const StayBookingSystem = ({
                       display: "flex",
                       overflowX: "auto",
                       gap: 16,
-                      padding: "4px",
-                      margin: "0 4px",
+                      padding: "4px 0",
                       WebkitOverflowScrolling: "touch",
                       scrollbarWidth: "none",
                       msOverflowStyle: "none",
@@ -1923,29 +1994,26 @@ const StayBookingSystem = ({
                             key={i}
                             onClick={handleCardClick}
                             className="stay-modal-addon-item"
-                            style={{
-                              background: isSelected ? AL : S,
-                              border: `1.5px solid ${isSelected ? A : B}`,
-                            }}
+                            data-selected={isSelected}
                           >
                             {addonImage && (
-                              <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: `1px solid ${B}88` }}>
-                                <img src={addonImage} alt={addon.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              <div className="stay-modal-addon-image">
+                                <img src={addonImage} alt={addon.title} />
                               </div>
                             )}
-                            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                              <p style={{ fontSize: 12, fontWeight: 700, color: isSelected ? A : FG, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            <div className="stay-modal-addon-content">
+                              <p className="stay-modal-addon-title">
                                 {addon.title}
                               </p>
-                              <p style={{ fontSize: 11, fontWeight: 800, color: isSelected ? A : M, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                              <p className="stay-modal-addon-price-row">
                                 <span>{priceLabel}</span>
-                                <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                <span className="stay-modal-addon-type">
                                   • {typeLabel}
                                 </span>
                               </p>
                             </div>
 
-                            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                            <div className="stay-modal-addon-action" onClick={(e) => e.stopPropagation()}>
                               {isSelected ? (
                                 pricingType === "Group" ? (
                                   <button
@@ -2003,65 +2071,50 @@ const StayBookingSystem = ({
               )}
 
               <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
-                <div className="booking-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1.3fr", gap: 1, background: B }}>
-                  {/* Left Column: Calendar */}
-                  <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8, lineHeight: "1.2" }}>
-                          01. Select Dates
-                          <span style={{ fontSize: 10, fontWeight: 700, background: AL, color: A, padding: "2px 8px", borderRadius: 100, border: `1px solid ${A}22` }}>
-                            {selectionMode === "check-in" ? "Select Check-in" : selectionMode === "check-out" ? "Select Check-out" : "Dates Selected"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {selectionMode === "check-out" && nextBlockedDate && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          style={{ 
-                            marginBottom: 10, 
-                            padding: "6px 12px", 
-                            background: AL, 
-                            borderRadius: 12, 
-                            display: "flex", 
-                            alignItems: "center", 
-                            gap: 8,
-                            border: `1px solid ${A}22`
-                          }}
-                        >
-                          <Info size={12} color={A} />
-                          <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>
-                            Checkout must be before {nextBlockedDate.format("DD MMM, YYYY")}
-                          </span>
-                        </motion.div>
-                      )}
-
-                      <StayInlineCalendar 
-                        checkInDate={checkInDate}
-                        checkOutDate={checkOutDate}
-                        onDateSelect={handleDateSelect}
-                        isBlockedDay={isBlockedDay}
-                        tokens={{ A, AL, BG, FG, M, B, S, W }}
-                        selectionMode={selectionMode}
-                        nextBlockedDate={nextBlockedDate}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Right Column: Booking Details & Guests */}
+                <div className="booking-grid" style={{ display: "flex", flexDirection: "column", gap: 1, background: B }}>
+                  {/* Booking Details & Guests */}
                   <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
-                    {/* Section 02: Booking Details */}
+                    {/* Section 01: Booking Details */}
                     <div>
-                      <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", lineHeight: "1.2" }}>
-                        02. Booking Details
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: "1.2" }}>
+                          01. Booking Details
+                        </div>
+                        {(checkInDate || checkOutDate) && (
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setCheckInDate(null);
+                              setCheckOutDate(null);
+                              setSelectionMode("check-in");
+                              setValidationError("");
+                            }}
+                            style={{ 
+                              background: AL, 
+                              border: `1px solid ${A}33`, 
+                              color: A, 
+                              fontSize: 9, 
+                              fontWeight: 800, 
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              cursor: "pointer", 
+                              padding: "4px 10px", 
+                              borderRadius: 100,
+                              transition: "0.3s"
+                            }}
+                          >
+                            Clear Dates
+                          </button>
+                        )}
                       </div>
                       
                       {/* Check-in / Check-out Cards */}
                       <div style={{ marginBottom: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                         <div 
-                          onClick={() => setSelectionMode("check-in")}
+                          onClick={() => {
+                            setSelectionMode("check-in");
+                            setShowCalendarModal(true);
+                          }}
                           style={{ 
                             padding: "10px 14px", 
                             background: BG, 
@@ -2076,8 +2129,12 @@ const StayBookingSystem = ({
                           <p style={{ fontSize: 13, fontWeight: 700, color: checkInDate ? FG : M }}>{checkInDate ? checkInDate.format("DD MMM, YYYY") : "Select date"}</p>
                         </div>
                         <div 
+                          title={!checkInDate ? "Select Check-in date first" : undefined}
                           onClick={() => {
-                            if (checkInDate) setSelectionMode("check-out");
+                            if (checkInDate) {
+                              setSelectionMode("check-out");
+                              setShowCalendarModal(true);
+                            }
                           }}
                           style={{ 
                             padding: "10px 14px", 
@@ -2094,43 +2151,12 @@ const StayBookingSystem = ({
                           <p style={{ fontSize: 13, fontWeight: 700, color: checkOutDate ? FG : M }}>{checkOutDate ? checkOutDate.format("DD MMM, YYYY") : "Select date"}</p>
                         </div>
                       </div>
-
-                      {/* Clear Dates Button */}
-                      {(checkInDate || checkOutDate) && (
-                        <div>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setCheckInDate(null);
-                              setCheckOutDate(null);
-                              setSelectionMode("check-in");
-                              setValidationError("");
-                            }}
-                            style={{ 
-                              width: "100%",
-                              background: AL, 
-                              border: `1px solid ${A}33`, 
-                              color: A, 
-                              fontSize: 10, 
-                              fontWeight: 800, 
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
-                              cursor: "pointer", 
-                              padding: "6px 12px", 
-                              borderRadius: 100,
-                              transition: "0.3s"
-                            }}
-                          >
-                            Clear Dates
-                          </button>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Section 03: Guests & Accommodations */}
+                    {/* Section 02: Guests & Accommodations */}
                     <div>
                       <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", lineHeight: "1.2" }}>
-                        03. Guests & Accommodations
+                        02. Guests & Accommodations
                       </div>
                       
                       {(() => {
@@ -2141,37 +2167,27 @@ const StayBookingSystem = ({
                         return (
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {!isEntirelyBedBased && (
-                              <>
-                                <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div>
-                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</p>
-                                      <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.adults}</p>
-                                    </div>
-                                    <Counter 
-                                      value={guests.adults} 
-                                      setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
-                                      min={1} 
-                                      max={allowedAdults}
-                                    />
-                                  </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, transition: "0.2s" }}>
+                                  <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Adults</p>
+                                  <Counter 
+                                    value={guests.adults} 
+                                    setValue={(v) => setGuests(prev => ({...prev, adults: v}))} 
+                                    min={1} 
+                                    max={allowedAdults}
+                                  />
                                 </div>
 
-                                <div style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16 }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div>
-                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</p>
-                                      <p style={{ fontSize: 10, color: M, fontWeight: 500, margin: 0 }}>{guestAgeLabels.children}</p>
-                                    </div>
-                                    <Counter 
-                                      value={guests.children} 
-                                      setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
-                                      min={0} 
-                                      max={allowedChildren}
-                                    />
-                                  </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, transition: "0.2s" }}>
+                                  <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Children</p>
+                                  <Counter 
+                                    value={guests.children} 
+                                    setValue={(v) => setGuests(prev => ({...prev, children: v}))} 
+                                    min={0} 
+                                    max={allowedChildren}
+                                  />
                                 </div>
-                              </>
+                              </div>
                             )}
 
                             {pricing.earlyBirdDiscountPercent > 0 && (
@@ -2290,100 +2306,6 @@ const StayBookingSystem = ({
                         </div>
                       )}
                     </div>
-
-                    {/* Active Add-ons */}
-                    {(() => {
-                      const activeAddons = Array.isArray(stay?.addons) ? stay.addons.filter(a => a.isActive || a.status === 'Active') : [];
-                      if (activeAddons.length === 0) return null;
-
-                      return (
-                        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: "1.2" }}>
-                            Add-ons
-                          </span>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {activeAddons.map(addon => {
-                              const addonId = addon.addonId || addon.assignmentId || addon.id;
-                              const isSelected = selectedAddOns.includes(addonId);
-                              const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                              const isIndividual = pricingType === "Individual";
-                              const qty = isIndividual ? (addOnQuantities[addonId] || 1) : 1;
-                              const price = parseFloat(addon.price || 0);
-
-                              return (
-                                <div key={addonId} style={{ 
-                                  padding: "10px 14px", background: isSelected ? `${A}0A` : BG, 
-                                  borderRadius: 16, border: `1px solid ${isSelected ? A : B}`,
-                                  display: "flex", justifyContent: "space-between", alignItems: "center", transition: "0.2s"
-                                }}>
-                                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                                    <div style={{ width: 26, height: 26, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A, flexShrink: 0 }}>
-                                      <Sparkles size={13} />
-                                    </div>
-                                    <div>
-                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
-                                        {addon.title || addon.name}
-                                      </p>
-                                      <p style={{ fontSize: 10, fontWeight: 500, color: M, margin: "2px 0 0" }}>
-                                        {price > 0 ? `+ ₹${price.toFixed(2)}` : "Free"}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="addon-actions" style={{ flexShrink: 0 }}>
-                                    {isSelected ? (
-                                      pricingType === "Group" ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => onToggleAddOn(addonId, pricingType)}
-                                          style={{
-                                            background: `${A}15`, color: A, border: `1px solid ${A}50`, borderRadius: 100,
-                                            padding: "0 12px", height: "26px", fontSize: 9, fontWeight: 800, cursor: "pointer",
-                                            textTransform: "uppercase", letterSpacing: "0.05em", outline: "none"
-                                          }}
-                                        >
-                                          Remove
-                                        </button>
-                                      ) : (
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: W, borderRadius: 100, padding: "0 6px", height: "26px", border: `1px solid ${A}` }}>
-                                          <button
-                                            type="button"
-                                            onClick={() => onAddOnQuantityChange(addonId, qty - 1)}
-                                            style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: A }}
-                                          >
-                                            <Minus size={10} />
-                                          </button>
-                                          <span style={{ fontSize: 11, fontWeight: 700, color: FG, minWidth: 12, textAlign: "center" }}>{qty}</span>
-                                          <button
-                                            type="button"
-                                            onClick={() => onAddOnQuantityChange(addonId, qty + 1)}
-                                            style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: A }}
-                                          >
-                                            <Plus size={10} />
-                                          </button>
-                                        </div>
-                                      )
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => onToggleAddOn(addonId, pricingType)}
-                                        style={{
-                                          background: A, color: W, border: `1px solid ${A}`, borderRadius: 100,
-                                          padding: "0 14px", height: "26px", fontSize: 9, fontWeight: 800, cursor: "pointer",
-                                          textTransform: "uppercase", letterSpacing: "0.05em", outline: "none"
-                                        }}
-                                      >
-                                        Add
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
 
                     {/* Stay Allocation Summary */}
                     {(() => {
@@ -2751,6 +2673,69 @@ const StayBookingSystem = ({
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
       />
+
+      <AnimatePresence>
+        {showCalendarModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              zIndex: 99999,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+            onClick={() => setShowCalendarModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: BG,
+                padding: "24px",
+                borderRadius: 24,
+                width: "90%",
+                maxWidth: 420,
+                boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: FG }}>
+                  {selectionMode === "check-in" ? "Select Check-in Date" : "Select Check-out Date"}
+                </h3>
+                <button onClick={() => setShowCalendarModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: M, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={20} />
+                </button>
+              </div>
+              
+              {selectionMode === "check-out" && nextBlockedDate && (
+                <div style={{ marginBottom: 16, padding: "8px 12px", background: AL, borderRadius: 12, display: "flex", alignItems: "center", gap: 8, border: `1px solid ${A}22` }}>
+                  <Info size={14} color={A} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: FG }}>
+                    Checkout must be before {nextBlockedDate.format("DD MMM, YYYY")}
+                  </span>
+                </div>
+              )}
+
+              <StayInlineCalendar 
+                checkInDate={checkInDate}
+                checkOutDate={checkOutDate}
+                onDateSelect={handleDateSelect}
+                isBlockedDay={isBlockedDay}
+                tokens={{ A, AL, BG, FG, M, B, S, W }}
+                selectionMode={selectionMode}
+                nextBlockedDate={nextBlockedDate}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
