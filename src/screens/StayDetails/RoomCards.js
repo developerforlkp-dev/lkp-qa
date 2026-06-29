@@ -588,7 +588,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
   return (
     <motion.div 
-      whileHover={{ y: -4, boxShadow: "0 12px 30px rgba(0,0,0,0.06)" }}
+      whileHover={{ y: -1, boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}
       transition={{ duration: 0.3 }}
       className={cn(styles.card, { [styles.cardSelected]: isSelected })}
       style={{
