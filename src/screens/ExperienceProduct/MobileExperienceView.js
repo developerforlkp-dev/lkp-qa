@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronDown, Clock, User, Zap, Baby, Languages,
-  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass
+  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart
 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import PhotoView from "../../components/PhotoView";
+import FullScreenImage from "../../components/FullScreenImage";
 import Favorite from "../../components/Favorite";
+import Icon from "../../components/Icon";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import "./MobileExperienceView.css";
@@ -80,6 +82,9 @@ export default function MobileExperienceView({
   const [activityPhotoVisible, setActivityPhotoVisible] = useState(false);
   const [activityPhotoIndex, setActivityPhotoIndex] = useState(0);
   const [selectedActivityImages, setSelectedActivityImages] = useState([]);
+  const [addonPhotoVisible, setAddonPhotoVisible] = useState(false);
+  const [selectedAddonImages, setSelectedAddonImages] = useState([]);
+  const [addonPhotoIndex, setAddonPhotoIndex] = useState(0);
   const galleryRef = useRef(null);
 
   /* ── gallery scroll handler ── */
@@ -146,15 +151,28 @@ export default function MobileExperienceView({
         <div className="mob-hero-gradient" />
 
         {/* Top controls */}
-        <div className="mob-hero-top">
-          <button className="mob-hero-btn" onClick={() => history.goBack()} aria-label="Go back" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "none", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: W }}>
-            <ChevronLeft size={20} />
+        <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 10 }}>
+          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <ChevronLeft size={22} color="#111" />
           </button>
-          <div style={{ display: "flex", gap: 10, flexShrink: 0, alignItems: "center" }}>
-            <Favorite itemType="listing" itemId={id} variant="hero" showText={false}
-              style={{ position: "relative", top: "auto", right: "auto", margin: 0, zIndex: 200 }} />
-            <button className="mob-hero-btn" onClick={handleShare} aria-label="Share" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "none", color: W, width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Share2 size={16} />
+          <div style={{ display: "flex", gap: 12 }}>
+            <Favorite itemType="listing" itemId={id}>
+              {({ saved, onClick }) => (
+                <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", flexShrink: 0 }}>
+                <style>{`
+                  .exp-save-icon-${id} svg {
+                    fill: ${saved ? "#0097B2" : "#111"};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`exp-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
+              </button>
+              )}
+            </Favorite>
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+              <Share2 size={20} color="#111" />
             </button>
           </div>
         </div>
@@ -362,7 +380,20 @@ export default function MobileExperienceView({
 
               return (
                 <div key={i} className="mob-addon-card" style={{ borderColor: selected ? A : B, background: isDark ? "#111" : W }}>
-                  {addonImg && <img className="mob-addon-img" src={addonImg} alt={addonName} loading="lazy" />}
+                  {addonImg && (
+                    <img
+                      className="mob-addon-img"
+                      src={addonImg}
+                      alt={addonName}
+                      loading="lazy"
+                      onClick={() => {
+                        const imgs = addon.imageUrls?.length > 0 ? addon.imageUrls.map(fmt) : [addonImg];
+                        setSelectedAddonImages(imgs);
+                        setAddonPhotoIndex(0);
+                        setAddonPhotoVisible(true);
+                      }}
+                    />
+                  )}
                   <div className="mob-addon-info">
                     <p className="mob-addon-name" style={{ color: FG }}>{addonName}</p>
                     <p className="mob-addon-price" style={{ color: A }}>
@@ -695,23 +726,30 @@ export default function MobileExperienceView({
           ╚═══════════════════════════════════╝ */}
       <AnimatePresence>
         {photoVisible && imgs.length > 0 && (
-          <PhotoView
+          <FullScreenImage
+            src={imgs[photoIndex]}
             items={imgs}
-            visible={photoVisible}
-            initialSlide={photoIndex}
+            currentIndex={photoIndex}
             onNavigate={setPhotoIndex}
             onClose={() => setPhotoVisible(false)}
-            variant="minimal"
           />
         )}
         {activityPhotoVisible && selectedActivityImages.length > 0 && (
-          <PhotoView
+          <FullScreenImage
+            src={selectedActivityImages[activityPhotoIndex]}
             items={selectedActivityImages}
-            visible={activityPhotoVisible}
-            initialSlide={activityPhotoIndex}
+            currentIndex={activityPhotoIndex}
             onNavigate={setActivityPhotoIndex}
             onClose={() => setActivityPhotoVisible(false)}
-            variant="minimal"
+          />
+        )}
+        {addonPhotoVisible && selectedAddonImages.length > 0 && (
+          <FullScreenImage
+            src={selectedAddonImages[addonPhotoIndex]}
+            items={selectedAddonImages}
+            currentIndex={addonPhotoIndex}
+            onNavigate={setAddonPhotoIndex}
+            onClose={() => setAddonPhotoVisible(false)}
           />
         )}
       </AnimatePresence>

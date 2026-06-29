@@ -1668,7 +1668,7 @@ const EventProduct = () => {
 
             </div>
             <div className={styles.heroActions}>
-              <Actions wishlistItemType="event" wishlistItemId={eventId} />
+              {/* <Actions wishlistItemType="event" wishlistItemId={eventId} /> */}
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star } from "lucide-react";
+import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star, Heart } from "lucide-react";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
@@ -13,6 +13,9 @@ import RelatedListingsStrip from "../../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../../utils/scrollLock";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import DetailPageNavPortal from "../../../components/DetailPageNavPortal";
+import Favorite from "../../../components/Favorite";
+import Icon from "../../../components/Icon";
+import FullScreenImage from "../../../components/FullScreenImage";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -58,306 +61,7 @@ function ScopedThemeProvider({ children }) {
 }
 
 /* ─── MODAL IMAGE POPUP ────────────────────────── */
-const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
-  const { theme, tokens: { BG, A } } = useTheme();
-  const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
 
-  const textMain = isDark ? '#FFF' : '#141414';
-  const pillBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)';
-  const pillBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
-  const pillText = A || '#0097B2';
-
-  const btnBg = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)';
-  const btnBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,1)';
-  const btnHoverBg = isDark ? 'rgba(255,255,255,0.2)' : '#FFFFFF';
-
-  const hasNavigation = Array.isArray(items) && items.length > 1 && typeof onNavigate === "function";
-
-  useEffect(() => {
-    return lockBodyScroll();
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10000,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'clamp(16px, 4vw, 40px)',
-      }}
-      onClick={onClose}
-    >
-      <style>{`
-        .fs-modal-box {
-          width: 100%;
-          max-width: 1400px;
-          height: 85vh;
-          background: ${isDark ? '#0A0A0A' : '#FFFFFF'};
-          border-radius: 32px;
-          box-shadow: 0 30px 80px rgba(0,0,0,0.25);
-          display: flex;
-          overflow: hidden;
-          position: relative;
-          transform: translateZ(0);
-          -webkit-mask-image: -webkit-radial-gradient(white, black);
-        }
-        
-        .fs-left-pane {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          background: ${isDark ? '#141414' : '#FFFFFF'};
-        }
-        
-        .fs-right-pane {
-          width: clamp(200px, 20vw, 300px);
-          display: flex;
-          flex-direction: column;
-          border-left: 1px solid ${isDark ? '#333' : '#F0F0F0'};
-          background: ${isDark ? '#0A0A0A' : '#FAFAFA'};
-        }
-        
-        .fs-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 24px 32px;
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 10;
-        }
-        
-        .fs-image-container {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-        
-        .fs-image {
-          object-fit: contain !important;
-          width: 100% !important;
-          height: 100% !important;
-          filter: drop-shadow(0 20px 40px rgba(0,0,0,0.08));
-          position: absolute;
-          top: 0;
-          left: 0;
-          padding: 24px;
-          box-sizing: border-box;
-        }
-        
-        .fs-thumbnail-list {
-          flex: 1;
-          overflow-y: auto;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          scrollbar-width: none;
-        }
-        
-        .fs-nav-btn {
-          position: absolute;
-          top: 50%;
-          margin-top: -24px;
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background: ${btnBg};
-          border: 1px solid ${btnBorder};
-          color: ${textMain};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          backdrop-filter: blur(20px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-          z-index: 10;
-        }
-        .fs-nav-left {
-          left: 24px;
-        }
-        .fs-nav-right {
-          right: 24px;
-        }
-        
-        .fs-thumbnail-list::-webkit-scrollbar {
-          display: none;
-        }
-        
-        .fs-thumb {
-          width: 100%;
-          aspect-ratio: 4/3;
-          border-radius: 12px;
-          overflow: hidden;
-          cursor: pointer;
-          opacity: 0.5;
-          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-          box-sizing: border-box;
-          transform: scale(0.98);
-        }
-        
-        .fs-thumb:hover {
-          opacity: 0.8;
-        }
-        
-        .fs-thumb.active {
-          opacity: 1;
-          border: 3px solid ${A || '#0097B2'};
-          box-shadow: 0 10px 24px ${A ? A + '40' : 'rgba(0,151,178,0.25)'};
-          transform: scale(1.02);
-        }
-
-        @media (max-width: 900px) {
-          .fs-modal-box {
-            flex-direction: column;
-            height: 90vh;
-            border-radius: 24px 24px 0 0;
-            margin-top: auto;
-            align-self: flex-end;
-          }
-          
-          .fs-right-pane {
-            width: 100%;
-            height: clamp(100px, 15vh, 140px);
-            border-left: none;
-            border-top: 1px solid ${isDark ? '#333' : '#F0F0F0'};
-          }
-          
-          .fs-thumbnail-list {
-            flex-direction: row;
-            overflow-y: hidden;
-            overflow-x: auto;
-            padding: 16px 20px;
-            align-items: center;
-          }
-          
-          .fs-thumb {
-            width: clamp(80px, 25vw, 140px);
-            height: 100%;
-            flex-shrink: 0;
-          }
-          
-          .fs-header {
-            padding: 16px 20px;
-          }
-          
-          .fs-image-container {
-            padding: 0;
-          }
-          .fs-image {
-            padding: 12px;
-          }
-          .fs-nav-btn {
-            width: 40px;
-            height: 40px;
-            margin-top: -20px;
-          }
-          .fs-nav-left { left: 12px; }
-          .fs-nav-right { right: 12px; }
-        }
-      `}</style>
-
-      <motion.div
-        className="fs-modal-box"
-        initial={{ y: 50, opacity: 0, scale: 0.98 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
-        exit={{ y: 50, opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        onClick={(e) => e.stopPropagation()}
-      >
-
-        {/* LEFT PANE - Image Viewer */}
-        <div className="fs-left-pane">
-          <div className="fs-header">
-            {hasNavigation ? (
-              <div style={{ background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
-                {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{items.length}</span>
-              </div>
-            ) : <div />}
-
-            <motion.button
-              onClick={onClose}
-              whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
-              whileTap={{ scale: 0.92 }}
-              style={{ width: 48, height: 48, borderRadius: '50%', background: btnBg, border: `1px solid ${btnBorder}`, color: textMain, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
-            >
-              <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
-            </motion.button>
-          </div>
-
-          <div className="fs-image-container">
-            <AnimatePresence>
-              <motion.img
-                className="fs-image"
-                key={src}
-                src={src}
-                initial={{ opacity: 0, scale: 0.98, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'brightness(1)' }}
-                exit={{ opacity: 0, scale: 1.02, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                alt="Viewer"
-              />
-            </AnimatePresence>
-
-            {hasNavigation && (
-              <>
-                <motion.button
-                  className="fs-nav-btn fs-nav-left"
-                  onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex - 1 + items.length) % items.length); }}
-                  whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
-                  whileTap={{ scale: 0.92 }}
-                >
-                  <ChevronLeft size={24} />
-                </motion.button>
-                <motion.button
-                  className="fs-nav-btn fs-nav-right"
-                  onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex + 1) % items.length); }}
-                  whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
-                  whileTap={{ scale: 0.92 }}
-                >
-                  <ChevronLeft size={24} style={{ transform: 'rotate(180deg)' }} />
-                </motion.button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT PANE - Thumbnails */}
-        {hasNavigation && (
-          <div className="fs-right-pane">
-            <div className="fs-thumbnail-list">
-              {items.map((thumbSrc, idx) => (
-                <div
-                  key={idx}
-                  className={`fs-thumb ${idx === currentIndex ? 'active' : ''}`}
-                  onClick={() => onNavigate(idx)}
-                >
-                  <img src={thumbSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Thumbnail ${idx + 1}`} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-      </motion.div>
-    </motion.div>
-  );
-};
 
 const E = [0.22, 1, 0.36, 1];
 
@@ -689,6 +393,8 @@ function HeroShareFab({ title, text, url, style = {} }) {
     </motion.button>
   );
 }
+
+
 
 function Rev({ children, delay = 0, style = {} }) {
   const r = useRef(null);
@@ -1078,9 +784,225 @@ const SpecCard = ({ label, value, sub, index, A, B, FG, M, W, theme, isCount }) 
 };
 
 /* ─── SECTIONS ───────────────────────────────────── */
+function useMobileView() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+}
+
+function MobileHero({ event, heroRef }) {
+  const history = useHistory();
+  const { theme, tokens: { A, W, FG, M, B } } = useTheme();
+
+  const title = event?.title || "SOLSTICE";
+  const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
+  const venueStr = event?.venueFullAddress || "Mumbai";
+  
+  const getVenueParts = () => {
+    let cleanStr = stripPinAndCountry(venueStr);
+    const parts = cleanStr.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length <= 1) return { main: cleanStr, sub: "Kerala" };
+    return { main: parts[0], sub: parts.slice(1).join(', ') };
+  };
+  const { main: venueMain, sub: venueSub } = getVenueParts();
+
+  const ticketTypes = Array.isArray(event?.ticketTypes) ? event.ticketTypes : [];
+  const slots = event?.slots || event?.eventSlots || event?.timeSlots || ticketTypes.flatMap(ticket => (
+    ticket?.applicableSlots || ticket?.slots || ticket?.eventSlots || []
+  ));
+  const displayTime = slots[0]?.startTime ? slots[0].startTime : (event?.startTime || "4:00 PM");
+
+  const getParsedDateParts = () => {
+    if (!event?.startDate) return { day: "21", month: "JUN" };
+    try {
+      const d = new Date(event.startDate);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      return { day, month };
+    } catch (err) {
+      return { day: "08", month: "JUN" };
+    }
+  };
+  const { day: dateDay, month: dateMonth } = getParsedDateParts();
+
+  const getImageUrl = (item) => {
+    const candidates = [
+      item?.coverPhotoUrl,
+      item?.coverImageUrl,
+      item?.coverPhoto,
+      item?.thumbnailUrl,
+      item?.imageUrl,
+      item?.listingMedia?.[0]?.url,
+      item?.listingMedia?.[0]?.fileUrl,
+      item?.media?.[0]?.url,
+      item?.images?.[0]?.url,
+      item?.images?.[0],
+    ];
+    const found = candidates.find((v) => v != null && String(v).trim());
+    return found || "https://picsum.photos/seed/lkp/800/800";
+  };
+  const bgImage = formatImageUrl(getImageUrl(event));
+
+  const words = title.split(' ');
+  const lastWord = words.length >= 2 ? words.pop() : "";
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: `Check out ${title}`, url: shareUrl });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+    } catch (_) { }
+  };
+
+  const itemId = event?.eventId || event?.id || event?._id || new URLSearchParams(window.location.search).get("id");
+
+  return (
+    <div ref={heroRef} style={{
+      position: "relative",
+      width: "100%",
+      minHeight: "450px",
+      height: "60vh",
+      backgroundImage: `url(${bgImage})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      borderBottomLeftRadius: 36,
+      borderBottomRightRadius: 36,
+      overflow: "visible",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      padding: "24px 20px 72px 20px",
+      marginBottom: 0
+    }}>
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%)", borderBottomLeftRadius: 36, borderBottomRightRadius: 36 }} />
+      
+      {/* Image Ring Overlay for Mobile */}
+      <div style={{ 
+        position: "absolute", 
+        top: "40%", 
+        right: "-70px",
+        transform: "translateY(-50%) scale(0.55)", 
+        transformOrigin: "center right",
+        zIndex: 5,
+        pointerEvents: "none" 
+      }}>
+        <ImageRing event={event} />
+      </div>
+      
+      {/* Top Controls */}
+      <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 10 }}>
+        <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+          <ChevronLeft size={22} color="#111" />
+        </button>
+        <div style={{ display: "flex", gap: 12 }}>
+          <Favorite itemType="event" itemId={itemId}>
+            {({ saved, onClick }) => (
+              <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                <style>{`
+                  .mobile-save-icon-${itemId} svg {
+                    fill: ${saved ? "#0097B2" : "#111"};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`mobile-save-icon-${itemId}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
+              </button>
+            )}
+          </Favorite>
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <Share2 size={20} color="#111" />
+          </button>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div style={{ position: "relative", zIndex: 10, marginBottom: 16 }}>
+        <h1 style={{ fontSize: 38, fontWeight: 700, color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', lineHeight: 1.1, margin: 0 }}>
+          {words.join(' ')}{' '}
+          <span style={{ fontStyle: "italic", color: A, WebkitTextFillColor: A }}>
+            {lastWord}
+          </span>
+        </h1>
+      </div>
+
+      {/* Floating Cards Container */}
+      <div style={{
+        position: "absolute",
+        bottom: -36,
+        left: 20,
+        right: 20,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 12,
+        zIndex: 20
+      }}>
+        {/* Date Card */}
+        <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
+           <div style={{ 
+              background: W, 
+              borderRadius: 12, 
+              width: 44, 
+              height: 48, 
+              display: "flex", 
+              flexDirection: "column", 
+              alignItems: "center", 
+              overflow: "hidden",
+              flexShrink: 0,
+              border: `1px solid ${B}`
+            }}>
+              <span style={{ fontSize: 9, fontWeight: 800, background: A, color: W, width: "100%", textAlign: "center", padding: "4px 0", letterSpacing: "0.1em" }}>{dateMonth}</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: FG, marginTop: 2 }}>{dateDay}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>DATE</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{date}</span>
+              <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayTime}</span>
+            </div>
+        </div>
+
+        {/* Venue Card */}
+        <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
+           <div style={{ 
+              background: `${A}15`, 
+              borderRadius: 12, 
+              width: 44, 
+              height: 48, 
+              display: "flex", 
+              alignItems: "center",
+              justifyContent: "center",
+              color: A,
+              flexShrink: 0
+            }}>
+              <MapPin size={22} strokeWidth={2.5} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>VENUE</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueMain}</span>
+              <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueSub}</span>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Hero({ event, heroRef }) {
   const { theme, tokens: { A, W, M, FG, B, S, AL } } = useTheme();
   const history = useHistory();
+  const isMobile = useMobileView();
+
+  if (isMobile) {
+    return <MobileHero event={event} heroRef={heroRef} />;
+  }
+
   const title = event?.title || "SOLSTICE";
   const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
   const venueStr = event?.venueFullAddress || "Mumbai";
@@ -1210,13 +1132,67 @@ function Hero({ event, heroRef }) {
         </div>
       )}
 
-      {/* Share Button (Bottom Right Corner) */}
+      {/* Share and Save Buttons (Bottom Right Corner) */}
       <div style={{
         position: "absolute",
         bottom: 32,
         right: 40,
-        zIndex: 200
+        zIndex: 200,
+        display: "flex",
+        gap: 16,
+        alignItems: "center"
       }}>
+        <Favorite itemType="event" itemId={event?.eventId || event?.listingId || event?.id || event?._id || new URLSearchParams(window.location.search).get("id")}>
+          {({ saved, onClick }) => {
+            const glow = A || "#0097B2";
+            const surfaceColor = theme === "dark" ? "rgba(8,8,8,0.72)" : "rgba(255,255,255,0.92)";
+            const borderColor = theme === "dark" ? `${glow}66` : `${glow}4D`;
+            const shadowColor = theme === "dark"
+              ? `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.34)`
+              : "0 6px 18px rgba(15,15,15,0.12)";
+            const iconColor = saved ? "#E53935" : (theme === "dark" ? FG : A);
+
+            return (
+              <motion.button
+                type="button"
+                aria-label="Save this event"
+                className="premium-share-fab"
+                onClick={onClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  position: "relative",
+                  top: "auto",
+                  right: "auto",
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  background: surfaceColor,
+                  border: `1px solid ${borderColor}`,
+                  boxShadow: shadowColor,
+                  color: iconColor,
+                  cursor: "pointer",
+                  outline: "none",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <style>{`
+                  .desktop-save-icon-${event?.id} svg {
+                    fill: ${saved ? "#0097B2" : iconColor};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`desktop-save-icon-${event?.id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
+              </motion.button>
+            );
+          }}
+        </Favorite>
         <HeroShareFab
           title={title}
           text={`Check out ${title} on Little Known Planet`}
