@@ -2950,12 +2950,25 @@ const StayDetails = () => {
         onToggleAddOn={handleToggleAddOn}
       />
 
-      <RelatedListingsStrip
-        businessInterestId={3}
-        primaryCategoryId={primaryCategoryId}
-        currentListingId={currentListingId}
-        title="More Stays You May Like"
-      />
+      <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>
+        <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+          <RelatedListingsStrip
+            businessInterestId={3}
+            primaryCategoryId={primaryCategoryId}
+            currentListingId={currentListingId}
+            title="More Stays You May Like"
+            sectionStyle={{ padding: "0px", background: "transparent" }}
+            titleStyle={{ 
+              fontSize: "clamp(2.5rem, 4vw, 3.5rem)", 
+              fontWeight: 700, 
+              lineHeight: 1.1, 
+              fontFamily: '"Cormorant Garamond", "Playfair Display", serif', 
+              letterSpacing: "-0.02em",
+              color: FG
+            }}
+          />
+        </div>
+      </div>
 
     </div>
   );
