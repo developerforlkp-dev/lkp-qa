@@ -2275,6 +2275,7 @@ const StayDetails = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [addOnQuantities, setAddOnQuantities] = useState({});
+  const [currentAddonIndex, setCurrentAddonIndex] = useState(2);
 
   const handleToggleAddOn = useCallback((addOnId, pricingType) => {
     setSelectedAddOns((prev) => {
@@ -2569,51 +2570,88 @@ const StayDetails = () => {
       <StayAmenities stay={stay} />
 
       {/* ADDONS SECTION */}
-      {stay?.addons && stay.addons.length > 0 && (
-        <section className="addons-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px" }}>
-          <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <SHdr idx="03" label="Make it Yours" />
-              {stay.addons.length > 2 && (
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => scrollAddonsSlider("left")}
-                    style={{
-                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      color: FG, transition: "0.3s", outline: "none"
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollAddonsSlider("right")}
-                    style={{
-                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      color: FG, transition: "0.3s", outline: "none"
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-                  >
-                    <ChevronRight size={18} />
-                  </button>
+      {(() => {
+        const activeAddons = Array.isArray(stay?.addons) 
+          ? stay.addons.filter(a => a.isActive || a.status === 'Active' || a.addon?.isActive || a.addon?.status === 'Active')
+          : [];
+        if (activeAddons.length === 0) return null;
+
+        return (
+        <section className="addons-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "64px 0" }}>
+          <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
+                  Enhance Your Stay
+                </span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  Make it Yours
+                </h3>
+                <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
+                  Curated add-ons to make your stay even more special.
+                </p>
+              </div>
+              {activeAddons.length > 2 && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => scrollAddonsSlider("left")}
+                      style={{
+                        width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                        color: M, transition: "0.3s", outline: "none"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollAddonsSlider("right")}
+                      style={{
+                        width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                        color: M, transition: "0.3s", outline: "none"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: "12px", fontFamily: '"Inter", sans-serif', fontWeight: 600, paddingRight: 4 }}>
+                    <span style={{ color: A }}>{Math.min(currentAddonIndex, Math.max(1, activeAddons.length))}</span> <span style={{ color: M }}>/ {Math.max(1, activeAddons.length)}</span>
+                  </div>
                 </div>
               )}
             </div>
             
             {(() => {
-              const addonsList = stay.addons;
+              const addonsList = activeAddons;
               const showScroll = addonsList.length > 2;
 
               return (
                 <div
                   ref={addonsSliderRef}
                   className={showScroll ? "no-scrollbar" : ""}
+                  onScroll={(e) => {
+                    if (!showScroll) return;
+                    const container = e.target;
+                    const stepSize = (container.clientWidth + 20) / 2;
+                    let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
+                    
+                    if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
+                      newIndex = addonsList.length;
+                    } else {
+                      newIndex = Math.min(addonsList.length, newIndex);
+                    }
+
+                    if (newIndex !== currentAddonIndex) {
+                      setCurrentAddonIndex(newIndex);
+                    }
+                  }}
                   style={showScroll ? {
                     display: "flex",
                     gap: "20px",
@@ -2622,7 +2660,8 @@ const StayDetails = () => {
                     paddingBottom: "12px",
                     width: "100%",
                     boxSizing: "border-box",
-                    scrollBehavior: "smooth"
+                    scrollBehavior: "smooth",
+                    scrollSnapType: "x mandatory"
                   } : {
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
@@ -2631,52 +2670,72 @@ const StayDetails = () => {
                 >
                   {addonsList.map((item, i) => {
                     const addon = item.addon || item;
-                    const addonId = addon.addonId || addon.assignmentId || addon.id;
-                    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                    const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                    const addonId = addon.addonId || item.assignmentId || addon.id || item.id;
+                    const pricingType = addon.pricingType || item.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                    const addonImage = addon.imageUrl || (Array.isArray(addon.imageUrls) && addon.imageUrls[0]) || addon.image || (Array.isArray(item.imageUrls) && item.imageUrls[0]) || item.imageUrl;
 
                     return (
                       <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
                         key={addonId}
+                        className="addon-item"
+                        whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
+                        transition={{ duration: 0.2 }}
                         style={{
-                          background: "transparent",
                           display: "flex",
-                          flexDirection: "column",
-                          gap: "12px"
+                          flexDirection: "row",
+                          height: "115px",
+                          width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
+                          flexShrink: 0,
+                          background: W,
+                          borderRadius: "16px",
+                          border: `1px solid ${selectedAddOns.includes(addonId) ? A : "transparent"}`,
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                          transition: "box-shadow 0.3s, border-color 0.3s",
+                          overflow: "hidden",
+                          boxSizing: "border-box",
+                          scrollSnapAlign: "start"
                         }}
                       >
-                        {addonImage && (
-                          <div style={{ width: "100%", height: "180px", background: S, borderRadius: "12px", overflow: "hidden", position: "relative" }}>
-                            <img src={addonImage} alt={addon.title || addon.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            {selectedAddOns.includes(addonId) && (
-                              <div style={{ position: "absolute", top: 12, right: 12, width: 28, height: 28, background: A, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", boxShadow: `0 4px 12px ${A}44` }}>
-                                <Check size={16} />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 4px" }}>
-                          <h4 style={{ fontSize: "16px", fontWeight: 700, color: FG, margin: "0 0 6px 0", lineHeight: 1.3 }}>{addon.title || addon.name}</h4>
-                          {addon.description && (
-                            <p style={{ fontSize: "14px", color: M, margin: "0 0 16px 0", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                              {addon.description}
-                            </p>
+                        {/* Left side: Image */}
+                        <div style={{ width: "160px", height: "100%", flexShrink: 0, overflow: "hidden", background: W, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {addonImage ? (
+                            <img
+                              src={addonImage}
+                              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                              alt={addon.title || addon.name}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "/images/content/placeholder.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: `${A}08` }}>
+                              <Plus size={24} color={A} />
+                            </div>
                           )}
+                        </div>
+
+                        {/* Right side: Content */}
+                        <div style={{ flex: 1, minWidth: 0, padding: "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", boxSizing: "border-box" }}>
                           
-                          <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              <span style={{ fontSize: "10px", fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                {pricingType}
-                              </span>
-                              {addon.price > 0 && (
-                                <span style={{ fontSize: "15px", fontWeight: 700, color: FG }}>₹{addon.price}</span>
-                              )}
+                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "6px", flex: 1, minWidth: 0, paddingRight: "16px" }}>
+                            <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
+                              {pricingType}
+                            </div>
+                            <h4 style={{ fontSize: "18px", fontWeight: 700, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {addon.title || addon.name}
+                            </h4>
+                            <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
+                              {addon.briefDescription || addon.description}
+                            </p>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", minWidth: "90px" }}>
+                            <div style={{ fontSize: "16px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', marginBottom: "12px" }}>
+                              ₹{Number(addon.price || 0).toFixed(2)}
                             </div>
 
-                            <div className="addon-actions">
+                            <div className="addon-actions" style={{ flexShrink: 0 }}>
                               {selectedAddOns.includes(addonId) ? (
                                 pricingType === "Group" ? (
                                   <button
@@ -2685,13 +2744,15 @@ const StayDetails = () => {
                                     style={{
                                       background: `${A}15`,
                                       color: A,
-                                      border: "none",
+                                      border: `1px solid ${A}50`,
                                       borderRadius: 100,
-                                      padding: "6px 14px",
-                                      fontSize: 11,
-                                      fontWeight: 800,
+                                      padding: "6px 16px",
+                                      fontSize: 12,
+                                      fontWeight: 700,
                                       cursor: "pointer",
-                                      transition: "all 0.2s"
+                                      textTransform: "uppercase",
+                                      transition: "all 0.2s",
+                                      outline: "none"
                                     }}
                                     onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
@@ -2699,21 +2760,21 @@ const StayDetails = () => {
                                     Remove
                                   </button>
                                 ) : (
-                                  <div style={{ display: "flex", alignItems: "center", gap: 12, background: `${A}08`, borderRadius: 100, padding: "4px 8px" }}>
+                                  <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "4px 8px", border: `1px solid ${A}` }}>
                                     <button
                                       type="button"
                                       onClick={() => handleAddOnQuantityChange(addonId, (addOnQuantities[addonId] || 1) - 1)}
-                                      style={{ background: W, borderRadius: "50%", width: 28, height: 28, border: `1px solid ${A}22`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: A, boxShadow: `0 2px 6px ${A}11` }}
+                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
                                     >
                                       <Minus size={14} />
                                     </button>
-                                    <span style={{ fontSize: 14, fontWeight: 700, color: FG, minWidth: 16, textAlign: "center" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
                                       {addOnQuantities[addonId] || 1}
                                     </span>
                                     <button
                                       type="button"
                                       onClick={() => handleAddOnQuantityChange(addonId, (addOnQuantities[addonId] || 1) + 1)}
-                                      style={{ background: W, borderRadius: "50%", width: 28, height: 28, border: `1px solid ${A}22`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: A, boxShadow: `0 2px 6px ${A}11` }}
+                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
                                     >
                                       <Plus size={14} />
                                     </button>
@@ -2724,19 +2785,17 @@ const StayDetails = () => {
                                   type="button"
                                   onClick={() => handleToggleAddOn(addonId, pricingType)}
                                   style={{
-                                    background: A,
-                                    color: W,
+                                    background: "#007B8F",
+                                    color: "#FFFFFF",
                                     border: "none",
-                                    borderRadius: 100,
-                                    padding: "8px 18px",
-                                    fontSize: 12,
-                                    fontWeight: 800,
+                                    borderRadius: "100px",
+                                    padding: "6px 20px",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    fontFamily: '"Inter", sans-serif',
                                     cursor: "pointer",
-                                    transition: "all 0.2s",
-                                    boxShadow: `0 4px 12px ${A}33`
+                                    outline: "none"
                                   }}
-                                  onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
-                                  onMouseLeave={(e) => e.currentTarget.style.transform = "none"}
                                 >
                                   Add
                                 </button>
@@ -2752,7 +2811,8 @@ const StayDetails = () => {
             })()}
           </div>
         </section>
-      )}
+        );
+      })()}
 
 
       <div style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
