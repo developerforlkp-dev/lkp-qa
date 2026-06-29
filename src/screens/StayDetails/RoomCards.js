@@ -626,11 +626,11 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
       >
         {allImages.length >= 3 ? (
           <>
-            <img src={allImages[0]} alt={name} style={{ width: "65%", height: "100%", objectFit: "cover", transition: "transform 0.4s", transform: isImgHovered ? "scale(1.05)" : "scale(1)" }} />
+            <img src={allImages[0]} alt={name} style={{ width: "65%", height: "100%", objectFit: "cover" }} />
             <div style={{ width: "35%", display: "flex", flexDirection: "column", height: "100%" }}>
-              <img src={allImages[1]} alt={name} style={{ width: "100%", height: "50%", objectFit: "cover", borderLeft: "2px solid #FFF", borderBottom: "1px solid #FFF", transition: "transform 0.4s", transform: isImgHovered ? "scale(1.05)" : "scale(1)" }} />
+              <img src={allImages[1]} alt={name} style={{ width: "100%", height: "50%", objectFit: "cover", borderLeft: "2px solid #FFF", borderBottom: "1px solid #FFF" }} />
               <div style={{ width: "100%", height: "50%", position: "relative", overflow: "hidden", borderLeft: "2px solid #FFF", borderTop: "1px solid #FFF" }}>
-                <img src={allImages[2]} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s", transform: isImgHovered ? "scale(1.05)" : "scale(1)" }} />
+                <img src={allImages[2]} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 {totalPhotos > 3 && (
                   <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", fontSize: "14px", fontWeight: 700 }}>
                     +{totalPhotos - 3}
@@ -640,12 +640,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s", transform: isImgHovered ? "scale(1.05)" : "scale(1)" }} />
+          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
 
         {/* Room Count Tag */}
         {totalRooms != null && (
-          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
             {totalRooms} {isBedBased ? "BEDS" : "ROOMS"}
           </div>
         )}
@@ -690,7 +690,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               {room.bedType && <span style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{room.bedType}</span>}
               {room.roomSize && <span style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{room.roomSize} sq ft</span>}
-              {features.slice(0, 4).map((f, i) => (
+              {features.map((f, i) => (
                 <span key={i} style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{f}</span>
               ))}
             </div>

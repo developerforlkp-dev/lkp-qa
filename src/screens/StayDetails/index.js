@@ -3711,6 +3711,7 @@ function PropertyStayCard({ stay }) {
   const [isHoveringCover, setIsHoveringCover] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [isImgHovered, setIsImgHovered] = useState(false);
 
   const toDateOnly = (value) => {
     if (!value) return null;
@@ -3807,79 +3808,139 @@ function PropertyStayCard({ stay }) {
   const totalPhotos = Math.max(1, allImages.length);
 
   return (
-    <div className={roomStyles.card} style={{ marginBottom: 24 }}>
+    <motion.div 
+      whileHover={{ y: -1, boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}
+      transition={{ duration: 0.3 }}
+      className={roomStyles.card}
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "stretch",
+        background: W,
+        border: `1px solid ${B}`,
+        borderRadius: "20px",
+        padding: "0",
+        position: "relative",
+        gap: 0,
+        minHeight: "220px",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        marginBottom: "24px"
+      }}
+    >
+      {/* Left: Image Mosaic */}
       <div 
-        className={roomStyles.collageWrap} 
+        onMouseEnter={() => setIsImgHovered(true)}
+        onMouseLeave={() => setIsImgHovered(false)}
         onClick={() => setShowModal(true)}
+        style={{
+          width: "280px",
+          flexShrink: 0,
+          display: "flex",
+          borderRight: `1px solid ${B}`,
+          background: W,
+          position: "relative",
+          cursor: "pointer",
+          overflow: "hidden"
+        }}
       >
         {allImages.length >= 3 ? (
           <>
-            <img src={allImages[0]} alt={propertyName} className={roomStyles.mainImg} />
-            <div className={roomStyles.subImgCol}>
-              <img src={allImages[1]} alt={propertyName} className={roomStyles.subImg} />
-              <img src={allImages[2]} alt={propertyName} className={roomStyles.subImg} />
+            <img src={allImages[0]} alt={propertyName} style={{ width: "65%", height: "100%", objectFit: "cover" }} />
+            <div style={{ width: "35%", display: "flex", flexDirection: "column", height: "100%" }}>
+              <img src={allImages[1]} alt={propertyName} style={{ width: "100%", height: "50%", objectFit: "cover", borderLeft: "2px solid #FFF", borderBottom: "1px solid #FFF" }} />
+              <div style={{ width: "100%", height: "50%", position: "relative", overflow: "hidden", borderLeft: "2px solid #FFF", borderTop: "1px solid #FFF" }}>
+                <img src={allImages[2]} alt={propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                {totalPhotos > 3 && (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", fontSize: "14px", fontWeight: 700 }}>
+                    +{totalPhotos - 3}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={propertyName} className={roomStyles.singleImg} />
+          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
-        <span className={roomStyles.badge}>PROPERTY STAY</span>
-        
-        <div className={roomStyles.viewPhotosOverlay}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          <span>{totalPhotos} Photos</span>
+
+        {/* Property Badge Tag */}
+        <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+          PROPERTY STAY
         </div>
+
+        {/* View Gallery Overlay Button */}
+        <AnimatePresence>
+          {isImgHovered && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.2)" }}
+            >
+              <div style={{ padding: "10px 20px", borderRadius: "100px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", color: FG, fontSize: "12px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", textTransform: "uppercase", letterSpacing: "0.05em", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                View Gallery
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      <div className={roomStyles.body}>
-        <div className={roomStyles.infoCol}>
-          <div className={roomStyles.splitHeader}>
-            <div className={roomStyles.leftHeader}>
-              <h4 className={roomStyles.roomName}>{propertyName}</h4>
-              
-              <div className={roomStyles.amenitiesRow}>
-                {amenities.map((amenity, idx) => (
-                  <span key={idx} className={roomStyles.amenityTag}>{amenity}</span>
-                ))}
+
+      {/* Middle: Content details */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <h4 style={{ fontSize: "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
+            {propertyName}
+          </h4>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "4px" }}>
+            {/* Checkin/Checkout prominent display */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "13px", fontWeight: 600, color: FG, fontFamily: '"Inter", sans-serif' }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Clock size={16} color={A} />
+                <span>Check-in: {checkInText}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Clock size={16} color={A} />
+                <span>Check-out: {checkOutText}</span>
               </div>
             </div>
-
-            <div className={roomStyles.rightHeader}>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", marginBottom: 8 }}>
-                <span className={roomStyles.guestCount}>
-                  <Clock size={14} className={roomStyles.guestIcon} />
-                  Check-in: {checkInText}
-                </span>
-                <span className={roomStyles.guestCount}>
-                  <Clock size={14} className={roomStyles.guestIcon} />
-                  Check-out: {checkOutText}
-                </span>
-              </div>
-
-              <div className={roomStyles.priceBlock}>
-                <span className={roomStyles.priceLabel}>PRICE</span>
-                <div className={roomStyles.amount}>
-                  {priceValue != null ? (
-                    <>
-                      {discountRate > 0 && (
-                        <span className={roomStyles.strikePrice}>
-                          {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
-                        </span>
-                      )}
-                      {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")}
-                      <span className={roomStyles.perNight}> / night</span>
-                    </>
-                  ) : (
-                    <span className={roomStyles.priceOnRequest}>Price on request</span>
-                  )}
-                </div>
-              </div>
+            
+            {/* Amenities Row */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {amenities.map((amenity, idx) => (
+                <span key={idx} style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{amenity}</span>
+              ))}
             </div>
           </div>
+        </div>
 
-          <div className={roomStyles.descBlock}>
-            <p className={roomStyles.descText}>
-              Entire-property booking with curated comfort and premium amenities.
-            </p>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "24px" }}>
+          <p style={{ fontSize: "13px", color: M, margin: 0, flex: 1, paddingRight: "16px", lineHeight: 1.5 }}>
+            Entire-property booking with curated comfort and premium amenities.
+          </p>
+          
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: M, marginBottom: "4px" }}>
+              STARTING FROM
+            </span>
+            <div style={{ fontSize: "24px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', lineHeight: 1 }}>
+              {priceValue != null ? (
+                <>
+                  {discountRate > 0 && discountedPriceValue && (
+                    <span style={{ fontSize: "14px", color: M, textDecoration: "line-through", marginRight: "8px" }}>
+                      {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
+                    </span>
+                  )}
+                  {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")}
+                  <span style={{ fontSize: "12px", fontWeight: 500, color: M }}> / night</span>
+                </>
+              ) : (
+                <span style={{ fontSize: "16px", fontWeight: 600, color: M }}>Price on request</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -3898,7 +3959,7 @@ function PropertyStayCard({ stay }) {
         </AnimatePresence>,
         document.body
       )}
-    </div>
+    </motion.div>
   );
 }
 
