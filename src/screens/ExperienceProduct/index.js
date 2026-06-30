@@ -2402,126 +2402,153 @@ const ExperienceProduct = () => {
                         : "0 20px 40px rgba(15, 23, 42, 0.04)";
                     }}
                     >
-                      {/* Visual Accent Top Bar */}
-                      <div style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 3,
-                        background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
-                      }} />
+                      {listing?.lkpQualityIndex ? (
+                        <>
+                          {/* Visual Accent Top Bar */}
+                          <div style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 3,
+                            background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
+                          }} />
 
-                      {/* Background Ambient Glow under the circle */}
-                      <div style={{
-                        position: "absolute",
-                        left: 20,
-                        top: 50,
-                        width: 140,
-                        height: 140,
-                        borderRadius: "50%",
-                        background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
-                        pointerEvents: "none"
-                      }} />
+                          {/* Background Ambient Glow under the circle */}
+                          <div style={{
+                            position: "absolute",
+                            left: 20,
+                            top: 50,
+                            width: 140,
+                            height: 140,
+                            borderRadius: "50%",
+                            background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
+                            pointerEvents: "none"
+                          }} />
 
-                      {/* Left: Score Circle */}
-                      {(() => {
-                        const displayScore = listing?.lkpQualityIndex?.score || 9.2;
-                        const scoreInt = Math.floor(displayScore);
-                        const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
+                          {/* Left: Score Circle */}
+                          {(() => {
+                            const displayScore = listing.lkpQualityIndex.score || 9.2;
+                            const scoreInt = Math.floor(displayScore);
+                            const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
 
-                        return (
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                            <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
-                              <defs>
-                                <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" stopColor="#8B5CF6" />
-                                  <stop offset="100%" stopColor={A} />
-                                </linearGradient>
-                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                  <feGaussianBlur stdDeviation="6" result="blur" />
-                                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                </filter>
-                              </defs>
-                              <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
-                              <motion.circle
-                                cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGrad)" strokeWidth="6" strokeLinecap="round"
-                                style={{ filter: "url(#glow)" }}
-                                initial={{ strokeDasharray: "0 346" }}
-                                whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
-                                transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                              />
-                            </svg>
-                            <div style={{ position: "absolute", textAlign: "center" }}>
-                              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                                <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
-                                <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
+                            return (
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
+                                <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
+                                  <defs>
+                                    <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stopColor="#8B5CF6" />
+                                      <stop offset="100%" stopColor={A} />
+                                    </linearGradient>
+                                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                      <feGaussianBlur stdDeviation="6" result="blur" />
+                                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                    </filter>
+                                  </defs>
+                                  <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
+                                  <motion.circle
+                                    cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGrad)" strokeWidth="6" strokeLinecap="round"
+                                    style={{ filter: "url(#glow)" }}
+                                    initial={{ strokeDasharray: "0 346" }}
+                                    whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
+                                    transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+                                  />
+                                </svg>
+                                <div style={{ position: "absolute", textAlign: "center" }}>
+                                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+                                    <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
+                                    <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
+                                  </div>
+                                  <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
+                                </div>
                               </div>
-                              <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
+                            );
+                          })()}
+
+                          {/* Right: Narrative Details & Verification Checks */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+                            <div>
+                              <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
+                              <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
+                            </div>
+                            
+                            <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
+                              {listing.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
+                            </p>
+
+                            {/* Verification Criteria Pills */}
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                              <span style={{
+                                fontSize: "9px",
+                                fontWeight: 700,
+                                color: A,
+                                background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
+                                border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
+                                padding: "3px 8px",
+                                borderRadius: "6px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4
+                              }}>
+                                ✓ Verified Host
+                              </span>
+
+                              <span style={{
+                                fontSize: "9px",
+                                fontWeight: 700,
+                                color: "#10B981",
+                                background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
+                                border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
+                                padding: "3px 8px",
+                                borderRadius: "6px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4
+                              }}>
+                                ✓ Safety Check
+                              </span>
+
+                              <span style={{
+                                fontSize: "9px",
+                                fontWeight: 700,
+                                color: "#D97706",
+                                background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
+                                border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
+                                padding: "3px 8px",
+                                borderRadius: "6px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4
+                              }}>
+                                ✓ High Rated
+                              </span>
                             </div>
                           </div>
-                        );
-                      })()}
-
-                      {/* Right: Narrative Details & Verification Checks */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-                        <div>
-                          <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                          <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
-                        </div>
-                        
-                        <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-                          {listing?.lkpQualityIndex?.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
-                        </p>
-
-                        {/* Verification Criteria Pills */}
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                        </>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", textAlign: "center" }}>
                           <span style={{
-                            fontSize: "9px",
-                            fontWeight: 700,
-                            color: A,
-                            background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                            padding: "3px 8px",
-                            borderRadius: "6px",
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: 4
-                          }}>
-                            ✓ Verified Host
-                          </span>
-
-                          <span style={{
-                            fontSize: "9px",
-                            fontWeight: 700,
+                            justifyContent: "center",
+                            background: theme === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.08)",
                             color: "#10B981",
-                            background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                            padding: "3px 8px",
-                            borderRadius: "6px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4
+                            padding: "6px 16px",
+                            borderRadius: "20px",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                            marginBottom: 16
                           }}>
-                            ✓ Safety Check
+                            Newly Added
                           </span>
-
-                          <span style={{
-                            fontSize: "9px",
-                            fontWeight: 700,
-                            color: "#D97706",
-                            background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                            padding: "3px 8px",
-                            borderRadius: "6px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4
-                          }}>
-                            ✓ High Rated
-                          </span>
+                          <h4 style={{ fontSize: 20, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: "Poppins, sans-serif" }}>Welcome to LKP</h4>
+                          <p style={{ fontSize: 13, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5 }}>
+                            This listing is new to our platform. It is currently building its verified trust score based on guest experiences.
+                          </p>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </Rev>

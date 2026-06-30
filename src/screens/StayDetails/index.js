@@ -1553,38 +1553,44 @@ function PolicyCategoryItem({ category }) {
 
     // Property Rules
     const propItems = [];
+    const generalRules = [];
+    
     if (stay?.privacyAndPolicy?.propertyRulesTemplate && stay.privacyAndPolicy.propertyRulesTemplate !== "No property rules defined.") {
       const lines = stay.privacyAndPolicy.propertyRulesTemplate.split('\n').map(l => l.trim()).filter(Boolean);
-      lines.forEach((line, i) => {
+      lines.forEach((line) => {
+        if (line.toLowerCase() === "check-in and check-out" || line.toLowerCase() === "property rules") return;
+        
         const colonIdx = line.indexOf(':');
         if (colonIdx > 0 && colonIdx < 60) {
-          propItems.push({ id: `prop-${i}`, title: line.substring(0, colonIdx).trim(), body: line.substring(colonIdx + 1).trim() });
+          generalRules.push({ title: line.substring(0, colonIdx).trim(), valueText: line.substring(colonIdx + 1).trim() });
         } else {
-          if (line.toLowerCase() !== "check-in and check-out" && line.toLowerCase() !== "property rules") {
-            propItems.push({ id: `prop-${i}`, title: line, body: line });
-          }
+          generalRules.push({ title: line });
         }
       });
     } else {
       const rawPropRules = stay?.propertyRulesDefaultTemplate || stay?.propertyRules || stay?.propertyRule || findArrayWithKey(stay, 'propertyRule');
       if (Array.isArray(rawPropRules) && rawPropRules.length > 0) {
-        rawPropRules.forEach((r, i) => propItems.push({ id: `prop-${i}`, title: `Rule ${i + 1}`, body: extractText(r) }));
+        rawPropRules.forEach(r => generalRules.push({ title: extractText(r) }));
       } else if (stay?.houseRules) {
-        propItems.push({ id: `prop-0`, title: "General Rules", body: stay.houseRules });
+        generalRules.push({ title: stay.houseRules });
       } else if (stay?.checkInTime || stay?.checkOutTime) {
-        propItems.push({ id: `prop-0`, title: "Check-in / Check-out", body: `Check-in from ${stay.checkInTime || "2:00 PM"}. Check-out by ${stay.checkOutTime || "11:00 AM"}.` });
+        generalRules.push({ title: "Check-in", valueText: `From ${stay.checkInTime || "2:00 PM"}` });
+        generalRules.push({ title: "Check-out", valueText: `By ${stay.checkOutTime || "11:00 AM"}` });
       } else {
-        propItems.push({ id: `prop-0`, title: "General Rules", body: "Check-in from 2:00 PM. Check-out by 11:00 AM." });
+        generalRules.push({ title: "Check-in", valueText: "From 2:00 PM" });
+        generalRules.push({ title: "Check-out", valueText: "By 11:00 AM" });
       }
     }
+    
     if (stay?.ageRestriction != null && stay.ageRestriction !== "") {
-      propItems.push({ id: "age_restriction", title: "Minimum Age", body: `${stay.ageRestriction}+` });
+      generalRules.push({ title: "Minimum Age", valueText: `${stay.ageRestriction}+` });
     }
-    propItems.push({ id: "id_required", title: "ID Required at Check-in", body: stay?.idRequiredAtCheckIn ? "Yes" : "No" });
-    propItems.push({ id: "pets_allowed", title: "Pets Allowed", body: stay?.petAllowed ? "Yes" : "No" });
-    propItems.push({ id: "couple_friendly", title: "Couple Friendly", body: stay?.coupleFriendly ? "Yes" : "No" });
+    generalRules.push({ title: "ID Required at Check-in", valueText: stay?.idRequiredAtCheckIn ? "Yes" : "No" });
+    generalRules.push({ title: "Pets Allowed", valueText: stay?.petAllowed ? "Yes" : "No" });
+    generalRules.push({ title: "Couple Friendly", valueText: stay?.coupleFriendly ? "Yes" : "No" });
 
-    if (propItems.length > 0) {
+    if (generalRules.length > 0) {
+      propItems.push({ id: "prop-all", title: null, questions: generalRules });
       categories.push({ id: 'cat-prop', title: "Property Rules", items: propItems });
     }
 
@@ -1593,11 +1599,7 @@ function PolicyCategoryItem({ category }) {
     if (Array.isArray(stay?.guestRequirements) && stay.guestRequirements.length > 0) {
       stay.guestRequirements.forEach((req, i) => {
         const title = req.setting?.title || req.description || `Requirement ${i + 1}`;
-        let body = "";
-        if (Array.isArray(req.questions)) {
-          body = req.questions.map(q => `• ${q.title || q.question?.title}`).join("\n");
-        }
-        guestItems.push({ id: `guest-${i}`, title, body: body || title, questions: req.questions });
+        guestItems.push({ id: `guest-${i}`, title, body: null, questions: req.questions });
       });
     }
     if (guestItems.length > 0) {
@@ -1958,126 +1960,153 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                   : "0 20px 40px rgba(15, 23, 42, 0.04)";
               }}
               >
-                {/* Visual Accent Top Bar */}
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 3,
-                  background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
-                }} />
+                {stay?.lkpQualityIndex ? (
+                  <>
+                    {/* Visual Accent Top Bar */}
+                    <div style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 3,
+                      background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
+                    }} />
 
-                {/* Background Ambient Glow under the circle */}
-                <div style={{
-                  position: "absolute",
-                  left: 20,
-                  top: 50,
-                  width: 140,
-                  height: 140,
-                  borderRadius: "50%",
-                  background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
-                  pointerEvents: "none"
-                }} />
+                    {/* Background Ambient Glow under the circle */}
+                    <div style={{
+                      position: "absolute",
+                      left: 20,
+                      top: 50,
+                      width: 140,
+                      height: 140,
+                      borderRadius: "50%",
+                      background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
+                      pointerEvents: "none"
+                    }} />
 
-                {/* Left: Score Circle */}
-                {(() => {
-                  const displayScore = stay?.lkpQualityIndex?.score || 9.2;
-                  const scoreInt = Math.floor(displayScore);
-                  const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
+                    {/* Left: Score Circle */}
+                    {(() => {
+                      const displayScore = stay.lkpQualityIndex.score || 9.2;
+                      const scoreInt = Math.floor(displayScore);
+                      const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
 
-                  return (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                      <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
-                        <defs>
-                          <linearGradient id="scoreGradStay" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#8B5CF6" />
-                            <stop offset="100%" stopColor={A} />
-                          </linearGradient>
-                          <filter id="glowStay" x="-20%" y="-20%" width="140%" height="140%">
-                            <feGaussianBlur stdDeviation="6" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                          </filter>
-                        </defs>
-                        <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
-                        <motion.circle
-                          cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGradStay)" strokeWidth="6" strokeLinecap="round"
-                          style={{ filter: "url(#glowStay)" }}
-                          initial={{ strokeDasharray: "0 346" }}
-                          whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
-                          transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                        />
-                      </svg>
-                      <div style={{ position: "absolute", textAlign: "center" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                          <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
-                          <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
+                      return (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
+                          <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
+                            <defs>
+                              <linearGradient id="scoreGradStay" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#8B5CF6" />
+                                <stop offset="100%" stopColor={A} />
+                              </linearGradient>
+                              <filter id="glowStay" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="6" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                              </filter>
+                            </defs>
+                            <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
+                            <motion.circle
+                              cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGradStay)" strokeWidth="6" strokeLinecap="round"
+                              style={{ filter: "url(#glowStay)" }}
+                              initial={{ strokeDasharray: "0 346" }}
+                              whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
+                              transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+                            />
+                          </svg>
+                          <div style={{ position: "absolute", textAlign: "center" }}>
+                            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+                              <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
+                              <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
+                            </div>
+                            <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
+                          </div>
                         </div>
-                        <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
+                      );
+                    })()}
+
+                    {/* Right: Narrative Details & Verification Checks */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+                      <div>
+                        <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
+                        <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
+                      </div>
+                      
+                      <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
+                        {stay.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
+                      </p>
+
+                      {/* Verification Criteria Pills */}
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                        <span style={{
+                          fontSize: "9px",
+                          fontWeight: 700,
+                          color: A,
+                          background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
+                          border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}>
+                          ✓ Verified Host
+                        </span>
+
+                        <span style={{
+                          fontSize: "9px",
+                          fontWeight: 700,
+                          color: "#10B981",
+                          background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
+                          border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}>
+                          ✓ Safety Check
+                        </span>
+
+                        <span style={{
+                          fontSize: "9px",
+                          fontWeight: 700,
+                          color: "#D97706",
+                          background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
+                          border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4
+                        }}>
+                          ✓ High Rated
+                        </span>
                       </div>
                     </div>
-                  );
-                })()}
-
-                {/* Right: Narrative Details & Verification Checks */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-                  <div>
-                    <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                    <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
-                  </div>
-                  
-                  <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-                    {stay?.lkpQualityIndex?.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
-                  </p>
-
-                  {/* Verification Criteria Pills */}
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                  </>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", textAlign: "center" }}>
                     <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: A,
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ Verified Host
-                    </span>
-
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
+                      justifyContent: "center",
+                      background: theme === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.08)",
                       color: "#10B981",
-                      background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
+                      padding: "6px 16px",
+                      borderRadius: "20px",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      marginBottom: 16
                     }}>
-                      ✓ Safety Check
+                      Newly Added
                     </span>
-
-                    <span style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#D97706",
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4
-                    }}>
-                      ✓ High Rated
-                    </span>
+                    <h4 style={{ fontSize: 20, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: "Poppins, sans-serif" }}>Welcome to LKP</h4>
+                    <p style={{ fontSize: 13, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5 }}>
+                      This listing is new to our platform. It is currently building its verified trust score based on guest experiences.
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </Rev>
