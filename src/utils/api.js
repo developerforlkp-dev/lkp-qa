@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
-const DEV_API_BASE_URL = "http://api.qa.littleknownplanet.com/api";
+const DEV_API_BASE_URL = "https://api.qa.littleknownplanet.com/api";
 
 export const normalizePublicImageUrl = (url) => {
   if (!url) return null;
