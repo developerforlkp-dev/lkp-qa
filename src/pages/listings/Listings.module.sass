@@ -589,21 +589,34 @@
     border-radius: 8px
     border: none
     background: transparent
-    color: $n4
+    color: $n3
     cursor: pointer
     transition: all .18s ease
+    svg
+        fill: $n3
+        transition: fill .18s ease
     +dark
         color: $n5
+        svg
+            fill: $n5
     &:hover
-        color: $n2
+        color: $n1
+        svg
+            fill: $n1
         +dark
             color: $n7
+            svg
+                fill: $n7
 
 .viewToggleBtnActive
-    background: $n8
-    color: $n2
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10)
+    background: $p1
+    color: $n8
+    box-shadow: 0 2px 8px rgba(0, 151, 178, 0.25)
+    svg
+        fill: $n8
     +dark
-        background: $n3
-        color: $n7
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25)
+        background: $p1
+        color: $n8
+        box-shadow: 0 2px 8px rgba(0, 151, 178, 0.4)
+        svg
+            fill: $n8
