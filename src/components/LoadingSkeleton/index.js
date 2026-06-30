@@ -11,6 +11,7 @@ import styles from "./LoadingSkeleton.module.sass";
  *   "host"      — Host profile page
  *   "reviews"   — Reviews listing page
  *   "stay"      — Stay product page
+ *   "experience"— Experience/Event product page
  *   "completed" — Completed orders inside bookings tab
  *   "cards"     — Just a row of card skeletons (generic)
  *
@@ -20,15 +21,21 @@ import styles from "./LoadingSkeleton.module.sass";
  *   sections — number of homepage sections to show (default 3)
  */
 
-// ─── Individual skeleton elements ─────────────────────────────────────────────
+// ─── Shimmer Box Primitive ────────────────────────────────────────────────────
+
+const Shimmer = ({ className, style }) => (
+  <div className={`${styles.shimmer} ${className || ""}`} style={style} />
+);
+
+// ─── Homepage Skeleton ────────────────────────────────────────────────────────
 
 const SkeletonCard = () => (
   <div className={styles.cardSkeleton}>
-    <div className={styles.cardImage} />
+    <Shimmer className={styles.cardImage} />
     <div className={styles.cardBody}>
-      <div className={styles.cardLine} />
-      <div className={styles.cardLine} />
-      <div className={styles.cardLine} />
+      <Shimmer className={styles.cardLine} />
+      <Shimmer className={styles.cardLine} />
+      <Shimmer className={styles.cardLine} />
     </div>
   </div>
 );
@@ -36,8 +43,8 @@ const SkeletonCard = () => (
 const SkeletonSection = ({ cardCount = 4 }) => (
   <div className={styles.sectionSkeleton}>
     <div className={styles.sectionHeader}>
-      <div className={styles.sectionTitleBar} />
-      <div className={styles.sectionSubtitleBar} />
+      <Shimmer className={styles.sectionTitleBar} />
+      <Shimmer className={styles.sectionSubtitleBar} />
     </div>
     <div className={styles.cardsRow}>
       {Array.from({ length: cardCount }).map((_, i) => (
@@ -47,40 +54,6 @@ const SkeletonSection = ({ cardCount = 4 }) => (
   </div>
 );
 
-const SkeletonBookingCard = () => (
-  <div className={styles.bookingCardSkeleton}>
-    <div className={styles.bookingCardImage} />
-    <div className={styles.bookingCardBody}>
-      <div className={styles.bookingMeta}>
-        <div className={styles.bookingMetaChip} />
-        <div className={styles.bookingMetaChip} />
-        <div className={styles.bookingMetaChip} />
-      </div>
-      <div className={styles.bookingCardTitle} />
-      <div className={styles.bookingCardLine} />
-      <div className={styles.bookingCardLine} />
-      <div className={styles.bookingActions}>
-        <div className={styles.bookingActionBtn} />
-        <div className={styles.bookingActionBtn} />
-      </div>
-    </div>
-  </div>
-);
-
-const SkeletonReviewItem = () => (
-  <div className={styles.reviewItem}>
-    <div className={styles.reviewAvatar} />
-    <div className={styles.reviewBody}>
-      <div className={styles.reviewName} />
-      <div className={styles.reviewStars} />
-      <div className={styles.reviewText} />
-      <div className={styles.reviewText} />
-    </div>
-  </div>
-);
-
-// ─── Variant renderers ────────────────────────────────────────────────────────
-
 const HomepageSkeleton = ({ sections = 3, cardCount = 4 }) => (
   <div className={styles.homepageSkeleton}>
     {Array.from({ length: sections }).map((_, i) => (
@@ -89,16 +62,39 @@ const HomepageSkeleton = ({ sections = 3, cardCount = 4 }) => (
   </div>
 );
 
+// ─── Bookings List Skeleton ───────────────────────────────────────────────────
+
+const SkeletonBookingCard = () => (
+  <div className={styles.bookingCardSkeleton}>
+    <Shimmer className={styles.bookingCardImage} />
+    <div className={styles.bookingCardBody}>
+      <div className={styles.bookingMeta}>
+        <Shimmer className={styles.bookingMetaChip} />
+        <Shimmer className={styles.bookingMetaChip} />
+        <Shimmer className={styles.bookingMetaChip} />
+      </div>
+      <Shimmer className={styles.bookingCardTitle} />
+      <Shimmer className={styles.bookingCardLine} />
+      <Shimmer className={styles.bookingCardLine} />
+      <div className={styles.bookingActions}>
+        <Shimmer className={styles.bookingActionBtn} />
+        <Shimmer className={styles.bookingActionBtn} />
+      </div>
+    </div>
+  </div>
+);
+
+// Full skeleton: title + tabs + cards — used only on initial full-page load
 const BookingsSkeleton = ({ count = 3 }) => (
   <div className={styles.bookingsSkeleton}>
     <div className={styles.bookingsHeader}>
-      <div className={styles.bookingsBackBtn} />
-      <div className={styles.bookingsTitle} />
+      <Shimmer className={styles.bookingsTitle} />
     </div>
     <div className={styles.bookingsTabs}>
-      <div className={styles.bookingsTabItem} />
-      <div className={styles.bookingsTabItem} />
-      <div className={styles.bookingsTabItem} />
+      <Shimmer className={styles.bookingsTabItem} />
+      <Shimmer className={styles.bookingsTabItem} />
+      <Shimmer className={styles.bookingsTabItem} />
+      <Shimmer className={styles.bookingsTabItem} />
     </div>
     {Array.from({ length: count }).map((_, i) => (
       <SkeletonBookingCard key={i} />
@@ -106,62 +102,93 @@ const BookingsSkeleton = ({ count = 3 }) => (
   </div>
 );
 
-const DetailSkeleton = () => (
-  <div className={styles.detailSkeleton}>
-    <div className={styles.detailBackBtn} />
-    <div className={styles.detailTitle} />
-    <div className={styles.detailRating} />
-    <div className={styles.detailBanner} />
-    <div className={styles.detailGrid}>
-      <div className={styles.detailCard}>
-        <div className={styles.detailCardTitle} />
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div className={styles.detailCardRow} key={i}>
-            <div className={styles.detailCardLabel} />
-            <div className={styles.detailCardValue} />
-          </div>
-        ))}
-      </div>
-      <div className={styles.detailCard}>
-        <div className={styles.detailCardTitle} />
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div className={styles.detailCardRow} key={i}>
-            <div className={styles.detailCardLabel} />
-            <div className={styles.detailCardValue} />
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const HostSkeleton = () => (
-  <div className={styles.hostSkeleton}>
-    <div className={styles.hostAvatar} />
-    <div className={styles.hostName} />
-    <div className={styles.hostBio} />
-    <div className={styles.hostCards}>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <SkeletonCard key={i} />
-      ))}
-    </div>
-  </div>
-);
-
-const ReviewsSkeleton = ({ count = 4 }) => (
-  <div className={styles.reviewsSkeleton}>
+// Lean skeleton: cards only — used inline inside the tab panel where title/tabs are already visible
+const BookingsListSkeleton = ({ count = 3 }) => (
+  <div className={styles.bookingsListSkeleton}>
     {Array.from({ length: count }).map((_, i) => (
-      <SkeletonReviewItem key={i} />
+      <SkeletonBookingCard key={i} />
     ))}
   </div>
 );
+
+const CompletedSkeleton = ({ count = 3 }) => (
+  <div className={styles.completedSkeleton}>
+    {Array.from({ length: count }).map((_, i) => (
+      <SkeletonBookingCard key={i} />
+    ))}
+  </div>
+);
+
+// ─── Booking Detail Page Skeleton ─────────────────────────────────────────────
+// Mirrors the actual ViewDetails page layout:
+// [back btn] → [title] → [rating] → [banner] → [summary card grid] → [info cards]
+
+const DetailSkeleton = () => (
+  <div className={styles.detailSkeleton}>
+    {/* Back button */}
+    <Shimmer className={styles.detailBackBtn} />
+
+    {/* Title */}
+    <Shimmer className={styles.detailTitle} />
+    <Shimmer className={styles.detailTitleShort} />
+
+    {/* Rating row */}
+    <Shimmer className={styles.detailRating} />
+
+    {/* Full-width banner image */}
+    <Shimmer className={styles.detailBanner} />
+
+    {/* Summary card - grid of label/value pairs */}
+    <div className={styles.detailSummaryCard}>
+      <Shimmer className={styles.detailSummaryTitle} />
+      <div className={styles.detailSummaryGrid}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div className={styles.detailSummaryItem} key={i}>
+            <Shimmer className={styles.detailSummaryLabel} />
+            <Shimmer className={styles.detailSummaryValue} />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Two side-by-side detail cards */}
+    <div className={styles.detailCardsRow}>
+      <div className={styles.detailCard}>
+        <Shimmer className={styles.detailCardTitle} />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div className={styles.detailCardRow} key={i}>
+            <Shimmer className={styles.detailCardLabel} />
+            <Shimmer className={styles.detailCardValue} />
+          </div>
+        ))}
+      </div>
+      <div className={styles.detailCard}>
+        <Shimmer className={styles.detailCardTitle} />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div className={styles.detailCardRow} key={i}>
+            <Shimmer className={styles.detailCardLabel} />
+            <Shimmer className={styles.detailCardValue} />
+          </div>
+        ))}
+        {/* Action buttons area */}
+        <div className={styles.detailActions}>
+          <Shimmer className={styles.detailActionBtn} />
+          <Shimmer className={styles.detailActionBtn} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Stay Product Page Skeleton ───────────────────────────────────────────────
+// Mirrors: title/subtitle → gallery grid → content+sidebar layout
 
 const StaySkeleton = () => (
   <div className={styles.staySkeleton}>
     <div className={styles.stayHeader}>
       <div>
-        <div className={styles.stayTitle} />
-        <div className={styles.staySubtitle} />
+        <Shimmer className={styles.stayTitle} />
+        <Shimmer className={styles.staySubtitle} />
       </div>
     </div>
     <div className={styles.stayGallery}>
@@ -174,40 +201,118 @@ const StaySkeleton = () => (
     <div className={styles.stayContentGrid}>
       <div className={styles.stayMainContent}>
         <div className={styles.stayTabsBar}>
-          <div className={styles.stayTabItem} />
-          <div className={styles.stayTabItem} />
-          <div className={styles.stayTabItem} />
+          <Shimmer className={styles.stayTabItem} />
+          <Shimmer className={styles.stayTabItem} />
+          <Shimmer className={styles.stayTabItem} />
         </div>
         <div className={styles.stayParagraph}>
-          <div className={styles.stayTextLine} />
-          <div className={styles.stayTextLine} />
-          <div className={styles.stayTextLine} />
-          <div className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
         </div>
         <div className={styles.stayParagraph}>
-          <div className={styles.stayTextLine} />
-          <div className={styles.stayTextLine} />
-          <div className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
+          <Shimmer className={styles.stayTextLine} />
         </div>
       </div>
       <div className={styles.staySidebar}>
-        <div className={styles.staySidebarPrice} />
-        <div className={styles.staySidebarField} />
-        <div className={styles.staySidebarField} />
-        <div className={styles.staySidebarField} />
-        <div className={styles.staySidebarBtn} />
+        <Shimmer className={styles.staySidebarPrice} />
+        <Shimmer className={styles.staySidebarField} />
+        <Shimmer className={styles.staySidebarField} />
+        <Shimmer className={styles.staySidebarField} />
+        <Shimmer className={styles.staySidebarBtn} />
       </div>
     </div>
   </div>
 );
 
-const CompletedSkeleton = ({ count = 3 }) => (
-  <div className={styles.completedSkeleton}>
+// ─── Experience / Event Product Page Skeleton ─────────────────────────────────
+// Mirrors: big banner/image → title + tags → content+sidebar
+
+const ExperienceSkeleton = () => (
+  <div className={styles.experienceSkeleton}>
+    {/* Hero banner */}
+    <Shimmer className={styles.experienceBanner} />
+    <div className={styles.experienceContent}>
+      {/* Left: title, tags, description */}
+      <div className={styles.experienceMain}>
+        <div className={styles.experienceTags}>
+          <Shimmer className={styles.experienceTag} />
+          <Shimmer className={styles.experienceTag} />
+        </div>
+        <Shimmer className={styles.experienceTitle} />
+        <Shimmer className={styles.experienceRating} />
+        <div className={styles.experienceParagraph}>
+          <Shimmer className={styles.experienceTextLine} />
+          <Shimmer className={styles.experienceTextLine} />
+          <Shimmer className={styles.experienceTextLine} />
+          <Shimmer className={styles.experienceTextLine} />
+        </div>
+        {/* Info pills row */}
+        <div className={styles.experienceInfoRow}>
+          <Shimmer className={styles.experienceInfoPill} />
+          <Shimmer className={styles.experienceInfoPill} />
+          <Shimmer className={styles.experienceInfoPill} />
+        </div>
+        {/* More text */}
+        <div className={styles.experienceParagraph}>
+          <Shimmer className={styles.experienceTextLine} />
+          <Shimmer className={styles.experienceTextLine} />
+          <Shimmer className={styles.experienceTextLine} />
+        </div>
+      </div>
+      {/* Right sidebar: booking card */}
+      <div className={styles.experienceSidebar}>
+        <Shimmer className={styles.experienceSidebarPrice} />
+        <Shimmer className={styles.experienceSidebarField} />
+        <Shimmer className={styles.experienceSidebarField} />
+        <Shimmer className={styles.experienceSidebarField} />
+        <Shimmer className={styles.experienceSidebarBtn} />
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Host Profile Skeleton ────────────────────────────────────────────────────
+
+const HostSkeleton = () => (
+  <div className={styles.hostSkeleton}>
+    <Shimmer className={styles.hostAvatar} />
+    <Shimmer className={styles.hostName} />
+    <Shimmer className={styles.hostBio} />
+    <div className={styles.hostCards}>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  </div>
+);
+
+// ─── Reviews Skeleton ─────────────────────────────────────────────────────────
+
+const SkeletonReviewItem = () => (
+  <div className={styles.reviewItem}>
+    <Shimmer className={styles.reviewAvatar} />
+    <div className={styles.reviewBody}>
+      <Shimmer className={styles.reviewName} />
+      <Shimmer className={styles.reviewStars} />
+      <Shimmer className={styles.reviewText} />
+      <Shimmer className={styles.reviewText} />
+    </div>
+  </div>
+);
+
+const ReviewsSkeleton = ({ count = 4 }) => (
+  <div className={styles.reviewsSkeleton}>
     {Array.from({ length: count }).map((_, i) => (
-      <SkeletonBookingCard key={i} />
+      <SkeletonReviewItem key={i} />
     ))}
   </div>
 );
+
+// ─── Cards Skeleton ───────────────────────────────────────────────────────────
 
 const CardsSkeleton = ({ count = 4 }) => (
   <div className={styles.homepageSkeleton}>
@@ -228,6 +333,8 @@ const LoadingSkeleton = ({ variant = "homepage", count, sections }) => {
         return <HomepageSkeleton sections={sections || 3} cardCount={count || 4} />;
       case "bookings":
         return <BookingsSkeleton count={count || 3} />;
+      case "bookingsList":
+        return <BookingsListSkeleton count={count || 3} />;
       case "detail":
         return <DetailSkeleton />;
       case "host":
@@ -236,6 +343,8 @@ const LoadingSkeleton = ({ variant = "homepage", count, sections }) => {
         return <ReviewsSkeleton count={count || 4} />;
       case "stay":
         return <StaySkeleton />;
+      case "experience":
+        return <ExperienceSkeleton />;
       case "completed":
         return <CompletedSkeleton count={count || 3} />;
       case "cards":

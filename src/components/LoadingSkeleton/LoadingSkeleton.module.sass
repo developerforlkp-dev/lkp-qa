@@ -10,26 +10,34 @@
 @keyframes fadeInUp
     0%
         opacity: 0
-        transform: translateY(12px)
+        transform: translateY(8px)
     100%
         opacity: 1
         transform: translateY(0)
 
 // ─── Base Shimmer Mixin ───────────────────────────────────────────────────────
 =shimmer-bg
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%)
-    background-size: 200% 100%
-    animation: shimmer 1.6s ease-in-out infinite
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 37%, #f0f0f0 63%)
+    background-size: 400% 100%
+    animation: shimmer 1.5s ease-in-out infinite
     +dark
-        background: linear-gradient(90deg, rgba(35, 38, 47, 0.6) 25%, rgba(53, 57, 69, 0.6) 37%, rgba(35, 38, 47, 0.6) 63%)
-        background-size: 200% 100%
+        background: linear-gradient(90deg, rgba(30, 33, 42, 0.8) 25%, rgba(48, 52, 64, 0.8) 37%, rgba(30, 33, 42, 0.8) 63%)
+        background-size: 400% 100%
 
 // ─── Skeleton Container ──────────────────────────────────────────────────────
 .container
     width: 100%
-    animation: fadeInUp 0.3s ease-out
+    animation: fadeInUp 0.25s ease-out
 
-// ─── Homepage Skeleton ────────────────────────────────────────────────────────
+// ─── Shimmer Primitive ────────────────────────────────────────────────────────
+.shimmer
+    border-radius: 6px
+    +shimmer-bg
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HOMEPAGE SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
+
 .homepageSkeleton
     padding: 20px 0
 
@@ -49,19 +57,17 @@
     height: 28px
     width: 220px
     border-radius: 8px
-    +shimmer-bg
     +m
         height: 22px
         width: 160px
 
 .sectionSubtitleBar
     height: 16px
-    width: 140px
+    width: 100px
     border-radius: 6px
-    +shimmer-bg
     +m
         height: 14px
-        width: 100px
+        width: 80px
 
 .cardsRow
     display: grid
@@ -88,20 +94,21 @@
 .cardImage
     width: 100%
     padding-bottom: 66%
-    +shimmer-bg
+    border-radius: 0
     +m
         padding-bottom: 75%
 
 .cardBody
     padding: 16px
+    display: flex
+    flex-direction: column
+    gap: 10px
     +m
         padding: 10px
 
 .cardLine
     height: 14px
     border-radius: 6px
-    margin-bottom: 10px
-    +shimmer-bg
     &:nth-child(1)
         width: 85%
         height: 16px
@@ -109,63 +116,62 @@
         width: 60%
     &:nth-child(3)
         width: 40%
-        margin-bottom: 0
-        margin-top: 14px
+        margin-top: 4px
     +m
         height: 12px
-        margin-bottom: 8px
         &:nth-child(1)
             height: 13px
-        &:nth-child(3)
-            margin-top: 10px
 
-// ─── Booking List Skeleton ────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOOKINGS LIST SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
+
+.bookingsListSkeleton
+    padding: 0
+
+// Full-page skeleton wrapper (title + tabs + cards)
 .bookingsSkeleton
-    padding: 2rem
+    padding: 2rem 2rem 3rem
 
 .bookingsHeader
-    display: flex
-    align-items: center
-    gap: 16px
-    margin-bottom: 32px
-
-.bookingsBackBtn
-    width: 40px
-    height: 40px
-    border-radius: 50%
-    +shimmer-bg
+    margin-bottom: 28px
 
 .bookingsTitle
-    height: 32px
-    width: 200px
-    border-radius: 8px
-    +shimmer-bg
+    height: 36px
+    width: 240px
+    border-radius: 10px
 
 .bookingsTabs
     display: flex
-    gap: 12px
+    gap: 10px
     margin-bottom: 32px
-    padding-bottom: 16px
-    border-bottom: 1px solid $n6
+    padding-bottom: 20px
+    border-bottom: 1px solid rgba($n6, 0.5)
     +dark
-        border-color: $n3
+        border-color: rgba($n3, 0.4)
+    +m
+        overflow-x: auto
+        padding-bottom: 14px
 
 .bookingsTabItem
     height: 36px
     width: 100px
-    border-radius: 20px
-    +shimmer-bg
+    border-radius: 22px
+    &:nth-child(1)
+        width: 110px
     &:nth-child(2)
         width: 120px
     &:nth-child(3)
         width: 90px
+    &:nth-child(4)
+        width: 105px
 
 .bookingCardSkeleton
     display: flex
     border-radius: 16px
     overflow: hidden
     background: $n8
-    border: 1px solid rgba($n6, 0.4)
+    border: 1px solid rgba($n6, 0.35)
     margin-bottom: 20px
     +dark
         background: $n1
@@ -177,7 +183,7 @@
     width: 260px
     min-height: 200px
     flex-shrink: 0
-    +shimmer-bg
+    border-radius: 0
     +m
         width: 100%
         min-height: 180px
@@ -199,7 +205,6 @@
 .bookingMetaChip
     height: 14px
     border-radius: 4px
-    +shimmer-bg
     &:nth-child(1)
         width: 60px
     &:nth-child(2)
@@ -209,14 +214,12 @@
 
 .bookingCardTitle
     height: 22px
-    width: 75%
+    width: 70%
     border-radius: 6px
-    +shimmer-bg
 
 .bookingCardLine
     height: 14px
     border-radius: 4px
-    +shimmer-bg
     &:nth-child(1)
         width: 50%
     &:nth-child(2)
@@ -231,47 +234,117 @@
 .bookingActionBtn
     height: 36px
     width: 110px
-    border-radius: 20px
-    +shimmer-bg
+    border-radius: 22px
 
-// ─── Detail Page Skeleton ─────────────────────────────────────────────────────
+.completedSkeleton
+    padding: 0.5rem 0
+    display: flex
+    flex-direction: column
+    gap: 0
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOOKING DETAIL PAGE SKELETON
+// Mirrors: back btn → title → rating → banner → summary card → detail cards
+// ═══════════════════════════════════════════════════════════════════════════════
+
 .detailSkeleton
-    padding: 2rem 0
+    padding: 2rem 0 4rem
 
+// Back button
 .detailBackBtn
     height: 36px
     width: 160px
-    border-radius: 20px
-    +shimmer-bg
-    margin-bottom: 24px
+    border-radius: 22px
+    margin-bottom: 28px
 
+// Title (two lines to reflect long titles)
 .detailTitle
-    height: 36px
-    width: 65%
-    border-radius: 8px
-    +shimmer-bg
-    margin-bottom: 16px
+    height: 38px
+    width: 72%
+    border-radius: 10px
+    margin-bottom: 12px
     +m
         width: 90%
+        height: 30px
 
+.detailTitleShort
+    height: 38px
+    width: 45%
+    border-radius: 10px
+    margin-bottom: 20px
+    +m
+        width: 65%
+        height: 30px
+
+// Rating stars row
 .detailRating
-    height: 18px
-    width: 180px
+    height: 20px
+    width: 200px
     border-radius: 6px
-    +shimmer-bg
-    margin-bottom: 32px
-
-.detailBanner
-    width: 100%
-    padding-bottom: 40%
-    border-radius: 20px
-    +shimmer-bg
     margin-bottom: 32px
     +m
-        padding-bottom: 56%
+        margin-bottom: 20px
+
+// Full-width banner image — mirrors the aspect ratio of the actual banner
+.detailBanner
+    width: 100%
+    height: 380px
+    border-radius: 20px
+    margin-bottom: 32px
+    border-radius: 24px
+    +t
+        height: 280px
+    +m
+        height: 200px
         border-radius: 14px
 
-.detailGrid
+// Summary card — big card with a grid of label/value items
+.detailSummaryCard
+    background: $n8
+    border: 1px solid rgba($n6, 0.4)
+    border-radius: 20px
+    padding: 28px 32px
+    margin-bottom: 24px
+    +dark
+        background: $n1
+        border-color: rgba($n3, 0.3)
+    +m
+        padding: 20px 16px
+        border-radius: 14px
+
+.detailSummaryTitle
+    height: 22px
+    width: 140px
+    border-radius: 6px
+    margin-bottom: 24px
+
+.detailSummaryGrid
+    display: grid
+    grid-template-columns: repeat(3, 1fr)
+    gap: 24px 32px
+    +t
+        grid-template-columns: repeat(2, 1fr)
+    +m
+        grid-template-columns: 1fr 1fr
+        gap: 16px
+
+.detailSummaryItem
+    display: flex
+    flex-direction: column
+    gap: 8px
+
+.detailSummaryLabel
+    height: 12px
+    width: 70px
+    border-radius: 4px
+
+.detailSummaryValue
+    height: 18px
+    width: 90%
+    border-radius: 5px
+
+// Two-column row of info cards below the summary
+.detailCardsRow
     display: grid
     grid-template-columns: 1fr 1fr
     gap: 20px
@@ -279,130 +352,59 @@
         grid-template-columns: 1fr
 
 .detailCard
-    border-radius: 16px
-    overflow: hidden
     background: $n8
     border: 1px solid rgba($n6, 0.4)
-    padding: 24px
+    border-radius: 20px
+    padding: 24px 28px
     +dark
         background: $n1
         border-color: rgba($n3, 0.3)
+    +m
+        padding: 18px 16px
+        border-radius: 14px
 
 .detailCardTitle
-    height: 20px
-    width: 140px
+    height: 18px
+    width: 120px
     border-radius: 6px
-    +shimmer-bg
     margin-bottom: 20px
 
 .detailCardRow
     display: flex
     justify-content: space-between
-    margin-bottom: 14px
-    &:last-child
+    margin-bottom: 16px
+    &:last-of-type
         margin-bottom: 0
 
 .detailCardLabel
-    height: 14px
-    width: 100px
+    height: 13px
+    width: 90px
     border-radius: 4px
-    +shimmer-bg
 
 .detailCardValue
-    height: 14px
+    height: 13px
     width: 120px
     border-radius: 4px
-    +shimmer-bg
 
-// ─── Host Profile Skeleton ────────────────────────────────────────────────────
-.hostSkeleton
-    padding: 2rem 0
+// Action buttons inside a card
+.detailActions
     display: flex
-    flex-direction: column
-    align-items: center
-    gap: 24px
-    min-height: 60vh
-
-.hostAvatar
-    width: 100px
-    height: 100px
-    border-radius: 50%
-    +shimmer-bg
-
-.hostName
-    height: 28px
-    width: 200px
-    border-radius: 8px
-    +shimmer-bg
-
-.hostBio
-    height: 16px
-    width: 300px
-    border-radius: 6px
-    +shimmer-bg
-
-.hostCards
-    display: grid
-    grid-template-columns: repeat(3, 1fr)
-    gap: 20px
-    width: 100%
-    max-width: 800px
-    margin-top: 20px
-    +m
-        grid-template-columns: repeat(2, 1fr)
-        gap: 12px
-
-// ─── Reviews Skeleton ─────────────────────────────────────────────────────────
-.reviewsSkeleton
-    padding: 1rem 0
-
-.reviewItem
-    display: flex
-    gap: 16px
-    padding: 20px
-    border-radius: 16px
-    background: $n8
-    border: 1px solid rgba($n6, 0.3)
-    margin-bottom: 16px
+    gap: 12px
+    margin-top: 24px
+    padding-top: 20px
+    border-top: 1px solid rgba($n6, 0.4)
     +dark
-        background: $n1
         border-color: rgba($n3, 0.3)
 
-.reviewAvatar
-    width: 48px
-    height: 48px
-    border-radius: 50%
-    flex-shrink: 0
-    +shimmer-bg
+.detailActionBtn
+    height: 40px
+    width: 150px
+    border-radius: 22px
 
-.reviewBody
-    flex: 1
-    display: flex
-    flex-direction: column
-    gap: 8px
+// ═══════════════════════════════════════════════════════════════════════════════
+// STAY PRODUCT PAGE SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
 
-.reviewName
-    height: 16px
-    width: 120px
-    border-radius: 4px
-    +shimmer-bg
-
-.reviewStars
-    height: 14px
-    width: 80px
-    border-radius: 4px
-    +shimmer-bg
-
-.reviewText
-    height: 14px
-    border-radius: 4px
-    +shimmer-bg
-    &:nth-child(1)
-        width: 95%
-    &:nth-child(2)
-        width: 70%
-
-// ─── Stay Product Skeleton ────────────────────────────────────────────────────
 .staySkeleton
     padding: 2rem 0
 
@@ -416,7 +418,6 @@
     height: 32px
     width: 50%
     border-radius: 8px
-    +shimmer-bg
     +m
         width: 80%
 
@@ -424,8 +425,7 @@
     height: 16px
     width: 30%
     border-radius: 6px
-    +shimmer-bg
-    margin-top: 10px
+    margin-top: 12px
     +m
         width: 60%
 
@@ -436,7 +436,7 @@
     gap: 8px
     border-radius: 20px
     overflow: hidden
-    margin-bottom: 32px
+    margin-bottom: 36px
     +m
         grid-template-columns: 1fr
         grid-template-rows: 240px
@@ -463,16 +463,15 @@
 .stayTabsBar
     display: flex
     gap: 20px
-    border-bottom: 1px solid $n6
+    border-bottom: 1px solid rgba($n6, 0.5)
     padding-bottom: 16px
     +dark
-        border-color: $n3
+        border-color: rgba($n3, 0.4)
 
 .stayTabItem
     height: 18px
     width: 80px
     border-radius: 4px
-    +shimmer-bg
 
 .stayParagraph
     display: flex
@@ -482,7 +481,6 @@
 .stayTextLine
     height: 14px
     border-radius: 4px
-    +shimmer-bg
     &:nth-child(1)
         width: 100%
     &:nth-child(2)
@@ -506,25 +504,216 @@
     height: 28px
     width: 140px
     border-radius: 6px
-    +shimmer-bg
     margin-bottom: 20px
 
 .staySidebarField
     height: 48px
     border-radius: 12px
-    +shimmer-bg
     margin-bottom: 12px
 
 .staySidebarBtn
     height: 52px
     width: 100%
     border-radius: 26px
-    +shimmer-bg
     margin-top: 8px
 
-// ─── Completed Orders Skeleton ────────────────────────────────────────────────
-.completedSkeleton
-    padding: 2rem 0
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPERIENCE / EVENT PRODUCT PAGE SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
+
+.experienceSkeleton
+    padding: 0
+
+.experienceBanner
+    width: 100%
+    height: 420px
+    border-radius: 0
+    margin-bottom: 0
+    border-radius: 24px
+    +t
+        height: 300px
+    +m
+        height: 220px
+        border-radius: 0
+
+.experienceContent
+    display: grid
+    grid-template-columns: 1fr 380px
+    gap: 48px
+    padding-top: 32px
+    +m
+        grid-template-columns: 1fr
+        gap: 24px
+
+.experienceMain
     display: flex
     flex-direction: column
     gap: 16px
+
+.experienceTags
+    display: flex
+    gap: 8px
+
+.experienceTag
+    height: 26px
+    width: 90px
+    border-radius: 14px
+
+.experienceTitle
+    height: 40px
+    width: 80%
+    border-radius: 10px
+    +m
+        width: 95%
+        height: 30px
+
+.experienceRating
+    height: 18px
+    width: 180px
+    border-radius: 5px
+
+.experienceParagraph
+    display: flex
+    flex-direction: column
+    gap: 10px
+    margin-top: 4px
+
+.experienceTextLine
+    height: 14px
+    border-radius: 4px
+    &:nth-child(1)
+        width: 100%
+    &:nth-child(2)
+        width: 94%
+    &:nth-child(3)
+        width: 88%
+    &:nth-child(4)
+        width: 65%
+
+.experienceInfoRow
+    display: flex
+    gap: 12px
+    flex-wrap: wrap
+    margin-top: 8px
+
+.experienceInfoPill
+    height: 36px
+    width: 130px
+    border-radius: 18px
+
+.experienceSidebar
+    border-radius: 20px
+    border: 1px solid rgba($n6, 0.4)
+    padding: 24px
+    height: fit-content
+    position: sticky
+    top: 100px
+    display: flex
+    flex-direction: column
+    gap: 14px
+    +dark
+        border-color: rgba($n3, 0.3)
+    +m
+        position: static
+
+.experienceSidebarPrice
+    height: 32px
+    width: 150px
+    border-radius: 8px
+
+.experienceSidebarField
+    height: 50px
+    border-radius: 12px
+
+.experienceSidebarBtn
+    height: 54px
+    width: 100%
+    border-radius: 27px
+    margin-top: 4px
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HOST PROFILE SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
+
+.hostSkeleton
+    padding: 2rem 0
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: 20px
+    min-height: 60vh
+
+.hostAvatar
+    width: 100px
+    height: 100px
+    border-radius: 50%
+
+.hostName
+    height: 28px
+    width: 200px
+    border-radius: 8px
+
+.hostBio
+    height: 16px
+    width: 300px
+    border-radius: 6px
+
+.hostCards
+    display: grid
+    grid-template-columns: repeat(3, 1fr)
+    gap: 20px
+    width: 100%
+    max-width: 800px
+    margin-top: 16px
+    +m
+        grid-template-columns: repeat(2, 1fr)
+        gap: 12px
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REVIEWS SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
+
+.reviewsSkeleton
+    padding: 1rem 0
+
+.reviewItem
+    display: flex
+    gap: 16px
+    padding: 20px
+    border-radius: 16px
+    background: $n8
+    border: 1px solid rgba($n6, 0.3)
+    margin-bottom: 16px
+    +dark
+        background: $n1
+        border-color: rgba($n3, 0.3)
+
+.reviewAvatar
+    width: 48px
+    height: 48px
+    border-radius: 50%
+    flex-shrink: 0
+
+.reviewBody
+    flex: 1
+    display: flex
+    flex-direction: column
+    gap: 8px
+
+.reviewName
+    height: 16px
+    width: 120px
+    border-radius: 4px
+
+.reviewStars
+    height: 14px
+    width: 80px
+    border-radius: 4px
+
+.reviewText
+    height: 14px
+    border-radius: 4px
+    &:nth-child(3)
+        width: 95%
+    &:nth-child(4)
+        width: 70%

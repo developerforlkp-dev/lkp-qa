@@ -1686,9 +1686,9 @@ const Main = ({
     }
   };
 
-  // Show loading state while fetching/transforming data
-  // Show loading if: (1) currently loading, OR (2) no data provided yet (null), OR (3) transforming current page
-  if ((loading && rawBookings.length === 0) || (propBookingData === null && rawBookings.length === 0) || isTransforming) {
+  // Show loading state while fetching order list data only on initial load
+  // Do NOT block on isTransforming — that is handled inline in the list area
+  if ((loading && rawBookings.length === 0) || (propBookingData === null && rawBookings.length === 0)) {
     return (
       <div style={{ padding: "4rem 2rem", minHeight: "80vh" }}>
         <LoadingSkeleton variant="bookings" count={3} />
@@ -1732,6 +1732,10 @@ const Main = ({
           {loadingCompleted && displayedTab === "completed" ? (
             <div style={{ padding: "1rem 0" }}>
               <LoadingSkeleton variant="completed" count={3} />
+            </div>
+          ) : isTransforming ? (
+            <div style={{ padding: "1rem 0" }}>
+              <LoadingSkeleton variant="bookingsList" count={3} />
             </div>
           ) : bookingsForTab.length > 0 ? (
             <div className={styles.list}>
