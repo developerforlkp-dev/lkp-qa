@@ -1553,38 +1553,44 @@ function PolicyCategoryItem({ category }) {
 
     // Property Rules
     const propItems = [];
+    const generalRules = [];
+    
     if (stay?.privacyAndPolicy?.propertyRulesTemplate && stay.privacyAndPolicy.propertyRulesTemplate !== "No property rules defined.") {
       const lines = stay.privacyAndPolicy.propertyRulesTemplate.split('\n').map(l => l.trim()).filter(Boolean);
-      lines.forEach((line, i) => {
+      lines.forEach((line) => {
+        if (line.toLowerCase() === "check-in and check-out" || line.toLowerCase() === "property rules") return;
+        
         const colonIdx = line.indexOf(':');
         if (colonIdx > 0 && colonIdx < 60) {
-          propItems.push({ id: `prop-${i}`, title: line.substring(0, colonIdx).trim(), body: line.substring(colonIdx + 1).trim() });
+          generalRules.push({ title: line.substring(0, colonIdx).trim(), valueText: line.substring(colonIdx + 1).trim() });
         } else {
-          if (line.toLowerCase() !== "check-in and check-out" && line.toLowerCase() !== "property rules") {
-            propItems.push({ id: `prop-${i}`, title: line, body: line });
-          }
+          generalRules.push({ title: line });
         }
       });
     } else {
       const rawPropRules = stay?.propertyRulesDefaultTemplate || stay?.propertyRules || stay?.propertyRule || findArrayWithKey(stay, 'propertyRule');
       if (Array.isArray(rawPropRules) && rawPropRules.length > 0) {
-        rawPropRules.forEach((r, i) => propItems.push({ id: `prop-${i}`, title: `Rule ${i + 1}`, body: extractText(r) }));
+        rawPropRules.forEach(r => generalRules.push({ title: extractText(r) }));
       } else if (stay?.houseRules) {
-        propItems.push({ id: `prop-0`, title: "General Rules", body: stay.houseRules });
+        generalRules.push({ title: stay.houseRules });
       } else if (stay?.checkInTime || stay?.checkOutTime) {
-        propItems.push({ id: `prop-0`, title: "Check-in / Check-out", body: `Check-in from ${stay.checkInTime || "2:00 PM"}. Check-out by ${stay.checkOutTime || "11:00 AM"}.` });
+        generalRules.push({ title: "Check-in", valueText: `From ${stay.checkInTime || "2:00 PM"}` });
+        generalRules.push({ title: "Check-out", valueText: `By ${stay.checkOutTime || "11:00 AM"}` });
       } else {
-        propItems.push({ id: `prop-0`, title: "General Rules", body: "Check-in from 2:00 PM. Check-out by 11:00 AM." });
+        generalRules.push({ title: "Check-in", valueText: "From 2:00 PM" });
+        generalRules.push({ title: "Check-out", valueText: "By 11:00 AM" });
       }
     }
+    
     if (stay?.ageRestriction != null && stay.ageRestriction !== "") {
-      propItems.push({ id: "age_restriction", title: "Minimum Age", body: `${stay.ageRestriction}+` });
+      generalRules.push({ title: "Minimum Age", valueText: `${stay.ageRestriction}+` });
     }
-    propItems.push({ id: "id_required", title: "ID Required at Check-in", body: stay?.idRequiredAtCheckIn ? "Yes" : "No" });
-    propItems.push({ id: "pets_allowed", title: "Pets Allowed", body: stay?.petAllowed ? "Yes" : "No" });
-    propItems.push({ id: "couple_friendly", title: "Couple Friendly", body: stay?.coupleFriendly ? "Yes" : "No" });
+    generalRules.push({ title: "ID Required at Check-in", valueText: stay?.idRequiredAtCheckIn ? "Yes" : "No" });
+    generalRules.push({ title: "Pets Allowed", valueText: stay?.petAllowed ? "Yes" : "No" });
+    generalRules.push({ title: "Couple Friendly", valueText: stay?.coupleFriendly ? "Yes" : "No" });
 
-    if (propItems.length > 0) {
+    if (generalRules.length > 0) {
+      propItems.push({ id: "prop-all", title: null, questions: generalRules });
       categories.push({ id: 'cat-prop', title: "Property Rules", items: propItems });
     }
 
@@ -1593,11 +1599,7 @@ function PolicyCategoryItem({ category }) {
     if (Array.isArray(stay?.guestRequirements) && stay.guestRequirements.length > 0) {
       stay.guestRequirements.forEach((req, i) => {
         const title = req.setting?.title || req.description || `Requirement ${i + 1}`;
-        let body = "";
-        if (Array.isArray(req.questions)) {
-          body = req.questions.map(q => `• ${q.title || q.question?.title}`).join("\n");
-        }
-        guestItems.push({ id: `guest-${i}`, title, body: body || title, questions: req.questions });
+        guestItems.push({ id: `guest-${i}`, title, body: null, questions: req.questions });
       });
     }
     if (guestItems.length > 0) {
