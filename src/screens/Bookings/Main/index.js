@@ -807,6 +807,10 @@ const Main = ({
   const [loading, setLoading] = useState(false);
   const [loadingCompleted, setLoadingCompleted] = useState(false);
   const [initialTabSet, setInitialTabSet] = useState(false); // Track if initial tab has been set
+
+  // Cache of already-transformed bookings keyed by orderId.
+  // This prevents re-fetching API data when switching back to a previously loaded tab.
+  const transformedCacheRef = React.useRef(new Map());
   // Review modal state (completed orders only)
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [bookingToReview, setBookingToReview] = useState(null);
@@ -1284,18 +1288,46 @@ const Main = ({
     return bookingsForTab.slice(startIndex, startIndex + itemsPerPage);
   }, [bookingsForTab, currentPage]);
 
-  // Lazy load / Transform only the paginated bookings
+  // Lazy transform: only transform bookings on the current page.
+  // Uses a cache keyed by orderId so switching back to an already-loaded
+  // tab renders instantly with NO skeleton shown.
   useEffect(() => {
     const transformPage = async () => {
       if (paginatedBookings.length === 0) {
         setPaginatedTransformedBookings([]);
         return;
       }
+
+      const cache = transformedCacheRef.current;
+
+      // Check if every booking on this page is already cached
+      const allCached = paginatedBookings.every(b => cache.has(String(b.orderId)));
+
+      if (allCached) {
+        // Instant render from cache — no skeleton, no API calls
+        setPaginatedTransformedBookings(
+          paginatedBookings.map(b => cache.get(String(b.orderId)))
+        );
+        return;
+      }
+
+      // Some bookings are not yet cached — transform only the missing ones
       setIsTransforming(true);
       try {
-        const rawItems = paginatedBookings.map(b => b.bookingData);
-        const transformed = await transformMultipleBookings(rawItems);
-        setPaginatedTransformedBookings(transformed);
+        const missing = paginatedBookings.filter(b => !cache.has(String(b.orderId)));
+        const missingRaw = missing.map(b => b.bookingData);
+        const freshTransformed = await transformMultipleBookings(missingRaw);
+
+        // Store the newly transformed bookings in the cache
+        freshTransformed.forEach(t => {
+          if (t && t.orderId != null) {
+            cache.set(String(t.orderId), t);
+          }
+        });
+
+        // Build the full ordered result from cache
+        const result = paginatedBookings.map(b => cache.get(String(b.orderId))).filter(Boolean);
+        setPaginatedTransformedBookings(result);
       } catch (err) {
         console.error("Error transforming page:", err);
       } finally {
@@ -1529,6 +1561,9 @@ const Main = ({
           return booking;
         });
       });
+
+      // Invalidate this booking in the transform cache so the cancelled tab shows fresh data
+      transformedCacheRef.current.delete(String(orderIdForCancel));
 
       // Switch to cancelled tab if not already there, using handleTabChange for proper animation
       if (activeTab !== "cancelled") {
