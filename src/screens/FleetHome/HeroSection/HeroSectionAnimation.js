@@ -177,8 +177,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         const [active, ...rest] = newOrder;
         const prv = rest[rest.length - 1];
 
-        gsap.set(detailsActive, { zIndex: 22, yPercent: -50 });
-        gsap.to(detailsActive, { opacity: 1, yPercent: -50, delay: 0.4, ease: EASE_TYPE });
+        gsap.set(detailsActive, { zIndex: 22 });
+        gsap.to(detailsActive, { opacity: 1, delay: 0.4, ease: EASE_TYPE });
         gsap.to(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false });
         gsap.to(`${detailsActive} .hero-desc`, { y: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false });
         gsap.to(`${detailsActive} .hero-button`, {
@@ -205,7 +205,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
             const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2; // vertically center smaller thumbnails
             gsap.set(getCard(prv), { x: prvCardX, y: thumbnailsY + yOffset, width: config.size, height: config.size, zIndex: config.zIndex, borderRadius: 12, scale: 0.9 });
             gsap.set(getCardContent(prv), { x: prvCardX, y: thumbnailsY + yOffset + config.size + 10, opacity: 1, zIndex: 40 });
-            gsap.set(detailsInactive, { opacity: 0, yPercent: -50 });
+            gsap.set(detailsInactive, { opacity: 0 });
             gsap.set(`${detailsInactive} .hero-title-1`, { y: 50, opacity: 0 });
             gsap.set(`${detailsInactive} .hero-desc`, { y: 50, opacity: 0 });
             gsap.set(`${detailsInactive} .hero-button`, { y: 50, opacity: 0 });
@@ -348,11 +348,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         currentActiveIndexRef.current = active;
       }
 
-      gsap.set(detailsActive, { opacity: 1, zIndex: 22, yPercent: -50 });
+      gsap.set(detailsActive, { opacity: 1, zIndex: 22 });
       gsap.set(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1 });
       gsap.set(`${detailsActive} .hero-desc`, { y: 0, opacity: 1 });
       gsap.set(`${detailsActive} .hero-button`, { y: 0, opacity: 1 });
-      gsap.set(detailsInactive, { opacity: 0, zIndex: 12, yPercent: -50 });
+      gsap.set(detailsInactive, { opacity: 0, zIndex: 12 });
       gsap.set(`${detailsInactive} .hero-title-1`, { y: 50, opacity: 0 });
       gsap.set(`${detailsInactive} .hero-desc`, { y: 50, opacity: 0 });
       gsap.set(`${detailsInactive} .hero-button`, { y: 50, opacity: 0 });
@@ -455,7 +455,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       });
 
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
-      gsap.set(detailsActive, { opacity: 1, zIndex: 22, yPercent: -50, x: 0 });
+      gsap.set(detailsActive, { opacity: 1, zIndex: 22, x: 0 });
       gsap.set(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1 });
       gsap.set(`${detailsActive} .hero-desc`, { y: 0, opacity: 1 });
       gsap.set(`${detailsActive} .hero-button`, { y: 0, opacity: 1 });
@@ -466,7 +466,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         currentActiveIndexRef.current = active;
       }
 
-      gsap.set(detailsInactive, { opacity: 0, zIndex: 12, yPercent: -50 });
+      gsap.set(detailsInactive, { opacity: 0, zIndex: 12 });
       orderRef.current.slice(1).forEach((cardIndex) => {
         gsap.set(getCard(cardIndex), { opacity: 0, zIndex: 0 });
         gsap.set(getCardContent(cardIndex), { opacity: 0, zIndex: 0 });
