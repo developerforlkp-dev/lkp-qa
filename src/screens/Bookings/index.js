@@ -3,7 +3,6 @@ import Page from "../../components/Page";
 import Main from "./Main";
 import { getCustomerOrders, getCompleteExpiredOrders } from "../../utils/api";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import LoadingSkeleton from "../../components/LoadingSkeleton";
 
 const Bookings = ({ bookingData = null }) => {
   const [orders, setOrders] = useState(null);
@@ -103,7 +102,8 @@ const Bookings = ({ bookingData = null }) => {
     fetchOrders();
   }, [bookingData]);
 
-  // Always render Page wrapper, but hide footer during loading
+  // Always render Main immediately — it manages its own skeleton state.
+  // This prevents the blank white screen flash between parent loading and Main mounting.
   return (
     <Page separatorHeader fooferHide={loading}>
       {error && error !== "" && (
@@ -112,8 +112,8 @@ const Bookings = ({ bookingData = null }) => {
         </div>
       )}
       <Main 
-        bookingData={orders} 
-        completedOrders={completedOrders} 
+        bookingData={loading ? null : (orders || [])} 
+        completedOrders={loading ? null : (completedOrders || [])} 
         completedCount={completedCount}
         setCompletedOrders={setCompletedOrders}
       />
