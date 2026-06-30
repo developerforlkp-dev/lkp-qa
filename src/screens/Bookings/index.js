@@ -106,25 +106,17 @@ const Bookings = ({ bookingData = null }) => {
   // Always render Page wrapper, but hide footer during loading
   return (
     <Page separatorHeader fooferHide={loading}>
-      {loading ? (
-        <div style={{ padding: "4rem 2rem", minHeight: "80vh" }}>
-          <LoadingSkeleton variant="bookings" count={3} />
+      {error && error !== "" && (
+        <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
+          <p>⚠️ {error}</p>
         </div>
-      ) : (
-        <>
-          {error && error !== "" && (
-            <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
-              <p>⚠️ {error}</p>
-            </div>
-          )}
-          <Main 
-            bookingData={orders || []} 
-            completedOrders={completedOrders || []} 
-            completedCount={completedCount}
-            setCompletedOrders={setCompletedOrders}
-          />
-        </>
       )}
+      <Main 
+        bookingData={orders} 
+        completedOrders={completedOrders} 
+        completedCount={completedCount}
+        setCompletedOrders={setCompletedOrders}
+      />
     </Page>
   );
 };
