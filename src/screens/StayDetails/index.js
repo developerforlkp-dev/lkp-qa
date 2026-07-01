@@ -3033,7 +3033,8 @@ const StayDetails = () => {
                         style={{
                           display: "flex",
                           flexDirection: "row",
-                          height: isMobile ? "auto" : "115px",
+                          minHeight: isMobile ? "auto" : "115px",
+                          height: "auto",
                           width: isMobile ? "100%" : (showScroll ? "calc((100% - 20px) / 2)" : "100%"),
                           flexShrink: 0,
                           background: W,
@@ -3074,7 +3075,7 @@ const StayDetails = () => {
                                 {pricingType}
                               </div>
                             )}
-                            <h4 style={{ fontSize: isMobile ? "15px" : "18px", fontWeight: 700, color: FG, margin: isMobile ? 0 : "4px 0 0 0", fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <h4 style={{ fontSize: isMobile ? "15px" : "18px", fontWeight: 700, color: FG, margin: isMobile ? 0 : "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
                               {addon.title || addon.name}
                             </h4>
                             {isMobile ? (

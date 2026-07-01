@@ -1773,7 +1773,8 @@ const ExperienceProduct = () => {
                         style={{
                           display: "flex",
                           flexDirection: "row",
-                          height: "115px",
+                          minHeight: "115px",
+                          height: "auto",
                           width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
                           flexShrink: 0,
                           background: W,
@@ -1812,7 +1813,7 @@ const ExperienceProduct = () => {
                             <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
                               {pricingType}
                             </div>
-                            <h4 style={{ fontSize: "18px", fontWeight: 700, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <h4 style={{ fontSize: "18px", fontWeight: 700, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
                               {addon.title}
                             </h4>
                             <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
