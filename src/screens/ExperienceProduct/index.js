@@ -1938,8 +1938,8 @@ const ExperienceProduct = () => {
               border: `1px solid ${B}`, 
               padding: 16, 
               display: "grid", 
-              gridTemplateColumns: "1fr 1fr", 
-              gap: 32,
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+              gap: isMobile ? 24 : 32,
               boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
             }} className="prep-grid">
               

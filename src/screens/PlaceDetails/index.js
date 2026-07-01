@@ -4,7 +4,7 @@ import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -15,6 +15,8 @@ import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getPlaceDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import Favorite from "../../components/Favorite";
+import Icon from "../../components/Icon";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -358,108 +360,10 @@ function SHdr({ idx, label }) {
   );
 }
 
-/* ─── HERO SHARE FAB ─────────────────────────── */
-function HeroShareFab({ title, text, url }) {
-  const [copied, setCopied] = useState(false);
-  const [ripple, setRipple] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const { tokens: { A } } = useTheme();
-  const glow = A || "#0097B2";
 
-  const handleShare = async () => {
-    setRipple(true);
-    setTimeout(() => setRipple(false), 700);
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, text, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2400);
-      }
-    } catch (_) {}
-  };
-
-  return (
-    <motion.button
-      className="premium-share-fab"
-      onClick={handleShare}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      whileTap={{ scale: 0.86 }}
-      style={{
-        position: "absolute",
-        top: 96,
-        right: 60,
-        zIndex: 200,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        height: 44,
-        maxWidth: hovered ? 200 : 44,
-        overflow: "hidden",
-        paddingLeft: 13,
-        paddingRight: hovered ? 18 : 13,
-        background: "rgba(0,151,178,0.13)",
-        backdropFilter: "blur(22px)",
-        WebkitBackdropFilter: "blur(22px)",
-        border: `1.5px solid ${glow}55`,
-        borderRadius: 50,
-        cursor: "pointer",
-        color: "#FFFFFF",
-        fontFamily: "inherit",
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.13em",
-        textTransform: "uppercase",
-        boxShadow: hovered
-          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
-          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
-        outline: "none",
-        userSelect: "none",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
-      }}
-    >
-      <motion.span
-        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
-      />
-      <motion.span
-        animate={{
-          y: hovered ? 0 : [0, -2, 0, 2, 0],
-          rotate: hovered ? 360 : 0,
-          scale: hovered ? 1.15 : 1
-        }}
-        transition={{
-          y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
-          rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-          scale: { duration: 0.3, ease: "easeOut" }
-        }}
-        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
-      >
-        <Share2 size={17} strokeWidth={2.2} />
-      </motion.span>
-      <span style={{
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        maxWidth: hovered ? 140 : 0,
-        opacity: hovered ? 1 : 0,
-        marginLeft: hovered ? 9 : 0,
-        position: "relative",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
-      }}>
-        {copied ? "✓ Copied!" : "Share Location"}
-      </span>
-    </motion.button>
-  );
-}
 
 /* ─── PLACE SECTIONS ─────────── */
-function PlaceHero({ place, galleryItems }) {
+function PlaceHero({ place, galleryItems, id }) {
   const { tokens: { A, FG, M, W, B, S } } = useTheme();
   const r = useRef(null);
   const sliderRef = useRef(null);
@@ -559,6 +463,25 @@ function PlaceHero({ place, galleryItems }) {
     setActiveIdx((prev) => (prev - 1 + baseItems.length) % baseItems.length);
   };
 
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareHovered, setShareHovered] = useState(false);
+  const [shareRipple, setShareRipple] = useState(false);
+  const glow = A || "#0097B2";
+
+  const handleShare = async () => {
+    setShareRipple(true);
+    setTimeout(() => setShareRipple(false), 700);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: place?.placeName || "Place", text: place?.description || "", url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2400);
+      }
+    } catch (_) {}
+  };
+
   return (
     <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.02, overflow: "hidden", zIndex: 1 }}>
@@ -576,6 +499,8 @@ function PlaceHero({ place, galleryItems }) {
           {placeName.split(' ')[0].toUpperCase()}
         </motion.h1>
       </div>
+
+
 
       <div style={{
         display: "flex",
@@ -648,6 +573,103 @@ function PlaceHero({ place, galleryItems }) {
                   {toDisplayString(tag)}
                 </span>
               ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 32 }}>
+              {id && (
+                <Favorite itemType="place" itemId={id}>
+                  {({ saved, onClick }) => {
+                    const surface = "#FFFFFF";
+                    const borderCol = `${glow}4D`;
+                    const shadow = `0 6px 18px rgba(15,15,15,0.12)`;
+                    return (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.86 }}
+                        onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                        style={{ width: 44, height: 44, borderRadius: "50%", background: surface, border: `1.5px solid ${borderCol}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, outline: "none" }}
+                      >
+                        <style>{`
+                          .place-save-icon-${id} svg {
+                            fill: ${saved ? glow : "transparent"};
+                            transition: fill 0.3s ease;
+                          }
+                          .place-save-icon-${id} svg path,
+                          .place-save-icon-${id} svg circle {
+                            stroke: ${saved ? glow : glow} !important;
+                            transition: stroke 0.3s ease;
+                          }
+                        `}</style>
+                        <div className={`place-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", color: glow }}>
+                          <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                        </div>
+                      </motion.button>
+                    );
+                  }}
+                </Favorite>
+              )}
+
+              <motion.button
+                onClick={handleShare}
+                onHoverStart={() => setShareHovered(true)}
+                onHoverEnd={() => setShareHovered(false)}
+                whileTap={{ scale: 0.86 }}
+                style={{
+                  height: 44,
+                  borderRadius: 22,
+                  background: "#FFFFFF",
+                  border: `1.5px solid ${shareHovered ? glow : `${glow}4D`}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  boxShadow: shareHovered
+                    ? `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+                    : "0 6px 18px rgba(15,15,15,0.12)",
+                  cursor: "pointer",
+                  maxWidth: shareHovered ? 160 : 44,
+                  overflow: "hidden",
+                  paddingLeft: 12,
+                  paddingRight: shareHovered ? 16 : 12,
+                  transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+                  position: "relative",
+                  zIndex: 200,
+                  outline: "none"
+                }}
+              >
+                <motion.span
+                  animate={{ scale: [1, 3.4], opacity: [0.45, 0] }}
+                  transition={{ duration: 0, opacity: 0 }}
+                  style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none", opacity: shareRipple ? 0.45 : 0, scale: shareRipple ? 3.4 : 1 }}
+                />
+                <motion.span
+                  animate={{
+                    y: shareHovered ? 0 : [0, -2, 0, 2, 0],
+                    rotate: shareHovered ? 360 : 0,
+                    scale: shareHovered ? 1.15 : 1
+                  }}
+                  transition={{
+                    y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+                    rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+                    scale: { duration: 0.3, ease: "easeOut" }
+                  }}
+                  style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative", color: glow }}
+                >
+                  <Share2 size={20} color={glow} />
+                </motion.span>
+                <span style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  maxWidth: shareHovered ? 130 : 0,
+                  opacity: shareHovered ? 1 : 0,
+                  marginLeft: shareHovered ? 8 : 0,
+                  transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+                  color: glow,
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: 13,
+                  fontWeight: 600
+                }}>
+                  {shareCopied ? "Copied!" : "Share"}
+                </span>
+              </motion.button>
             </div>
           </motion.div>
         </div>
@@ -803,36 +825,37 @@ function PlaceHero({ place, galleryItems }) {
             })}
           </div>
 
-          {/* View All Badge */}
-          <button
+          {/* View All Badge - ExperienceProduct style */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => openLightbox(0)}
             style={{
               position: "absolute",
               bottom: 24,
               right: 24,
-              zIndex: 20,
-              background: "rgba(0, 0, 0, 0.6)",
+              background: "rgba(0, 0, 0, 0.3)",
               backdropFilter: "blur(12px)",
-              border: `1px solid rgba(255,255,255,0.25)`,
-              color: "#FFF",
-              borderRadius: 30,
-              padding: "10px 20px",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: "0.1em",
-              cursor: "pointer",
+              WebkitBackdropFilter: "blur(12px)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              borderRadius: 24,
+              padding: "8px 16px",
               display: "flex",
               alignItems: "center",
               gap: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-              transition: "all 0.2s"
+              fontSize: "13px",
+              fontWeight: 500,
+              fontFamily: '"Inter", sans-serif',
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              cursor: "pointer",
+              zIndex: 10,
+              transition: "all 0.3s ease"
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.85)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)"; }}
           >
-            <Star size={12} fill="#FFF" color="#FFF" />
-            <span>VIEW ALL ({baseItems.length})</span>
-          </button>
+            <Camera size={16} />
+            See all photos
+          </motion.button>
         </div>
 
       </div>
@@ -961,11 +984,6 @@ function PlaceHero({ place, galleryItems }) {
       </AnimatePresence>
 
       {/* Scroll to discover removed */}
-      <HeroShareFab
-        title={placeName}
-        text={place?.description || ""}
-        url={window.location.href}
-      />
     </section>
   );
 }
@@ -1940,7 +1958,7 @@ function LocationSection({ place }) {
   return (
     <section className="location-section" style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 32 : 64 }} className="prep-grid">
           <Rev delay={0.1} style={{ height: "100%" }}>
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
@@ -2061,11 +2079,30 @@ function LocationSection({ place }) {
 
 /* ─── MOBILE COMPONENTS ─────────── */
 
-function MobileHero({ place, galleryItems }) {
+function MobileHero({ place, galleryItems, id }) {
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B } = tokens;
   const history = useHistory();
   const placeName = place?.placeName || place?.title || "COASTAL GEM";
+  
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareHovered, setShareHovered] = useState(false);
+  const [shareRipple, setShareRipple] = useState(false);
+  const glow = A || "#0097B2";
+
+  const handleShare = async () => {
+    setShareRipple(true);
+    setTimeout(() => setShareRipple(false), 700);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: place?.placeName || "Place", text: place?.description || "", url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2400);
+      }
+    } catch (_) {}
+  };
 
   const images = galleryItems && galleryItems.length ? galleryItems : ["https://picsum.photos/seed/destination/800/1000"];
 
@@ -2080,12 +2117,105 @@ function MobileHero({ place, galleryItems }) {
       >
         <ChevronLeft size={20} />
       </button>
-      {/* Hero Share Button */}
-      <HeroShareFab
-        title={placeName}
-        text={place?.description || ""}
-        url={window.location.href}
-      />
+      {/* Wishlist + Share buttons */}
+      <div style={{ position: "absolute", top: 20, right: 24, zIndex: 100, display: "flex", alignItems: "center", gap: 8 }}>
+        {id && (
+          <Favorite itemType="place" itemId={id}>
+            {({ saved, onClick }) => {
+              const surface = theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.84)";
+              const borderCol = `${glow}4D`;
+              const shadow = `0 6px 18px rgba(15,15,15,0.12)`;
+              return (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.86 }}
+                  onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                  style={{ width: 44, height: 44, borderRadius: "50%", background: surface, backdropFilter: "blur(10px)", border: `1.5px solid ${borderCol}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, outline: "none" }}
+                >
+                  <style>{`
+                    .mobile-place-save-${id} svg {
+                      fill: ${saved ? glow : glow};
+                      transition: fill 0.3s ease;
+                    }
+                    .mobile-place-save-${id} svg path,
+                    .mobile-place-save-${id} svg circle {
+                      stroke: ${saved ? glow : glow} !important;
+                      transition: stroke 0.3s ease;
+                    }
+                  `}</style>
+                  <div className={`mobile-place-save-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", color: glow }}>
+                    <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                  </div>
+                </motion.button>
+              );
+            }}
+          </Favorite>
+        )}
+
+        <motion.button
+          onClick={handleShare}
+          onHoverStart={() => setShareHovered(true)}
+          onHoverEnd={() => setShareHovered(false)}
+          whileTap={{ scale: 0.86 }}
+          style={{
+            height: 44,
+            borderRadius: 22,
+            background: theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.84)",
+            backdropFilter: "blur(10px)",
+            border: `1.5px solid ${shareHovered ? glow : `${glow}4D`}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            boxShadow: shareHovered
+              ? `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+              : "0 6px 18px rgba(15,15,15,0.12)",
+            cursor: "pointer",
+            maxWidth: shareHovered ? 140 : 44,
+            overflow: "hidden",
+            paddingLeft: 12,
+            paddingRight: shareHovered ? 16 : 12,
+            transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+            position: "relative",
+            zIndex: 200,
+            outline: "none"
+          }}
+        >
+          <motion.span
+            animate={{ scale: [1, 3.4], opacity: [0.45, 0] }}
+            transition={{ duration: 0, opacity: 0 }}
+            style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none", opacity: shareRipple ? 0.45 : 0, scale: shareRipple ? 3.4 : 1 }}
+          />
+          <motion.span
+            animate={{
+              y: shareHovered ? 0 : [0, -2, 0, 2, 0],
+              rotate: shareHovered ? 360 : 0,
+              scale: shareHovered ? 1.15 : 1
+            }}
+            transition={{
+              y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+              rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+              scale: { duration: 0.3, ease: "easeOut" }
+            }}
+            style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative", color: glow }}
+          >
+            <Share2 size={20} color={glow} />
+          </motion.span>
+          <span style={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            maxWidth: shareHovered ? 100 : 0,
+            opacity: shareHovered ? 1 : 0,
+            marginLeft: shareHovered ? 8 : 0,
+            transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+            color: glow,
+            fontFamily: '"Inter", sans-serif',
+            fontSize: 13,
+            fontWeight: 600
+          }}>
+            {shareCopied ? "Copied!" : "Share"}
+          </span>
+        </motion.button>
+      </div>
 
       {/* Layered Image Stack / Peeking Slider */}
       <div style={{
@@ -2870,7 +3000,7 @@ function MobilePlaceDetails({
       {unavailablePopup}
       
       {/* 1. Hero Image with floating content */}
-      <MobileHero place={place} galleryItems={galleryItems} />
+      <MobileHero place={place} galleryItems={galleryItems} id={currentListingId} />
 
       {/* Place Description */}
       <PlaceDescription place={place} />
@@ -3109,7 +3239,7 @@ const PlaceDetails = () => {
       <ProgressBar />
       {unavailablePopup}
 
-      <PlaceHero place={place} galleryItems={galleryItems} />
+      <PlaceHero place={place} galleryItems={galleryItems} id={currentListingId} />
 
       <PlaceDescription place={place} />
 
