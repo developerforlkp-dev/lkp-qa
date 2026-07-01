@@ -627,8 +627,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     startTime: formatTime(apiBooking.checkInTime || apiBooking.originalData?.checkInTime || stayData?.checkInTime), // Will be overridden by slot data if present
     endTime: formatTime(apiBooking.checkOutTime || apiBooking.originalData?.checkOutTime || stayData?.checkOutTime), // Will be overridden by slot data if present
     guestCount: apiBooking.numberOfGuests || 0,
-    adultsCount: apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
-    childrenCount: apiBooking.guests?.children || apiBooking.originalData?.guests?.children || apiBooking.originalData?.pricing?.childrenCount || apiBooking.childrenCount || apiBooking.childCount || apiBooking.children || 0,
+    adultsCount: apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || (Array.isArray(apiBooking.stayOrderRooms) ? apiBooking.stayOrderRooms.reduce((sum, r) => sum + (r.adults || r.numberOfAdults || r.noOfAdults || r.adultCount || 0) + (r.extraAdults || r.extraAdult || 0), 0) : 0) || 0,
+    childrenCount: apiBooking.guests?.children || apiBooking.originalData?.guests?.children || apiBooking.originalData?.pricing?.childrenCount || apiBooking.childrenCount || apiBooking.childCount || apiBooking.children || (Array.isArray(apiBooking.stayOrderRooms) ? apiBooking.stayOrderRooms.reduce((sum, r) => sum + (r.children || r.numberOfChildren || r.noOfChildren || r.childCount || 0) + (r.extraChildren || r.extraChild || 0), 0) : 0) || 0,
     location: location,
     bannerImage: {
       src: coverPhotoUrl,
@@ -1058,10 +1058,11 @@ const ViewDetails = () => {
       const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
       const children = booking.childrenCount || 0;
       if (adults > 0 || children > 0) {
-        return [
-          adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : null,
-          children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : null,
-        ].filter(Boolean).join(", ");
+        const total = adults + children;
+        const adultText = adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : "";
+        const childText = children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : "";
+        if (adults > 0 && children > 0) return `${total} Guest${total !== 1 ? "s" : ""} (${adultText}, ${childText})`;
+        return `${total} Guest${total !== 1 ? "s" : ""} (${adultText || childText})`;
       }
       return `${booking.guestCount || 0} Guest${booking.guestCount === 1 ? "" : "s"}`;
     })();
@@ -2702,13 +2703,11 @@ const ViewDetails = () => {
                   const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
                   const children = booking.childrenCount || 0;
                   if (adults > 0 || children > 0) {
-                    return (
-                      <>
-                        {adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : ""}
-                        {adults > 0 && children > 0 ? ", " : ""}
-                        {children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : ""}
-                      </>
-                    );
+                    const total = adults + children;
+                    const adultText = adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : "";
+                    const childText = children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : "";
+                    if (adults > 0 && children > 0) return `${total} Guest${total !== 1 ? "s" : ""} (${adultText}, ${childText})`;
+                    return `${total} Guest${total !== 1 ? "s" : ""} (${adultText || childText})`;
                   }
                   return `${booking.guestCount} ${booking.guestCount === 1 ? "guest" : "guests"}`;
                 })()}
