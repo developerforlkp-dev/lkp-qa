@@ -1,6 +1,13 @@
 import axios from "axios";
 
-const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
+const normalizeBaseUrl = (url) => {
+  if (!url) return url;
+  let normalized = url.replace(/\/+$/, "");
+  if (normalized.includes(".littleknownplanet.com") && normalized.startsWith("http://")) {
+    normalized = normalized.replace("http://", "https://");
+  }
+  return normalized;
+};
 const DEV_API_BASE_URL = "https://api.dev.littleknownplanet.com/api";
 
 export const normalizePublicImageUrl = (url) => {

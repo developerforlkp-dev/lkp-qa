@@ -1,7 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Globe, ArrowUp, Star, Home, Ticket, Users } from "lucide-react";
+import { Globe, ArrowUp, Star, Home, Ticket, Users, ChevronDown, ChevronUp } from "lucide-react";
 import styles from "./Footer.module.sass";
+
+
+function FooterCol({ title, children }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className={styles.linkCol}>
+      <h4 onClick={() => setIsOpen(!isOpen)} className={styles.colTitle}>
+        {title}
+        <span className={styles.colIcon}>
+          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
+      </h4>
+      <div className={`${styles.colContent} ${isOpen ? styles.colContentOpen : ''}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function Footer() {
   return (
@@ -61,20 +79,15 @@ export function Footer() {
 
           {/* Links Sections */}
           <div className={styles.rightSection}>
-            <div className={styles.linkCol}>
-              <h4>Explore</h4>
-              <ul>
+            <FooterCol title="Explore"><ul>
                 <li><Link to="/experiences">Experiences</Link></li>
                 <li><Link to="/events">Events</Link></li>
                 <li><Link to="/stays">Stays</Link></li>
                 <li><Link to="/food">Food</Link></li>
                 <li><Link to="/places">Places</Link></li>
-              </ul>
-            </div>
+              </ul></FooterCol>
 
-            <div className={styles.linkCol}>
-              <h4>Discover</h4>
-              <ul>
+            <FooterCol title="Discover"><ul>
                 <li><Link to="/experiences">Trending Experiences</Link></li>
                 <li><Link to="/events">Upcoming Events</Link></li>
                 <li><Link to="/stays">Featured Stays</Link></li>
@@ -82,30 +95,23 @@ export function Footer() {
                 <li><Link to="/places">Travel Stories</Link></li>
                 <li><Link to="/experiences">Collections</Link></li>
                 <li><Link to="/blog">Blog</Link></li>
-              </ul>
-            </div>
+              </ul></FooterCol>
 
-            <div className={styles.linkCol}>
-              <h4>Company</h4>
-              <ul>
+            <FooterCol title="Company"><ul>
                 <li><Link to="/">About Little Known Planet</Link></li>
                 <li><Link to="/host-profile">Become a Host</Link></li>
                 <li><Link to="/">Partner With Us</Link></li>
                 <li><Link to="/">Careers</Link></li>
                 <li><a href="mailto:support@littleknownplanet.com">Contact Us</a></li>
-              </ul>
-            </div>
+              </ul></FooterCol>
             
-            <div className={styles.linkCol}>
-              <h4>Support</h4>
-              <ul>
+            <FooterCol title="Support"><ul>
                 <li><Link to="/support">Help Center</Link></li>
                 <li><Link to="/bookings">Bookings</Link></li>
                 <li><Link to="/terms-of-service">Cancellation Policy</Link></li>
                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
                 <li><Link to="/terms-of-service">Terms & Conditions</Link></li>
-              </ul>
-            </div>
+              </ul></FooterCol>
           </div>
 
         </div>
