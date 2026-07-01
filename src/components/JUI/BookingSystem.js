@@ -1590,7 +1590,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           const [h, m] = String(startTime).split(":").map(Number);
           if (Number.isFinite(h) && Number.isFinite(m)) {
             const slotMinutes = h * 60 + m;
-            if (slotMinutes <= currentMinutes) return false;
+            const cutoffHours = Number(slot.bookingCutoffHours || slot.booking_cutoff_hours) || 0;
+            const cutoffMinutes = cutoffHours * 60;
+            if (slotMinutes - cutoffMinutes <= currentMinutes) return false;
           }
         }
 
@@ -1661,7 +1663,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (startTime) {
         const [h, m] = startTime.split(':').map(Number);
         const slotMinutes = h * 60 + m;
-        if (slotMinutes <= currentMinutes) {
+        const cutoffHours = Number(slot.bookingCutoffHours || slot.booking_cutoff_hours) || 0;
+        const cutoffMinutes = cutoffHours * 60;
+        if (slotMinutes - cutoffMinutes <= currentMinutes) {
           return false;
         }
       }
