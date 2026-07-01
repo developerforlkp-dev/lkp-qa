@@ -275,6 +275,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     // Map to display status - keep PENDING as "Pending", CONFIRMED as "Confirmed"
     const statusMap = {
       PENDING: "Pending",
+      PENDING_CONFIRMATION: "Pending Confirmation",
       CONFIRMED: "Confirmed",
       COMPLETED: "Completed",
       CANCELLED: "Cancelled",
@@ -2744,6 +2745,7 @@ const ViewDetails = () => {
                       const normalized = String(originalStatus).toUpperCase().trim();
                       // Map original status to display text
                       if (normalized === "PENDING") return "Pending";
+                      if (normalized === "PENDING_CONFIRMATION") return "Pending Confirmation";
                       if (normalized === "CONFIRMED") return "Confirmed";
                       if (normalized === "COMPLETED") return "Completed";
                       if (normalized === "CANCELLED" || normalized === "CANCELED") return "Cancelled";
