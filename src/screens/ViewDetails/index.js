@@ -2931,7 +2931,7 @@ const ViewDetails = () => {
                 <span>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</span>
                 <span>{booking.pricing.total}</span>
               </div>
-              {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && (
+              {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && String(booking.originalData?.orderStatus || "").toUpperCase() !== "PENDING_CONFIRMATION" && (
                 <div className={styles.paymentActions}>
                   <button
                     type="button"
