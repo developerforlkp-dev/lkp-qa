@@ -900,23 +900,18 @@ function CulinaryHero({ food, galleryItems }) {
           )}
         </div>
 
-        {/* Hero Back Button */}
-        <button
-          type="button"
-          className="premium-back-button"
-          onClick={() => history.goBack()}
-          aria-label="Go back"
-        >
-          <ChevronLeft size={20} />
-        </button>
-
-        {/* Share Button absolute overlays */}
-        <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
-          <HeroShareFab
-            title={food?.menuName || food?.title || ""}
-            text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-            url={window.location.href}
-          />
+        {/* Top controls */}
+        <div style={{ position: "absolute", top: 90, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 200 }}>
+          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <ChevronLeft size={22} color="#111" />
+          </button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <HeroShareFab
+              title={food?.menuName || food?.title || ""}
+              text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+              url={window.location.href}
+            />
+          </div>
         </div>
 
         {/* Floating Content Card */}
@@ -934,65 +929,55 @@ function CulinaryHero({ food, galleryItems }) {
           zIndex: 15,
           position: "relative"
         }}>
-          <h1 className="font-display" style={{
-            fontSize: "24px",
-            fontWeight: 800,
+          <h1 style={{
+            fontSize: "clamp(2rem, 8vw, 2.5rem)",
+            fontWeight: 700,
+            lineHeight: 1.1,
             color: FG,
-            lineHeight: 1.2,
-            margin: "0 0 6px 0",
+            margin: "0 0 8px 0",
+            letterSpacing: "-0.02em",
+            fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
             textTransform: "capitalize"
           }}>
             {title}
           </h1>
-          <h2 className="font-cursive" style={{
-            fontSize: "24px",
-            color: A,
-            margin: "0 0 12px 0",
-            fontWeight: 400
+          <div style={{
+            fontSize: "14px",
+            color: "#0097B2",
+            margin: "0 0 16px 0",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            fontFamily: '"Inter", sans-serif'
           }}>
             {food?.shortDescription || "Authentic Taste Experience"}
-          </h2>
+          </div>
+        </div>
+
+        {/* Detailed Description */}
+        <div style={{ padding: "0 24px", marginTop: "16px" }}>
+          <div style={{
+            fontSize: "11px",
+            fontWeight: 800,
+            color: "#0097B2",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            marginBottom: "6px",
+            fontFamily: '"Inter", sans-serif'
+          }}>
+            About This Food
+          </div>
           <p style={{
-            fontSize: "13px",
+            fontSize: "14px",
             color: M,
-            lineHeight: 1.5,
-            margin: 0
+            lineHeight: 1.6,
+            margin: 0,
+            fontFamily: '"Inter", sans-serif'
           }}>
             {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
           </p>
         </div>
 
-        {/* Details & Badges Section */}
-        <div style={{ padding: "0 16px", marginTop: "20px", display: "flex", flexDirection: "column", gap: 20 }}>
-          <div className="info-badges-grid" style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "12px",
-            padding: "16px 0",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`
-          }}>
-            <InfoBadge icon={Utensils} label={cuisine} sublabel="Cuisine" tokens={tokens} />
-            <InfoBadge icon={Globe} label={source} sublabel="Source" tokens={tokens} />
-            <InfoBadge icon={Zap} label={serveMode} sublabel="Service" tokens={tokens} />
-            <InfoBadge icon={Leaf} label={dietary} sublabel="Dietary" tokens={tokens} />
-          </div>
-
-          <div className="hero-stats-card" style={{
-            background: W,
-            borderRadius: "20px",
-            padding: "16px",
-            border: `1px solid ${B}`,
-            display: "flex",
-            flexDirection: "column",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.02)",
-            gap: 0
-          }}>
-            <HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} />
-            <HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} />
-            <HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder />
-          </div>
-        </div>
 
       </section>
     );
@@ -1762,7 +1747,7 @@ function FoodMetadataCard({ food }) {
         {/* Left Side: Main Ticket Body (3x2 horizontal grid flow) */}
         <div style={{ flex: 1.9, padding: isMobile ? "20px 16px" : "28px 36px", display: "flex", flexDirection: "column", gap: "24px" }}>
           
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? "16px" : "20px 24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: isMobile ? "12px" : "20px 24px" }}>
             
             {/* Card 1: Category */}
             <motion.div
@@ -1915,39 +1900,44 @@ function FoodMetadataCard({ food }) {
         </div>
 
         {/* Perforated Divider */}
-        {!isMobile && (
+        <div style={{
+          width: isMobile ? "100%" : "1px",
+          height: isMobile ? "1px" : "auto",
+          borderLeft: isMobile ? "none" : `2px dashed ${tokens.M}`,
+          borderTop: isMobile ? `2px dashed ${tokens.M}` : "none",
+          position: "relative",
+          margin: isMobile ? "0" : "20px 0",
+          zIndex: 5
+        }}>
+          {/* Top/Left Cutout */}
           <div style={{
-            width: "1px",
-            borderLeft: `2px dashed ${tokens.M}`,
-            position: "relative",
-            margin: "20px 0"
-          }}>
-            {/* Top Cutout */}
-            <div style={{
-              position: "absolute",
-              top: -32,
-              left: -13,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: tokens.BG,
-              borderBottom: `1px solid ${tokens.B}`,
-              zIndex: 10
-            }} />
-            {/* Bottom Cutout */}
-            <div style={{
-              position: "absolute",
-              bottom: -32,
-              left: -13,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: tokens.BG,
-              borderTop: `1px solid ${tokens.B}`,
-              zIndex: 10
-            }} />
-          </div>
-        )}
+            position: "absolute",
+            top: isMobile ? -12 : -32,
+            left: isMobile ? -12 : -13,
+            width: "24px",
+            height: "24px",
+            borderRadius: "50%",
+            background: tokens.BG,
+            borderBottom: isMobile ? "none" : `1px solid ${tokens.B}`,
+            borderRight: isMobile ? `1px solid ${tokens.B}` : "none",
+            zIndex: 10
+          }} />
+          {/* Bottom/Right Cutout */}
+          <div style={{
+            position: "absolute",
+            top: isMobile ? -12 : "auto",
+            bottom: isMobile ? "auto" : -32,
+            right: isMobile ? -12 : "auto",
+            left: isMobile ? "auto" : -13,
+            width: "24px",
+            height: "24px",
+            borderRadius: "50%",
+            background: tokens.BG,
+            borderTop: isMobile ? "none" : `1px solid ${tokens.B}`,
+            borderLeft: isMobile ? `1px solid ${tokens.B}` : "none",
+            zIndex: 10
+          }} />
+        </div>
 
         {/* Right Side: Access Stub */}
         <div style={{
@@ -1958,7 +1948,7 @@ function FoodMetadataCard({ food }) {
           flexDirection: "column",
           justifyContent: "space-between",
           gap: "24px",
-          borderTop: isMobile ? `2px dashed ${tokens.M}` : "none"
+          borderTop: "none"
         }}>
           <div>
             <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", color: tokens.A, letterSpacing: "0.15em" }}>Access Stub</span>
@@ -2231,7 +2221,7 @@ const FoodDetails = () => {
 
         return (
           <div style={{
-            margin: "0 -80px",
+            margin: isMobile ? "0 -24px" : "0 -80px",
             overflow: "hidden",
             position: "relative",
             padding: "20px 0",
