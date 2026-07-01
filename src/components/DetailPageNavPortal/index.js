@@ -234,14 +234,17 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
           style={{
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             background: W,
             border: `1px solid ${B}`,
             borderRadius: "40px",
-            padding: "8px 8px 8px 24px",
+            padding: "8px 8px 8px 32px",
             boxShadow: "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
             cursor: "pointer",
             transition: "box-shadow 0.2s ease",
             gap: "16px",
+            width: "100%",
+            maxWidth: "480px",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.18)")}
           onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)")}
