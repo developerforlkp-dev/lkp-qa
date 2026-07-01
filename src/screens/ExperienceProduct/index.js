@@ -3761,7 +3761,7 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                   <Star 
                     key={i} 
                     size={16} 
-                    style={{ fill: i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent" }} 
+                    fill={i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent"} 
                     color={i < Math.round(summary.averageRating) ? "#F59E0B" : M} 
                   />
                 ))}
@@ -3791,7 +3791,7 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                           <Star 
                             key={si} 
                             size={14} 
-                            style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} 
+                            fill={si < (rev.rating || 5) ? "#F59E0B" : "transparent"} 
                             color={si < (rev.rating || 5) ? "#F59E0B" : M} 
                           />
                         ))}

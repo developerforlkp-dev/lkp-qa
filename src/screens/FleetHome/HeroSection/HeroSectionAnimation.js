@@ -201,8 +201,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         gsap.to(getCard(prv), { scale: 1.1, ease: EASE_TYPE });
         gsap.to(getCardContent(active), { y: thumbnailsY + 100, opacity: 0, duration: 0.3, ease: EASE_TYPE });
 
-        const imageLeft = isMobile ? 0 : "20%";
-        const imageWidth = isMobile ? "100%" : "80%";
+        const imageLeft = isMobile ? 0 : containerWidth * 0.2;
+        const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
 
         gsap.to(getCard(active), {
           x: imageLeft, y: 0, ease: EASE_TYPE, width: imageWidth, height: "100%", borderRadius: 0, scale: 1,
@@ -299,8 +299,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         return startX;
       };
 
-      const imageLeft = isMobile ? 0 : "20%";
-      const imageWidth = isMobile ? "100%" : "80%";
+      const imageLeft = isMobile ? 0 : containerWidth * 0.2;
+      const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
 
       gsap.set(getCard(active), { x: imageLeft, y: 0, width: imageWidth, height: "100%", borderRadius: 0, zIndex: 20, opacity: 1, scale: 1 });
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
