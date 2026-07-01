@@ -14,6 +14,8 @@ import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
+import Favorite from "../../components/Favorite";
+import Icon from "../../components/Icon";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 
@@ -714,17 +716,26 @@ function HeroStat({ icon: Icon, label, value, subvalue, tokens, hideBorder }) {
 }
 
 /* ─── HERO SHARE FAB ─────────────────────────── */
-function HeroShareFab({ title, text, url }) {
-  const { isMobile } = useWindowSize();
+function HeroShareFab({ title, text, url, label = "Share Taste" }) {
   const [copied, setCopied] = useState(false);
-  const [ripple, setRipple] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const { tokens: { A } } = useTheme();
+  const { theme, tokens: { A, FG } } = useTheme();
   const glow = A || "#0097B2";
+  const isDark = theme === "dark";
+  const surface = isDark ? "#141414" : "#FFFFFF";
+  const surfaceHover = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? FG : A;
+  const borderColor = hovered ? glow : (isDark ? `${glow}66` : `${glow}4D`);
+  const shadow = hovered
+    ? isDark
+      ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 8px 28px rgba(0,0,0,0.5)`
+      : `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+    : isDark
+      ? `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.34)`
+      : "0 6px 18px rgba(15,15,15,0.12)";
 
-  const handleShare = async () => {
-    setRipple(true);
-    setTimeout(() => setRipple(false), 700);
+  const handleShare = async (e) => {
+    e.stopPropagation();
     try {
       if (navigator.share) {
         await navigator.share({ title, text, url });
@@ -733,57 +744,36 @@ function HeroShareFab({ title, text, url }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2400);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   return (
     <motion.button
-      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       whileTap={{ scale: 0.86 }}
       style={{
-        position: "absolute",
-        top: isMobile ? 90 : 96,
-        right: isMobile ? 20 : 60,
-        zIndex: 200,
+        height: 44,
+        borderRadius: 22,
+        background: hovered ? surfaceHover : surface,
+        border: `1.5px solid ${borderColor}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
-        height: 44,
-        maxWidth: hovered ? 200 : 44,
-        overflow: "hidden",
-        paddingLeft: 13,
-        paddingRight: hovered ? 18 : 13,
-        background: "rgba(0,151,178,0.13)",
-        backdropFilter: "blur(22px)",
-        WebkitBackdropFilter: "blur(22px)",
-        border: `1.5px solid ${glow}55`,
-        borderRadius: 50,
+        boxShadow: shadow,
         cursor: "pointer",
-        color: "#FFFFFF",
-        fontFamily: "inherit",
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.13em",
-        textTransform: "uppercase",
-        boxShadow: hovered
-          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
-          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
-        outline: "none",
-        userSelect: "none",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+        maxWidth: hovered ? 160 : 44,
+        overflow: "hidden",
+        paddingLeft: 12,
+        paddingRight: hovered ? 16 : 12,
+        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, background 0.35s ease, border-color 0.35s ease",
+        pointerEvents: "auto",
+        position: "relative",
+        zIndex: 200,
+        outline: "none"
       }}
     >
-      <motion.span
-        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
-      />
       <motion.span
         animate={{
           y: hovered ? 0 : [0, -2, 0, 2, 0],
@@ -795,20 +785,24 @@ function HeroShareFab({ title, text, url }) {
           rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
           scale: { duration: 0.3, ease: "easeOut" }
         }}
-        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
+        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative" }}
       >
-        <Share2 size={17} strokeWidth={2.2} />
+        <Share2 size={20} color={textColor} />
       </motion.span>
       <span style={{
         whiteSpace: "nowrap",
         overflow: "hidden",
-        maxWidth: hovered ? 140 : 0,
+        maxWidth: hovered ? 130 : 0,
         opacity: hovered ? 1 : 0,
-        marginLeft: hovered ? 9 : 0,
+        marginLeft: hovered ? 8 : 0,
         position: "relative",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
+        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+        color: textColor,
+        fontFamily: '"Inter", sans-serif',
+        fontSize: 13,
+        fontWeight: 600
       }}>
-        {copied ? "✓ Copied!" : "Share Taste"}
+        {copied ? "Copied!" : label}
       </span>
     </motion.button>
   );
@@ -820,6 +814,9 @@ function CulinaryHero({ food, galleryItems }) {
   const { isMobile } = useWindowSize();
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const id = food?.id || food?.foodId || food?._id || searchParams.get("id");
 
   const [idx, setIdx] = useState(0);
   const items = galleryItems?.length ? galleryItems : ["https://picsum.photos/seed/culinary/1200/800"];
@@ -914,11 +911,13 @@ function CulinaryHero({ food, galleryItems }) {
         </button>
 
         {/* Share Button absolute overlays */}
-        <HeroShareFab
-          title={food?.menuName || food?.title || ""}
-          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-          url={window.location.href}
-        />
+        <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
+          <HeroShareFab
+            title={food?.menuName || food?.title || ""}
+            text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+            url={window.location.href}
+          />
+        </div>
 
         {/* Floating Content Card */}
         <div className="hero-mobile-floating-card" style={{
@@ -1018,11 +1017,13 @@ function CulinaryHero({ food, galleryItems }) {
       </button>
 
       {/* Share Button absolute overlays */}
-      <HeroShareFab
-        title={food?.menuName || food?.title || ""}
-        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-        url={window.location.href}
-      />
+      <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
+        <HeroShareFab
+          title={food?.menuName || food?.title || ""}
+          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          url={window.location.href}
+        />
+      </div>
 
       {/* Header Blending Gradient */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
