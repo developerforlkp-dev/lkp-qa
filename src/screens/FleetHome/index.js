@@ -691,8 +691,8 @@ const FleetHome = () => {
     };
 
     const scheduleNext = (isFirst = false) => {
-      // Delay between 1100ms and 3000ms to guarantee no two cards animate at once (anim is 1000ms)
-      const delay = isFirst ? 500 : Math.random() * (3000 - 1100) + 1100;
+      // Delay between 400ms and 3000ms
+      const delay = isFirst ? 500 : Math.random() * (3000 - 400) + 400;
       timeoutId = setTimeout(() => {
         window.requestAnimationFrame(runMicroInteraction);
       }, delay);
