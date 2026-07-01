@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus, Check, Camera
+  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus, Check, Camera, Home
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -4200,16 +4200,17 @@ function PropertyStayCard({ stay }) {
       className={roomStyles.card}
       style={{
         display: "flex",
-        flexDirection: "row",
+        flexDirection: isMobile ? "column" : "row",
         alignItems: "stretch",
         background: W,
         border: `1px solid ${B}`,
-        borderRadius: "20px",
+        borderRadius: isMobile ? "24px" : "20px",
         padding: "0",
         position: "relative",
         gap: 0,
         minHeight: "220px",
         overflow: "hidden",
+        boxShadow: isMobile ? "0 4px 20px rgba(0,0,0,0.06)" : "none",
         boxSizing: "border-box",
         marginBottom: "24px"
       }}
@@ -4220,10 +4221,12 @@ function PropertyStayCard({ stay }) {
         onMouseLeave={() => setIsImgHovered(false)}
         onClick={() => setShowModal(true)}
         style={{
-          width: "280px",
+          width: isMobile ? "100%" : "280px",
+          height: isMobile ? "200px" : "auto",
           flexShrink: 0,
           display: "flex",
-          borderRight: `1px solid ${B}`,
+          borderRight: isMobile ? "none" : `1px solid ${B}`,
+          borderBottom: isMobile ? `1px solid ${B}` : "none",
           background: W,
           position: "relative",
           cursor: "pointer",
@@ -4250,9 +4253,17 @@ function PropertyStayCard({ stay }) {
         )}
 
         {/* Property Badge Tag */}
-        <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-          PROPERTY STAY
+        <div style={{ position: "absolute", top: 12, left: 12, padding: "6px 12px", borderRadius: "100px", background: "rgba(0,0,0,0.65)", color: "#FFF", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", gap: "6px" }}>
+          <Home size={14} /> PROPERTY STAY
         </div>
+
+        {/* Photos Tag */}
+        {isMobile && (
+          <div style={{ position: "absolute", bottom: 12, right: 12, padding: "6px 12px", borderRadius: "100px", background: "rgba(0,0,0,0.65)", color: "#FFF", fontSize: "11px", fontWeight: 700, backdropFilter: "blur(4px)", display: "flex", alignItems: "center", gap: "6px" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            {totalPhotos} Photos
+          </div>
+        )}
 
         {/* View Gallery Overlay Button */}
         <AnimatePresence>
@@ -4274,10 +4285,10 @@ function PropertyStayCard({ stay }) {
       </div>
 
       {/* Middle: Content details */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: isMobile ? "16px" : "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
         
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <h4 style={{ fontSize: "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "10px" : "12px" }}>
+          <h4 style={{ fontSize: isMobile ? "24px" : "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
             {propertyName}
           </h4>
           
@@ -4295,20 +4306,20 @@ function PropertyStayCard({ stay }) {
             </div>
             
             {/* Amenities Row */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {amenities.map((amenity, idx) => (
-                <span key={idx} style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{amenity}</span>
+                <span key={idx} style={{ flexShrink: 0, fontSize: "11px", fontWeight: 600, color: FG, background: W, padding: "6px 12px", borderRadius: "100px", border: `1px solid ${B}`, whiteSpace: "nowrap" }}>{amenity}</span>
               ))}
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "24px" }}>
-          <p style={{ fontSize: "13px", color: M, margin: 0, flex: 1, paddingRight: "16px", lineHeight: 1.5 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "flex-end", justifyContent: "space-between", marginTop: isMobile ? "16px" : "24px", gap: isMobile ? "16px" : "0" }}>
+          <p style={{ fontSize: "13px", color: M, margin: 0, flex: 1, paddingRight: isMobile ? "0" : "16px", lineHeight: 1.5 }}>
             Entire-property booking with curated comfort and premium amenities.
           </p>
           
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end", flexShrink: 0 }}>
             <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: M, marginBottom: "4px" }}>
               STARTING FROM
             </span>
