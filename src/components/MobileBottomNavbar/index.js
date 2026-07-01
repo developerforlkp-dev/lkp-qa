@@ -115,7 +115,9 @@ export default function MobileBottomNavbar() {
 
   // Set initial visibility on route change
   useEffect(() => {
-    if (location.pathname === "/") {
+    const normalizedPath = location.pathname.toLowerCase().replace(/\/$/, "") || "/";
+    const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
+    if (homeRoutes.includes(normalizedPath)) {
       setVisible(false); // Hide initially on landing page
     } else {
       setVisible(true); // Show initially on other pages
@@ -134,8 +136,12 @@ export default function MobileBottomNavbar() {
           const currentScrollY = window.scrollY;
           const lastScrollY = lastScrollYRef.current;
           
-          // Landing page (root path) specific behavior
-          if (location.pathname === "/") {
+          const normalizedPath = location.pathname.toLowerCase().replace(/\/$/, "") || "/";
+          const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
+          const isLandingPage = homeRoutes.includes(normalizedPath);
+          
+          // Landing page specific behavior
+          if (isLandingPage) {
             const exploreSection = document.getElementById("explore-by-section");
             if (exploreSection) {
               const exploreRect = exploreSection.getBoundingClientRect();

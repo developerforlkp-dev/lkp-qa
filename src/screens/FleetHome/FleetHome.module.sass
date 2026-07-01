@@ -646,9 +646,9 @@
     position: relative
     overflow: visible
     +m
-        margin-left: -32px
-        margin-right: -32px
-        padding: 16px 32px 20px
+        margin-left: -20px
+        margin-right: -20px
+        padding: 16px 0 20px
 
 .horizontalScroll
     position: relative
@@ -659,6 +659,13 @@
             margin: 0
             overflow-y: visible !important
             overflow-x: auto !important
+            +m
+                padding: 4px 20px 0 20px !important
+                &::after
+                    content: ""
+                    display: block
+                    min-width: 1px
+                    min-height: 1px
 
 .destinationCard
     flex: 0 0 auto
@@ -841,9 +848,9 @@
     position: relative
     overflow: visible
     +m
-        margin-left: -32px
-        margin-right: -32px
-        padding: 16px 32px 20px
+        margin-left: -20px
+        margin-right: -20px
+        padding: 16px 0 20px
 
 .horizontalScroll
     position: relative
@@ -854,6 +861,13 @@
             margin: 0
             overflow-y: visible !important
             overflow-x: auto !important
+            +m
+                padding: 4px 20px 0 20px !important
+                &::after
+                    content: ""
+                    display: block
+                    min-width: 1px
+                    min-height: 1px
 
 .destinationCard
     flex: 0 0 auto
