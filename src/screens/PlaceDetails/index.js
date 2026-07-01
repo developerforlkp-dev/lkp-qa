@@ -15,6 +15,7 @@ import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getPlaceDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -3108,6 +3109,7 @@ const PlaceDetails = () => {
       <ScopedStyles />
       <ProgressBar />
       {unavailablePopup}
+      {!isMobile && <DetailPageNavPortal activeCategory="places" />}
 
       <PlaceHero place={place} galleryItems={galleryItems} />
 

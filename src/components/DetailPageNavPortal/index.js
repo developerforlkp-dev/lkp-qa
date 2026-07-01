@@ -22,6 +22,8 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState(null);
   
+  const showDateAndGuest = !['food', 'place', 'places'].includes(activeCategory);
+  
   // Search States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDestination, setSelectedDestination] = useState(null);
@@ -322,55 +324,59 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
               </div>
             </div>
 
-            <div className={styles.searchDivider} />
+            {showDateAndGuest && (
+              <>
+                <div className={styles.searchDivider} />
 
-            {/* Date field */}
-            <div
-              className={styles.searchField}
-              ref={dateFieldRef}
-              onClick={() => {
-                setShowDatePicker(!showDatePicker);
-                setShowGuestPicker(false);
-              }}
-            >
-              <div className={styles.searchFieldContent}>
-                <div className={styles.searchLabel}>When</div>
-                <div className={styles.searchInput}>
-                  {formattedDate}
+                {/* Date field */}
+                <div
+                  className={styles.searchField}
+                  ref={dateFieldRef}
+                  onClick={() => {
+                    setShowDatePicker(!showDatePicker);
+                    setShowGuestPicker(false);
+                  }}
+                >
+                  <div className={styles.searchFieldContent}>
+                    <div className={styles.searchLabel}>When</div>
+                    <div className={styles.searchInput}>
+                      {formattedDate}
+                    </div>
+                  </div>
+                  <InlineDatePicker
+                    visible={showDatePicker}
+                    onClose={() => setShowDatePicker(false)}
+                    onDateSelect={handleDateSelect}
+                    selectedDate={selectedDate}
+                    className={styles.datePickerContainer}
+                  />
                 </div>
-              </div>
-              <InlineDatePicker
-                visible={showDatePicker}
-                onClose={() => setShowDatePicker(false)}
-                onDateSelect={handleDateSelect}
-                selectedDate={selectedDate}
-                className={styles.datePickerContainer}
-              />
-            </div>
 
-            <div className={styles.searchDivider} />
+                <div className={styles.searchDivider} />
 
-            {/* Guest field */}
-            <div
-              className={styles.searchField}
-              ref={guestFieldRef}
-              onClick={() => {
-                setShowGuestPicker(!showGuestPicker);
-                setShowDatePicker(false);
-              }}
-            >
-              <div className={styles.searchFieldContent}>
-                <div className={styles.searchLabel}>Who</div>
-                <div className={styles.searchInput}>{guestCountText}</div>
-              </div>
-              <GuestPicker
-                visible={showGuestPicker}
-                onClose={() => setShowGuestPicker(false)}
-                onGuestChange={handleGuestChange}
-                initialGuests={guests}
-                className={styles.guestPickerContainer}
-              />
-            </div>
+                {/* Guest field */}
+                <div
+                  className={styles.searchField}
+                  ref={guestFieldRef}
+                  onClick={() => {
+                    setShowGuestPicker(!showGuestPicker);
+                    setShowDatePicker(false);
+                  }}
+                >
+                  <div className={styles.searchFieldContent}>
+                    <div className={styles.searchLabel}>Who</div>
+                    <div className={styles.searchInput}>{guestCountText}</div>
+                  </div>
+                  <GuestPicker
+                    visible={showGuestPicker}
+                    onClose={() => setShowGuestPicker(false)}
+                    onGuestChange={handleGuestChange}
+                    initialGuests={guests}
+                    className={styles.guestPickerContainer}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Search button inside dropdown */}
             <button

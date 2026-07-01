@@ -15,6 +15,7 @@ import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -2047,6 +2048,7 @@ const FoodDetails = () => {
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
 
+  const { isMobile } = useWindowSize();
   const location = useLocation();
   const history = useHistory();
   const params = new URLSearchParams(location.search);
@@ -2222,6 +2224,7 @@ const FoodDetails = () => {
       <ProgressBar />
       <ScopedStyles />
       {unavailablePopup}
+      {!isMobile && <DetailPageNavPortal activeCategory="food" />}
 
       <CulinaryHero food={food} galleryItems={galleryItems} />
 
