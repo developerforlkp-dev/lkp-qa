@@ -11,6 +11,7 @@ import Login from "../Login";
 import useDarkMode from "use-dark-mode";
 import MobileNavDrawer from "./MobileDrawer/MobileNavDrawer";
 import { getCustomerWishlistItems } from "../../utils/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 
@@ -29,6 +30,7 @@ const items = [
 const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings }) => {
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const darkMode = useDarkMode(false);
 
   // Check if user is authenticated (has JWT token)
@@ -68,6 +70,44 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
       window.removeEventListener("lkp:wishlist-changed", handleWishlistChange);
     };
   }, [shouldShowLogin]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isHomepage) {
+      setShowMobileSearch(false);
+      return;
+    }
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const searchPillWrap = document.getElementById("mcsh-floating-pill-wrap");
+          if (searchPillWrap) {
+            // Find absolute position of the pill wrapper
+            const pillRect = searchPillWrap.getBoundingClientRect();
+            // If the pill has scrolled completely out of view (above viewport)
+            if (pillRect.bottom < 0) {
+              setShowMobileSearch(true);
+            } else {
+              setShowMobileSearch(false);
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Trigger once on mount
+    handleScroll();
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isHomepage]);
+
+  const handleOpenSearch = () => {
+    window.dispatchEvent(new CustomEvent("open-mobile-search"));
+  };
 
   return (
     <>
@@ -135,6 +175,23 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
             ) : (
               <User className={styles.user} items={items} />
             )}
+
+            {/* Mobile Search Icon - Appears when floating pill is scrolled past */}
+            <AnimatePresence>
+              {showMobileSearch && (
+                <motion.button
+                  className={styles.mobileSearchBtn}
+                  onClick={handleOpenSearch}
+                  initial={{ opacity: 0, width: 0, scale: 0.8, marginLeft: 0 }}
+                  animate={{ opacity: 1, width: "36px", scale: 1, marginLeft: "12px" }}
+                  exit={{ opacity: 0, width: 0, scale: 0.8, marginLeft: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  aria-label="Search"
+                >
+                  <Icon name="search" size="20" />
+                </motion.button>
+              )}
+            </AnimatePresence>
 
             {/* Burger — mobile only, opens the slide-in drawer */}
             <button

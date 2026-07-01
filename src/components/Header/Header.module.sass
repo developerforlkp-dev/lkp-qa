@@ -286,3 +286,32 @@
             +dark
                 background: $n6
                 box-shadow: 0 -5px 0 $n6, 0 5px 0 $n6
+
+.mobileSearchBtn
+    display: none
+    +m
+        display: flex
+        align-items: center
+        justify-content: center
+        height: 36px
+        border-radius: 10px
+        background: $n7
+        border: 1.5px solid $n6
+        -webkit-tap-highlight-color: rgba(0,0,0,0)
+        transition: background .2s, border-color .2s
+        overflow: hidden
+        flex-shrink: 0
+        +dark
+            background: $n2
+            border-color: $n3
+        &:hover
+            background: $n6
+            border-color: $n5
+            +dark
+                background: $n3
+                border-color: $n4
+        svg
+            fill: #000000
+            transition: fill .2s
+            +dark
+                fill: #FFFFFF

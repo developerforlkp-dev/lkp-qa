@@ -168,11 +168,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         const { width: containerWidth, height: containerHeight } = getContainerDimensions();
         const isMobile = containerWidth <= MOBILE_BREAKPOINT;
         const currentThumbConfigs = isMobile ? MOBILE_THUMB_CONFIGS : THUMB_CONFIGS;
-        const currentOverlap = isMobile ? -12 : OVERLAP_GAP;
+        const currentOverlap = isMobile ? 8 : OVERLAP_GAP;
 
         const sideMargin = isMobile ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
         const thumbnailsY = isMobile 
-          ? containerHeight - currentThumbConfigs[0].size - 30
+          ? containerHeight - currentThumbConfigs[0].size - 55
           : containerHeight - THUMB_CONFIGS[0].size - 16; // Bottom of the hero section
 
         const getThumbX = (index) => {

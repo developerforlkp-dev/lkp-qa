@@ -878,7 +878,10 @@ const FleetHome = () => {
 
         {/* Mobile Categories (Reference Image 3 style) */}
         {isMobileOrTablet && (
-          <div className={styles.mobileCategoriesContainer}>
+          <div id="explore-by-section" className={styles.mobileCategoriesContainer}>
+            <div style={{ marginBottom: '16px', padding: '0 20px' }}>
+              <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '13px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
+            </div>
             <div className={styles.mobileCategoriesScroll}>
               {visibleFilterOptions.map((filter) => {
                 const isEnabledForListings = businessInterestAvailability[filter.id] !== false;

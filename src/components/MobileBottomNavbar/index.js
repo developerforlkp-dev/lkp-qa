@@ -113,9 +113,13 @@ export default function MobileBottomNavbar() {
     loadBusinessInterests();
   }, []);
 
-  // Reset visibility to true on route change
+  // Set initial visibility on route change
   useEffect(() => {
-    setVisible(true);
+    if (location.pathname === "/") {
+      setVisible(false); // Hide initially on landing page
+    } else {
+      setVisible(true); // Show initially on other pages
+    }
   }, [location.pathname]);
 
   // Set up scroll direction and footer visibility tracking
@@ -129,33 +133,52 @@ export default function MobileBottomNavbar() {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           const lastScrollY = lastScrollYRef.current;
+          
+          // Landing page (root path) specific behavior
+          if (location.pathname === "/") {
+            const exploreSection = document.getElementById("explore-by-section");
+            if (exploreSection) {
+              const exploreRect = exploreSection.getBoundingClientRect();
+              // If the bottom of the Explore By section is scrolled past the top of the viewport
+              if (exploreRect.bottom < 0) {
+                setVisible(true);
+              } else {
+                setVisible(false);
+              }
+            } else {
+              // Fallback if section not found yet
+              if (currentScrollY < 10) setVisible(false);
+            }
+          } else {
+            // Normal behavior for other pages
 
-          // 1. If we are near the top of the page, always show the navbar
-          if (currentScrollY < 10) {
-            setVisible(true);
-            lastScrollYRef.current = currentScrollY;
-            ticking = false;
-            return;
-          }
-
-          // 2. Check if footer is visible in the viewport
-          const footer = document.querySelector(".cinematic-footer");
-          if (footer) {
-            const rect = footer.getBoundingClientRect();
-            if (rect.top < window.innerHeight) {
-              setVisible(false);
+            // 1. If we are near the top of the page, always show the navbar
+            if (currentScrollY < 10) {
+              setVisible(true);
               lastScrollYRef.current = currentScrollY;
               ticking = false;
               return;
             }
-          }
 
-          // 3. Compare scroll positions to decide visibility (threshold of 5px)
-          if (Math.abs(currentScrollY - lastScrollY) > 5) {
-            if (currentScrollY > lastScrollY) {
-              setVisible(false); // scrolling down -> hide
-            } else {
-              setVisible(true);  // scrolling up -> show
+            // 2. Check if footer is visible in the viewport
+            const footer = document.querySelector(".cinematic-footer");
+            if (footer) {
+              const rect = footer.getBoundingClientRect();
+              if (rect.top < window.innerHeight) {
+                setVisible(false);
+                lastScrollYRef.current = currentScrollY;
+                ticking = false;
+                return;
+              }
+            }
+
+            // 3. Compare scroll positions to decide visibility (threshold of 5px)
+            if (Math.abs(currentScrollY - lastScrollY) > 5) {
+              if (currentScrollY > lastScrollY) {
+                setVisible(false); // scrolling down -> hide
+              } else {
+                setVisible(true);  // scrolling up -> show
+              }
             }
           }
 
@@ -167,10 +190,14 @@ export default function MobileBottomNavbar() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    // Run once on mount to set initial state correctly
+    handleScroll();
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [location.pathname]);
 
   // Set up MutationObserver to monitor open modals or body scroll locks
   useEffect(() => {
