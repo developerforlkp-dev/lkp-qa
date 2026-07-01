@@ -203,6 +203,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "";
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const months = [
       "Jan",
@@ -224,11 +225,34 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   // Format time from "05:44:00" to "5:44 AM" format
   const formatTime = (timeString) => {
     if (!timeString) return "";
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours, 10);
+
+    const isEpoch = !isNaN(Number(timeString)) && String(timeString).trim().length > 0;
+    const isIsoOrFullDate = typeof timeString === 'string' && (timeString.includes("T") || timeString.match(/[a-zA-Z]{3}.*\d{4}/));
+    
+    if (isEpoch || isIsoOrFullDate) {
+      const date = new Date(isEpoch ? Number(timeString) : timeString);
+      if (!Number.isNaN(date.getTime())) {
+        const hour = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const ampm = hour >= 12 ? "PM" : "AM";
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes} ${ampm}`;
+      }
+    }
+
+    let timePart = String(timeString);
+    if (timePart.includes(" ")) {
+      timePart = timePart.split(" ")[1] || timePart;
+    }
+    const parts = timePart.split(":");
+    if (parts.length < 2) return timeString;
+    
+    const hour = parseInt(parts[0], 10);
+    if (isNaN(hour)) return timeString;
+    
     const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+    return `${displayHour}:${parts[1]} ${ampm}`;
   };
 
   // Format currency amount
@@ -595,12 +619,13 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     bookingId: `LKP-${apiBooking.orderId}`,
     title: title,
     status: status,
-    startDate: formatDate(apiBooking.checkInDate || apiBooking.bookingDate),
-    endDate: formatDate(apiBooking.checkOutDate || apiBooking.bookingDate),
-    bookingDate: formatDate(apiBooking.checkInDate || apiBooking.bookingDate),
-    bookingTime: formatTime(apiBooking.bookingTime),
-    startTime: null, // Will be populated from slot data
-    endTime: null, // Will be populated from slot data
+    startDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || apiBooking.bookingDate),
+    endDate: formatDate(apiBooking.checkOutDate || apiBooking.eventDate || apiBooking.bookingDate),
+    bookingDate: formatDate(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingDate),
+    bookingTime: formatTime(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingTime),
+    reservationDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || (apiBooking.timeSlotStartTime && (apiBooking.timeSlotStartTime.includes('T') || apiBooking.timeSlotStartTime.includes(' ')) ? apiBooking.timeSlotStartTime.split(/[T ]/)[0] : null) || apiBooking.bookingDate),
+    startTime: formatTime(apiBooking.checkInTime || apiBooking.originalData?.checkInTime || stayData?.checkInTime), // Will be overridden by slot data if present
+    endTime: formatTime(apiBooking.checkOutTime || apiBooking.originalData?.checkOutTime || stayData?.checkOutTime), // Will be overridden by slot data if present
     guestCount: apiBooking.numberOfGuests || 0,
     adultsCount: apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
     childrenCount: apiBooking.guests?.children || apiBooking.originalData?.guests?.children || apiBooking.originalData?.pricing?.childrenCount || apiBooking.childrenCount || apiBooking.childCount || apiBooking.children || 0,
@@ -1041,8 +1066,8 @@ const ViewDetails = () => {
       return `${booking.guestCount || 0} Guest${booking.guestCount === 1 ? "" : "s"}`;
     })();
     const scheduleLabel = booking.startTime && booking.endTime
-      ? `${booking.startDate} | ${booking.startTime} - ${booking.endTime}`
-      : `${booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
+      ? `${booking.reservationDate || booking.startDate} | ${booking.startTime} - ${booking.endTime}`
+      : `${booking.reservationDate || booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
     const discountPercent = getReceiptPercent(discountAmount, subtotalAmount);
     const taxPercent = getReceiptPercent(taxAmount, subtotalAmount);
     const companyWebsite =
@@ -2648,18 +2673,28 @@ const ViewDetails = () => {
             </div>
             <div className={styles.summaryItem}>
               <div className={styles.summaryLabel}>Booking Time</div>
-              <div className={styles.summaryValue}>
-                {booking.startTime && booking.endTime ? (
-                  <>
-                    {booking.startTime} - {booking.endTime}
-                  </>
-                ) : booking.bookingTime ? (
-                  booking.bookingTime
-                ) : (
-                  "Not specified"
-                )}
-              </div>
+              <div className={styles.summaryValue}>{booking.bookingTime || "Not specified"}</div>
             </div>
+            {booking.reservationDate && (
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryLabel}>Reservation Date</div>
+                <div className={styles.summaryValue}>{booking.reservationDate}</div>
+              </div>
+            )}
+            {(booking.startTime || booking.endTime) && (
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryLabel}>Reservation Time</div>
+                <div className={styles.summaryValue}>
+                  {booking.startTime && booking.endTime ? (
+                    <>
+                      {booking.startTime} - {booking.endTime}
+                    </>
+                  ) : (
+                    booking.startTime || booking.endTime
+                  )}
+                </div>
+              </div>
+            )}
             <div className={styles.summaryItem}>
               <div className={styles.summaryLabel}>Guests</div>
               <div className={styles.summaryValue}>
