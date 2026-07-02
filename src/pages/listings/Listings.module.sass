@@ -275,22 +275,22 @@
 
 .layout
     display: grid
-    grid-template-columns: 350px 1fr
+    grid-template-columns: 350px minmax(0, 1fr)
     gap: 32px
     +t
-        grid-template-columns: 1fr
+        grid-template-columns: minmax(0, 1fr)
         gap: 24px
     +m
-        grid-template-columns: 1fr
+        grid-template-columns: minmax(0, 1fr)
         gap: 0
         width: 100%
     &.withMap
-        grid-template-columns: 350px 1fr 400px
+        grid-template-columns: 350px minmax(0, 1fr) 400px
         +t
-            grid-template-columns: 1fr
+            grid-template-columns: minmax(0, 1fr)
             gap: 24px
         +m
-            grid-template-columns: 1fr
+            grid-template-columns: minmax(0, 1fr)
             gap: 0
 
 .sidebar
