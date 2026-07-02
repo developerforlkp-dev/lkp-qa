@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
+// Force HMR re-render
 import { useParams, useHistory } from "react-router-dom";
 import { mapApiBlogToComponentFormat } from "../../utils/blogData";
 import { getBlogBySlug } from "../../utils/api";
-import {
-  Layout1CinematicHero,
+import { 
+  Layout1ModernMinimalist,
   Layout2EditorialMagazine,
-  Layout3ImmersiveDark,
-  Layout4AsymmetricMosaic
+  Layout3ImmersiveDark
 } from "../../components/Blog/BlogLayouts";
-import "../../styles/blog-tailwind.css";
+import { blogTailwindCss } from "../../styles/blogTailwindString";
 
 export default function BlogDetails() {
   const { slug } = useParams();
@@ -16,10 +16,27 @@ export default function BlogDetails() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Instantly inject the CSS string without any network requests or SCSS compiler bugs
+  useEffect(() => {
+    let style = document.getElementById('blog-tailwind-style-inline');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'blog-tailwind-style-inline';
+      style.innerHTML = blogTailwindCss;
+      document.head.appendChild(style);
+    }
+    return () => {
+      if (style && style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const fetchBlog = async () => {
       try {
         const rawBlog = await getBlogBySlug(slug);
+        console.log("🔥 Raw blog data from backend:", rawBlog);
         if (!rawBlog) {
           history.push("/blog");
         } else {
@@ -45,25 +62,23 @@ export default function BlogDetails() {
 
   if (!post) return null;
 
-  const variant = (String(post.id).charCodeAt(0) % 4) + 1;
+  const variant = post.layoutId || ((String(post.id).charCodeAt(0) % 3) + 1);
 
   let LayoutComponent;
   switch (variant) {
     case 1:
-      LayoutComponent = Layout1CinematicHero;
+      LayoutComponent = Layout1ModernMinimalist;
       break;
     case 2:
       LayoutComponent = Layout2EditorialMagazine;
       break;
     case 3:
+    default:
       LayoutComponent = Layout3ImmersiveDark;
       break;
-    case 4:
-      LayoutComponent = Layout4AsymmetricMosaic;
-      break;
-    default:
-      LayoutComponent = Layout1CinematicHero;
   }
+
+  console.log("Currently rendering Blog Layout Variant:", variant);
 
   return (
     <div className="blog-page-root">
@@ -73,6 +88,28 @@ export default function BlogDetails() {
           overflow-x: clip;
           --color-brand: #00A4C4;
           --color-brand-dark: #001F3F;
+          --blog-title-color: #001F3F;
+          --blog-desc-color: #4b5563;
+          --blog-bg: #ffffff;
+          --blog-card-bg: #ffffff;
+          --blog-border-color: #f0f0f0;
+          --blog-body-color: #6b7280;
+          --blog-muted-color: #9ca3af;
+        }
+        .blog-page-root *, .blog-page-root ::before, .blog-page-root ::after {
+          box-sizing: border-box;
+        }
+        html.dark .blog-page-root,
+        body.dark .blog-page-root,
+        [data-theme="dark"] .blog-page-root,
+        .dark-mode .blog-page-root {
+          --blog-title-color: #ffffff;
+          --blog-desc-color: #d1d5db;
+          --blog-bg: #0a0a0a;
+          --blog-card-bg: #1a1a1a;
+          --blog-border-color: #2a2a2a;
+          --blog-body-color: #a0a0a0;
+          --blog-muted-color: #666666;
         }
         .blog-page-root img {
           max-width: 100%;

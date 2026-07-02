@@ -4,7 +4,7 @@ import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -359,108 +359,10 @@ function SHdr({ idx, label }) {
   );
 }
 
-/* ─── HERO SHARE FAB ─────────────────────────── */
-function HeroShareFab({ title, text, url }) {
-  const [copied, setCopied] = useState(false);
-  const [ripple, setRipple] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const { tokens: { A } } = useTheme();
-  const glow = A || "#0097B2";
 
-  const handleShare = async () => {
-    setRipple(true);
-    setTimeout(() => setRipple(false), 700);
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, text, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2400);
-      }
-    } catch (_) {}
-  };
-
-  return (
-    <motion.button
-      className="premium-share-fab"
-      onClick={handleShare}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      whileTap={{ scale: 0.86 }}
-      style={{
-        position: "absolute",
-        top: 96,
-        right: 60,
-        zIndex: 200,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        height: 44,
-        maxWidth: hovered ? 200 : 44,
-        overflow: "hidden",
-        paddingLeft: 13,
-        paddingRight: hovered ? 18 : 13,
-        background: "rgba(0,151,178,0.13)",
-        backdropFilter: "blur(22px)",
-        WebkitBackdropFilter: "blur(22px)",
-        border: `1.5px solid ${glow}55`,
-        borderRadius: 50,
-        cursor: "pointer",
-        color: "#FFFFFF",
-        fontFamily: "inherit",
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.13em",
-        textTransform: "uppercase",
-        boxShadow: hovered
-          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
-          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
-        outline: "none",
-        userSelect: "none",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
-      }}
-    >
-      <motion.span
-        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
-      />
-      <motion.span
-        animate={{
-          y: hovered ? 0 : [0, -2, 0, 2, 0],
-          rotate: hovered ? 360 : 0,
-          scale: hovered ? 1.15 : 1
-        }}
-        transition={{
-          y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
-          rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-          scale: { duration: 0.3, ease: "easeOut" }
-        }}
-        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
-      >
-        <Share2 size={17} strokeWidth={2.2} />
-      </motion.span>
-      <span style={{
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        maxWidth: hovered ? 140 : 0,
-        opacity: hovered ? 1 : 0,
-        marginLeft: hovered ? 9 : 0,
-        position: "relative",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
-      }}>
-        {copied ? "✓ Copied!" : "Share Location"}
-      </span>
-    </motion.button>
-  );
-}
 
 /* ─── PLACE SECTIONS ─────────── */
-function PlaceHero({ place, galleryItems }) {
+function PlaceHero({ place, galleryItems, id }) {
   const { tokens: { A, FG, M, W, B, S } } = useTheme();
   const r = useRef(null);
   const sliderRef = useRef(null);
@@ -507,8 +409,8 @@ function PlaceHero({ place, galleryItems }) {
 
   const fullDescription = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
   const isDescriptionLong = fullDescription.length > 160;
-  const displayDescription = isDescriptionLong && !isExpanded 
-    ? `${fullDescription.slice(0, 160)}...` 
+  const displayDescription = isDescriptionLong && !isExpanded
+    ? `${fullDescription.slice(0, 160)}...`
     : fullDescription;
 
   // Continuous smooth auto-scrolling loop (pauses completely when hovered or interacting)
@@ -523,7 +425,7 @@ function PlaceHero({ place, galleryItems }) {
       if (baseItems.length === 0) return;
       const repeats = Math.max(4, Math.ceil(15 / baseItems.length));
       const oneSetWidth = el.scrollWidth / repeats;
-      
+
       // Seamlessly wrap scroll position back once we pass one full set
       if (el.scrollLeft >= oneSetWidth) {
         el.scrollLeft = el.scrollLeft - oneSetWidth;
@@ -560,6 +462,25 @@ function PlaceHero({ place, galleryItems }) {
     setActiveIdx((prev) => (prev - 1 + baseItems.length) % baseItems.length);
   };
 
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareHovered, setShareHovered] = useState(false);
+  const [shareRipple, setShareRipple] = useState(false);
+  const glow = A || "#0097B2";
+
+  const handleShare = async () => {
+    setShareRipple(true);
+    setTimeout(() => setShareRipple(false), 700);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: place?.placeName || "Place", text: place?.description || "", url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2400);
+      }
+    } catch (_) { }
+  };
+
   return (
     <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.02, overflow: "hidden", zIndex: 1 }}>
@@ -578,6 +499,8 @@ function PlaceHero({ place, galleryItems }) {
         </motion.h1>
       </div>
 
+
+
       <div style={{
         display: "flex",
         flexDirection: "row",
@@ -590,7 +513,7 @@ function PlaceHero({ place, galleryItems }) {
         boxSizing: "border-box",
         alignItems: "center"
       }}>
-        
+
         <div style={{
           width: "30%",
           display: "flex",
@@ -650,10 +573,107 @@ function PlaceHero({ place, galleryItems }) {
                 </span>
               ))}
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 32 }}>
+              {id && (
+                <Favorite itemType="place" itemId={id}>
+                  {({ saved, onClick }) => {
+                    const surface = "#FFFFFF";
+                    const borderCol = `${glow}4D`;
+                    const shadow = `0 6px 18px rgba(15,15,15,0.12)`;
+                    return (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.86 }}
+                        onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                        style={{ width: 44, height: 44, borderRadius: "50%", background: surface, border: `1.5px solid ${borderCol}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, outline: "none" }}
+                      >
+                        <style>{`
+                          .place-save-icon-${id} svg {
+                            fill: ${saved ? glow : "transparent"};
+                            transition: fill 0.3s ease;
+                          }
+                          .place-save-icon-${id} svg path,
+                          .place-save-icon-${id} svg circle {
+                            stroke: ${saved ? glow : glow} !important;
+                            transition: stroke 0.3s ease;
+                          }
+                        `}</style>
+                        <div className={`place-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", color: glow }}>
+                          <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                        </div>
+                      </motion.button>
+                    );
+                  }}
+                </Favorite>
+              )}
+
+              <motion.button
+                onClick={handleShare}
+                onHoverStart={() => setShareHovered(true)}
+                onHoverEnd={() => setShareHovered(false)}
+                whileTap={{ scale: 0.86 }}
+                style={{
+                  height: 44,
+                  borderRadius: 22,
+                  background: "#FFFFFF",
+                  border: `1.5px solid ${shareHovered ? glow : `${glow}4D`}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  boxShadow: shareHovered
+                    ? `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+                    : "0 6px 18px rgba(15,15,15,0.12)",
+                  cursor: "pointer",
+                  maxWidth: shareHovered ? 160 : 44,
+                  overflow: "hidden",
+                  paddingLeft: 12,
+                  paddingRight: shareHovered ? 16 : 12,
+                  transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+                  position: "relative",
+                  zIndex: 200,
+                  outline: "none"
+                }}
+              >
+                <motion.span
+                  animate={{ scale: [1, 3.4], opacity: [0.45, 0] }}
+                  transition={{ duration: 0, opacity: 0 }}
+                  style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none", opacity: shareRipple ? 0.45 : 0, scale: shareRipple ? 3.4 : 1 }}
+                />
+                <motion.span
+                  animate={{
+                    y: shareHovered ? 0 : [0, -2, 0, 2, 0],
+                    rotate: shareHovered ? 360 : 0,
+                    scale: shareHovered ? 1.15 : 1
+                  }}
+                  transition={{
+                    y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+                    rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+                    scale: { duration: 0.3, ease: "easeOut" }
+                  }}
+                  style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative", color: glow }}
+                >
+                  <Share2 size={20} color={glow} />
+                </motion.span>
+                <span style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  maxWidth: shareHovered ? 130 : 0,
+                  opacity: shareHovered ? 1 : 0,
+                  marginLeft: shareHovered ? 8 : 0,
+                  transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+                  color: glow,
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: 13,
+                  fontWeight: 600
+                }}>
+                  {shareCopied ? "Copied!" : "Share"}
+                </span>
+              </motion.button>
+            </div>
           </motion.div>
         </div>
 
-        <div 
+        <div
           onMouseMove={handleMouseMove}
           onMouseEnter={() => setIsSliderHovered(true)}
           onMouseLeave={() => {
@@ -736,7 +756,7 @@ function PlaceHero({ place, galleryItems }) {
           </AnimatePresence>
 
           {/* Images Slider Container */}
-          <div 
+          <div
             ref={sliderRef}
             className="no-scrollbar"
             style={{
@@ -768,8 +788,8 @@ function PlaceHero({ place, galleryItems }) {
                     borderRadius: 24,
                     overflow: "hidden",
                     border: `1px solid ${B}`,
-                    boxShadow: isHovered 
-                      ? "0 40px 80px -20px rgba(0,0,0,0.2)" 
+                    boxShadow: isHovered
+                      ? "0 40px 80px -20px rgba(0,0,0,0.2)"
                       : "0 20px 40px -15px rgba(0,0,0,0.05)",
                     cursor: "pointer",
                     flexShrink: 0,
@@ -778,7 +798,7 @@ function PlaceHero({ place, galleryItems }) {
                 >
                   <motion.img
                     src={img}
-                    animate={{ 
+                    animate={{
                       scale: isHovered ? 1.06 : 1,
                       filter: isAnyHovered && !isHovered ? "brightness(0.7) grayscale(0.1)" : "brightness(1) grayscale(0)"
                     }}
@@ -790,7 +810,7 @@ function PlaceHero({ place, galleryItems }) {
                     }}
                     alt=""
                   />
-                  
+
                   <div style={{
                     position: "absolute",
                     inset: 0,
@@ -804,36 +824,37 @@ function PlaceHero({ place, galleryItems }) {
             })}
           </div>
 
-          {/* View All Badge */}
-          <button
+          {/* View All Badge - ExperienceProduct style */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => openLightbox(0)}
             style={{
               position: "absolute",
               bottom: 24,
               right: 24,
-              zIndex: 20,
-              background: "rgba(0, 0, 0, 0.6)",
+              background: "rgba(0, 0, 0, 0.3)",
               backdropFilter: "blur(12px)",
-              border: `1px solid rgba(255,255,255,0.25)`,
-              color: "#FFF",
-              borderRadius: 30,
-              padding: "10px 20px",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: "0.1em",
-              cursor: "pointer",
+              WebkitBackdropFilter: "blur(12px)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              borderRadius: 24,
+              padding: "8px 16px",
               display: "flex",
               alignItems: "center",
               gap: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-              transition: "all 0.2s"
+              fontSize: "13px",
+              fontWeight: 500,
+              fontFamily: '"Inter", sans-serif',
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              cursor: "pointer",
+              zIndex: 10,
+              transition: "all 0.3s ease"
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.85)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)"; }}
           >
-            <Star size={12} fill="#FFF" color="#FFF" />
-            <span>VIEW ALL ({baseItems.length})</span>
-          </button>
+            <Camera size={16} />
+            See all photos
+          </motion.button>
         </div>
 
       </div>
@@ -962,11 +983,6 @@ function PlaceHero({ place, galleryItems }) {
       </AnimatePresence>
 
       {/* Scroll to discover removed */}
-      <HeroShareFab
-        title={placeName}
-        text={place?.description || ""}
-        url={window.location.href}
-      />
     </section>
   );
 }
@@ -975,7 +991,7 @@ function PlaceDescription({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
   const { isMobile } = useWindowSize();
   const description = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
-  
+
   const facts = [
     { label: "Timings", val: place?.timings || place?.openingHours || "06:00 - 20:00", icon: Clock },
     { label: "Entry Fee", val: place?.entryFee || "Free Entry", icon: Ticket },
@@ -1010,7 +1026,7 @@ function PlaceDescription({ place }) {
               );
             })}
           </div>
-          
+
           {/* Description Text */}
           <p style={{
             fontSize: 14,
@@ -1030,23 +1046,23 @@ function PlaceDescription({ place }) {
   return (
     <section className="place-description-section" style={{ background: W, padding: "60px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 48 }}>
-        
+
         {/* Horizontal facts row */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(4, 1fr)", 
-          gap: 20, 
-          background: S, 
-          borderRadius: 24, 
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 20,
+          background: S,
+          borderRadius: 24,
           padding: "24px 40px",
           border: `1px solid ${B}`
         }}>
           {facts.map((f, i) => {
             const IconComp = f.icon;
             return (
-              <div key={f.label} style={{ 
-                display: "flex", 
-                alignItems: "center", 
+              <div key={f.label} style={{
+                display: "flex",
+                alignItems: "center",
                 gap: 16,
                 borderRight: i < 3 ? `1px solid ${B}` : "none",
                 paddingRight: i < 3 ? 20 : 0
@@ -1066,8 +1082,8 @@ function PlaceDescription({ place }) {
         {/* Two-column Editorial text */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: A, fontWeight: 800 }}>About this place</span>
-          <div style={{ 
-            columnCount: 2, 
+          <div style={{
+            columnCount: 2,
             columnGap: 60,
             fontSize: 16,
             lineHeight: 1.9,
@@ -1268,14 +1284,14 @@ function VisitorInformation({ place }) {
   return (
     <section style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <h3 style={{ 
-          fontSize: isMobile ? 24 : "clamp(1.8rem, 2.5vw, 2.2rem)", 
-          fontWeight: 700, 
-          color: FG, 
-          marginBottom: 32, 
-          fontFamily: "Poppins, sans-serif" 
+        <h3 style={{
+          fontSize: isMobile ? 24 : "clamp(1.8rem, 2.5vw, 2.2rem)",
+          fontWeight: 700,
+          color: FG,
+          marginBottom: 32,
+          fontFamily: "Poppins, sans-serif"
         }}>Visitor Guide</h3>
-        
+
         <Soul y={30}>
           <div style={{
             display: "grid",
@@ -1285,7 +1301,7 @@ function VisitorInformation({ place }) {
             boxSizing: "border-box"
           }}>
             {/* Card 1: Official & Administrative Permit */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
               transition={{ duration: 0.4 }}
               style={{
@@ -1303,15 +1319,15 @@ function VisitorInformation({ place }) {
             >
               {/* Ticket Top Barber Stripe */}
               <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-              
+
               {/* Ticket Notches */}
               <div style={ticketNotchStyle("left")} />
               <div style={ticketNotchStyle("right")} />
 
               {/* Watermark Suitcase Clipart */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <rect x="2" y="7" width="20" height="14" rx="2"/>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                <rect x="2" y="7" width="20" height="14" rx="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
               </svg>
 
               {/* Card content top */}
@@ -1319,7 +1335,7 @@ function VisitorInformation({ place }) {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     </div>
                     <div>
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Pass Category</span>
@@ -1361,7 +1377,7 @@ function VisitorInformation({ place }) {
                   <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em" }}>Log Status</span>
                   <span style={{ fontWeight: 800, color: FG, fontSize: 12 }}>VERIFIED PERMIT</span>
                 </div>
-                
+
                 {/* Stamp Clipart */}
                 <div style={{
                   border: `2px double ${A}`,
@@ -1388,7 +1404,7 @@ function VisitorInformation({ place }) {
             </motion.div>
 
             {/* Card 2: Transit & Connectors */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
               transition={{ duration: 0.4 }}
               style={{
@@ -1406,7 +1422,7 @@ function VisitorInformation({ place }) {
             >
               {/* Ticket Top Barber Stripe */}
               <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-              
+
               {/* Ticket Notches */}
               <div style={ticketNotchStyle("left")} />
               <div style={ticketNotchStyle("right")} />
@@ -1421,7 +1437,7 @@ function VisitorInformation({ place }) {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 2.6-2.6 2-2.6 2 2-2.6 2.6-2 2.6-2z"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="M16.2 7.8l-2 2.6-2.6 2-2.6 2 2-2.6 2.6-2 2.6-2z" /></svg>
                     </div>
                     <div>
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Transit Ticket</span>
@@ -1432,7 +1448,7 @@ function VisitorInformation({ place }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div style={{ display: "flex", gap: 12 }}>
                       <div style={{ color: A, marginTop: 2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Nearest Town</span>
@@ -1441,7 +1457,7 @@ function VisitorInformation({ place }) {
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>
                       <div style={{ color: A, marginTop: 2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="3" width="16" height="18" rx="2"/><rect x="8" y="7" width="8" height="4"/><circle cx="10" cy="16" r="1"/><circle cx="14" cy="16" r="1"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="3" width="16" height="18" rx="2" /><rect x="8" y="7" width="8" height="4" /><circle cx="10" cy="16" r="1" /><circle cx="14" cy="16" r="1" /></svg>
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Railway Terminal</span>
@@ -1450,7 +1466,7 @@ function VisitorInformation({ place }) {
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>
                       <div style={{ color: A, marginTop: 2 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l8 2.5z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l8 2.5z" /></svg>
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Airport Terminal</span>
@@ -1470,7 +1486,7 @@ function VisitorInformation({ place }) {
                   <span style={{ fontSize: 9, color: M, display: "block" }}>Vehicle Access</span>
                   <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.accessByVehicle || "All Vehicles"}</span>
                 </div>
-                
+
                 {/* Stamp Clipart */}
                 <div style={{
                   border: `1.5px dashed ${A}`,
@@ -1497,7 +1513,7 @@ function VisitorInformation({ place }) {
             </motion.div>
 
             {/* Card 3: Admission & Specifications */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
               transition={{ duration: 0.4 }}
               style={{
@@ -1515,15 +1531,15 @@ function VisitorInformation({ place }) {
             >
               {/* Ticket Top Barber Stripe */}
               <div style={{ height: 5, background: `repeating-linear-gradient(45deg, ${A}, ${A} 8px, ${B} 8px, ${B} 16px)`, width: "100%" }} />
-              
+
               {/* Ticket Notches */}
               <div style={ticketNotchStyle("left")} />
               <div style={ticketNotchStyle("right")} />
 
               {/* Watermark Compass Clipart */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <circle cx="12" cy="12" r="10"/>
-                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
               </svg>
 
               {/* Card content top */}
@@ -1531,7 +1547,7 @@ function VisitorInformation({ place }) {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                     </div>
                     <div>
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Entry Permits</span>
@@ -1569,7 +1585,7 @@ function VisitorInformation({ place }) {
                   <span style={{ fontSize: 9, color: M, display: "block" }}>Best Visit Season</span>
                   <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.bestTimeToVisit || "Year Round"}</span>
                 </div>
-                
+
                 {/* Stamp Clipart */}
                 <div style={{
                   border: `2px double ${A}`,
@@ -1596,7 +1612,7 @@ function VisitorInformation({ place }) {
             </motion.div>
 
             {/* Card 4: Operating Hours & Official Stamp Detached Stub */}
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
               transition={{ duration: 0.4 }}
               style={{
@@ -1621,7 +1637,7 @@ function VisitorInformation({ place }) {
 
               {/* Watermark Hourglass Clipart */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ width: 110, height: 110, opacity: 0.04, position: "absolute", top: "45%", right: 10, transform: "translateY(-50%)", pointerEvents: "none", color: A }}>
-                <path d="M5 2h14v2H5V2zM5 22h14v-2H5v2zM19 4l-7 7-7-7M5 20l7-7 7 7"/>
+                <path d="M5 2h14v2H5V2zM5 22h14v-2H5v2zM19 4l-7 7-7-7M5 20l7-7 7 7" />
               </svg>
 
               {/* Card content top */}
@@ -1629,7 +1645,7 @@ function VisitorInformation({ place }) {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     </div>
                     <div>
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Coupon validity</span>
@@ -1660,12 +1676,12 @@ function VisitorInformation({ place }) {
               {/* Card content bottom (Detached Stamp Stub) */}
               <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ 
-                    width: 90, 
-                    height: 24, 
-                    background: FG, 
-                    opacity: 0.1, 
-                    backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 1px, ${FG} 1px, ${FG} 3px, transparent 3px, transparent 4px, ${FG} 4px, ${FG} 5px)` 
+                  <div style={{
+                    width: 90,
+                    height: 24,
+                    background: FG,
+                    opacity: 0.1,
+                    backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 1px, ${FG} 1px, ${FG} 3px, transparent 3px, transparent 4px, ${FG} 4px, ${FG} 5px)`
                   }} />
                   <span className="font-mono" style={{ fontSize: 7, color: M }}>LKP-{place?.id || "99812"}</span>
                 </div>
@@ -1718,19 +1734,19 @@ function GoodToKnow({ place }) {
     <section style={{ background: S, padding: "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
         <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, fontFamily: "Poppins, sans-serif" }}>Good To Know</h3>
-        
+
         {/* Row 1: Good to Know Title & Two side-by-side cards */}
         <Rev>
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
-            gap: 32, 
-            marginTop: 8 
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: 32,
+            marginTop: 8
           }}>
-            
+
             {/* What to Carry - Premium Luggage Tag design */}
             <div style={{ position: "relative" }}>
-              
+
               <motion.div
                 whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,151,178,0.12)" }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -1821,13 +1837,13 @@ function GoodToKnow({ place }) {
                 }}
               >
                 {/* Warning Barber Stripe border top */}
-                <div style={{ 
-                  height: 4, 
-                  background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 6px, transparent 6px, transparent 12px)`, 
-                  width: "100%", 
-                  position: "absolute", 
-                  top: 0, 
-                  left: 0 
+                <div style={{
+                  height: 4,
+                  background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 6px, transparent 6px, transparent 12px)`,
+                  width: "100%",
+                  position: "absolute",
+                  top: 0,
+                  left: 0
                 }} />
 
                 {/* Rotated Restricted Stamp Overlay */}
@@ -1882,12 +1898,12 @@ function GoodToKnow({ place }) {
                 </div>
 
                 {/* Bottom Barber Stripe to frame it */}
-                <div style={{ 
-                  height: 4, 
-                  background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 6px, transparent 6px, transparent 12px)`, 
-                  width: "100%", 
-                  position: "absolute", 
-                  bottom: 0, 
+                <div style={{
+                  height: 4,
+                  background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 6px, transparent 6px, transparent 12px)`,
+                  width: "100%",
+                  position: "absolute",
+                  bottom: 0,
                   left: 0,
                   opacity: 0.7
                 }} />
@@ -1941,7 +1957,7 @@ function LocationSection({ place }) {
   return (
     <section className="location-section" style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "45fr 55fr", gap: 64 }} className="prep-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 32 : 64 }} className="prep-grid">
           <Rev delay={0.1} style={{ height: "100%" }}>
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
@@ -2062,11 +2078,30 @@ function LocationSection({ place }) {
 
 /* ─── MOBILE COMPONENTS ─────────── */
 
-function MobileHero({ place, galleryItems }) {
+function MobileHero({ place, galleryItems, id }) {
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B } = tokens;
   const history = useHistory();
   const placeName = place?.placeName || place?.title || "COASTAL GEM";
+
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareHovered, setShareHovered] = useState(false);
+  const [shareRipple, setShareRipple] = useState(false);
+  const glow = A || "#0097B2";
+
+  const handleShare = async () => {
+    setShareRipple(true);
+    setTimeout(() => setShareRipple(false), 700);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: place?.placeName || "Place", text: place?.description || "", url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2400);
+      }
+    } catch (_) { }
+  };
 
   const images = galleryItems && galleryItems.length ? galleryItems : ["https://picsum.photos/seed/destination/800/1000"];
 
@@ -2081,12 +2116,105 @@ function MobileHero({ place, galleryItems }) {
       >
         <ChevronLeft size={20} />
       </button>
-      {/* Hero Share Button */}
-      <HeroShareFab
-        title={placeName}
-        text={place?.description || ""}
-        url={window.location.href}
-      />
+      {/* Wishlist + Share buttons */}
+      <div style={{ position: "absolute", top: 20, right: 24, zIndex: 100, display: "flex", alignItems: "center", gap: 8 }}>
+        {id && (
+          <Favorite itemType="place" itemId={id}>
+            {({ saved, onClick }) => {
+              const surface = theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.84)";
+              const borderCol = `${glow}4D`;
+              const shadow = `0 6px 18px rgba(15,15,15,0.12)`;
+              return (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.86 }}
+                  onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                  style={{ width: 44, height: 44, borderRadius: "50%", background: surface, backdropFilter: "blur(10px)", border: `1.5px solid ${borderCol}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, outline: "none" }}
+                >
+                  <style>{`
+                    .mobile-place-save-${id} svg {
+                      fill: ${saved ? glow : glow};
+                      transition: fill 0.3s ease;
+                    }
+                    .mobile-place-save-${id} svg path,
+                    .mobile-place-save-${id} svg circle {
+                      stroke: ${saved ? glow : glow} !important;
+                      transition: stroke 0.3s ease;
+                    }
+                  `}</style>
+                  <div className={`mobile-place-save-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", color: glow }}>
+                    <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                  </div>
+                </motion.button>
+              );
+            }}
+          </Favorite>
+        )}
+
+        <motion.button
+          onClick={handleShare}
+          onHoverStart={() => setShareHovered(true)}
+          onHoverEnd={() => setShareHovered(false)}
+          whileTap={{ scale: 0.86 }}
+          style={{
+            height: 44,
+            borderRadius: 22,
+            background: theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.84)",
+            backdropFilter: "blur(10px)",
+            border: `1.5px solid ${shareHovered ? glow : `${glow}4D`}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            boxShadow: shareHovered
+              ? `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+              : "0 6px 18px rgba(15,15,15,0.12)",
+            cursor: "pointer",
+            maxWidth: shareHovered ? 140 : 44,
+            overflow: "hidden",
+            paddingLeft: 12,
+            paddingRight: shareHovered ? 16 : 12,
+            transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+            position: "relative",
+            zIndex: 200,
+            outline: "none"
+          }}
+        >
+          <motion.span
+            animate={{ scale: [1, 3.4], opacity: [0.45, 0] }}
+            transition={{ duration: 0, opacity: 0 }}
+            style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none", opacity: shareRipple ? 0.45 : 0, scale: shareRipple ? 3.4 : 1 }}
+          />
+          <motion.span
+            animate={{
+              y: shareHovered ? 0 : [0, -2, 0, 2, 0],
+              rotate: shareHovered ? 360 : 0,
+              scale: shareHovered ? 1.15 : 1
+            }}
+            transition={{
+              y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+              rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+              scale: { duration: 0.3, ease: "easeOut" }
+            }}
+            style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative", color: glow }}
+          >
+            <Share2 size={20} color={glow} />
+          </motion.span>
+          <span style={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            maxWidth: shareHovered ? 100 : 0,
+            opacity: shareHovered ? 1 : 0,
+            marginLeft: shareHovered ? 8 : 0,
+            transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+            color: glow,
+            fontFamily: '"Inter", sans-serif',
+            fontSize: 13,
+            fontWeight: 600
+          }}>
+            {shareCopied ? "Copied!" : "Share"}
+          </span>
+        </motion.button>
+      </div>
 
       {/* Layered Image Stack / Peeking Slider */}
       <div style={{
@@ -2206,7 +2334,7 @@ function MobileAbout({ place, hostData, hostAvatar }) {
       <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 10 }}>
         About the Destination
       </p>
-      
+
       <h2 className="font-display" style={{
         fontSize: 26,
         fontWeight: 700,
@@ -2547,10 +2675,10 @@ function MobileGoodToKnow({ place }) {
       </h3>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32, marginBottom: 32 }}>
-        
+
         {/* What to Carry - Mobile Luggage Tag */}
         <div style={{ position: "relative" }}>
-          
+
           <div style={{
             background: W,
             border: `1px solid ${B}`,
@@ -2587,12 +2715,12 @@ function MobileGoodToKnow({ place }) {
 
             {/* Baggage Barcode */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: 18, opacity: 0.7 }}>
-              <div style={{ 
-                width: 110, 
-                height: 20, 
+              <div style={{
+                width: 110,
+                height: 20,
                 color: FG,
-                opacity: 0.15, 
-                backgroundImage: `repeating-linear-gradient(90deg, currentColor, currentColor 1px, transparent 1px, transparent 3px, currentColor 3px, currentColor 4px, transparent 4px, transparent 6px)` 
+                opacity: 0.15,
+                backgroundImage: `repeating-linear-gradient(90deg, currentColor, currentColor 1px, transparent 1px, transparent 3px, currentColor 3px, currentColor 4px, transparent 4px, transparent 6px)`
               }} />
               <span style={{ fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.1em" }}>*BAG-LKP-${place?.id || "PACK"}*</span>
             </div>
@@ -2610,13 +2738,13 @@ function MobileGoodToKnow({ place }) {
           boxShadow: "0 4px 20px rgba(0,0,0,0.01)"
         }}>
           {/* Warning Barber Stripe border top */}
-          <div style={{ 
-            height: 5, 
-            background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 5px, transparent 5px, transparent 10px)`, 
-            width: "100%", 
-            position: "absolute", 
-            top: 0, 
-            left: 0 
+          <div style={{
+            height: 5,
+            background: `repeating-linear-gradient(-45deg, #ef4444, #ef4444 5px, transparent 5px, transparent 10px)`,
+            width: "100%",
+            position: "absolute",
+            top: 0,
+            left: 0
           }} />
 
           {/* Rotated Restricted Stamp Overlay */}
@@ -2869,9 +2997,9 @@ function MobilePlaceDetails({
   return (
     <>
       {unavailablePopup}
-      
+
       {/* 1. Hero Image with floating content */}
-      <MobileHero place={place} galleryItems={galleryItems} />
+      <MobileHero place={place} galleryItems={galleryItems} id={currentListingId} />
 
       {/* Place Description */}
       <PlaceDescription place={place} />
@@ -3111,7 +3239,7 @@ const PlaceDetails = () => {
       {unavailablePopup}
       {!isMobile && <DetailPageNavPortal activeCategory="places" />}
 
-      <PlaceHero place={place} galleryItems={galleryItems} />
+      <PlaceHero place={place} galleryItems={galleryItems} id={currentListingId} />
 
       <PlaceDescription place={place} />
 
