@@ -280,6 +280,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       COMPLETED: "Completed",
       CANCELLED: "Cancelled",
       CANCELED: "Cancelled", // Handle alternative spelling
+      REJECTED: "Rejected",
+      DECLINED: "Rejected",
     };
 
     const mappedStatus = statusMap[normalizedStatus] || "Pending";

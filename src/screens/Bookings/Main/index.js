@@ -144,6 +144,8 @@ const enrichRawBooking = (apiBooking) => {
     BOOKED: "Upcoming",
     COMPLETED: "Completed",
     CANCELLED: "Cancelled",
+    REJECTED: "Cancelled",
+    DECLINED: "Cancelled",
   };
 
   const normalizedOrderStatus = String(apiBooking?.orderStatus || "").toUpperCase().trim();
@@ -405,6 +407,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     BOOKED: "Upcoming",
     COMPLETED: "Completed",
     CANCELLED: "Cancelled",
+    REJECTED: "Cancelled",
+    DECLINED: "Cancelled",
   };
 
   const normalizedOrderStatus = String(apiBooking?.orderStatus || "").toUpperCase().trim();
@@ -1292,10 +1296,10 @@ const Main = ({
 
     // Sort by booking time descending to show latest bookings first
     return [...result].sort((a, b) => {
-      // 1. For Cancelled tab, prioritize the cancellation time if available
+      // 1. For Cancelled tab, prioritize the cancellation/rejection time if available
       if (displayedTab === "cancelled") {
-        const cancelA = a.bookingData?.cancelledAt || "";
-        const cancelB = b.bookingData?.cancelledAt || "";
+        const cancelA = a.bookingData?.cancelledAt || a.bookingData?.rejectedAt || a.bookingData?.updatedAt || "";
+        const cancelB = b.bookingData?.cancelledAt || b.bookingData?.rejectedAt || b.bookingData?.updatedAt || "";
         if (cancelA !== cancelB) {
           return cancelB.localeCompare(cancelA);
         }
