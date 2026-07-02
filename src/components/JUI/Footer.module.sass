@@ -22,14 +22,20 @@
   height: 100%
   z-index: 0
   pointer-events: none
-  opacity: 0.8
+  opacity: 0.4
   background-size: cover
   background-position: center
-  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%)
-  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%)
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 80%)
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 80%)
 
   @media (min-width: 768px)
     width: 50%
+
+  @media (min-width: 1024px)
+    width: 50%
+    opacity: 0.8
+    mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%)
+    -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%)
 
 .waveMask
   position: absolute
@@ -41,6 +47,7 @@
   line-height: 1
   z-index: 10
   pointer-events: none
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))
 
   @media (min-width: 768px)
     height: 6rem
@@ -60,26 +67,27 @@
   position: relative
   z-index: 20
   color: #fff !important
-  padding: 6rem 1.5rem 4rem
+  padding: 2.5rem 1.5rem 2rem
 
   @media (min-width: 768px)
-    padding-top: 8rem
+    padding-top: 5rem
+    padding-bottom: 3rem
 
 .container
   max-width: 80rem
   margin: 0 auto
   display: flex
   flex-direction: column
-  gap: 4rem
+  gap: 2rem
 
   @media (min-width: 1024px)
     flex-direction: row
-    gap: 3rem
+    gap: 4rem
 
 .leftSection
   display: flex
   flex-direction: column
-  gap: 1.5rem
+  gap: 1.25rem
 
   @media (min-width: 1024px)
     width: 40%
@@ -110,7 +118,7 @@
   color: #e5e7eb !important
   max-width: 28rem
   font-size: 15px !important
-  line-height: 1.625 !important
+  line-height: 1.75 !important
   margin: 0 !important
 
 .newsletter
@@ -173,10 +181,10 @@
     border-radius: 9999px !important
 
 .socials
-  padding-top: 1.5rem
+  padding-top: 1rem
   display: flex
   align-items: center
-  gap: 1rem
+  gap: 1.25rem
 
 .socialText
   font-size: 13px !important
@@ -187,8 +195,8 @@
   gap: 0.75rem
 
 .socialIcon
-  width: 2rem !important
-  height: 2rem !important
+  width: 2.25rem !important
+  height: 2.25rem !important
   border-radius: 9999px !important
   border: 1px solid rgba(107, 114, 128, 0.5) !important
   display: flex !important
@@ -217,27 +225,80 @@
     grid-template-columns: repeat(2, 1fr)
 
   @media (min-width: 768px)
-    grid-template-columns: repeat(4, 1fr)
+    grid-template-columns: repeat(3, 1fr)
 
   @media (min-width: 1024px)
     width: 60%
 
+
 .footer .linkCol
-  h4
+  padding-bottom: 1rem
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06)
+  margin-bottom: 0.5rem
+
+  @media (min-width: 640px)
+    border-bottom: none
+    padding-bottom: 0
+    margin-bottom: 0
+
+  .colTitle
+    display: flex
+    align-items: center
+    justify-content: space-between
+    cursor: pointer
     font-size: 13px !important
     font-weight: 700 !important
     color: #0097B2 !important
     letter-spacing: 0.05em !important
     text-transform: uppercase !important
-    margin: 0 0 1.5rem 0 !important
+    margin: 0 !important
+    padding: 1rem 0 !important
+    transition: color 0.3s ease
+    @media (min-width: 640px)
+      cursor: default
+      margin: 0 0 1.5rem 0 !important
+      padding: 0 !important
+
+  .colTitleOpen
+    color: #fff !important
+
+  .colIcon
+    display: block
+    color: rgba(255, 255, 255, 0.5)
+    transition: transform 0.3s ease
+    @media (min-width: 640px)
+      display: none !important
+
+  .colIconOpen
+    transform: rotate(180deg)
+
+  .colContent
+    display: grid
+    grid-template-rows: 0fr
+    transition: grid-template-rows 0.3s ease, padding 0.3s ease
+    overflow: hidden
+    padding-top: 0
+    @media (min-width: 640px)
+      display: block !important
+      grid-template-rows: none
+      padding-top: 0
+      overflow: visible
+
+    & > ul
+      min-height: 0
+      
+  .colContentOpen
+    grid-template-rows: 1fr
+    padding-top: 0.5rem
 
   ul
+
     list-style: none !important
     padding: 0 !important
     margin: 0 !important
     display: flex !important
     flex-direction: column !important
-    gap: 1rem !important
+    gap: 0.6rem !important
     font-size: 13px !important
     
     li
@@ -406,4 +467,4 @@
 .upperCopyrightText
   font-size: 13px !important
   color: #9ca3af !important
-  margin-top: 1rem !important
+  margin-top: 0.5rem !important

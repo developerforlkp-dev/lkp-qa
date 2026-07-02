@@ -167,7 +167,7 @@ export default function MobileBottomNavbar() {
             }
 
             // 2. Check if footer is visible in the viewport
-            const footer = document.querySelector(".cinematic-footer");
+            const footer = document.querySelector(".cinematic-footer, footer");
             if (footer) {
               const rect = footer.getBoundingClientRect();
               if (rect.top < window.innerHeight) {
@@ -240,6 +240,30 @@ export default function MobileBottomNavbar() {
     };
   }, []);
 
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        setIsFooterVisible(entry.isIntersecting);
+      });
+    }, { threshold: 0.05 }); // Trigger when at least 5% of the footer is visible
+
+    const interval = setInterval(() => {
+      const footer = document.getElementById("main-footer");
+      if (footer) {
+        observer.observe(footer);
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
+    };
+  }, []);
+
   if (!shouldShowNavbar(location.pathname, location.search)) {
     return null;
   }
@@ -261,8 +285,8 @@ export default function MobileBottomNavbar() {
     (filter) => businessInterestActiveMap[filter.id] !== false
   );
 
-  // Navbar is hidden when: scrolled down, a modal is open, or the mobile search sheet is open
-  const isNavbarVisible = visible && !modalOpen && !searchSheetOpen;
+  // Navbar is hidden when: scrolled down, a modal is open, mobile search sheet is open, or footer is visible
+  const isNavbarVisible = visible && !modalOpen && !searchSheetOpen && !isFooterVisible;
 
   return (
     <div className={cn(styles.mobileNavbarContainer, { [styles.hidden]: !isNavbarVisible })}>

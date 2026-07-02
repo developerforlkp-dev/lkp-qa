@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import moment from "moment";
+import moment from "moment-timezone";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "./Theme";
@@ -2185,6 +2185,54 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
 
     const errors = {};
+
+    // Check Cut-off time
+    if (!isEventBooking && startDate && startTime && timeSlots && timeSlots.length > 0) {
+      const selectedSlotObj = timeSlots.find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
+      const baseSlotObj = (listing?.timeSlots || []).find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
+      
+      const cutoffTimeValue = selectedSlotObj?.bookingCutoffTime || selectedSlotObj?.booking_cutoff_time || baseSlotObj?.bookingCutoffTime || baseSlotObj?.booking_cutoff_time || selectedSlotObj?.bookingCutoffHours || baseSlotObj?.bookingCutoffHours;
+      
+      if (cutoffTimeValue) {
+        const now = moment().tz('Asia/Kolkata');
+        let slotDateTime = moment(startDate).tz('Asia/Kolkata');
+        const parsedTime = moment(startTime, ['HH:mm', 'HH:mm:ss', 'hh:mm A', 'h:mm A']);
+        if (parsedTime.isValid()) {
+          slotDateTime = slotDateTime.hours(parsedTime.hours()).minutes(parsedTime.minutes()).seconds(0);
+        } else {
+          const [hours, minutes] = startTime.split(':').map(Number);
+          slotDateTime = slotDateTime.hours(hours || 0).minutes(minutes || 0).seconds(0);
+        }
+        
+        let cutoffHours = 0;
+        let cutoffMinutes = 0;
+        if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
+          const parts = cutoffTimeValue.split(':').map(Number);
+          cutoffHours = parts[0] || 0;
+          cutoffMinutes = parts[1] || 0;
+        } else {
+          cutoffHours = Number(cutoffTimeValue) || 0;
+        }
+        
+        const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours').subtract(cutoffMinutes, 'minutes');
+        
+        if (now.isAfter(cutoffDateTime)) {
+          let displayCutoff = String(cutoffTimeValue);
+          if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
+             const parts = cutoffTimeValue.split(':');
+             const h = parseInt(parts[0], 10);
+             const m = parseInt(parts[1], 10);
+             displayCutoff = `${h > 0 ? h + ' hour(s)' : ''} ${m > 0 ? m + ' minute(s)' : ''}`.trim() || '0 hours';
+          } else {
+             displayCutoff = `${cutoffTimeValue} hour(s)`;
+          }
+          
+          showErrorPopup(`You can no longer reserve this slot as the booking cut-off time (${displayCutoff} prior) has passed.`, "Booking Cut-off Passed");
+          return;
+        }
+      }
+    }
+
     if (!startDate) {
       errors.date = "Please select a date to continue.";
     } else {

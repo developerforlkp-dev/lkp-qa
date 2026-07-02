@@ -388,6 +388,38 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
     return slotTime.isBefore(now);
   };
 
+  const isPastCutoffTime = (date, timeString, cutoffTimeString) => {
+    if (!date || !timeString || !cutoffTimeString) return false;
+    const now = moment().tz('Asia/Kolkata');
+    
+    // Use moment to parse time correctly (handles both 24h and 12h formats like "04:00 PM")
+    // Fallback to split if moment parsing is weird
+    let slotDateTime = moment(date).tz('Asia/Kolkata');
+    const parsedTime = moment(timeString, ['HH:mm', 'HH:mm:ss', 'hh:mm A', 'h:mm A']);
+    if (parsedTime.isValid()) {
+      slotDateTime = slotDateTime.hours(parsedTime.hours()).minutes(parsedTime.minutes()).seconds(0);
+    } else {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      slotDateTime = slotDateTime.hours(hours).minutes(minutes).seconds(0);
+    }
+    
+    // Parse cutoff time string (e.g., "01:00" or just "1" or "01")
+    let cutoffHours = 0;
+    let cutoffMinutes = 0;
+    if (typeof cutoffTimeString === 'string' && cutoffTimeString.includes(':')) {
+      const parts = cutoffTimeString.split(':').map(Number);
+      cutoffHours = parts[0] || 0;
+      cutoffMinutes = parts[1] || 0;
+    } else {
+      cutoffHours = Number(cutoffTimeString) || 0;
+    }
+    
+    // Calculate cutoff time
+    const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours').subtract(cutoffMinutes, 'minutes');
+    
+    return now.isAfter(cutoffDateTime);
+  };
+
   const getMaxGuestsForSlot = () => {
     // First check availability data for the selected date and slot
     if (selectedDateAvailability) {
@@ -450,6 +482,36 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
       return { valid: false, error: "Selected time slot has passed. Please choose a future time." };
     }
 
+    const cutoffTimeValue = selectedTimeSlotData?.bookingCutoffTime || selectedTimeSlotData?.bookingCutoffHours || selectedTimeSlotData?.booking_cutoff_hours || selectedTimeSlotData?.booking_cutoff_time;
+    
+    // Debug alert so you can see exactly what the logic sees
+    const debugMsg = `DEBUG INFO:
+Current time: ${moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm')}
+Selected Date: ${selectedDate?.format('YYYY-MM-DD')}
+Booking Time: ${bookingTime}
+Cutoff Time Value: ${cutoffTimeValue || 'NOT FOUND'}
+Will it block? ${cutoffTimeValue && isPastCutoffTime(selectedDate, bookingTime, cutoffTimeValue) ? 'YES' : 'NO'}`;
+    
+    // Uncomment this if you want an aggressive popup to debug
+    // alert(debugMsg);
+    
+    if (cutoffTimeValue && isPastCutoffTime(selectedDate, bookingTime, cutoffTimeValue)) {
+      console.log("isPastCutoffTime returned TRUE. Blocking booking.");
+      // Format the display string for the error message
+      let displayCutoff = String(cutoffTimeValue);
+      if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
+        const parts = cutoffTimeValue.split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        displayCutoff = `${h > 0 ? h + ' hour(s)' : ''} ${m > 0 ? m + ' minute(s)' : ''}`.trim() || '0 hours';
+      } else {
+        displayCutoff = `${cutoffTimeValue} hour(s)`;
+      }
+      return { valid: false, error: `You can no longer reserve this slot as the booking cut-off time (${displayCutoff} prior) has passed.` };
+    } else {
+      console.log("isPastCutoffTime returned FALSE. Allowing booking.");
+    }
+
     return { valid: true };
   };
 
@@ -485,33 +547,36 @@ const Description = ({ classSection, listing, hostData, externalRoomId, external
 
   // Find the selected timeSlot object to get maxSeats and for display
   const selectedTimeSlotData = useMemo(() => {
-    // First try to find in slotsData from API
+    // Base slot from the listing, containing static properties like bookingCutoffTime
+    const baseSlot = (listing?.timeSlots || []).find(
+      (slot) => slot.slotName === selectedTimeSlot || slot.slot_name === selectedTimeSlot || slot.slotId?.toString() === selectedTimeSlot || slot.slot_id?.toString() === selectedTimeSlot
+    );
+
+    // First try to find in slotsData from API (for live pricing/capacity)
     if (slotsData && slotsData.length > 0 && selectedTimeSlot) {
       const apiSlot = slotsData.find(
         (slot) => slot.slot_name === selectedTimeSlot || slot.slot_id?.toString() === selectedTimeSlot
       );
       if (apiSlot) {
-        // Transform API slot to expected format
+        // Transform API slot to expected format, and merge important static fields from baseSlot
         return {
           slotId: apiSlot.slot_id,
           slot_id: apiSlot.slot_id,
           slotName: apiSlot.slot_name,
-          startTime: apiSlot.schedule?.start_time,
-          endTime: apiSlot.schedule?.end_time,
+          startTime: apiSlot.schedule?.start_time || baseSlot?.startTime || baseSlot?.start_time,
+          endTime: apiSlot.schedule?.end_time || baseSlot?.endTime || baseSlot?.end_time,
           startDate: apiSlot.schedule?.start_date,
           endDate: apiSlot.schedule?.end_date,
           maxSeats: apiSlot.capacity?.max_seats,
           pricePerPerson: apiSlot.pricing?.price_per_person,
           b2bRate: apiSlot.pricing?.b2b_rate,
           groupBookingPricing: apiSlot.group_booking_pricing || [],
+          bookingCutoffTime: apiSlot.bookingCutoffTime || apiSlot.booking_cutoff_time || baseSlot?.bookingCutoffTime || baseSlot?.booking_cutoff_time,
         };
       }
     }
-    // Fallback to listing timeSlots
-    if (!listing?.timeSlots || !selectedTimeSlot) return null;
-    return listing.timeSlots.find(
-      (slot) => slot.slotName === selectedTimeSlot || slot.slotId?.toString() === selectedTimeSlot
-    );
+    // Fallback to listing timeSlots directly
+    return baseSlot || null;
   }, [slotsData, listing?.timeSlots, selectedTimeSlot]);
 
   // Filter availability data by selected slot for date picker

@@ -10,7 +10,7 @@ export const posts = [
       "Sun-kissed islands, crystal-clear waters and timeless beauty — perfect for your Greek adventure.",
     date: "June 9, 2026",
     readTime: "5 min read",
-    imageClassName: "h-[340px] rounded-t-[100px] rounded-b-3xl",
+    imageClassName: "h-[280px] rounded-[24px]",
     author: "Elena Roussos",
     authorImage:
       "/images/blog/landscape-fallback.webp",
@@ -54,27 +54,28 @@ export const posts = [
   },
   {
     id: 2,
+    layoutId: 2,
     slug: "italy-romantic-lakes",
     image:
-      "/images/blog/landscape-fallback.webp",
+      "https://images.unsplash.com/photo-1518182170546-076616fd6aa5?auto=format&fit=crop&q=80",
     category: "Experience",
     title: "A Guide to Italy's Most Romantic Lakes",
     description:
       "Explore the charm, culture and cuisine around Italy's hidden lake towns.",
     date: "June 8, 2026",
     readTime: "6 min read",
-    imageClassName: "h-56 rounded-[40px]",
+    imageClassName: "h-[340px] rounded-[24px]",
     author: "Marco Bellini",
     authorImage:
-      "/images/blog/landscape-fallback.webp",
+      "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80",
     authorBio:
       "Marco is an Italian travel journalist and culinary writer who grew up on the shores of Lake Garda. He writes about slow travel, food culture and the art of la dolce vita.",
     heroImage:
-      "/images/blog/landscape-fallback.webp",
+      "https://images.unsplash.com/photo-1518182170546-076616fd6aa5?auto=format&fit=crop&q=80",
     galleryImages: [
-      "/images/blog/landscape-fallback.webp",
-      "/images/blog/landscape-fallback.webp",
-      "/images/blog/landscape-fallback.webp",
+      "https://images.unsplash.com/photo-1533816656515-d3527aaefaf7?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1516483638261-f40889dbf0a0?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1498307833015-e7b400441eb8?auto=format&fit=crop&q=80",
     ],
     content: {
       intro:
@@ -84,7 +85,7 @@ export const posts = [
           heading: "Lake Como — Aristocratic Elegance",
           body: "Lake Como is perhaps the most famous of Italy's lakes, and for good reason. Its forked shape cuts deep into the pre-Alpine foothills, creating dramatic scenery at every bend. The lakeside towns of Bellagio, Varenna and Menaggio each have distinct characters. Bellagio, perched on the promontory where the two forks meet, is the jewel — its stepped streets fragrant with oleander and jasmine, its waterfront promenade lined with Belle Époque hotels. Take a ferry between villages, letting the lake breeze carry you from one gelato stop to the next.",
           image:
-            "/images/blog/landscape-fallback.webp",
+            "https://images.unsplash.com/photo-1533816656515-d3527aaefaf7?auto=format&fit=crop&q=80",
         },
         {
           heading: "Lake Maggiore — Gardens and Grand Hotels",
@@ -94,7 +95,7 @@ export const posts = [
           heading: "Lake Garda — Where Wine Country Meets the Water",
           body: "Italy's largest lake, Garda has a different energy — more animated, more varied. The southern shores are broad and flat, backed by moraine hills covered in vineyards producing Bardolino and Lugana wines. The northern reaches narrow dramatically, hemmed in by mountains, where Riva del Garda has the feel of an Austrian spa town. Sirmione, on a narrow peninsula jutting into the southern lake, contains Roman ruins, a medieval castle and thermal springs — a remarkable concentration of history in one small place.",
           image:
-            "/images/blog/landscape-fallback.webp",
+            "https://images.unsplash.com/photo-1516483638261-f40889dbf0a0?auto=format&fit=crop&q=80",
         },
       ],
       pullQuote:
@@ -116,7 +117,7 @@ export const posts = [
       "How we create magical seaside events that leave lasting memories.",
     date: "June 7, 2026",
     readTime: "4 min read",
-    imageClassName: "h-64 rounded-3xl",
+    imageClassName: "h-[260px] rounded-[24px]",
     author: "Priya Nair",
     authorImage:
       "/images/blog/landscape-fallback.webp",
@@ -169,7 +170,7 @@ export const posts = [
       "Explore lesser-known places that offer incredible experiences and memories.",
     date: "June 8, 2026",
     readTime: "6 min read",
-    imageClassName: "h-48 rounded-3xl rounded-bl-[60px]",
+    imageClassName: "h-[380px] rounded-[24px]",
     author: "James Okafor",
     authorImage:
       "/images/blog/landscape-fallback.webp",
@@ -222,7 +223,7 @@ export const posts = [
       "Discover handpicked private villas in Bali that offer luxury, privacy and breathtaking views.",
     date: "June 9, 2026",
     readTime: "5 min read",
-    imageClassName: "h-60 rounded-[40px]",
+    imageClassName: "h-[300px] rounded-[24px]",
     author: "Sarah Tanaka",
     authorImage:
       "/images/blog/landscape-fallback.webp",
@@ -275,7 +276,7 @@ export const posts = [
       "Simple tips to help you plan better, travel smarter and enjoy more.",
     date: "June 4, 2026",
     readTime: "7 min read",
-    imageClassName: "h-64 rounded-3xl",
+    imageClassName: "h-[360px] rounded-[24px]",
     author: "Aisha Mensah",
     authorImage:
       "/images/blog/landscape-fallback.webp",
@@ -358,18 +359,24 @@ export function mapApiBlogToComponentFormat(apiBlog) {
   const defaultImage = '/images/blog/landscape-fallback.webp';
   const imageUrl = apiBlog.coverImageUrl || defaultImage;
 
+  const parseTags = (tags) => {
+    if (Array.isArray(tags)) return tags;
+    if (typeof tags === 'string') return tags.split(',').map(t => t.trim()).filter(Boolean);
+    return [];
+  };
+
   return {
     id: apiBlog.blogPostId || Math.random(),
     slug: apiBlog.slug,
     image: imageUrl,
     heroImage: imageUrl,
     galleryImages: [imageUrl, imageUrl, imageUrl],
-    category: (apiBlog.tags && apiBlog.tags.length > 0) ? apiBlog.tags[0] : 'Blog',
+    category: apiBlog.category || 'Experience',
     title: apiBlog.title || 'Untitled',
     description: apiBlog.summary || '',
     date: formatDate(apiBlog.publishedAt || apiBlog.createdAt),
     readTime: calculateReadTime(apiBlog.content),
-    imageClassName: 'h-[340px] rounded-t-[100px] rounded-b-3xl',
+    imageClassName: "h-[320px] rounded-[24px]",
     author: apiBlog.authorName || (apiBlog.authorFirstName ? `${apiBlog.authorFirstName} ${apiBlog.authorLastName || ''}`.trim() : 'Unknown Author'),
     authorImage: defaultImage,
     authorBio: '',
@@ -384,7 +391,7 @@ export function mapApiBlogToComponentFormat(apiBlog) {
       ],
       conclusion: '',
     },
-    tags: apiBlog.tags || [],
+    tags: parseTags(apiBlog.tags),
     relatedIds: [],
   };
 }

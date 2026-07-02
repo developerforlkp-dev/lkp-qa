@@ -1,6 +1,13 @@
 import axios from "axios";
 
-const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
+const normalizeBaseUrl = (url) => {
+  if (!url) return url;
+  let normalized = url.replace(/\/+$/, "");
+  if (normalized.includes(".littleknownplanet.com") && normalized.startsWith("http://")) {
+    normalized = normalized.replace("http://", "https://");
+  }
+  return normalized;
+};
 const DEV_API_BASE_URL = "https://api.dev.littleknownplanet.com/api";
 
 export const normalizePublicImageUrl = (url) => {
@@ -762,7 +769,7 @@ export const uploadCustomerAvatar = async (file) => {
   }
 };
 
-const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay"]);
+const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay", "place"]);
 
 export const normalizeWishlistItemType = (itemType) => {
   const normalized = String(itemType || "").trim().toLowerCase();
