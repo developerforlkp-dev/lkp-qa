@@ -280,6 +280,14 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
         console.warn("⚠️ No JWT token found in response:", response);
       }
 
+      if (response?.requiresProfileCompletion || response?.data?.requiresProfileCompletion) {
+        setStep("profile");
+        const customer = response?.customer || response?.data?.customer || {};
+        if (customer?.firstName && !firstName) setFirstName(customer.firstName);
+        if (customer?.lastName && !lastName) setLastName(customer.lastName);
+        return;
+      }
+
       // Store phone number and user info in localStorage
       const userInfo = {
         phone: phoneNumber.trim(),
