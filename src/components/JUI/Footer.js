@@ -8,10 +8,10 @@ function FooterCol({ title, children }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className={styles.linkCol}>
-      <h4 onClick={() => setIsOpen(!isOpen)} className={styles.colTitle}>
+      <h4 onClick={() => setIsOpen(!isOpen)} className={`${styles.colTitle} ${isOpen ? styles.colTitleOpen : ''}`}>
         {title}
-        <span className={styles.colIcon}>
-          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        <span className={`${styles.colIcon} ${isOpen ? styles.colIconOpen : ''}`}>
+          <ChevronDown size={16} />
         </span>
       </h4>
       <div className={`${styles.colContent} ${isOpen ? styles.colContentOpen : ''}`}>
