@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import moment from "moment";
+import moment from "moment-timezone";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "./Theme";
@@ -1590,7 +1590,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           const [h, m] = String(startTime).split(":").map(Number);
           if (Number.isFinite(h) && Number.isFinite(m)) {
             const slotMinutes = h * 60 + m;
-            if (slotMinutes <= currentMinutes) return false;
+            const cutoffHours = Number(slot.bookingCutoffHours || slot.booking_cutoff_hours) || 0;
+            const cutoffMinutes = cutoffHours * 60;
+            if (slotMinutes - cutoffMinutes <= currentMinutes) return false;
           }
         }
 
@@ -1661,7 +1663,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (startTime) {
         const [h, m] = startTime.split(':').map(Number);
         const slotMinutes = h * 60 + m;
-        if (slotMinutes <= currentMinutes) {
+        const cutoffHours = Number(slot.bookingCutoffHours || slot.booking_cutoff_hours) || 0;
+        const cutoffMinutes = cutoffHours * 60;
+        if (slotMinutes - cutoffMinutes <= currentMinutes) {
           return false;
         }
       }
@@ -2012,13 +2016,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
   const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
   const subtotalBeforeAdjustments = rawBaseTotal + addOnsTotal;
-  // Discounts should only apply to the base ticket price, not add-ons
-  const totalDiscountAmount = rawBaseTotal * (appliedDiscountRate / 100);
-  const totalPromoDiscountAmount = rawBaseTotal * ((activeGuestPricing?.promoDiscountRate || 0) / 100);
-  const totalEarlyBirdDiscountAmount = rawBaseTotal * ((activeGuestPricing?.earlyBirdDiscountRate || 0) / 100);
+  const discountableAmount = subtotalBeforeAdjustments;
+  const totalDiscountAmount = discountableAmount * (appliedDiscountRate / 100);
+  const totalPromoDiscountAmount = discountableAmount * ((activeGuestPricing?.promoDiscountRate || 0) / 100);
+  const totalEarlyBirdDiscountAmount = discountableAmount * ((activeGuestPricing?.earlyBirdDiscountRate || 0) / 100);
 
-  const taxableBase = Math.max(0, rawBaseTotal - totalDiscountAmount);
-  const taxableSubtotal = taxableBase + addOnsTotal;
+  const taxableSubtotal = Math.max(0, discountableAmount - totalDiscountAmount);
   const totalTaxAmount = taxableSubtotal * (appliedTaxRate / 100);
   const finalTotal = taxableSubtotal + totalTaxAmount;
 
@@ -2182,6 +2185,54 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
 
     const errors = {};
+
+    // Check Cut-off time
+    if (!isEventBooking && startDate && startTime && timeSlots && timeSlots.length > 0) {
+      const selectedSlotObj = timeSlots.find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
+      const baseSlotObj = (listing?.timeSlots || []).find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
+      
+      const cutoffTimeValue = selectedSlotObj?.bookingCutoffTime || selectedSlotObj?.booking_cutoff_time || baseSlotObj?.bookingCutoffTime || baseSlotObj?.booking_cutoff_time || selectedSlotObj?.bookingCutoffHours || baseSlotObj?.bookingCutoffHours;
+      
+      if (cutoffTimeValue) {
+        const now = moment().tz('Asia/Kolkata');
+        let slotDateTime = moment(startDate).tz('Asia/Kolkata');
+        const parsedTime = moment(startTime, ['HH:mm', 'HH:mm:ss', 'hh:mm A', 'h:mm A']);
+        if (parsedTime.isValid()) {
+          slotDateTime = slotDateTime.hours(parsedTime.hours()).minutes(parsedTime.minutes()).seconds(0);
+        } else {
+          const [hours, minutes] = startTime.split(':').map(Number);
+          slotDateTime = slotDateTime.hours(hours || 0).minutes(minutes || 0).seconds(0);
+        }
+        
+        let cutoffHours = 0;
+        let cutoffMinutes = 0;
+        if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
+          const parts = cutoffTimeValue.split(':').map(Number);
+          cutoffHours = parts[0] || 0;
+          cutoffMinutes = parts[1] || 0;
+        } else {
+          cutoffHours = Number(cutoffTimeValue) || 0;
+        }
+        
+        const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours').subtract(cutoffMinutes, 'minutes');
+        
+        if (now.isAfter(cutoffDateTime)) {
+          let displayCutoff = String(cutoffTimeValue);
+          if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
+             const parts = cutoffTimeValue.split(':');
+             const h = parseInt(parts[0], 10);
+             const m = parseInt(parts[1], 10);
+             displayCutoff = `${h > 0 ? h + ' hour(s)' : ''} ${m > 0 ? m + ' minute(s)' : ''}`.trim() || '0 hours';
+          } else {
+             displayCutoff = `${cutoffTimeValue} hour(s)`;
+          }
+          
+          showErrorPopup(`You can no longer reserve this slot as the booking cut-off time (${displayCutoff} prior) has passed.`, "Booking Cut-off Passed");
+          return;
+        }
+      }
+    }
+
     if (!startDate) {
       errors.date = "Please select a date to continue.";
     } else {
@@ -2985,16 +3036,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
+              transition={{ duration: 0.15 }}
               onClick={() => setShow(false)}
               style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)" }}
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               onClick={(e) => e.stopPropagation()}
               className="booking-modal-container"
               style={{
@@ -3674,6 +3725,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                 delete next.slot;
                                                 return next;
                                               });
+                                              setTimeout(() => {
+                                                const guestsSection = document.getElementById("booking-guests-section-exp");
+                                                if (guestsSection) {
+                                                  guestsSection.classList.add("highlight-next-step");
+                                                  setTimeout(() => {
+                                                    guestsSection.classList.remove("highlight-next-step");
+                                                  }, 2500);
+                                                }
+                                              }, 300);
                                             }}
                                             selectedTime={startTime}
                                             timeSlots={timeSlots}
@@ -3879,7 +3939,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             </AnimatePresence>
                         </div>
 
-                        <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
+                        <div id="booking-guests-section-exp" className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: "24px" }}>
                           <div style={{ fontSize: 11, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8, lineHeight: "1.2" }}>
                             02. Guests
                             {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}

@@ -139,6 +139,7 @@ const Checkout = () => {
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [stayDetails, setStayDetails] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [messageText, setMessageText] = useState("");
 
   // Edit functionality state
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -830,20 +831,15 @@ const Checkout = () => {
           className={styles.control}
           urlHome="/"
           backUrl={backUrl}
-          breadcrumbs={breadcrumbs}
         />
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
             title={tripTitle}
-            buttonUrl="/checkout-complete"
             guests={!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate)}
-            amountToPay={resolvedAmountToPay}
-            amountInPaise={isAmountInPaise}
-            currency={paymentData?.currency || "INR"}
-            paymentData={effectivePaymentData}
             dateValue={items[0]?.title}
-            guestValue={items[2]?.title}
+            timeValue={items[1]?.category === "Time slot" ? items[1]?.title : undefined}
+            guestValue={items[2]?.title || items[1]?.title} // fallback if there's no time slot
             onEditDate={() => setShowDatePicker(true)}
             onEditGuests={() => setShowGuestPicker(true)}
             isStay={!!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate)}
@@ -851,6 +847,8 @@ const Checkout = () => {
             checkOutDate={bookingData?.checkOutDate}
             roomType={bookingData?.roomType}
             mealPlan={bookingData?.mealPlan}
+            messageText={messageText}
+            setMessageText={setMessageText}
             datePicker={(
               <InlineDatePicker
                 visible={showDatePicker}
@@ -883,6 +881,9 @@ const Checkout = () => {
             hostName={hostName}
             hostAvatar={hostAvatar}
             cancellationPolicy={bookingData?.cancellationPolicySummary || stayDetails?.cancellationPolicySummary}
+            buttonUrl="/checkout-complete"
+            paymentData={effectivePaymentData}
+            messageText={messageText}
           />
         </div>
       </div>

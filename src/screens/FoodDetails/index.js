@@ -14,7 +14,10 @@ import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
+import Favorite from "../../components/Favorite";
+import Icon from "../../components/Icon";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -713,17 +716,26 @@ function HeroStat({ icon: Icon, label, value, subvalue, tokens, hideBorder }) {
 }
 
 /* ─── HERO SHARE FAB ─────────────────────────── */
-function HeroShareFab({ title, text, url }) {
-  const { isMobile } = useWindowSize();
+function HeroShareFab({ title, text, url, label = "Share Taste" }) {
   const [copied, setCopied] = useState(false);
-  const [ripple, setRipple] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const { tokens: { A } } = useTheme();
+  const { theme, tokens: { A, FG } } = useTheme();
   const glow = A || "#0097B2";
+  const isDark = theme === "dark";
+  const surface = isDark ? "#141414" : "#FFFFFF";
+  const surfaceHover = isDark ? "#1A1A1A" : "#FFFFFF";
+  const textColor = isDark ? FG : A;
+  const borderColor = hovered ? glow : (isDark ? `${glow}66` : `${glow}4D`);
+  const shadow = hovered
+    ? isDark
+      ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 8px 28px rgba(0,0,0,0.5)`
+      : `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
+    : isDark
+      ? `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.34)`
+      : "0 6px 18px rgba(15,15,15,0.12)";
 
-  const handleShare = async () => {
-    setRipple(true);
-    setTimeout(() => setRipple(false), 700);
+  const handleShare = async (e) => {
+    e.stopPropagation();
     try {
       if (navigator.share) {
         await navigator.share({ title, text, url });
@@ -732,57 +744,36 @@ function HeroShareFab({ title, text, url }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2400);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   return (
     <motion.button
-      className="premium-share-fab"
       onClick={handleShare}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.85, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       whileTap={{ scale: 0.86 }}
       style={{
-        position: "absolute",
-        top: isMobile ? 90 : 96,
-        right: isMobile ? 20 : 60,
-        zIndex: 200,
+        height: 44,
+        borderRadius: 22,
+        background: hovered ? surfaceHover : surface,
+        border: `1.5px solid ${borderColor}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
-        height: 44,
-        maxWidth: hovered ? 200 : 44,
-        overflow: "hidden",
-        paddingLeft: 13,
-        paddingRight: hovered ? 18 : 13,
-        background: "rgba(0,151,178,0.13)",
-        backdropFilter: "blur(22px)",
-        WebkitBackdropFilter: "blur(22px)",
-        border: `1.5px solid ${glow}55`,
-        borderRadius: 50,
+        boxShadow: shadow,
         cursor: "pointer",
-        color: "#FFFFFF",
-        fontFamily: "inherit",
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.13em",
-        textTransform: "uppercase",
-        boxShadow: hovered
-          ? `0 0 20px ${glow}55, 0 0 50px ${glow}20, 0 6px 24px rgba(0,0,0,0.4)`
-          : `0 0 10px ${glow}30, 0 4px 14px rgba(0,0,0,0.28)`,
-        outline: "none",
-        userSelect: "none",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), padding-right 0.45s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
+        maxWidth: hovered ? 160 : 44,
+        overflow: "hidden",
+        paddingLeft: 12,
+        paddingRight: hovered ? 16 : 12,
+        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, background 0.35s ease, border-color 0.35s ease",
+        pointerEvents: "auto",
+        position: "relative",
+        zIndex: 200,
+        outline: "none"
       }}
     >
-      <motion.span
-        animate={ripple ? { scale: [1, 3.4], opacity: [0.45, 0] } : { scale: 1, opacity: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
-        style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none" }}
-      />
       <motion.span
         animate={{
           y: hovered ? 0 : [0, -2, 0, 2, 0],
@@ -794,20 +785,24 @@ function HeroShareFab({ title, text, url }) {
           rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
           scale: { duration: 0.3, ease: "easeOut" }
         }}
-        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 18, position: "relative" }}
+        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative" }}
       >
-        <Share2 size={17} strokeWidth={2.2} />
+        <Share2 size={20} color={textColor} />
       </motion.span>
       <span style={{
         whiteSpace: "nowrap",
         overflow: "hidden",
-        maxWidth: hovered ? 140 : 0,
+        maxWidth: hovered ? 130 : 0,
         opacity: hovered ? 1 : 0,
-        marginLeft: hovered ? 9 : 0,
+        marginLeft: hovered ? 8 : 0,
         position: "relative",
-        transition: "max-width 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.12s, margin-left 0.45s cubic-bezier(0.22,1,0.36,1)",
+        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
+        color: textColor,
+        fontFamily: '"Inter", sans-serif',
+        fontSize: 13,
+        fontWeight: 600
       }}>
-        {copied ? "✓ Copied!" : "Share Taste"}
+        {copied ? "Copied!" : label}
       </span>
     </motion.button>
   );
@@ -819,6 +814,9 @@ function CulinaryHero({ food, galleryItems }) {
   const { isMobile } = useWindowSize();
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const id = food?.id || food?.foodId || food?._id || searchParams.get("id");
 
   const [idx, setIdx] = useState(0);
   const items = galleryItems?.length ? galleryItems : ["https://picsum.photos/seed/culinary/1200/800"];
@@ -902,22 +900,19 @@ function CulinaryHero({ food, galleryItems }) {
           )}
         </div>
 
-        {/* Hero Back Button */}
-        <button
-          type="button"
-          className="premium-back-button"
-          onClick={() => history.goBack()}
-          aria-label="Go back"
-        >
-          <ChevronLeft size={20} />
-        </button>
-
-        {/* Share Button absolute overlays */}
-        <HeroShareFab
-          title={food?.menuName || food?.title || ""}
-          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-          url={window.location.href}
-        />
+        {/* Top controls */}
+        <div style={{ position: "absolute", top: 90, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 200 }}>
+          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <ChevronLeft size={22} color="#111" />
+          </button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <HeroShareFab
+              title={food?.menuName || food?.title || ""}
+              text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+              url={window.location.href}
+            />
+          </div>
+        </div>
 
         {/* Floating Content Card */}
         <div className="hero-mobile-floating-card" style={{
@@ -934,70 +929,55 @@ function CulinaryHero({ food, galleryItems }) {
           zIndex: 15,
           position: "relative"
         }}>
-          <h1 className="font-display" style={{
-            fontSize: "24px",
-            fontWeight: 800,
+          <h1 style={{
+            fontSize: "clamp(2rem, 8vw, 2.5rem)",
+            fontWeight: 700,
+            lineHeight: 1.1,
             color: FG,
-            lineHeight: 1.2,
-            margin: "0 0 6px 0",
+            margin: "0 0 8px 0",
+            letterSpacing: "-0.02em",
+            fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
             textTransform: "capitalize"
           }}>
             {title}
           </h1>
-          <h2 className="font-cursive" style={{
-            fontSize: "24px",
-            color: A,
-            margin: "0 0 12px 0",
-            fontWeight: 400
+          <div style={{
+            fontSize: "14px",
+            color: "#0097B2",
+            margin: "0 0 16px 0",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            fontFamily: '"Inter", sans-serif'
           }}>
             {food?.shortDescription || "Authentic Taste Experience"}
-          </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-            <Star size={14} fill="#F59E0B" color="#F59E0B" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{food?.googleRating || food?.rating || "4.8"}</span>
-            <span style={{ fontSize: 11, color: M }}>(Google Rating)</span>
+          </div>
+        </div>
+
+        {/* Detailed Description */}
+        <div style={{ padding: "0 24px", marginTop: "16px" }}>
+          <div style={{
+            fontSize: "11px",
+            fontWeight: 800,
+            color: "#0097B2",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            marginBottom: "6px",
+            fontFamily: '"Inter", sans-serif'
+          }}>
+            About This Food
           </div>
           <p style={{
-            fontSize: "13px",
+            fontSize: "14px",
             color: M,
-            lineHeight: 1.5,
-            margin: 0
+            lineHeight: 1.6,
+            margin: 0,
+            fontFamily: '"Inter", sans-serif'
           }}>
             {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
           </p>
         </div>
 
-        {/* Details & Badges Section */}
-        <div style={{ padding: "0 16px", marginTop: "20px", display: "flex", flexDirection: "column", gap: 20 }}>
-          <div className="info-badges-grid" style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "12px",
-            padding: "16px 0",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`
-          }}>
-            <InfoBadge icon={Utensils} label={cuisine} sublabel="Cuisine" tokens={tokens} />
-            <InfoBadge icon={Globe} label={source} sublabel="Source" tokens={tokens} />
-            <InfoBadge icon={Zap} label={serveMode} sublabel="Service" tokens={tokens} />
-            <InfoBadge icon={Leaf} label={dietary} sublabel="Dietary" tokens={tokens} />
-          </div>
-
-          <div className="hero-stats-card" style={{
-            background: W,
-            borderRadius: "20px",
-            padding: "16px",
-            border: `1px solid ${B}`,
-            display: "flex",
-            flexDirection: "column",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.02)",
-            gap: 0
-          }}>
-            <HeroStat icon={Coffee} label="Average Cost" value={`₹${food?.averageCostForOne || "450"}`} subvalue="For One" tokens={tokens} />
-            <HeroStat icon={Clock} label="Open Today" value={`${food?.openingTime || "11:00 AM"} - ${food?.closingTime || "08:30 PM"}`} tokens={tokens} />
-            <HeroStat icon={Calendar} label="Open Days" value={openDays} tokens={tokens} hideBorder />
-          </div>
-        </div>
 
       </section>
     );
@@ -1017,11 +997,13 @@ function CulinaryHero({ food, galleryItems }) {
       </button>
 
       {/* Share Button absolute overlays */}
-      <HeroShareFab
-        title={food?.menuName || food?.title || ""}
-        text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-        url={window.location.href}
-      />
+      <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
+        <HeroShareFab
+          title={food?.menuName || food?.title || ""}
+          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          url={window.location.href}
+        />
+      </div>
 
       {/* Header Blending Gradient */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
@@ -1063,7 +1045,7 @@ function CulinaryHero({ food, galleryItems }) {
                 fontWeight: 600,
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif",
+                fontFamily: '"Inter", sans-serif',
                 zIndex: 2
               }}>
                 {category}
@@ -1082,14 +1064,14 @@ function CulinaryHero({ food, galleryItems }) {
               }}>
                 <Rev>
                   <h1 className="hero-title" style={{
-                    fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
+                    fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
                     fontWeight: 700,
-                    lineHeight: 1.2,
+                    lineHeight: 1.1,
                     color: "#FFFFFF",
                     WebkitTextFillColor: "#FFFFFF",
                     margin: 0,
-                    letterSpacing: "-0.01em",
-                    fontFamily: "Poppins, sans-serif"
+                    letterSpacing: "-0.02em",
+                    fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
                   }}>
                     {title}
                   </h1>
@@ -1098,12 +1080,6 @@ function CulinaryHero({ food, galleryItems }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
                     <Globe size={15} color={A || "#0097B2"} />
                     <span>{source}</span>
-                  </div>
-                </Rev>
-                <Rev delay={0.2}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#FFFFFF", fontSize: "13px", fontWeight: 700 }}>
-                    <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                    <span>{food?.googleRating || food?.rating || "4.8"} Google Rating</span>
                   </div>
                 </Rev>
               </div>
@@ -1130,7 +1106,7 @@ function CulinaryHero({ food, galleryItems }) {
                 fontWeight: 600,
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
-                fontFamily: "Poppins, sans-serif",
+                fontFamily: '"Inter", sans-serif',
                 zIndex: 2
               }}>
                 {category}
@@ -1149,14 +1125,14 @@ function CulinaryHero({ food, galleryItems }) {
               }}>
                 <Rev>
                   <h1 className="hero-title" style={{
-                    fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
+                    fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
                     fontWeight: 700,
-                    lineHeight: 1.2,
+                    lineHeight: 1.1,
                     color: "#FFFFFF",
                     WebkitTextFillColor: "#FFFFFF",
                     margin: 0,
-                    letterSpacing: "-0.01em",
-                    fontFamily: "Poppins, sans-serif"
+                    letterSpacing: "-0.02em",
+                    fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
                   }}>
                     {title}
                   </h1>
@@ -1165,12 +1141,6 @@ function CulinaryHero({ food, galleryItems }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
                     <Globe size={15} color={A || "#0097B2"} />
                     <span>{source}</span>
-                  </div>
-                </Rev>
-                <Rev delay={0.2}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#FFFFFF", fontSize: "13px", fontWeight: 700 }}>
-                    <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                    <span>{food?.googleRating || food?.rating || "4.8"} Google Rating</span>
                   </div>
                 </Rev>
               </div>
@@ -1399,7 +1369,7 @@ function LocationSection({ food }) {
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 32 : 64 }} className="prep-grid">
           <Rev delay={0.1} style={{ height: "100%" }}>
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 32, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
                   <div style={{
@@ -1456,7 +1426,7 @@ function LocationSection({ food }) {
           </Rev>
           <Rev delay={0.2} style={{ height: "100%" }}>
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 32, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it is</h3>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
                   {(food?.meetingAddress || food?.address) && (
@@ -1777,7 +1747,7 @@ function FoodMetadataCard({ food }) {
         {/* Left Side: Main Ticket Body (3x2 horizontal grid flow) */}
         <div style={{ flex: 1.9, padding: isMobile ? "20px 16px" : "28px 36px", display: "flex", flexDirection: "column", gap: "24px" }}>
           
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? "16px" : "20px 24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: isMobile ? "12px" : "20px 24px" }}>
             
             {/* Card 1: Category */}
             <motion.div
@@ -1930,39 +1900,44 @@ function FoodMetadataCard({ food }) {
         </div>
 
         {/* Perforated Divider */}
-        {!isMobile && (
+        <div style={{
+          width: isMobile ? "100%" : "1px",
+          height: isMobile ? "1px" : "auto",
+          borderLeft: isMobile ? "none" : `2px dashed ${tokens.M}`,
+          borderTop: isMobile ? `2px dashed ${tokens.M}` : "none",
+          position: "relative",
+          margin: isMobile ? "0" : "20px 0",
+          zIndex: 5
+        }}>
+          {/* Top/Left Cutout */}
           <div style={{
-            width: "1px",
-            borderLeft: `2px dashed ${tokens.M}`,
-            position: "relative",
-            margin: "20px 0"
-          }}>
-            {/* Top Cutout */}
-            <div style={{
-              position: "absolute",
-              top: -32,
-              left: -13,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: tokens.BG,
-              borderBottom: `1px solid ${tokens.B}`,
-              zIndex: 10
-            }} />
-            {/* Bottom Cutout */}
-            <div style={{
-              position: "absolute",
-              bottom: -32,
-              left: -13,
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: tokens.BG,
-              borderTop: `1px solid ${tokens.B}`,
-              zIndex: 10
-            }} />
-          </div>
-        )}
+            position: "absolute",
+            top: isMobile ? -12 : -32,
+            left: isMobile ? -12 : -13,
+            width: "24px",
+            height: "24px",
+            borderRadius: "50%",
+            background: tokens.BG,
+            borderBottom: isMobile ? "none" : `1px solid ${tokens.B}`,
+            borderRight: isMobile ? `1px solid ${tokens.B}` : "none",
+            zIndex: 10
+          }} />
+          {/* Bottom/Right Cutout */}
+          <div style={{
+            position: "absolute",
+            top: isMobile ? -12 : "auto",
+            bottom: isMobile ? "auto" : -32,
+            right: isMobile ? -12 : "auto",
+            left: isMobile ? "auto" : -13,
+            width: "24px",
+            height: "24px",
+            borderRadius: "50%",
+            background: tokens.BG,
+            borderTop: isMobile ? "none" : `1px solid ${tokens.B}`,
+            borderLeft: isMobile ? `1px solid ${tokens.B}` : "none",
+            zIndex: 10
+          }} />
+        </div>
 
         {/* Right Side: Access Stub */}
         <div style={{
@@ -1973,7 +1948,7 @@ function FoodMetadataCard({ food }) {
           flexDirection: "column",
           justifyContent: "space-between",
           gap: "24px",
-          borderTop: isMobile ? `2px dashed ${tokens.M}` : "none"
+          borderTop: "none"
         }}>
           <div>
             <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", color: tokens.A, letterSpacing: "0.15em" }}>Access Stub</span>
@@ -2047,6 +2022,7 @@ const FoodDetails = () => {
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, AL } = tokens;
 
+  const { isMobile } = useWindowSize();
   const location = useLocation();
   const history = useHistory();
   const params = new URLSearchParams(location.search);
@@ -2222,6 +2198,7 @@ const FoodDetails = () => {
       <ProgressBar />
       <ScopedStyles />
       {unavailablePopup}
+      {!isMobile && <DetailPageNavPortal activeCategory="food" />}
 
       <CulinaryHero food={food} galleryItems={galleryItems} />
 
@@ -2244,7 +2221,7 @@ const FoodDetails = () => {
 
         return (
           <div style={{
-            margin: "0 -80px",
+            margin: isMobile ? "0 -24px" : "0 -80px",
             overflow: "hidden",
             position: "relative",
             padding: "20px 0",
@@ -2277,7 +2254,7 @@ const FoodDetails = () => {
                         fontSize: "18px",
                         fontWeight: isEven ? 700 : 300,
                         color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
+                        fontFamily: '"Inter", sans-serif',
                         letterSpacing: "0.12em",
                         textTransform: "uppercase",
                         opacity: isEven ? 1 : 0.75
@@ -2285,7 +2262,7 @@ const FoodDetails = () => {
                     >
                       {dish}
                     </span>
-                    <Sparkles size={14} color="#F59E0B" fill="#F59E0B" style={{ opacity: 0.6 }} />
+                    <Sparkles size={14} color={A || "#0097B2"} fill={A || "#0097B2"} style={{ opacity: 0.6 }} />
                   </div>
                 );
               })}

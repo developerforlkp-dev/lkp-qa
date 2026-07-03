@@ -1,14 +1,20 @@
 @import ../../styles/helpers
 
 .title
-    margin-bottom: 32px
-    padding-bottom: 32px
+    margin-bottom: 24px
+    padding-bottom: 24px
     border-bottom: 1px solid $n6
     +dark
         border-color: $n2
+    +m
+        order: 1
+        margin-top: 0
+        padding-bottom: 16px
+        margin-bottom: 16px
+        border-bottom: none
 
 .amountToPay
-    margin-bottom: 32px
+    margin-bottom: 24px
     padding: 20px 24px
     border-radius: 16px
     background: $n7
@@ -65,141 +71,170 @@
     & > .category
         margin-right: auto
 
-.group
-    display: flex
-    margin: 0 -8px
+.subtitle
+    +body-2
+    color: $n4
+    margin-top: -16px
+    margin-bottom: 24px
     +m
-        display: block
+        order: 2
+        margin-top: -8px
+        margin-bottom: 16px
 
-.option
-    position: relative
-    flex: 1
-    margin: 0 8px
-    padding: 8px 45px 8px 16px
-    border-radius: 12px
-    background: $n7
-    +m
-        margin: 0
-        padding: 12px 45px 12px 16px
-        border-radius: 16px
+.stepper
+    display: flex
+    align-items: flex-start
+    margin-bottom: 32px
+    padding-bottom: 32px
+    border-bottom: 1px solid $n6
     +dark
+        border-color: $n3
+    +m
+        display: none
+
+.list
+    +m
+        order: 4
+        display: flex
+        flex-direction: column
+        gap: 16px
+
+.step, .stepActive
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: 12px
+    width: 120px
+
+.stepIcon, .stepIconActive
+    width: 32px
+    height: 32px
+    border-radius: 50%
+    display: flex
+    align-items: center
+    justify-content: center
+    font-size: 14px
+    font-weight: 600
+    flex-shrink: 0
+
+.stepIcon
+    background: $p1
+    color: $n8
+    svg
+        fill: $n8
+
+.stepIconActive
+    background: $p1
+    color: $n8
+
+.stepLabel, .stepLabelActive
+    +caption-2
+    font-weight: 500
+    text-align: center
+
+.stepLabel
+    color: $n4
+
+.stepLabelActive
+    color: $p1
+
+.stepperLine
+    flex: 1
+    height: 2px
+    background: $n6
+    margin: 15px 16px 0
+    +dark
+        background: $n3
+
+.tripGrid
+    display: grid
+    grid-template-columns: 1fr 1fr
+    gap: 16px
+    margin-bottom: 32px
+    +m
+        grid-template-columns: 1fr 1fr
+        gap: 12px
+
+.tripCard
+    border: 1px solid $n6
+    border-radius: 16px
+    padding: 16px
+    background: $n8
+    +dark
+        border-color: $n3
         background: $n2
-    &:not(:last-child)
-        +m
-            margin-bottom: 8px
+    +m
+        padding: 12px
+        border-color: $n3
+
+.cardHeader
+    display: flex
+    align-items: center
+    gap: 8px
+    margin-bottom: 8px
+    position: relative
+    svg
+        fill: $p1
 
 .info
     +caption-2
     color: $n4
 
-.input
-    display: none
-    width: 100%
-    height: 24px
-    background: none
-    +poppins
+.value
     +body-bold-2
-    color: $n2
 
 .edit
     position: absolute
     top: 50%
-    right: 16px
+    right: 0
     transform: translateY(-50%)
+    background: none
     svg
-        fill: $n5
+        fill: $n4
         transition: fill .2s
     &:hover
         svg
             fill: $p1
 
-.value
-    +body-bold-2
+.messageSection
+    margin-top: 32px
 
-.nav
-    display: flex
-    justify-content: center
-
-.link
-    display: flex
-    padding: 6px 12px
-    border-radius: 14px
-    background: none
-    +button-2
+.messageSubtitle
+    +body-2
     color: $n4
-    transition: all .2s
-    svg
-        margin-right: 8px
-        fill: $n4
-        transition: fill .2s
-    &:hover
-        color: $n3
-        svg
-            fill: $n3
-        +dark
-            color: $n6
-    &.active
-        background: $n3
-        color: $n8
-        svg
-            fill: $n8
-        +dark
-            background: $n8
-            color: $n2
-    &:not(:last-child)
-        margin-right: 16px
-    
-.label
-    margin-bottom: 12px
-    +hairline-2
-    color: $n5
+    margin-bottom: 16px
+    margin-top: 8px
 
-.line
+.secureBox
     display: flex
-    align-items: center
-    margin-bottom: 40px
-
-.subtitle
-    margin-right: auto
-    +body-bold-2
-
-.cards
-    display: flex
-    align-items: center
-
-.fieldset
-    & > .field
-        margin-bottom: 32px
-    
-.row
-    display: flex
-    margin: 0 -8px
-    .field
-        flex: 0 0 calc(50% - 16px)
-        width: calc(50% - 16px)
-        margin: 0 8px
-
-.checkbox
-    margin-top: 32px
-
-.message
+    align-items: flex-start
+    gap: 16px
+    padding: 24px
+    border: 1px solid $n6
+    border-radius: 16px
     margin-top: 24px
-    .category
-        margin-bottom: 24px
+    background: rgba($n6, 0.3)
+    +dark
+        border-color: $n3
+        background: rgba($n3, 0.2)
 
-.button
-    margin-top: 32px
-
-.logo
-    img
-        max-height: 24px
-
-.control
+.secureIcon
+    width: 40px
+    height: 40px
+    border-radius: 50%
+    background: rgba($p1, 0.1)
     display: flex
     align-items: center
-    .button
-        margin: 0 16px 0 0
+    justify-content: center
+    flex-shrink: 0
+    svg
+        fill: $p1
 
-.verified
-    img
-        max-height: 48px
+.secureTitle
+    +body-bold-2
+    color: $p1
+    margin-bottom: 4px
+
+.secureDesc
+    +caption-2
+    color: $n4

@@ -10,15 +10,20 @@
         padding: 0 8px
 
 .control
-    margin-bottom: 80px
+    margin-bottom: 16px
     +t
-        margin-bottom: 48px
+        margin-bottom: 16px
 
 .wrapper
     display: flex
     align-items: flex-start
     +t
-        flex-direction: column-reverse
+        flex-direction: column
+    +m
+        padding: 0 16px
+        width: 100%
+        box-sizing: border-box
+        overflow-x: hidden
 
 .confirm
     flex-grow: 1
@@ -30,6 +35,9 @@
     +t
         width: 100%
         padding: 0
+        margin-bottom: 32px
+    +m
+        display: contents
 
 .price
     flex-shrink: 0
@@ -40,5 +48,6 @@
         width: 416px
     +t
         width: 100%
-        margin-bottom: 48px
+    +m
+        display: contents
 

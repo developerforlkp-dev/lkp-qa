@@ -713,6 +713,17 @@ export const loginWithGoogle = async (idToken) => {
   }
 };
 
+// Complete Customer Profile
+export const completeCustomerProfile = async (profileData) => {
+  try {
+    const response = await ListingsAPI.put("/customers/auth/complete-profile", profileData);
+    return response.data;
+  } catch (error) {
+    console.error("Error completing customer profile:", error);
+    throw error;
+  }
+};
+
 // ✅ Customer Profile API functions
 export const getCustomerProfile = async () => {
   try {
@@ -751,7 +762,7 @@ export const uploadCustomerAvatar = async (file) => {
   }
 };
 
-const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay"]);
+const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay", "place"]);
 
 export const normalizeWishlistItemType = (itemType) => {
   const normalized = String(itemType || "").trim().toLowerCase();

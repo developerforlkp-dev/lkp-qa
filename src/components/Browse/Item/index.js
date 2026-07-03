@@ -23,7 +23,7 @@ const Item = ({ className, item }) => {
     <Link 
       className={cn(className, styles.item)} 
       to={item.url}
-      target="_blank"
+      target={window.innerWidth <= 768 ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>

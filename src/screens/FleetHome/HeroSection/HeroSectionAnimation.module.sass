@@ -67,8 +67,8 @@
     padding-bottom: 4px
     +m
         height: auto
-        padding-bottom: 6px
-        margin-bottom: 4px
+        padding-bottom: 0
+        margin-bottom: 2px
 
 .title1
     font-weight: 700
@@ -87,9 +87,9 @@
     +t
         font-size: clamp(28px, 3.5vw, 36px)
     +m
-        font-size: clamp(32px, 8vw, 46px)
-        line-height: 0.9
-        padding-bottom: 4px
+        font-size: clamp(26px, 7vw, 32px)
+        line-height: 1
+        padding-bottom: 2px
 
 // Global classes for GSAP selectors
 :global(.hero-title-1)
@@ -109,9 +109,9 @@
     +t
         font-size: clamp(28px, 3.5vw, 36px)
     +m
-        font-size: clamp(32px, 8vw, 46px)
-        line-height: 0.9
-        padding-bottom: 4px
+        font-size: clamp(26px, 7vw, 32px)
+        line-height: 1
+        padding-bottom: 2px
 
 :global(.hero-accent-word)
     font-style: italic
@@ -152,6 +152,7 @@
         line-height: 1.3
         max-width: 100%
         padding-right: 8px
+        display: none
 
 :global(.hero-desc)
     margin-top: 8px
@@ -174,6 +175,7 @@
         line-height: 1.3
         max-width: 100%
         padding-right: 8px
+        display: none
 
 .button, :global(.hero-button)
     margin-top: 16px
@@ -198,9 +200,11 @@
     opacity: 1
     will-change: transform, opacity
     +m
-        padding: 6px 10px 6px 20px
-        font-size: 14px
-        margin-top: 20px
+        padding: 4px 6px 4px 16px
+        font-size: 13px
+        margin-top: 6px
+        margin-left: 0 !important
+        width: 135px
     span
         flex-grow: 1
         text-align: left
@@ -233,6 +237,9 @@
     text-shadow: none !important
     +dark
         color: $n8 !important
+    +m
+        color: #ffffff !important
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important
 
 .details .desc,
 :global(.hero-desc)
@@ -240,9 +247,70 @@
     text-shadow: none !important
     +dark
         color: $n6 !important
+    +m
+        color: rgba(255, 255, 255, 0.9) !important
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important
 
 :global(.hero-curve-fill)
-    fill: #ffffff
+    fill: var(--BG, #ffffff)
     transition: fill 0.3s ease
     +dark
-        fill: #070B14
+        fill: var(--BG, #080808)
+
+.curveOverlay
+    +m
+        display: block !important
+        background: linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 100%)
+        svg
+            display: none
+
+.discoverTextMobile
+    display: none
+    +m
+        display: block
+        font-family: "Inter", sans-serif
+        font-weight: 700
+        font-size: 13px
+        letter-spacing: 0.15em
+        color: #0097B2
+        text-transform: uppercase
+        margin-bottom: 8px
+
+.mobileStatsBlock
+    display: none
+    +m
+        display: block
+        position: absolute
+        left: 0
+        top: 0
+        width: 100%
+        height: 100%
+        pointer-events: none
+
+.statsCircle
+    position: absolute
+    width: 48px
+    height: 48px
+    border-radius: 50%
+    border: 1px solid #ffffff
+    display: flex
+    align-items: center
+    justify-content: center
+    font-family: "Inter", sans-serif
+    font-weight: 600
+    font-size: 14px
+    color: #ffffff
+    background: transparent
+
+.statsText
+    position: absolute
+    margin-left: 0
+    font-family: "Inter", sans-serif
+    font-size: 12px
+    color: #ffffff
+    font-weight: 500
+    line-height: 1.2
+    span
+        font-weight: 700
+        font-size: 16px
+

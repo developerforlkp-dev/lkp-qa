@@ -203,6 +203,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "";
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const months = [
       "Jan",
@@ -224,11 +225,34 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   // Format time from "05:44:00" to "5:44 AM" format
   const formatTime = (timeString) => {
     if (!timeString) return "";
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours, 10);
+
+    const isEpoch = !isNaN(Number(timeString)) && String(timeString).trim().length > 0;
+    const isIsoOrFullDate = typeof timeString === 'string' && (timeString.includes("T") || timeString.match(/[a-zA-Z]{3}.*\d{4}/));
+    
+    if (isEpoch || isIsoOrFullDate) {
+      const date = new Date(isEpoch ? Number(timeString) : timeString);
+      if (!Number.isNaN(date.getTime())) {
+        const hour = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const ampm = hour >= 12 ? "PM" : "AM";
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes} ${ampm}`;
+      }
+    }
+
+    let timePart = String(timeString);
+    if (timePart.includes(" ")) {
+      timePart = timePart.split(" ")[1] || timePart;
+    }
+    const parts = timePart.split(":");
+    if (parts.length < 2) return timeString;
+    
+    const hour = parseInt(parts[0], 10);
+    if (isNaN(hour)) return timeString;
+    
     const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+    return `${displayHour}:${parts[1]} ${ampm}`;
   };
 
   // Format currency amount
@@ -251,10 +275,13 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     // Map to display status - keep PENDING as "Pending", CONFIRMED as "Confirmed"
     const statusMap = {
       PENDING: "Pending",
+      PENDING_CONFIRMATION: "Pending Confirmation",
       CONFIRMED: "Confirmed",
       COMPLETED: "Completed",
       CANCELLED: "Cancelled",
       CANCELED: "Cancelled", // Handle alternative spelling
+      REJECTED: "Rejected",
+      DECLINED: "Rejected",
     };
 
     const mappedStatus = statusMap[normalizedStatus] || "Pending";
@@ -595,15 +622,22 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     bookingId: `LKP-${apiBooking.orderId}`,
     title: title,
     status: status,
-    startDate: formatDate(apiBooking.checkInDate || apiBooking.bookingDate),
-    endDate: formatDate(apiBooking.checkOutDate || apiBooking.bookingDate),
-    bookingDate: formatDate(apiBooking.checkInDate || apiBooking.bookingDate),
-    bookingTime: formatTime(apiBooking.bookingTime),
-    startTime: null, // Will be populated from slot data
-    endTime: null, // Will be populated from slot data
+    startDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || apiBooking.bookingDate),
+    endDate: formatDate(apiBooking.checkOutDate || apiBooking.eventDate || apiBooking.bookingDate),
+    bookingDate: formatDate(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingDate),
+    bookingTime: formatTime(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingTime),
+    reservationDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || (apiBooking.timeSlotStartTime && (apiBooking.timeSlotStartTime.includes('T') || apiBooking.timeSlotStartTime.includes(' ')) ? apiBooking.timeSlotStartTime.split(/[T ]/)[0] : null) || apiBooking.bookingDate),
+    startTime: formatTime(apiBooking.checkInTime || apiBooking.originalData?.checkInTime || stayData?.checkInTime), // Will be overridden by slot data if present
+    endTime: formatTime(apiBooking.checkOutTime || apiBooking.originalData?.checkOutTime || stayData?.checkOutTime), // Will be overridden by slot data if present
     guestCount: apiBooking.numberOfGuests || 0,
-    adultsCount: apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
-    childrenCount: apiBooking.guests?.children || apiBooking.originalData?.guests?.children || apiBooking.originalData?.pricing?.childrenCount || apiBooking.childrenCount || apiBooking.childCount || apiBooking.children || 0,
+    adultsCount: Math.max(
+      apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
+      Array.isArray(apiBooking.stayOrderRooms) ? apiBooking.stayOrderRooms.reduce((sum, r) => sum + (r.adults || r.numberOfAdults || r.noOfAdults || r.adultCount || 0) + (r.extraAdults || r.extraAdult || 0), 0) : 0
+    ),
+    childrenCount: Math.max(
+      apiBooking.guests?.children || apiBooking.originalData?.guests?.children || apiBooking.originalData?.pricing?.childrenCount || apiBooking.childrenCount || apiBooking.childCount || apiBooking.children || 0,
+      Array.isArray(apiBooking.stayOrderRooms) ? apiBooking.stayOrderRooms.reduce((sum, r) => sum + (r.children || r.numberOfChildren || r.noOfChildren || r.childCount || 0) + (r.extraChildren || r.extraChild || 0), 0) : 0
+    ),
     location: location,
     bannerImage: {
       src: coverPhotoUrl,
@@ -1030,19 +1064,20 @@ const ViewDetails = () => {
       booking.eventData?.venueName ||
       "Confirmed booking";
     const guestSummary = (() => {
-      const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
+      const adults = Math.max(booking.adultsCount || 0, booking.guestCount - (booking.childrenCount || 0));
       const children = booking.childrenCount || 0;
       if (adults > 0 || children > 0) {
-        return [
-          adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : null,
-          children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : null,
-        ].filter(Boolean).join(", ");
+        const total = adults + children;
+        const adultText = adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : "";
+        const childText = children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : "";
+        if (adults > 0 && children > 0) return `${total} Guest${total !== 1 ? "s" : ""} (${adultText}, ${childText})`;
+        return `${total} Guest${total !== 1 ? "s" : ""} (${adultText || childText})`;
       }
       return `${booking.guestCount || 0} Guest${booking.guestCount === 1 ? "" : "s"}`;
     })();
     const scheduleLabel = booking.startTime && booking.endTime
-      ? `${booking.startDate} | ${booking.startTime} - ${booking.endTime}`
-      : `${booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
+      ? `${booking.reservationDate || booking.startDate} | ${booking.startTime} - ${booking.endTime}`
+      : `${booking.reservationDate || booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
     const discountPercent = getReceiptPercent(discountAmount, subtotalAmount);
     const taxPercent = getReceiptPercent(taxAmount, subtotalAmount);
     const companyWebsite =
@@ -1170,6 +1205,43 @@ const ViewDetails = () => {
     }
 
     return new Date() >= checkInDatetime;
+  };
+
+  const isPastStayCheckOutTime = () => {
+    if (!booking) return false;
+
+    // Only apply to Stays
+    const businessInterestCode = String(booking?.originalData?.businessInterestCode || "").toUpperCase();
+    const isStayOrder = businessInterestCode === "STAYS" ||
+      booking?.originalData?.stayId != null ||
+      (booking?.originalData?.stayOrderRooms && booking?.originalData?.stayOrderRooms.length > 0) ||
+      booking?.stayData != null;
+
+    if (!isStayOrder) return true; // If not a stay, we don't restrict by stay rules
+
+    const checkOutDateStr =
+      booking?.originalData?.checkOutDate ||
+      booking?.originalData?.endDate ||
+      booking?.stayData?.checkOutDate;
+
+    if (!checkOutDateStr) return true; // If no check out date, allow it
+
+    const checkOutDatetime = new Date(checkOutDateStr);
+
+    const checkOutTimeStr =
+      booking?.originalData?.checkOutTime ||
+      booking?.originalData?.endTime ||
+      booking?.stayData?.checkOutTime ||
+      "11:00:00";
+
+    if (checkOutTimeStr && typeof checkOutTimeStr === 'string' && checkOutTimeStr.includes(':')) {
+      const parts = checkOutTimeStr.split(':').map(Number);
+      checkOutDatetime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+    } else {
+      checkOutDatetime.setHours(11, 0, 0, 0);
+    }
+
+    return new Date() >= checkOutDatetime;
   };
 
   const handleCancelBookingClick = async () => {
@@ -2531,7 +2603,7 @@ const ViewDetails = () => {
       if (!isPastStayCheckInTime()) {
         actions.push({ label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick });
       }
-      if (canLeaveReview && sourceTab !== "upcoming") {
+      if (canLeaveReview && isPastStayCheckOutTime() && sourceTab !== "upcoming") {
         actions.push({
           label: "Leave Review",
           variant: "secondary",
@@ -2554,7 +2626,7 @@ const ViewDetails = () => {
       const actions = [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
       ];
-      if (canLeaveReview && sourceTab !== "upcoming") {
+      if (canLeaveReview && isPastStayCheckOutTime() && sourceTab !== "upcoming") {
         actions.push({
           label: "Leave Review",
           variant: "secondary",
@@ -2648,37 +2720,53 @@ const ViewDetails = () => {
             </div>
             <div className={styles.summaryItem}>
               <div className={styles.summaryLabel}>Booking Time</div>
-              <div className={styles.summaryValue}>
-                {booking.startTime && booking.endTime ? (
-                  <>
-                    {booking.startTime} - {booking.endTime}
-                  </>
-                ) : booking.bookingTime ? (
-                  booking.bookingTime
-                ) : (
-                  "Not specified"
-                )}
-              </div>
+              <div className={styles.summaryValue}>{booking.bookingTime || "Not specified"}</div>
             </div>
-            <div className={styles.summaryItem}>
-              <div className={styles.summaryLabel}>Guests</div>
-              <div className={styles.summaryValue}>
-                {(() => {
-                  const adults = booking.adultsCount > 0 ? booking.adultsCount : Math.max(0, booking.guestCount - booking.childrenCount);
-                  const children = booking.childrenCount || 0;
-                  if (adults > 0 || children > 0) {
-                    return (
-                      <>
-                        {adults > 0 ? `${adults} Adult${adults > 1 ? "s" : ""}` : ""}
-                        {adults > 0 && children > 0 ? ", " : ""}
-                        {children > 0 ? `${children} Child${children !== 1 ? "ren" : ""}` : ""}
-                      </>
-                    );
-                  }
-                  return `${booking.guestCount} ${booking.guestCount === 1 ? "guest" : "guests"}`;
-                })()}
+            {booking.reservationDate && (
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryLabel}>Reservation Date</div>
+                <div className={styles.summaryValue}>{booking.reservationDate}</div>
               </div>
-            </div>
+            )}
+            {(booking.startTime || booking.endTime) && (
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryLabel}>Reservation Time</div>
+                <div className={styles.summaryValue}>
+                  {booking.startTime && booking.endTime ? (
+                    <>
+                      {booking.startTime} - {booking.endTime}
+                    </>
+                  ) : (
+                    booking.startTime || booking.endTime
+                  )}
+                </div>
+              </div>
+            )}
+            {(() => {
+              const adults = Math.max(booking.adultsCount || 0, booking.guestCount - (booking.childrenCount || 0));
+              const children = booking.childrenCount || 0;
+              const total = adults + children;
+              return (
+                <>
+                  <div className={styles.summaryItem}>
+                    <div className={styles.summaryLabel}>Total Guests</div>
+                    <div className={styles.summaryValue}>{total} {total === 1 ? "Guest" : "Guests"}</div>
+                  </div>
+                  {adults > 0 && (
+                    <div className={styles.summaryItem}>
+                      <div className={styles.summaryLabel}>Adults</div>
+                      <div className={styles.summaryValue}>{adults}</div>
+                    </div>
+                  )}
+                  {children > 0 && (
+                    <div className={styles.summaryItem}>
+                      <div className={styles.summaryLabel}>Children</div>
+                      <div className={styles.summaryValue}>{children}</div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             <div className={styles.summaryItem}>
               <div className={styles.summaryLabel}>Status</div>
               <div className={styles.summaryValue}>
@@ -2696,6 +2784,7 @@ const ViewDetails = () => {
                       const normalized = String(originalStatus).toUpperCase().trim();
                       // Map original status to display text
                       if (normalized === "PENDING") return "Pending";
+                      if (normalized === "PENDING_CONFIRMATION") return "Pending Confirmation";
                       if (normalized === "CONFIRMED") return "Confirmed";
                       if (normalized === "COMPLETED") return "Completed";
                       if (normalized === "CANCELLED" || normalized === "CANCELED") return "Cancelled";
@@ -2883,7 +2972,7 @@ const ViewDetails = () => {
                 <span>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</span>
                 <span>{booking.pricing.total}</span>
               </div>
-              {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && (
+              {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && String(booking.originalData?.orderStatus || "").toUpperCase() !== "PENDING_CONFIRMATION" && (
                 <div className={styles.paymentActions}>
                   <button
                     type="button"
@@ -2982,8 +3071,8 @@ const ViewDetails = () => {
           </div>
         </div>
 
-        {/* Review Section - Only show for completed orders */}
-        {(isCompletedOrder && (canLeaveReview || reviewSubmitted)) && (
+        {/* Review Section - Only show for completed orders and after checkout */}
+        {(isCompletedOrder && isPastStayCheckOutTime() && (canLeaveReview || reviewSubmitted)) && (
           <div className={cn(styles.card, styles.reviewCard)}>
             <h2 className={styles.cardTitle}>Leave a Review</h2>
             {reviewSubmitted ? (

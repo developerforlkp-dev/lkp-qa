@@ -1,15 +1,15 @@
 @import ../../styles/helpers
 
 .price
-    padding: 32px
+    padding: 24px
     border-radius: 24px
     box-shadow: 0px 40px 32px -24px rgba(15, 15, 15, 0.12)
     border: 1px solid $n6
     +d
         padding: 24px
     +m
-        padding: 24px 20px
-        border-radius: 24px
+        padding: 16px
+        border-radius: 20px
         box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.06)
         border: none
     +dark
@@ -18,108 +18,113 @@
             box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.4)
             background: $n2
 
-.description
-    margin-top: 32px
-    padding: 8px
-    border-radius: 20px
+.summaryBox
+    display: flex
+    align-items: center
+    justify-content: space-between
+    margin-top: 24px
+    padding: 12px 16px
+    border: 1px solid $n6
+    border-radius: 12px
     background: $n7
     +dark
         background: $n2
-    &.flex
-        display: flex
-        flex-wrap: wrap
-        +m
-            display: block
-        .item
-            flex: 0 0 50%
-            &:nth-child(2n)
-                position: relative
-                &:before
-                    content: ""
-                    position: absolute
-                    top: 12px
-                    left: 0
-                    bottom: 12px
-                    width: 1px
-                    background: $n6
-                    +dark
-                        background: $n4
-                    +m
-                        display: none
+        border-color: $n3
+    +m
+        flex-direction: column
+        align-items: stretch
+        gap: 12px
+        padding: 16px
 
-.item
+.summaryItem
     display: flex
-    padding: 12px
-
-.icon
-    display: flex
-    justify-content: center
     align-items: center
-    width: 32px
-    height: 32px
-    margin-right: 12px
-    svg
-        fill: $n5
-    
-.category
-    +caption-2
-    color: $n4
+    flex: 1
+    position: relative
 
-.subtitle
-    font-size: 14px
+.summaryIcon
+    width: 24px
+    height: 24px
+    display: flex
+    align-items: center
+    justify-content: center
+    margin-right: 8px
+    svg
+        fill: $n4
+
+.summaryContent
+    display: flex
+    flex-direction: column
+
+.summaryCategory
+    font-size: 11px
+    color: $n4
+    text-transform: uppercase
+    letter-spacing: 0.05em
+    margin-bottom: 2px
+
+.summaryTitle
+    font-size: 13px
     font-weight: 600
-    line-height: 1.4
-    white-space: nowrap
-    overflow: hidden
-    text-overflow: ellipsis
+    color: $n2
+    +dark
+        color: $n8
+
+.summaryDivider
+    width: 1px
+    height: 24px
+    background: $n6
+    margin: 0 16px
+    +dark
+        background: $n3
+    +m
+        display: none
+
+.head
+    +m
+        order: 3
 
 .body
     margin-top: 32px
+    +m
+        order: 5
 
 .stage
     margin-bottom: 24px
     +body-bold-1
 
-.amountToPaySection
-    margin-bottom: 24px
-    padding: 20px 24px
-    border-radius: 16px
-    background: $n7
-    border: 2px solid $p1
+.highlightedAmount
+    margin-top: 24px
+    margin-bottom: 16px
+    padding: 16px 20px
+    border-radius: 12px
+    background: #EAF6F8
     display: flex
     justify-content: space-between
     align-items: center
-    +m
-        padding: 20px 24px
-        flex-direction: column
-        align-items: flex-start
-        gap: 8px
-        background: rgba($p1, 0.05)
-        border: none
+    border: 1px solid rgba($p1, 0.2)
     +dark
-        background: $n2
-        border-color: $p1
-        +m
-            background: rgba($p1, 0.1)
+        background: rgba($p1, 0.1)
+        border-color: rgba($p1, 0.2)
 
-.amountToPayLabel
+.amountLabel
     +body-bold-2
-    color: $n4
-    +m
-        font-size: 14px
-    +dark
-        color: $n5
-
-.amountToPayValue
-    +dm-sans
-    font-size: 24px
-    font-weight: 700
-    line-height: 1.2
     color: $p1
-    +m
-        font-size: 20px
-    +dark
-        color: $p1
+
+.amountValue
+    +dm-sans
+    font-size: 20px
+    font-weight: 700
+    color: $p1
+
+.checkoutAction
+    margin-top: 24px
+    text-align: center
+
+.notChargedText
+    +caption-2
+    color: $n4
+    margin-top: 12px
 
 .form
     margin: -16px 0 16px

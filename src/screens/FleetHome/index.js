@@ -641,6 +641,89 @@ const FleetHome = () => {
     loadHomepageData();
   }, [activeFilter]);
 
+  // ── Explore By Cards Micro-Interaction ─────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === "undefined" || !isMobileOrTablet) return;
+
+    // Respect prefers-reduced-motion
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mediaQuery.matches) return;
+
+    let timeoutId;
+    let observer;
+    let isVisible = false;
+    let availableCards = [];
+
+    const runMicroInteraction = () => {
+      // Don't run if tab is inactive or section is off-screen
+      if (document.hidden || !isVisible) {
+        scheduleNext();
+        return;
+      }
+
+      const cards = Array.from(document.querySelectorAll(`.${styles.mobileCategoryCard}`));
+      if (!cards || cards.length === 0) {
+        scheduleNext();
+        return;
+      }
+
+      // Refill the bag if all cards have animated in this round
+      if (availableCards.length === 0) {
+        availableCards = [...cards];
+      }
+
+      // Randomly pick a card from the remaining available pool
+      const randomIndex = Math.floor(Math.random() * availableCards.length);
+      const card = availableCards[randomIndex];
+
+      // Remove it from the available pool so it doesn't repeat this round
+      availableCards.splice(randomIndex, 1);
+
+      if (!card.classList.contains("global-micro-tilt")) {
+        card.classList.add("global-micro-tilt");
+        // Remove class after animation duration (1000ms)
+        setTimeout(() => {
+          if (card) card.classList.remove("global-micro-tilt");
+        }, 1000);
+      }
+
+      scheduleNext();
+    };
+
+    const scheduleNext = (isFirst = false) => {
+      // Delay between 400ms and 3000ms
+      const delay = isFirst ? 500 : Math.random() * (3000 - 400) + 400;
+      timeoutId = setTimeout(() => {
+        window.requestAnimationFrame(runMicroInteraction);
+      }, delay);
+    };
+
+    // Use IntersectionObserver to pause when the section is not visible
+    const section = document.getElementById("explore-by-section");
+    if (section) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            isVisible = entry.isIntersecting;
+          });
+        },
+        { threshold: 0.1 }
+      );
+      observer.observe(section);
+    } else {
+      // Fallback if section isn't immediately found
+      isVisible = true; 
+    }
+
+    // Start loop with initial quick trigger
+    scheduleNext(true);
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (observer && section) observer.unobserve(section);
+    };
+  }, [isMobileOrTablet, activeFilter]);
+
   return (
     <div className={cn("section", styles.section)}>
       {/* Sticky Header — appears on scroll past hero (desktop only) */}
@@ -875,6 +958,46 @@ const FleetHome = () => {
             ))}
           </div>
         </div>
+
+        {/* Mobile Categories (Reference Image 3 style) */}
+        {isMobileOrTablet && (
+          <div id="explore-by-section" className={styles.mobileCategoriesContainer}>
+            <div style={{ marginBottom: '16px', padding: '0 20px' }}>
+              <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '13px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
+            </div>
+            <div className={styles.mobileCategoriesScroll}>
+              {visibleFilterOptions.map((filter) => {
+                const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
+                const isActive = activeFilter === filter.id;
+                return (
+                  <div 
+                    key={filter.id}
+                    className={cn(styles.mobileCategoryCard, {
+                      [styles.mobileCategoryCardActive]: isActive,
+                      [styles.mobileCategoryCardDisabled]: !isEnabledForListings,
+                    })}
+                    onClick={() => {
+                      if (isEnabledForListings) handleFilterClick(filter.id);
+                    }}
+                  >
+                    <img src={filter.image} alt={filter.label} className={styles.mobileCategoryBg} />
+                    <div className={styles.mobileCategoryOverlay} />
+                    <div className={styles.mobileCategoryContent}>
+                      <div className={styles.mobileCategoryIcon}>
+                        {filter.id === "experience" && <Compass size={28} />}
+                        {filter.id === "events" && <Ticket size={28} />}
+                        {filter.id === "stays" && <Home size={28} />}
+                        {filter.id === "food" && <Utensils size={28} />}
+                        {filter.id === "places" && <MapPin size={28} />}
+                      </div>
+                      <span className={styles.mobileCategoryLabel}>{filter.label}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Dynamic Sections from API */}
         {loading && (

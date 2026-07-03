@@ -10,6 +10,11 @@ const THUMB_CONFIGS = [
   { size: 44, opacity: 0.75, zIndex: 32 },
   { size: 32, opacity: 0.5, zIndex: 31 },
 ];
+const MOBILE_THUMB_CONFIGS = [
+  { size: 48, opacity: 1, zIndex: 31 },
+  { size: 48, opacity: 1, zIndex: 32 },
+  { size: 48, opacity: 1, zIndex: 33 },
+];
 const OVERLAP_GAP = -16;
 const SIDE_MARGIN_DESKTOP = 60;
 const SIDE_MARGIN_MOBILE = 20;
@@ -161,19 +166,23 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         }
 
         const { width: containerWidth, height: containerHeight } = getContainerDimensions();
-        const sideMargin = containerWidth <= MOBILE_BREAKPOINT ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
-        const thumbnailsY = containerWidth <= MOBILE_BREAKPOINT 
-          ? containerHeight - THUMB_CONFIGS[0].size - sideMargin
+        const isMobile = containerWidth <= MOBILE_BREAKPOINT;
+        const currentThumbConfigs = isMobile ? MOBILE_THUMB_CONFIGS : THUMB_CONFIGS;
+        const currentOverlap = isMobile ? 8 : OVERLAP_GAP;
+
+        const sideMargin = isMobile ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
+        const thumbnailsY = isMobile 
+          ? containerHeight - currentThumbConfigs[0].size - 55
           : containerHeight - THUMB_CONFIGS[0].size - 16; // Bottom of the hero section
 
         const getThumbX = (index) => {
           const startX = sideMargin;
           if (index === 2) return startX;
-          if (index === 1) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP;
-          if (index === 0) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP + THUMB_CONFIGS[1].size + OVERLAP_GAP;
+          if (index === 1) return startX + currentThumbConfigs[2].size + currentOverlap;
+          if (index === 0) return startX + currentThumbConfigs[2].size + currentOverlap + currentThumbConfigs[1].size + currentOverlap;
           return startX;
         };
-
+        
         const [active, ...rest] = newOrder;
         const prv = rest[rest.length - 1];
 
@@ -192,18 +201,17 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         gsap.to(getCard(prv), { scale: 1.1, ease: EASE_TYPE });
         gsap.to(getCardContent(active), { y: thumbnailsY + 100, opacity: 0, duration: 0.3, ease: EASE_TYPE });
 
-        const isMobile = containerWidth <= MOBILE_BREAKPOINT;
         const imageLeft = isMobile ? 0 : containerWidth * 0.2;
         const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
 
         gsap.to(getCard(active), {
-          x: imageLeft, y: 0, ease: EASE_TYPE, width: imageWidth, height: containerHeight, borderRadius: 0, scale: 1,
+          x: imageLeft, y: 0, ease: EASE_TYPE, width: imageWidth, height: "100%", borderRadius: 0, scale: 1,
           onComplete: () => {
             const prvIndexInRest = rest.length - 1;
-            const config = THUMB_CONFIGS[Math.min(prvIndexInRest, 2)];
+            const config = currentThumbConfigs[Math.min(prvIndexInRest, 2)];
             const prvCardX = getThumbX(Math.min(prvIndexInRest, 2));
-            const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2; // vertically center smaller thumbnails
-            gsap.set(getCard(prv), { x: prvCardX, y: thumbnailsY + yOffset, width: config.size, height: config.size, zIndex: config.zIndex, borderRadius: 12, scale: 0.9 });
+            const yOffset = isMobile ? 0 : (THUMB_CONFIGS[0].size - config.size) / 2; // vertically center smaller thumbnails
+            gsap.set(getCard(prv), { x: prvCardX, y: thumbnailsY + yOffset, width: config.size, height: config.size, zIndex: config.zIndex, borderRadius: isMobile ? '50%' : 12, border: isMobile ? '1px solid #fff' : 'none', scale: isMobile ? 1 : 0.9 });
             gsap.set(getCardContent(prv), { x: prvCardX, y: thumbnailsY + yOffset + config.size + 10, opacity: 1, zIndex: 40 });
             gsap.set(detailsInactive, { opacity: 0 });
             gsap.set(`${detailsInactive} .hero-title-1`, { y: 50, opacity: 0 });
@@ -217,9 +225,9 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
         rest.forEach((cardIndex, index) => {
           if (cardIndex !== prv) {
             const visualIndex = Math.min(index, 2);
-            const config = THUMB_CONFIGS[visualIndex];
+            const config = currentThumbConfigs[visualIndex];
             const cardX = getThumbX(visualIndex);
-            const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2;
+            const yOffset = isMobile ? 0 : (THUMB_CONFIGS[0].size - config.size) / 2;
             gsap.set(getCard(cardIndex), { zIndex: config.zIndex });
             gsap.to(getCard(cardIndex), { 
               x: cardX, 
@@ -227,7 +235,9 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
               width: config.size, 
               height: config.size, 
               opacity: config.opacity,
-              scale: index === 0 ? 1.1 : 0.9, // Active thumbnail (index 0) scales up
+              borderRadius: isMobile ? '50%' : 12,
+              border: isMobile ? '1px solid #fff' : 'none',
+              scale: isMobile ? 1 : (index === 0 ? 1.1 : 0.9), // Active thumbnail (index 0) scales up
               ease: EASE_TYPE, 
               delay: 0.1 * (index + 1) 
             });
@@ -272,31 +282,34 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       }
 
       const [active, ...rest] = order;
-      const sideMargin = containerWidth <= MOBILE_BREAKPOINT ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
-      const thumbnailsY = containerWidth <= MOBILE_BREAKPOINT 
-        ? containerHeight - THUMB_CONFIGS[0].size - sideMargin
+      const isMobile = containerWidth <= MOBILE_BREAKPOINT;
+      const currentThumbConfigs = isMobile ? MOBILE_THUMB_CONFIGS : THUMB_CONFIGS;
+      const currentOverlap = isMobile ? -12 : OVERLAP_GAP;
+
+      const sideMargin = isMobile ? SIDE_MARGIN_MOBILE : SIDE_MARGIN_DESKTOP;
+      const thumbnailsY = isMobile 
+        ? containerHeight - currentThumbConfigs[0].size - 30
         : containerHeight - THUMB_CONFIGS[0].size - 16; // Bottom of the hero section
 
       const getThumbX = (index) => {
         const startX = sideMargin;
         if (index === 2) return startX;
-        if (index === 1) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP;
-        if (index === 0) return startX + THUMB_CONFIGS[2].size + OVERLAP_GAP + THUMB_CONFIGS[1].size + OVERLAP_GAP;
+        if (index === 1) return startX + currentThumbConfigs[2].size + currentOverlap;
+        if (index === 0) return startX + currentThumbConfigs[2].size + currentOverlap + currentThumbConfigs[1].size + currentOverlap;
         return startX;
       };
 
-      const isMobile = containerWidth <= MOBILE_BREAKPOINT;
       const imageLeft = isMobile ? 0 : containerWidth * 0.2;
       const imageWidth = isMobile ? containerWidth : containerWidth * 0.8;
 
-      gsap.set(getCard(active), { x: imageLeft, y: 0, width: imageWidth, height: containerHeight, borderRadius: 0, zIndex: 20, opacity: 1, scale: 1 });
+      gsap.set(getCard(active), { x: imageLeft, y: 0, width: imageWidth, height: "100%", borderRadius: 0, zIndex: 20, opacity: 1, scale: 1 });
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
 
       rest.forEach((cardIndex, index) => {
         const visualIndex = Math.min(index, 2);
-        const config = THUMB_CONFIGS[visualIndex];
+        const config = currentThumbConfigs[visualIndex];
         const cardX = getThumbX(visualIndex);
-        const yOffset = (THUMB_CONFIGS[0].size - config.size) / 2; // Center vertically
+        const yOffset = isMobile ? 0 : (THUMB_CONFIGS[0].size - config.size) / 2; // Center vertically
         
         // Hide anything beyond the 3rd thumbnail completely
         if (index > 2) {
@@ -311,9 +324,10 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
             width: config.size, 
             height: config.size, 
             zIndex: config.zIndex, 
-            borderRadius: 12, 
+            borderRadius: isMobile ? '50%' : 12,
+            border: isMobile ? '1px solid #fff' : 'none',
             opacity: config.opacity, 
-            scale: index === 0 ? 1.1 : 0.9 // active is 1.1, inactive is 0.9
+            scale: isMobile ? 1 : (index === 0 ? 1.1 : 0.9) // active is 1.1, inactive is 0.9
         });
         gsap.set(getCardContent(cardIndex), { x: cardX, zIndex: 40, y: thumbnailsY + yOffset + config.size + 10, opacity: 1 });
       });
@@ -378,7 +392,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       `<div class="hero-card-content" id="hero-card-content-${index}"></div>`
     ).join('');
     const svgOverlay = `
-      <div class="hero-curve-overlay" style="
+      <div class="hero-curve-overlay ${styles.curveOverlay}" style="
         position: absolute;
         left: 0;
         top: 0;
@@ -420,8 +434,6 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
             stroke-linecap="round"
           />
 
-          <!-- Small bottom corner element -->
-          <path class="hero-curve-fill" d="M1000 750 C960 800, 980 920, 880 1000 L1000 1000 Z" />
         </svg>
       </div>
     `;

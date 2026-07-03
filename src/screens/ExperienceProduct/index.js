@@ -939,23 +939,7 @@ const ExperienceProduct = () => {
             width: "100%"
           }}>
             {/* Top Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-              <div style={{
-                color: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 500,
-                fontFamily: "Poppins, sans-serif",
-                opacity: 0.9,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
-              }}>
-                <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>Home</Link>
-                <ChevronRight size={12} opacity={0.6} />
-                <Link to="/experience" style={{ color: "inherit", textDecoration: "none" }}>Experiences</Link>
-                <ChevronRight size={12} opacity={0.6} />
-                <span style={{ fontWeight: 700 }}>{listing?.title || "Experience"}</span>
-              </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", width: "100%" }}>
 
               {/* Early Bird Ticker */}
               {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
@@ -1024,7 +1008,7 @@ const ExperienceProduct = () => {
                   })()}
                 </Rev>
                 <Rev delay={0.15}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500, fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif' }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: 16, fontWeight: 400, fontFamily: '"Inter", sans-serif' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="transparent" stroke={A || "#0097B2"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ fill: "transparent" }}>
                       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="transparent" />
                       <circle cx="12" cy="10" r="3" fill="transparent" />
@@ -1271,10 +1255,10 @@ const ExperienceProduct = () => {
               </div>
 
               {/* Overview Cards (6-block flat facts grid) */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }} className="facts-grid">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridAutoRows: "1fr", gap: "16px" }} className="facts-grid">
                 
                 {/* Fact 1: Duration */}
-                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <Clock size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
                     {listing?.duration ? `${listing.duration} ${listing.durationUnit || ""}` : "2.5 Hrs"}
@@ -1283,28 +1267,28 @@ const ExperienceProduct = () => {
                 </div>
 
                 {/* Fact 2: Min Age */}
-                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <User size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.minimumAge || "12"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Min Age</p>
                 </div>
 
                 {/* Fact 3: Difficulty */}
-                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <Zap size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.difficultyLevel || "Moderate"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Difficulty</p>
                 </div>
 
                 {/* Fact 4: Infant Allowance */}
-                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <Baby size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>{listing?.allowsInfants || listing?.infantsAllowed ? "Allowed" : "No"}</p>
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Infants</p>
                 </div>
 
                 {/* Fact 5: Languages */}
-                <div className="fact-card" style={{ position: "relative", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ position: "relative", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <Languages size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   {(() => {
                     const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
@@ -1401,7 +1385,7 @@ const ExperienceProduct = () => {
                 </div>
 
                 {/* Fact 6: Private Tour */}
-                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF' }}>
+                <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <ShieldCheck size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
                   <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
                     {listing?.privateOptionAvailable ? "Yes" : "No"}
@@ -1465,7 +1449,7 @@ const ExperienceProduct = () => {
                           fontSize: "18px",
                           fontWeight: isEven ? 700 : 300,
                           color: isEven ? FG : M,
-                          fontFamily: "Poppins, sans-serif",
+                          fontFamily: '"Inter", sans-serif',
                           letterSpacing: "0.12em",
                           textTransform: "uppercase",
                           opacity: isEven ? 1 : 0.75
@@ -1502,24 +1486,12 @@ const ExperienceProduct = () => {
                       A thoughtfully curated journey that brings you closer to the natural beauty and rich experiences of this destination.
                     </p>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <Clock size={28} color={A} fill="transparent" />
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                       <span style={{ fontSize: "16px", fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif' }}>
-                         {listing?.keyActivities?.length || 0} Unique Experiences
-                       </span>
-                       <span style={{ fontSize: "14px", color: M, fontFamily: '"Inter", sans-serif' }}>
-                         Carefully planned for you
-                       </span>
-                    </div>
-                  </div>
                 </div>
                 
                 {/* Activities List */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {(listing?.keyActivities || []).map((it, i) => {
                     const activityImageUrl = getActivityImageUrl(it);
-                    const numStr = String(i + 1).padStart(2, "0");
                     return (
                       <motion.div
                         key={i}
@@ -1587,27 +1559,19 @@ const ExperienceProduct = () => {
                         )}
                         
                           <div style={{ flex: 1, padding: "24px 32px", display: "flex", alignItems: "center", position: "relative" }}>
-                            {/* Vertical Line with Dot */}
-                            <div style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", height: "60%", width: "1px", background: B }}>
-                              <div style={{ position: "absolute", left: "-4px", top: "50%", transform: "translateY(-50%)", width: "9px", height: "9px", borderRadius: "50%", background: A }} />
-                            </div>
                             
                             <div style={{ display: "flex", width: "100%", alignItems: "center" }}>
-                              {/* Big Faint Number */}
-                              <div style={{ fontSize: "80px", fontWeight: 700, color: theme === "dark" ? "#1E293B" : "#F0F4F8", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', lineHeight: 1, marginRight: "32px", letterSpacing: "-0.05em", userSelect: "none" }}>
-                                {numStr}
-                              </div>
                             
                             {/* Text Content */}
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: "12px", fontWeight: 700, color: A, marginBottom: "8px", fontFamily: '"Inter", sans-serif', letterSpacing: "0.15em", textTransform: "uppercase", whiteSpace: "normal", wordWrap: "break-word" }}>
+                              <div style={{ fontSize: "11px", fontWeight: 600, color: A, marginBottom: "8px", fontFamily: '"Inter", sans-serif', letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "normal", wordWrap: "break-word" }}>
                                 {it.title || it.name || "Activity"}
                               </div>
                               {(it.description || it.pilot || it.briefDescription) && (
                                 <div>
                                   <p style={{ 
                                     color: M, 
-                                    fontSize: "14px", 
+                                    fontSize: 16, 
                                     lineHeight: "1.6", 
                                     margin: 0, 
                                     fontWeight: 400, 
@@ -1773,7 +1737,8 @@ const ExperienceProduct = () => {
                         style={{
                           display: "flex",
                           flexDirection: "row",
-                          height: "115px",
+                          minHeight: "115px",
+                          height: "auto",
                           width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
                           flexShrink: 0,
                           background: W,
@@ -1812,7 +1777,7 @@ const ExperienceProduct = () => {
                             <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
                               {pricingType}
                             </div>
-                            <h4 style={{ fontSize: "18px", fontWeight: 700, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <h4 style={{ fontSize: 16, fontWeight: 400, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
                               {addon.title}
                             </h4>
                             <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
@@ -1909,12 +1874,12 @@ const ExperienceProduct = () => {
                 style={{ marginTop: 24, padding: "16px 20px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
               >
                 <div>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 2 }}>Add-ons Summary</p>
+                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons Summary</p>
                   <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 800, marginBottom: 2 }}>Subtotal</p>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: A, margin: 0 }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
+                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 600, marginBottom: 2 }}>Subtotal</p>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: A, margin: 0 }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
                 </div>
               </motion.div>
             )}
@@ -1938,8 +1903,8 @@ const ExperienceProduct = () => {
               border: `1px solid ${B}`, 
               padding: 16, 
               display: "grid", 
-              gridTemplateColumns: "1fr 1fr", 
-              gap: 32,
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+              gap: isMobile ? 24 : 32,
               boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
             }} className="prep-grid">
               
@@ -1996,7 +1961,7 @@ const ExperienceProduct = () => {
                         </div>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingAddress}</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingAddress}</span>
                         </div>
                       </li>
                     )}
@@ -2008,7 +1973,7 @@ const ExperienceProduct = () => {
                         </div>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingDistrict}</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingDistrict}</span>
                         </div>
                       </li>
                     )}
@@ -2020,7 +1985,7 @@ const ExperienceProduct = () => {
                         </div>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingState}</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingState}</span>
                         </div>
                       </li>
                     )}
@@ -2032,7 +1997,7 @@ const ExperienceProduct = () => {
                         </div>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingCountry}</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingCountry}</span>
                         </div>
                       </li>
                     )}
@@ -2044,7 +2009,7 @@ const ExperienceProduct = () => {
                         </div>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingInstructions}</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingInstructions}</span>
                         </div>
                       </li>
                     )}
@@ -2056,7 +2021,7 @@ const ExperienceProduct = () => {
                         </div>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
-                          <span style={{ fontSize: 16, color: M, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
+                          <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
                         </div>
                       </li>
                     )}
@@ -2118,7 +2083,7 @@ const ExperienceProduct = () => {
                           fontSize: "18px",
                           fontWeight: isEven ? 700 : 300,
                           color: isEven ? FG : M,
-                          fontFamily: "Poppins, sans-serif",
+                          fontFamily: '"Inter", sans-serif',
                           letterSpacing: "0.12em",
                           textTransform: "uppercase",
                           opacity: isEven ? 1 : 0.75
@@ -2261,7 +2226,7 @@ const ExperienceProduct = () => {
                                 color: FG,
                                 margin: 0,
                                 cursor: (leadIdForProfile || hostLeadUserId) ? "pointer" : "default",
-                                fontFamily: "Poppins, sans-serif",
+                                fontFamily: '"Inter", sans-serif',
                                 letterSpacing: "-0.01em",
                                 lineHeight: 1.2,
                                 transition: "color 0.2s"
@@ -2456,7 +2421,7 @@ const ExperienceProduct = () => {
                                 </svg>
                                 <div style={{ position: "absolute", textAlign: "center" }}>
                                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                                    <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: "Poppins, sans-serif" }}>{scoreInt}</span>
+                                    <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: '"Inter", sans-serif' }}>{scoreInt}</span>
                                     <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
                                   </div>
                                   <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
@@ -2469,7 +2434,7 @@ const ExperienceProduct = () => {
                           <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
                             <div>
                               <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                              <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
+                              <h4 style={{ fontSize: 18, fontWeight: 600, color: FG, margin: 0, fontFamily: '"Inter", sans-serif' }}>Verified Trust Score</h4>
                             </div>
                             
                             <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
@@ -2543,7 +2508,7 @@ const ExperienceProduct = () => {
                           }}>
                             Newly Added
                           </span>
-                          <h4 style={{ fontSize: 20, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: "Poppins, sans-serif" }}>Welcome to LKP</h4>
+                          <h4 style={{ fontSize: 20, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: '"Inter", sans-serif' }}>Welcome to LKP</h4>
                           <p style={{ fontSize: 13, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5 }}>
                             This listing is new to our platform. It is currently building its verified trust score based on guest experiences.
                           </p>
@@ -3162,7 +3127,7 @@ function PolicyItem({ req }) {
         </div>
         
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, display: "block", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{title}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: FG, display: "block", fontFamily: '"Inter", sans-serif' }}>{title}</span>
         </div>
 
         <motion.div
@@ -3718,7 +3683,7 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
             exit={{ opacity: 0, y: -10 }}
             style={{ background: S, border: `1px solid ${B}`, padding: 24, borderRadius: 20 }}
           >
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: FG, marginBottom: 8 }}>Share your experience</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: FG, marginBottom: 8 }}>Share your experience</h3>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, color: FG, marginBottom: 8, textTransform: "uppercase" }}>Rating</p>
@@ -3761,7 +3726,7 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                   <Star 
                     key={i} 
                     size={16} 
-                    style={{ fill: i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent" }} 
+                    fill={i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent"} 
                     color={i < Math.round(summary.averageRating) ? "#F59E0B" : M} 
                   />
                 ))}
@@ -3785,13 +3750,13 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <div>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 2 }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 2 , fontFamily: '"Inter", sans-serif' }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
                       <div style={{ display: "flex", gap: 4 }}>
                         {[...Array(5)].map((_, si) => (
                           <Star 
                             key={si} 
                             size={14} 
-                            style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} 
+                            fill={si < (rev.rating || 5) ? "#F59E0B" : "transparent"} 
                             color={si < (rev.rating || 5) ? "#F59E0B" : M} 
                           />
                         ))}

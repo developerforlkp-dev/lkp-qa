@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import cn from "classnames";
 import styles from "./Login.module.sass";
 import Icon from "../Icon";
-import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
+import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle, completeCustomerProfile } from "../../utils/api";
 import { GoogleLogin } from '@react-oauth/google';
 
 const getFriendlyOtpError = (err) => {
@@ -38,6 +38,7 @@ const Login = ({ onClose }) => {
   const [, setActiveInput] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [step, setStep] = useState("phone"); // "phone", "otp"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -140,6 +141,11 @@ const Login = ({ onClose }) => {
         localStorage.setItem("jwtToken", token);
       }
 
+      if (response?.requiresProfileCompletion) {
+        setStep("profile");
+        return;
+      }
+
       const customer = response?.customer || {};
       const userInfo = {
         firstName: customer?.firstName || "",
@@ -165,6 +171,63 @@ const Login = ({ onClose }) => {
       }
     }
   }
+
+  // Handle Profile Completion Submit
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    if (!isMountedRef.current) return;
+    setError("");
+
+    if (!dateOfBirth) {
+      setError("Please enter your date of birth");
+      return;
+    }
+
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 18) {
+      setError("You must be at least 18 years of age.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await completeCustomerProfile({
+        fullName: `${firstName} ${lastName}`.trim(),
+        dateOfBirth,
+      });
+
+      const customer = response?.customer || {};
+      const userInfo = {
+        firstName: customer?.firstName || "",
+        lastName: customer?.lastName || "",
+        email: customer?.email || "",
+        customerId: customer?.customerId,
+        loginMethod: 'google'
+      };
+      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+      if (onClose) {
+        onClose();
+      }
+      window.location.reload();
+    } catch (err) {
+      console.error("Profile completion error:", err);
+      if (isMountedRef.current) {
+        setError(err.response?.data?.message || err.message || "Failed to complete profile.");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  };
 
 
   // Send OTP when phone number is submitted
@@ -415,6 +478,56 @@ const Login = ({ onClose }) => {
               Back to phone number
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Step 3: Profile Completion */}
+      {step === "profile" && (
+        <div className={styles.item}>
+          <div className={cn("h3", styles.title)}>Complete your profile</div>
+          <div className={styles.info}>Please provide your details to continue</div>
+          <form onSubmit={handleProfileSubmit} className={styles.form}>
+            <div className={styles.nameFields} style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+              <input
+                type="text"
+                className={styles.nameInput}
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <input
+                type="text"
+                className={styles.nameInput}
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                disabled={loading}
+                required
+              />
+            </div>
+            <div className={styles.field} style={{ marginBottom: "16px" }}>
+              <input
+                type="date"
+                className={styles.input}
+                placeholder="Date of Birth"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                disabled={loading}
+                required
+              />
+            </div>
+            {error && <div className={styles.error} style={{ marginBottom: "16px" }}>{error}</div>}
+            <button
+              type="submit"
+              className={cn("button", styles.button)}
+              disabled={loading || !firstName || !lastName || !dateOfBirth}
+              style={{ width: "100%" }}
+            >
+              {loading ? "Saving..." : "Complete Profile"}
+            </button>
+          </form>
         </div>
       )}
     </div>

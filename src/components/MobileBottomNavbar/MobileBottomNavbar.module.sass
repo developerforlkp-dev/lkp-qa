@@ -89,7 +89,7 @@
     // Richer cyan with depth — clearly distinct from white dock
     background: linear-gradient(150deg, #00C4E8 0%, #0097B2 60%, #007A92 100%)
     border: 1px solid rgba(0, 180, 220, 0.5)
-    box-shadow: 0 2px 12px rgba(0, 151, 178, 0.45), 0 0 0 2px rgba(0,210,255,0.14), inset 0 1px 0 rgba(255,255,255,0.22)
+    box-shadow: 0 2px 6px rgba(0, 151, 178, 0.25), 0 0 0 1px rgba(0,210,255,0.08), inset 0 1px 0 rgba(255,255,255,0.15)
     // ── DARK MODE ───────────────────────────────────────────────────────────
     +dark
         background: linear-gradient(135deg, rgba(0, 210, 255, 0.28) 0%, rgba(0, 151, 178, 0.35) 100%)
@@ -110,14 +110,14 @@
     // Inherit graphite/white color from parent button
     stroke: currentColor
     stroke-width: 1.9
+    fill: none !important
     // Smooth transitions for size + filter changes
     transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), filter 0.22s ease, opacity 0.22s ease
 
 .mobileNavIconActive
     transform: scale(1.08)
     stroke-width: 2.2
-    // Subtle white glow on active icon — works in both themes
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5))
+    // Removed the heavy white drop-shadow that was obscuring the icon details
 
 // ── Label ────────────────────────────────────────────────────────────────────
 .mobileNavLabel

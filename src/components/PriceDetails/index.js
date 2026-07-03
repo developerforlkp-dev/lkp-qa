@@ -5,6 +5,7 @@ import HeadMoreOptions from "./HeadMoreOptions";
 import HeadOptions from "./HeadOptions";
 import Icon from "../Icon";
 import Form from "../Form";
+import CreditCard from "../ConfirmAndPay/CreditCard";
 
 const PriceDetails = ({
   className,
@@ -25,6 +26,9 @@ const PriceDetails = ({
   cancellationPolicy,
   rating,
   reviewsCount,
+  buttonUrl,
+  paymentData,
+  messageText,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -39,7 +43,6 @@ const PriceDetails = ({
     return match ? Number(match[0]) : 0;
   };
 
-  // Format amount - Razorpay amounts are in paise (smallest currency unit), so divide by 100 for INR
   const formatAmount = (amount) => {
     if (!amount) return null;
     const numericAmount = Number(amount) || 0;
@@ -47,7 +50,6 @@ const PriceDetails = ({
     return `${currency} ${amountInRupees}`;
   };
 
-  // Prefer addonDetails (enriched from server) over legacy addOns prop
   const displayAddons = addonDetails && addonDetails.length > 0
     ? addonDetails
     : (addOns || []);
@@ -74,27 +76,9 @@ const PriceDetails = ({
         />
       )}
 
-      {/* ── Booking summary items (date / time / guests) ── */}
-      <div
-        className={cn(styles.description, {
-          [styles.flex]: items.length > 1,
-        })}
-      >
-        {items.map((x, index) => (
-          <div className={styles.item} key={index}>
-            <div className={styles.icon}>
-              <Icon name={x.icon} size="24" />
-            </div>
-            <div className={styles.box}>
-              <div className={styles.category}>{x.category}</div>
-              <div className={styles.subtitle}>{x.title}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Removed duplicate Booking summary items (Date / Time / Guests) since they are on the left */}
 
       <div className={styles.body}>
-        {/* ── Selected add-on cards ── */}
         {displayAddons.length > 0 && (
           <div className={styles.addOnsSection}>
             <div className={styles.addOnsTitle}>Selected Add-ons</div>
@@ -107,31 +91,19 @@ const PriceDetails = ({
 
                 return (
                   <div className={styles.addOnItem} key={addon.addonId || index}>
-                    {/* Left: image + name/subtitle stacked */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                       {addon.image && (
                         <img
                           src={addon.image}
                           alt={addonName}
-                          style={{
-                            width: 48,
-                            height: 48,
-                            objectFit: "cover",
-                            borderRadius: 8,
-                            flexShrink: 0,
-                            display: "block",
-                          }}
+                          style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, flexShrink: 0, display: "block" }}
                         />
                       )}
                       <div style={{ minWidth: 0 }}>
-                        {/* Addon name & quantity */}
                         <div className={styles.addOnItemName}>
                           {addonName}
-                          <span style={{ opacity: 0.6, marginLeft: 4 }}>
-                            ×{addonQty}
-                          </span>
+                          <span style={{ opacity: 0.6, marginLeft: 4 }}>×{addonQty}</span>
                         </div>
-                        {/* Per-unit price as subtitle */}
                         {unitPrice > 0 && (
                           <div style={{ fontSize: 12, color: "#9A9FA5", marginTop: 2 }}>
                             {currency} {Number(unitPrice).toFixed(2)} / item
@@ -139,19 +111,11 @@ const PriceDetails = ({
                         )}
                       </div>
                     </div>
-
-                    {/* Right: total price */}
                     <div className={styles.addOnItemPrice} style={{ flexShrink: 0 }}>
                       {currency} {Number(subtotal).toFixed(2)}
                     </div>
-
-                    {/* Optional remove button */}
                     {onRemoveAddOn && (
-                      <button
-                        className={styles.addOnRemoveButton}
-                        onClick={() => onRemoveAddOn(index)}
-                        title="Remove add-on"
-                      >
+                      <button className={styles.addOnRemoveButton} onClick={() => onRemoveAddOn(index)} title="Remove add-on">
                         <Icon name="close" size="12" />
                       </button>
                     )}
@@ -164,7 +128,6 @@ const PriceDetails = ({
 
         <div className={styles.stage}>Price details</div>
 
-        {/* ── Pricing breakdown rows (base price, add-ons, commission, tax, discount) ── */}
         {table && table.length > 0 && (
           <div className={styles.table}>
             {table.map((x, index) => {
@@ -187,9 +150,7 @@ const PriceDetails = ({
 
               return (
                 <div className={styles.row} key={index}>
-                  <div className={styles.cell}>
-                    {renderTitle(x.title)}
-                  </div>
+                  <div className={styles.cell}>{renderTitle(x.title)}</div>
                   <div className={styles.cell}>{x.value}</div>
                 </div>
               );
@@ -197,13 +158,17 @@ const PriceDetails = ({
           </div>
         )}
 
-        {/* ── Amount to be paid ── */}
         {amountToPay && (
-          <div className={styles.amountToPaySection} style={{ marginTop: 24 }}>
-            <div className={styles.amountToPayLabel}>Amount to be paid</div>
-            <div className={styles.amountToPayValue}>{formatAmount(amountToPay)}</div>
+          <div className={styles.highlightedAmount}>
+            <div className={styles.amountLabel}>Amount to be paid</div>
+            <div className={styles.amountValue}>{formatAmount(amountToPay)}</div>
           </div>
         )}
+
+        {/* ── Checkout Button ── */}
+        <div className={styles.checkoutAction}>
+          <CreditCard buttonUrl={buttonUrl} hidePaymentFields paymentData={paymentData} messageText={messageText} />
+        </div>
 
         {discoundCode && (
           <Form
@@ -225,7 +190,6 @@ const PriceDetails = ({
           </div>
         )}
       </div>
-
     </div>
   );
 };

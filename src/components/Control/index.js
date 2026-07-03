@@ -32,7 +32,9 @@ const Control = ({ className, urlHome, breadcrumbs, backUrl }) => {
         <Icon name="arrow-left" size="10" />
         <span>Back</span>
       </button>
-      <Breadcrumbs className={styles.breadcrumbs} items={breadcrumbs} />
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <Breadcrumbs className={styles.breadcrumbs} items={breadcrumbs} />
+      )}
     </div>
   );
 };

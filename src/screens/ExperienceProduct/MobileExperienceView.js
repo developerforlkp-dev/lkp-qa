@@ -433,10 +433,10 @@ export default function MobileExperienceView({
           {selectedAddOns.length > 0 && (
             <div style={{ marginTop: 16, padding: "14px 16px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 2 }}>Add-ons</p>
+                <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons</p>
                 <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((s, a) => s + (a.quantity || 1), 0)} selected</p>
               </div>
-              <p style={{ fontSize: 16, fontWeight: 800, color: A, margin: 0 }}>₹{selectedAddOns.reduce((s, a) => {
+              <p style={{ fontSize: 16, fontWeight: 600, color: A, margin: 0 }}>₹{selectedAddOns.reduce((s, a) => {
                 const addonData = a.addon || a;
                 const aPrice = addonData.price || addonData.addonPrice || addonData.amount || 0;
                 return s + ((parseFloat(aPrice) || 0) * (a.quantity || 1));
@@ -646,7 +646,7 @@ export default function MobileExperienceView({
               <div>
                 <div style={{ display: "flex", gap: 2 }}>
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} color={i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "#CBD5E1"} style={{ fill: i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "transparent" }} />
+                    <Star key={i} size={14} color={i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "#CBD5E1"} fill={i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "transparent"} />
                   ))}
                 </div>
                 <p style={{ fontSize: 11, color: M, fontWeight: 600, margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.08em" }}>
@@ -667,7 +667,7 @@ export default function MobileExperienceView({
                     <p className="mob-review-name" style={{ color: FG }}>{rev.customerName || rev.author || "Verified Guest"}</p>
                     <div className="mob-review-stars" style={{ display: "flex", gap: 2, marginTop: 4 }}>
                       {[...Array(5)].map((_, si) => (
-                        <Star key={si} size={10} color={si < (rev.rating || 5) ? "#F59E0B" : "#CBD5E1"} style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} />
+                        <Star key={si} size={10} color={si < (rev.rating || 5) ? "#F59E0B" : "#CBD5E1"} fill={si < (rev.rating || 5) ? "#F59E0B" : "transparent"} />
                       ))}
                     </div>
                   </div>

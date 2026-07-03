@@ -144,6 +144,8 @@ const enrichRawBooking = (apiBooking) => {
     BOOKED: "Upcoming",
     COMPLETED: "Completed",
     CANCELLED: "Cancelled",
+    REJECTED: "Cancelled",
+    DECLINED: "Cancelled",
   };
 
   const normalizedOrderStatus = String(apiBooking?.orderStatus || "").toUpperCase().trim();
@@ -405,6 +407,8 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     BOOKED: "Upcoming",
     COMPLETED: "Completed",
     CANCELLED: "Cancelled",
+    REJECTED: "Cancelled",
+    DECLINED: "Cancelled",
   };
 
   const normalizedOrderStatus = String(apiBooking?.orderStatus || "").toUpperCase().trim();
@@ -749,6 +753,44 @@ const isPastStayCheckInTime = (booking) => {
   return new Date() >= checkInDatetime;
 };
 
+const isPastStayCheckOutTime = (booking) => {
+  if (!booking) return false;
+  const { bookingData, stayData } = booking;
+
+  // Only apply to Stays
+  const businessInterestCode = String(bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
+  const isStayOrder = businessInterestCode === "STAYS" ||
+    bookingData?.stayId != null ||
+    (bookingData?.stayOrderRooms && bookingData?.stayOrderRooms.length > 0) ||
+    stayData != null;
+
+  if (!isStayOrder) return true; // Non-stays bypass stay checkout restriction
+
+  const checkOutDateStr =
+    bookingData?.checkOutDate ||
+    bookingData?.endDate ||
+    stayData?.checkOutDate;
+
+  if (!checkOutDateStr) return true; // If missing checkout date, don't restrict
+
+  const checkOutDatetime = new Date(checkOutDateStr);
+
+  const checkOutTimeStr =
+    bookingData?.checkOutTime ||
+    bookingData?.endTime ||
+    stayData?.checkOutTime ||
+    "11:00:00";
+
+  if (checkOutTimeStr && typeof checkOutTimeStr === 'string' && checkOutTimeStr.includes(':')) {
+    const parts = checkOutTimeStr.split(':').map(Number);
+    checkOutDatetime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+  } else {
+    checkOutDatetime.setHours(11, 0, 0, 0);
+  }
+
+  return new Date() >= checkOutDatetime;
+};
+
 const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
   const baseActions = actionsByStatus[booking?.status] || [];
 
@@ -767,11 +809,15 @@ const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
   } else if (tabId === "completed") {
     actions = actions.filter((a) => {
       if (a.label !== "Leave review") return true;
-      return orderIdsEligibleForReview.has(booking.orderId);
+      return orderIdsEligibleForReview.has(booking.orderId) && isPastStayCheckOutTime(booking);
     });
   }
 
   if (isPastStayCheckInTime(booking)) {
+    actions = actions.filter((a) => a.label !== "Cancel Booking");
+  }
+
+  if (String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING_CONFIRMATION") {
     actions = actions.filter((a) => a.label !== "Cancel Booking");
   }
 
@@ -1250,10 +1296,10 @@ const Main = ({
 
     // Sort by booking time descending to show latest bookings first
     return [...result].sort((a, b) => {
-      // 1. For Cancelled tab, prioritize the cancellation time if available
+      // 1. For Cancelled tab, prioritize the cancellation/rejection time if available
       if (displayedTab === "cancelled") {
-        const cancelA = a.bookingData?.cancelledAt || "";
-        const cancelB = b.bookingData?.cancelledAt || "";
+        const cancelA = a.bookingData?.cancelledAt || a.bookingData?.rejectedAt || a.bookingData?.updatedAt || "";
+        const cancelB = b.bookingData?.cancelledAt || b.bookingData?.rejectedAt || b.bookingData?.updatedAt || "";
         if (cancelA !== cancelB) {
           return cancelB.localeCompare(cancelA);
         }

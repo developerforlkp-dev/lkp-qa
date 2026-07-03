@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { Search, MapPin, Calendar, Users, ChevronUp, X, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { Search, MapPin, Calendar, Users, ChevronUp, ChevronDown, X, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
 
 // ─── Scoped global styles (mobile-only, injected once) ────────────────────────
-const STYLE_ID = "mcsh-styles-v3";
+const STYLE_ID = "mcsh-styles-v4";
 
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) return;
@@ -26,7 +26,7 @@ function injectStyles() {
       .mcsh-pill-wrap {
         display: flex;
         position: absolute;
-        bottom: -26px;
+        bottom: -32px;
         left: 0;
         right: 0;
         justify-content: center;
@@ -39,39 +39,36 @@ function injectStyles() {
       .mcsh-pill {
         display: flex;
         align-items: center;
-        gap: 10px;
-        background: rgba(255, 255, 255, 0.88);
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
-        border: 1px solid rgba(0, 151, 178, 0.2);
+        gap: 14px;
+        background: #ffffff;
+        border: none;
         border-radius: 100px;
-        padding: 10px 16px 10px 12px;
+        padding: 10px 24px 10px 10px;
         width: 100%;
-        max-width: 400px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,151,178,0.06);
+        max-width: 450px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 10px rgba(0,0,0,0.06);
         cursor: pointer;
         pointer-events: auto;
         -webkit-tap-highlight-color: transparent;
         user-select: none;
-        transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
       .mcsh-pill:active {
-        box-shadow: 0 6px 32px rgba(0,151,178,0.18), 0 2px 8px rgba(0,0,0,0.1);
-        border-color: rgba(0, 151, 178, 0.4);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transform: scale(0.98);
       }
       .mcsh-pill-label {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.22em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: #0097B2;
+        color: #00B4D8;
         line-height: 1;
       }
       .mcsh-pill-summary {
-        font-size: 13px;
-        font-weight: 600;
-        color: #141416;
-        letter-spacing: 0.01em;
+        font-size: 15px;
+        font-weight: 500;
+        color: #2D3748;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -79,42 +76,36 @@ function injectStyles() {
       }
       .mcsh-pill-chevron {
         flex-shrink: 0;
-        color: rgba(0,0,0,0.35);
+        color: #4A5568;
         display: flex;
         align-items: center;
       }
 
       /* ── Pill — DARK MODE override ── */
       .dark-mode .mcsh-pill {
-        background: rgba(10, 10, 14, 0.72);
-        border: 1px solid rgba(0, 210, 255, 0.22);
-        box-shadow: 0 0 20px rgba(0, 180, 220, 0.12), 0 8px 32px rgba(0,0,0,0.45);
+        background: #1A202C;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       }
-      .dark-mode .mcsh-pill:active {
-        box-shadow: 0 0 28px rgba(0, 210, 255, 0.25), 0 8px 40px rgba(0,0,0,0.55);
-        border-color: rgba(0, 210, 255, 0.4);
-      }
-      .dark-mode .mcsh-pill-label { color: rgba(0, 210, 255, 0.85); }
-      .dark-mode .mcsh-pill-summary { color: rgba(255,255,255,0.92); }
-      .dark-mode .mcsh-pill-chevron { color: rgba(255,255,255,0.4); }
+      .dark-mode .mcsh-pill-label { color: #00B4D8; }
+      .dark-mode .mcsh-pill-summary { color: #E2E8F0; }
+      .dark-mode .mcsh-pill-chevron { color: #A0AEC0; }
 
       /* Pill icon — same in both themes */
       .mcsh-pill-icon {
-        width: 30px;
-        height: 30px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #00D2FF 0%, #0097B2 100%);
+        background: #00B4D8;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
       }
       .mcsh-pill-text {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 1px;
+        gap: 2px;
         overflow: hidden;
       }
 
@@ -1408,6 +1399,17 @@ export default function MobileCinematicSearch({
     };
   }, [sheetOpen]);
 
+  // ── Listen for custom event to open sheet from Header ──────────────
+  useEffect(() => {
+    const handleOpenMobileSearch = () => {
+      setSheetOpen(true);
+    };
+    window.addEventListener("open-mobile-search", handleOpenMobileSearch);
+    return () => {
+      window.removeEventListener("open-mobile-search", handleOpenMobileSearch);
+    };
+  }, []);
+
   // ── Scroll active switcher tab into view ───────────────────────────────────
   useEffect(() => {
     if (!sheetOpen) return;
@@ -1543,54 +1545,22 @@ export default function MobileCinematicSearch({
 
   return (
     <>
-      {/* ── Floating Sticky Search Bar Pill ── */}
-      <AnimatePresence>
-        {isStickyVisible && (
-          <div className="mcsh-sticky-pill-wrap">
-            <motion.div
-              className="mcsh-sticky-pill"
-              onClick={openSheet}
-              style={{ scale }}
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{
-                type: "spring",
-                stiffness: 320,
-                damping: 26,
-                mass: 0.85,
-                opacity: { duration: 0.15 }
-              }}
-            >
-              <div className="mcsh-sticky-pill-icon">
-                <Search size={14} strokeWidth={2.8} />
-              </div>
-              <div className="mcsh-sticky-pill-summary">
-                {stickySummary}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* ── Floating Search Trigger Pill ── */}
-      <div className="mcsh-pill-wrap">
+      <div id="mcsh-floating-pill-wrap" className="mcsh-pill-wrap">
         <motion.div
           className="mcsh-pill"
           onClick={openSheet}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 400, damping: 22 }}
+          whileTap={{ scale: 0.98 }}
         >
           <div className="mcsh-pill-icon">
-            <Search size={15} color="#fff" strokeWidth={2.5} />
+            <Search size={22} color="#fff" strokeWidth={2.5} />
           </div>
           <div className="mcsh-pill-text">
-            <span className="mcsh-pill-label">Discover</span>
-            <span className="mcsh-pill-summary">{summary}</span>
+            <span className="mcsh-pill-label">WHERE TO?</span>
+            <span className="mcsh-pill-summary">{stickySummary}</span>
           </div>
           <div className="mcsh-pill-chevron">
-            <ChevronUp size={16} strokeWidth={2.2} />
+            <ChevronDown size={20} strokeWidth={2} />
           </div>
         </motion.div>
       </div>

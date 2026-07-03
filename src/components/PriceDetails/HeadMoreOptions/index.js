@@ -25,32 +25,27 @@ const HeadMoreOptions = ({ className, image, title, hostName, hostAvatar, rating
       </div>
       <div className={styles.details}>
         <div className={styles.title}>{title}</div>
-        <div className={styles.author}>
-          <div className={styles.text}>Hosted by</div>
-          <div className={styles.avatar}>
-            {showLetterAvatar ? (
-              <div className={styles.avatarLetter}>{hostInitial}</div>
-            ) : (
-              <img
-                src={avatarSrc}
-                alt={normalizedHostName}
-                onError={() => setAvatarLoadFailed(true)}
-              />
-            )}
-          </div>
-          <div className={styles.man}>{normalizedHostName}</div>
-        </div>
-        {/* <div className={styles.parameters}>
-          {parameters.map((x, index) => (
-            <div className={styles.parameter} key={index}>
-              {x}
+        <div className={styles.metaRow}>
+          <div className={styles.author}>
+            <div className={styles.text}>Hosted by</div>
+            <div className={styles.avatar}>
+              {showLetterAvatar ? (
+                <div className={styles.avatarLetter}>{hostInitial}</div>
+              ) : (
+                <img
+                  src={avatarSrc}
+                  alt={normalizedHostName}
+                  onError={() => setAvatarLoadFailed(true)}
+                />
+              )}
             </div>
-          ))}
-        </div> */}
-        <div className={styles.rating}>
-          <Icon name="star" size="20" />
-          <div className={styles.number}>{rating != null ? Number(rating).toFixed(1) : "0.0"}</div>
-          <div className={styles.reviews}>({reviewsCount || 0} reviews)</div>
+            <div className={styles.man}>{normalizedHostName}</div>
+          </div>
+          <div className={styles.rating}>
+            <Icon name="star" size="16" />
+            <div className={styles.number}>{rating != null ? Number(rating).toFixed(1) : "0.0"}</div>
+            <div className={styles.reviews}>({reviewsCount || 0} reviews)</div>
+          </div>
         </div>
       </div>
     </div>

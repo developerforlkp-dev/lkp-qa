@@ -94,6 +94,16 @@ const HeroSection = () => {
     setHeroReady(true);
   }, []);
 
+  // Failsafe: always hide loading overlay after 1.5s in case GSAP fails on mobile
+  useEffect(() => {
+    if (!loading && !error && heroData && heroData.length > 0) {
+      const timer = setTimeout(() => {
+        setHeroReady(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, error, heroData]);
+
   if (loading) {
     return (
       <div ref={containerRef} className={styles.container}>

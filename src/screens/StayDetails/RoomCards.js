@@ -534,6 +534,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
 
 const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan }) => {
   const { tokens: { FG, B, A, AL, S, W, M, BG } } = useTheme();
+  const { isMobile } = useWindowSize();
   const [showModal, setShowModal] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [showDesc, setShowDesc] = useState(false);
@@ -593,17 +594,17 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
       className={cn(styles.card, { [styles.cardSelected]: isSelected })}
       style={{
         display: "flex",
-        flexDirection: "row",
+        flexDirection: isMobile ? "column" : "row",
         alignItems: "stretch",
         background: W,
         border: `1px solid ${isSelected ? A : B}`,
-        borderRadius: "20px",
+        borderRadius: isMobile ? "24px" : "20px",
         padding: "0",
         position: "relative",
         gap: 0,
         minHeight: "220px",
         overflow: "hidden",
-        boxShadow: isSelected ? `0 8px 24px ${A}20` : "none",
+        boxShadow: isSelected ? `0 8px 24px ${A}20` : (isMobile ? "0 4px 20px rgba(0,0,0,0.06)" : "none"),
         boxSizing: "border-box",
         marginBottom: "24px"
       }}
@@ -614,10 +615,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         onMouseLeave={() => setIsImgHovered(false)}
         onClick={() => setShowModal(true)}
         style={{
-          width: "280px",
+          width: isMobile ? "100%" : "280px",
+          height: isMobile ? "200px" : "auto",
           flexShrink: 0,
           display: "flex",
-          borderRight: `1px solid ${B}`,
+          borderRight: isMobile ? "none" : `1px solid ${B}`,
+          borderBottom: isMobile ? `1px solid ${B}` : "none",
           background: W,
           position: "relative",
           cursor: "pointer",
@@ -645,10 +648,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
         {/* Room Count Tag */}
         {totalRooms != null && (
-          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-            {totalRooms} {isBedBased ? "BEDS" : "ROOMS"}
+          <div style={{ position: "absolute", top: 12, left: 12, padding: "4px 10px", borderRadius: "100px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Bed size={14} /> {totalRooms} {isBedBased ? "BEDS" : "ROOMS"}
           </div>
         )}
+
+
 
         {/* View Gallery Overlay Button */}
         <AnimatePresence>
@@ -670,10 +675,10 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
       </div>
 
       {/* Middle: Content details */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: isMobile ? "16px" : "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
         
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <h4 style={{ fontSize: "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "10px" : "12px" }}>
+          <h4 style={{ fontSize: isMobile ? "24px" : "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
             {name}
           </h4>
           
@@ -687,11 +692,13 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             )}
             
             {/* Amenities Row */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {room.bedType && <span style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{room.bedType}</span>}
-              {room.roomSize && <span style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{room.roomSize} sq ft</span>}
+            <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              {room.bedType && <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>{room.bedType}</span>}
+              {room.roomSize && <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>{room.roomSize} sq ft</span>}
               {features.map((f, i) => (
-                <span key={i} style={{ fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)" }}>{f}</span>
+                <span key={i} style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>
+                  {f}
+                </span>
               ))}
             </div>
           </div>
@@ -724,7 +731,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
       </div>
 
       {/* Right: Actions */}
-      <div style={{ width: "260px", flexShrink: 0, background: AL, padding: "24px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "20px" }}>
+      <div style={{ width: isMobile ? "100%" : "260px", flexShrink: 0, background: isMobile ? W : AL, padding: isMobile ? "0 16px 16px" : "24px", display: "flex", flexDirection: "column", justifyContent: "center", gap: isMobile ? "12px" : "20px", borderTop: isMobile ? "none" : "none" }}>
         
         {allPlans.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -745,7 +752,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
           </div>
         ) : <div />}
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end" }}>
           <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: M, marginBottom: "4px" }}>
             STARTING FROM
           </span>
@@ -766,37 +773,63 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
           </div>
         </div>
 
-        <div style={{ width: "100%", marginTop: "auto" }}>
+        <div style={{ width: "100%", marginTop: isMobile ? "0" : "auto" }}>
           {isSelected ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: W, borderRadius: "8px", border: `1px solid ${A}`, padding: "6px 12px", height: "42px", boxSizing: "border-box" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: FG }}>
-                  {roomsCount} {isBedBased ? "Bed" : "Room"}{roomsCount === 1 ? "" : "s"}
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <button
-                    type="button"
-                    disabled={roomsCount <= 1}
-                    onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount - 1); }}
-                    style={{ background: "none", border: "none", cursor: roomsCount <= 1 ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: roomsCount <= 1 ? M : A, opacity: roomsCount <= 1 ? 0.5 : 1, outline: "none" }}
-                  >
-                    <Minus size={16} strokeWidth={3} />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={totalRooms != null && roomsCount >= Number(totalRooms)}
-                    onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount + 1); }}
-                    style={{ background: "none", border: "none", cursor: (totalRooms != null && roomsCount >= Number(totalRooms)) ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: (totalRooms != null && roomsCount >= Number(totalRooms)) ? M : A, opacity: (totalRooms != null && roomsCount >= Number(totalRooms)) ? 0.5 : 1, outline: "none" }}
-                  >
-                    <Plus size={16} strokeWidth={3} />
-                  </button>
-                </div>
+                {!isMobile ? (
+                  <>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: FG }}>
+                      {roomsCount} {isBedBased ? "Bed" : "Room"}{roomsCount === 1 ? "" : "s"}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <button
+                        type="button"
+                        disabled={roomsCount <= 1}
+                        onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount - 1); }}
+                        style={{ background: "none", border: "none", cursor: roomsCount <= 1 ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: roomsCount <= 1 ? M : A, opacity: roomsCount <= 1 ? 0.5 : 1, outline: "none" }}
+                      >
+                        <Minus size={16} strokeWidth={3} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={totalRooms != null && roomsCount >= Number(totalRooms)}
+                        onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount + 1); }}
+                        style={{ background: "none", border: "none", cursor: (totalRooms != null && roomsCount >= Number(totalRooms)) ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: (totalRooms != null && roomsCount >= Number(totalRooms)) ? M : A, opacity: (totalRooms != null && roomsCount >= Number(totalRooms)) ? 0.5 : 1, outline: "none" }}
+                      >
+                        <Plus size={16} strokeWidth={3} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={roomsCount <= 1}
+                      onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount - 1); }}
+                      style={{ background: "none", border: "none", cursor: roomsCount <= 1 ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: roomsCount <= 1 ? M : A, opacity: roomsCount <= 1 ? 0.5 : 1, outline: "none" }}
+                    >
+                      <Minus size={16} strokeWidth={3} />
+                    </button>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: FG }}>
+                      {roomsCount} {isBedBased ? "Bed" : "Room"}{roomsCount === 1 ? "" : "s"}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={totalRooms != null && roomsCount >= Number(totalRooms)}
+                      onClick={(e) => { e.stopPropagation(); onRoomsCountChange(roomsCount + 1); }}
+                      style={{ background: "none", border: "none", cursor: (totalRooms != null && roomsCount >= Number(totalRooms)) ? "not-allowed" : "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: (totalRooms != null && roomsCount >= Number(totalRooms)) ? M : A, opacity: (totalRooms != null && roomsCount >= Number(totalRooms)) ? 0.5 : 1, outline: "none" }}
+                    >
+                      <Plus size={16} strokeWidth={3} />
+                    </button>
+                  </>
+                )}
               </div>
               <button 
                 onClick={handleSelect}
                 style={{ width: "100%", height: "42px", borderRadius: "8px", background: FG, color: BG, fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
               >
-                <Check size={16} /> Selected
+                <Check size={16} /> SELECTED
               </button>
             </div>
           ) : (
@@ -806,7 +839,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 16px ${A}40`; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
             >
-              Select {isBedBased ? "Bed" : "Room"}
+              SELECT {isBedBased ? "BED" : "ROOM"}
             </button>
           )}
         </div>

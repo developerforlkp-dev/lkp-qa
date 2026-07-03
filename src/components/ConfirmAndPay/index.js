@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import cn from "classnames";
 import styles from "./ConfirmAndPay.module.sass";
-import CreditCard from "./CreditCard";
 import Icon from "../Icon";
 import TextArea from "../TextArea";
 
@@ -9,12 +8,9 @@ const ConfirmAndPay = ({
   className,
   guests,
   title,
-  buttonUrl,
-  amountToPay,
-  amountInPaise = false,
-  currency = "INR",
   dateValue,
   guestValue,
+  timeValue,
   onEditDate,
   onEditGuests,
   datePicker,
@@ -26,82 +22,111 @@ const ConfirmAndPay = ({
   checkOutDate,
   roomType,
   mealPlan,
+  // Message state passed down
+  messageText,
+  setMessageText,
 }) => {
-  const [messageText, setMessageText] = useState("");
-
-  const formatAmount = (amount) => {
-    if (!amount) return null;
-    const numericAmount = Number(amount) || 0;
-    const amountInRupees = amountInPaise ? (numericAmount / 100).toFixed(2) : numericAmount.toFixed(2);
-    return `${currency} ${amountInRupees}`;
-  };
-
   return (
     <div className={cn(className, styles.confirm)}>
-      <div className={cn("h2", styles.title)}>Confirm and pay</div>
-      {amountToPay && (
-        <div className={styles.amountToPay}>
-          <div className={styles.amountLabel}>Amount to be paid</div>
-          <div className={styles.amountValue}>{formatAmount(amountToPay)}</div>
+      <div className={cn("h2", styles.title)}>Confirm and Pay</div>
+      <div className={styles.subtitle}>Almost done! Review your trip details and complete your booking.</div>
+      
+      <div className={styles.stepper}>
+        <div className={styles.step}>
+          <div className={styles.stepIcon}>
+            <Icon name="check" size="16" />
+          </div>
+          <div className={styles.stepLabel}>Booking details</div>
         </div>
-      )}
+        <div className={styles.stepperLine} />
+        <div className={styles.stepActive}>
+          <div className={styles.stepIconActive}>2</div>
+          <div className={styles.stepLabelActive}>Confirm and pay</div>
+        </div>
+      </div>
+
       <div className={styles.list}>
         <div className={styles.item}>
           <div className={styles.box}>
             <div className={styles.category}>{title}</div>
-            <div className={styles.group}>
+            <div className={styles.tripGrid}>
               {isStay ? (
                 <>
                   {/* Check-in */}
-                  <div className={styles.option}>
-                    <div className={styles.info}>Check-in</div>
+                  <div className={styles.tripCard}>
+                    <div className={styles.cardHeader}>
+                      <Icon name="calendar" size="24" />
+                      <div className={styles.info}>Check-in</div>
+                    </div>
                     <div className={styles.value}>{checkInDate || "Select date"}</div>
                   </div>
                   {/* Check-out */}
-                  <div className={styles.option}>
-                    <div className={styles.info}>Check-out</div>
+                  <div className={styles.tripCard}>
+                    <div className={styles.cardHeader}>
+                      <Icon name="calendar" size="24" />
+                      <div className={styles.info}>Check-out</div>
+                    </div>
                     <div className={styles.value}>{checkOutDate || "Select date"}</div>
                   </div>
                   {/* Room type */}
                   {roomType && (
-                    <div className={styles.option}>
-                      <div className={styles.info}>Room type</div>
+                    <div className={styles.tripCard}>
+                      <div className={styles.cardHeader}>
+                        <Icon name="home" size="24" />
+                        <div className={styles.info}>Room type</div>
+                      </div>
                       <div className={styles.value}>{roomType}</div>
                     </div>
                   )}
                   {/* Meal plan */}
                   {mealPlan && (
-                    <div className={styles.option}>
-                      <div className={styles.info}>Meal plan</div>
+                    <div className={styles.tripCard}>
+                      <div className={styles.cardHeader}>
+                        <Icon name="lightning" size="24" />
+                        <div className={styles.info}>Meal plan</div>
+                      </div>
                       <div className={styles.value}>{mealPlan}</div>
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <div className={styles.option}>
-                    <div className={styles.info}>
-                      {dateValue && (dateValue.includes(" - ") || dateValue.includes(" – ") || dateValue.includes(" to ")) ? "Dates" : "Date"}
-                    </div>
-                    <input className={styles.input} type="text" />
-                    <div className={styles.value}>{dateValue || "Select date"}</div>
-                    {onEditDate && (
-                      <button className={styles.edit} onClick={onEditDate}>
-                        <Icon name="edit" size="24" />
-                      </button>
-                    )}
-                    {onEditDate && datePicker}
-                  </div>
-                  {guests && (
-                    <div className={styles.option}>
-                      <div className={styles.info}>Guests</div>
-                      <input className={styles.input} type="text" />
-                      <div className={styles.value}>{guestValue || "Add guests"}</div>
-                      {onEditGuests && (
-                        <button className={styles.edit} onClick={onEditGuests}>
-                          <Icon name="edit" size="24" />
+                  <div className={styles.tripCard}>
+                    <div className={styles.cardHeader}>
+                      <Icon name="calendar" size="24" />
+                      <div className={styles.info}>
+                        {dateValue && (dateValue.includes(" - ") || dateValue.includes(" – ") || dateValue.includes(" to ")) ? "Dates" : "Date"}
+                      </div>
+                      {onEditDate && (
+                        <button className={styles.edit} onClick={onEditDate}>
+                          <Icon name="edit" size="16" />
                         </button>
                       )}
+                    </div>
+                    <div className={styles.value}>{dateValue || "Select date"}</div>
+                    {onEditDate && datePicker}
+                  </div>
+                  {timeValue && (
+                    <div className={styles.tripCard}>
+                      <div className={styles.cardHeader}>
+                        <Icon name="clock" size="24" />
+                        <div className={styles.info}>Time slot</div>
+                      </div>
+                      <div className={styles.value}>{timeValue}</div>
+                    </div>
+                  )}
+                  {guests && (
+                    <div className={styles.tripCard}>
+                      <div className={styles.cardHeader}>
+                        <Icon name="user" size="24" />
+                        <div className={styles.info}>Guests</div>
+                        {onEditGuests && (
+                          <button className={styles.edit} onClick={onEditGuests}>
+                            <Icon name="edit" size="16" />
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles.value}>{guestValue || "Add guests"}</div>
                       {onEditGuests && guestPicker}
                     </div>
                   )}
@@ -109,8 +134,9 @@ const ConfirmAndPay = ({
               )}
             </div>
 
-            <div className={styles.message} style={{ marginTop: '32px', display: 'block' }}>
-              <div className={styles.category} style={{ marginBottom: '16px' }}>Message the host</div>
+            <div className={styles.messageSection}>
+              <div className={styles.category}>Message the host</div>
+              <div className={styles.messageSubtitle}>Let the host know if you have any special requests.</div>
               <TextArea
                 className={styles.field}
                 name="messageText"
@@ -120,9 +146,6 @@ const ConfirmAndPay = ({
               />
             </div>
           </div>
-        </div>
-        <div className={styles.item}>
-          <CreditCard className={styles.credit} buttonUrl={buttonUrl} hidePaymentFields paymentData={paymentData} messageText={messageText} />
         </div>
       </div>
     </div>

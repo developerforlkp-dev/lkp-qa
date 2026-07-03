@@ -49,6 +49,7 @@ const Checkout = () => {
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [addonDetails, setAddonDetails] = useState([]);
   const [reviewsData, setReviewsData] = useState({ rating: null, count: 0 });
+  const [messageText, setMessageText] = useState("");
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -828,20 +829,17 @@ const Checkout = () => {
           className={styles.control}
           urlHome="/"
           backUrl={backUrl}
-          breadcrumbs={breadcrumbs}
         />
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
             title={isEventBooking ? "Your event" : "Your trip"}
-            buttonUrl="/experience-checkout-complete"
             guests
-            amountToPay={paymentData?.amount}
-            amountInPaise={isAmountInPaise}
-            currency={paymentData?.currency || "INR"}
             dateValue={items[0]?.title}
-            guestValue={items[2]?.title}
-            paymentData={paymentData}
+            timeValue={items[1]?.category === "Time slot" ? items[1]?.title : undefined}
+            guestValue={items[2]?.title || items[1]?.title}
+            messageText={messageText}
+            setMessageText={setMessageText}
           />
           <PriceDetails
             className={styles.price}
@@ -860,6 +858,9 @@ const Checkout = () => {
             cancellationPolicy={cancellationPolicy}
             rating={reviewsData.rating}
             reviewsCount={reviewsData.count}
+            buttonUrl="/experience-checkout-complete"
+            paymentData={paymentData}
+            messageText={messageText}
           />
         </div>
       </div>
