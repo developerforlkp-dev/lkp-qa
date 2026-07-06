@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft, AlertCircle, Sparkles, Plus, Minus, Info } from "lucide-react";
 import cn from "classnames";
@@ -1620,7 +1620,7 @@ const StayProduct = () => {
   const isRoomBased = !isPropertyBased && (stay?.rooms?.length > 0 || stay?.roomTypes?.length > 0);
   const roomCatalog = useMemo(() => (stay?.rooms || stay?.roomTypes || stay?.room_types || []), [stay]);
 
-  const enrichRoomsWithCatalog = (rooms = []) => {
+  const enrichRoomsWithCatalog = useCallback((rooms = []) => {
     if (!Array.isArray(rooms) || rooms.length === 0) return [];
     const byId = new Map(
       (Array.isArray(roomCatalog) ? roomCatalog : []).map((r) => [
@@ -1641,7 +1641,7 @@ const StayProduct = () => {
         mealPlanPricing: room?.mealPlanPricing || base?.mealPlanPricing,
       };
     });
-  };
+  }, [roomCatalog]);
 
   // Don't filter rooms by capacity — show ALL rooms.
   // The roomCapacityMessage / extra-room logic will guide the user when
@@ -1809,7 +1809,7 @@ const StayProduct = () => {
     };
     fetchAvailability();
     return () => { cancelled = true; };
-  }, [stayId, checkInDate, checkOutDate, stay]);
+  }, [stayId, checkInDate, checkOutDate, stay, enrichRoomsWithCatalog]);
 
   const handleCheckAvailability = async () => {
     if (!stayId || !checkInDate || !checkOutDate) return;
