@@ -722,9 +722,10 @@ export const loginWithGoogle = async (idToken, dateOfBirth = "") => {
 };
 
 // Complete Customer Profile
-export const completeCustomerProfile = async (profileData) => {
+export const completeCustomerProfile = async (profileData, token = null) => {
   try {
-    const response = await ListingsAPI.put("/customers/auth/complete-profile", profileData);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await ListingsAPI.put("/customers/auth/complete-profile", profileData, config);
     return response.data;
   } catch (error) {
     console.error("Error completing customer profile:", error);

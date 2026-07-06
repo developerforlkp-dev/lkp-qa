@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import cn from "classnames";
 import styles from "./LoginModal.module.sass";
 import Icon from "../Icon";
-import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle } from "../../utils/api";
+import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle, completeCustomerProfile } from "../../utils/api";
 
 const getFriendlyOtpError = (err) => {
   const status = err?.response?.status;
@@ -38,10 +38,11 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
   const [, setActiveInput] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [step, setStep] = useState("phone"); // "phone", "otp"
+  const [step, setStep] = useState("phone"); // "phone", "otp", "profile"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [pendingToken, setPendingToken] = useState(null);
   const countryCode = "+91";
   const isMountedRef = useRef(true);
   const otpFocusTimeoutRef = useRef(null);
@@ -65,7 +66,6 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
       setOtp(["", "", "", "", "", ""]);
       setFirstName("");
       setLastName("");
-      setDateOfBirth("");
       setStep("phone");
       setActiveInput(0);
       setError("");
@@ -172,10 +172,17 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
       if (!tokenResponse?.credential) {
         throw new Error("No Google ID token received");
       }
-      const response = await loginWithGoogle(tokenResponse.credential, dateOfBirth);
+      const response = await loginWithGoogle(tokenResponse.credential);
 
-      // Store JWT token from response
+      // Store JWT token from response temporarily
       const token = response?.token;
+
+      if (response?.requiresProfileCompletion) {
+        setPendingToken(token);
+        setStep("profile");
+        return;
+      }
+
       if (token) {
         localStorage.setItem("jwtToken", token);
       }
@@ -217,10 +224,6 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
   // Send OTP when phone number is submitted
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
-    if (!dateOfBirth) {
-      setError("Please enter your date of birth.");
-      return;
-    }
     if (!isMountedRef.current) return;
     setError("");
 
@@ -267,8 +270,7 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
         otpString,
         countryCode,
         firstName.trim(),
-        lastName.trim(),
-        dateOfBirth
+        lastName.trim()
       );
 
       // Store JWT token if provided in response
@@ -280,19 +282,20 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
         response.data?.jwtToken ||
         response.data?.accessToken;
 
-      if (token) {
-        localStorage.setItem("jwtToken", token);
-        console.log("✅ JWT token stored in localStorage");
-      } else {
-        console.warn("⚠️ No JWT token found in response:", response);
-      }
-
       if (response?.requiresProfileCompletion || response?.data?.requiresProfileCompletion) {
+        setPendingToken(token);
         setStep("profile");
         const customer = response?.customer || response?.data?.customer || {};
         if (customer?.firstName && !firstName) setFirstName(customer.firstName);
         if (customer?.lastName && !lastName) setLastName(customer.lastName);
         return;
+      }
+
+      if (token) {
+        localStorage.setItem("jwtToken", token);
+        console.log("✅ JWT token stored in localStorage");
+      } else {
+        console.warn("⚠️ No JWT token found in response:", response);
       }
 
       // Store phone number and user info in localStorage
@@ -326,6 +329,67 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
     }
   };
 
+  // Handle Profile Completion Submit
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    if (!isMountedRef.current) return;
+    setError("");
+
+    if (!dateOfBirth) {
+      setError("Please enter your date of birth");
+      return;
+    }
+
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 18) {
+      setError("You must be at least 18 years of age.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await completeCustomerProfile({
+        fullName: `${firstName} ${lastName}`.trim(),
+        dateOfBirth,
+      }, pendingToken);
+
+      if (pendingToken) {
+        localStorage.setItem("jwtToken", pendingToken);
+      }
+
+      const customer = response?.customer || {};
+      const userInfo = {
+        firstName: customer?.firstName || "",
+        lastName: customer?.lastName || "",
+        email: customer?.email || "",
+        customerId: customer?.customerId,
+        loginMethod: 'google'
+      };
+      localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+      if (onPhoneLogin) {
+        onPhoneLogin(null, response);
+      }
+      onClose();
+    } catch (err) {
+      console.error("Profile completion error:", err);
+      if (isMountedRef.current) {
+        setError(err.response?.data?.message || err.message || "Failed to complete profile.");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  };
+
   // Go back to phone input
   const handleBackToPhone = () => {
     setStep("phone");
@@ -339,37 +403,14 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
   return createPortal(
     <div className={styles.modal}>
       <div className={styles.content}>
-        <button className={styles.close} onClick={onClose}>
-          <Icon name="close" size="24" />
-        </button>
-
         <div className={styles.login}>
           {/* Step 1: Phone Number Input */}
           {step === "phone" && (
             <div className={styles.item}>
               <div className={cn("h3", styles.title)}>Sign up on Little Known Planet</div>
               <div className={styles.info}>Login with your Google account</div>
-              
-                <div className={styles.field} style={{ marginBottom: "16px", textAlign: "left" }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#1a202c' }}>
-                    Date of Birth (Required)
-                  </label>
-                  <input
-                    type="date"
-                    className={styles.input}
-                    placeholder="Date of Birth"
-                    value={dateOfBirth}
-                    onChange={(e) => {
-                      setDateOfBirth(e.target.value);
-                      setError("");
-                    }}
-                    disabled={loading}
-                    max={new Date().toISOString().split("T")[0]}
-                    required
-                  />
-                </div>
 
-                <div className={styles.btns} style={{ pointerEvents: dateOfBirth ? 'auto' : 'none', opacity: dateOfBirth ? 1 : 0.5 }}>
+                <div className={styles.btns}>
                 <button 
                   className={cn("button-stroke", styles.googleBtn)} 
                   onClick={handleGoogleClick}
@@ -497,16 +538,56 @@ const LoginModal = ({ visible, onClose, onPhoneLogin }) => {
                   {loading ? "Verifying..." : "Continue"}
                 </button>
               </form>
-              <div className={styles.foot}>
+            </div>
+          )}
+
+          {/* Step 3: Profile Completion */}
+          {step === "profile" && (
+            <div className={styles.item}>
+              <div className={cn("h3", styles.title)}>Complete your profile</div>
+              <div className={styles.info}>Please provide your details to continue</div>
+              <form onSubmit={handleProfileSubmit} className={styles.form}>
+                <div className={styles.nameFields} style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+                  <input
+                    type="text"
+                    className={styles.nameInput}
+                    placeholder="First Name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <input
+                    type="text"
+                    className={styles.nameInput}
+                    placeholder="Last Name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                <div className={styles.field} style={{ marginBottom: "16px" }}>
+                  <input
+                    type="date"
+                    className={styles.input}
+                    placeholder="Date of Birth"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                {error && <div className={styles.error} style={{ marginBottom: "16px" }}>{error}</div>}
                 <button
-                  type="button"
-                  className={styles.password}
-                  onClick={handleBackToPhone}
-                  disabled={loading}
+                  type="submit"
+                  className={cn("button", styles.button)}
+                  disabled={loading || !firstName || !lastName || !dateOfBirth}
+                  style={{ width: "100%" }}
                 >
-                  Back to phone number
+                  {loading ? "Saving..." : "Complete Profile"}
                 </button>
-              </div>
+              </form>
             </div>
           )}
         </div>
