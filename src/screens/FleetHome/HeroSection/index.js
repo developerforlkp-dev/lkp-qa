@@ -2,6 +2,29 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import HeroSectionAnimation from "./HeroSectionAnimation";
 import { getHomepageHero } from "../../../utils/api";
 import styles from "./HeroSection.module.sass";
+import MobileHeroSlider from "./MobileHeroSlider";
+
+function useWindowSize() {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+    isMobile: false,
+  });
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isMobile: window.innerWidth <= 768,
+      });
+    }
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return windowSize;
+}
 
 // Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
@@ -34,6 +57,43 @@ const HeroSection = () => {
   const [loading, setLoading] = useState(!cachedHeroData);
   const [heroReady, setHeroReady] = useState(false);
   const [error, setError] = useState(null);
+  const { isMobile } = useWindowSize();
+  const heroStageRef = useRef(null);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    let animationFrameId = null;
+    
+    const handleScroll = () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      
+      animationFrameId = requestAnimationFrame(() => {
+        if (!heroStageRef.current) return;
+        
+        const scrollY = window.scrollY;
+        if (scrollY <= 0) {
+          heroStageRef.current.style.transform = 'scale(1) translateY(0px)';
+          heroStageRef.current.style.opacity = '1';
+          heroStageRef.current.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+        } else {
+          // Scale down up to 0.9, move it down slightly for parallax
+          const scale = Math.max(0.92, 1 - (scrollY / 1200));
+          const opacity = Math.max(0.5, 1 - (scrollY / 500));
+          const translateY = scrollY * 0.3; // Parallax effect
+          heroStageRef.current.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+          heroStageRef.current.style.opacity = opacity.toString();
+          heroStageRef.current.style.transition = 'none'; // Instant follow on scroll
+        }
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [isMobile]);
 
   useEffect(() => {
     const loadHeroData = async () => {
@@ -134,12 +194,19 @@ const HeroSection = () => {
 
   return (
     <div ref={containerRef} className={styles.container}>
-      <div className={styles.heroStage}>
-        <HeroSectionAnimation
-          containerRef={containerRef}
-          destinations={heroData}
-          onReady={handleReady}
-        />
+      <div ref={heroStageRef} className={styles.heroStage} style={{ transformOrigin: 'top center', willChange: 'transform, opacity' }}>
+        {isMobile ? (
+          <MobileHeroSlider
+            destinations={heroData}
+            onReady={handleReady}
+          />
+        ) : (
+          <HeroSectionAnimation
+            containerRef={containerRef}
+            destinations={heroData}
+            onReady={handleReady}
+          />
+        )}
       </div>
       <div
         className={`${styles.loadingOverlay} ${heroReady ? styles.loadingOverlayHidden : ""

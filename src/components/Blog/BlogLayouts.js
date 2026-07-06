@@ -10,7 +10,7 @@ export function Layout1ModernMinimalist({ post }) {
   return (
     <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
-      {/* SCOPED CSS FOR LAYOUT 1 TO AVOID TAILWIND CONFLICTS */}
+      {/* SCOPED CSS STYLES */}
       <style>{`
         
         .l1-root { background-color: #FAFAFA; color: #333; transition: background-color 0.3s, color 0.3s; }

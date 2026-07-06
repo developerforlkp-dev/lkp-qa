@@ -50,7 +50,7 @@ const Modal = ({ outerClassName, visible, onClose, children }) => {
             onClose();
           }}>
             {children}
-            <button className={styles.close} onClick={onClose}>
+            <button className={cn(styles.close, "Modal-close-btn")} onClick={onClose}>
               <Icon name="close" size="24" />
             </button>
           </OutsideClickHandler>

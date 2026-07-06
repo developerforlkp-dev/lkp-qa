@@ -98,7 +98,7 @@ function App() {
               }
               // Default to Homepage with appropriate section
               return (
-                <Page separatorHeader={false}>
+                <Page separatorHeader={false} hideHeaderOnMobile={true}>
                   <FleetHome />
                 </Page>
               );

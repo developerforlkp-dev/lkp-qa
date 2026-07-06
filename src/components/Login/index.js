@@ -39,9 +39,10 @@ const Login = ({ onClose }) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [step, setStep] = useState("phone"); // "phone", "otp"
+  const [step, setStep] = useState("phone"); // "phone", "otp", "profile"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingToken, setPendingToken] = useState(null);
   const countryCode = "+91";
   const isMountedRef = useRef(true);
   const otpFocusTimeoutRef = useRef(null);
@@ -135,15 +136,17 @@ const Login = ({ onClose }) => {
       }
       const response = await loginWithGoogle(tokenResponse.credential);
 
-      // Store JWT token from response
+      // Store JWT token from response temporarily
       const token = response?.token;
-      if (token) {
-        localStorage.setItem("jwtToken", token);
-      }
 
       if (response?.requiresProfileCompletion) {
+        setPendingToken(token);
         setStep("profile");
         return;
+      }
+
+      if (token) {
+        localStorage.setItem("jwtToken", token);
       }
 
       const customer = response?.customer || {};
@@ -201,7 +204,11 @@ const Login = ({ onClose }) => {
       const response = await completeCustomerProfile({
         fullName: `${firstName} ${lastName}`.trim(),
         dateOfBirth,
-      });
+      }, pendingToken);
+
+      if (pendingToken) {
+        localStorage.setItem("jwtToken", pendingToken);
+      }
 
       const customer = response?.customer || {};
       const userInfo = {
@@ -291,19 +298,20 @@ const Login = ({ onClose }) => {
         response.data?.jwtToken ||
         response.data?.accessToken;
 
-      if (token) {
-        localStorage.setItem("jwtToken", token);
-        console.log("✅ JWT token stored in localStorage");
-      } else {
-        console.warn("⚠️ No JWT token found in response:", response);
-      }
-
       if (response?.requiresProfileCompletion || response?.data?.requiresProfileCompletion) {
+        setPendingToken(token);
         setStep("profile");
         const customer = response?.customer || response?.data?.customer || {};
         if (customer?.firstName && !firstName) setFirstName(customer.firstName);
         if (customer?.lastName && !lastName) setLastName(customer.lastName);
         return;
+      }
+
+      if (token) {
+        localStorage.setItem("jwtToken", token);
+        console.log("✅ JWT token stored in localStorage");
+      } else {
+        console.warn("⚠️ No JWT token found in response:", response);
       }
 
       // Store phone number and user info in localStorage
@@ -350,6 +358,7 @@ const Login = ({ onClose }) => {
         <div className={styles.item}>
           <div className={cn("h3", styles.title)}>Sign up on Little Known Planet</div>
           <div className={styles.info}>Login with your Google account</div>
+          
           <div className={styles.btns}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
@@ -476,22 +485,15 @@ const Login = ({ onClose }) => {
               {loading ? "Verifying..." : "Continue"}
             </button>
           </form>
-          <div className={styles.foot}>
-            <button
-              type="button"
-              className={styles.password}
-              onClick={handleBackToPhone}
-              disabled={loading}
-            >
-              Back to phone number
-            </button>
-          </div>
         </div>
       )}
 
       {/* Step 3: Profile Completion */}
       {step === "profile" && (
         <div className={styles.item}>
+          <style>{`
+            .Modal-close-btn { display: none !important; }
+          `}</style>
           <div className={cn("h3", styles.title)}>Complete your profile</div>
           <div className={styles.info}>Please provide your details to continue</div>
           <form onSubmit={handleProfileSubmit} className={styles.form}>

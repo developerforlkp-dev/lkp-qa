@@ -1141,7 +1141,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [startDate, setStartDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 });
+  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0, childAges: [] });
   const totalGuests = guests.adults + guests.children;
   const billableAdults = guests.adults;
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -1995,6 +1995,32 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const showExperienceChildAgeHint = !isEventBooking && allowChildPricing && childrenAllowed && hasChildAgeRange;
   const hasChildPricing = childrenAllowed && rawChildPrice > 0 && guests.children > 0;
   const baseAdultPricePerPerson = parseFloat(effectiveRawPrice || 0);
+
+  let eventChildPriceTotal = 0;
+  const childAgeWarnings = {};
+  if (isEventBooking && selectedTicket && guests.children > 0) {
+    for (let i = 0; i < guests.children; i++) {
+      const age = guests.childAges?.[i] ?? 0;
+      let matchedPrice = 0; // Default price is 0 if no tier matches
+      const tiers = selectedTicket.childPricingTiers || selectedTicket.child_pricing_tiers || [];
+      const tier = tiers.find(t => age >= (t.ageFrom ?? t.age_from ?? 0) && age <= (t.ageTo ?? t.age_to ?? 100));
+      if (tier) {
+        matchedPrice = Number(tier.pricePerChild ?? tier.price_per_child ?? tier.price ?? 0);
+      } else if (tiers.length > 0) {
+        const maxAge = Math.max(...tiers.map(t => t.ageTo ?? t.age_to ?? 100));
+        const minAge = Math.min(...tiers.map(t => t.ageFrom ?? t.age_from ?? 0));
+        if (age > maxAge) {
+          matchedPrice = Number(effectiveEventPrice?.price || 0);
+          childAgeWarnings[i] = 'adult';
+        } else if (age < minAge) {
+          matchedPrice = 0;
+          childAgeWarnings[i] = 'free';
+        }
+      }
+      eventChildPriceTotal += matchedPrice;
+    }
+  }
+
   const baseChildPricePerChild = hasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
 
   const data = {
@@ -2005,13 +2031,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   // Compute totals with child pricing split
   const adultSubtotal = parseFloat(extractedPrice || 0) * guests.adults;
-  const childSubtotal = effectiveChildPrice * guests.children;
-  const baseTotal = isEventBooking
-    ? adultSubtotal + childSubtotal
-    : adultSubtotal + childSubtotal;
+  const childSubtotal = isEventBooking ? eventChildPriceTotal : effectiveChildPrice * guests.children;
+  const baseTotal = adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
     ? (baseAdultPricePerPerson * guests.adults) + (baseChildPricePerChild * guests.children)
-    : ((eventGuestPricing.baseUnitPrice * guests.adults) + (baseChildPricePerChild * guests.children));
+    : ((eventGuestPricing.baseUnitPrice * guests.adults) + eventChildPriceTotal);
   const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
   const appliedTaxRate = activeGuestPricing?.customerTaxRate ?? 0;
@@ -2146,9 +2170,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const updateGuestsWithinSeatLimit = useCallback((updater) => {
     setGuests((current) => {
       const nextGuests = typeof updater === "function" ? updater(current) : updater;
-      return clampGuestsToSeatLimit(nextGuests);
+      const clamped = clampGuestsToSeatLimit(nextGuests);
+      
+      let nextChildAges = [...(current.childAges || [])];
+      if (clamped.children > nextChildAges.length) {
+        nextChildAges = [...nextChildAges, ...Array(clamped.children - nextChildAges.length).fill(0)];
+      } else if (clamped.children < nextChildAges.length) {
+        nextChildAges = nextChildAges.slice(0, clamped.children);
+      }
+      
+      return { ...clamped, childAges: nextChildAges };
     });
   }, [clampGuestsToSeatLimit]);
+
+  const updateChildAge = useCallback((index, age) => {
+    setGuests(current => {
+      const nextAges = [...(current.childAges || [])];
+      nextAges[index] = Number(age);
+      return { ...current, childAges: nextAges };
+    });
+  }, []);
 
   const adultMax = bookingGuestLimit !== undefined
     ? Math.max(bookingGuestLimit === 0 ? 0 : 1, bookingGuestLimit - (guests.children || 0))
@@ -2190,9 +2231,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     if (!isEventBooking && startDate && startTime && timeSlots && timeSlots.length > 0) {
       const selectedSlotObj = timeSlots.find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
       const baseSlotObj = (listing?.timeSlots || []).find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
-      
+
       const cutoffTimeValue = selectedSlotObj?.bookingCutoffTime || selectedSlotObj?.booking_cutoff_time || baseSlotObj?.bookingCutoffTime || baseSlotObj?.booking_cutoff_time || selectedSlotObj?.bookingCutoffHours || baseSlotObj?.bookingCutoffHours;
-      
+
       if (cutoffTimeValue) {
         const now = moment().tz('Asia/Kolkata');
         let slotDateTime = moment(startDate).tz('Asia/Kolkata');
@@ -2203,7 +2244,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           const [hours, minutes] = startTime.split(':').map(Number);
           slotDateTime = slotDateTime.hours(hours || 0).minutes(minutes || 0).seconds(0);
         }
-        
+
         let cutoffHours = 0;
         let cutoffMinutes = 0;
         if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
@@ -2213,20 +2254,20 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         } else {
           cutoffHours = Number(cutoffTimeValue) || 0;
         }
-        
+
         const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours').subtract(cutoffMinutes, 'minutes');
-        
+
         if (now.isAfter(cutoffDateTime)) {
           let displayCutoff = String(cutoffTimeValue);
           if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
-             const parts = cutoffTimeValue.split(':');
-             const h = parseInt(parts[0], 10);
-             const m = parseInt(parts[1], 10);
-             displayCutoff = `${h > 0 ? h + ' hour(s)' : ''} ${m > 0 ? m + ' minute(s)' : ''}`.trim() || '0 hours';
+            const parts = cutoffTimeValue.split(':');
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            displayCutoff = `${h > 0 ? h + ' hour(s)' : ''} ${m > 0 ? m + ' minute(s)' : ''}`.trim() || '0 hours';
           } else {
-             displayCutoff = `${cutoffTimeValue} hour(s)`;
+            displayCutoff = `${cutoffTimeValue} hour(s)`;
           }
-          
+
           showErrorPopup(`You can no longer reserve this slot as the booking cut-off time (${displayCutoff} prior) has passed.`, "Booking Cut-off Passed");
           return;
         }
@@ -2350,6 +2391,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         eventSlotIds,
         bookingDate: dateStr,
         numberOfGuests: totalGuests,
+        adultCount: guests.adults || 0,
         childCount: guests.children || 0,
         customerName: customerName,
         customerEmail: customerEmail,
@@ -2360,11 +2402,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         addons: eventAddonsPayload,
         tickets: [{
           ticketTypeId,
-          ticketTypeName,
-          quantity: totalGuests,
+          ticketTypeName: selectedTicket?.name || 'General Admission',
+          quantity: billableAdults + (guests.children || 0),
           childQuantity: guests.children || 0,
           pricePerTicket: Number(pricePerTicket.toFixed(2)),
         }],
+        childAges: guests.childAges || [],
         appliedDiscountCode: null,
         notes: null,
       };
@@ -3607,7 +3650,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                         <X size={20} />
                                       </button>
                                     </div>
-                                    
+
                                     <div style={{ height: 380, overflowY: "auto", paddingRight: 8, margin: "0 -8px 0 0" }}>
 
                                       {isEventBooking ? (
@@ -3937,212 +3980,250 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 </motion.div>
                               )}
                             </AnimatePresence>
-                        </div>
-
-                        <div id="booking-guests-section-exp" className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: "24px" }}>
-                          <div style={{ fontSize: 11, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8, lineHeight: "1.2" }}>
-                            02. Guests
-                            {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                           </div>
-                          <div
-                            title={!(startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: childrenAllowed ? "1fr 1fr" : "1fr",
-                              gap: 8,
-                              opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
-                              pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
-                              transition: "0.3s"
-                            }}
-                          >
-                            <div style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "10px 14px",
-                              background: validationErrors.adults ? EL : BG,
-                              border: `1px solid ${validationErrors.adults ? `${E}44` : B}`,
-                              borderRadius: 16,
-                              transition: "0.3s"
-                            }}>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</span>
-                              <Counter
-                                value={guests.adults}
-                                setValue={(v) => {
-                                  updateGuestsWithinSeatLimit(p => ({ ...p, adults: v }));
-                                  if (v >= 1) {
-                                    setValidationErrors(prev => {
-                                      const next = { ...prev };
-                                      delete next.adults;
-                                      return next;
-                                    });
-                                  }
-                                }}
-                                min={0}
-                                max={adultMax}
-                              />
+
+                          <div id="booking-guests-section-exp" className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: "24px" }}>
+                            <div style={{ fontSize: 11, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8, lineHeight: "1.2" }}>
+                              02. Guests
+                              {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                             </div>
-                            {childrenAllowed && (
-                              <div style={{ padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
+                            <div
+                              title={!(startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: childrenAllowed ? "1fr 1fr" : "1fr",
+                                gap: 8,
+                                opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
+                                pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
+                                transition: "0.3s"
+                              }}
+                            >
+                              <div style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "10px 14px",
+                                background: validationErrors.adults ? EL : BG,
+                                border: `1px solid ${validationErrors.adults ? `${E}44` : B}`,
+                                borderRadius: 16,
+                                transition: "0.3s"
+                              }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Adults</span>
                                 <Counter
-                                  value={guests.children}
-                                  setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                                  value={guests.adults}
+                                  setValue={(v) => {
+                                    updateGuestsWithinSeatLimit(p => ({ ...p, adults: v }));
+                                    if (v >= 1) {
+                                      setValidationErrors(prev => {
+                                        const next = { ...prev };
+                                        delete next.adults;
+                                        return next;
+                                      });
+                                    }
+                                  }}
                                   min={0}
-                                  max={childMax}
+                                  max={adultMax}
                                 />
+                              </div>
+                              {childrenAllowed && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                  <div style={{ padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
+                                    <Counter
+                                      value={guests.children}
+                                      setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                                      min={0}
+                                      max={childMax}
+                                    />
+                                  </div>
+                                  {isEventBooking && guests.children > 0 && Array.from({ length: guests.children }).map((_, i) => (
+                                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 14px", background: `${B}22`, borderRadius: 12 }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: M }}>Child {i + 1} Age</span>
+                                        <select
+                                          value={guests.childAges?.[i] ?? 0}
+                                          onChange={(e) => updateChildAge(i, Number(e.target.value))}
+                                          style={{
+                                            padding: "4px 8px",
+                                            borderRadius: 8,
+                                            border: `1px solid ${B}`,
+                                            background: BG,
+                                            color: FG,
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            outline: "none",
+                                            cursor: "pointer"
+                                          }}
+                                        >
+                                          {[...Array(16).keys()].map(age => (
+                                            <option key={age} value={age}>{age} {age === 1 ? 'year' : 'years'}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      {childAgeWarnings[i] === 'adult' && (
+                                        <div style={{ fontSize: 10, color: "#eab308", fontWeight: 500, marginTop: 4 }}>
+                                          Age exceeds child limits. Adult price applied.
+                                        </div>
+                                      )}
+                                      {childAgeWarnings[i] === 'free' && (
+                                        <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 500, marginTop: 4 }}>
+                                          Age below child limits. No charge applied.
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {isEventBooking && selectedTicketTypeId && selectedTicketMaxPerBooking !== undefined && (
+                              <div style={{ marginTop: 4, fontSize: 10, color: M, fontWeight: 600, lineHeight: 1.2 }}>
+                                Max {selectedTicketMaxPerBooking} ticket{selectedTicketMaxPerBooking === 1 ? "" : "s"} per booking.
+                              </div>
+                            )}
+                            {isEventBooking && selectedTicketTypeId && effectiveEventPrice.tier && (
+                              <div style={{ marginTop: 4, fontSize: 11, color: A, fontWeight: 800, lineHeight: 1.2 }}>
+                                Group price: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} / ticket.
+                              </div>
+                            )}
+
+                            {/* Dynamic Pricing Modifier Labels */}
+                            {(() => {
+                              const isGroupBookingApplied = (!isEventBooking && groupOverridePrice != null && groupOverridePrice > 0) || (isEventBooking && effectiveEventPrice?.tier);
+                              const isAddonsApplied = selectedAddOns && selectedAddOns.length > 0;
+                              const isEarlyBirdApplied = activeGuestPricing && (activeGuestPricing.earlyBirdDiscountRate > 0 || activeGuestPricing.earlyBirdDiscountAmount > 0);
+
+                              if (!isGroupBookingApplied && !isAddonsApplied && !isEarlyBirdApplied) return null;
+
+                              return (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, width: "100%" }}>
+                                  {isGroupBookingApplied && (
+                                    <span style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      padding: "4px 10px",
+                                      borderRadius: 100,
+                                      background: `${A}12`,
+                                      border: `1px solid ${A}28`,
+                                      color: A,
+                                      fontSize: 10,
+                                      fontWeight: 800,
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em",
+                                    }}>
+                                      🏷 Group Booking Applied
+                                    </span>
+                                  )}
+                                  {isAddonsApplied && (
+                                    <span style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      padding: "4px 10px",
+                                      borderRadius: 100,
+                                      background: `${A}12`,
+                                      border: `1px solid ${A}28`,
+                                      color: A,
+                                      fontSize: 10,
+                                      fontWeight: 800,
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em",
+                                    }}>
+                                      🏷 Add-ons Applied
+                                    </span>
+                                  )}
+                                  {isEarlyBirdApplied && (
+                                    <span style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      padding: "4px 10px",
+                                      borderRadius: 100,
+                                      background: `${A}12`,
+                                      border: `1px solid ${A}28`,
+                                      color: A,
+                                      fontSize: 10,
+                                      fontWeight: 800,
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em",
+                                    }}>
+                                      🏷 Early Bird Discount Applied
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Ticket Applied Details */}
+                            {isEventBooking && selectedTicketTypeId && selectedTicket && (
+                              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                                <span style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  padding: "4px 10px",
+                                  borderRadius: 100,
+                                  background: `${A}12`,
+                                  border: `1px solid ${A}28`,
+                                  color: A,
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em",
+                                  width: "fit-content"
+                                }}>
+                                  🏷 Ticket Applied : {selectedTicket.ticketName || selectedTicket.name}
+                                </span>
                               </div>
                             )}
                           </div>
-                          {isEventBooking && selectedTicketTypeId && selectedTicketMaxPerBooking !== undefined && (
-                            <div style={{ marginTop: 4, fontSize: 10, color: M, fontWeight: 600, lineHeight: 1.2 }}>
-                              Max {selectedTicketMaxPerBooking} ticket{selectedTicketMaxPerBooking === 1 ? "" : "s"} per booking.
-                            </div>
-                          )}
-                          {isEventBooking && selectedTicketTypeId && effectiveEventPrice.tier && (
-                            <div style={{ marginTop: 4, fontSize: 11, color: A, fontWeight: 800, lineHeight: 1.2 }}>
-                              Group price: ₹{Number(effectiveEventPrice.price || 0).toFixed(2)} / ticket.
-                            </div>
-                          )}
 
-                          {/* Dynamic Pricing Modifier Labels */}
-                          {(() => {
-                            const isGroupBookingApplied = (!isEventBooking && groupOverridePrice != null && groupOverridePrice > 0) || (isEventBooking && effectiveEventPrice?.tier);
-                            const isAddonsApplied = selectedAddOns && selectedAddOns.length > 0;
-                            const isEarlyBirdApplied = activeGuestPricing && (activeGuestPricing.earlyBirdDiscountRate > 0 || activeGuestPricing.earlyBirdDiscountAmount > 0);
-
-                            if (!isGroupBookingApplied && !isAddonsApplied && !isEarlyBirdApplied) return null;
-
-                            return (
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, width: "100%" }}>
-                                {isGroupBookingApplied && (
-                                  <span style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "4px 10px",
-                                    borderRadius: 100,
-                                    background: `${A}12`,
-                                    border: `1px solid ${A}28`,
-                                    color: A,
-                                    fontSize: 10,
-                                    fontWeight: 800,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.05em",
-                                  }}>
-                                    🏷 Group Booking Applied
-                                  </span>
-                                )}
-                                {isAddonsApplied && (
-                                  <span style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "4px 10px",
-                                    borderRadius: 100,
-                                    background: `${A}12`,
-                                    border: `1px solid ${A}28`,
-                                    color: A,
-                                    fontSize: 10,
-                                    fontWeight: 800,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.05em",
-                                  }}>
-                                    🏷 Add-ons Applied
-                                  </span>
-                                )}
-                                {isEarlyBirdApplied && (
-                                  <span style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "4px 10px",
-                                    borderRadius: 100,
-                                    background: `${A}12`,
-                                    border: `1px solid ${A}28`,
-                                    color: A,
-                                    fontSize: 10,
-                                    fontWeight: 800,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.05em",
-                                  }}>
-                                    🏷 Early Bird Discount Applied
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
-
-                          {/* Ticket Applied Details */}
-                          {isEventBooking && selectedTicketTypeId && selectedTicket && (
-                            <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                              <span style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                padding: "4px 10px",
-                                borderRadius: 100,
-                                background: `${A}12`,
-                                border: `1px solid ${A}28`,
-                                color: A,
-                                fontSize: 10,
-                                fontWeight: 800,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
-                                width: "fit-content"
-                              }}>
-                                🏷 Ticket Applied : {selectedTicket.ticketName || selectedTicket.name}
-                              </span>
-                            </div>
-                          )}
+                          {/* Price Summary removed to align with Event popup behavior */}
                         </div>
-
-                        {/* Price Summary removed to align with Event popup behavior */}
                       </div>
+                    )}
                   </div>
-                )}
-                </div>
 
-              {/* Footer — outside scrollable content, always pinned at bottom of popup */}
-              <div className="booking-modal-footer" style={{ flexShrink: 0, padding: "16px 28px", background: BG, borderTop: `1px solid ${B}`, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: `0 -4px 20px rgba(0,0,0,0.06)` }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
-                  <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={bookingLoading}
-                  onClick={handleReserve}
-                  style={{
-                    padding: "12px 32px",
-                    background: (canReserve || showValidation) ? A : B,
-                    color: "#FFF",
-                    borderRadius: 16,
-                    border: "none",
-                    fontSize: 15,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    boxShadow: (canReserve || showValidation) ? `0 10px 30px ${A}44` : "none",
-                    transition: "0.3s"
-                  }}
-                >
-                  {bookingLoading ? "Processing..." : reserveLabel}
-                </motion.button>
-              </div>
+                  {/* Footer — outside scrollable content, always pinned at bottom of popup */}
+                  <div className="booking-modal-footer" style={{ flexShrink: 0, padding: "16px 28px", background: BG, borderTop: `1px solid ${B}`, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: `0 -4px 20px rgba(0,0,0,0.06)` }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
+                      <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      disabled={bookingLoading}
+                      onClick={handleReserve}
+                      style={{
+                        padding: "12px 32px",
+                        background: (canReserve || showValidation) ? A : B,
+                        color: "#FFF",
+                        borderRadius: 16,
+                        border: "none",
+                        fontSize: 15,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        boxShadow: (canReserve || showValidation) ? `0 10px 30px ${A}44` : "none",
+                        transition: "0.3s"
+                      }}
+                    >
+                      {bookingLoading ? "Processing..." : reserveLabel}
+                    </motion.button>
+                  </div>
 
-              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
-                <ShieldCheck size={12} />
-                <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
-              </div>
-            </>
+                  <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
+                    <ShieldCheck size={12} />
+                    <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
+                  </div>
+                </>
               )}
-          </motion.div>
-    </div >
-      )
-}
-    </AnimatePresence >
+            </motion.div>
+          </div >
+        )
+        }
+      </AnimatePresence >
       <LoginPromptModal
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}

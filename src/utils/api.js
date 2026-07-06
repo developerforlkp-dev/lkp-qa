@@ -661,7 +661,7 @@ export const sendPhoneOTP = async (phone, countryCode = "+91") => {
 };
 
 // Verify OTP and login
-export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName = "", lastName = "") => {
+export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName = "", lastName = "", dateOfBirth = "") => {
   try {
     const response = await ListingsAPI.post("/customers/auth/phone/verify-otp", {
       phone,
@@ -669,6 +669,7 @@ export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName 
       countryCode,
       firstName,
       lastName,
+      dateOfBirth,
     });
     console.log("✅ OTP verified successfully:", response.data);
     return response.data;
@@ -679,10 +680,10 @@ export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName 
 };
 
 // Google OAuth login
-export const loginWithGoogle = async (idToken) => {
+export const loginWithGoogle = async (idToken, dateOfBirth = "") => {
   try {
     const url = "/customers/auth/google";
-    const requestData = { idToken: idToken };
+    const requestData = { idToken: idToken, dateOfBirth: dateOfBirth };
     const baseURL = getApiBaseURL();
     const fullURL = baseURL === "/api"
       ? `${window.location.origin}${baseURL}${url}`
@@ -714,9 +715,10 @@ export const loginWithGoogle = async (idToken) => {
 };
 
 // Complete Customer Profile
-export const completeCustomerProfile = async (profileData) => {
+export const completeCustomerProfile = async (profileData, token = null) => {
   try {
-    const response = await ListingsAPI.put("/customers/auth/complete-profile", profileData);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await ListingsAPI.put("/customers/auth/complete-profile", profileData, config);
     return response.data;
   } catch (error) {
     console.error("Error completing customer profile:", error);

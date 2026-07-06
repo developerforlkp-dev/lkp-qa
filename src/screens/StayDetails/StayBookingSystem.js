@@ -590,7 +590,10 @@ const StayBookingSystem = ({
     const checkInStr = checkInDate ? (typeof checkInDate === 'string' ? checkInDate : checkInDate.format('YYYY-MM-DD')) : null;
     
     return selectedRooms.map(sel => {
-      const room = roomsSource.find(r => String(r.roomId || r.id) === String(sel.roomId));
+      let room = roomsSource.find(r => String(r.roomId || r.id) === String(sel.roomId));
+      if (!room) {
+        room = stayRoomsCatalog.find(r => String(r.roomId || r.id) === String(sel.roomId));
+      }
       if (!room) return null;
 
       const mealPlan = sel.mealPlan || "EP";
@@ -1221,42 +1224,56 @@ const StayBookingSystem = ({
             extraAdults: extraAdultsCount,
             extraChildren: extraChildrenCount,
           }
-        : {
-            ...payloadBase,
-            rooms: (() => {
-              const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
-              const grouped = {};
-              if (distribution.success) {
-                distribution.allocations.forEach(alloc => {
-                  if (!grouped[alloc.roomId]) {
-                    grouped[alloc.roomId] = {
-                      roomId: alloc.roomId,
-                      roomsBooked: 0,
-                      adults: 0,
-                      children: 0,
-                      extraAdults: 0,
-                      extraChildren: 0
-                    };
-                  }
-                  const g = grouped[alloc.roomId];
-                  g.roomsBooked += 1;
-                  g.adults += alloc.adults;
-                  g.children += alloc.children;
-                  g.extraAdults += alloc.extraAdults;
-                  g.extraChildren += alloc.extraChildren;
-                });
-              }
+        : (() => {
+            const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
+            const grouped = {};
+            if (distribution.success) {
+              distribution.allocations.forEach(alloc => {
+                if (!grouped[alloc.roomId]) {
+                  grouped[alloc.roomId] = {
+                    roomId: alloc.roomId,
+                    roomsBooked: 0,
+                    adults: 0,
+                    children: 0,
+                    extraAdults: 0,
+                    extraChildren: 0
+                  };
+                }
+                const g = grouped[alloc.roomId];
+                g.roomsBooked += 1;
+                g.adults += alloc.adults;
+                g.children += alloc.children;
+                g.extraAdults += alloc.extraAdults;
+                g.extraChildren += alloc.extraChildren;
+              });
+            }
+            
+            const roomsPayload = [];
+            const bedConfigsPayload = [];
+            
+            resolvedSelectedRooms.forEach(r => {
+              const grp = grouped[r.roomId || r.id] || {
+                roomsBooked: r.count,
+                adults: r.count * (r.maxAdults || 1),
+                children: 0,
+                extraAdults: 0,
+                extraChildren: 0
+              };
               
-              return resolvedSelectedRooms.map(r => {
-                const grp = grouped[r.roomId || r.id] || {
-                  roomsBooked: r.count,
-                  adults: r.count * (r.maxAdults || 1),
-                  children: 0,
-                  extraAdults: 0,
-                  extraChildren: 0
-                };
-                return {
-                  roomId: r.roomId || r.id,
+              const isBed = r.isBedConfig;
+              const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
+              const validId = rawId > 0 ? rawId : 1; 
+              
+              if (isBed) {
+                bedConfigsPayload.push({
+                  bedConfigId: validId,
+                  name: r.roomName || r.name || "Bed",
+                  bedsBooked: r.count,
+                  mealPlanCode: r.mealPlan || "EP"
+                });
+              } else {
+                roomsPayload.push({
+                  roomId: validId,
                   roomsBooked: r.count,
                   adults: grp.adults,
                   children: grp.children,
@@ -1264,10 +1281,16 @@ const StayBookingSystem = ({
                   extraBeds: Number(r.extraBeds || 0),
                   extraAdults: grp.extraAdults,
                   extraChildren: grp.extraChildren,
-                };
-              });
-            })()
-          };
+                });
+              }
+            });
+
+            return {
+              ...payloadBase,
+              rooms: roomsPayload,
+              ...(bedConfigsPayload.length > 0 ? { bedConfigs: bedConfigsPayload } : {})
+            };
+          })();
 
       const response = await createStayOrder(payload);
       const paymentResponse = response?.payment || response?.data?.payment || response;

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Card from "../../../components/Card";
 import BrowseItem from "../../../components/Browse/Item";
 import DestinationCard from "../DestinationCard";
+import CircleCard from "../CircleCard";
 import Destination from "../../../components/Destination";
 import HorizontalScroll from "../../../components/HorizontalScroll";
 import Icon from "../../../components/Icon";
@@ -634,6 +635,45 @@ export const CardDestination = ({ section, listings, className }) => {
 };
 
 /**
+ * CARD_CIRCLE_NODETAIL - Perfect circle image cards with vertical layout, minimal details
+ */
+export const CardCircle = ({ section, listings, className }) => {
+  const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
+  const sectionListingsUrl = getSectionListingsUrl(section);
+
+  return (
+    <section className={cn(styles.categorySection, className)}>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionTitleWrapper}>
+          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
+            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
+          </Link>
+          {section.priceStartingFrom && (
+            <div className={styles.priceStarting}>
+              Starts from <span>₹{section.priceStartingFrom}</span>
+            </div>
+          )}
+        </div>
+        {section.description && (
+          <p className={styles.sectionSubtitle}>{section.description}</p>
+        )}
+      </div>
+      <div className={styles.horizontalScrollWrapper}>
+        <HorizontalScroll className={styles.horizontalScroll} gap={24}>
+          {destinationItems.map((item) => (
+            <CircleCard
+              className={styles.destinationCard}
+              item={item}
+              key={item.id}
+            />
+          ))}
+        </HorizontalScroll>
+      </div>
+    </section>
+  );
+};
+
+/**
  * CARD_RECT_HORIZONTAL_NODETAIL - Rectangular horizontal cards with image, title, and content, no detailed info
  */
 export const CardDestinationHorizontal = ({ section, listings, className }) => {
@@ -716,6 +756,10 @@ export const HomepageSectionCard = ({ section, listings, className }) => {
 
     case "CARD_OVAL_VERTICAL_NODETAIL":
       return <CardDestination section={section} listings={renderListings} className={className} />;
+
+
+    case "CARD_CIRCLE_NODETAIL":
+      return <CardCircle section={section} listings={renderListings} className={className} />;
 
 
     case "CARD_RECT_HORIZONTAL_NODETAIL":
