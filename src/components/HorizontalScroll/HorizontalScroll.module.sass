@@ -26,9 +26,16 @@
         display: none
     +m
         gap: 16px
+        padding: 0 20px
+        scroll-padding: 0 20px
         cursor: default
         &:active
             cursor: default
+        &::after
+            content: ""
+            display: block
+            min-width: 1px
+            min-height: 1px
 
 .arrowButton
     position: absolute
