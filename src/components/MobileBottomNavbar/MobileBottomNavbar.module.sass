@@ -1,0 +1,132 @@
+@import ../../styles/helpers
+
+// ── Container ─────────────────────────────────────────────────────────────────
+.mobileNavbarContainer
+    display: none
+    +t
+        display: block
+        position: fixed
+        bottom: 20px
+        left: 50%
+        transform: translateX(-50%)
+        width: calc(100% - 40px)
+        max-width: 440px
+        z-index: 9999
+        pointer-events: none
+        transition: transform 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.32s ease
+
+    &.hidden
+        +t
+            transform: translate3d(-50%, 30px, 0)
+            opacity: 0
+
+// ── Dock — LIGHT MODE (default) ───────────────────────────────────────────────
+// High-contrast frosted glass with visible graphite icons
+.mobileNavbar
+    display: flex
+    flex-direction: row
+    align-items: center
+    justify-content: space-between
+    padding: 5px 6px
+    // Rich frosted white glass — readable against any background
+    background: rgba(248, 249, 251, 0.94)
+    backdrop-filter: blur(32px) saturate(180%)
+    -webkit-backdrop-filter: blur(32px) saturate(180%)
+    // Visible border + layered shadow system
+    border: 1px solid rgba(200, 206, 216, 0.7)
+    border-bottom: 1px solid rgba(180, 188, 200, 0.55)
+    border-radius: 100px
+    box-shadow: 0 2px 1px rgba(255,255,255,0.95) inset, 0 8px 28px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06)
+    pointer-events: auto
+    width: 100%
+    // ── DARK MODE ───────────────────────────────────────────────────────────
+    +dark
+        background: rgba(10, 10, 14, 0.82)
+        backdrop-filter: blur(32px) saturate(140%)
+        -webkit-backdrop-filter: blur(32px) saturate(140%)
+        border: 1px solid rgba(255, 255, 255, 0.08)
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05)
+        box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(0,210,255,0.07)
+
+// ── Nav item — LIGHT MODE ─────────────────────────────────────────────────────
+.mobileNavItem
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+    flex: 1
+    // Tall enough for comfortable touch target
+    height: 48px
+    border: none
+    background: transparent
+    cursor: pointer
+    padding: 0 4px
+    border-radius: 100px
+    // Graphite — strong contrast on white glass (AA compliant)
+    color: #5a6070
+    -webkit-tap-highlight-color: transparent
+    transition: color 0.2s ease
+    +dark
+        color: rgba(255, 255, 255, 0.38)
+
+.mobileNavItemActive
+    // White text on the cyan capsule — pure white for max contrast
+    color: #ffffff !important
+    +dark
+        color: #ffffff !important
+
+.mobileNavItemDisabled
+    opacity: 0.28
+    pointer-events: auto
+    cursor: not-allowed
+
+// ── Active background capsule — LIGHT ─────────────────────────────────────────
+.mobileActiveBg
+    position: absolute
+    inset: 2px
+    z-index: 1
+    border-radius: 100px
+    // Richer cyan with depth — clearly distinct from white dock
+    background: linear-gradient(150deg, #00C4E8 0%, #0097B2 60%, #007A92 100%)
+    border: 1px solid rgba(0, 180, 220, 0.5)
+    box-shadow: 0 2px 6px rgba(0, 151, 178, 0.25), 0 0 0 1px rgba(0,210,255,0.08), inset 0 1px 0 rgba(255,255,255,0.15)
+    // ── DARK MODE ───────────────────────────────────────────────────────────
+    +dark
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.28) 0%, rgba(0, 151, 178, 0.35) 100%)
+        border: 1px solid rgba(0, 210, 255, 0.35)
+        box-shadow: 0 0 16px rgba(0, 210, 255, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.12)
+
+// ── Icon ─────────────────────────────────────────────────────────────────────
+.mobileNavItemInner
+    position: relative
+    z-index: 2
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 5px
+    white-space: nowrap
+
+.mobileNavIcon
+    // Inherit graphite/white color from parent button
+    stroke: currentColor
+    stroke-width: 1.9
+    fill: none !important
+    // Smooth transitions for size + filter changes
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), filter 0.22s ease, opacity 0.22s ease
+
+.mobileNavIconActive
+    transform: scale(1.08)
+    stroke-width: 2.2
+    // Removed the heavy white drop-shadow that was obscuring the icon details
+
+// ── Label ────────────────────────────────────────────────────────────────────
+.mobileNavLabel
+    font-size: 11.5px
+    font-weight: 700
+    letter-spacing: 0.01em
+    text-transform: capitalize
+    // Inherit white color from .mobileNavItemActive
+    color: inherit
+    overflow: hidden
+    // Prevent layout shift as label animates in
+    line-height: 1
