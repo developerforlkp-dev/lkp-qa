@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import { NavLink } from "react-router-dom";
+import { Heart } from "lucide-react";
 import cn from "classnames";
 import Image from "../../Image";
 import Icon from "../../Icon";
@@ -108,6 +109,17 @@ const MobileNavDrawer = ({
                 <Icon name="home" size="20" />
               </span>
               <span className={styles.navLabel}>Bookings</span>
+            </NavLink>
+            <NavLink
+              className={styles.navLink}
+              to="/wishlists"
+              activeClassName={styles.navLinkActive}
+              onClick={onClose}
+            >
+              <span className={styles.navIcon}>
+                <Heart size={20} className={styles.strokeIcon} />
+              </span>
+              <span className={styles.navLabel}>Wishlists</span>
             </NavLink>
           </nav>
 

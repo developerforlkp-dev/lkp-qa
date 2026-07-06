@@ -47,8 +47,8 @@
         padding: 0 40px
         padding-top: 52px
     +m
-        padding: 0 32px
-        padding-top: 48px
+        padding: 0 20px
+        padding-top: 36px
 
 .glassContainer
     max-width: 950px
@@ -990,23 +990,29 @@
     +m
         display: block
         width: 100vw
-        margin-left: -32px
-        margin-top: 8px
-        margin-bottom: 24px
+        margin-left: -20px
+        margin-top: 4px
+        margin-bottom: 20px
         overflow: hidden
 
 .mobileCategoriesScroll
     display: flex
-    gap: 4px
+    gap: 12px
     width: 100%
-    padding: 0 8px
-    justify-content: space-between
+    padding: 4px 20px 12px 20px
+    justify-content: flex-start
+    overflow-x: auto
+    -webkit-overflow-scrolling: touch
+    &::-webkit-scrollbar
+        display: none
+    scrollbar-width: none
 
 .mobileCategoryCard
     position: relative
-    flex: 0 0 calc((100% - 16px) / 5)
-    height: 90px
-    border-radius: 10px
+    flex: 0 0 auto
+    width: 84px
+    height: 84px
+    border-radius: 14px
     overflow: hidden
     cursor: pointer
     transition: transform 0.2s ease
@@ -1093,8 +1099,7 @@
 
 .mobileCategoryIcon
     color: #ffffff
-    margin-bottom: auto
-    margin-top: 6px
+    margin-bottom: 6px
     svg
         width: 22px
         height: 22px
@@ -1105,7 +1110,7 @@
 .mobileCategoryLabel
     color: #ffffff
     font-family: 'Inter', sans-serif
-    font-size: 9px
+    font-size: 11px
     font-weight: 600
     letter-spacing: -0.2px
     text-align: center

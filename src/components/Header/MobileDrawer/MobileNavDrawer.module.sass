@@ -186,6 +186,15 @@
         svg
             fill: $p1
 
+.strokeIcon
+    fill: none !important
+    stroke: $n4
+    transition: stroke 0.18s ease
+    +dark
+        stroke: $n5
+    .navLinkActive &
+        stroke: $p1
+
 .navLabel
     flex: 1
     letter-spacing: -0.01em

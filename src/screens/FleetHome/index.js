@@ -12,8 +12,9 @@ import GuestPicker from "../../components/GuestPicker";
 import HeroSection from "./HeroSection";
 import MobileCinematicSearch from "./MobileCinematicSearch";
 import StickyHeaderController from "./StickyHeaderController";
+import MobileAppHeader from "./MobileAppHeader";
 import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 
@@ -140,6 +141,15 @@ const FleetHome = () => {
   const autocompleteSessionTokenRef = useRef(null);
   const debounceTimerRef = useRef(null);
   const heroRef = useRef(null);
+  const [isStickyNav, setIsStickyNav] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsStickyNav(window.scrollY > 150);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
 
   // Map path to filter ID
@@ -725,8 +735,15 @@ const FleetHome = () => {
   }, [isMobileOrTablet, activeFilter]);
 
   return (
-    <div className={cn("section", styles.section)}>
-      {/* Sticky Header — appears on scroll past hero (desktop only) */}
+    <LayoutGroup>
+      <div className={cn("section", styles.section)}>
+        {isMobileOrTablet && (
+        <MobileAppHeader 
+          onSearchClick={() => setSheetOpen(true)}
+          isStickyNav={isStickyNav}
+        />
+      )}
+      
       {!isMobileOrTablet && (
         <StickyHeaderController
           heroRef={heroRef}
@@ -767,6 +784,7 @@ const FleetHome = () => {
         {/* Mobile-only: floating search pill + bottom sheet */}
         {isMobileOrTablet && (
           <MobileCinematicSearch
+            isStickyNav={isStickyNav}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             selectedDestination={selectedDestination}
@@ -961,9 +979,12 @@ const FleetHome = () => {
 
         {/* Mobile Categories (Reference Image 3 style) */}
         {isMobileOrTablet && (
-          <div id="explore-by-section" className={styles.mobileCategoriesContainer}>
+          <div 
+            id="explore-by-section" 
+            className={styles.mobileCategoriesContainer}
+          >
             <div style={{ marginBottom: '16px', padding: '0 20px' }}>
-              <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '13px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
+              <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
             </div>
             <div className={styles.mobileCategoriesScroll}>
               {visibleFilterOptions.map((filter) => {
@@ -1059,6 +1080,7 @@ const FleetHome = () => {
           })}
       </div>
     </div>
+    </LayoutGroup>
   );
 };
 

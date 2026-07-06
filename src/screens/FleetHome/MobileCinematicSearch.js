@@ -1232,6 +1232,7 @@ export default function MobileCinematicSearch({
   onFilterClick,
   businessInterestAvailability = {},
   businessInterestActiveMap = {},
+  isStickyNav = false,
 }) {
   const SECTION_CONFIG = {
     experience: {
@@ -1546,7 +1547,15 @@ export default function MobileCinematicSearch({
   return (
     <>
       {/* ── Floating Search Trigger Pill ── */}
-      <div id="mcsh-floating-pill-wrap" className="mcsh-pill-wrap">
+      <div 
+        id="mcsh-floating-pill-wrap" 
+        className={cn("mcsh-pill-wrap", { "mcsh-pill-wrap-hidden": isStickyNav })}
+        style={{
+          opacity: isStickyNav ? 0 : 1,
+          pointerEvents: isStickyNav ? 'none' : 'auto',
+          transition: 'opacity 0.2s ease',
+        }}
+      >
         <motion.div
           className="mcsh-pill"
           onClick={openSheet}
