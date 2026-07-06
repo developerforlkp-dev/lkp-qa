@@ -111,8 +111,13 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
 
   useEffect(() => {
     const handleOpenNav = () => setVisibleNav(true);
+    const handleOpenLogin = () => setVisible(true);
     window.addEventListener("open-mobile-nav", handleOpenNav);
-    return () => window.removeEventListener("open-mobile-nav", handleOpenNav);
+    window.addEventListener("open-login-modal", handleOpenLogin);
+    return () => {
+      window.removeEventListener("open-mobile-nav", handleOpenNav);
+      window.removeEventListener("open-login-modal", handleOpenLogin);
+    };
   }, []);
 
   return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import { useHistory } from "react-router-dom";
-import { Search, Heart, Menu } from "lucide-react";
+import { Search, Heart, Menu, User } from "lucide-react";
 import { getCustomerWishlistItems } from "../../utils/api";
 import styles from "./MobileAppHeader.module.sass";
 
@@ -10,12 +10,17 @@ const MobileAppHeader = ({
   isStickyNav,
 }) => {
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const history = useHistory();
 
   useEffect(() => {
     // Check if authenticated
     const token = typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
-    if (!token) return;
+    if (!token) {
+      setIsAuthenticated(false);
+      return;
+    }
+    setIsAuthenticated(true);
 
     getCustomerWishlistItems()
       .then(items => {
@@ -57,6 +62,15 @@ const MobileAppHeader = ({
         )}
         
         <div className={styles.actions}>
+          {!isAuthenticated && (
+            <button 
+              className={styles.iconButton}
+              onClick={() => window.dispatchEvent(new CustomEvent("open-login-modal"))}
+              aria-label="Login"
+            >
+              <User size={20} />
+            </button>
+          )}
           {isStickyNav && (
             <button 
               className={styles.iconButton}
