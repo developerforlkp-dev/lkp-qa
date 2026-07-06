@@ -2,6 +2,29 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import HeroSectionAnimation from "./HeroSectionAnimation";
 import { getHomepageHero } from "../../../utils/api";
 import styles from "./HeroSection.module.sass";
+import MobileHeroSlider from "./MobileHeroSlider";
+
+function useWindowSize() {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined,
+    height: undefined,
+    isMobile: false,
+  });
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isMobile: window.innerWidth <= 768,
+      });
+    }
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return windowSize;
+}
 
 // Helper function to format image URLs (from Azure blob storage or full URLs)
 const formatImageUrl = (url) => {
@@ -34,6 +57,7 @@ const HeroSection = () => {
   const [loading, setLoading] = useState(!cachedHeroData);
   const [heroReady, setHeroReady] = useState(false);
   const [error, setError] = useState(null);
+  const { isMobile } = useWindowSize();
 
   useEffect(() => {
     const loadHeroData = async () => {
@@ -135,11 +159,18 @@ const HeroSection = () => {
   return (
     <div ref={containerRef} className={styles.container}>
       <div className={styles.heroStage}>
-        <HeroSectionAnimation
-          containerRef={containerRef}
-          destinations={heroData}
-          onReady={handleReady}
-        />
+        {isMobile ? (
+          <MobileHeroSlider
+            destinations={heroData}
+            onReady={handleReady}
+          />
+        ) : (
+          <HeroSectionAnimation
+            containerRef={containerRef}
+            destinations={heroData}
+            onReady={handleReady}
+          />
+        )}
       </div>
       <div
         className={`${styles.loadingOverlay} ${heroReady ? styles.loadingOverlayHidden : ""
