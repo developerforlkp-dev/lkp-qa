@@ -1129,8 +1129,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
             />
           </AnimatePresence>
 
-          {/* Dark visual gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.05) 100%)", pointerEvents: "none" }} />
+          {/* Dark visual gradient overlay — removed per request */}
 
           {/* Left/Right Arrow Overlays */}
           {allImages.length > 1 && (

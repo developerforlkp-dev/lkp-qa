@@ -44,7 +44,8 @@ const Page = ({
 
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
-  const isHomeRoute = homeRoutes.includes(pathname) || pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details");
+  const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details");
+  const isHomeRoute = homeRoutes.includes(pathname) || isDetailPage;
 
   useEffect(() => {
     clearAllBodyScrollLocks();
@@ -97,10 +98,10 @@ const Page = ({
       {/* Header Background Layer (Under the Hero) */}
       {!hideHeader && (
         <div 
-          className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible })}
+          className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible, "is-detail-page": isDetailPage })}
           style={{ 
             position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, 
-            height: (scrolled || separatorHeader) ? "80px" : "0px",
+            height: (scrolled || separatorHeader) ? "70px" : "0px",
             zIndex: 90, 
             background: (scrolled && !isHomeRoute || separatorHeader) ? BG : "transparent", 
             backdropFilter: "none", 
@@ -112,8 +113,8 @@ const Page = ({
       {/* Header Content Layer (Above the Hero) */}
       {!hideHeader && (
         <motion.div
-          className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && !isHomeRoute })}
-          initial={{ y: -80, opacity: 0 }} 
+          className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && !isHomeRoute, "is-detail-page": isDetailPage })}
+          initial={{ y: -70, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.85, ease: E }}
           style={{ 
@@ -122,7 +123,7 @@ const Page = ({
             background: (scrolled && !isHomeRoute) ? BG : "transparent",
             boxShadow: (scrolled && !isHomeRoute) ? "0px 2px 10px rgba(0,0,0,0.05)" : "none",
             transition: "all 0.4s", 
-            marginTop: separatorHeader ? "-80px" : "0", // Account for the background div in sticky mode
+            marginTop: separatorHeader ? "-70px" : "0", // Account for the background div in sticky mode
           }}
         >
           <Header
@@ -161,11 +162,34 @@ const Page = ({
         @media (max-width: 1023px) {
           .slim-header-bg.auto-hide,
           .slim-header-wrapper.auto-hide {
-            transform: translateY(-80px) !important;
+            transform: translateY(-70px) !important;
           }
           .slim-header-bg,
           .slim-header-wrapper {
             transition: transform 0.3s ease-in-out, height 0.4s, background 0.4s, margin 0.4s !important;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .slim-header-bg.is-detail-page {
+            height: 60px !important;
+          }
+          .slim-header-wrapper.is-detail-page {
+            margin-top: ${separatorHeader ? "-60px" : "0"} !important;
+          }
+          .slim-header-wrapper.is-detail-page > div {
+            padding: 12px 0 !important;
+          }
+          .slim-header-wrapper.is-detail-page [class*="Header_container"] {
+            padding: 0 16px !important;
+          }
+          .slim-header-wrapper.is-detail-page img {
+            height: 36px !important;
+            width: auto !important;
+          }
+          .slim-header-wrapper.is-detail-page [class*="Header_burger"] {
+             transform: none;
+             margin-top: 0;
           }
         }
       `}</style>
