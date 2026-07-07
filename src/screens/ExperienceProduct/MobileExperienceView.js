@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft, ChevronDown, Clock, User, Zap, Baby, Languages,
   ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart
@@ -54,6 +54,54 @@ function Accordion({ title, icon, children, borderColor, bgColor, fgColor, mColo
     </div>
   );
 }
+
+/* ── Early Bird Ticker ── */
+const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
+  const [index, setIndex] = useState(0);
+
+  React.useEffect(() => {
+    if (!discounts || discounts.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % discounts.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [discounts]);
+
+  if (!discounts || discounts.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", height: 20, alignItems: "center", overflow: "hidden" }}>
+      <AnimatePresence>
+        <motion.span
+          key={index}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          style={{
+            gridArea: "1 / 1",
+            fontSize: 10,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: isDark ? "#FFFFFF" : "#000000",
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            display: "block"
+          }}
+        >
+          <span style={{ opacity: 0.7 }}>Book</span>{" "}
+          <span style={{ color: isDark ? "#38BDF8" : "#0284C7", fontWeight: 800 }}>
+            {discounts[index].daysInAdvance} Days
+          </span>{" "}
+          <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
+          <span style={{ color: isDark ? "#4ADE80" : "#16A34A", fontWeight: 800 }}>
+            {discounts[index].percentage}% OFF
+          </span>
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
 
 /* ════════════════════════════════════════════════════════════
    MAIN MOBILE VIEW
@@ -181,6 +229,21 @@ export default function MobileExperienceView({
         <div className="mob-hero-bottom">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
+              {listing?.earlyBirdDiscounts?.some(d => d.isActive) && (
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: isDark ? "rgba(0,0,0,0.75)" : "rgba(255,255,255,0.9)",
+                  padding: "4px 12px",
+                  borderRadius: "100px",
+                  marginBottom: 10,
+                  backdropFilter: "blur(4px)"
+                }}>
+                  <Sparkles size={12} color="#F59E0B" fill="#F59E0B" style={{ flexShrink: 0 }} />
+                  <EarlyBirdTicker discounts={listing.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={isDark} />
+                </div>
+              )}
               {listing?.category && (
                 <span className="mob-hero-tag" style={{ background: `${A}CC` }}>
                   {typeof listing.category === "string" ? listing.category : listing.category?.name || "Experience"}
