@@ -31,7 +31,7 @@ const getWishlistConfig = (item) => {
   return null;
 };
 
-const Item = ({ className, item, row, car, hidePrice }) => {
+const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const wishlistConfig = getWishlistConfig(item);
   
@@ -99,7 +99,7 @@ const Item = ({ className, item, row, car, hidePrice }) => {
             CLOSED
           </div>
         )}
-        {wishlistConfig && (
+        {wishlistConfig && !hideWishlist && (
           <Favorite
             className={styles.favorite}
             itemType={wishlistConfig.itemType}
