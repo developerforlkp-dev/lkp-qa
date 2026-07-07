@@ -751,7 +751,7 @@ const formatRefundPolicyUsed = (percentage) => {
   const numericValue = Number(percentage);
   if (!Number.isFinite(numericValue)) return "N/A";
   if (numericValue <= 0) return "No refund";
-  return `${numericValue}% refund`;
+  return `${Math.round(numericValue)}% refund`;
 };
 
 const RECEIPT_SUPPORT_EMAIL = "support@littleknownplanet.com";
@@ -3006,18 +3006,32 @@ const ViewDetails = () => {
                 </>
               )}
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E6E8EC' }}>
-                {!isCancelledBooking ? (
-                  <p style={{ fontSize: '12px', color: '#777E90', marginBottom: '0', lineHeight: '1.5' }}>
-                    Cancellation and refund eligibility will be determined based on the date of cancellation and the applicable refund policy.
-                  </p>
-                ) : (
-                  getAppliedRefundPolicyText() && (
-                    <p style={{ fontSize: '12px', color: '#777E90', lineHeight: '1.5', marginBottom: '0' }}>
-                      <span style={{ fontWeight: 500 }}>Applied Cancellation Policy: </span>
-                      {getAppliedRefundPolicyText()}
-                    </p>
-                  )
-                )}
+                {(() => {
+                  const isRefundAmountZero = refundDetails && Number(refundDetails.refundAmount) <= 0;
+                  const isNoRefundStatus = refundDetails && (String(refundDetails.refundStatus).toUpperCase() === 'NOT_REQUIRED' || String(refundDetails.refundStatus).toUpperCase() === 'NO_REFUND');
+                  const hasNoRefund = isCancelledBooking && (isRefundAmountZero || isNoRefundStatus);
+                  const policyText = getAppliedRefundPolicyText();
+                  const isPolicyTextNoRefund = policyText && policyText.toLowerCase().includes("no refund");
+
+                  if (!isCancelledBooking || hasNoRefund || isPolicyTextNoRefund) {
+                    return (
+                      <p style={{ fontSize: '12px', color: '#777E90', marginBottom: '0', lineHeight: '1.5' }}>
+                        Cancellation and refund eligibility will be determined based on the date of cancellation and the applicable refund policy.
+                      </p>
+                    );
+                  }
+
+                  if (policyText) {
+                    return (
+                      <p style={{ fontSize: '12px', color: '#777E90', lineHeight: '1.5', marginBottom: '0' }}>
+                        <span style={{ fontWeight: 500 }}>Applied Cancellation Policy: </span>
+                        {policyText}
+                      </p>
+                    );
+                  }
+
+                  return null;
+                })()}
               </div>
             </div>
           </div>
