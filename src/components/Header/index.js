@@ -55,7 +55,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
           setWishlistCount(items.length);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     const handleWishlistChange = (e) => {
       if (e.detail?.saved === true) {
@@ -101,7 +101,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
     window.addEventListener("scroll", handleScroll, { passive: true });
     // Trigger once on mount
     handleScroll();
-    
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isHomepage]);
 
@@ -159,15 +159,13 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
             >
               <Icon name={darkMode.value ? "sun" : "moon"} size="24" />
             </button>
-            {!shouldShowLogin && !hideBookings && (
-              <NavLink
-                className={cn(styles.link, styles.bookingsLink)}
-                to="/bookings"
-                activeClassName={styles.active}
-              >
-                Bookings
-              </NavLink>
-            )}
+            <NavLink
+              className={cn(styles.link, styles.bookingsLink)}
+              to="/blog"
+              activeClassName={styles.active}
+            >
+              Blog
+            </NavLink>
             <NavLink
               className={cn(styles.link, styles.wishlistLink)}
               to="/wishlists"

@@ -1917,7 +1917,9 @@ function PolicyCategoryItem({ category }) {
         if (line.toLowerCase() === "check-in and check-out" || line.toLowerCase() === "property rules") return;
         
         const colonIdx = line.indexOf(':');
-        if (colonIdx > 0 && colonIdx < 60) {
+        const isTimeFormat = colonIdx > 0 && colonIdx + 1 < line.length && /\d/.test(line[colonIdx + 1]);
+        
+        if (colonIdx > 0 && colonIdx < 60 && !isTimeFormat) {
           generalRules.push({ title: line.substring(0, colonIdx).trim(), valueText: line.substring(colonIdx + 1).trim() });
         } else {
           generalRules.push({ title: line });
