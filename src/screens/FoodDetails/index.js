@@ -900,17 +900,39 @@ function CulinaryHero({ food, galleryItems }) {
           )}
         </div>
 
-        {/* Top controls */}
-        <div style={{ position: "absolute", top: 90, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 200 }}>
-          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <ChevronLeft size={22} color="#111" />
+        {/* Mobile Top Controls */}
+        <div style={{ position: "absolute", top: 90, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 200, pointerEvents: "none" }}>
+          <button onClick={(e) => { e.stopPropagation(); history.goBack(); }} style={{ pointerEvents: "auto", width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+            <ChevronLeft size={22} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
           </button>
-          <div style={{ display: "flex", gap: 12 }}>
-            <HeroShareFab
-              title={food?.menuName || food?.title || ""}
-              text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
-              url={window.location.href}
-            />
+          <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
+            <Favorite itemType="food" itemId={id}>
+              {({ saved, onClick }) => (
+                <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+                  <style>{`
+                    .mobile-save-icon-alt-${id} svg {
+                      fill: ${saved ? (A || "#0097B2") : (theme === "dark" ? "#FFFFFF" : "#111111")};
+                      transition: fill 0.3s ease;
+                    }
+                  `}</style>
+                  <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                  </div>
+                </button>
+              )}
+            </Favorite>
+            <button onClick={async (e) => { 
+              e.stopPropagation(); 
+              try {
+                if (navigator.share) {
+                  await navigator.share({ title: food?.menuName || food?.title || "", text: food?.detailedDescription || food?.shortDescription || food?.description || "", url: window.location.href });
+                } else {
+                  await navigator.clipboard.writeText(window.location.href);
+                }
+              } catch (_) {}
+            }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+              <Share2 size={20} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
+            </button>
           </div>
         </div>
 

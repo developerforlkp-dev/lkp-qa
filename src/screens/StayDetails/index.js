@@ -616,8 +616,8 @@ const ScopedStyles = () => (
       /* Mobile Floating Badge */
       .mobile-floating-badge {
         position: absolute;
-        top: 12px;
-        left: 12px;
+        bottom: 32px;
+        right: 24px;
         z-index: 60;
         pointer-events: none;
         width: 70px;
@@ -1067,9 +1067,47 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
         {/* Main Cover Image View */}
         <div className="hero-spotlight" onClick={() => openFullscreen(activeIdx)} style={{ cursor: "pointer", height: isMobile ? "100%" : undefined }}>
           
-          {/* Top Controls */}
+          {/* Mobile Top Controls */}
+          {isMobile && (
+            <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 70, pointerEvents: "none" }}>
+              <button onClick={(e) => { e.stopPropagation(); history.goBack(); }} style={{ pointerEvents: "auto", width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+                <ChevronLeft size={22} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
+              </button>
+              <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
+                <Favorite itemType="stay" itemId={stayWishlistId}>
+                  {({ saved, onClick }) => (
+                    <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+                      <style>{`
+                        .mobile-save-icon-alt-${stayWishlistId} svg {
+                          fill: ${saved ? (A || "#0097B2") : (theme === "dark" ? "#FFFFFF" : "#111111")};
+                          transition: fill 0.3s ease;
+                        }
+                      `}</style>
+                      <div className={`mobile-save-icon-alt-${stayWishlistId}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                      </div>
+                    </button>
+                  )}
+                </Favorite>
+                <button onClick={async (e) => { 
+                  e.stopPropagation(); 
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({ title, text: stay?.shortDescription || stay?.description || "", url: window.location.href });
+                    } else {
+                      await navigator.clipboard.writeText(window.location.href);
+                    }
+                  } catch (_) {}
+                }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+                  <Share2 size={20} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Top Controls */}
           <div style={{ position: "absolute", top: 24, left: 24, right: 24, display: "flex", justifyContent: "flex-end", zIndex: 70, pointerEvents: "none" }}>
-            <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
+            <div style={{ display: isMobile ? "none" : "flex", gap: 12, pointerEvents: "auto" }}>
               <Favorite itemType="stay" itemId={stayWishlistId}>
                 {({ saved, onClick }) => {
                   const isDark = theme === "dark";
@@ -1129,8 +1167,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
             />
           </AnimatePresence>
 
-          {/* Dark visual gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.05) 100%)", pointerEvents: "none" }} />
+          {/* Dark visual gradient overlay — removed per request */}
 
           {/* Left/Right Arrow Overlays */}
           {allImages.length > 1 && (

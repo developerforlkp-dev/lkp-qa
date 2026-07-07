@@ -5,6 +5,21 @@ import Icon from "../Icon";
 import { sendPhoneOTP, verifyPhoneOTP, loginWithGoogle, completeCustomerProfile } from "../../utils/api";
 import { GoogleLogin } from '@react-oauth/google';
 
+const isDateOfBirthRequiredError = (err) => {
+  const dobErrors = err?.response?.data?.fieldErrors?.dateOfBirth;
+  const message =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    "";
+
+  if (Array.isArray(dobErrors) && dobErrors.length > 0) {
+    return true;
+  }
+
+  return String(message).toLowerCase().includes("date of birth is required");
+};
+
 const getFriendlyOtpError = (err) => {
   const status = err?.response?.status;
   const rawMessage =
@@ -43,6 +58,7 @@ const Login = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingToken, setPendingToken] = useState(null);
+  const [pendingGoogleCredential, setPendingGoogleCredential] = useState("");
   const countryCode = "+91";
   const isMountedRef = useRef(true);
   const otpFocusTimeoutRef = useRef(null);
@@ -166,6 +182,14 @@ const Login = ({ onClose }) => {
     } catch (err) {
       console.error("Google login error:", err);
       if (isMountedRef.current) {
+        if (isDateOfBirthRequiredError(err) && tokenResponse?.credential) {
+          setPendingGoogleCredential(tokenResponse.credential);
+          setPendingToken(null);
+          setDateOfBirth("");
+          setError("");
+          setStep("profile");
+          return;
+        }
         setError(err.response?.data?.message || err.message || "Google login failed.");
       }
     } finally {
@@ -201,6 +225,31 @@ const Login = ({ onClose }) => {
 
     setLoading(true);
     try {
+      if (pendingGoogleCredential && !pendingToken) {
+        const response = await loginWithGoogle(pendingGoogleCredential, dateOfBirth);
+        const token = response?.token;
+
+        if (token) {
+          localStorage.setItem("jwtToken", token);
+        }
+
+        const customer = response?.customer || {};
+        const userInfo = {
+          firstName: customer?.firstName || "",
+          lastName: customer?.lastName || "",
+          email: customer?.email || "",
+          customerId: customer?.customerId,
+          loginMethod: 'google'
+        };
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+
+        if (onClose) {
+          onClose();
+        }
+        window.location.reload();
+        return;
+      }
+
       const response = await completeCustomerProfile({
         fullName: `${firstName} ${lastName}`.trim(),
         dateOfBirth,
@@ -494,29 +543,37 @@ const Login = ({ onClose }) => {
           <style>{`
             .Modal-close-btn { display: none !important; }
           `}</style>
-          <div className={cn("h3", styles.title)}>Complete your profile</div>
-          <div className={styles.info}>Please provide your details to continue</div>
+          <div className={cn("h3", styles.title)}>
+            {pendingGoogleCredential && !pendingToken ? "Complete your sign up" : "Complete your profile"}
+          </div>
+          <div className={styles.info}>
+            {pendingGoogleCredential && !pendingToken
+              ? "Please provide your date of birth to continue with Google"
+              : "Please provide your details to continue"}
+          </div>
           <form onSubmit={handleProfileSubmit} className={styles.form}>
-            <div className={styles.nameFields} style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
-              <input
-                type="text"
-                className={styles.nameInput}
-                placeholder="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                disabled={loading}
-                required
-              />
-              <input
-                type="text"
-                className={styles.nameInput}
-                placeholder="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                disabled={loading}
-                required
-              />
-            </div>
+            {!(pendingGoogleCredential && !pendingToken) && (
+              <div className={styles.nameFields} style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+                <input
+                  type="text"
+                  className={styles.nameInput}
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+                <input
+                  type="text"
+                  className={styles.nameInput}
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            )}
             <div className={styles.field} style={{ marginBottom: "16px" }}>
               <input
                 type="date"
@@ -532,10 +589,10 @@ const Login = ({ onClose }) => {
             <button
               type="submit"
               className={cn("button", styles.button)}
-              disabled={loading || !firstName || !lastName || !dateOfBirth}
+              disabled={loading || !dateOfBirth || (!(pendingGoogleCredential && !pendingToken) && (!firstName || !lastName))}
               style={{ width: "100%" }}
             >
-              {loading ? "Saving..." : "Complete Profile"}
+              {loading ? "Saving..." : pendingGoogleCredential && !pendingToken ? "Continue with Google" : "Complete Profile"}
             </button>
           </form>
         </div>

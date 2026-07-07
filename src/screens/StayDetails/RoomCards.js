@@ -542,14 +542,17 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
   const isBedBased = room.isBedConfig || (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0));
 
-  const allPlans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
-  if (!allPlans.length) {
-    if (room.epPrice) allPlans.push("EP");
-    if (room.bbPrice) allPlans.push("BB");
-    if (room.cpPrice) allPlans.push("CP");
-    if (room.mapPrice) allPlans.push("MAP");
-    if (room.apPrice) allPlans.push("AP");
-  }
+  const allPlans = React.useMemo(() => {
+    const plans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
+    if (!plans.length) {
+      if (room.epPrice) plans.push("EP");
+      if (room.bbPrice) plans.push("BB");
+      if (room.cpPrice) plans.push("CP");
+      if (room.mapPrice) plans.push("MAP");
+      if (room.apPrice) plans.push("AP");
+    }
+    return plans;
+  }, [room.mealPlanPricing, room.epPrice, room.bbPrice, room.cpPrice, room.mapPrice, room.apPrice]);
 
   const [plan, setPlan] = useState(selectedMealPlan || allPlans[0] || null);
   useEffect(() => {

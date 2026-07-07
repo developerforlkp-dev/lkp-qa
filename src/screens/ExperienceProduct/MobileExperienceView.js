@@ -152,16 +152,16 @@ export default function MobileExperienceView({
 
         {/* Top controls */}
         <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 10 }}>
-          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <ChevronLeft size={22} color="#111" />
+          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <ChevronLeft size={22} color={isDark ? "#FFFFFF" : "#111111"} />
           </button>
           <div style={{ display: "flex", gap: 12 }}>
             <Favorite itemType="listing" itemId={id}>
               {({ saved, onClick }) => (
-                <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", flexShrink: 0 }}>
+                <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", flexShrink: 0 }}>
                 <style>{`
                   .exp-save-icon-${id} svg {
-                    fill: ${saved ? "#0097B2" : "#111"};
+                    fill: ${saved ? "#0097B2" : (isDark ? "#FFFFFF" : "#111111")};
                     transition: fill 0.3s ease;
                   }
                 `}</style>
@@ -171,8 +171,8 @@ export default function MobileExperienceView({
               </button>
               )}
             </Favorite>
-            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: W, border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-              <Share2 size={20} color="#111" />
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+              <Share2 size={20} color={isDark ? "#FFFFFF" : "#111111"} />
             </button>
           </div>
         </div>

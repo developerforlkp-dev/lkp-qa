@@ -203,6 +203,9 @@ const FleetHome = () => {
       if (location.pathname !== targetPath) {
         history.push(targetPath);
       }
+
+      // Scroll to top when switching categories
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 

@@ -2028,59 +2028,6 @@ Will it block? ${cutoffTimeValue && isPastCutoffTime(selectedDate, bookingTime, 
     }
   });
 
-  // Load Google Sign-In script
-  useEffect(() => {
-    if (!window.google && process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        if (window.google && window.google.accounts) {
-          window.google.accounts.id.initialize({
-            client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-            callback: handleGoogleCallback.current,
-          });
-        }
-      };
-      document.body.appendChild(script);
-    }
-    return () => {
-      // Cleanup if needed
-    };
-  }, []);
-
-  // Handle Google login button click
-  const handleGoogleLogin = () => {
-    if (window.google && window.google.accounts && window.google.accounts.id) {
-      // Trigger Google Sign-In button click
-      const buttonContainer = document.getElementById("google-signin-button");
-      if (buttonContainer) {
-        const googleButton = buttonContainer.querySelector("div[role='button']");
-        if (googleButton) {
-          googleButton.click();
-        } else {
-          // Render button if not already rendered
-          window.google.accounts.id.renderButton(buttonContainer, {
-            theme: "outline",
-            size: "large",
-            width: 350,
-            text: "signin_with",
-          });
-          // Wait a bit then click
-          setTimeout(() => {
-            const btn = buttonContainer.querySelector("div[role='button']");
-            if (btn) btn.click();
-          }, 100);
-        }
-      } else {
-        alert("Google Sign-In button container not found.");
-      }
-    } else {
-      alert("Google Sign-In is not available. Please configure REACT_APP_GOOGLE_CLIENT_ID.");
-    }
-  };
-
   // Create order from pending booking data (used after login)
   const createOrderFromPendingBooking = async () => {
     if (reserveSubmitLockRef.current) {
@@ -3361,7 +3308,6 @@ Will it block? ${cutoffTimeValue && isPastCutoffTime(selectedDate, bookingTime, 
       <LoginModal
         visible={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onGoogleLogin={handleGoogleLogin}
         onPhoneLogin={handlePhoneLogin}
       />
     </>
