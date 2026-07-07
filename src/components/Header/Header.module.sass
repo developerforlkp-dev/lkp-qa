@@ -25,7 +25,14 @@
     max-width: 1440px
     padding: 0 40px
     margin: 0 auto
+    background: rgba(255, 255, 255, 0)
+    border: 1px solid rgba(0, 0, 0, 0)
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0)
     transition: all 300ms ease
+    +dark
+        background: rgba(0, 0, 0, 0)
+        border: 1px solid rgba(255, 255, 255, 0)
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0)
     +t
         padding: 0 32px
     +m
@@ -68,17 +75,13 @@
     align-items: center
     flex-grow: 1
     padding-left: 40px
-    border-left: 1px solid $n6
     +d
         padding-left: 32px
     +t
         padding-left: 0
-        border: none
     // Hidden on mobile — nav lives in the slide-in drawer instead
     +m
         display: none
-    +dark
-        border-color: $n2
     & > div
         &:first-child
             +t

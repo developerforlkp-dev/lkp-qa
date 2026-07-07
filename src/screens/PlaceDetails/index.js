@@ -485,21 +485,6 @@ function PlaceHero({ place, galleryItems, id }) {
 
   return (
     <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.02, overflow: "hidden", zIndex: 1 }}>
-        <motion.h1
-          className="font-display"
-          style={{
-            scale,
-            rotate,
-            fontSize: "40vw",
-            fontWeight: 900,
-            color: FG,
-            whiteSpace: "nowrap"
-          }}
-        >
-          {placeName.split(' ')[0].toUpperCase()}
-        </motion.h1>
-      </div>
 
 
 

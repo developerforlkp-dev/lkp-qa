@@ -15,6 +15,7 @@ import FullPhoto from "./screens/FullPhoto";
 import HostProfile from "./screens/HostProfile";
 import AccountSettings from "./screens/AccountSettings";
 
+
 import MessageCenter from "./screens/MessageCenter";
 import Wishlists from "./screens/Wishlists";
 import Bookings from "./screens/Bookings";
@@ -81,214 +82,214 @@ function App() {
           <Switch>
             <Route
               exact
-            path={["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"]}
-            render={(props) => {
-              // Check if it's the Stays product page (has id)
-              if (props.location.pathname === "/stays" && new URLSearchParams(props.location.search).get("id")) {
+              path={["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"]}
+              render={(props) => {
+                // Check if it's the Stays product page (has id)
+                if (props.location.pathname === "/stays" && new URLSearchParams(props.location.search).get("id")) {
+                  return (
+                    <Page separatorHeader>
+                      <StayProduct />
+                    </Page>
+                  );
+                }
+                // Default to Homepage with appropriate section
                 return (
-                  <Page separatorHeader>
-                    <StayProduct />
+                  <Page separatorHeader={false} hideHeaderOnMobile={true}>
+                    <FleetHome />
                   </Page>
                 );
-              }
-              // Default to Homepage with appropriate section
-              return (
-                <Page separatorHeader={false} hideHeaderOnMobile={true}>
-                  <FleetHome />
+              }}
+            />
+            <Route
+              exact
+              path="/experience-category"
+              render={() => (
+                <Page notAuthorized>
+                  <ExperienceCategory />
                 </Page>
-              );
-            }}
-          />
-          <Route
-            exact
-            path="/experience-category"
-            render={() => (
-              <Page notAuthorized>
-                <ExperienceCategory />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/experience/:slugAndId"
-            render={() => (
-              <ExperienceProduct />
-            )}
-          />
-          <Route
-            exact
-            path="/experience-product"
-            render={() => (
-              <ExperienceProduct />
-            )}
-          />
-                                                  <Route
-            exact
-            path="/experience-checkout"
-            render={() => (
-              <Page separatorHeader>
-                <ExperienceCheckout />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/experience-checkout-complete"
-            render={() => (
-              <Page separatorHeader>
-                <ExperienceCheckoutComplete />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/full-photo"
-            render={() => (
-              <Page separatorHeader>
-                <FullPhoto />
-              </Page>
-            )}
-          />
+              )}
+            />
+            <Route
+              exact
+              path="/experience/:slugAndId"
+              render={() => (
+                <ExperienceProduct />
+              )}
+            />
+            <Route
+              exact
+              path="/experience-product"
+              render={() => (
+                <ExperienceProduct />
+              )}
+            />
+            <Route
+              exact
+              path="/experience-checkout"
+              render={() => (
+                <Page separatorHeader>
+                  <ExperienceCheckout />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/experience-checkout-complete"
+              render={() => (
+                <Page separatorHeader>
+                  <ExperienceCheckoutComplete />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/full-photo"
+              render={() => (
+                <Page separatorHeader>
+                  <FullPhoto />
+                </Page>
+              )}
+            />
 
-                                                  <Route
-            exact
-            path="/event"
-            render={() => (
-              <Page hideBookings fooferHide>
-                <EventFlowHome />
-              </Page>
-            )}
-          />
-                    <Route
-            exact
-            path="/checkout"
-            render={() => (
-              <Page separatorHeader>
-                <Checkout />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/checkout-complete"
-            render={() => (
-              <Page separatorHeader>
-                <CheckoutComplete />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/messages"
-            render={() => (
-              <Page separatorHeader fooferHide wide>
-                <MessageCenter />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/wishlists"
-            render={() => (
-              <Page separatorHeader>
-                <Wishlists />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/bookings"
-            component={Bookings}
-          />
-          <Route
-            exact
-            path="/host-profile"
-            render={() => (
-              <Page>
-                <HostProfile />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/account-settings"
-            render={() => (
-              <Page>
-                <AccountSettings />
-              </Page>
-            )}
-          />
+            <Route
+              exact
+              path="/event"
+              render={() => (
+                <Page hideBookings fooferHide>
+                  <EventFlowHome />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/checkout"
+              render={() => (
+                <Page separatorHeader>
+                  <Checkout />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/checkout-complete"
+              render={() => (
+                <Page separatorHeader>
+                  <CheckoutComplete />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/messages"
+              render={() => (
+                <Page separatorHeader fooferHide wide>
+                  <MessageCenter />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/wishlists"
+              render={() => (
+                <Page separatorHeader>
+                  <Wishlists />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/bookings"
+              component={Bookings}
+            />
+            <Route
+              exact
+              path="/host-profile"
+              render={() => (
+                <Page>
+                  <HostProfile />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/account-settings"
+              render={() => (
+                <Page>
+                  <AccountSettings />
+                </Page>
+              )}
+            />
 
-          <Route
-            exact
-            path="/listings"
-            render={() => (
-              <Page>
-                <Listings />
-              </Page>
-            )}
-          />
+            <Route
+              exact
+              path="/listings"
+              render={() => (
+                <Page>
+                  <Listings />
+                </Page>
+              )}
+            />
 
 
-          <Route
-            exact
-            path="/stay-details"
-            render={() => (
-              <Page separatorHeader>
-                <StayDetails />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/food-details"
-            render={() => (
-            <Page separatorHeader fooferHide>
-                <FoodDetails />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/place-details"
-            render={() => (
-              <Page separatorHeader fooferHide>
-                <PlaceDetails />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/terms-of-service"
-            render={() => (
-              <TermsOfService />
-            )}
-          />
-          <Route
-            exact
-            path="/privacy-policy"
-            render={() => (
-              <PrivacyPolicy />
-            )}
-          />
-          <Route
-            exact
-            path="/blog"
-            render={() => (
-              <Page separatorHeader>
-                <Blog />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/blog/:slug"
-            render={() => (
-              <Page separatorHeader>
-                <BlogDetails />
-              </Page>
-            )}
-          />
+            <Route
+              exact
+              path="/stay-details"
+              render={() => (
+                <Page separatorHeader>
+                  <StayDetails />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/food-details"
+              render={() => (
+                <Page separatorHeader fooferHide>
+                  <FoodDetails />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/place-details"
+              render={() => (
+                <Page separatorHeader fooferHide>
+                  <PlaceDetails />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/terms-of-service"
+              render={() => (
+                <TermsOfService />
+              )}
+            />
+            <Route
+              exact
+              path="/privacy-policy"
+              render={() => (
+                <PrivacyPolicy />
+              )}
+            />
+            <Route
+              exact
+              path="/blog"
+              render={() => (
+                <Page separatorHeader>
+                  <Blog />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/blog/:slug"
+              render={() => (
+                <Page separatorHeader>
+                  <BlogDetails />
+                </Page>
+              )}
+            />
           </Switch>
           {isMobileOrTablet && <MobileBottomNavbar />}
         </Router>
