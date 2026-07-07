@@ -850,9 +850,14 @@ const ExperienceProduct = () => {
     listing?.category?.id ||
     listing?.category;
   const currentListingId = listing?.listingId || listing?.id || id;
+  const cityOrDistrict = listing?.meetingCity || listing?.city || listing?.meetingDistrict || listing?.district;
+  const state = listing?.meetingState || listing?.state;
+  const combinedLocation = [cityOrDistrict, state].filter(Boolean).join(", ");
+
   const fallbackLocationValues = [
     listing?.locationName,
     listing?.location,
+    combinedLocation,
     listing?.city,
     listing?.district,
     listing?.state,
@@ -1013,7 +1018,7 @@ const ExperienceProduct = () => {
                       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="transparent" />
                       <circle cx="12" cy="10" r="3" fill="transparent" />
                     </svg>
-                    <span>{listing?.locationName || fallbackLocationValues[0] || "Valparai, Western Ghats"}</span>
+                    <span>{listing?.locationName || fallbackLocationValues[0] || "Location TBD"}</span>
                   </div>
                 </Rev>
               </motion.div>
