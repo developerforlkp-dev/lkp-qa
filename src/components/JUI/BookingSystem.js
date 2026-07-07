@@ -3990,8 +3990,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             <div
                               title={!(startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
                               style={{
-                                display: "grid",
-                                gridTemplateColumns: childrenAllowed ? "1fr 1fr" : "1fr",
+                                display: "flex",
+                                flexWrap: "wrap",
                                 gap: 8,
                                 opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
                                 pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
@@ -3999,6 +3999,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               }}
                             >
                               <div style={{
+                                flex: "1 1 140px",
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center",
@@ -4026,7 +4027,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 />
                               </div>
                               {childrenAllowed && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ flex: "1 1 140px", display: "flex", flexDirection: "column", gap: 8 }}>
                                   <div style={{ padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
                                     <Counter
