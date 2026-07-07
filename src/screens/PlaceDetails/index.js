@@ -576,38 +576,7 @@ function PlaceHero({ place, galleryItems, id }) {
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 32 }}>
-              {id && (
-                <Favorite itemType="place" itemId={id}>
-                  {({ saved, onClick }) => {
-                    const surface = "#FFFFFF";
-                    const borderCol = `${glow}4D`;
-                    const shadow = `0 6px 18px rgba(15,15,15,0.12)`;
-                    return (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.86 }}
-                        onClick={(e) => { e.stopPropagation(); onClick(e); }}
-                        style={{ width: 44, height: 44, borderRadius: "50%", background: surface, border: `1.5px solid ${borderCol}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, outline: "none" }}
-                      >
-                        <style>{`
-                          .place-save-icon-${id} svg {
-                            fill: ${saved ? glow : "transparent"};
-                            transition: fill 0.3s ease;
-                          }
-                          .place-save-icon-${id} svg path,
-                          .place-save-icon-${id} svg circle {
-                            stroke: ${saved ? glow : glow} !important;
-                            transition: stroke 0.3s ease;
-                          }
-                        `}</style>
-                        <div className={`place-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center", color: glow }}>
-                          <Icon name={saved ? "heart-fill" : "heart"} size={20} />
-                        </div>
-                      </motion.button>
-                    );
-                  }}
-                </Favorite>
-              )}
+
 
               <motion.button
                 onClick={handleShare}
