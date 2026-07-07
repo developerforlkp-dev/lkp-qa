@@ -1384,13 +1384,25 @@ const ExperienceProduct = () => {
                   <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Languages</p>
                 </div>
 
-                {/* Fact 6: Private Tour */}
+                {/* Fact 6: Private Tour / Group Size */}
                 <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
-                  <ShieldCheck size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
-                  <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
-                    {listing?.privateOptionAvailable ? "Yes" : "No"}
-                  </p>
-                  <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Private Tour</p>
+                  {listing?.privateOptionAvailable ? (
+                    <>
+                      <ShieldCheck size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
+                      <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
+                        Yes
+                      </p>
+                      <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Private Tour</p>
+                    </>
+                  ) : (
+                    <>
+                      <Users size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
+                      <p style={{ fontSize: "16px", fontWeight: 700, color: FG, marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
+                        {listing?.maxGroupSize ? `Max ${listing.maxGroupSize}` : "Max 15"}
+                      </p>
+                      <p style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: M, margin: 0, fontWeight: 600, fontFamily: '"Inter", sans-serif' }}>Max Guests</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
