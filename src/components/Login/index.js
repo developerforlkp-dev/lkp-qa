@@ -63,6 +63,21 @@ const Login = ({ onClose }) => {
   const isMountedRef = useRef(true);
   const otpFocusTimeoutRef = useRef(null);
 
+  // Responsive width for Google Login button
+  const [googleBtnWidth, setGoogleBtnWidth] = useState(
+    window.innerWidth < 480 ? Math.max(200, window.innerWidth - 80).toString() : "350"
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setGoogleBtnWidth(
+        window.innerWidth < 480 ? Math.max(200, window.innerWidth - 80).toString() : "350"
+      );
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
@@ -418,7 +433,7 @@ const Login = ({ onClose }) => {
               theme="filled_blue"
               size="large"
               shape="pill"
-              width="350"
+              width={googleBtnWidth}
             />
           </div>
           <div className={styles.note}>Or continue with phone number</div>
