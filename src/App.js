@@ -13,15 +13,11 @@ import Checkout from "./screens/Checkout";
 import CheckoutComplete from "./screens/CheckoutComplete";
 import FullPhoto from "./screens/FullPhoto";
 import HostProfile from "./screens/HostProfile";
-import ProfileUser from "./screens/ProfileUser";
 import AccountSettings from "./screens/AccountSettings";
-import Support from "./screens/Support";
 
 import MessageCenter from "./screens/MessageCenter";
 import Wishlists from "./screens/Wishlists";
-import YourTrips from "./screens/YourTrips";
 import Bookings from "./screens/Bookings";
-import ViewDetails from "./screens/ViewDetails";
 import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import Blog from "./pages/Blog";
@@ -31,7 +27,6 @@ import StayProduct from "./screens/StayProduct";
 import StayDetails from "./screens/StayDetails";
 import FoodDetails from "./screens/FoodDetails";
 import PlaceDetails from "./screens/PlaceDetails";
-import ReviewsListing from "./screens/ReviewsListing";
 import { ThemeProvider } from "./components/JUI/Theme";
 import { ProgressBar } from "./components/JUI/UI";
 import ScrollToTop from "./components/ScrollToTop";
@@ -207,33 +202,6 @@ function App() {
           />
           <Route
             exact
-            path="/viewdetails"
-            render={() => (
-              <Page separatorHeader>
-                <ViewDetails />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/your-trips"
-            render={() => (
-              <Page separatorHeader>
-                <YourTrips />
-              </Page>
-            )}
-          />
-                    <Route
-            exact
-            path="/profile"
-            render={() => (
-              <Page>
-                <ProfileUser />
-              </Page>
-            )}
-          />
-          <Route
-            exact
             path="/host-profile"
             render={() => (
               <Page>
@@ -247,15 +215,6 @@ function App() {
             render={() => (
               <Page>
                 <AccountSettings />
-              </Page>
-            )}
-          />
-          <Route
-            exact
-            path="/support"
-            render={() => (
-              <Page>
-                <Support />
               </Page>
             )}
           />
@@ -310,18 +269,6 @@ function App() {
             path="/privacy-policy"
             render={() => (
               <PrivacyPolicy />
-            )}
-          />
-          <Route
-            exact
-            path={[
-              "/reviews",
-              "/reviews/:type/:id",
-            ]}
-            render={() => (
-              <Page separatorHeader>
-                <ReviewsListing />
-              </Page>
             )}
           />
           <Route
