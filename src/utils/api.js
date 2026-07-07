@@ -686,6 +686,18 @@ export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName 
   }
 };
 
+// Request Hosting OTP
+export const requestHostingOtp = async (hostingData) => {
+  try {
+    const response = await ListingsAPI.post("/public/hosting/request-otp", hostingData);
+    console.log("✅ Hosting OTP requested successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error requesting Hosting OTP:", error);
+    throw error;
+  }
+};
+
 // Google OAuth login
 export const loginWithGoogle = async (idToken, dateOfBirth = "") => {
   try {
