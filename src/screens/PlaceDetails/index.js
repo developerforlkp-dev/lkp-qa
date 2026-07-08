@@ -365,12 +365,9 @@ function Chars({ text, cls = "", style = {}, delay = 0 }) {
 
 function Soul({ children, y = 80, s = 0.05, r = 0, delay = 0, style = {} }) {
   const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const moveY = useTransform(scrollYProgress, [0, 0.5, 1], [y, 0, -y]);
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1 - s, 1, 1 - s]);
-  const opacity = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0, 1, 1, 0]);
+  const v = useInView(ref, { once: true, margin: "-40px" });
   return (
-    <motion.div ref={ref} style={{ ...style, y: moveY, scale, opacity }} transition={{ ease: E, delay }}>
+    <motion.div ref={ref} initial={{ opacity: 0, y, scale: 1 - s }} animate={v ? { opacity: 1, y: 0, scale: 1 } : {}} transition={{ duration: 0.9, ease: E, delay }} style={style}>
       {children}
     </motion.div>
   );
