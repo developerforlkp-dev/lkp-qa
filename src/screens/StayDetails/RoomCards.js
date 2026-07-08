@@ -147,10 +147,17 @@ const getRoomFeatures = (room, listing) => {
   // 1. Prioritize roomAmenities (Enriched objects from backend)
   if (Array.isArray(room.roomAmenities) && room.roomAmenities.length > 0) {
     room.roomAmenities.forEach(ra => {
-      const label = ra.displayName || ra.code || ra.name;
+      const label = ra.displayName || ra.code || ra.name || ra.amenityName || ra.amenity;
       if (label) features.push(label);
     });
   } 
+  
+  if (Array.isArray(room.bedConfigAmenities)) {
+    room.bedConfigAmenities.forEach(bca => {
+      const label = bca.displayName || bca.code || bca.name || bca.amenityName || bca.amenity;
+      if (label) features.push(label);
+    });
+  }
   // 2. Fallback to legacy amenityIds if roomAmenities is missing
   else if (Array.isArray(room.amenityIds) && Array.isArray(listing?.amenities)) {
     room.amenityIds.forEach(id => {
@@ -883,7 +890,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
       maxChildren: 0,
       maxExtraAdults: 0,
       description: b.description || b.bedDescription,
-      roomAmenities: b.amenities || [],
+      roomAmenities: b.bedConfigAmenities || b.amenities || [],
       isBedConfig: true
     }));
     
