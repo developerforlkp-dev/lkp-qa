@@ -1115,7 +1115,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   );
 }
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger }) {
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger, initialDate, initialGuests }) {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
@@ -1138,10 +1138,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [show]);
 
   // Real State management
-  const [startDate, setStartDate] = useState(null);
+  const [startDate, setStartDate] = useState(() => initialDate ? moment(initialDate) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0, childAges: [] });
+  const [guests, setGuests] = useState(() => {
+    if (initialGuests && typeof initialGuests === 'object') {
+      return { adults: initialGuests.adults || 0, children: initialGuests.children || 0, infants: 0, childAges: [] };
+    }
+    if (initialGuests && typeof initialGuests === 'number' && initialGuests > 0) {
+      return { adults: initialGuests, children: 0, infants: 0, childAges: [] };
+    }
+    return { adults: 0, children: 0, infants: 0, childAges: [] };
+  });
   const totalGuests = guests.adults + guests.children;
   const billableAdults = guests.adults;
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -2021,7 +2029,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
   }
 
-  const baseChildPricePerChild = hasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
+  const isEventTieredChildPricing = isEventBooking && guests.children > 0 && eventChildPriceTotal > 0;
+  const actualHasChildPricing = hasChildPricing || isEventTieredChildPricing;
+
+  const baseChildPricePerChild = actualHasChildPricing 
+    ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : parseFloat(rawChildPrice || 0)) 
+    : baseAdultPricePerPerson;
 
   const data = {
     price: extractedPrice,
@@ -2759,13 +2772,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         currency: "INR",
         basePrice: rawBaseTotal,
         // Adult/child split for checkout page
-        allowChildPricing: hasChildPricing,
+        allowChildPricing: actualHasChildPricing,
         adultsCount: guests.adults,
         childrenCount: guests.children,
         pricePerPerson: parseFloat(extractedPrice || 0),
         basePricePerPerson: baseAdultPricePerPerson,
         adultBasePricePerPerson: baseAdultPricePerPerson,
-        childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+        childPricePerChild: actualHasChildPricing ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : effectiveChildPrice) : 0,
         baseChildPricePerChild,
         discount: totalDiscountAmount,
         promoDiscount: totalPromoDiscountAmount,
@@ -2815,7 +2828,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       bookingSlotId: Number(slotId),
       guestCount: totalGuests,
       childCount: guests.children || 0,
-      childPricePerChild: Number(hasChildPricing ? baseChildPricePerChild : 0),
+      childPricePerChild: Number(actualHasChildPricing ? baseChildPricePerChild : 0),
       customer: {
         name: userInfo.name || (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || "Guest User",
         email: userInfo.email || userInfo.customerEmail || "guest@example.com",
@@ -3585,7 +3598,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                       onDateSelect={(date) => {
                                         setStartDate(date);
                                         setShowDatePicker(false);
-                                        setGuests({ adults: 0, children: 0, infants: 0 });
                                         setShowDateWarning(false);
                                         setValidationErrors(prev => {
                                           const next = { ...prev };
@@ -3990,8 +4002,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             <div
                               title={!(startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
                               style={{
-                                display: "grid",
-                                gridTemplateColumns: childrenAllowed ? "1fr 1fr" : "1fr",
+                                display: "flex",
+                                flexWrap: "wrap",
                                 gap: 8,
                                 opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
                                 pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
@@ -3999,6 +4011,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               }}
                             >
                               <div style={{
+                                flex: "1 1 140px",
                                 display: "flex",
                                 justifyContent: "space-between",
                                 alignItems: "center",
@@ -4026,7 +4039,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 />
                               </div>
                               {childrenAllowed && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ flex: "1 1 140px", display: "flex", flexDirection: "column", gap: 8 }}>
                                   <div style={{ padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
                                     <Counter

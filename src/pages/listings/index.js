@@ -45,9 +45,15 @@ const Listings = () => {
     
   const [selectedDate, setSelectedDate] = useState(initialDate);
   
-  const initialGuests = searchParams.get("guests")
-    ? { adults: parseInt(searchParams.get("guests")), children: 0, infants: 0, pets: 0 }
-    : (locationState.guests || { adults: 1, children: 0, infants: 0, pets: 0 });
+  const initialGuestsStr = searchParams.get("guests");
+  const initialAdultsStr = searchParams.get("adults");
+  const initialChildrenStr = searchParams.get("children");
+  
+  const initialGuests = initialAdultsStr || initialChildrenStr
+    ? { adults: parseInt(initialAdultsStr) || 0, children: parseInt(initialChildrenStr) || 0, infants: 0, pets: 0 }
+    : (initialGuestsStr 
+        ? { adults: parseInt(initialGuestsStr), children: 0, infants: 0, pets: 0 }
+        : (locationState.guests || { adults: 1, children: 0, infants: 0, pets: 0 }));
 
   const [guests, setGuests] = useState(initialGuests);
   
@@ -287,7 +293,11 @@ const Listings = () => {
     if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
     if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
     const guestTotal = guests.adults + guests.children;
-    if (guestTotal > 0) params.set("guests", String(guestTotal));
+    if (guestTotal > 0) {
+      params.set("guests", String(guestTotal));
+      params.set("adults", String(guests.adults || 0));
+      params.set("children", String(guests.children || 0));
+    }
     if (businessInterest) params.set("businessInterest", businessInterest);
     if (businessInterestIdParam) params.set("businessInterestId", businessInterestIdParam);
     if (categoryTypeParam) params.set("categoryType", categoryTypeParam);

@@ -12,20 +12,7 @@ import {
   getHostContent,
 } from "../../../utils/api";
 
-const socials = [
-  {
-    title: "twitter",
-    url: "https://twitter.com/ui8",
-  },
-  {
-    title: "instagram",
-    url: "https://www.instagram.com/ui8net/",
-  },
-  {
-    title: "facebook",
-    url: "https://www.facebook.com/ui8.net/",
-  },
-];
+
 
 const Main = ({ hostId, onLoadingChange }) => {
   const [hostData, setHostData] = useState(null);
@@ -243,7 +230,6 @@ const Main = ({ hostId, onLoadingChange }) => {
           <Profile
             className={styles.profile}
             parametersUser={parametersUser}
-            socials={socials}
             hideContactButton={true}
             hideReportButton={true}
             info={host?.bio || ""}

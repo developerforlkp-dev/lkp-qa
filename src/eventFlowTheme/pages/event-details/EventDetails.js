@@ -747,23 +747,24 @@ const SpecCard = ({ label, value, sub, index, A, B, FG, M, W, theme, isCount }) 
       }}
     >
       <p style={{
-        fontSize: "15px",
+        fontSize: "16px",
         fontWeight: 700,
         color: hovered ? A : FG,
-        marginBottom: 4,
-        fontFamily: "Poppins, sans-serif",
+        marginBottom: 6,
+        fontFamily: '"Inter", sans-serif',
         transition: "color 0.3s",
         margin: "0 0 4px 0"
       }}>
         {isCount ? <Count to={value} /> : value}
       </p>
       <p style={{
-        fontSize: "10px",
+        fontSize: "11px",
         letterSpacing: "0.1em",
         textTransform: "uppercase",
         color: M,
         margin: 0,
         fontWeight: 600,
+        fontFamily: '"Inter", sans-serif',
         transition: "color 0.3s"
       }}>
         {label}
@@ -2043,7 +2044,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueAddress}</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueAddress}</span>
                       </div>
                     </li>
                   )}
@@ -2054,7 +2055,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Landmark</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueLandmark}</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueLandmark}</span>
                       </div>
                     </li>
                   )}
@@ -2065,7 +2066,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueDistrict}</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueDistrict}</span>
                       </div>
                     </li>
                   )}
@@ -2076,7 +2077,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueState}</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueState}</span>
                       </div>
                     </li>
                   )}
@@ -2087,7 +2088,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueCountry}</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueCountry}</span>
                       </div>
                     </li>
                   )}
@@ -2098,7 +2099,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 700, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueInstructions}</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueInstructions}</span>
                       </div>
                     </li>
                   )}
@@ -2109,7 +2110,7 @@ function Venue({ event, hostName }) {
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
-                        <span style={{ fontSize: 16, color: M, fontWeight: 500, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
+                        <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
                       </div>
                     </li>
                   )}
@@ -2124,7 +2125,7 @@ function Venue({ event, hostName }) {
 }
 
 function PolicyItem({ req }) {
-  const { tokens: { FG, A, M, AL, B, W } } = useTheme();
+  const { theme, tokens: { FG, A, M, AL, B, W } } = useTheme();
   const [op, setOp] = useState(false);
 
   const title = req.setting?.title || req.title || "Requirement";
@@ -2149,15 +2150,15 @@ function PolicyItem({ req }) {
     <motion.div
       layout
       style={{
-        background: op ? AL : W,
-        border: `1px solid ${op ? A : B}`,
+        background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF',
+        border: `1px solid ${B}`,
         borderRadius: "16px",
         overflow: "hidden",
         marginBottom: "16px",
-        transition: "background 0.3s, border-color 0.3s",
-        boxShadow: op ? "0 8px 30px rgba(0, 0, 0, 0.04)" : "none"
+        transition: "all 0.3s",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
       }}
-      whileHover={{ borderColor: A }}
+      whileHover={{ borderColor: A, boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
     >
       <div
         onClick={() => setOp(!op)}
@@ -2178,16 +2179,15 @@ function PolicyItem({ req }) {
           justifyContent: "center",
           width: 40,
           height: 40,
-          borderRadius: 12,
-          background: op ? `${A}22` : AL,
-          flexShrink: 0,
-          transition: "background 0.3s"
+          borderRadius: 8,
+          background: theme === 'dark' ? '#1E293B' : '#F0F9FA',
+          flexShrink: 0
         }}>
           {getIcon()}
         </div>
         
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: "18px", fontWeight: 700, color: FG, display: "block", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{title}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: FG, display: "block", fontFamily: '"Inter", sans-serif' }}>{title}</span>
         </div>
 
         <motion.div
@@ -2404,20 +2404,7 @@ function HostDetails({ event, hostName }) {
             {hostDescription && hostDescription.length > 150 ? hostDescription.substring(0, 150) + "..." : hostDescription}
           </p>
 
-          {(hostPhone || hostEmail) && (
-            <div className="mob-host-contact" style={{ marginTop: 16 }}>
-              {hostPhone && (
-                <a href={`tel:${hostPhone}`} className="mob-host-contact-btn" style={{ borderColor: B, color: FG, background: "transparent", textDecoration: "none" }}>
-                  <Phone size={14} /> Call
-                </a>
-              )}
-              {hostEmail && (
-                <a href={`mailto:${hostEmail}`} className="mob-host-contact-btn" style={{ borderColor: B, color: FG, background: "transparent", textDecoration: "none" }}>
-                  <Mail size={14} /> Email
-                </a>
-              )}
-            </div>
-          )}
+
 
           <button onClick={navigateToHostProfile}
             style={{ marginTop: 16, width: "100%", padding: "12px", borderRadius: 100, border: `1.5px solid ${A}`, background: "transparent", color: A, fontSize: 13, fontWeight: 700, cursor: "pointer", outline: "none" }}>
@@ -3060,6 +3047,17 @@ function EventReviews({ reviews = [] }) {
 }
 
 function EventBookingPopup({ event }) {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialDateStr = queryParams.get("date");
+  const initialAdultsStr = queryParams.get("adults");
+  const initialChildrenStr = queryParams.get("children");
+  const initialGuestsStr = queryParams.get("guests");
+  
+  const initialGuests = initialAdultsStr || initialChildrenStr
+    ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
+    : (initialGuestsStr ? { adults: Number(initialGuestsStr), children: 0 } : null);
+
   const [selectedAddOns, setSelectedAddOns] = useState([]);
 
   const handleUpdateAddonQuantity = (addon, delta) => {
@@ -3108,12 +3106,15 @@ function EventBookingPopup({ event }) {
         id: ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`,
         name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
         price: ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0,
+        childPrice: ticket.childPrice ?? ticket.child_price ?? ticket.childTypePrice ?? ticket.child_type_price ?? ticket.childTicketPrice ?? 0,
         totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
         maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
         groupPricingTiers: Array.isArray(ticket.groupPricingTiers) ? ticket.groupPricingTiers :
           Array.isArray(ticket.group_pricing_tiers) ? ticket.group_pricing_tiers :
             Array.isArray(ticket.groupBookingPricing) ? ticket.groupBookingPricing :
               Array.isArray(ticket.group_booking_pricing) ? ticket.group_booking_pricing : [],
+        childPricingTiers: Array.isArray(ticket.childPricingTiers) ? ticket.childPricingTiers :
+          Array.isArray(ticket.child_pricing_tiers) ? ticket.child_pricing_tiers : [],
         ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
         ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
         applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
@@ -3168,7 +3169,7 @@ function EventBookingPopup({ event }) {
     host: event?.hostProfile?.host || event?.host || {}
   };
 
-  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" />;
+  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} />;
 }
 
 function Tickets({ event }) {

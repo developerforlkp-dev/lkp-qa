@@ -1,9 +1,7 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import cn from "classnames";
 import styles from "./List.module.sass";
 import Card from "../../../../components/Card";
-import Icon from "../../../../components/Icon";
-import Slider from "react-slick";
 import { buildExperienceUrl } from "../../../../utils/experienceUrl";
 
 const formatImageUrl = (url) => {
@@ -53,8 +51,9 @@ const getUrlByType = (listing, type) => {
   return buildExperienceUrl(getTitleByType(listing, type), id);
 };
 
-const transformListingToCard = (listing, type) => {
-  const id = getIdByType(listing, type);
+const transformListingToCard = (listing, type, index) => {
+  const rawId = getIdByType(listing, type);
+  const id = (rawId !== undefined && rawId !== null) ? rawId : `idx-${index}`;
   const coverPhotoUrl = formatImageUrl(
     listing?.coverPhotoUrl ||
       listing?.coverImageUrl ||
@@ -103,7 +102,6 @@ const tabs = [
 
 const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const sliderRef = useRef(null);
   const activeTab = tabs[activeIndex];
   const activeRawListings = Array.isArray(listingsByType?.[activeTab.key])
     ? listingsByType[activeTab.key]
@@ -111,18 +109,10 @@ const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
 
   const transformedListings = useMemo(
     () => activeRawListings
-      .map((listing) => transformListingToCard(listing, activeTab.key))
+      .map((listing, index) => transformListingToCard(listing, activeTab.key, index))
       .filter(Boolean),
     [activeRawListings, activeTab.key]
   );
-
-  const settings = {
-    infinite: false,
-    speed: 500,
-    slidesToShow: 2,
-    slidesToScroll: 1,
-    arrows: false,
-  };
 
   return (
     <div className={cn(className, styles.list)}>
@@ -140,33 +130,15 @@ const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
       </div>
       <div className={styles.wrapper}>
         {transformedListings.length > 0 ? (
-          <Slider ref={sliderRef} className="profile-slider" {...settings}>
+          <div className={styles.grid}>
             {transformedListings.map((item) => (
-              <Card className={styles.card} item={item} key={item.id} />
+              <Card className={styles.card} item={item} key={item.id} hideWishlist={true} />
             ))}
-          </Slider>
+          </div>
         ) : (
           <div className={styles.empty}>No {activeTab.title.toLowerCase()} available</div>
         )}
       </div>
-      {transformedListings.length > 0 && (
-        <div className={styles.carouselNav}>
-          <button
-            type="button"
-            className={styles.navBtn}
-            onClick={() => sliderRef.current?.slickPrev()}
-          >
-            <Icon name="arrow-prev" size="16" />
-          </button>
-          <button
-            type="button"
-            className={styles.navBtn}
-            onClick={() => sliderRef.current?.slickNext()}
-          >
-            <Icon name="arrow-next" size="16" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

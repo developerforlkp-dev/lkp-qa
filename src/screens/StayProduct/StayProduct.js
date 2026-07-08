@@ -16,7 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 // Helper to format image URLs
 const formatImageUrl = (url) => {
   if (!url) return null;
-  const raw = String(url).trim();
+  const urlString = typeof url === "string" ? url : (url.url || url.fileUrl || url.imageUrl);
+  const raw = String(urlString || "").trim();
   if (!raw) return null;
 
   // If already a full URL, return as is

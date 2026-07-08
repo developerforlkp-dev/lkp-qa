@@ -18,6 +18,7 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import Favorite from "../../components/Favorite";
 import Icon from "../../components/Icon";
+import FullScreenImage from "../../components/FullScreenImage";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -42,6 +43,39 @@ function useWindowSize() {
 
   return size;
 }
+
+const formatImageUrlGlobal = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  const [pathPart, queryPart] = url.split("?");
+  const normalizedPath = String(pathPart).replaceAll("%2F", "/").replace(/\\/g, "/");
+  const encodedPath = encodeURI(normalizedPath);
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
+};
+
+const getItineraryImageUrl = (activity) => {
+  const firstImage = Array.isArray(activity?.images) ? activity.images[0] : null;
+  if (!firstImage) return null;
+  const rawUrl = typeof firstImage === "string" ? firstImage : firstImage.url || firstImage.fileUrl || firstImage.imageUrl;
+  if (!rawUrl) return null;
+  return formatImageUrlGlobal(rawUrl);
+};
+
+const getItineraryImages = (activity) => {
+  const imgs = Array.isArray(activity?.images) ? activity.images : [];
+  const urls = Array.isArray(activity?.imageUrls) ? activity.imageUrls : [];
+  let rawUrls = [];
+  if (imgs.length > 0) {
+    rawUrls = imgs.map(img => typeof img === "string" ? img : (img.url || img.fileUrl || img.imageUrl));
+  } else if (urls.length > 0) {
+    rawUrls = urls.map(url => typeof url === "string" ? url : (url.url || url.fileUrl || url.imageUrl));
+  }
+  if (rawUrls.length === 0) {
+    const single = getItineraryImageUrl(activity);
+    return single ? [single] : [];
+  }
+  return rawUrls.map(u => formatImageUrlGlobal(u)).filter(Boolean);
+};
 
 /* ─── TOKENS & THEME ─────────── */
 const THEMES = {
@@ -93,11 +127,26 @@ const ScopedStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Italianno&family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,800&display=swap');
 
-    .place-details-premium {
+      .place-details-premium {
       font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
       overflow-x: hidden;
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
+    }
+    
+    .itinerary-image-wrapper:hover .gallery-pill {
+      opacity: 1 !important;
+    }
+    .itinerary-image-wrapper:hover .itinerary-img {
+      transform: scale(1.05) !important;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
     @keyframes marquee-l { from{transform:translateX(0)} to{transform:translateX(-50%)} }
     @keyframes marquee-r { from{transform:translateX(-50%)} to{transform:translateX(0)} }
@@ -485,21 +534,6 @@ function PlaceHero({ place, galleryItems, id }) {
 
   return (
     <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.02, overflow: "hidden", zIndex: 1 }}>
-        <motion.h1
-          className="font-display"
-          style={{
-            scale,
-            rotate,
-            fontSize: "40vw",
-            fontWeight: 900,
-            color: FG,
-            whiteSpace: "nowrap"
-          }}
-        >
-          {placeName.split(' ')[0].toUpperCase()}
-        </motion.h1>
-      </div>
 
 
 
@@ -1191,31 +1225,100 @@ function Logistics({ place, hostData }) {
 
 function Itinerary({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
-  const steps = [
-    { title: "Discovery Phase", desc: "Explore the primary landmarks and architectural wonders of this unique location." },
-    { title: "Local Immersion", desc: "Engage with the local culture and hidden gems that define the heart of the area." },
-    { title: "Sunset Perspective", desc: "End your journey with breathtaking panoramic views as the day transitions to night." }
-  ];
+  const [photoVisible, setPhotoVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const scrollRef = useRef(null);
+
+  const steps = place?.itinerary || [];
+  if (steps.length === 0) return null;
+
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -400, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 400, behavior: 'smooth' });
+    }
+  };
+
   return (
     <section style={{ background: S, padding: "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Curated Experience Plan</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 32 }}>
-          {steps.map((s, i) => (
-            <Soul key={i} delay={i * 0.15} y={80} r={i % 2 === 0 ? 3 : -3}>
-              <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.4 }} style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: "56px 48px", height: "100%", position: "relative", overflow: "hidden" }}>
-                <span className="font-display" style={{ position: "absolute", top: -10, right: 10, fontSize: "clamp(5rem, 8vw, 10rem)", fontWeight: 800, color: A, opacity: 0.04, pointerEvents: "none" }}>{i + 1}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                  <div style={{ width: 8, height: 8, background: A }} />
-                  <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
-                </div>
-                <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 20 }}>{s.title}</h3>
-                <p style={{ fontSize: 14, color: M, lineHeight: 1.85 }}>{s.desc}</p>
-              </motion.div>
-            </Soul>
-          ))}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+          <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Curated Experience Plan</h3>
+          {steps.length > 3 && (
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={scrollLeft} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${B}`, background: W, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: FG }}>
+                <ChevronLeft size={20} />
+              </button>
+              <button onClick={scrollRight} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${B}`, background: W, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: FG }}>
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
+        </div>
+        <div style={{ position: "relative", margin: "0 -80px", padding: "0 80px" }}>
+          <div 
+            ref={scrollRef}
+            className="hide-scrollbar"
+            style={{ 
+              display: "flex", 
+              gap: 32, 
+              overflowX: "auto", 
+              scrollSnapType: "x mandatory",
+              scrollBehavior: "smooth"
+            }}
+          >
+            {steps.map((s, i) => (
+              <div key={i} style={{ flex: "0 0 calc(33.333% - 21.33px)", minWidth: 300, scrollSnapAlign: "start" }}>
+                <Soul delay={i * 0.15} y={80} r={i % 2 === 0 ? 3 : -3}>
+                  <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.4 }} style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: "32px 32px 48px", height: "100%", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                    <span className="font-display" style={{ position: "absolute", top: -10, right: 10, fontSize: "clamp(5rem, 8vw, 10rem)", fontWeight: 800, color: A, opacity: 0.04, pointerEvents: "none" }}>{i + 1}</span>
+                    {getItineraryImageUrl(s) && (
+                      <div 
+                        className="itinerary-image-wrapper"
+                        style={{ margin: "-32px -32px 24px -32px", height: 200, overflow: "hidden", cursor: "pointer", position: "relative" }}
+                        onClick={() => {
+                          const imgs = getItineraryImages(s);
+                          setSelectedImages(imgs);
+                          setPhotoIndex(0);
+                          setPhotoVisible(true);
+                        }}
+                      >
+                        <img className="itinerary-img" src={getItineraryImageUrl(s)} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease" }} />
+                        <div className="gallery-pill" style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)", opacity: 0, transition: "opacity 0.3s ease" }}>
+                          <Camera size={12} /> GALLERY
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, marginTop: getItineraryImageUrl(s) ? 0 : 24 }}>
+                      <div style={{ width: 8, height: 8, background: A }} />
+                      <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
+                    </div>
+                    <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 20 }}>{s.title || s.name}</h3>
+                    <p style={{ fontSize: 14, color: M, lineHeight: 1.85 }}>{s.desc || s.description || s.briefDescription}</p>
+                  </motion.div>
+                </Soul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+      <AnimatePresence>
+        {photoVisible && (
+          <FullScreenImage
+            src={selectedImages[photoIndex] || "/images/content/placeholder.jpg"}
+            items={selectedImages.length > 0 ? selectedImages : ["/images/content/placeholder.jpg"]}
+            currentIndex={photoIndex}
+            onNavigate={setPhotoIndex}
+            onClose={() => setPhotoVisible(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
@@ -2471,11 +2574,12 @@ function MobileGallery({ galleryItems }) {
 
 function MobileItinerary({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
-  const steps = [
-    { title: "Discovery Phase", desc: "Explore the primary landmarks and architectural wonders of this unique location." },
-    { title: "Local Immersion", desc: "Engage with the local culture and hidden gems that define the heart of the area." },
-    { title: "Sunset Perspective", desc: "End your journey with breathtaking panoramic views as the day transitions to night." }
-  ];
+  const [photoVisible, setPhotoVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  const steps = place?.itinerary || [];
+  if (steps.length === 0) return null;
 
   return (
     <section style={{ background: S, padding: "40px 16px" }}>
@@ -2498,7 +2602,7 @@ function MobileItinerary({ place }) {
         }} />
 
         {steps.map((s, i) => (
-          <div key={i} style={{ display: "flex", gap: 16, position: "relative", zIndex: 1 }}>
+          <div key={i} style={{ display: "flex", gap: 16, position: "relative", zIndex: 1, alignItems: "flex-start" }}>
             {/* Step Marker */}
             <div style={{
               width: 34,
@@ -2513,7 +2617,8 @@ function MobileItinerary({ place }) {
               fontSize: 12,
               color: A,
               flexShrink: 0,
-              boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
+              boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+              marginTop: getItineraryImageUrl(s) ? 16 : 0
             }}>
               {i + 1}
             </div>
@@ -2525,14 +2630,42 @@ function MobileItinerary({ place }) {
               borderRadius: 20,
               padding: "16px 14px",
               flex: 1,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.01)"
+              boxShadow: "0 4px 12px rgba(0,0,0,0.01)",
+              overflow: "hidden"
             }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 6, margin: "0 0 6px 0" }}>{s.title}</h4>
-              <p style={{ fontSize: 11, color: M, lineHeight: 1.6, margin: 0 }}>{s.desc}</p>
+              {getItineraryImageUrl(s) && (
+                <div 
+                  style={{ margin: "-16px -14px 16px -14px", height: 160, overflow: "hidden", cursor: "pointer", position: "relative" }}
+                  onClick={() => {
+                    const imgs = getItineraryImages(s);
+                    setSelectedImages(imgs);
+                    setPhotoIndex(0);
+                    setPhotoVisible(true);
+                  }}
+                >
+                  <img src={getItineraryImageUrl(s)} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)" }}>
+                    <Camera size={12} /> GALLERY
+                  </div>
+                </div>
+              )}
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 6, margin: "0 0 6px 0" }}>{s.title || s.name}</h4>
+              <p style={{ fontSize: 11, color: M, lineHeight: 1.6, margin: 0 }}>{s.desc || s.description || s.briefDescription}</p>
             </div>
           </div>
         ))}
       </div>
+      <AnimatePresence>
+        {photoVisible && (
+          <FullScreenImage
+            src={selectedImages[photoIndex] || "/images/content/placeholder.jpg"}
+            items={selectedImages.length > 0 ? selectedImages : ["/images/content/placeholder.jpg"]}
+            currentIndex={photoIndex}
+            onNavigate={setPhotoIndex}
+            onClose={() => setPhotoVisible(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

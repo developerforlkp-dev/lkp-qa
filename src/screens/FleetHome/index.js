@@ -261,7 +261,11 @@ const FleetHome = () => {
     if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
     
     const guestTotal = guests.adults + guests.children;
-    if (guestTotal > 0) params.append("guests", guestTotal);
+    if (guestTotal > 0) {
+      params.append("guests", guestTotal);
+      params.append("adults", guests.adults);
+      params.append("children", guests.children);
+    }
 
     // Map activeFilter to backend business interest string
     const interestMap = {

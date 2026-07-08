@@ -27,13 +27,15 @@
     display: flex
     flex-direction: column
     align-items: center
+    justify-content: center
     width: 100%
     max-width: 100%
     min-width: 0
     box-sizing: border-box
-    // Remove forced width to allow fixed-width Google button
     & > div
-        width: auto !important
+        display: flex
+        justify-content: center
+        width: 100% !important
         margin: 0 auto
 
 .googleBtn

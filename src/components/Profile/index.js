@@ -46,18 +46,7 @@ const Profile = ({
             <span>{siteUrl}</span>
           </a>
         ) : null}
-        {phoneNumber ? (
-          <div className={styles.site}>
-            <Icon name="phone" size="16" />
-            <span>{phoneNumber}</span>
-          </div>
-        ) : null}
-        {email ? (
-          <div className={styles.site}>
-            <Icon name="email" size="16" />
-            <span>{email}</span>
-          </div>
-        ) : null}
+
         <div className={styles.control}>
           <div className={styles.btns}>
             {!hideContactButton && (

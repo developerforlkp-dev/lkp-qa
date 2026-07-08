@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Globe, ArrowUp, Star, Home, Ticket, Users, ChevronDown, ChevronUp, Instagram, Linkedin } from "lucide-react";
 import styles from "./Footer.module.sass";
+import HostingApplicationForm from "../HostingApplicationForm";
 
 
 function FooterCol({ title, children }) {
@@ -22,6 +23,8 @@ function FooterCol({ title, children }) {
 }
 
 export function Footer() {
+  const [isHostingFormVisible, setIsHostingFormVisible] = useState(false);
+
   return (
     <footer id="main-footer" className={styles.footer}>
       {/* Background Image on Left */}
@@ -87,7 +90,7 @@ export function Footer() {
 
             <FooterCol title="Company"><ul>
                 <li><Link to="/">About Little Known Planet</Link></li>
-                <li><Link to="/host-profile">Become a Host</Link></li>
+                <li><button onClick={() => setIsHostingFormVisible(true)} className={styles.linkButton}>Become a Host</button></li>
                 <li><a href="mailto:support@littleknownplanet.com">Contact Us</a></li>
               </ul></FooterCol>
             
@@ -102,7 +105,10 @@ export function Footer() {
         </div>
       </div>
 
-
+      <HostingApplicationForm 
+        visible={isHostingFormVisible} 
+        onClose={() => setIsHostingFormVisible(false)} 
+      />
     </footer>
   );
 }
