@@ -547,6 +547,14 @@ const ExperienceProduct = () => {
   const idParam = params.get("id");
   const id = idFromPath || idParam || "1";
 
+  const initialDateStr = params.get("date");
+  const initialGuestsStr = params.get("guests");
+  const initialAdultsStr = params.get("adults");
+  const initialChildrenStr = params.get("children");
+  const initialGuests = initialAdultsStr || initialChildrenStr 
+    ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
+    : (initialGuestsStr ? Number(initialGuestsStr) : null);
+
   const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const [listing, setListing] = useState(null);
   const [hostData, setHostData] = useState(null);
@@ -2718,6 +2726,8 @@ const ExperienceProduct = () => {
           listing={listing}
           selectedAddOns={selectedAddOns}
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
+          initialDate={initialDateStr}
+          initialGuests={initialGuests}
         />
 
         <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>

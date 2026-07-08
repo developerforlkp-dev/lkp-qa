@@ -3047,6 +3047,17 @@ function EventReviews({ reviews = [] }) {
 }
 
 function EventBookingPopup({ event }) {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialDateStr = queryParams.get("date");
+  const initialAdultsStr = queryParams.get("adults");
+  const initialChildrenStr = queryParams.get("children");
+  const initialGuestsStr = queryParams.get("guests");
+  
+  const initialGuests = initialAdultsStr || initialChildrenStr
+    ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
+    : (initialGuestsStr ? { adults: Number(initialGuestsStr), children: 0 } : null);
+
   const [selectedAddOns, setSelectedAddOns] = useState([]);
 
   const handleUpdateAddonQuantity = (addon, delta) => {
@@ -3155,7 +3166,7 @@ function EventBookingPopup({ event }) {
     host: event?.hostProfile?.host || event?.host || {}
   };
 
-  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" />;
+  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} />;
 }
 
 function Tickets({ event }) {

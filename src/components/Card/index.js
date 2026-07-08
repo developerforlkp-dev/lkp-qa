@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import cn from "classnames";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./Card.module.sass";
 import Icon from "../Icon";
 import Favorite from "../Favorite";
@@ -33,6 +33,7 @@ const getWishlistConfig = (item) => {
 
 const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
   
   const defaultImage = "/images/content/card-pic-13.jpg";
@@ -66,6 +67,32 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     return false;
   })();
 
+  const getDestinationUrl = () => {
+    if (!item?.url) return "";
+    try {
+      const urlParams = new URLSearchParams(location.search);
+      const date = urlParams.get('date');
+      const guests = urlParams.get('guests');
+      const adults = urlParams.get('adults');
+      const children = urlParams.get('children');
+      
+      if (!date && !guests && !adults && !children) return item.url;
+      
+      const isAbsolute = item.url.startsWith('http');
+      const base = isAbsolute ? item.url : `http://localhost${item.url.startsWith('/') ? '' : '/'}${item.url}`;
+      const urlObj = new URL(base);
+      
+      if (date) urlObj.searchParams.set('date', date);
+      if (guests) urlObj.searchParams.set('guests', guests);
+      if (adults) urlObj.searchParams.set('adults', adults);
+      if (children) urlObj.searchParams.set('children', children);
+      
+      return isAbsolute ? urlObj.toString() : urlObj.pathname + urlObj.search + urlObj.hash;
+    } catch (e) {
+      return item.url;
+    }
+  };
+
   return (
     <Link
       className={cn(
@@ -74,7 +101,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
         { [styles.row]: row },
         { [styles.car]: car }
       )}
-      to={item.url}
+      to={getDestinationUrl()}
       target={window.innerWidth <= 768 ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >

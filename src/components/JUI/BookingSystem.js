@@ -1115,7 +1115,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   );
 }
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger }) {
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger, initialDate, initialGuests }) {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
@@ -1138,10 +1138,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [show]);
 
   // Real State management
-  const [startDate, setStartDate] = useState(null);
+  const [startDate, setStartDate] = useState(() => initialDate ? moment(initialDate) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0, childAges: [] });
+  const [guests, setGuests] = useState(() => {
+    if (initialGuests && typeof initialGuests === 'object') {
+      return { adults: initialGuests.adults || 0, children: initialGuests.children || 0, infants: 0, childAges: [] };
+    }
+    if (initialGuests && typeof initialGuests === 'number' && initialGuests > 0) {
+      return { adults: initialGuests, children: 0, infants: 0, childAges: [] };
+    }
+    return { adults: 0, children: 0, infants: 0, childAges: [] };
+  });
   const totalGuests = guests.adults + guests.children;
   const billableAdults = guests.adults;
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -3585,7 +3593,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                       onDateSelect={(date) => {
                                         setStartDate(date);
                                         setShowDatePicker(false);
-                                        setGuests({ adults: 0, children: 0, infants: 0 });
                                         setShowDateWarning(false);
                                         setValidationErrors(prev => {
                                           const next = { ...prev };

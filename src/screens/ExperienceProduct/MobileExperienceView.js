@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft, ChevronDown, Clock, User, Zap, Baby, Languages,
@@ -119,6 +119,16 @@ export default function MobileExperienceView({
 }) {
   const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const isDark = theme === "dark";
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const initialDateStr = queryParams.get("date");
+  const initialGuestsStr = queryParams.get("guests");
+  const initialAdultsStr = queryParams.get("adults");
+  const initialChildrenStr = queryParams.get("children");
+  const initialGuests = initialAdultsStr || initialChildrenStr 
+    ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
+    : (initialGuestsStr ? Number(initialGuestsStr) : null);
 
   /* ── local state ── */
   const [descExpanded, setDescExpanded] = useState(false);
@@ -799,6 +809,8 @@ export default function MobileExperienceView({
         hideTrigger={true}
         externalOpen={bookingOpen}
         onExternalOpenChange={setBookingOpen}
+        initialDate={initialDateStr}
+        initialGuests={initialGuests}
       />
 
       {/* Spacer for sticky CTA */}
