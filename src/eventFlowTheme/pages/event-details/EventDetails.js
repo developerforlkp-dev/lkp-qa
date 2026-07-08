@@ -1403,6 +1403,7 @@ function About({ event }) {
   const { theme, tokens: { A, BG, FG, M, W, B, S } } = useTheme();
   const isMobile = useMobileView();
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const desc = event?.description || "SOLSTICE is not merely an event — it is a threshold. A gathering of the most luminous minds in music, art, and culture, converging for a single evening at the intersection of the timeless and the radically new.";
 
@@ -1455,7 +1456,38 @@ function About({ event }) {
         <h2 className="mob-section-title" style={{ color: FG }}>
           Where the ancient <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
         </h2>
-        <p className="mob-section-desc" style={{ color: M }}>{desc}</p>
+        <div style={{ marginBottom: 16 }}>
+          <p className="mob-section-desc" style={{ 
+            color: M,
+            display: "-webkit-box",
+            WebkitLineClamp: isExpanded ? "unset" : 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            margin: 0,
+            WebkitMaskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
+            maskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)"
+          }}>{desc}</p>
+          {desc?.length > 150 && (
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              style={{
+                background: "none",
+                border: "none",
+                color: A,
+                fontSize: "14px",
+                fontWeight: 700,
+                padding: 0,
+                marginTop: 12,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px"
+              }}
+            >
+              {isExpanded ? "Read Less" : "Read More"} &rarr;
+            </button>
+          )}
+        </div>
 
         {/* Stats Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
@@ -1496,14 +1528,51 @@ function About({ event }) {
                   <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
                 </h3>
                 <Rev delay={0.25}>
-                  <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, marginBottom: 36, fontWeight: 400, fontFamily: '"Inter", sans-serif' }}>{desc}</p>
+                  <div style={{ marginBottom: 36 }}>
+                    <p style={{ 
+                      color: M, 
+                      fontSize: "16px", 
+                      lineHeight: "1.7", 
+                      margin: 0, 
+                      fontWeight: 400, 
+                      fontFamily: '"Inter", sans-serif',
+                      display: "-webkit-box",
+                      WebkitLineClamp: isExpanded ? "unset" : 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      WebkitMaskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
+                      maskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)"
+                    }}>
+                      {desc}
+                    </p>
+                    {desc?.length > 150 && (
+                      <button 
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: A,
+                          fontSize: "14px",
+                          fontWeight: 700,
+                          padding: 0,
+                          marginTop: 12,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px"
+                        }}
+                      >
+                        {isExpanded ? "Read Less" : "Read More"} &rarr;
+                      </button>
+                    )}
+                  </div>
                 </Rev>
               </div>
 
             </div>
-            <Rev delay={0.2} style={{ height: "100%" }}>
+            <Rev delay={0.2}>
               {/* Stats Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridTemplateRows: "repeat(2, 1fr)", gap: 16, height: "100%" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, alignContent: "start" }}>
                 {statsList.map((s, i) => (
                   <SpecCard
                     key={s.l}
