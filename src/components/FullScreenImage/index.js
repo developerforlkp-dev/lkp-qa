@@ -62,6 +62,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
           max-width: 1100px;
           height: 75vh;
           background: ${isDark ? '#0A0A0A' : '#FFFFFF'};
+          border: 1px solid ${isDark ? '#333' : '#E0E0E0'};
           border-radius: 32px;
           box-shadow: 0 30px 80px rgba(0,0,0,0.25);
           display: flex;
@@ -108,7 +109,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         }
         
         .fs-image {
-          object-fit: cover !important;
+          object-fit: contain !important;
           width: 100% !important;
           height: 100% !important;
           filter: drop-shadow(0 20px 40px rgba(0,0,0,0.08));
@@ -117,6 +118,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
           left: 0;
           padding: 0;
           box-sizing: border-box;
+          border-radius: 32px 0 0 32px;
         }
         
         .fs-thumbnail-list {
@@ -220,7 +222,8 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
             padding: 0;
           }
           .fs-image {
-            padding: 12px;
+            padding: 12px !important;
+            object-fit: contain !important;
           }
           .fs-nav-btn {
             width: 40px;
@@ -229,6 +232,18 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
           }
           .fs-nav-left { left: 12px; }
           .fs-nav-right { right: 12px; }
+          .fs-close-btn {
+            top: 16px !important;
+            right: 16px !important;
+            width: 40px !important;
+            height: 40px !important;
+          }
+          .fs-count-pill {
+            top: 16px !important;
+            left: 16px !important;
+            padding: 6px 16px !important;
+            font-size: 11px !important;
+          }
         }
       `}</style>
 
@@ -241,6 +256,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         onClick={(e) => e.stopPropagation()}
       >
         <motion.button
+          className="fs-close-btn"
           onClick={onClose}
           whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
           whileTap={{ scale: 0.92 }}
@@ -252,7 +268,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         {/* LEFT PANE - Image Viewer */}
         <div className="fs-left-pane">
           <div className="fs-image-container">
-            <div style={{ position: 'absolute', top: 24, left: 24, zIndex: 100, background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
+            <div className="fs-count-pill" style={{ position: 'absolute', top: 24, left: 24, zIndex: 100, background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
               {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{Math.max(1, items.length)}</span>
             </div>
             <AnimatePresence>
