@@ -178,7 +178,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
 
         <div className={styles.foot}>
           <div className={styles.flex}>
-            {!item.hideRating && (
+            {!item.hideRating && Number(item.reviews) > 0 && (
               <div className={styles.rating}>
                 <div className={styles.ratingTop}>
                   <Icon name="star" />
