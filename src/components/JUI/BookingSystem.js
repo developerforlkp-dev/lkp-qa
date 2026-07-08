@@ -4005,6 +4005,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 display: "flex",
                                 flexWrap: "wrap",
                                 gap: 8,
+                                alignItems: "flex-start",
                                 opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
                                 pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
                                 transition: "0.3s"
