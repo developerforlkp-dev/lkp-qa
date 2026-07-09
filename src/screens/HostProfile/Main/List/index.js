@@ -97,7 +97,7 @@ const tabs = [
   { key: "events", title: "Events" },
   { key: "stays", title: "Stays" },
   { key: "places", title: "Places" },
-  { key: "foodMenus", title: "Food Menus" },
+  { key: "foodMenus", title: "Food" },
 ];
 
 const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
