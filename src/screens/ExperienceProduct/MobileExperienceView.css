@@ -261,9 +261,9 @@
 
 .mob-gallery-item {
   flex-shrink: 0;
-  width: 80vw;
-  max-width: 340px;
-  aspect-ratio: 4/3;
+  width: 65vw;
+  max-width: 280px;
+  aspect-ratio: 16/9;
   border-radius: var(--mob-radius);
   overflow: hidden;
   scroll-snap-align: center;
