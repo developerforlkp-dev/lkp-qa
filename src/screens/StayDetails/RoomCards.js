@@ -653,7 +653,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/footerimage.webp"} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={allImages[0] || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
 
         {/* Room Count Tag */}

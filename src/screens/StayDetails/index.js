@@ -1009,7 +1009,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
     }
     
     if (collected.length === 0) {
-      collected.push("/images/footerimage.webp");
+      collected.push("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=");
     }
     return collected;
   }, [galleryItems, stay]);
@@ -4295,7 +4295,7 @@ function PropertyStayCard({ stay }) {
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/footerimage.webp"} alt={propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={allImages[0] || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="} alt={propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
 
         {/* Property Badge Tag */}

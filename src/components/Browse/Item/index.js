@@ -7,7 +7,7 @@ import Icon from "../../Icon";
 const Item = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const defaultImage = "/images/footerimage.webp";
+  const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const finalSrc = imageError ? defaultImage : item.src;
   const finalSrcSet = imageError ? undefined : `${item.srcSet} 2x`;
 

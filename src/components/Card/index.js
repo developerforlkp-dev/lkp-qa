@@ -37,7 +37,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
   
-  const defaultImage = "/images/footerimage.webp";
+  const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const hasSasToken = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && 
                       item.src.includes("sig=") && item.src.includes("sv=");
   const imageSrc = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && !hasSasToken
