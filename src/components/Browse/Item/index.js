@@ -6,11 +6,14 @@ import Icon from "../../Icon";
 
 const Item = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const handleImageError = (e) => {
-    // Silently fallback to default image if original fails to load
-    if (e.target.src !== "") {
-      e.target.src = "";
-      e.target.srcSet = "";
+  const [imageError, setImageError] = useState(false);
+  const defaultImage = "/images/content/card-pic-13.jpg";
+  const finalSrc = imageError ? defaultImage : item.src;
+  const finalSrcSet = imageError ? undefined : `${item.srcSet} 2x`;
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
     }
     setImageLoaded(true);
   };
@@ -28,8 +31,8 @@ const Item = ({ className, item }) => {
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 
-          srcSet={`${item.srcSet} 2x`} 
-          src={item.src} 
+          srcSet={finalSrcSet} 
+          src={finalSrc} 
           alt={item.title || "Nature"}
           onLoad={() => setImageLoaded(true)}
           onError={handleImageError}
