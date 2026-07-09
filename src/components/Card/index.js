@@ -115,7 +115,8 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
           src={finalSrc} 
           alt={item.title || "Listing"}
           onLoad={() => setImageLoaded(true)}
-          onError={() => {
+          onError={(e) => {
+            e.target.onerror = null;
             if (!imageError) {
               setImageError(true);
             }

@@ -11,7 +11,8 @@ const Item = ({ className, item }) => {
   const finalSrc = imageError ? defaultImage : item.src;
   const finalSrcSet = imageError ? undefined : `${item.srcSet} 2x`;
 
-  const handleImageError = () => {
+  const handleImageError = (e) => {
+    e.target.onerror = null;
     if (!imageError) {
       setImageError(true);
     }

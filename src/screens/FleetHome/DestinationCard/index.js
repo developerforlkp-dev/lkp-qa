@@ -23,7 +23,8 @@ const DestinationCard = ({ className, item }) => {
           alt={item.title}
           className={styles.image}
           onLoad={() => setImageLoaded(true)}
-          onError={() => {
+          onError={(e) => {
+            e.target.onerror = null;
             if (!imageError) {
               setImageError(true);
             }
