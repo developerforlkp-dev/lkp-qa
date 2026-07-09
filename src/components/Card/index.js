@@ -33,6 +33,7 @@ const getWishlistConfig = (item) => {
 
 const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
   
@@ -43,6 +44,9 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     ? defaultImage 
     : (item.src || defaultImage);
   const imageSrcSet = imageSrc;
+
+  const finalSrc = imageError ? defaultImage : imageSrc;
+  const finalSrcSet = imageError ? defaultImage : (imageSrcSet !== defaultImage ? `${imageSrcSet} 2x` : defaultImage);
 
   const shouldHidePrice = hidePrice;
 
@@ -107,15 +111,13 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 
-          srcSet={imageSrcSet !== defaultImage ? `${imageSrcSet} 2x` : defaultImage}
-          src={imageSrc} 
+          srcSet={finalSrcSet}
+          src={finalSrc} 
           alt={item.title || "Listing"}
           onLoad={() => setImageLoaded(true)}
-          onError={(e) => {
-            if (!e.target.src.includes("card-pic-13.jpg")) {
-              e.target.src = defaultImage;
-              e.target.srcSet = defaultImage;
-              e.target.onerror = null;
+          onError={() => {
+            if (!imageError) {
+              setImageError(true);
             }
             setImageLoaded(true);
           }}

@@ -5,6 +5,10 @@ import styles from "./DestinationCard.module.sass";
 
 const DestinationCard = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const defaultImage = "/images/content/card-pic-13.jpg";
+  const finalSrc = imageError ? defaultImage : item.src;
+  const finalSrcSet = imageError ? undefined : (item.srcSet ? `${item.srcSet} 2x` : undefined);
   return (
     <Link 
       className={cn(className, styles.card)} 
@@ -14,16 +18,14 @@ const DestinationCard = ({ className, item }) => {
     >
       <div className={cn(styles.imageWrapper, { [styles.loaded]: imageLoaded })}>
         <img
-          srcSet={item.srcSet ? `${item.srcSet} 2x` : undefined}
-          src={item.src}
+          srcSet={finalSrcSet}
+          src={finalSrc}
           alt={item.title}
           className={styles.image}
           onLoad={() => setImageLoaded(true)}
-          onError={(e) => {
-            // Silently fallback to default image if original fails to load
-            if (e.target.src !== "") {
-              e.target.src = "";
-              e.target.srcSet = "";
+          onError={() => {
+            if (!imageError) {
+              setImageError(true);
             }
             setImageLoaded(true);
           }}
