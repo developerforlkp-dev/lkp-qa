@@ -10,6 +10,9 @@ const getWishlistConfig = (item) => {
   const explicitId = item?.wishlistItemId ?? item?.itemId ?? item?.listingId ?? item?.eventId ?? item?.stayId;
 
   if (explicitType && explicitId != null && explicitId !== "") {
+    if (explicitType === "food" || explicitType === "place") {
+      return null;
+    }
     return {
       itemType: explicitType,
       itemId: explicitId,
@@ -19,6 +22,9 @@ const getWishlistConfig = (item) => {
 
   const url = String(item?.url || "").toLowerCase();
   if (explicitId != null && explicitId !== "") {
+    if (url.includes("/food") || url.includes("/place")) {
+      return null;
+    }
     if (url.includes("/event")) {
       return { itemType: "event", itemId: explicitId, initialSaved: Boolean(item?.wishlistSaved) };
     }

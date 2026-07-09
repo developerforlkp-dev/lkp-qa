@@ -209,7 +209,9 @@ const FleetHome = () => {
         setTimeout(() => {
           const target = document.getElementById("listings-scroll-target");
           if (target) {
-            const offset = target.getBoundingClientRect().top + window.scrollY - 120; // 120px offset for sticky headers on desktop
+            // Use 70px offset so target goes to 70px.
+            // This satisfies the rect.bottom < 72 threshold, keeping the sticky header active.
+            const offset = target.getBoundingClientRect().top + window.scrollY - 70; 
             window.scrollTo({ top: offset, behavior: "smooth" });
           } else {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1002,9 +1004,10 @@ const FleetHome = () => {
           <div id="listings-scroll-target"></div>
 
           {/* Dynamic Sections from API */}
-          {loading && (
-            <LoadingSkeleton variant="homepage" sections={3} count={4} />
-          )}
+          <div style={{ minHeight: "100vh" }}>
+            {loading && (
+              <LoadingSkeleton variant="homepage" sections={3} count={4} />
+            )}
 
 
           {error && (
@@ -1059,6 +1062,7 @@ const FleetHome = () => {
                 />
               );
             })}
+          </div>
         </div>
       </div>
     </LayoutGroup>

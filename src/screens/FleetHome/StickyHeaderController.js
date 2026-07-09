@@ -90,7 +90,9 @@ const StickyHeaderController = ({
     // Initial check
     handleScroll();
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [heroRef, isSticky]);
 
   // ─── Close search panel and dropdowns on outside click or Escape ────────
