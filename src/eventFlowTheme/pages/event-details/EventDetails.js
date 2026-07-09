@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star, Heart, Compass, Info } from "lucide-react";
+import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star, Heart, Compass, Info, Building, Map } from "lucide-react";
 import { X, Plus as PlusIcon } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
@@ -1399,6 +1399,70 @@ function Hero({ event, heroRef }) {
   );
 }
 
+function PremiumMarquee({ items }) {
+  const { theme, tokens: { B, BG, FG, M } } = useTheme();
+  
+  const rawTags = items && items.length > 0 ? items : ["Experience", "Premium", "Event", "Curated", "Editorial"];
+  // Duplicate to ensure infinite seamless scrolling loop
+  const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
+
+  const estimatedTagWidth = (tag) => String(tag).length * 9.5 + 75; // text width + margin + icon + padding
+  const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50%
+  const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
+
+  return (
+    <div style={{
+      overflow: "hidden",
+      position: "relative",
+      padding: "20px 0",
+      background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+      borderTop: `1px solid ${B}`,
+      borderBottom: `1px solid ${B}`,
+    }}>
+      {/* Left & Right Edge Fades */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+
+      <motion.div
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+        style={{ display: "flex", alignItems: "center", width: "max-content" }}
+      >
+        {loopedTags.map((tag, idx) => {
+          const isEven = idx % 2 === 0;
+          return (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "24px",
+                whiteSpace: "nowrap",
+                marginRight: "32px"
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "18px",
+                  fontWeight: isEven ? 700 : 300,
+                  color: isEven ? FG : M,
+                  fontFamily: "Poppins, sans-serif",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  opacity: isEven ? 1 : 0.75
+                }}
+              >
+                {tag}
+              </span>
+              <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
+            </div>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+}
+
 function About({ event }) {
   const { theme, tokens: { A, BG, FG, M, W, B, S } } = useTheme();
   const isMobile = useMobileView();
@@ -1594,67 +1658,7 @@ function About({ event }) {
           </div>
         </div>
       </section>
-      {(() => {
-        const rawTags = mqItems.length > 0 ? mqItems : ["Experience", "Premium", "Event", "Curated", "Editorial"];
-        // Duplicate to ensure infinite seamless scrolling loop
-        const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
-
-        const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-        const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50%
-        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-        return (
-          <div style={{
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
-          }}>
-            {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-              style={{ display: "flex", alignItems: "center", width: "max-content" }}
-            >
-              {loopedTags.map((tag, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap",
-                      marginRight: "32px"
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
-                      }}
-                    >
-                      {tag}
-                    </span>
-                    <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
-          </div>
-        );
-      })()}
+      <PremiumMarquee items={mqItems} />
     </>
   );
 }
@@ -1944,7 +1948,7 @@ function Venue({ event, hostName }) {
   if (isMobile) {
     return (
       <>
-        <Mq items={tags} dir="r" size="sm" bg={S} accent />
+        <PremiumMarquee items={tags} />
         <div className="mob-section" id="venue" style={{ background: isDark ? BG : W }}>
           <span className="mob-section-eyebrow" style={{ color: A }}>Location & Details</span>
           <h2 className="mob-section-title" style={{ color: FG }}>Where it All Happens</h2>
@@ -1989,7 +1993,7 @@ function Venue({ event, hostName }) {
             {venueDistrict && (
               <div className="mob-detail-row" style={{ borderColor: B }}>
                 <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <MapPin size={18} color={A} />
+                  <Building size={18} color={A} />
                 </div>
                 <div>
                   <p className="mob-detail-label" style={{ color: A }}>District</p>
@@ -2000,7 +2004,7 @@ function Venue({ event, hostName }) {
             {venueState && (
               <div className="mob-detail-row" style={{ borderColor: B }}>
                 <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <MapPin size={18} color={A} />
+                  <Map size={18} color={A} />
                 </div>
                 <div>
                   <p className="mob-detail-label" style={{ color: A }}>State</p>
@@ -2011,7 +2015,7 @@ function Venue({ event, hostName }) {
             {venueCountry && (
               <div className="mob-detail-row" style={{ borderColor: B }}>
                 <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <MapPin size={18} color={A} />
+                  <Globe size={18} color={A} />
                 </div>
                 <div>
                   <p className="mob-detail-label" style={{ color: A }}>Country</p>
@@ -2038,7 +2042,7 @@ function Venue({ event, hostName }) {
 
   return (
     <>
-      <Mq items={tags} dir="r" size="sm" bg={S} accent />
+      <PremiumMarquee items={tags} />
       <section id="venue" style={{ background: BG, padding: "32px 80px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
           {/* Header Area */}
@@ -2131,7 +2135,7 @@ function Venue({ event, hostName }) {
                   {venueDistrict && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark) ? `1px solid ${B}` : "none" }}>
                       <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
+                        <Building size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
@@ -2142,7 +2146,7 @@ function Venue({ event, hostName }) {
                   {venueState && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict) ? `1px solid ${B}` : "none" }}>
                       <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
+                        <Map size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
@@ -2153,7 +2157,7 @@ function Venue({ event, hostName }) {
                   {venueCountry && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState) ? `1px solid ${B}` : "none" }}>
                       <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
+                        <Globe size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
@@ -2164,7 +2168,7 @@ function Venue({ event, hostName }) {
                   {venueInstructions && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState && !venueCountry) ? `1px solid ${B}` : "none" }}>
                       <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
+                        <Info size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                         <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
