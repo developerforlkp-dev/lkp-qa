@@ -70,28 +70,28 @@ const StickyHeaderController = ({
     }
   }, []);
 
-  // ─── Intersection Observer: hero section ─────────────────────────────────
+  // ─── Scroll Listener: trigger when heroRef bottom passes top of viewport ────────
   useEffect(() => {
-    if (!heroRef?.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsSticky(!entry.isIntersecting);
-        if (entry.isIntersecting) {
-          // Close search panel if scrolling back to top
+    const handleScroll = () => {
+      if (!heroRef?.current) return;
+      const rect = heroRef.current.getBoundingClientRect();
+      // 72px is roughly the height of the top navbar
+      const shouldBeSticky = rect.bottom < 72;
+      
+      if (shouldBeSticky !== isSticky) {
+        setIsSticky(shouldBeSticky);
+        if (!shouldBeSticky) {
           setIsSearchPanelOpen(false);
         }
-      },
-      {
-        root: null,
-        threshold: 0,
-        rootMargin: "-72px 0px 0px 0px", // Account for existing header height
       }
-    );
+    };
 
-    observer.observe(heroRef.current);
-    return () => observer.disconnect();
-  }, [heroRef]);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Initial check
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [heroRef, isSticky]);
 
   // ─── Close search panel and dropdowns on outside click or Escape ────────
   useEffect(() => {

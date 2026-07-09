@@ -758,7 +758,7 @@ const FleetHome = () => {
         )}
 
         {/* Hero Section */}
-        <div ref={heroRef} className={styles.heroSection} style={{ position: "relative" }}>
+        <div className={styles.heroSection} style={{ position: "relative" }}>
           <HeroSection />
           {/* Mobile-only: floating search pill + bottom sheet */}
           {isMobileOrTablet && (
@@ -937,7 +937,7 @@ const FleetHome = () => {
             </div>
           </div>
 
-          <div className={cn(styles.filtersContainer, styles.desktopFilters)}>
+          <div ref={heroRef} className={cn(styles.filtersContainer, styles.desktopFilters)}>
             <div className={styles.filtersGrid}>
               {visibleFilterOptions.map((filter) => (
                 (() => {
