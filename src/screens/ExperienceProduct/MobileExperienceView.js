@@ -146,6 +146,30 @@ export default function MobileExperienceView({
   const galleryRef = useRef(null);
 
   /* ── gallery scroll handler ── */
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        setIsFooterVisible(entry.isIntersecting);
+      });
+    }, { threshold: 0.01 });
+
+    const interval = setInterval(() => {
+      const footer = document.getElementById("main-footer");
+      if (footer) {
+        observer.observe(footer);
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
+    };
+  }, []);
+
   const handleGalleryScroll = useCallback(() => {
     if (!galleryRef.current) return;
     const el = galleryRef.current;
@@ -819,7 +843,7 @@ export default function MobileExperienceView({
       {/* ╔═══════════════════════════════════╗
           ║       STICKY BOTTOM CTA           ║
           ╚═══════════════════════════════════╝ */}
-      {!bookingOpen && (
+      {!bookingOpen && !isFooterVisible && (
         <div className="mob-sticky-cta" style={{
           background: "transparent",
           borderColor: "transparent",
