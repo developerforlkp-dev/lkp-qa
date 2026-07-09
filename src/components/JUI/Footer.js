@@ -25,6 +25,19 @@ function FooterCol({ title, children }) {
 export function Footer() {
   const [isHostingFormVisible, setIsHostingFormVisible] = useState(false);
 
+  const handleExploreClick = () => {
+    setTimeout(() => {
+      const target = document.getElementById("listings-scroll-target");
+      if (target) {
+        const isMobile = window.innerWidth <= 1023;
+        const offset = target.getBoundingClientRect().top + window.scrollY - (isMobile ? 80 : 120);
+        window.scrollTo({ top: offset, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
+
   return (
     <footer id="main-footer" className={styles.footer}>
       {/* Background Image on Left */}
@@ -80,11 +93,11 @@ export function Footer() {
           {/* Links Sections */}
           <div className={styles.rightSection}>
             <FooterCol title="Explore"><ul>
-                <li><Link to="/experiences">Experiences</Link></li>
-                <li><Link to="/events">Events</Link></li>
-                <li><Link to="/stays">Stays</Link></li>
-                <li><Link to="/food">Food</Link></li>
-                <li><Link to="/places">Places</Link></li>
+                <li><Link to="/experiences" onClick={handleExploreClick}>Experiences</Link></li>
+                <li><Link to="/events" onClick={handleExploreClick}>Events</Link></li>
+                <li><Link to="/stays" onClick={handleExploreClick}>Stays</Link></li>
+                <li><Link to="/food" onClick={handleExploreClick}>Food</Link></li>
+                <li><Link to="/places" onClick={handleExploreClick}>Places</Link></li>
                 <li><Link to="/blog">Blog</Link></li>
               </ul></FooterCol>
 
