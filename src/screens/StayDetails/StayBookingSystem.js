@@ -1826,7 +1826,7 @@ const StayBookingSystem = ({
         }}
       >
         <Bed size={22} />
-        Reserve
+        Reserve Now
       </motion.button>
 
       <AnimatePresence>
@@ -2627,7 +2627,7 @@ const StayBookingSystem = ({
                     const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
                     const isCapacityExceeded = pricing.isOver && !loading;
                     const isDisabled = loading;
-                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Add Another Room" : (hasSelection ? "Reserve Stay" : "Select Room"));
+                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Add Another Room" : (hasSelection ? "Reserve Now" : "Select Room"));
 
                     return (
                       <motion.button

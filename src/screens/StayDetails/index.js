@@ -3747,7 +3747,7 @@ function PropertyModal({ stay, onClose }) {
                     display: "flex", alignItems: "center", justifyContent: "center"
                   }}
                 >
-                  Reserve Stay
+                  Reserve Now
                 </button>
 
                 <button
