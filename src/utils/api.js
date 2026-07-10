@@ -799,7 +799,17 @@ export const getCustomerWishlistItems = async () => {
     const response = await ListingsAPI.get("/customers/wishlist/items");
     return Array.isArray(response?.data?.items) ? response.data.items : [];
   } catch (error) {
-    console.error("Failed to fetch wishlist items:", error.response?.data || error.message);
+    console.error("Error fetching wishlist items:", error);
+    throw error;
+  }
+};
+
+export const getSupportGuest = async () => {
+  try {
+    const response = await ListingsAPI.get("/public/support/guest");
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching support guest data:", error);
     throw error;
   }
 };

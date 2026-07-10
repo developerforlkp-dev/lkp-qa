@@ -1,0 +1,132 @@
+@import ../../styles/helpers
+
+.container
+  max-width: 900px
+  margin: 0 auto
+  padding: 140px 24px 80px
+  min-height: 60vh
+
+.header
+  text-align: center
+  margin-bottom: 64px
+
+.title
+  font-size: 48px
+  font-weight: 800
+  color: #02203c
+  margin-bottom: 16px
+  letter-spacing: -0.02em
+  +d
+    font-size: 40px
+  +m
+    font-size: 32px
+
+.subtitle
+  font-size: 18px
+  color: #64748b
+  max-width: 600px
+  margin: 0 auto
+  line-height: 1.6
+
+.faqList
+  display: flex
+  flex-direction: column
+  gap: 20px
+
+.faqItem
+  border: 1px solid #f1f5f9
+  border-left-width: 4px
+  border-radius: 16px
+  overflow: hidden
+  background-color: #ffffff
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.03)
+  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1)
+  
+  &:hover
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08)
+    transform: translateY(-2px)
+  
+  &.open
+    border-color: #0097B2
+    box-shadow: 0 10px 30px -5px rgba(0, 151, 178, 0.15)
+    border-left-color: #0097B2
+    transform: translateY(-2px)
+
+.questionButton
+  width: 100%
+  display: flex
+  justify-content: space-between
+  align-items: center
+  padding: 24px 32px
+  background: none
+  border: none
+  cursor: pointer
+  text-align: left
+  transition: background .2s ease
+  +m
+    padding: 20px 24px
+  
+  &:hover
+    background: #f8fafc
+
+.questionText
+  font-size: 1.15rem
+  font-weight: 600
+  color: #0f172a
+  margin: 0
+  padding-right: 24px
+  line-height: 1.5
+
+.icon
+  color: #94a3b8
+  transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1), color .3s ease
+  flex-shrink: 0
+
+.open .icon
+  transform: rotate(180deg)
+  color: #0097B2
+
+.answerContainer
+  overflow: hidden
+  transition: max-height .4s cubic-bezier(0.4, 0, 0.2, 1), opacity .4s ease
+
+.answerContent
+  padding: 0 32px 32px
+  +m
+    padding: 0 24px 24px
+  
+  p
+    font-size: 1rem
+    color: #475569
+    line-height: 1.7
+    margin: 0
+
+.noFaqs
+  text-align: center
+  color: #64748b
+  font-size: 16px
+  padding: 60px
+  background: #f8fafc
+  border-radius: 16px
+  border: 1px dashed #cbd5e1
+
+.loaderContainer
+  display: flex
+  justify-content: center
+  align-items: center
+  min-height: 60vh
+  padding-top: 100px
+
+.loader
+  border: 3px solid rgba(0, 151, 178, 0.1)
+  border-top-color: #0097B2
+  border-radius: 50%
+  width: 48px
+  height: 48px
+  animation: spin 1s linear infinite
+
+@keyframes spin
+  0%
+    transform: rotate(0deg)
+  100%
+    transform: rotate(360deg)
