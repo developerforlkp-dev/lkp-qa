@@ -10,6 +10,11 @@
 .nav
     display: flex
     margin-bottom: 32px
+    overflow-x: auto
+    -webkit-overflow-scrolling: touch
+    scrollbar-width: none
+    &::-webkit-scrollbar
+        display: none
 
 .link
     display: flex
@@ -19,6 +24,11 @@
     +button-2
     color: $n4
     transition: all .2s
+    white-space: nowrap
+    flex-shrink: 0
+    +m
+        padding: 4px 10px
+        font-size: 13px
     svg
         margin-right: 8px
         fill: $n4
@@ -30,13 +40,13 @@
         +dark
             color: $n6
     &.active
-        background: $n3
-        color: $n8
+        background: $p1
+        color: $white
         svg
-            fill: $n8
+            fill: $white
         +dark
-            background: $n3
-            color: $n8
+            background: $p1
+            color: $white
     &:not(:last-child)
         margin-right: 8px
 

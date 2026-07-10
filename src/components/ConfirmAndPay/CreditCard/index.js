@@ -25,21 +25,8 @@ const cards = [
 
 const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null, messageText = "" }) => {
   const [save, setSave] = useState(true);
-  const [isAtBottom, setIsAtBottom] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const history = useHistory();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
-      setIsAtBottom(scrolledToBottom);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const ensureRazorpayScript = () =>
     new Promise((resolve, reject) => {
@@ -264,14 +251,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           />
         </>
       )}
-      <div
-        className={styles.stickyBottom}
-        style={{
-          opacity: isAtBottom ? 0 : 1,
-          visibility: isAtBottom ? "hidden" : "visible",
-          transition: "opacity 0.3s ease, visibility 0.3s ease",
-        }}
-      >
+      <div className={styles.stickyBottom}>
         <button
           className={cn("button", styles.button)}
           type="button"

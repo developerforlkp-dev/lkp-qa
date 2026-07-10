@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ListingsAPI, getFilteredListings, searchNearbyListings } from "../utils/api";
+import { ListingsAPI, getFilteredListings, searchNearbyListings, filterFoodMenus, filterPlaces } from "../utils/api";
 
 /**
  * Custom hook for fetching listings with filters and pagination
@@ -88,21 +88,45 @@ export const useListings = ({
         const mappedBusinessInterestId =
           categoryFilter?.businessInterestId || mapBusinessInterestId(businessInterest);
 
-        const filteredResponse = await getFilteredListings({
-          businessInterestId: mappedBusinessInterestId,
-          categoryType: categoryFilter?.categoryType,
-          categoryValues: categoryFilter?.categoryValues || [],
-          ratingFilter: hasRatingFilter ? Math.max(...filters.ratings) : undefined,
-          minPrice: effectiveMinPrice,
-          maxPrice: effectiveMaxPrice,
-          limit,
-          offset: nextOffset,
-          sortBy: categoryFilter?.sortBy || "newest",
-        });
+        if (mappedNearbyInterest === "FOOD" || mappedNearbyInterest === "PLACES") {
+          const filterPayload = { limit, offset: nextOffset };
+          
+          if (categoryFilter?.categoryType === "Primary Category") {
+            filterPayload.primaryCategoryId = categoryFilter.categoryValues.join(",");
+          } else if (categoryFilter?.categoryType === "Sub Category") {
+            filterPayload.subcategoryId = categoryFilter.categoryValues.join(",");
+          } else if (categoryFilter?.categoryType === "Tags" || categoryFilter?.categoryType === "Special Labels") {
+            filterPayload.tags = categoryFilter.categoryValues.join(",");
+          }
+          
+          if (filters.tags && filters.tags.length > 0) {
+            filterPayload.tags = filterPayload.tags ? `${filterPayload.tags},${filters.tags.join(",")}` : filters.tags.join(",");
+          }
 
-        listings = filteredResponse.listings || [];
-        totalCount = filteredResponse.totalCount ?? null;
-        hasMoreFromAPI = filteredResponse.hasMore ?? null;
+          const response = mappedNearbyInterest === "FOOD" 
+            ? await filterFoodMenus(filterPayload)
+            : await filterPlaces(filterPayload);
+          
+          listings = response.listings || [];
+          totalCount = response.totalCount ?? null;
+          hasMoreFromAPI = response.hasMore ?? null;
+        } else {
+          const filteredResponse = await getFilteredListings({
+            businessInterestId: mappedBusinessInterestId,
+            categoryType: categoryFilter?.categoryType,
+            categoryValues: categoryFilter?.categoryValues || [],
+            ratingFilter: hasRatingFilter ? Math.max(...filters.ratings) : undefined,
+            minPrice: effectiveMinPrice,
+            maxPrice: effectiveMaxPrice,
+            limit,
+            offset: nextOffset,
+            sortBy: categoryFilter?.sortBy || "newest",
+          });
+
+          listings = filteredResponse.listings || [];
+          totalCount = filteredResponse.totalCount ?? null;
+          hasMoreFromAPI = filteredResponse.hasMore ?? null;
+        }
       } else if (hasLocationSearch) {
         // Nearby search flow
         const nearbyResponse = await searchNearbyListings({

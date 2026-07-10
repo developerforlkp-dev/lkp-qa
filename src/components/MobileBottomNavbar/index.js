@@ -72,8 +72,7 @@ const shouldShowNavbar = (pathname, search) => {
     "/events",
     "/stays",
     "/food",
-    "/places",
-    "/listings"
+    "/places"
   ];
 
   return allowedPaths.includes(path);
@@ -145,8 +144,8 @@ export default function MobileBottomNavbar() {
             const exploreSection = document.getElementById("explore-by-section");
             if (exploreSection) {
               const exploreRect = exploreSection.getBoundingClientRect();
-              // If the bottom of the Explore By section is scrolled past the top of the viewport
-              if (exploreRect.bottom < 0) {
+              // Show the navbar when the top of the Explore By section passes under the mobile header (~80px)
+              if (exploreRect.top <= 80) {
                 setVisible(true);
               } else {
                 setVisible(false);
@@ -279,6 +278,17 @@ export default function MobileBottomNavbar() {
     if (location.pathname !== targetPath) {
       history.push(targetPath);
     }
+
+    // Scroll to the first listing instead of the current position
+    setTimeout(() => {
+      const target = document.getElementById("listings-scroll-target");
+      if (target) {
+        const offset = target.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: offset, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
   };
 
   const visibleFilterOptions = filterOptions.filter(

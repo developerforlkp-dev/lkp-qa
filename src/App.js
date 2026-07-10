@@ -35,6 +35,7 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 import TermsOfService from "./screens/TermsOfService";
 import PrivacyPolicy from "./screens/PrivacyPolicy";
 import MobileBottomNavbar from "./components/MobileBottomNavbar";
+import FAQ from "./screens/FAQ";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -278,6 +279,15 @@ function App() {
               render={() => (
                 <Page separatorHeader>
                   <Blog />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/faq"
+              render={() => (
+                <Page separatorHeader>
+                  <FAQ />
                 </Page>
               )}
             />

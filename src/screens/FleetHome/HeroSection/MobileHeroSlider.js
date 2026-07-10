@@ -7,12 +7,30 @@ import styles from './MobileHeroSlider.module.sass';
 const MobileHeroSlider = ({ destinations, onReady }) => {
   const history = useHistory();
 
-  // Trigger onReady since there is no complex loading sequence
+  // Preload the first image before calling onReady to maintain the skeleton loader
   React.useEffect(() => {
-    if (onReady) {
-      onReady();
+    if (!destinations || destinations.length === 0 || !destinations[0].image) {
+      if (onReady) onReady();
+      return;
     }
-  }, [onReady]);
+
+    let isMounted = true;
+    const img = new Image();
+    
+    const handleReady = () => {
+      if (isMounted && onReady) {
+        onReady();
+      }
+    };
+
+    img.onload = handleReady;
+    img.onerror = handleReady;
+    img.src = destinations[0].image;
+
+    return () => {
+      isMounted = false;
+    };
+  }, [destinations, onReady]);
 
   const settings = {
     dots: true,

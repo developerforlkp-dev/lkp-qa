@@ -10,16 +10,88 @@
     +m
         padding: 0 16px
 
-// ─── Desktop Search Bar (unchanged) ──────────────────────────────────────────
+// ─── Category Navigation Header ──────────────────────────────────────────────
+.categoryNav
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 12px
+    margin: 8px auto 24px
+    max-width: 1000px
+    overflow-x: auto
+    -webkit-overflow-scrolling: touch
+    scrollbar-width: none
+    &::-webkit-scrollbar
+        display: none
+    +m
+        justify-content: flex-start
+        padding: 0 4px
+        margin: 8px auto 16px
+
+.categoryNavItem
+    display: flex
+    align-items: center
+    gap: 8px
+    padding: 12px 24px
+    border-radius: 100px
+    background: transparent
+    border: 1px solid transparent
+    +button-2
+    color: $n4
+    cursor: pointer
+    transition: all .2s ease
+    white-space: nowrap
+    +dark
+        color: $n5
+    svg
+        color: $n4
+        fill: none
+        stroke: currentColor
+        transition: color .2s ease
+        +dark
+            color: $n5
+    &:hover
+        color: $n2
+        background: $n7
+        +dark
+            color: $n8
+            background: $n2
+        svg
+            color: $n2
+            +dark
+                color: $n8
+
+.categoryNavItemActive
+    background: $p1
+    border-color: $p1
+    color: $n8
+    box-shadow: 0 4px 12px rgba(0, 151, 178, 0.25)
+    +dark
+        background: $p1
+        border-color: $p1
+        color: $n8
+        box-shadow: 0 4px 12px rgba(0, 151, 178, 0.4)
+    svg
+        color: $n8
+        fill: none
+        stroke: currentColor
+        +dark
+            color: $n8
+    &:hover
+        background: darken(#0097B2, 5%)
+        +dark
+            background: darken(#0097B2, 5%)
+
+// ─── Desktop Search Bar ──────────────────────────────────────────
 .searchBar
     display: flex
     align-items: center
     gap: 0
     max-width: 1000px
-    margin: 0 auto 48px
+    margin: 0 auto 32px
     background: $n8
-    border-radius: 20px
-    padding: 24px
+    border-radius: 100px
+    padding: 12px 16px
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
     +dark
         background: $n1
@@ -30,7 +102,7 @@
         margin-bottom: 16px
         background: $n8
         border-radius: 20px
-        padding: 20px 16px
+        padding: 12px 16px
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08)
         +dark
             background: $n1
@@ -44,7 +116,7 @@
     gap: 12px
     padding: 0 20px
     +m
-        padding: 14px 4px
+        padding: 8px 4px
         width: 100%
         border-bottom: 1px solid $n6
         +dark
@@ -145,8 +217,8 @@
         display: none
 
 .searchButton
-    padding: 16px 40px
-    border-radius: 16px
+    padding: 12px 32px
+    border-radius: 100px
     background: #0097B2
     border: none
     +body-bold-2
@@ -156,8 +228,8 @@
     white-space: nowrap
     +m
         width: 100%
-        margin-top: 16px
-        padding: 15px 40px
+        margin-top: 8px
+        padding: 12px 24px
         border-radius: 14px
     &:hover
         background: darken(#0097B2, 5%)

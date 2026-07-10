@@ -147,10 +147,17 @@ const getRoomFeatures = (room, listing) => {
   // 1. Prioritize roomAmenities (Enriched objects from backend)
   if (Array.isArray(room.roomAmenities) && room.roomAmenities.length > 0) {
     room.roomAmenities.forEach(ra => {
-      const label = ra.displayName || ra.code || ra.name;
+      const label = ra.displayName || ra.code || ra.name || ra.amenityName || ra.amenity;
       if (label) features.push(label);
     });
   } 
+  
+  if (Array.isArray(room.bedConfigAmenities)) {
+    room.bedConfigAmenities.forEach(bca => {
+      const label = bca.displayName || bca.code || bca.name || bca.amenityName || bca.amenity;
+      if (label) features.push(label);
+    });
+  }
   // 2. Fallback to legacy amenityIds if roomAmenities is missing
   else if (Array.isArray(room.amenityIds) && Array.isArray(listing?.amenities)) {
     room.amenityIds.forEach(id => {
@@ -646,7 +653,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={allImages[0] || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
 
         {/* Room Count Tag */}
@@ -883,7 +890,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
       maxChildren: 0,
       maxExtraAdults: 0,
       description: b.description || b.bedDescription,
-      roomAmenities: b.amenities || [],
+      roomAmenities: b.bedConfigAmenities || b.amenities || [],
       isBedConfig: true
     }));
     

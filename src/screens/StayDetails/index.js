@@ -633,7 +633,7 @@ const ScopedStyles = () => (
       .hero-overlay-details-desktop {
         display: flex !important;
         padding: 24px 20px !important;
-        background: linear-gradient(to top, rgba(11, 11, 11, 0.95) 0%, rgba(11, 11, 11, 0.5) 50%, rgba(11, 11, 11, 0) 100%) !important;
+        background: transparent !important;
       }
       .hero-overlay-details-desktop .hero-title {
         font-size: clamp(2rem, 8vw, 3rem) !important;
@@ -1009,7 +1009,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
     }
     
     if (collected.length === 0) {
-      collected.push("/images/content/card-pic-13.jpg");
+      collected.push("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=");
     }
     return collected;
   }, [galleryItems, stay]);
@@ -1061,7 +1061,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
   };
 
   return (
-    <section ref={heroRef} style={{ position: "relative", height: isMobile ? "auto" : "75vh", background: BG, overflow: isMobile ? "visible" : "hidden", padding: "0", zIndex: 50 }}>
+    <section ref={heroRef} style={{ position: "relative", height: isMobile ? "auto" : "75vh", background: "transparent", overflow: "visible", padding: "0", zIndex: 50 }}>
       <div className="premium-hero-grid" style={isMobile ? { position: "relative", height: "55vh" } : {}}>
         
         {/* Main Cover Image View */}
@@ -1258,7 +1258,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
             left: 0,
             right: 0,
             padding: "48px 48px",
-            background: "linear-gradient(to top, rgba(11, 11, 11, 0.85) 0%, rgba(11, 11, 11, 0.4) 60%, rgba(11, 11, 11, 0) 100%)",
+            background: "transparent",
             zIndex: 40,
             pointerEvents: "none",
             flexDirection: "column",
@@ -1404,7 +1404,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
 
       {/* === MOBILE CONTENT BELOW HERO === */}
       {isMobile && (
-        <div className="mobile-bottom-below-hero" style={{ background: BG }}>
+        <div className="mobile-bottom-below-hero" style={{ background: "transparent" }}>
           {/* Mobile Thumbnail Strip */}
           <div className="mobile-thumb-strip">
             {allImages.slice(0, 5).map((imgUrl, idx) => (
@@ -1467,7 +1467,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
 
 function StayAmenities({ stay }) {
   const { isMobile } = useWindowSize();
-  const { tokens: { A, FG, M, S, B, W } } = useTheme();
+  const { tokens: { A, FG, M, S, B, W, BG } } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   const iconMap = {
@@ -1523,7 +1523,7 @@ function StayAmenities({ stay }) {
   }, [stay]);
 
   return (
-    <section style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px", boxSizing: "border-box", overflow: "hidden" }}>
+    <section style={{ background: "transparent", padding: isMobile ? "16px 24px" : "0px 80px", boxSizing: "border-box", overflow: "hidden" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         
         <Soul y={isMobile ? 30 : 60} s={0.03}>
@@ -3747,7 +3747,7 @@ function PropertyModal({ stay, onClose }) {
                     display: "flex", alignItems: "center", justifyContent: "center"
                   }}
                 >
-                  Reserve Stay
+                  Reserve Now
                 </button>
 
                 <button
@@ -4295,7 +4295,7 @@ function PropertyStayCard({ stay }) {
             </div>
           </>
         ) : (
-          <img src={allImages[0] || "/images/content/card-pic-13.jpg"} alt={propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={allImages[0] || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="} alt={propertyName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
 
         {/* Property Badge Tag */}

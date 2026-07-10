@@ -3087,7 +3087,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
       <AnimatePresence>
         {show && (
-          <div className="booking-modal-wrapper" style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflow: "auto" }}>
+          <div className="booking-modal-wrapper" style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", padding: 20, overflowY: "auto", overflowX: "hidden" }}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -3106,6 +3106,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               className="booking-modal-container"
               style={{
                 position: "relative",
+                margin: "auto",
                 width: "95%",
                 maxWidth: 480,
                 maxHeight: "calc(100vh - 40px)",
@@ -4005,6 +4006,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 display: "flex",
                                 flexWrap: "wrap",
                                 gap: 8,
+                                alignItems: "flex-start",
                                 opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
                                 pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
                                 transition: "0.3s"

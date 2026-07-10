@@ -18,7 +18,7 @@ import { buildExperienceUrl } from "../../../utils/experienceUrl";
 
 // Helper to format image URL from API
 const formatImageUrl = (url) => {
-  if (!url) return "/images/content/card-pic-13.jpg";
+  if (!url) return "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
   // If already a full URL, check if it's an Azure blob with SAS token
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -31,7 +31,7 @@ const formatImageUrl = (url) => {
         return url;
       }
       // No SAS token, fallback to default image
-      return "/images/content/card-pic-13.jpg";
+      return "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
     }
     // Not an Azure blob URL, return as-is
     return url;
@@ -42,14 +42,14 @@ const formatImageUrl = (url) => {
   if (url.includes("/") && !url.startsWith("/")) {
     // This would create an Azure blob URL which requires auth
     // Return default image instead to prevent failed requests
-    return "/images/content/card-pic-13.jpg";
+    return "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   }
 
   if (url.startsWith("/")) {
     return url;
   }
 
-  return "/images/content/card-pic-13.jpg";
+  return "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 };
 
 const getEntityId = (listing) => {
@@ -70,7 +70,12 @@ const getEntityId = (listing) => {
     listing.placeId ??
     listing.place_id ??
     listing.id ??
-    listing._id
+    listing._id ??
+    listing.listing?.id ??
+    listing.stay?.id ??
+    listing.event?.id ??
+    listing.foodMenu?.id ??
+    listing.place?.id
   );
 };
 
@@ -103,19 +108,19 @@ const getEntityIdByType = (listing, entityType) => {
   if (!listing || typeof listing !== "object") return undefined;
 
   if (entityType === "event") {
-    return listing.eventId ?? listing.event_id ?? listing.id ?? listing._id;
+    return listing.eventId ?? listing.event_id ?? listing.event?.id ?? listing.id ?? listing._id;
   }
   if (entityType === "stay") {
-    return listing.stayId ?? listing.stay_id ?? listing.propertyId ?? listing.property_id ?? listing.id ?? listing._id;
+    return listing.stayId ?? listing.stay_id ?? listing.stay?.id ?? listing.propertyId ?? listing.property_id ?? listing.property?.id ?? listing.id ?? listing._id;
   }
   if (entityType === "food") {
-    return listing.foodMenuId ?? listing.food_menu_id ?? listing.id ?? listing._id;
+    return listing.foodMenuId ?? listing.food_menu_id ?? listing.foodMenu?.id ?? listing.id ?? listing._id;
   }
   if (entityType === "place") {
-    return listing.placeId ?? listing.place_id ?? listing.id ?? listing._id;
+    return listing.placeId ?? listing.place_id ?? listing.place?.id ?? listing.id ?? listing._id;
   }
   // experience
-  return listing.listingId ?? listing.listing_id ?? listing.experienceId ?? listing.experience_id ?? listing.id ?? listing._id;
+  return listing.listingId ?? listing.listing_id ?? listing.listing?.id ?? listing.experienceId ?? listing.experience_id ?? listing.id ?? listing._id;
 };
 
 const getEntityImageUrl = (listing) => {
@@ -198,7 +203,7 @@ const transformListingToCard = (listing, section) => {
 
   // Price formatting
   const price = listing.individualPrice ?? listing.startingPrice ?? 0;
-  const hasPrice = price > 0;
+  const hasPrice = price > 0 && entityType !== "place";
   let suffix = "";
   if (entityType === "experience" || entityType === "event") suffix = " / person";
   if (entityType === "stay") suffix = " / night";
@@ -244,6 +249,10 @@ const transformListingToCard = (listing, section) => {
   } else if (normalizedTags.includes("TRENDING")) {
     finalCategoryText = "TRENDING";
     badgeColor = "orange";
+  }
+
+  if (entityType === "place") {
+    finalCategoryText = null;
   }
 
   return {

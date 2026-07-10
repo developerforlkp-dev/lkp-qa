@@ -6,11 +6,15 @@ import Icon from "../../Icon";
 
 const Item = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+  const finalSrc = imageError ? defaultImage : item.src;
+  const finalSrcSet = imageError ? undefined : `${item.srcSet} 2x`;
+
   const handleImageError = (e) => {
-    // Silently fallback to default image if original fails to load
-    if (e.target.src !== "") {
-      e.target.src = "";
-      e.target.srcSet = "";
+    e.target.onerror = null;
+    if (!imageError) {
+      setImageError(true);
     }
     setImageLoaded(true);
   };
@@ -28,8 +32,8 @@ const Item = ({ className, item }) => {
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 
-          srcSet={`${item.srcSet} 2x`} 
-          src={item.src} 
+          srcSet={finalSrcSet} 
+          src={finalSrc} 
           alt={item.title || "Nature"}
           onLoad={() => setImageLoaded(true)}
           onError={handleImageError}

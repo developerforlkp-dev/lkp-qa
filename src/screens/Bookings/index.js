@@ -47,7 +47,8 @@ const Bookings = ({ bookingData = null }) => {
       // Handle errors independently so one failure doesn't block the other
       const [ordersResult, completedCountResult] = await Promise.allSettled([
         getCustomerOrders(100, 1),
-        getCompleteExpiredOrders()
+        // getCompleteExpiredOrders() // Temporarily disabled
+        Promise.resolve({ completedCount: 0 })
       ]);
       
       // Handle regular orders result

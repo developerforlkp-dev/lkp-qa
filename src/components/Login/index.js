@@ -63,15 +63,15 @@ const Login = ({ onClose }) => {
   const isMountedRef = useRef(true);
   const otpFocusTimeoutRef = useRef(null);
 
-  // Responsive width for Google Login button
-  const [googleBtnWidth, setGoogleBtnWidth] = useState(
-    window.innerWidth < 480 ? Math.max(200, window.innerWidth - 80).toString() : "350"
+  // Responsive scale for Google Login button
+  const [googleScale, setGoogleScale] = useState(
+    window.innerWidth < 480 ? Math.min(1, (window.innerWidth - 80) / 350) : 1
   );
 
   useEffect(() => {
     const handleResize = () => {
-      setGoogleBtnWidth(
-        window.innerWidth < 480 ? Math.max(200, window.innerWidth - 80).toString() : "350"
+      setGoogleScale(
+        window.innerWidth < 480 ? Math.min(1, (window.innerWidth - 80) / 350) : 1
       );
     };
     window.addEventListener("resize", handleResize);
@@ -424,17 +424,26 @@ const Login = ({ onClose }) => {
           <div className={styles.info}>Login with your Google account</div>
           
           <div className={styles.btns}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => {
-                setError("Google login failed. Please try again.");
-              }}
-
-              theme="filled_blue"
-              size="large"
-              shape="pill"
-              width={googleBtnWidth}
-            />
+            <div style={{
+              width: '350px',
+              maxWidth: '350px',
+              transform: `scale(${googleScale})`,
+              transformOrigin: 'top center',
+              height: `${44 * googleScale}px`,
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  setError("Google login failed. Please try again.");
+                }}
+                theme="filled_blue"
+                size="large"
+                shape="pill"
+                width="350"
+              />
+            </div>
           </div>
           <div className={styles.note}>Or continue with phone number</div>
           <form onSubmit={handlePhoneSubmit} className={styles.form}>

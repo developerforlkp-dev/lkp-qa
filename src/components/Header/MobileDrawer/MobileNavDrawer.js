@@ -99,17 +99,19 @@ const MobileNavDrawer = ({
         <div className={styles.drawerBody}>
           {/* Nav Links */}
           <nav className={styles.nav}>
-            <NavLink
-              className={styles.navLink}
-              to="/bookings"
-              activeClassName={styles.navLinkActive}
-              onClick={onClose}
-            >
-              <span className={styles.navIcon}>
-                <Icon name="home" size="20" />
-              </span>
-              <span className={styles.navLabel}>Bookings</span>
-            </NavLink>
+            {isAuthenticated && (
+              <NavLink
+                className={styles.navLink}
+                to="/bookings"
+                activeClassName={styles.navLinkActive}
+                onClick={onClose}
+              >
+                <span className={styles.navIcon}>
+                  <Icon name="home" size="20" />
+                </span>
+                <span className={styles.navLabel}>Bookings</span>
+              </NavLink>
+            )}
             <NavLink
               className={styles.navLink}
               to="/wishlists"

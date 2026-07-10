@@ -10,6 +10,9 @@ const getWishlistConfig = (item) => {
   const explicitId = item?.wishlistItemId ?? item?.itemId ?? item?.listingId ?? item?.eventId ?? item?.stayId;
 
   if (explicitType && explicitId != null && explicitId !== "") {
+    if (explicitType === "food" || explicitType === "place") {
+      return null;
+    }
     return {
       itemType: explicitType,
       itemId: explicitId,
@@ -19,6 +22,9 @@ const getWishlistConfig = (item) => {
 
   const url = String(item?.url || "").toLowerCase();
   if (explicitId != null && explicitId !== "") {
+    if (url.includes("/food") || url.includes("/place")) {
+      return null;
+    }
     if (url.includes("/event")) {
       return { itemType: "event", itemId: explicitId, initialSaved: Boolean(item?.wishlistSaved) };
     }
@@ -33,16 +39,20 @@ const getWishlistConfig = (item) => {
 
 const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
   
-  const defaultImage = "/images/content/card-pic-13.jpg";
+  const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const hasSasToken = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && 
                       item.src.includes("sig=") && item.src.includes("sv=");
   const imageSrc = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && !hasSasToken
     ? defaultImage 
     : (item.src || defaultImage);
   const imageSrcSet = imageSrc;
+
+  const finalSrc = imageError ? defaultImage : imageSrc;
+  const finalSrcSet = imageError ? defaultImage : (imageSrcSet !== defaultImage ? `${imageSrcSet} 2x` : defaultImage);
 
   const shouldHidePrice = hidePrice;
 
@@ -107,15 +117,14 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>
         <img 
-          srcSet={imageSrcSet !== defaultImage ? `${imageSrcSet} 2x` : defaultImage}
-          src={imageSrc} 
+          srcSet={finalSrcSet}
+          src={finalSrc} 
           alt={item.title || "Listing"}
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
-            if (!e.target.src.includes("card-pic-13.jpg")) {
-              e.target.src = defaultImage;
-              e.target.srcSet = defaultImage;
-              e.target.onerror = null;
+            e.target.onerror = null;
+            if (!imageError) {
+              setImageError(true);
             }
             setImageLoaded(true);
           }}
@@ -178,7 +187,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
 
         <div className={styles.foot}>
           <div className={styles.flex}>
-            {!item.hideRating && (
+            {!item.hideRating && Number(item.reviews) > 0 && (
               <div className={styles.rating}>
                 <div className={styles.ratingTop}>
                   <Icon name="star" />

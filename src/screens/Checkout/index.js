@@ -87,6 +87,89 @@ const getStayEarlyBirdDiscount = (stayDetails, checkInDate) => {
   };
 };
 
+const isPropertyBasedStayBooking = (stayDetails, bookingData, orderDetails) => {
+  const scopeValues = [
+    stayDetails?.bookingScope,
+    stayDetails?.booking_scope,
+    stayDetails?.scope,
+    bookingData?.bookingScope,
+    bookingData?.booking_scope,
+    bookingData?.scope,
+    bookingData?.roomType,
+    orderDetails?.order?.bookingScope,
+    orderDetails?.order?.booking_scope,
+    orderDetails?.order?.scope,
+    orderDetails?.raw?.order?.bookingScope,
+    orderDetails?.raw?.order?.booking_scope,
+    orderDetails?.raw?.order?.scope,
+  ];
+
+  return scopeValues.some((value) => String(value || "").toLowerCase().includes("property"));
+};
+
+const getPropertyBaseNightlyPrice = (stayDetails, checkInDate) => {
+  if (!isPropertyBasedStayBooking(stayDetails, null, null)) {
+    return 0;
+  }
+
+  const asNumber = (value) => {
+    if (value === null || value === undefined || value === "") return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const toDateOnly = (value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    parsed.setHours(0, 0, 0, 0);
+    return parsed;
+  };
+
+  const stayDate = toDateOnly(checkInDate);
+  const seasonalPeriods = Array.isArray(stayDetails?.seasonalPricing)
+    ? stayDetails.seasonalPricing
+    : (Array.isArray(stayDetails?.seasonalPricings)
+      ? stayDetails.seasonalPricings
+      : (Array.isArray(stayDetails?.seasonalPeriods) ? stayDetails.seasonalPeriods : []));
+
+  const activeSeason = seasonalPeriods.find((period) => {
+    const start = toDateOnly(period?.startDate || period?.start_date);
+    const end = toDateOnly(period?.endDate || period?.end_date);
+    if (!stayDate || !start || !end) return false;
+    return stayDate >= start && stayDate <= end;
+  });
+
+  return (
+    asNumber(activeSeason?.fullPropertyHikePrice) ??
+    asNumber(activeSeason?.hikePrice) ??
+    asNumber(activeSeason?.fullPropertyB2cPrice) ??
+    asNumber(activeSeason?.fullPropertyb2cPrice) ??
+    asNumber(activeSeason?.full_property_b2c_price) ??
+    asNumber(activeSeason?.b2cPrice) ??
+    asNumber(stayDetails?.fullPropertyHikePrice) ??
+    asNumber(stayDetails?.fullPropertyB2cPrice) ??
+    asNumber(stayDetails?.fullPropertyb2cPrice) ??
+    asNumber(stayDetails?.full_property_b2c_price) ??
+    asNumber(stayDetails?.b2cPrice) ??
+    asNumber(stayDetails?.pricePerNight) ??
+    asNumber(stayDetails?.startingPrice) ??
+    asNumber(stayDetails?.price) ??
+    0
+  );
+};
+
+const getOrderNumericValue = (orderDetails, ...keys) => {
+  const order = orderDetails?.order || orderDetails?.raw?.order || orderDetails || {};
+  for (const key of keys) {
+    const value = order?.[key];
+    if (value === null || value === undefined || value === "") continue;
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+};
+
 const reorderPriceRows = (rows, computedTotal = null) => {
   const primaryRows = [];
   const addOnRows = [];
@@ -138,6 +221,7 @@ const Checkout = () => {
   const [paymentData, setPaymentData] = useState(null);
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [stayDetails, setStayDetails] = useState(null);
+  const [pendingOrderDetails, setPendingOrderDetails] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [messageText, setMessageText] = useState("");
 
@@ -301,6 +385,7 @@ const Checkout = () => {
       setCheckingPayment(true);
       try {
         const orderDetails = await getOrderDetails(pendingOrderId);
+        setPendingOrderDetails(orderDetails || null);
         const order = orderDetails?.order || orderDetails || {};
         const restoredPayment = hydratePendingPaymentFromOrder(orderDetails, {
           orderId: order?.orderId || pendingOrderId,
@@ -512,9 +597,18 @@ const Checkout = () => {
       }
 
       const baseRow = rows.find((r) => /base stay|base price|total base/i.test(String(r.title || "")));
-      const isPropertyBasedStay = /property-based|property based/i.test(String(stayDetails?.bookingScope || ""));
+      const isPropertyBasedStay = isPropertyBasedStayBooking(stayDetails, bookingData, pendingOrderDetails);
+      const orderBasePrice = isPropertyBasedStay
+        ? getOrderNumericValue(pendingOrderDetails, "basePrice")
+        : 0;
+      const orderAddOnsAmount = isPropertyBasedStay
+        ? getOrderNumericValue(pendingOrderDetails, "addonsTotal")
+        : 0;
       const propertyBaseFromApi = isPropertyBasedStay
-        ? parseAmount(stayDetails?.fullPropertyB2cPrice) * nights
+        ? Math.max(
+            orderBasePrice,
+            getPropertyBaseNightlyPrice(stayDetails, bookingData?.checkInDate) * nights
+          )
         : 0;
       let baseAmount = propertyBaseFromApi > 0
         ? propertyBaseFromApi
@@ -542,7 +636,8 @@ const Checkout = () => {
       const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
       const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
       const addOnRows = rows.filter((r) => /add[\s-]?ons?/i.test(String(r.title || "")));
-      const addOnsAmount = addOnRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
+      const receiptAddOnsAmount = addOnRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
+      const addOnsAmount = orderAddOnsAmount > 0 ? orderAddOnsAmount : receiptAddOnsAmount;
       const existingDiscountAmount = rows
         .filter((r) => /discount/i.test(String(r.title || "")))
         .reduce((sum, r) => sum + Math.abs(parseAmount(r.value)), 0);
@@ -588,6 +683,11 @@ const Checkout = () => {
       // Keep base stay as pure room charge (no discount/tax mixed in)
       if (baseRow) {
         baseRow.value = `INR ${baseAmount.toFixed(2)}`;
+      }
+      if (addOnRows.length > 0 && orderAddOnsAmount > 0) {
+        addOnRows.forEach((row) => {
+          row.value = `INR ${orderAddOnsAmount.toFixed(2)}`;
+        });
       }
 
       // Remove generic discount rows; we'll reinsert a single authoritative one
@@ -727,7 +827,7 @@ const Checkout = () => {
       ],
       computedFinalAmount: addOnsPrice,
     };
-  }, [bookingData, selectedAddOns, stayDetails]);
+  }, [bookingData, selectedAddOns, stayDetails, pendingOrderDetails]);
 
   useEffect(() => {
     if (computedFinalAmount == null || !paymentData) return;

@@ -55,7 +55,7 @@ const transformWishlistItemToCard = (item) => {
   const imageUrl =
     formatImageUrl(item?.display?.imageUrl) ||
     formatImageUrl(item?.display?.imageBlobName) ||
-    "/images/content/card-pic-13.jpg";
+    "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const title = item?.display?.title || "Saved item";
   const pricingLabel = item?.display?.pricing?.label || null;
 

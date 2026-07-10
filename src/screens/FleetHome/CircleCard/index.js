@@ -20,6 +20,7 @@ const CircleCard = ({ className, item }) => {
           className={styles.image}
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
+            e.target.onerror = null;
             if (e.target.src !== "") {
               e.target.src = "";
               e.target.srcSet = "";

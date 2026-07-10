@@ -5,7 +5,7 @@ import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
 import CategoryCard from "../../components/CategoryCard";
-import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces, getBusinessInterests } from "../../utils/api";
+import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getBusinessInterests } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -22,35 +22,35 @@ const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 const filterOptions = [
-  { 
-    id: "experience", 
-    label: "Experiences", 
+  {
+    id: "experience",
+    label: "Experiences",
     description: "Live unforgettable moments",
-    image: "/images/categories/experience.webp" 
+    image: "/images/categories/experience.webp"
   },
-  { 
-    id: "events", 
-    label: "Events", 
+  {
+    id: "events",
+    label: "Events",
     description: "Join unique happenings",
-    image: "/images/categories/events.webp" 
+    image: "/images/categories/events.webp"
   },
-  { 
-    id: "stays", 
-    label: "Stays", 
+  {
+    id: "stays",
+    label: "Stays",
     description: "Spaces that feel like you",
-    image: "/images/categories/stays.webp" 
+    image: "/images/categories/stays.webp"
   },
-  { 
-    id: "food", 
-    label: "Food", 
+  {
+    id: "food",
+    label: "Food",
     description: "Flavors worth remembering",
-    image: "/images/categories/food.webp" 
+    image: "/images/categories/food.webp"
   },
-  { 
-    id: "places", 
-    label: "Places", 
+  {
+    id: "places",
+    label: "Places",
     description: "Discover hidden gems",
-    image: "/images/categories/places.webp" 
+    image: "/images/categories/places.webp"
   },
 ];
 
@@ -192,20 +192,32 @@ const FleetHome = () => {
   );
 
   // Handle filter click by navigating to new URL
-  const handleFilterClick = (filterId) => {
+  const handleFilterClick = (filterId, shouldScroll = false) => {
     if (businessInterestActiveMap[filterId] === false) return;
     if (businessInterestAvailability[filterId] === false) return;
     if (activeFilter !== filterId) {
       // For experience, we use the root path "/"
       const targetPath = filterId === "experience" ? "/" : `/${filterId}`;
-      
+
       // Only navigate if we are not already on that path
       if (location.pathname !== targetPath) {
         history.push(targetPath);
       }
 
-      // Scroll to top when switching categories
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (shouldScroll) {
+        // Scroll to the first listing when switching categories from sticky headers
+        setTimeout(() => {
+          const target = document.getElementById("listings-scroll-target");
+          if (target) {
+            // Use 70px offset so target goes to 70px.
+            // This satisfies the rect.bottom < 72 threshold, keeping the sticky header active.
+            const offset = target.getBoundingClientRect().top + window.scrollY - 70; 
+            window.scrollTo({ top: offset, behavior: "smooth" });
+          } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }, 100);
+      }
     }
   };
 
@@ -259,7 +271,7 @@ const FleetHome = () => {
     if (searchQuery) params.append("search", searchQuery);
     if (selectedDestination?.placeId) params.append("placeId", selectedDestination.placeId);
     if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
-    
+
     const guestTotal = guests.adults + guests.children;
     if (guestTotal > 0) {
       params.append("guests", guestTotal);
@@ -275,7 +287,7 @@ const FleetHome = () => {
       food: "FOOD",
       places: "PLACE"
     };
-    
+
     params.append("businessInterest", interestMap[activeFilter] || "EXPERIENCE");
 
     history.push(`/listings?${params.toString()}`);
@@ -429,44 +441,6 @@ const FleetHome = () => {
   // Business interest IDs: 1=Experience, 2=Events, 3=Stays, 4=Places, 5=Food
   useEffect(() => {
 
-    if (activeFilter === "places") {
-      const loadPlaces = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-          const result = await getPlaces(20, 0);
-          // result is now { section, listings }; use backend section info if available
-          const backendSection = result?.section;
-          const listings = Array.isArray(result?.listings) ? result.listings : [];
-          console.log("📍 Places result from API:", result);
-          const newSections = [
-            {
-              section: {
-                sectionId: backendSection?.sectionId || backendSection?.id || "places",
-                sectionTitle: backendSection?.sectionTitle || backendSection?.title || backendSection?.name || "Places Nearby",
-                businessInterestId: backendSection?.businessInterestId || 4,
-                businessInterest: backendSection?.businessInterest || "PLACE",
-                businessInterestCode: backendSection?.businessInterestCode || "PLACE",
-              },
-              listings,
-            },
-          ];
-          console.log("📍 Setting sectionsData for places:", newSections);
-          setSectionsData(newSections);
-        } catch (err) {
-          console.error("❌ Error loading places nearby:", err);
-          setSectionsData([]);
-          setError(err.message || "Failed to load places");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadPlaces();
-      return;
-    }
-
     const businessInterestId = getBusinessInterestId(activeFilter) ?? (activeFilter === "experience" ? 1 : null);
     if (businessInterestId == null) {
       // Any other filter that doesn't have a dedicated fetch block or businessInterestId
@@ -534,7 +508,7 @@ const FleetHome = () => {
             const isEventsSection = activeFilter === "events" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("event"));
             const isStaysSection = activeFilter === "stays" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("stay"));
             const isFoodSection = activeFilter === "food" || (typeof sectionTitle === "string" && (sectionTitle.toLowerCase().includes("food") || sectionTitle.toLowerCase().includes("menu")));
-            
+
             if (isEventsSection && (!listings || listings.length === 0)) {
               try {
                 const eventResult = await getEventListings(12, 0);
@@ -729,7 +703,7 @@ const FleetHome = () => {
       observer.observe(section);
     } else {
       // Fallback if section isn't immediately found
-      isVisible = true; 
+      isVisible = true;
     }
 
     // Start loop with initial quick trigger
@@ -745,53 +719,20 @@ const FleetHome = () => {
     <LayoutGroup>
       <div className={cn("section", styles.section)}>
         {isMobileOrTablet && (
-        <MobileAppHeader 
-          onSearchClick={() => setSheetOpen(true)}
-          isStickyNav={isStickyNav}
-        />
-      )}
-      
-      {!isMobileOrTablet && (
-        <StickyHeaderController
-          heroRef={heroRef}
-          visibleFilterOptions={visibleFilterOptions}
-          activeFilter={activeFilter}
-          handleFilterClick={handleFilterClick}
-          businessInterestAvailability={businessInterestAvailability}
-          businessInterestActiveMap={businessInterestActiveMap}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedDestination={selectedDestination}
-          setSelectedDestination={setSelectedDestination}
-          selectedDate={selectedDate}
-          guests={guests}
-          showCalendar={showCalendar}
-          formattedDate={formattedDate}
-          guestCountText={guestCountText}
-          showDatePicker={showDatePicker}
-          setShowDatePicker={setShowDatePicker}
-          showGuestPicker={showGuestPicker}
-          setShowGuestPicker={setShowGuestPicker}
-          handleSearch={handleSearch}
-          handleDateSelect={handleDateSelect}
-          handleGuestChange={handleGuestChange}
-          destinationSuggestions={destinationSuggestions}
-          showDestinationSuggestions={showDestinationSuggestions}
-          setShowDestinationSuggestions={setShowDestinationSuggestions}
-          activeSuggestionIndex={activeSuggestionIndex}
-          setActiveSuggestionIndex={setActiveSuggestionIndex}
-          selectDestinationSuggestion={selectDestinationSuggestion}
-          destinationRef={destinationRef}
-        />
-      )}
-
-      {/* Hero Section */}
-      <div ref={heroRef} className={styles.heroSection} style={{ position: "relative" }}>
-        <HeroSection />
-        {/* Mobile-only: floating search pill + bottom sheet */}
-        {isMobileOrTablet && (
-          <MobileCinematicSearch
+          <MobileAppHeader
+            onSearchClick={() => setSheetOpen(true)}
             isStickyNav={isStickyNav}
+          />
+        )}
+
+        {!isMobileOrTablet && (
+          <StickyHeaderController
+            heroRef={heroRef}
+            visibleFilterOptions={visibleFilterOptions}
+            activeFilter={activeFilter}
+            handleFilterClick={handleFilterClick}
+            businessInterestAvailability={businessInterestAvailability}
+            businessInterestActiveMap={businessInterestActiveMap}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             selectedDestination={selectedDestination}
@@ -805,6 +746,9 @@ const FleetHome = () => {
             setShowDatePicker={setShowDatePicker}
             showGuestPicker={showGuestPicker}
             setShowGuestPicker={setShowGuestPicker}
+            handleSearch={handleSearch}
+            handleDateSelect={handleDateSelect}
+            handleGuestChange={handleGuestChange}
             destinationSuggestions={destinationSuggestions}
             showDestinationSuggestions={showDestinationSuggestions}
             setShowDestinationSuggestions={setShowDestinationSuggestions}
@@ -812,281 +756,315 @@ const FleetHome = () => {
             setActiveSuggestionIndex={setActiveSuggestionIndex}
             selectDestinationSuggestion={selectDestinationSuggestion}
             destinationRef={destinationRef}
-            sheetOpen={sheetOpen}
-            setSheetOpen={setSheetOpen}
-            handleSearch={handleSearch}
-            handleDateSelect={handleDateSelect}
-            handleGuestChange={handleGuestChange}
-            activeFilter={activeFilter}
-            onFilterClick={handleFilterClick}
-            businessInterestAvailability={businessInterestAvailability}
-            businessInterestActiveMap={businessInterestActiveMap}
           />
         )}
-      </div>
+
+        {/* Hero Section */}
+        <div className={styles.heroSection} style={{ position: "relative" }}>
+          <HeroSection />
+          {/* Mobile-only: floating search pill + bottom sheet */}
+          {isMobileOrTablet && (
+            <MobileCinematicSearch
+              isStickyNav={isStickyNav}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              selectedDestination={selectedDestination}
+              setSelectedDestination={setSelectedDestination}
+              selectedDate={selectedDate}
+              guests={guests}
+              showCalendar={showCalendar}
+              formattedDate={formattedDate}
+              guestCountText={guestCountText}
+              showDatePicker={showDatePicker}
+              setShowDatePicker={setShowDatePicker}
+              showGuestPicker={showGuestPicker}
+              setShowGuestPicker={setShowGuestPicker}
+              destinationSuggestions={destinationSuggestions}
+              showDestinationSuggestions={showDestinationSuggestions}
+              setShowDestinationSuggestions={setShowDestinationSuggestions}
+              activeSuggestionIndex={activeSuggestionIndex}
+              setActiveSuggestionIndex={setActiveSuggestionIndex}
+              selectDestinationSuggestion={selectDestinationSuggestion}
+              destinationRef={destinationRef}
+              sheetOpen={sheetOpen}
+              setSheetOpen={setSheetOpen}
+              handleSearch={handleSearch}
+              handleDateSelect={handleDateSelect}
+              handleGuestChange={handleGuestChange}
+              activeFilter={activeFilter}
+              onFilterClick={handleFilterClick}
+              businessInterestAvailability={businessInterestAvailability}
+              businessInterestActiveMap={businessInterestActiveMap}
+            />
+          )}
+        </div>
 
 
-      <div className={cn("container", styles.container)}>
-        <div className={styles.glassContainer}>
-          <div className={styles.searchBar}>
-            <div className={styles.searchField} ref={destinationRef}>
-              <Icon name="location" size="20" />
-              <div className={styles.searchFieldContent}>
-                <div className={styles.searchLabel}>What are you looking for?</div>
-                <input
-                  type="text"
-                  placeholder="Experiences, events, stays..."
-                  className={styles.searchInput}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSearchQuery(value);
-                    if (!selectedDestination || value !== selectedDestination.description) {
-                      setSelectedDestination(null);
-                    }
-                  }}
-                  onFocus={() => {
-                    if (destinationSuggestions.length > 0) {
-                      setShowDestinationSuggestions(true);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowDown") {
-                      if (destinationSuggestions.length === 0) return;
-                      e.preventDefault();
-                      setShowDestinationSuggestions(true);
-                      setActiveSuggestionIndex((prev) => (
-                        prev < destinationSuggestions.length - 1 ? prev + 1 : 0
-                      ));
-                      return;
-                    }
-                    if (e.key === "ArrowUp") {
-                      if (destinationSuggestions.length === 0) return;
-                      e.preventDefault();
-                      setShowDestinationSuggestions(true);
-                      setActiveSuggestionIndex((prev) => (
-                        prev > 0 ? prev - 1 : destinationSuggestions.length - 1
-                      ));
-                      return;
-                    }
-                    if (e.key === "Escape") {
-                      setShowDestinationSuggestions(false);
-                      setActiveSuggestionIndex(-1);
-                      return;
-                    }
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      if (showDestinationSuggestions && activeSuggestionIndex >= 0 && destinationSuggestions[activeSuggestionIndex]) {
-                        selectDestinationSuggestion(destinationSuggestions[activeSuggestionIndex]);
-                      } else {
-                        handleSearch();
+        <div className={cn("container", styles.container)}>
+          <div className={styles.glassContainer}>
+            <div className={styles.searchBar}>
+              <div className={styles.searchField} ref={destinationRef}>
+                <Icon name="location" size="20" />
+                <div className={styles.searchFieldContent}>
+                  <div className={styles.searchLabel}>Where would you like to go?</div>
+                  <input
+                    type="text"
+                    placeholder="Search districts, cities..."
+                    className={styles.searchInput}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchQuery(value);
+                      if (!selectedDestination || value !== selectedDestination.description) {
+                        setSelectedDestination(null);
                       }
-                    }
-                  }}
-                />
-                {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-                  <div className={styles.destinationSuggestions}>
-                    {destinationSuggestions.map((suggestion, index) => (
-                      <button
-                        key={suggestion.place_id || suggestion.description || index}
-                        type="button"
-                        className={cn(styles.destinationSuggestionItem, {
-                          [styles.destinationSuggestionItemActive]: index === activeSuggestionIndex,
-                        })}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => selectDestinationSuggestion(suggestion)}
-                      >
-                        {suggestion.description}
-                      </button>
-                    ))}
+                    }}
+                    onFocus={() => {
+                      if (destinationSuggestions.length > 0) {
+                        setShowDestinationSuggestions(true);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowDown") {
+                        if (destinationSuggestions.length === 0) return;
+                        e.preventDefault();
+                        setShowDestinationSuggestions(true);
+                        setActiveSuggestionIndex((prev) => (
+                          prev < destinationSuggestions.length - 1 ? prev + 1 : 0
+                        ));
+                        return;
+                      }
+                      if (e.key === "ArrowUp") {
+                        if (destinationSuggestions.length === 0) return;
+                        e.preventDefault();
+                        setShowDestinationSuggestions(true);
+                        setActiveSuggestionIndex((prev) => (
+                          prev > 0 ? prev - 1 : destinationSuggestions.length - 1
+                        ));
+                        return;
+                      }
+                      if (e.key === "Escape") {
+                        setShowDestinationSuggestions(false);
+                        setActiveSuggestionIndex(-1);
+                        return;
+                      }
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (showDestinationSuggestions && activeSuggestionIndex >= 0 && destinationSuggestions[activeSuggestionIndex]) {
+                          selectDestinationSuggestion(destinationSuggestions[activeSuggestionIndex]);
+                        } else {
+                          handleSearch();
+                        }
+                      }
+                    }}
+                  />
+                  {showDestinationSuggestions && destinationSuggestions.length > 0 && (
+                    <div className={styles.destinationSuggestions}>
+                      {destinationSuggestions.map((suggestion, index) => (
+                        <button
+                          key={suggestion.place_id || suggestion.description || index}
+                          type="button"
+                          className={cn(styles.destinationSuggestionItem, {
+                            [styles.destinationSuggestionItemActive]: index === activeSuggestionIndex,
+                          })}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => selectDestinationSuggestion(suggestion)}
+                        >
+                          {suggestion.description}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {showCalendar && (
+                <>
+                  <div className={styles.searchDivider}></div>
+                  <div
+                    className={styles.searchField}
+                    ref={dateItemRef}
+                    style={{ position: "relative" }}
+                  >
+                    <Icon name="calendar" size="20" />
+                    <div
+                      className={styles.searchFieldContent}
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className={styles.searchLabel}>
+                        When?
+                      </div>
+                      <div className={styles.searchInput}>
+                        {formattedDate === "Add dates" ? "Add dates" : formattedDate}
+                      </div>
+                    </div>
+                    <InlineDatePicker
+                      visible={showDatePicker}
+                      onClose={() => setShowDatePicker(false)}
+                      onDateSelect={handleDateSelect}
+                      selectedDate={selectedDate}
+                      className={styles.datePicker}
+                    />
                   </div>
-                )}
+                </>
+              )}
+              {showCalendar && (
+                <>
+                  <div className={styles.searchDivider}></div>
+                  <div
+                    className={styles.searchField}
+                    ref={guestItemRef}
+                    style={{ position: "relative" }}
+                  >
+                    <Icon name="user" size="20" />
+                    <div
+                      className={styles.searchFieldContent}
+                      onClick={() => setShowGuestPicker(!showGuestPicker)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className={styles.searchLabel}>Who?</div>
+                      <div className={styles.searchInput}>{guestCountText}</div>
+                    </div>
+                    <GuestPicker
+                      visible={showGuestPicker}
+                      onClose={() => setShowGuestPicker(false)}
+                      onGuestChange={handleGuestChange}
+                      initialGuests={guests}
+                      className={styles.guestPicker}
+                    />
+                  </div>
+                </>
+              )}
+              <button className={styles.searchButton} onClick={handleSearch}><Icon name="search" size="24" color="#fff" /></button>
+            </div>
+          </div>
+
+          <div ref={heroRef} className={cn(styles.filtersContainer, styles.desktopFilters)}>
+            <div className={styles.filtersGrid}>
+              {visibleFilterOptions.map((filter) => (
+                (() => {
+                  const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
+                  return (
+                    <CategoryCard
+                      key={filter.id}
+                      item={filter}
+                      isActive={activeFilter === filter.id}
+                      disabled={!isEnabledForListings}
+                      onClick={handleFilterClick}
+                    />
+                  );
+                })()
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile Categories (Reference Image 3 style) */}
+          {isMobileOrTablet && (
+            <div
+              id="explore-by-section"
+              className={styles.mobileCategoriesContainer}
+            >
+              <div style={{ marginBottom: '16px', padding: '0 20px' }}>
+                <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
+              </div>
+              <div className={styles.mobileCategoriesScroll}>
+                {visibleFilterOptions.map((filter) => {
+                  const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
+                  const isActive = activeFilter === filter.id;
+                  return (
+                    <div
+                      key={filter.id}
+                      className={cn(styles.mobileCategoryCard, {
+                        [styles.mobileCategoryCardActive]: isActive,
+                        [styles.mobileCategoryCardDisabled]: !isEnabledForListings,
+                      })}
+                      onClick={() => {
+                        if (isEnabledForListings) handleFilterClick(filter.id);
+                      }}
+                    >
+                      <img src={filter.image} alt={filter.label} className={styles.mobileCategoryBg} />
+                      <div className={styles.mobileCategoryOverlay} />
+                      <div className={styles.mobileCategoryContent}>
+                        <div className={styles.mobileCategoryIcon}>
+                          {filter.id === "experience" && <Compass size={28} />}
+                          {filter.id === "events" && <Ticket size={28} />}
+                          {filter.id === "stays" && <Home size={28} />}
+                          {filter.id === "food" && <Utensils size={28} />}
+                          {filter.id === "places" && <MapPin size={28} />}
+                        </div>
+                        <span className={styles.mobileCategoryLabel}>{filter.label}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            {showCalendar && (
-              <>
-                <div className={styles.searchDivider}></div>
-                <div
-                  className={styles.searchField}
-                  ref={dateItemRef}
-                  style={{ position: "relative" }}
-                >
-                  <Icon name="calendar" size="20" />
-                  <div
-                    className={styles.searchFieldContent}
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className={styles.searchLabel}>
-                      When?
-                    </div>
-                    <div className={styles.searchInput}>
-                      {formattedDate === "Add dates" ? "Add dates" : formattedDate}
-                    </div>
-                  </div>
-                  <InlineDatePicker
-                    visible={showDatePicker}
-                    onClose={() => setShowDatePicker(false)}
-                    onDateSelect={handleDateSelect}
-                    selectedDate={selectedDate}
-                    className={styles.datePicker}
-                  />
-                </div>
-              </>
+          )}
+
+          <div id="listings-scroll-target"></div>
+
+          {/* Dynamic Sections from API */}
+          <div style={{ minHeight: "100vh" }}>
+            {loading && (
+              <LoadingSkeleton variant="homepage" sections={3} count={4} />
             )}
-            {showCalendar && (
-              <>
-                <div className={styles.searchDivider}></div>
-                <div
-                  className={styles.searchField}
-                  ref={guestItemRef}
-                  style={{ position: "relative" }}
-                >
-                  <Icon name="user" size="20" />
-                  <div
-                    className={styles.searchFieldContent}
-                    onClick={() => setShowGuestPicker(!showGuestPicker)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className={styles.searchLabel}>Who?</div>
-                    <div className={styles.searchInput}>{guestCountText}</div>
-                  </div>
-                  <GuestPicker
-                    visible={showGuestPicker}
-                    onClose={() => setShowGuestPicker(false)}
-                    onGuestChange={handleGuestChange}
-                    initialGuests={guests}
-                    className={styles.guestPicker}
-                  />
-                </div>
-              </>
-            )}
-            <button className={styles.searchButton} onClick={handleSearch}><Icon name="search" size="24" color="#fff" /></button>
+
+
+          {error && (
+            <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
+              <p>⚠️ {error}</p>
+            </div>
+          )}
+
+
+          {!loading && !error && sectionsData.length === 0 && (
+            <div style={{ padding: "3rem", textAlign: "center" }}>
+              <p>No sections available</p>
+              <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                Check browser console for API response details
+              </p>
+            </div>
+          )}
+
+
+          {!loading && !error && sectionsData.length > 0 && sectionsData.every(s => !s.listings || s.listings.length === 0) && (
+            <div style={{ padding: "3rem", textAlign: "center" }}>
+              <p>Sections loaded but no listings found</p>
+              <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                {sectionsData.length} section(s) found. Check browser console for details.
+              </p>
+            </div>
+          )}
+
+
+          {!loading &&
+            sectionsData.map((sectionData, index) => {
+              if (!sectionData || !sectionData.section) {
+                console.warn(`⚠️ Skipping invalid section data at index ${index}:`, sectionData);
+                return null;
+              }
+
+
+              const isShowCategoriesOnly =
+                sectionData.section.displayMode === "SHOW_CATEGORIES_ONLY";
+
+              if ((!sectionData.listings || sectionData.listings.length === 0) && !isShowCategoriesOnly) {
+                console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
+                return null; // Skip sections with no listings
+              }
+
+
+              return (
+                <HomepageSectionCard
+                  key={sectionData.section.sectionId || index}
+                  section={sectionData.section}
+                  listings={sectionData.listings}
+                />
+              );
+            })}
           </div>
         </div>
-
-        <div className={cn(styles.filtersContainer, styles.desktopFilters)}>
-          <div className={styles.filtersGrid}>
-            {visibleFilterOptions.map((filter) => (
-              (() => {
-                const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
-                return (
-                  <CategoryCard
-                    key={filter.id}
-                    item={filter}
-                    isActive={activeFilter === filter.id}
-                    disabled={!isEnabledForListings}
-                    onClick={handleFilterClick}
-                  />
-                );
-              })()
-            ))}
-          </div>
-        </div>
-
-        {/* Mobile Categories (Reference Image 3 style) */}
-        {isMobileOrTablet && (
-          <div 
-            id="explore-by-section" 
-            className={styles.mobileCategoriesContainer}
-          >
-            <div style={{ marginBottom: '16px', padding: '0 20px' }}>
-              <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
-            </div>
-            <div className={styles.mobileCategoriesScroll}>
-              {visibleFilterOptions.map((filter) => {
-                const isEnabledForListings = businessInterestAvailability[filter.id] !== false;
-                const isActive = activeFilter === filter.id;
-                return (
-                  <div 
-                    key={filter.id}
-                    className={cn(styles.mobileCategoryCard, {
-                      [styles.mobileCategoryCardActive]: isActive,
-                      [styles.mobileCategoryCardDisabled]: !isEnabledForListings,
-                    })}
-                    onClick={() => {
-                      if (isEnabledForListings) handleFilterClick(filter.id);
-                    }}
-                  >
-                    <img src={filter.image} alt={filter.label} className={styles.mobileCategoryBg} />
-                    <div className={styles.mobileCategoryOverlay} />
-                    <div className={styles.mobileCategoryContent}>
-                      <div className={styles.mobileCategoryIcon}>
-                        {filter.id === "experience" && <Compass size={28} />}
-                        {filter.id === "events" && <Ticket size={28} />}
-                        {filter.id === "stays" && <Home size={28} />}
-                        {filter.id === "food" && <Utensils size={28} />}
-                        {filter.id === "places" && <MapPin size={28} />}
-                      </div>
-                      <span className={styles.mobileCategoryLabel}>{filter.label}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Dynamic Sections from API */}
-        {loading && (
-          <LoadingSkeleton variant="homepage" sections={3} count={4} />
-        )}
-
-
-        {error && (
-          <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
-            <p>⚠️ {error}</p>
-          </div>
-        )}
-
-
-        {!loading && !error && sectionsData.length === 0 && (
-          <div style={{ padding: "3rem", textAlign: "center" }}>
-            <p>No sections available</p>
-            <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-              Check browser console for API response details
-            </p>
-          </div>
-        )}
-
-
-        {!loading && !error && sectionsData.length > 0 && sectionsData.every(s => !s.listings || s.listings.length === 0) && (
-          <div style={{ padding: "3rem", textAlign: "center" }}>
-            <p>Sections loaded but no listings found</p>
-            <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-              {sectionsData.length} section(s) found. Check browser console for details.
-            </p>
-          </div>
-        )}
-
-
-        {!loading &&
-          sectionsData.map((sectionData, index) => {
-            if (!sectionData || !sectionData.section) {
-              console.warn(`⚠️ Skipping invalid section data at index ${index}:`, sectionData);
-              return null;
-            }
-
-
-            const isShowCategoriesOnly =
-              sectionData.section.displayMode === "SHOW_CATEGORIES_ONLY";
-
-            if ((!sectionData.listings || sectionData.listings.length === 0) && !isShowCategoriesOnly) {
-              console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
-              return null; // Skip sections with no listings
-            }
-
-
-            return (
-              <HomepageSectionCard
-                key={sectionData.section.sectionId || index}
-                section={sectionData.section}
-                listings={sectionData.listings}
-              />
-            );
-          })}
       </div>
-    </div>
     </LayoutGroup>
   );
 };

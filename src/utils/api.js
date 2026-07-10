@@ -792,7 +792,17 @@ export const getCustomerWishlistItems = async () => {
     const response = await ListingsAPI.get("/customers/wishlist/items");
     return Array.isArray(response?.data?.items) ? response.data.items : [];
   } catch (error) {
-    console.error("Failed to fetch wishlist items:", error.response?.data || error.message);
+    console.error("Error fetching wishlist items:", error);
+    throw error;
+  }
+};
+
+export const getSupportGuest = async () => {
+  try {
+    const response = await ListingsAPI.get("/public/support/guest");
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching support guest data:", error);
     throw error;
   }
 };
@@ -1864,6 +1874,36 @@ export const getFoodMenus = async (limit = 20, offset = 0) => {
   }
 };
 
+export const filterFoodMenus = async (filters = {}) => {
+  try {
+    const response = await ListingsAPI.get("/public/food-menus/filter", {
+      params: filters,
+    });
+    const payload = response.data;
+    console.log(`✅ Food menus filtered (raw):`, payload);
+
+    let listings = [];
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      listings = payload.foodMenus || payload.food_menus || payload.listings || payload.data || [];
+      if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
+        listings = payload.data.foodMenus || payload.data.food_menus || payload.data.listings || payload.data || [];
+      }
+      if (!Array.isArray(listings) && Array.isArray(payload.items)) {
+        listings = payload.items;
+      }
+    }
+
+    const finalListings = Array.isArray(listings) ? listings : [];
+    console.log(`✅ Food menus filter normalized:`, finalListings);
+    return { listings: finalListings };
+  } catch (error) {
+    console.error(`❌ Error filtering food menus:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getPlaces = async (limit = 20, offset = 0) => {
   try {
     const response = await ListingsAPI.get("/public/places", {
@@ -1893,6 +1933,36 @@ export const getPlaces = async (limit = 20, offset = 0) => {
     return { section, listings: finalListings };
   } catch (error) {
     console.error(`❌ Error fetching places:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const filterPlaces = async (filters = {}) => {
+  try {
+    const response = await ListingsAPI.get("/public/places/filter", {
+      params: filters,
+    });
+    const payload = response.data;
+    console.log(`✅ Places nearby filtered (raw):`, payload);
+
+    let listings = [];
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      listings = payload.places || payload.listings || payload.data || [];
+      if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
+        listings = payload.data.places || payload.data.listings || payload.data || [];
+      }
+      if (!Array.isArray(listings) && Array.isArray(payload.items)) {
+        listings = payload.items;
+      }
+    }
+
+    const finalListings = Array.isArray(listings) ? listings : [];
+    console.log(`✅ Places filter normalized:`, finalListings);
+    return { listings: finalListings };
+  } catch (error) {
+    console.error(`❌ Error filtering places:`, error.response?.data || error.message);
     throw error;
   }
 };
