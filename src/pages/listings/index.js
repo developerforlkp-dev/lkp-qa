@@ -25,6 +25,38 @@ const categoryOptions = [
   { id: "PLACE", label: "Places", IconComponent: MapPin },
 ];
 
+const buildCategoryFilterState = ({
+  categoryType,
+  categoryValues,
+  selectedCategoryLabel,
+}) => {
+  if (!categoryType || !Array.isArray(categoryValues) || categoryValues.length === 0) {
+    return null;
+  }
+
+  const normalizedLabels =
+    categoryValues.length === 1 && selectedCategoryLabel
+      ? [selectedCategoryLabel]
+      : categoryValues.map((value) => String(value));
+
+  return {
+    activeKeys: categoryValues.map((value) => `${categoryType}-${value}`),
+    selectedCategoryLabels: normalizedLabels,
+    selectedCategoryLabel: normalizedLabels.join(", "),
+    categoryType,
+    categoryValues,
+  };
+};
+
+const isSearchCategoryType = (categoryType) => {
+  const normalized = String(categoryType || "").trim().toUpperCase();
+  return (
+    normalized.includes("LOCATION") ||
+    normalized.includes("DISTRICT") ||
+    normalized.includes("STATE")
+  );
+};
+
 const Listings = () => {
   const location = useLocation();
   const history = useHistory();
@@ -70,15 +102,23 @@ const Listings = () => {
   const businessInterest = searchParams.get("businessInterest") || locationState.businessInterest || "EXPERIENCE";
   const businessInterestIdParam = searchParams.get("businessInterestId");
   const categoryTypeParam = searchParams.get("categoryType") || "";
-  const categoryValuesParam = searchParams.getAll("categoryValues");
-  const fallbackCategoryValues = searchParams.get("categoryValues");
   const selectedCategoryLabel = searchParams.get("selectedCategoryLabel") || "";
 
   const categoryValues = useMemo(() => {
-    return categoryValuesParam.length > 0
-      ? categoryValuesParam
-      : (fallbackCategoryValues ? fallbackCategoryValues.split(",").map((v) => v.trim()).filter(Boolean) : []);
-  }, [fallbackCategoryValues, location.search]);
+    const params = new URLSearchParams(location.search);
+    const valuesFromParams = params.getAll("categoryValues");
+    const fallbackValues = params.get("categoryValues");
+
+    return valuesFromParams.length > 0
+      ? valuesFromParams
+      : (fallbackValues ? fallbackValues.split(",").map((v) => v.trim()).filter(Boolean) : []);
+  }, [location.search]);
+
+  const derivedCategorySearchText = useMemo(() => {
+    if (!isSearchCategoryType(categoryTypeParam)) return "";
+    if (selectedCategoryLabel) return selectedCategoryLabel;
+    return categoryValues[0] ? String(categoryValues[0]) : "";
+  }, [categoryTypeParam, selectedCategoryLabel, categoryValues]);
 
   const categoryFilter = useMemo(() => {
     if (!categoryTypeParam || categoryValues.length === 0) return null;
@@ -89,6 +129,12 @@ const Listings = () => {
       sortBy: "newest",
     };
   }, [businessInterestIdParam, categoryTypeParam, categoryValues]);
+
+  const routeCategoryFilterState = useMemo(() => buildCategoryFilterState({
+    categoryType: categoryTypeParam,
+    categoryValues,
+    selectedCategoryLabel,
+  }), [categoryTypeParam, categoryValues, selectedCategoryLabel]);
 
   const resolvedBusinessInterestId = useMemo(() => {
     if (businessInterestIdParam) return Number(businessInterestIdParam);
@@ -145,7 +191,7 @@ const Listings = () => {
   ), [selectedDate]);
 
   // Filter state
-  const [filters, setFilters] = useState({
+  const createDefaultFilters = () => ({
     priceRange: { min: "", max: "" },
     pricePresetMax: null,
     propertyTypes: [],
@@ -154,9 +200,11 @@ const Listings = () => {
     categories: [],
     tags: [],
     specialLabels: [],
-    apiCategoryFilter: null,
+    apiCategoryFilter: routeCategoryFilterState,
     dateRange: { startDate: "", endDate: "" },
   });
+
+  const [filters, setFilters] = useState(createDefaultFilters);
 
   // UI state
   const [showMap, setShowMap] = useState(false);
@@ -168,6 +216,47 @@ const Listings = () => {
   // Mobile sticky search scroll state
   const [isScrolled, setIsScrolled] = useState(false);
   const searchBarRef = useRef(null);
+
+  useEffect(() => {
+    setFilters((prev) => {
+      const currentCategoryType = prev.apiCategoryFilter?.categoryType || null;
+      const currentCategoryValues = Array.isArray(prev.apiCategoryFilter?.categoryValues)
+        ? prev.apiCategoryFilter.categoryValues.map(String)
+        : [];
+      const nextCategoryType = routeCategoryFilterState?.categoryType || null;
+      const nextCategoryValues = Array.isArray(routeCategoryFilterState?.categoryValues)
+        ? routeCategoryFilterState.categoryValues.map(String)
+        : [];
+
+      if (
+        currentCategoryType === nextCategoryType &&
+        currentCategoryValues.length === nextCategoryValues.length &&
+        currentCategoryValues.every((value, index) => value === nextCategoryValues[index])
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        apiCategoryFilter: routeCategoryFilterState,
+      };
+    });
+  }, [routeCategoryFilterState]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const explicitSearchText =
+      params.get("location") ||
+      params.get("search") ||
+      locationState.location ||
+      "";
+
+    if (explicitSearchText || !derivedCategorySearchText) return;
+
+    setSearchLocation(derivedCategorySearchText);
+    setActiveSearch(derivedCategorySearchText);
+    setSelectedDestination(null);
+  }, [derivedCategorySearchText, location.search, locationState.location]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -257,10 +346,99 @@ const Listings = () => {
 
   // Handle filter changes
   const handleFilterChange = (filterType, value) => {
+    if (filterType === "apiCategoryFilter") {
+      syncCategoryFilterToUrl(value);
+    }
+
     setFilters((prev) => ({
       ...prev,
       [filterType]: value,
     }));
+  };
+
+  const buildBaseSearchParams = ({
+    nextBusinessInterest = businessInterest,
+    includeRouteCategoryFilter = false,
+  } = {}) => {
+    const params = new URLSearchParams();
+
+    if (searchLocation) params.set("search", searchLocation);
+    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
+    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
+
+    const guestTotal = guests.adults + guests.children;
+    if (guestTotal > 0) {
+      params.set("guests", String(guestTotal));
+      params.set("adults", String(guests.adults || 0));
+      params.set("children", String(guests.children || 0));
+    }
+
+    if (nextBusinessInterest) params.set("businessInterest", nextBusinessInterest);
+
+    const resolvedIdByInterest = (() => {
+      const normalized = String(nextBusinessInterest || "").toUpperCase();
+      if (normalized.includes("EVENT")) return 2;
+      if (normalized.includes("STAY")) return 3;
+      if (normalized.includes("PLACE")) return 4;
+      if (normalized.includes("FOOD")) return 5;
+      return 1;
+    })();
+    params.set("businessInterestId", String(resolvedIdByInterest));
+
+    if (includeRouteCategoryFilter && categoryTypeParam && categoryValues.length > 0) {
+      params.set("categoryType", categoryTypeParam);
+      categoryValues.forEach((value) => params.append("categoryValues", value));
+      if (selectedCategoryLabel) params.set("selectedCategoryLabel", selectedCategoryLabel);
+    }
+
+    return params;
+  };
+
+  const resetFiltersState = (nextCategoryFilter = null) => {
+    setFilters({
+      priceRange: { min: "", max: "" },
+      pricePresetMax: null,
+      propertyTypes: [],
+      amenities: [],
+      ratings: [],
+      categories: [],
+      tags: [],
+      specialLabels: [],
+      apiCategoryFilter: nextCategoryFilter,
+      dateRange: { startDate: "", endDate: "" },
+    });
+  };
+
+  const syncCategoryFilterToUrl = (nextCategoryFilter, nextBusinessInterest = businessInterest) => {
+    const params = buildBaseSearchParams({
+      nextBusinessInterest,
+      includeRouteCategoryFilter: false,
+    });
+
+    if (
+      nextCategoryFilter?.categoryType &&
+      Array.isArray(nextCategoryFilter?.categoryValues) &&
+      nextCategoryFilter.categoryValues.length > 0
+    ) {
+      params.set("categoryType", nextCategoryFilter.categoryType);
+      nextCategoryFilter.categoryValues.forEach((value) => {
+        params.append("categoryValues", String(value));
+      });
+
+      if (nextCategoryFilter.selectedCategoryLabel) {
+        params.set("selectedCategoryLabel", nextCategoryFilter.selectedCategoryLabel);
+      }
+    }
+
+    history.replace({
+      pathname: "/listings",
+      search: params.toString() ? `?${params.toString()}` : "",
+      state: {
+        location: searchLocation,
+        dateRange,
+        guests,
+      },
+    });
   };
 
   // Format selected date for display
@@ -304,25 +482,16 @@ const Listings = () => {
 
   // Handle category switch
   const handleCategorySwitch = (newBusinessInterest) => {
-    // Preserve base search params (location, date, guests) but discard specific filter values like categoryValues, tags, etc.
+    resetFiltersState(null);
+    setSortBy("newest");
+
     const newState = {
       location: searchLocation,
       dateRange: dateRange,
       guests: guests,
     };
-    const params = new URLSearchParams();
-    if (searchLocation) params.set("search", searchLocation);
-    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
-    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
-    const guestTotal = guests.adults + guests.children;
-    if (guestTotal > 0) {
-      params.set("guests", String(guestTotal));
-      params.set("adults", String(guests.adults || 0));
-      params.set("children", String(guests.children || 0));
-    }
-    params.set("businessInterest", newBusinessInterest);
+    const params = buildBaseSearchParams({ nextBusinessInterest: newBusinessInterest });
 
-    // Navigate to the new business interest filter page
     history.push({
       pathname: "/listings",
       search: params.toString() ? `?${params.toString()}` : "",
@@ -332,29 +501,17 @@ const Listings = () => {
 
   // Handle search button click or Enter key
   const handleSearch = () => {
-    // Update the active search state to trigger a re-fetch
     setActiveSearch(searchLocation);
-    
+
     const newState = {
       location: searchLocation,
       dateRange: dateRange,
       guests: guests,
     };
-    const params = new URLSearchParams();
-    if (searchLocation) params.set("search", searchLocation);
-    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
-    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
-    const guestTotal = guests.adults + guests.children;
-    if (guestTotal > 0) {
-      params.set("guests", String(guestTotal));
-      params.set("adults", String(guests.adults || 0));
-      params.set("children", String(guests.children || 0));
-    }
-    if (businessInterest) params.set("businessInterest", businessInterest);
-    if (businessInterestIdParam) params.set("businessInterestId", businessInterestIdParam);
-    if (categoryTypeParam) params.set("categoryType", categoryTypeParam);
-    categoryValues.forEach((value) => params.append("categoryValues", value));
-    if (selectedCategoryLabel) params.set("selectedCategoryLabel", selectedCategoryLabel);
+    const params = buildBaseSearchParams({
+      nextBusinessInterest: businessInterest,
+      includeRouteCategoryFilter: Boolean(routeCategoryFilterState),
+    });
 
     history.replace({
       pathname: "/listings",
@@ -464,17 +621,22 @@ const Listings = () => {
   }, []);
 
   const resetFilters = () => {
-    setFilters({
-      priceRange: { min: "", max: "" },
-      pricePresetMax: null,
-      propertyTypes: [],
-      amenities: [],
-      ratings: [],
-      categories: [],
-      tags: [],
-      specialLabels: [],
-      apiCategoryFilter: null,
-      dateRange: { startDate: "", endDate: "" },
+    resetFiltersState(null);
+    setSortBy("newest");
+
+    const newState = {
+      location: searchLocation,
+      dateRange: dateRange,
+      guests: guests,
+    };
+    const params = buildBaseSearchParams({
+      nextBusinessInterest: businessInterest,
+    });
+
+    history.replace({
+      pathname: "/listings",
+      search: params.toString() ? `?${params.toString()}` : "",
+      state: newState,
     });
   };
 
