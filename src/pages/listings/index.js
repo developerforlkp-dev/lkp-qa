@@ -11,9 +11,19 @@ import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import { getBusinessInterestFilters } from "../../utils/api";
+import { Compass, Ticket, Home, Utensils, MapPin } from "lucide-react";
+import Loader from "../../components/Loader";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+const categoryOptions = [
+  { id: "EXPERIENCE", label: "Experiences", IconComponent: Compass },
+  { id: "EVENT", label: "Events", IconComponent: Ticket },
+  { id: "STAY", label: "Stays", IconComponent: Home },
+  { id: "FOOD", label: "Food", IconComponent: Utensils },
+  { id: "PLACE", label: "Places", IconComponent: MapPin },
+];
 
 const Listings = () => {
   const location = useLocation();
@@ -199,6 +209,9 @@ const Listings = () => {
 
   const sortOptions = ["newest", "rating"];
   const isEventInterest = String(businessInterest || "").toUpperCase().includes("EVENT");
+  const isFoodOrPlace = String(businessInterest || "").toUpperCase().includes("FOOD") || String(businessInterest || "").toUpperCase().includes("PLACE");
+  const showDateAndGuest = !isFoodOrPlace;
+
   const emptyMessage = isEventInterest && selectedDate
     ? "No events in this date."
     : `No ${getListingTerm(businessInterest, 2)} found. Try adjusting your filters.`;
@@ -287,6 +300,34 @@ const Listings = () => {
     setDestinationSuggestions([]);
     setShowDestinationSuggestions(false);
     setActiveSuggestionIndex(-1);
+  };
+
+  // Handle category switch
+  const handleCategorySwitch = (newBusinessInterest) => {
+    // Preserve base search params (location, date, guests) but discard specific filter values like categoryValues, tags, etc.
+    const newState = {
+      location: searchLocation,
+      dateRange: dateRange,
+      guests: guests,
+    };
+    const params = new URLSearchParams();
+    if (searchLocation) params.set("search", searchLocation);
+    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
+    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
+    const guestTotal = guests.adults + guests.children;
+    if (guestTotal > 0) {
+      params.set("guests", String(guestTotal));
+      params.set("adults", String(guests.adults || 0));
+      params.set("children", String(guests.children || 0));
+    }
+    params.set("businessInterest", newBusinessInterest);
+
+    // Navigate to the new business interest filter page
+    history.push({
+      pathname: "/listings",
+      search: params.toString() ? `?${params.toString()}` : "",
+      state: newState,
+    });
   };
 
   // Handle search button click or Enter key
@@ -465,6 +506,26 @@ const Listings = () => {
       </div>
 
       <div className={cn("container", styles.container)}>
+        {/* Category Navigation Header */}
+        <div className={styles.categoryNav}>
+          {categoryOptions.map((opt) => {
+            const isActive = String(businessInterest || "").toUpperCase().includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                className={cn(styles.categoryNavItem, {
+                  [styles.categoryNavItemActive]: isActive,
+                })}
+                onClick={() => handleCategorySwitch(opt.id)}
+              >
+                <opt.IconComponent size={18} strokeWidth={2} />
+                <span>{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Search Bar Section */}
         <div className={styles.searchBar} ref={searchBarRef}>
           <div className={styles.searchField} ref={destinationRef}>
@@ -541,58 +602,71 @@ const Listings = () => {
               )}
             </div>
           </div>
-          <div className={styles.searchDivider}></div>
-          <div 
-            className={styles.searchField}
-            ref={dateItemRef}
-            style={{ position: "relative" }}
-          >
-            <Icon name="calendar" size="20" />
-            <div 
-              className={styles.searchFieldContent}
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              style={{ cursor: "pointer" }}
-            >
-              <div className={styles.searchLabel}>Check-in</div>
-              <div className={styles.searchInput}>
-                {formattedDate}
+          {showDateAndGuest && (
+            <>
+              <div className={styles.searchDivider}></div>
+              <div 
+                className={styles.searchField}
+                ref={dateItemRef}
+                style={{ position: "relative" }}
+              >
+                <Icon name="calendar" size="20" />
+                <div 
+                  className={styles.searchFieldContent}
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className={styles.searchLabel}>Check-in</div>
+                  <div className={styles.searchInput}>
+                    {formattedDate}
+                  </div>
+                </div>
+                <InlineDatePicker
+                  visible={showDatePicker}
+                  onClose={() => setShowDatePicker(false)}
+                  onDateSelect={handleDateSelect}
+                  selectedDate={selectedDate}
+                  className={styles.datePicker}
+                />
               </div>
-            </div>
-            <InlineDatePicker
-              visible={showDatePicker}
-              onClose={() => setShowDatePicker(false)}
-              onDateSelect={handleDateSelect}
-              selectedDate={selectedDate}
-              className={styles.datePicker}
-            />
-          </div>
-          <div className={styles.searchDivider}></div>
-          <div 
-            className={styles.searchField}
-            ref={guestItemRef}
-            style={{ position: "relative" }}
-          >
-            <Icon name="user" size="20" />
-            <div 
-              className={styles.searchFieldContent}
-              onClick={() => setShowGuestPicker(!showGuestPicker)}
-              style={{ cursor: "pointer" }}
-            >
-              <div className={styles.searchLabel}>Guest Count</div>
-              <div className={styles.searchInput}>{guestCountText}</div>
-            </div>
-            <GuestPicker
-              visible={showGuestPicker}
-              onClose={() => setShowGuestPicker(false)}
-              onGuestChange={handleGuestChange}
-              initialGuests={guests}
-              adultsSubtitle={null}
-              childrenSubtitle={null}
-              infantsSubtitle={null}
-              className={styles.guestPicker}
-            />
-          </div>
-          <button className={styles.searchButton} onClick={handleSearch}>Search</button>
+              <div className={styles.searchDivider}></div>
+              <div 
+                className={styles.searchField}
+                ref={guestItemRef}
+                style={{ position: "relative" }}
+              >
+                <Icon name="user" size="20" />
+                <div 
+                  className={styles.searchFieldContent}
+                  onClick={() => setShowGuestPicker(!showGuestPicker)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className={styles.searchLabel}>Guest Count</div>
+                  <div className={styles.searchInput}>{guestCountText}</div>
+                </div>
+                <GuestPicker
+                  visible={showGuestPicker}
+                  onClose={() => setShowGuestPicker(false)}
+                  onGuestChange={handleGuestChange}
+                  initialGuests={guests}
+                  adultsSubtitle={null}
+                  childrenSubtitle={null}
+                  infantsSubtitle={null}
+                  className={styles.guestPicker}
+                />
+              </div>
+            </>
+          )}
+          <button className={styles.searchButton} onClick={handleSearch} disabled={loading}>
+            {loading ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                <Loader color="white" />
+                Searching...
+              </span>
+            ) : (
+              "Search"
+            )}
+          </button>
         </div>
       </div>
 

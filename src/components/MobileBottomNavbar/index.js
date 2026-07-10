@@ -72,8 +72,7 @@ const shouldShowNavbar = (pathname, search) => {
     "/events",
     "/stays",
     "/food",
-    "/places",
-    "/listings"
+    "/places"
   ];
 
   return allowedPaths.includes(path);
