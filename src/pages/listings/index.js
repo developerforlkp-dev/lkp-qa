@@ -232,6 +232,16 @@ const Listings = () => {
   const searchBarRef = useRef(null);
 
   const [portalTarget, setPortalTarget] = useState(null);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== "undefined" ? window.innerWidth > 1023 : true
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setIsDesktop(window.innerWidth > 1023);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const target = document.getElementById("header-center-portal");
@@ -694,7 +704,7 @@ const Listings = () => {
 
       <div className={cn("container", styles.container)}>
         {/* Category Navigation Header inside Portal */}
-        {portalTarget ? ReactDOM.createPortal(
+        {(portalTarget && isDesktop) ? ReactDOM.createPortal(
           <div className={styles.categoryNav}>
             {categoryOptions.map((opt) => {
               const isActive = String(businessInterest || "").toUpperCase().includes(opt.id);
