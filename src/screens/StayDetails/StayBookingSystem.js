@@ -942,7 +942,7 @@ const StayBookingSystem = ({
       });
     }
 
-    const discountableSubtotal = grossSubtotal + addonsTotal;
+    const discountableSubtotal = grossSubtotal;
     const longStayDiscountAmount = discountableSubtotal * (appliedDiscountPercent / 100);
     const billingConfigDiscountAmount = discountableSubtotal * (billingConfigDiscountRate / 100);
     const earlyBirdDiscountAmount = discountableSubtotal * (earlyBirdDiscountPercent / 100);
@@ -952,7 +952,7 @@ const StayBookingSystem = ({
       - longStayDiscountAmount
       - billingConfigDiscountAmount
       - earlyBirdDiscountAmount
-    );
+    ) + addonsTotal;
     const discountAmount =
       longStayDiscountAmount
       + billingConfigDiscountAmount
