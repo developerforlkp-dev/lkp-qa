@@ -2310,7 +2310,7 @@ const StayBookingSystem = ({
                     {/* Section 02: Guests & Accommodations */}
                     <div id="booking-guests-section" style={{ scrollMarginTop: "24px" }}>
                       <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", lineHeight: "1.2" }}>
-                        02. Guests & Accommodations
+                        {isHostelBooking(stay) ? "02. Accommodations" : "02. Guests & Accommodations"}
                       </div>
                       
                       {(() => {
@@ -2596,7 +2596,7 @@ const StayBookingSystem = ({
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px" }}>
 
                             {/* Guests */}
-                            {!isEntirelyBedBased && (
+                            {(!isEntirelyBedBased && !isHostelBooking(stay)) && (
                               <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
                                 <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Guests</span>
                                 <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>

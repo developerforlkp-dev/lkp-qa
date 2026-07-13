@@ -20,7 +20,7 @@ const HeadOptions = ({ className, image, title, hostName, hostAvatar }) => {
       <div className={styles.preview}>
         <img src={image} alt="Nature" />
       </div>
-      <div className={styles.title}>{title}</div>
+      {title && <div className={styles.title}>{title}</div>}
       <div className={styles.author}>
         <div className={styles.text}>Hosted by</div>
         <div className={styles.avatar}>

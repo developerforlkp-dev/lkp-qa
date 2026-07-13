@@ -6,6 +6,7 @@ import TextArea from "../TextArea";
 
 const ConfirmAndPay = ({
   className,
+  children,
   guests,
   title,
   dateValue,
@@ -28,7 +29,6 @@ const ConfirmAndPay = ({
 }) => {
   return (
     <div className={cn(className, styles.confirm)}>
-      <div className={cn("h2", styles.title)}>Confirm and Pay</div>
       <div className={styles.subtitle}>Almost done! Review your trip details and complete your booking.</div>
       
       <div className={styles.stepper}>
@@ -44,6 +44,8 @@ const ConfirmAndPay = ({
           <div className={styles.stepLabelActive}>Confirm and pay</div>
         </div>
       </div>
+      
+      {children}
 
       <div className={styles.list}>
         <div className={styles.item}>

@@ -29,6 +29,7 @@ const PriceDetails = ({
   buttonUrl,
   paymentData,
   messageText,
+  hideHeader,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -56,29 +57,31 @@ const PriceDetails = ({
 
   return (
     <div className={cn(className, styles.price)}>
-      {more ? (
-        <HeadMoreOptions
-          className={styles.head}
-          image={image}
-          title={title}
-          hostName={hostName}
-          hostAvatar={hostAvatar}
-          rating={rating}
-          reviewsCount={reviewsCount}
-        />
-      ) : (
-        <HeadOptions
-          className={styles.head}
-          image={image}
-          title={title}
-          hostName={hostName}
-          hostAvatar={hostAvatar}
-        />
+      {!hideHeader && (
+        more ? (
+          <HeadMoreOptions
+            className={styles.head}
+            image={image}
+            title={title}
+            hostName={hostName}
+            hostAvatar={hostAvatar}
+            rating={rating}
+            reviewsCount={reviewsCount}
+          />
+        ) : (
+          <HeadOptions
+            className={styles.head}
+            image={image}
+            title={title}
+            hostName={hostName}
+            hostAvatar={hostAvatar}
+          />
+        )
       )}
 
       {/* Removed duplicate Booking summary items (Date / Time / Guests) since they are on the left */}
 
-      <div className={styles.body}>
+      <div className={cn(styles.body, { [styles.bodyNoHeader]: hideHeader })}>
         {displayAddons.length > 0 && (
           <div className={styles.addOnsSection}>
             <div className={styles.addOnsTitle}>Selected Add-ons</div>
