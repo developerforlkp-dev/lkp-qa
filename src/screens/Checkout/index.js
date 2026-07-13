@@ -964,6 +964,9 @@ const Checkout = () => {
             mealPlan={bookingData?.mealPlan}
             messageText={messageText}
             setMessageText={setMessageText}
+            addonDetails={selectedAddOns}
+            addOns={selectedAddOns}
+            currency={paymentData?.currency || "INR"}
             datePicker={(
               <InlineDatePicker
                 visible={showDatePicker}

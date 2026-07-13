@@ -82,52 +82,6 @@ const PriceDetails = ({
       {/* Removed duplicate Booking summary items (Date / Time / Guests) since they are on the left */}
 
       <div className={cn(styles.body, { [styles.bodyNoHeader]: hideHeader })}>
-        {displayAddons.length > 0 && (
-          <div className={styles.addOnsSection}>
-            <div className={styles.addOnsTitle}>Selected Add-ons</div>
-            <div className={styles.addOnsList}>
-              {displayAddons.map((addon, index) => {
-                const addonName = addon.name || addon.addonName || addon.title || "Add-on";
-                const addonQty = addon.quantity || 1;
-                const unitPrice = parseNumericAmount(addon.pricePerUnit ?? addon.price);
-                const subtotal = parseNumericAmount(addon.totalPrice ?? addon.priceValue) || (unitPrice * addonQty);
-
-                return (
-                  <div className={styles.addOnItem} key={addon.addonId || index}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                      {addon.image && (
-                        <img
-                          src={addon.image}
-                          alt={addonName}
-                          style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, flexShrink: 0, display: "block" }}
-                        />
-                      )}
-                      <div style={{ minWidth: 0 }}>
-                        <div className={styles.addOnItemName}>
-                          {addonName}
-                          <span style={{ opacity: 0.6, marginLeft: 4 }}>×{addonQty}</span>
-                        </div>
-                        {unitPrice > 0 && (
-                          <div style={{ fontSize: 12, color: "#9A9FA5", marginTop: 2 }}>
-                            {currency} {Number(unitPrice).toFixed(2)} / item
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className={styles.addOnItemPrice} style={{ flexShrink: 0 }}>
-                      {currency} {Number(subtotal).toFixed(2)}
-                    </div>
-                    {onRemoveAddOn && (
-                      <button className={styles.addOnRemoveButton} onClick={() => onRemoveAddOn(index)} title="Remove add-on">
-                        <Icon name="close" size="12" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         <div className={styles.stage}>Price details</div>
 

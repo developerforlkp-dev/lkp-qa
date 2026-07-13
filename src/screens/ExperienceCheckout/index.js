@@ -845,6 +845,9 @@ const Checkout = () => {
             guestValue={items[2]?.title || items[1]?.title}
             messageText={messageText}
             setMessageText={setMessageText}
+            addonDetails={addonDetails}
+            addOns={selectedAddOns}
+            currency={paymentData?.currency || "INR"}
           >
             <HeadOptions
               image={listingImage}
