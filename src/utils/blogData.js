@@ -365,8 +365,55 @@ export function mapApiBlogToComponentFormat(apiBlog) {
     return [];
   };
 
+  let processedContent = apiBlog.content || '';
+  const contentImages = apiBlog.contentImageUrls || [];
+  
+  if (Array.isArray(contentImages) && contentImages.length > 0) {
+    let sequentialIndex = 0;
+    processedContent = processedContent.replace(/<img[^>]+src=["']([^"']+)["']/g, (match, src) => {
+      if (src.startsWith('http')) return match;
+      
+      const decodedSrc = decodeURIComponent(src).split('/').pop().trim();
+      const matchedUrl = contentImages.find(url => {
+        const urlFilename = decodeURIComponent(url).split('/').pop().trim();
+        return urlFilename === decodedSrc || urlFilename.includes(decodedSrc);
+      });
+      
+      if (matchedUrl) {
+        return match.replace(src, matchedUrl);
+      }
+      
+      if (sequentialIndex < contentImages.length) {
+        const fallbackUrl = contentImages[sequentialIndex];
+        sequentialIndex++;
+        return match.replace(src, fallbackUrl);
+      }
+      
+      return match;
+    });
+  }
+
+  // Unwrap images that are wrapped in <p> tags
+  processedContent = processedContent.replace(/<p>\s*(<img[^>]+>)\s*<\/p>/gi, '$1');
+  
+  // Wrap consecutive img tags (2 or more) in a beautiful gallery grid
+  processedContent = processedContent.replace(/(?:<img[^>]+>\s*){2,}/gi, (match) => {
+    return `<div class="blog-gallery-grid">${match}</div>`;
+  });
+  
+  // Standardize single images with a class for styling
+  processedContent = processedContent.replace(/<img([^>]*)class=["'][^"']*["']([^>]*)>/gi, '<img$1$2>');
+  processedContent = processedContent.replace(/<img([^>]+)>/gi, '<img$1 class="blog-inline-image">');
+
+  const parseLayoutId = (apiObj) => {
+    const layoutStr = apiObj.layout || apiObj.blogLayout || apiObj.layoutType || apiObj.layoutId || '';
+    const match = String(layoutStr).match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+  };
+
   return {
     id: apiBlog.blogPostId || Math.random(),
+    layoutId: parseLayoutId(apiBlog),
     slug: apiBlog.slug,
     image: imageUrl,
     heroImage: imageUrl,
@@ -385,7 +432,7 @@ export function mapApiBlogToComponentFormat(apiBlog) {
       sections: [
         {
           heading: '',
-          body: apiBlog.content || '',
+          body: processedContent,
           image: null,
         }
       ],
