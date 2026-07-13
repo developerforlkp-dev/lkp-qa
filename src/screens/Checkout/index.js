@@ -4,6 +4,7 @@ import cn from "classnames";
 import styles from "./Checkout.module.sass";
 import Control from "../../components/Control";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
+import HeadOptions from "../../components/PriceDetails/HeadOptions";
 import PriceDetails from "../../components/PriceDetails";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -938,11 +939,14 @@ const Checkout = () => {
   return (
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
-        <Control
-          className={styles.control}
-          urlHome="/"
-          backUrl={backUrl}
-        />
+        <div className={styles.headerRow}>
+          <Control
+            className={styles.backControl}
+            urlHome="/"
+            backUrl={backUrl}
+          />
+          <h2 className={styles.pageTitle}>Confirm and Pay</h2>
+        </div>
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
@@ -977,9 +981,16 @@ const Checkout = () => {
                 maxGuests={bookingData?.listing?.maxGuests || 10}
               />
             )}
-          />
+          >
+            <HeadOptions
+              image={listingImage}
+              hostName={hostName}
+              hostAvatar={hostAvatar}
+            />
+          </ConfirmAndPay>
           <PriceDetails
             className={styles.price}
+            hideHeader={true}
             image={listingImage}
             title={tripTitle}
             items={items}
