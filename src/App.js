@@ -38,6 +38,7 @@ import TermsOfService from "./screens/TermsOfService";
 import PrivacyPolicy from "./screens/PrivacyPolicy";
 import MobileBottomNavbar from "./components/MobileBottomNavbar";
 import FAQ from "./screens/FAQ";
+import About from "./screens/About";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -299,6 +300,15 @@ function App() {
               render={() => (
                 <Page separatorHeader>
                   <FAQ />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/about"
+              render={() => (
+                <Page separatorHeader>
+                  <About />
                 </Page>
               )}
             />
