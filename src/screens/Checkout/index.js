@@ -720,6 +720,17 @@ const Checkout = () => {
         }
       }
 
+      // Remove Adults/Children rows for Hostel bookings
+      const isHostel = String(stayDetails?.bookingScope || stayDetails?.booking_scope || stayDetails?.scope || "").toLowerCase().includes("hostel");
+      if (isHostel) {
+        for (let i = rows.length - 1; i >= 0; i -= 1) {
+          const title = String(rows[i]?.title || "").toLowerCase().trim();
+          if (title === "adults" || title === "children") {
+            rows.splice(i, 1);
+          }
+        }
+      }
+
       let taxRowIndexForInsert = rows.findIndex((r) => /^tax/i.test(String(r.title || "")));
       if (taxRowIndexForInsert < 0) taxRowIndexForInsert = rows.length;
       let nextInsertIndex = taxRowIndexForInsert;
