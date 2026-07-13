@@ -229,44 +229,37 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
   const content = (
     <>
       <div className={cn(styles.portalContainer, styles.visible)}>
-        {/* Airbnb-style Search Pill */}
+        {/* Category pills row */}
+        <div className={styles.categoryRow}>
+          {[
+            { id: "experience", label: "Experiences", path: "/" },
+            { id: "events", label: "Events", path: "/events" },
+            { id: "stays", label: "Stays", path: "/stays" },
+            { id: "food", label: "Food", path: "/food" },
+            { id: "places", label: "Places", path: "/places" },
+          ].map((filter) => (
+            <button
+              key={filter.id}
+              className={cn(styles.categoryPill, {
+                [styles.categoryPillActive]: activeCategory === filter.id,
+              })}
+              onClick={() => history.push(filter.path)}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* Search Icon Button */}
         <button
           ref={searchPillRef}
+          className={styles.searchIconButton}
           onClick={() => setIsSearchPanelOpen(!isSearchPanelOpen)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: W,
-            border: `1px solid ${B}`,
-            borderRadius: "40px",
-            padding: "8px 8px 8px 32px",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
-            cursor: "pointer",
-            transition: "box-shadow 0.2s ease",
-            gap: "16px",
-            width: "100%",
-            maxWidth: "480px",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.18)")}
-          onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)")}
+          aria-label="Toggle search"
         >
-          <span style={{ fontSize: "14px", fontWeight: "600", color: FG }}>
-            {searchQuery || "Start your search"}
-          </span>
-          <div
-            style={{
-              background: "#0EA5C6",
-              borderRadius: "50%",
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Icon name="search" size="14" color="#ffffff" />
-          </div>
+          <Icon name={isSearchPanelOpen ? "close" : "search"} size={isSearchPanelOpen ? "16" : "20"} color="#fff" />
         </button>
       </div>
 
