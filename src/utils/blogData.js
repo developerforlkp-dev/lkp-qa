@@ -405,8 +405,15 @@ export function mapApiBlogToComponentFormat(apiBlog) {
   processedContent = processedContent.replace(/<img([^>]*)class=["'][^"']*["']([^>]*)>/gi, '<img$1$2>');
   processedContent = processedContent.replace(/<img([^>]+)>/gi, '<img$1 class="blog-inline-image">');
 
+  const parseLayoutId = (apiObj) => {
+    const layoutStr = apiObj.layout || apiObj.blogLayout || apiObj.layoutType || apiObj.layoutId || '';
+    const match = String(layoutStr).match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+  };
+
   return {
     id: apiBlog.blogPostId || Math.random(),
+    layoutId: parseLayoutId(apiBlog),
     slug: apiBlog.slug,
     image: imageUrl,
     heroImage: imageUrl,
