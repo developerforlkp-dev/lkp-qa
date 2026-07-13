@@ -23,6 +23,8 @@ import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import Blog from "./pages/Blog";
 import BlogDetails from "./pages/BlogDetails";
+import ViewDetails from "./screens/ViewDetails";
+
 
 import StayProduct from "./screens/StayProduct";
 import StayDetails from "./screens/StayDetails";
@@ -204,6 +206,15 @@ function App() {
             />
             <Route
               exact
+              path="/viewdetails"
+              render={() => (
+                <Page separatorHeader>
+                  <ViewDetails />
+                </Page>
+              )}
+            />
+            <Route
+              exact
               path="/host-profile"
               render={() => (
                 <Page>
@@ -309,6 +320,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
