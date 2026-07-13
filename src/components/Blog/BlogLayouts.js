@@ -8,7 +8,7 @@ export function Layout1ModernMinimalist({ post }) {
   const relatedPosts = posts.filter((p) => post.relatedIds?.includes(p.id));
 
   return (
-    <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
+    <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "0px", marginTop: "-40px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
       {/* SCOPED CSS STYLES */}
       <style>{`
@@ -377,7 +377,7 @@ export function Layout2EditorialMagazine({ post }) {
   const relatedPosts = posts.filter((p) => post.relatedIds?.includes(p.id));
 
   return (
-    <div className="blog-page-root l2-root" style={{ minHeight: "100vh", paddingTop: "60px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
+    <div className="blog-page-root l2-root" style={{ minHeight: "100vh", paddingTop: "0px", marginTop: "-40px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
       <style>{`
         
@@ -420,7 +420,7 @@ export function Layout2EditorialMagazine({ post }) {
         .l2-hero-text { flex: 1; }
         .l2-hero-image-wrap {
           flex: 1;
-          height: 500px;
+          height: 400px;
           width: 100%;
           border-radius: 30px;
           overflow: hidden;

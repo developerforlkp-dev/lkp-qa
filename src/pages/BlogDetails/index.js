@@ -114,6 +114,39 @@ export default function BlogDetails() {
         .blog-page-root img {
           max-width: 100%;
         }
+
+        .blog-inline-image {
+          width: 100%;
+          height: auto;
+          border-radius: 20px;
+          margin: 40px 0;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+          object-fit: cover;
+          max-height: 600px;
+        }
+
+        .blog-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 20px;
+          margin: 50px 0;
+        }
+
+        .blog-gallery-grid .blog-inline-image {
+          margin: 0 !important;
+          height: 300px;
+          width: 100%;
+        }
+
+        @media (max-width: 640px) {
+          .blog-gallery-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .blog-gallery-grid .blog-inline-image {
+            height: 240px;
+          }
+        }
       `}</style>
     </div>
   );
