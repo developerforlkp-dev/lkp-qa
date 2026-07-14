@@ -4,5 +4,25 @@
       "source": "/api/:path*",
       "destination": "https://api.qa.littleknownplanet.com/api/:path*"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/service-worker.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0"
+        }
+      ]
+    }
   ]
 }
