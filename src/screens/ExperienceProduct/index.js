@@ -1203,7 +1203,7 @@ const ExperienceProduct = () => {
               display: "grid", 
               gridTemplateColumns: "1.2fr 1fr", 
               gap: "24px", 
-              alignItems: "stretch"
+              alignItems: "flex-start"
             }} className="details-grid-container">
               
               {/* Narrative Block (Left-hand section) */}
