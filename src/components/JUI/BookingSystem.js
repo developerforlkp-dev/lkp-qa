@@ -1123,6 +1123,25 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [show, setShow] = useState(false);
   const [renderContent, setRenderContent] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
+  const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
+
+  const handleAddonsScroll = useCallback(() => {
+    const container = document.getElementById("header-addons-scroll");
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setShowLeftAddonArrow(scrollLeft > 0);
+      setShowRightAddonArrow(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (show && Array.isArray(listing?.addons) && listing.addons.length > 0) {
+      setTimeout(handleAddonsScroll, 100);
+      window.addEventListener("resize", handleAddonsScroll);
+    }
+    return () => window.removeEventListener("resize", handleAddonsScroll);
+  }, [show, listing?.addons, handleAddonsScroll]);
 
   // Sync external open state
   useEffect(() => {
@@ -3195,89 +3214,72 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       color: ${A} !important;
                     }
                     .addon-card-item {
-                      flex-shrink: 0;
+                      flex: 0 0 auto;
+                      width: 260px;
+                      border-radius: 12px;
+                      padding: 0;
                       display: flex;
-                      align-items: center;
-                      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                      align-items: stretch;
                       cursor: pointer;
-                      position: relative;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+                      transition: all 0.2s ease;
+                      background: ${S};
+                      border: 1.5px solid ${B};
+                      overflow: hidden;
                     }
                     .addon-card-item:hover {
                       transform: translateY(-2px);
-                      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
                     }
-                    /* Desktop and default */
-                    @media (min-width: 1024px) {
-                      .addon-card-item {
-                        min-width: 250px;
-                        max-width: 280px;
-                        padding: 0 16px 0 0;
-                        border-radius: 16px;
-                        gap: 14px;
-                      }
-                      .addon-img-box {
-                        width: 80px;
-                        height: 80px;
-                        border-radius: 16px 0 0 16px;
-                      }
-                      .addon-title-text {
-                        font-size: 13px;
-                      }
+                    .addon-card-item[data-selected="true"] {
+                      background: ${AL};
+                      border-color: ${A};
                     }
-                    /* Tablet */
-                    @media (min-width: 768px) and (max-width: 1023px) {
-                      .addon-card-item {
-                        min-width: 210px;
-                        max-width: 240px;
-                        padding: 0 14px 0 0;
-                        border-radius: 14px;
-                        gap: 12px;
-                      }
-                      .addon-img-box {
-                        width: 68px;
-                        height: 68px;
-                        border-radius: 14px 0 0 14px;
-                      }
-                      .addon-title-text {
-                        font-size: 12px;
-                      }
+                    .addon-img-box {
+                      width: 50px;
+                      flex-shrink: 0;
+                      border-right: 1px solid ${B}55;
                     }
-                    /* Mobile */
-                    @media (max-width: 767px) {
-                      .addon-card-item {
-                        min-width: 180px;
-                        max-width: 210px;
-                        padding: 0 12px 0 0;
-                        border-radius: 12px;
-                        gap: 10px;
-                      }
-                      .addon-img-box {
-                        width: 58px;
-                        height: 58px;
-                        border-radius: 12px 0 0 12px;
-                      }
-                      .addon-title-text {
-                        font-size: 11px;
-                      }
+                    .addon-content {
+                      flex: 1;
+                      min-width: 0;
+                      display: flex;
+                      flex-direction: column;
+                      justify-content: center;
+                      padding: 6px 10px;
+                    }
+                    .addon-title-text {
+                      font-size: 13px;
+                      font-weight: 700;
+                      color: ${FG};
+                      line-height: 1.3;
+                      white-space: nowrap;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      transition: color 0.2s;
+                    }
+                    .addon-card-item[data-selected="true"] .addon-title-text {
+                      color: ${A};
+                    }
+                    .addon-action-area {
+                      display: flex;
+                      align-items: center;
+                      justify-content: flex-end;
+                      width: 88px;
+                      flex-shrink: 0;
+                      padding-right: 10px;
                     }
                     .addon-action-btn-circle {
-                      border: none;
+                      border: 1.5px solid ${B};
                       border-radius: 50%;
-                      width: 32px;
-                      height: 32px;
+                      width: 28px;
+                      height: 28px;
                       display: flex;
                       align-items: center;
                       justify-content: center;
                       cursor: pointer;
                       transition: all 0.2s ease;
-                      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-                    }
-                    @media (max-width: 767px) {
-                      .addon-action-btn-circle {
-                        width: 28px;
-                        height: 28px;
-                      }
+                      background: ${BG};
+                      color: ${FG};
                     }
                     .addon-action-btn-circle:hover {
                       transform: scale(1.08);
@@ -3285,52 +3287,52 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     .addon-qty-ctrl-panel {
                       display: flex;
                       align-items: center;
-                      gap: 6px;
+                      gap: 8px;
                       background: ${BG};
                       border-radius: 100px;
-                      padding: 2px 4px;
-                      border: 1px solid ${A}33;
+                      padding: 4px;
+                      border: 1px solid ${B};
                     }
                     .addon-qty-panel-btn {
-                      background: none;
+                      background: ${S};
+                      color: ${FG};
                       border: none;
                       display: flex;
                       align-items: center;
                       justify-content: center;
-                      padding: 4px;
+                      width: 24px;
+                      height: 24px;
                       border-radius: 50%;
                       cursor: pointer;
                       transition: background 0.2s;
                     }
-                    .addon-qty-panel-btn:hover {
-                      background: ${B}55;
-                    }
                   `}</style>
 
                       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                        <button
-                          className="addon-scroll-btn"
-                          onClick={() => {
-                            const container = document.getElementById("header-addons-scroll");
-                            if (container) container.scrollBy({ left: -240, behavior: 'smooth' });
-                          }}
-                          style={{ left: -18 }}
-                        >
-                          <ChevronLeft size={18} />
-                        </button>
+                        {showLeftAddonArrow && (
+                          <button
+                            className="addon-scroll-btn"
+                            onClick={() => {
+                              const container = document.getElementById("header-addons-scroll");
+                              if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
+                            }}
+                            style={{ left: -18 }}
+                          >
+                            <ChevronLeft size={18} />
+                          </button>
+                        )}
 
-                        <div id="header-addons-scroll" style={{
+                        <div id="header-addons-scroll" onScroll={handleAddonsScroll} style={{
                           display: "flex",
                           overflowX: "auto",
                           gap: 16,
-                          padding: "8px 12px",
-                          margin: "0 4px",
+                          padding: "8px 0",
                           WebkitOverflowScrolling: "touch",
                           scrollbarWidth: "none",
                           msOverflowStyle: "none",
                           width: "100%",
-                          maskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
-                          WebkitMaskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)"
+                          maskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)",
+                          WebkitMaskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)"
                         }}>
                           {listing.addons.map((item, i) => {
                             const addon = item.addon || item;
@@ -3360,56 +3362,51 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 key={i}
                                 onClick={handleCardClick}
                                 className="addon-card-item"
-                                style={{
-                                  background: isSelected ? AL : S,
-                                  border: `1.5px solid ${isSelected ? A : B}`,
-                                }}
+                                data-selected={isSelected}
                               >
                                 {addonImage && (
-                                  <div className="addon-img-box" style={{ overflow: "hidden", flexShrink: 0, borderRight: `1px solid ${B}88` }}>
+                                  <div className="addon-img-box">
                                     <img src={addonImage} alt={addon.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                   </div>
                                 )}
-                                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                  <p className="addon-title-text" style={{ fontWeight: 700, color: isSelected ? A : FG, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                <div className="addon-content">
+                                  <p className="addon-title-text">
                                     {addon.title}
                                   </p>
-                                  <p style={{ fontSize: 11, fontWeight: 800, color: isSelected ? A : M, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <p style={{ fontSize: 11, fontWeight: 700, color: isSelected ? A : M, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
                                     <span>{priceLabel}</span>
-                                    <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                    <span style={{ fontSize: 9, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                                       • {typeLabel}
                                     </span>
                                   </p>
                                 </div>
 
-                                <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                                <div className="addon-action-area" onClick={(e) => e.stopPropagation()}>
                                   {isSelected ? (
                                     pricingType === "Group" ? (
                                       <button
                                         onClick={() => onUpdateAddonQuantity && onUpdateAddonQuantity(addon, -1)}
                                         className="addon-action-btn-circle"
-                                        style={{ background: A, color: "#fff" }}
+                                        style={{ background: A, color: "#fff", border: "none" }}
                                       >
-                                        <CheckCircle2 size={16} />
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                       </button>
                                     ) : (
                                       <div className="addon-qty-ctrl-panel">
                                         <button
                                           onClick={() => onUpdateAddonQuantity && onUpdateAddonQuantity(addon, -1)}
                                           className="addon-qty-panel-btn"
-                                          style={{ color: A }}
                                         >
-                                          <Minus size={12} />
+                                          -
                                         </button>
-                                        <span style={{ fontSize: 11, fontWeight: 700, minWidth: 12, textAlign: "center", color: A }}>
+                                        <span style={{ fontSize: 12, fontWeight: 800, minWidth: 16, textAlign: "center", color: FG }}>
                                           {quantity}
                                         </span>
                                         <button
                                           onClick={() => onUpdateAddonQuantity && onUpdateAddonQuantity(addon, 1)}
                                           className="addon-qty-panel-btn"
-                                          style={{ color: A }}
                                         >
-                                          <Plus size={12} />
+                                          +
                                         </button>
                                       </div>
                                     )
@@ -3417,9 +3414,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                     <button
                                       onClick={() => onUpdateAddonQuantity && onUpdateAddonQuantity(addon, 1)}
                                       className="addon-action-btn-circle"
-                                      style={{ background: BG, color: FG, border: `1.5px solid ${B}` }}
                                     >
-                                      <Plus size={16} />
+                                      +
                                     </button>
                                   )}
                                 </div>
@@ -3428,16 +3424,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           })}
                         </div>
 
-                        <button
-                          className="addon-scroll-btn"
-                          onClick={() => {
-                            const container = document.getElementById("header-addons-scroll");
-                            if (container) container.scrollBy({ left: 240, behavior: 'smooth' });
-                          }}
-                          style={{ right: -18 }}
-                        >
-                          <ChevronRight size={18} />
-                        </button>
+                        {showRightAddonArrow && (
+                          <button
+                            className="addon-scroll-btn"
+                            onClick={() => {
+                              const container = document.getElementById("header-addons-scroll");
+                              if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
+                            }}
+                            style={{ right: -18 }}
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
