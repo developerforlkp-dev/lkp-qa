@@ -116,29 +116,22 @@ export function Hero({ posts = [] }) {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="hero-text-container flex-1 z-10 w-full"
       >
-        <div style={{ marginBottom: '32px' }}>
-          <p className="hero-pill-mobile font-semibold tracking-widest text-sm uppercase">
+        <div style={{ marginBottom: '24px' }}>
+          <p className="font-semibold tracking-widest text-sm uppercase" style={{ color: '#00a4c4' }}>
             Our Blog
           </p>
         </div>
         
-        <h1 className="hero-text-mobile-white title text-4xl md:text-6xl lg:text-[80px] font-bold leading-[1.1] mb-6">
-          Stories that <br className="hidden md:block" />
-          inspire
+        <h1 className="hero-text-mobile-white title text-4xl md:text-6xl lg:text-[80px] font-bold leading-[1.1] mb-6" style={{ color: '#001F3F' }}>
+          Stories that <br />
+          inspire <br className="lg:hidden" /><span className="italic font-light" style={{ color: '#00a4c4' }}>journeys</span>
         </h1>
         
-        <p className="hero-text-mobile-white desc text-lg md:text-xl max-w-md mx-auto lg:mx-0 mb-8" style={{ marginTop: '40px', marginBottom: '48px' }}>
-          A space to share ideas, experiences, and moments that matter. Discover the beauty in everyday details.
+        <p className="hero-text-mobile-white desc text-lg md:text-xl max-w-md mx-auto lg:mx-0 mb-8" style={{ marginTop: '24px', marginBottom: '48px', color: '#4b5563' }}>
+          Travel guides, hidden gems and real stories from around the world.
         </p>
         
-        <div className="hero-button-wrapper">
-          <button className="group flex items-center gap-4 text-white px-8 py-4 rounded-full font-semibold transition-colors shadow-md" style={{ backgroundColor: '#00a4c4' }}>
-            Explore All Posts
-            <span className="bg-white rounded-full p-1.5 group-hover:translate-x-1 transition-transform" style={{ color: '#00a4c4' }}>
-              <ArrowRight size={20} />
-            </span>
-          </button>
-        </div>
+
       </motion.div>
 
       {/* Right Content - Images */}
@@ -169,7 +162,8 @@ export function Hero({ posts = [] }) {
           initial={{ opacity: 0, scale: 0.9, x: 20 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="absolute bottom-4 left-0 lg:left-auto lg:top-0 right-auto lg:right-4 w-[45%] h-[40%] lg:h-[45%] z-20 rounded-full overflow-hidden border-[4px] lg:border-[6px] border-white shadow-xl"
+          className="absolute bottom-4 left-0 lg:left-auto lg:top-0 right-auto lg:right-4 w-[45%] h-[40%] lg:h-[45%] z-20 rounded-full overflow-hidden shadow-xl"
+          style={{ border: '6px solid white', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}
         >
           <img 
             src={heroImages[1]} 
@@ -183,7 +177,8 @@ export function Hero({ posts = [] }) {
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-          className="absolute bottom-0 right-[5%] lg:right-0 w-[45%] lg:w-[55%] h-[45%] lg:h-[45%] z-20 overflow-hidden border-[4px] lg:border-[6px] border-white shadow-xl rounded-[60px_60px_40px_40px] lg:rounded-[60px_100px_40px_120px]"
+          className="absolute bottom-0 right-[5%] lg:right-0 w-[45%] lg:w-[55%] h-[45%] lg:h-[45%] z-20 overflow-hidden shadow-xl rounded-[60px_60px_40px_40px] lg:rounded-[60px_100px_40px_120px]"
+          style={{ border: '6px solid white', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}
         >
           <img 
             src={heroImages[2]} 

@@ -13,33 +13,32 @@
 .heroSection
     position: relative
     width: 100vw
+    max-width: 1920px
     left: 50%
-    right: 50%
-    margin-left: -50vw
-    margin-right: -50vw
+    transform: translateX(-50%)
     margin-bottom: 0
     overflow: hidden
     border-radius: 0
     z-index: 50
     +t
         width: 100vw
-        margin-left: -50vw
-        margin-right: -50vw
+        max-width: 1920px
+        left: 50%
+        transform: translateX(-50%)
         border-radius: 0
         overflow: visible
         margin-bottom: 32px
     +m
         width: 100%
+        max-width: none
         left: auto
-        right: auto
-        margin-left: 0
-        margin-right: 0
+        transform: none
         border-radius: 0
         overflow: visible
         margin-bottom: 32px
 
 .container
-    max-width: none
+    max-width: 1920px
     width: 100%
     margin: 0 auto
     padding: 0 80px

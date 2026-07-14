@@ -1,0 +1,162 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap")
+@import ../../styles/helpers
+
+.section
+    padding: 40px 0 80px
+    +d
+        padding: 40px 0 64px
+    +m
+        padding: 32px 0 48px
+
+.container
+    max-width: 1040px
+    margin: 0 auto
+    padding: 0 40px
+    +m
+        padding: 0 24px
+
+.hero
+    text-align: center
+    margin-bottom: 80px
+    +m
+        margin-bottom: 48px
+
+.title
+    font-family: "Cormorant Garamond", "Playfair Display", serif
+    font-size: 56px
+    line-height: 1.1
+    font-weight: 700
+    letter-spacing: -0.03em
+    margin-bottom: 24px
+    color: #11284B
+    +d
+        font-size: 48px
+    +m
+        font-size: 36px
+    +dark
+        color: $n8
+
+.accentWord
+    font-style: italic
+    font-weight: 500
+    background: linear-gradient(135deg, #08B5D6, #45D8F2)
+    background-size: 200% 200%
+    -webkit-background-clip: text
+    -webkit-text-fill-color: transparent
+    background-clip: text
+    animation: gradientShift 8s ease infinite
+
+@keyframes gradientShift
+    0%
+        background-position: 0% 50%
+    50%
+        background-position: 100% 50%
+    100%
+        background-position: 0% 50%
+
+.subtitle
+    font-family: "Inter", sans-serif
+    font-weight: 500
+    font-size: 18px
+    line-height: 1.6
+    color: #4F5B73
+    max-width: 600px
+    margin: 0 auto
+    +m
+        font-size: 15px
+
+.content
+    font-family: "Inter", sans-serif
+    font-size: 16px
+    line-height: 1.6
+    color: #4F5B73
+    margin-bottom: 80px
+    +m
+        margin-bottom: 48px
+    +dark
+        color: $n6
+    
+    p
+        margin-bottom: 24px
+        &:last-child
+            margin-bottom: 0
+
+.grid
+    display: grid
+    grid-template-columns: repeat(2, 1fr)
+    gap: 48px
+    margin-bottom: 80px
+    +m
+        grid-template-columns: 1fr
+        gap: 32px
+        margin-bottom: 48px
+
+.card
+    background: $n8
+    border-radius: 24px
+    padding: 40px
+    box-shadow: 0 10px 32px rgba($n2, 0.05)
+    border: 1px solid $n6
+    +dark
+        background: $n1
+        border-color: $n3
+        box-shadow: 0 10px 32px rgba(#000, 0.2)
+
+.cardIcon
+    display: flex
+    justify-content: center
+    align-items: center
+    width: 64px
+    height: 64px
+    border-radius: 50%
+    background: rgba(#0097B2, 0.1)
+    margin-bottom: 24px
+    svg
+        fill: #0097B2
+        path
+            fill: #0097B2
+
+.cardTitle
+    +body-bold-1
+    color: $n2
+    margin-bottom: 16px
+    +dark
+        color: $n8
+
+.cardText
+    +body-2
+    color: $n4
+    line-height: 1.6
+
+.mission
+    background: $n7
+    border-radius: 24px
+    padding: 64px
+    text-align: center
+    +m
+        padding: 40px 24px
+    +dark
+        background: $n2
+
+.missionTitle
+    font-family: "Cormorant Garamond", "Playfair Display", serif
+    font-size: 40px
+    line-height: 1.2
+    font-weight: 700
+    margin-bottom: 24px
+    color: #11284B
+    letter-spacing: -0.03em
+    +m
+        font-size: 32px
+    +dark
+        color: $n8
+
+.missionText
+    font-family: "Inter", sans-serif
+    font-size: 18px
+    line-height: 1.6
+    color: #4F5B73
+    max-width: 720px
+    margin: 0 auto
+    +dark
+        color: $n6

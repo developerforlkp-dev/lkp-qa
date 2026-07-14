@@ -8,7 +8,7 @@ export function Layout1ModernMinimalist({ post }) {
   const relatedPosts = posts.filter((p) => post.relatedIds?.includes(p.id));
 
   return (
-    <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
+    <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "0px", marginTop: "-40px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
       {/* SCOPED CSS STYLES */}
       <style>{`
@@ -377,7 +377,7 @@ export function Layout2EditorialMagazine({ post }) {
   const relatedPosts = posts.filter((p) => post.relatedIds?.includes(p.id));
 
   return (
-    <div className="blog-page-root l2-root" style={{ minHeight: "100vh", paddingTop: "60px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
+    <div className="blog-page-root l2-root" style={{ minHeight: "100vh", paddingTop: "0px", marginTop: "-40px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
       <style>{`
         
@@ -420,7 +420,7 @@ export function Layout2EditorialMagazine({ post }) {
         .l2-hero-text { flex: 1; }
         .l2-hero-image-wrap {
           flex: 1;
-          height: 500px;
+          height: 400px;
           width: 100%;
           border-radius: 30px;
           overflow: hidden;
@@ -585,13 +585,20 @@ export function Layout2EditorialMagazine({ post }) {
 
 export function Layout3ImmersiveDark({ post }) {
   return (
-    <div className="blog-page-root" style={{ 
-      backgroundColor: '#0a0a0a', 
+    <div className="blog-page-root l3-root" style={{ 
       minHeight: '100vh', 
-      fontFamily: '"Inter", sans-serif',
-      color: '#FFF'
+      fontFamily: '"Inter", sans-serif'
     }}>
       <style>{`
+        .l3-root {
+          background-color: #ffffff;
+          color: #333;
+          transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .dark-mode .l3-root {
+          background-color: #0a0a0a;
+          color: #FFF;
+        }
         .l3-hero {
           position: relative;
           height: 80vh;
@@ -610,13 +617,16 @@ export function Layout3ImmersiveDark({ post }) {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          opacity: 0.5;
         }
         .l3-hero-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to top, #0a0a0a 0%, transparent 100%);
+          background: linear-gradient(to top, #ffffff 0%, rgba(255,255,255,0.7) 40%, transparent 100%);
           z-index: 2;
+          transition: background 0.3s ease;
+        }
+        .dark-mode .l3-hero-overlay {
+          background: linear-gradient(to top, #0a0a0a 0%, rgba(10,10,10,0.8) 40%, transparent 100%);
         }
         .l3-hero-content {
           position: relative;
@@ -629,18 +639,28 @@ export function Layout3ImmersiveDark({ post }) {
           text-align: center;
         }
         .l3-title {
+          font-family: 'Poppins', sans-serif;
           font-size: clamp(40px, 6vw, 72px);
           font-weight: 900;
           line-height: 1.1;
           margin-bottom: 24px;
+          color: #001F3F;
+          text-transform: uppercase;
+        }
+        .dark-mode .l3-title {
+          color: #FFF;
         }
         .l3-meta {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 20px;
-          color: #AAA;
+          color: #555;
           font-size: 15px;
+          font-weight: 600;
+        }
+        .dark-mode .l3-meta {
+          color: #AAA;
         }
         .l3-container {
           max-width: 800px;
@@ -656,15 +676,18 @@ export function Layout3ImmersiveDark({ post }) {
         .l3-intro {
           font-size: 24px;
           color: #00A4C4;
-          font-weight: 600;
+          font-weight: 700;
           line-height: 1.6;
           margin-bottom: 40px;
         }
         .l3-text {
           font-size: 20px;
           line-height: 1.8;
-          color: #DDD;
+          color: #444;
           margin-bottom: 30px;
+        }
+        .dark-mode .l3-text {
+          color: #DDD;
         }
         .blog-body-html * {
           color: inherit !important;
@@ -672,18 +695,29 @@ export function Layout3ImmersiveDark({ post }) {
         }
         .l3-heading {
           font-size: 32px;
-          color: #FFF;
+          color: #001F3F;
           font-weight: 800;
           margin: 60px 0 30px 0;
+        }
+        .dark-mode .l3-heading {
+          color: #FFF;
         }
         .l3-quote {
           font-size: 28px;
           line-height: 1.5;
-          color: #FFF;
+          color: #00A4C4;
           font-style: italic;
           text-align: center;
           margin: 60px 0;
           padding: 0 40px;
+          border-left: 4px solid #001F3F;
+          background: #F8FCFD;
+          padding: 30px 40px;
+          border-radius: 0 20px 20px 0;
+        }
+        .dark-mode .l3-quote {
+          background: #111;
+          border-left-color: #FFF;
         }
         .l3-image {
           border-radius: 16px;

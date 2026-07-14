@@ -865,7 +865,7 @@ function CulinaryHero({ food, galleryItems }) {
 
   if (isMobile) {
     return (
-      <section className="hero-section-wrapper-mobile" style={{ background: BG, minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
+      <section className="hero-section-wrapper-mobile" style={{ background: BG, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
         {/* Full-width screen bleed image slider at the top */}
         <div className="hero-mobile-image-container" style={{ width: "100%", height: "55vh", position: "relative", overflow: "hidden", borderRadius: "0 0 36px 36px" }}>
           <AnimatePresence mode="wait">
@@ -974,30 +974,6 @@ function CulinaryHero({ food, galleryItems }) {
           }}>
             {food?.shortDescription || "Authentic Taste Experience"}
           </div>
-        </div>
-
-        {/* Detailed Description */}
-        <div style={{ padding: "0 24px", marginTop: "16px" }}>
-          <div style={{
-            fontSize: "11px",
-            fontWeight: 800,
-            color: "#0097B2",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            marginBottom: "6px",
-            fontFamily: '"Inter", sans-serif'
-          }}>
-            About This Food
-          </div>
-          <p style={{
-            fontSize: "14px",
-            color: M,
-            lineHeight: 1.6,
-            margin: 0,
-            fontFamily: '"Inter", sans-serif'
-          }}>
-            {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
-          </p>
         </div>
 
 
@@ -2226,10 +2202,79 @@ const FoodDetails = () => {
 
       <CulinaryNarrative food={food} hostData={hostData} hostAvatar={hostAvatar} />
 
+      {/* TAGS MARQUEE SECTION */}
+      {(() => {
+        const rawTags = Array.isArray(food?.tags) && food?.tags.length > 0
+          ? food.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
+          : typeof food?.tags === "string" && food?.tags.trim() !== ""
+            ? food.tags.split(",").map((s) => s.trim()).filter(Boolean)
+            : ["Culinary Art", "Taste", "Philosophy", "Epicurean", "Experience", "Gastronomy"];
+        
+        // Duplicate to ensure infinite seamless scrolling loop
+        const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags, ...rawTags, ...rawTags];
+
+        const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
+        const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 3; // offset 50% is half of the clones
+        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
+
+        return (
+          <div style={{
+            margin: isMobile ? "0 -24px" : "0 -80px",
+            overflow: "hidden",
+            position: "relative",
+            padding: "20px 0",
+            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+            borderTop: `1px solid ${B}`,
+            borderBottom: `1px solid ${B}`,
+          }}>
+            {/* Left & Right Edge Fades */}
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+
+            <motion.div
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+              style={{ display: "flex", alignItems: "center", width: "max-content" }}
+            >
+              {loopedTags.map((tag, idx) => {
+                const isEven = idx % 2 === 0;
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "24px",
+                      whiteSpace: "nowrap",
+                      marginRight: "32px"
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "18px",
+                        fontWeight: isEven ? 700 : 300,
+                        color: isEven ? FG : M,
+                        fontFamily: "Poppins, sans-serif",
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        opacity: isEven ? 1 : 0.75
+                      }}
+                    >
+                      {tag}
+                    </span>
+                    <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
+                  </div>
+                );
+              })}
+            </motion.div>
+          </div>
+        );
+      })()}
+
       <FoodMetadataCard food={food} />
 
       {(() => {
-        const sigRaw = food?.signatureDishes || "";
+        const sigRaw = food?.whatsSpecial || "";
         const dishes = Array.isArray(sigRaw) 
           ? sigRaw 
           : (typeof sigRaw === "string" ? sigRaw.split(",") : []);
@@ -2251,8 +2296,9 @@ const FoodDetails = () => {
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`,
           }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            {/* Left & Right Edge Fades */}
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
             <motion.div
               animate={{ x: ["0%", "-50%"] }}

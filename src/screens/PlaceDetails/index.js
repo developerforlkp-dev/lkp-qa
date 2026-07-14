@@ -2998,6 +2998,64 @@ function MobileCTA({ place }) {
   );
 }
 
+function PremiumMarquee({ items, isMobile, fallbackItems }) {
+  const { theme, tokens } = useTheme();
+  const { A, B, BG, FG, M } = tokens;
+  
+  const rawTags = Array.isArray(items) && items.length > 0
+    ? items.map((t) => (typeof t === "string" ? t : t?.name || t?.title || t?.tag || t?.label || t?.value || "")).filter(Boolean)
+    : (typeof items === "string" ? items.split(",").map(s=>s.trim()).filter(Boolean) : fallbackItems);
+    
+  const marqueeItems = rawTags.length > 0 ? rawTags : fallbackItems;
+  const loopedTags = Array(12).fill(marqueeItems).flat();
+  const estimatedTagWidth = (tag) => tag.length * 9.5 + 75;
+  const tagsDistance = marqueeItems.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 6;
+  const tagsDuration = Math.max(tagsDistance / 60, 10);
+
+  return (
+    <div style={{
+      margin: "0",
+      overflow: "hidden",
+      position: "relative",
+      padding: "20px 0",
+      background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+      borderTop: `1px solid ${B}`,
+      borderBottom: `1px solid ${B}`,
+    }}>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+
+      <motion.div
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+        style={{ display: "flex", alignItems: "center", width: "max-content" }}
+      >
+        {loopedTags.map((tag, idx) => {
+          const isEven = idx % 2 === 0;
+          return (
+            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 40, marginRight: 40 }}>
+              <span
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontSize: isMobile ? "12px" : "14px",
+                  fontWeight: isEven ? 700 : 400,
+                  color: isEven ? FG : M,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  opacity: isEven ? 1 : 0.75
+                }}
+              >
+                {tag}
+              </span>
+              <Star size={14} color={A || "#0097B2"} fill={A || "#0097B2"} style={{ opacity: 0.6 }} />
+            </div>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+}
+
 function MobilePlaceDetails({
   place,
   galleryItems,
@@ -3016,6 +3074,7 @@ function MobilePlaceDetails({
 
       {/* Place Description */}
       <PlaceDescription place={place} />
+      <PremiumMarquee items={place?.tags} isMobile={true} fallbackItems={["Authentic Experience", "Local Heritage", "Curated Journey", "Memorable Moments"]} />
 
       {/* 4. Gallery with Lightbox */}
       <MobileGallery galleryItems={galleryItems} />
@@ -3030,6 +3089,7 @@ function MobilePlaceDetails({
       <MobileGoodToKnow place={place} />
 
       {/* Location Map Section */}
+      <PremiumMarquee items={place?.whatsSpecial} isMobile={true} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
       <LocationSection place={place} />
 
       {/* Community Feedback */}
@@ -3255,6 +3315,7 @@ const PlaceDetails = () => {
       <PlaceHero place={place} galleryItems={galleryItems} id={currentListingId} />
 
       <PlaceDescription place={place} />
+      <PremiumMarquee items={place?.tags} isMobile={false} fallbackItems={["Authentic Experience", "Local Heritage", "Curated Journey", "Memorable Moments"]} />
 
       <Itinerary place={place} />
 
@@ -3262,6 +3323,7 @@ const PlaceDetails = () => {
 
       <GoodToKnow place={place} />
 
+      <PremiumMarquee items={place?.whatsSpecial} isMobile={false} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
       <LocationSection place={place} />
 
       <CommunityFeedback />

@@ -16,7 +16,7 @@
     align-items: center
     justify-content: center
     gap: 12px
-    margin: 8px auto 24px
+    margin: 4px auto 0
     max-width: 1000px
     overflow-x: auto
     -webkit-overflow-scrolling: touch
@@ -26,25 +26,25 @@
     +m
         justify-content: flex-start
         padding: 0 4px
-        margin: 8px auto 16px
+        margin: 0 auto 16px
 
 .categoryNavItem
     display: flex
     align-items: center
     gap: 8px
-    padding: 12px 24px
+    padding: 8px 16px
     border-radius: 100px
     background: transparent
     border: 1px solid transparent
     +button-2
-    color: $n4
+    color: $n2
     cursor: pointer
     transition: all .2s ease
     white-space: nowrap
     +dark
         color: $n5
     svg
-        color: $n4
+        color: $n2
         fill: none
         stroke: currentColor
         transition: color .2s ease
@@ -60,6 +60,47 @@
             color: $n2
             +dark
                 color: $n8
+
+.categoryPill
+    display: flex
+    align-items: center
+    padding: 6px 4px 10px
+    border: none
+    background: transparent
+    cursor: pointer
+    white-space: nowrap
+    font-family: 'DM Sans', sans-serif
+    font-size: 14px
+    font-weight: 600
+    color: #0F2747
+    letter-spacing: 0.01em
+    transition: all 200ms ease
+    -webkit-tap-highlight-color: transparent
+    flex-shrink: 0
+    position: relative
+    +dark
+        color: $n6
+    &:hover
+        color: #0EA5C6
+    &::after
+        content: ''
+        position: absolute
+        bottom: 0
+        left: 50%
+        width: 0
+        height: 2px
+        background: #0EA5C6
+        transition: all 200ms ease
+        transform: translateX(-50%)
+    &:hover::after
+        width: 100%
+
+.categoryPillActive
+    color: #0F2747
+    +dark
+        color: $n8
+    &::after
+        width: 100%
 
 .categoryNavItemActive
     background: $p1
@@ -224,7 +265,7 @@
     +body-bold-2
     color: $n8
     cursor: pointer
-    transition: all .2s ease
+    transition: background .2s ease, box-shadow .2s ease
     white-space: nowrap
     +m
         width: 100%
@@ -233,9 +274,6 @@
         border-radius: 14px
     &:hover
         background: darken(#0097B2, 5%)
-        transform: translateY(-2px)
-    &:active
-        transform: translateY(0)
 
 .datePicker
     position: absolute

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import ReactDOM from "react-dom";
 import { useLocation, useHistory } from "react-router-dom";
 import cn from "classnames";
 import moment from "moment";
@@ -24,6 +25,38 @@ const categoryOptions = [
   { id: "FOOD", label: "Food", IconComponent: Utensils },
   { id: "PLACE", label: "Places", IconComponent: MapPin },
 ];
+
+const buildCategoryFilterState = ({
+  categoryType,
+  categoryValues,
+  selectedCategoryLabel,
+}) => {
+  if (!categoryType || !Array.isArray(categoryValues) || categoryValues.length === 0) {
+    return null;
+  }
+
+  const normalizedLabels =
+    categoryValues.length === 1 && selectedCategoryLabel
+      ? [selectedCategoryLabel]
+      : categoryValues.map((value) => String(value));
+
+  return {
+    activeKeys: categoryValues.map((value) => `${categoryType}-${value}`),
+    selectedCategoryLabels: normalizedLabels,
+    selectedCategoryLabel: normalizedLabels.join(", "),
+    categoryType,
+    categoryValues,
+  };
+};
+
+const isSearchCategoryType = (categoryType) => {
+  const normalized = String(categoryType || "").trim().toUpperCase();
+  return (
+    normalized.includes("LOCATION") ||
+    normalized.includes("DISTRICT") ||
+    normalized.includes("STATE")
+  );
+};
 
 const Listings = () => {
   const location = useLocation();
@@ -70,15 +103,32 @@ const Listings = () => {
   const businessInterest = searchParams.get("businessInterest") || locationState.businessInterest || "EXPERIENCE";
   const businessInterestIdParam = searchParams.get("businessInterestId");
   const categoryTypeParam = searchParams.get("categoryType") || "";
-  const categoryValuesParam = searchParams.getAll("categoryValues");
-  const fallbackCategoryValues = searchParams.get("categoryValues");
   const selectedCategoryLabel = searchParams.get("selectedCategoryLabel") || "";
 
   const categoryValues = useMemo(() => {
-    return categoryValuesParam.length > 0
-      ? categoryValuesParam
-      : (fallbackCategoryValues ? fallbackCategoryValues.split(",").map((v) => v.trim()).filter(Boolean) : []);
-  }, [fallbackCategoryValues, location.search]);
+    const params = new URLSearchParams(location.search);
+    const valuesFromParams = params.getAll("categoryValues");
+    const fallbackValues = params.get("categoryValues");
+
+    return valuesFromParams.length > 0
+      ? valuesFromParams
+      : (fallbackValues ? fallbackValues.split(",").map((v) => v.trim()).filter(Boolean) : []);
+  }, [location.search]);
+
+  const derivedCategorySearchText = useMemo(() => {
+    if (!isSearchCategoryType(categoryTypeParam)) return "";
+    if (selectedCategoryLabel) return selectedCategoryLabel;
+    return categoryValues[0] ? String(categoryValues[0]) : "";
+  }, [categoryTypeParam, selectedCategoryLabel, categoryValues]);
+
+  const hasExplicitSearchText = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return Boolean(
+      params.get("location") ||
+      params.get("search") ||
+      locationState.location
+    );
+  }, [location.search, locationState.location]);
 
   const categoryFilter = useMemo(() => {
     if (!categoryTypeParam || categoryValues.length === 0) return null;
@@ -89,6 +139,12 @@ const Listings = () => {
       sortBy: "newest",
     };
   }, [businessInterestIdParam, categoryTypeParam, categoryValues]);
+
+  const routeCategoryFilterState = useMemo(() => buildCategoryFilterState({
+    categoryType: categoryTypeParam,
+    categoryValues,
+    selectedCategoryLabel,
+  }), [categoryTypeParam, categoryValues, selectedCategoryLabel]);
 
   const resolvedBusinessInterestId = useMemo(() => {
     if (businessInterestIdParam) return Number(businessInterestIdParam);
@@ -108,6 +164,7 @@ const Listings = () => {
   const autocompleteServiceRef = useRef(null);
   const autocompleteSessionTokenRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const isUserTyping = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -145,7 +202,7 @@ const Listings = () => {
   ), [selectedDate]);
 
   // Filter state
-  const [filters, setFilters] = useState({
+  const createDefaultFilters = () => ({
     priceRange: { min: "", max: "" },
     pricePresetMax: null,
     propertyTypes: [],
@@ -154,9 +211,11 @@ const Listings = () => {
     categories: [],
     tags: [],
     specialLabels: [],
-    apiCategoryFilter: null,
+    apiCategoryFilter: routeCategoryFilterState,
     dateRange: { startDate: "", endDate: "" },
   });
+
+  const [filters, setFilters] = useState(createDefaultFilters);
 
   // UI state
   const [showMap, setShowMap] = useState(false);
@@ -164,10 +223,70 @@ const Listings = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState("grid");
   const [businessInterestFilters, setBusinessInterestFilters] = useState(null);
+  const [isCategoryDerivedSearch, setIsCategoryDerivedSearch] = useState(
+    Boolean(!hasExplicitSearchText && derivedCategorySearchText)
+  );
 
   // Mobile sticky search scroll state
   const [isScrolled, setIsScrolled] = useState(false);
   const searchBarRef = useRef(null);
+
+  const [portalTarget, setPortalTarget] = useState(null);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== "undefined" ? window.innerWidth > 1023 : true
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setIsDesktop(window.innerWidth > 1023);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const target = document.getElementById("header-center-portal");
+    if (target) {
+      setPortalTarget(target);
+    }
+  }, []);
+
+  useEffect(() => {
+    setFilters((prev) => {
+      const currentCategoryType = prev.apiCategoryFilter?.categoryType || null;
+      const currentCategoryValues = Array.isArray(prev.apiCategoryFilter?.categoryValues)
+        ? prev.apiCategoryFilter.categoryValues.map(String)
+        : [];
+      const nextCategoryType = routeCategoryFilterState?.categoryType || null;
+      const nextCategoryValues = Array.isArray(routeCategoryFilterState?.categoryValues)
+        ? routeCategoryFilterState.categoryValues.map(String)
+        : [];
+
+      if (
+        currentCategoryType === nextCategoryType &&
+        currentCategoryValues.length === nextCategoryValues.length &&
+        currentCategoryValues.every((value, index) => value === nextCategoryValues[index])
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        apiCategoryFilter: routeCategoryFilterState,
+      };
+    });
+  }, [routeCategoryFilterState]);
+
+  useEffect(() => {
+    if (hasExplicitSearchText || !derivedCategorySearchText) {
+      setIsCategoryDerivedSearch(false);
+      return;
+    }
+
+    setSearchLocation(derivedCategorySearchText);
+    setActiveSearch("");
+    setSelectedDestination(null);
+    setIsCategoryDerivedSearch(true);
+  }, [derivedCategorySearchText, hasExplicitSearchText]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -243,7 +362,7 @@ const Listings = () => {
 
   // Use listings hook - only re-renders when activeSearch or other filters change
   const { data: listings, loading, error, hasMore, fetchMore } = useListings({
-    location: activeSearch,
+    location: isCategoryDerivedSearch ? "" : activeSearch,
     dateRange,
     guests,
     filters,
@@ -257,10 +376,99 @@ const Listings = () => {
 
   // Handle filter changes
   const handleFilterChange = (filterType, value) => {
+    if (filterType === "apiCategoryFilter") {
+      syncCategoryFilterToUrl(value);
+    }
+
     setFilters((prev) => ({
       ...prev,
       [filterType]: value,
     }));
+  };
+
+  const buildBaseSearchParams = ({
+    nextBusinessInterest = businessInterest,
+    includeRouteCategoryFilter = false,
+  } = {}) => {
+    const params = new URLSearchParams();
+
+    if (searchLocation && !isCategoryDerivedSearch) params.set("search", searchLocation);
+    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
+    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
+
+    const guestTotal = guests.adults + guests.children;
+    if (guestTotal > 0) {
+      params.set("guests", String(guestTotal));
+      params.set("adults", String(guests.adults || 0));
+      params.set("children", String(guests.children || 0));
+    }
+
+    if (nextBusinessInterest) params.set("businessInterest", nextBusinessInterest);
+
+    const resolvedIdByInterest = (() => {
+      const normalized = String(nextBusinessInterest || "").toUpperCase();
+      if (normalized.includes("EVENT")) return 2;
+      if (normalized.includes("STAY")) return 3;
+      if (normalized.includes("PLACE")) return 4;
+      if (normalized.includes("FOOD")) return 5;
+      return 1;
+    })();
+    params.set("businessInterestId", String(resolvedIdByInterest));
+
+    if (includeRouteCategoryFilter && categoryTypeParam && categoryValues.length > 0) {
+      params.set("categoryType", categoryTypeParam);
+      categoryValues.forEach((value) => params.append("categoryValues", value));
+      if (selectedCategoryLabel) params.set("selectedCategoryLabel", selectedCategoryLabel);
+    }
+
+    return params;
+  };
+
+  const resetFiltersState = (nextCategoryFilter = null) => {
+    setFilters({
+      priceRange: { min: "", max: "" },
+      pricePresetMax: null,
+      propertyTypes: [],
+      amenities: [],
+      ratings: [],
+      categories: [],
+      tags: [],
+      specialLabels: [],
+      apiCategoryFilter: nextCategoryFilter,
+      dateRange: { startDate: "", endDate: "" },
+    });
+  };
+
+  const syncCategoryFilterToUrl = (nextCategoryFilter, nextBusinessInterest = businessInterest) => {
+    const params = buildBaseSearchParams({
+      nextBusinessInterest,
+      includeRouteCategoryFilter: false,
+    });
+
+    if (
+      nextCategoryFilter?.categoryType &&
+      Array.isArray(nextCategoryFilter?.categoryValues) &&
+      nextCategoryFilter.categoryValues.length > 0
+    ) {
+      params.set("categoryType", nextCategoryFilter.categoryType);
+      nextCategoryFilter.categoryValues.forEach((value) => {
+        params.append("categoryValues", String(value));
+      });
+
+      if (nextCategoryFilter.selectedCategoryLabel) {
+        params.set("selectedCategoryLabel", nextCategoryFilter.selectedCategoryLabel);
+      }
+    }
+
+    history.replace({
+      pathname: "/listings",
+      search: params.toString() ? `?${params.toString()}` : "",
+      state: {
+        location: searchLocation,
+        dateRange,
+        guests,
+      },
+    });
   };
 
   // Format selected date for display
@@ -295,6 +503,7 @@ const Listings = () => {
     if (!suggestion) return;
     const description = suggestion.description || "";
     const placeId = suggestion.place_id || suggestion.placeId || "";
+    setIsCategoryDerivedSearch(false);
     setSearchLocation(description);
     setSelectedDestination({ description, placeId });
     setDestinationSuggestions([]);
@@ -304,25 +513,17 @@ const Listings = () => {
 
   // Handle category switch
   const handleCategorySwitch = (newBusinessInterest) => {
-    // Preserve base search params (location, date, guests) but discard specific filter values like categoryValues, tags, etc.
+    resetFiltersState(null);
+    setSortBy("newest");
+    setIsCategoryDerivedSearch(false);
+
     const newState = {
       location: searchLocation,
       dateRange: dateRange,
       guests: guests,
     };
-    const params = new URLSearchParams();
-    if (searchLocation) params.set("search", searchLocation);
-    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
-    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
-    const guestTotal = guests.adults + guests.children;
-    if (guestTotal > 0) {
-      params.set("guests", String(guestTotal));
-      params.set("adults", String(guests.adults || 0));
-      params.set("children", String(guests.children || 0));
-    }
-    params.set("businessInterest", newBusinessInterest);
+    const params = buildBaseSearchParams({ nextBusinessInterest: newBusinessInterest });
 
-    // Navigate to the new business interest filter page
     history.push({
       pathname: "/listings",
       search: params.toString() ? `?${params.toString()}` : "",
@@ -332,29 +533,18 @@ const Listings = () => {
 
   // Handle search button click or Enter key
   const handleSearch = () => {
-    // Update the active search state to trigger a re-fetch
+    setIsCategoryDerivedSearch(false);
     setActiveSearch(searchLocation);
-    
+
     const newState = {
       location: searchLocation,
       dateRange: dateRange,
       guests: guests,
     };
-    const params = new URLSearchParams();
-    if (searchLocation) params.set("search", searchLocation);
-    if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
-    if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
-    const guestTotal = guests.adults + guests.children;
-    if (guestTotal > 0) {
-      params.set("guests", String(guestTotal));
-      params.set("adults", String(guests.adults || 0));
-      params.set("children", String(guests.children || 0));
-    }
-    if (businessInterest) params.set("businessInterest", businessInterest);
-    if (businessInterestIdParam) params.set("businessInterestId", businessInterestIdParam);
-    if (categoryTypeParam) params.set("categoryType", categoryTypeParam);
-    categoryValues.forEach((value) => params.append("categoryValues", value));
-    if (selectedCategoryLabel) params.set("selectedCategoryLabel", selectedCategoryLabel);
+    const params = buildBaseSearchParams({
+      nextBusinessInterest: businessInterest,
+      includeRouteCategoryFilter: Boolean(routeCategoryFilterState),
+    });
 
     history.replace({
       pathname: "/listings",
@@ -431,7 +621,9 @@ const Listings = () => {
         (predictions, status) => {
           if (status === "OK" && Array.isArray(predictions) && predictions.length > 0) {
             setDestinationSuggestions(predictions);
-            setShowDestinationSuggestions(true);
+            if (isUserTyping.current) {
+              setShowDestinationSuggestions(true);
+            }
             setActiveSuggestionIndex(-1);
           } else {
             setDestinationSuggestions([]);
@@ -464,17 +656,22 @@ const Listings = () => {
   }, []);
 
   const resetFilters = () => {
-    setFilters({
-      priceRange: { min: "", max: "" },
-      pricePresetMax: null,
-      propertyTypes: [],
-      amenities: [],
-      ratings: [],
-      categories: [],
-      tags: [],
-      specialLabels: [],
-      apiCategoryFilter: null,
-      dateRange: { startDate: "", endDate: "" },
+    resetFiltersState(null);
+    setSortBy("newest");
+
+    const newState = {
+      location: searchLocation,
+      dateRange: dateRange,
+      guests: guests,
+    };
+    const params = buildBaseSearchParams({
+      nextBusinessInterest: businessInterest,
+    });
+
+    history.replace({
+      pathname: "/listings",
+      search: params.toString() ? `?${params.toString()}` : "",
+      state: newState,
     });
   };
 
@@ -506,25 +703,46 @@ const Listings = () => {
       </div>
 
       <div className={cn("container", styles.container)}>
-        {/* Category Navigation Header */}
-        <div className={styles.categoryNav}>
-          {categoryOptions.map((opt) => {
-            const isActive = String(businessInterest || "").toUpperCase().includes(opt.id);
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                className={cn(styles.categoryNavItem, {
-                  [styles.categoryNavItemActive]: isActive,
-                })}
-                onClick={() => handleCategorySwitch(opt.id)}
-              >
-                <opt.IconComponent size={18} strokeWidth={2} />
-                <span>{opt.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Category Navigation Header inside Portal */}
+        {(portalTarget && isDesktop) ? ReactDOM.createPortal(
+          <div className={styles.categoryNav}>
+            {categoryOptions.map((opt) => {
+              const isActive = String(businessInterest || "").toUpperCase().includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={cn(styles.categoryPill, {
+                    [styles.categoryPillActive]: isActive,
+                  })}
+                  onClick={() => handleCategorySwitch(opt.id)}
+                >
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>,
+          portalTarget
+        ) : (
+          <div className={styles.categoryNav}>
+            {categoryOptions.map((opt) => {
+              const isActive = String(businessInterest || "").toUpperCase().includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={cn(styles.categoryNavItem, {
+                    [styles.categoryNavItemActive]: isActive,
+                  })}
+                  onClick={() => handleCategorySwitch(opt.id)}
+                >
+                  <opt.IconComponent size={18} strokeWidth={2} />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Search Bar Section */}
         <div className={styles.searchBar} ref={searchBarRef}>
@@ -538,7 +756,9 @@ const Listings = () => {
                 className={styles.searchInput}
                 value={searchLocation}
                 onChange={(e) => {
+                  isUserTyping.current = true;
                   const value = e.target.value;
+                  setIsCategoryDerivedSearch(false);
                   setSearchLocation(value);
                   if (!selectedDestination || value !== selectedDestination.description) {
                     setSelectedDestination(null);
@@ -658,14 +878,7 @@ const Listings = () => {
             </>
           )}
           <button className={styles.searchButton} onClick={handleSearch} disabled={loading}>
-            {loading ? (
-              <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                <Loader color="white" />
-                Searching...
-              </span>
-            ) : (
-              "Search"
-            )}
+            Search
           </button>
         </div>
       </div>

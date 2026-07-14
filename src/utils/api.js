@@ -446,6 +446,81 @@ export const getFilteredListings = async ({
   }
 };
 
+const normalizePublicFilterPayload = (payload, collectionKeys = []) => {
+  let listings = [];
+  let totalCount = null;
+  let hasMore = null;
+
+  if (Array.isArray(payload)) {
+    listings = payload;
+  } else if (payload && typeof payload === "object") {
+    for (const key of collectionKeys) {
+      if (Array.isArray(payload[key])) {
+        listings = payload[key];
+        break;
+      }
+    }
+
+    if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
+      for (const key of collectionKeys) {
+        if (Array.isArray(payload.data[key])) {
+          listings = payload.data[key];
+          break;
+        }
+      }
+    }
+
+    if (!Array.isArray(listings) || listings.length === 0) {
+      if (Array.isArray(payload.data)) listings = payload.data;
+      else if (Array.isArray(payload.items)) listings = payload.items;
+      else if (Array.isArray(payload.listings)) listings = payload.listings;
+      else if (Array.isArray(payload.results)) listings = payload.results;
+    }
+
+    if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+    else if (payload.total !== undefined) totalCount = payload.total;
+    else if (payload.count !== undefined) totalCount = payload.count;
+
+    if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+    else if (payload.has_more !== undefined) hasMore = payload.has_more;
+  }
+
+  return {
+    listings: Array.isArray(listings) ? listings : [],
+    totalCount,
+    hasMore,
+    raw: payload,
+  };
+};
+
+export const filterEventListings = async (filters = {}) => {
+  try {
+    const response = await ListingsAPI.get("/public/events/filter", {
+      params: filters,
+    });
+    const payload = response.data;
+    console.log("✅ Event listings filtered (raw):", payload);
+    return normalizePublicFilterPayload(payload, ["events", "eventListings"]);
+  } catch (error) {
+    console.error("❌ Error filtering event listings:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const filterStayListings = async (filters = {}) => {
+  try {
+    const response = await ListingsAPI.get("/public/stays/filter", {
+      params: filters,
+    });
+    const payload = response.data;
+    console.log("✅ Stay listings filtered (raw):", payload);
+    return normalizePublicFilterPayload(payload, ["stays", "stayListings"]);
+  } catch (error) {
+    console.error("❌ Error filtering stay listings:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Get available filters for a business interest
 // API: GET /api/public/business-interest-filters/:businessInterestId
 export const getBusinessInterestFilters = async (businessInterestId) => {

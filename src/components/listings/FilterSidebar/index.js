@@ -299,8 +299,6 @@ const FilterSidebar = ({
 
   const normalizedInterest = String(businessInterest || "").toUpperCase();
   const isStayInterest = normalizedInterest === "STAY" || normalizedInterest === "STAYS";
-  const isEventInterest = normalizedInterest === "EVENT" || normalizedInterest === "EVENTS";
-  const isExperienceInterest = normalizedInterest === "EXPERIENCE" || normalizedInterest === "EXPERIENCES";
   const isPriceRangeEnabled = true;
   const pricePresetOptions = ["Any", "Under 15000", "Under 10000", "Under 5000", "Under 1000"];
   const presetToMaxMap = {
@@ -537,14 +535,6 @@ const FilterSidebar = ({
     onFilterChange("apiCategoryFilter", nextFilter);
   };
 
-  const handleDateFieldChange = (key, value) => {
-    const current = filters.dateRange || { startDate: "", endDate: "" };
-    onFilterChange("dateRange", {
-      ...current,
-      [key]: value,
-    });
-  };
-
   return (
     <div className={styles.sidebar}>
       {!hideHeader && (
@@ -589,29 +579,6 @@ const FilterSidebar = ({
         )}
 
         {/* Date Range — Experience / Events only */}
-        {(isExperienceInterest || isEventInterest) && (
-          <AccordionSection label="Date range">
-            <div className={styles.dateGrid}>
-              <label className={styles.dateField}>
-                <span>Check-in</span>
-                <input
-                  type="date"
-                  value={filters.dateRange?.startDate || ""}
-                  onChange={(e) => handleDateFieldChange("startDate", e.target.value)}
-                />
-              </label>
-              <label className={styles.dateField}>
-                <span>Check-out</span>
-                <input
-                  type="date"
-                  value={filters.dateRange?.endDate || ""}
-                  onChange={(e) => handleDateFieldChange("endDate", e.target.value)}
-                />
-              </label>
-            </div>
-          </AccordionSection>
-        )}
-
         {/* Rating */}
         <AccordionSection label="Rating">
           <div className={styles.ratingsList}>
