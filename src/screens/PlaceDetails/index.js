@@ -4,7 +4,7 @@ import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -608,6 +608,75 @@ function PlaceHero({ place, galleryItems, id }) {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 32 }}>
 
+              <Favorite itemType="place" itemId={id}>
+                {({ saved, pending, onClick }) => {
+                  return (
+                    <motion.button
+                      onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                      whileHover="hover"
+                      initial="initial"
+                      whileTap={{ scale: 0.86 }}
+                      style={{
+                        height: 44,
+                        borderRadius: 22,
+                        background: "#FFFFFF",
+                        border: `1.5px solid ${A}4D`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                        boxShadow: "0 6px 18px rgba(15,15,15,0.12)",
+                        cursor: "pointer",
+                        maxWidth: 44,
+                        overflow: "hidden",
+                        paddingLeft: 12,
+                        paddingRight: 12,
+                        transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, background 0.35s ease, border-color 0.35s ease",
+                        pointerEvents: "auto",
+                        position: "relative",
+                        zIndex: 200,
+                        outline: "none"
+                      }}
+                      variants={{
+                        hover: {
+                          maxWidth: 160,
+                          paddingRight: 16,
+                          borderColor: A,
+                          boxShadow: `0 0 18px ${A}33, 0 8px 28px rgba(15,15,15,0.14)`,
+                        }
+                      }}
+                    >
+                      <motion.span
+                        variants={{
+                          hover: { y: 0, rotate: 360, scale: 1.15 },
+                          initial: { y: 0, rotate: 0, scale: 1 }
+                        }}
+                        transition={{ rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] }, scale: { duration: 0.3 } }}
+                        style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative" }}
+                      >
+                        <Heart size={20} color="#0097B2" fill={saved ? "#0097B2" : "none"} />
+                      </motion.span>
+                      <motion.span
+                        variants={{
+                          hover: { maxWidth: 130, opacity: 1, marginLeft: 8 },
+                          initial: { maxWidth: 0, opacity: 0, marginLeft: 0 }
+                        }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          position: "relative",
+                          color: A,
+                          fontFamily: '"Inter", sans-serif',
+                          fontSize: 13,
+                          fontWeight: 600
+                        }}
+                      >
+                        {pending ? (saved ? "Removing..." : "Saving...") : (saved ? "Saved" : "Save")}
+                      </motion.span>
+                    </motion.button>
+                  );
+                }}
+              </Favorite>
 
               <motion.button
                 onClick={handleShare}
