@@ -225,6 +225,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
         onLoginClick={() => setVisible(true)}
         darkMode={darkMode}
         isAuthenticated={isAuthenticated()}
+        wishlistCount={wishlistCount}
       />
     </>
   );
