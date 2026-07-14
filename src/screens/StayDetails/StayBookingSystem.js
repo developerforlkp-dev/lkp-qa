@@ -338,6 +338,25 @@ const StayBookingSystem = ({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
+  const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
+  const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
+
+  const handleAddonsScroll = () => {
+    const container = document.getElementById("stay-header-addons-scroll");
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setShowLeftAddonArrow(scrollLeft > 0);
+      setShowRightAddonArrow(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+    }
+  };
+
+  useEffect(() => {
+    if (show && Array.isArray(stay?.addons) && stay.addons.length > 0) {
+      setTimeout(handleAddonsScroll, 100);
+      window.addEventListener("resize", handleAddonsScroll);
+    }
+    return () => window.removeEventListener("resize", handleAddonsScroll);
+  }, [show, stay?.addons]);
 
   const handleRoomCountChangeWithReset = (roomId, count) => {
     onRoomsCountChange(roomId, count);
@@ -2009,7 +2028,7 @@ const StayBookingSystem = ({
                       border-color: ${A};
                     }
                     .stay-modal-addon-image {
-                      width: 64px;
+                      width: 50px;
                       flex-shrink: 0;
                       border-right: 1px solid ${B}55;
                     }
@@ -2024,7 +2043,7 @@ const StayBookingSystem = ({
                       display: flex;
                       flex-direction: column;
                       justify-content: center;
-                      padding: 10px 12px;
+                      padding: 6px 10px;
                     }
                     .stay-modal-addon-title {
                       font-size: 13px;
@@ -2058,10 +2077,13 @@ const StayBookingSystem = ({
                       font-weight: 600;
                       text-transform: uppercase;
                       letter-spacing: 0.05em;
+                      white-space: nowrap;
                     }
                     .stay-modal-addon-action {
                       display: flex;
                       align-items: center;
+                      justify-content: flex-end;
+                      width: 88px;
                       flex-shrink: 0;
                       padding-right: 10px;
                     }
@@ -2100,18 +2122,20 @@ const StayBookingSystem = ({
                     }
                   `}</style>
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <button
-                      className="stay-addon-scroll-btn"
-                      onClick={() => {
-                        const container = document.getElementById("stay-header-addons-scroll");
-                        if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
-                      }}
-                      style={{ left: -18 }}
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
+                    {showLeftAddonArrow && (
+                      <button
+                        className="stay-addon-scroll-btn"
+                        onClick={() => {
+                          const container = document.getElementById("stay-header-addons-scroll");
+                          if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                        }}
+                        style={{ left: -18 }}
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                    )}
 
-                    <div id="stay-header-addons-scroll" style={{
+                    <div id="stay-header-addons-scroll" onScroll={handleAddonsScroll} style={{
                       display: "flex",
                       overflowX: "auto",
                       gap: 16,
@@ -2120,8 +2144,8 @@ const StayBookingSystem = ({
                       scrollbarWidth: "none",
                       msOverflowStyle: "none",
                       width: "100%",
-                      maskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
-                      WebkitMaskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)"
+                      maskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)",
+                      WebkitMaskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)"
                     }}>
                       {stay.addons.map((item, i) => {
                         const addon = item.addon || item;
@@ -2210,16 +2234,18 @@ const StayBookingSystem = ({
                         );
                       })}
                     </div>
-                    <button
-                      className="stay-addon-scroll-btn"
-                      onClick={() => {
-                        const container = document.getElementById("stay-header-addons-scroll");
-                        if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
-                      }}
-                      style={{ right: -18 }}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
+                    {showRightAddonArrow && (
+                      <button
+                        className="stay-addon-scroll-btn"
+                        onClick={() => {
+                          const container = document.getElementById("stay-header-addons-scroll");
+                          if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                        }}
+                        style={{ right: -18 }}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
