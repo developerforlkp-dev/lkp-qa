@@ -25,6 +25,13 @@ const amenities = [
   { id: "washer", label: "Washer" },
 ];
 
+const mealPlans = [
+  { id: "ep", label: "EP" },
+  { id: "cp", label: "CP" },
+  { id: "map", label: "MAP" },
+  { id: "ap", label: "AP" },
+];
+
 const ratings = [
   { id: 5, label: "5 stars" },
   { id: 4, label: "4+ stars" },
@@ -220,6 +227,20 @@ const FilterSidebar = ({
       });
     }
 
+    // Meal Plan
+    if (Array.isArray(filters?.mealPlan)) {
+      filters.mealPlan.forEach((mId) => {
+        const found = mealPlans.find((m) => m.id === mId);
+        if (found) {
+          chips.push({
+            type: "mealPlan",
+            value: mId,
+            label: `Meal: ${found.label}`,
+          });
+        }
+      });
+    }
+
     // API Category Filter
     if (filters?.apiCategoryFilter) {
       const { activeKeys, selectedCategoryLabels } = filters.apiCategoryFilter;
@@ -266,6 +287,9 @@ const FilterSidebar = ({
     } else if (chip.type === "amenities") {
       const updated = (filters.amenities || []).filter((x) => x !== chip.value);
       onFilterChange("amenities", updated);
+    } else if (chip.type === "mealPlan") {
+      const updated = (filters.mealPlan || []).filter((x) => x !== chip.value);
+      onFilterChange("mealPlan", updated);
     } else if (chip.type === "apiCategoryFilter") {
       const current = filters.apiCategoryFilter;
       if (current && Array.isArray(current.activeKeys)) {
@@ -478,6 +502,14 @@ const FilterSidebar = ({
     onFilterChange("amenities", updated);
   };
 
+  const handleMealPlanChange = (id) => {
+    const current = filters.mealPlan || [];
+    const updated = current.includes(id)
+      ? current.filter((x) => x !== id)
+      : [...current, id];
+    onFilterChange("mealPlan", updated);
+  };
+
   const handleRatingChange = (rating) => {
     const current = filters.ratings || [];
     const updated = current.includes(rating) ? [] : [rating];
@@ -659,6 +691,23 @@ const FilterSidebar = ({
                   content={type.label}
                   value={(filters.propertyTypes || []).includes(type.id)}
                   onChange={() => handlePropertyTypeChange(type.id)}
+                />
+              ))}
+            </div>
+          </AccordionSection>
+        )}
+
+        {/* Meal Plan — Stays only */}
+        {isStayInterest && (
+          <AccordionSection label="Meal plan">
+            <div className={styles.checkboxList}>
+              {mealPlans.map((plan) => (
+                <Checkbox
+                  key={plan.id}
+                  className={styles.checkbox}
+                  content={plan.label}
+                  value={(filters.mealPlan || []).includes(plan.id)}
+                  onChange={() => handleMealPlanChange(plan.id)}
                 />
               ))}
             </div>

@@ -851,7 +851,7 @@ export const uploadCustomerAvatar = async (file) => {
   }
 };
 
-const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay", "place"]);
+const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay", "place", "food"]);
 
 export const normalizeWishlistItemType = (itemType) => {
   const normalized = String(itemType || "").trim().toLowerCase();

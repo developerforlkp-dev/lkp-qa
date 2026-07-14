@@ -53,8 +53,32 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
     }
   }, []);
 
-  // ─── Intersection Observer ─────────────────────────────────────────────
-  // (Removed since we want the search pill visible at all times)
+  // ─── Scroll & Resize Observer ─────────────────────────────────────────────
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 1024 : false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 50);
+    };
+    
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
+    
+    // Init
+    handleScroll();
+    handleResize();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  const shouldShow = isSticky || isMobile;
 
   const autocompleteServiceRef = useRef(null);
   const autocompleteSessionTokenRef = useRef(null);
@@ -228,7 +252,7 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
 
   const content = (
     <>
-      <div className={cn(styles.portalContainer, styles.visible)}>
+      <div className={cn(styles.portalContainer, { [styles.visible]: shouldShow })}>
         {/* Category pills row */}
         <div className={styles.categoryRow}>
           {[

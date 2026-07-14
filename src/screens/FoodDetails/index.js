@@ -6,7 +6,7 @@ import {
   Utensils, Star, Clock, MapPin, ChefHat, Award, Leaf, Globe,
   Coffee, Info, ChevronRight, ChevronDown, Phone, Instagram, Check, ArrowRight, ArrowDown,
   Calendar, Zap, CheckCircle, ChevronLeft, UtensilsCrossed, Share2, Search, Sparkles,
-  Users, DollarSign, GlassWater, CloudSun, Tag
+  Users, DollarSign, GlassWater, CloudSun, Tag, Heart
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -901,7 +901,7 @@ function CulinaryHero({ food, galleryItems }) {
         </div>
 
         {/* Mobile Top Controls */}
-        <div style={{ position: "absolute", top: 90, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 200, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 200, pointerEvents: "none" }}>
           <button onClick={(e) => { e.stopPropagation(); history.goBack(); }} style={{ pointerEvents: "auto", width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
             <ChevronLeft size={22} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
           </button>
@@ -996,6 +996,44 @@ function CulinaryHero({ food, galleryItems }) {
 
       {/* Share Button absolute overlays */}
       <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
+        <Favorite itemType="food" itemId={id}>
+          {({ saved, pending, onClick }) => {
+            const isDark = theme === "dark";
+            const textColor = isDark ? FG : (A || "#0097B2");
+            return (
+              <motion.button
+                onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                whileTap={{ scale: 0.86 }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  background: isDark ? "#141414" : "#FFFFFF",
+                  border: `1.5px solid ${isDark ? `${A}66` : `${A}4D`}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 6px 18px rgba(15,15,15,0.12)",
+                  cursor: "pointer",
+                  pointerEvents: "auto",
+                  position: "relative",
+                  zIndex: 200,
+                  outline: "none"
+                }}
+              >
+                <style>{`
+                  .desktop-save-icon-${id} svg {
+                    fill: ${saved ? (A || "#0097B2") : textColor};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`desktop-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
+              </motion.button>
+            );
+          }}
+        </Favorite>
         <HeroShareFab
           title={food?.menuName || food?.title || ""}
           text={food?.detailedDescription || food?.shortDescription || food?.description || ""}

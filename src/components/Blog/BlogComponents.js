@@ -1,5 +1,5 @@
 // Force recompile
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock, BookOpen, Quote, Search as LucideSearch } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,6 +9,8 @@ import Icon from "../Icon";
 
 // ── Hero ──
 export function Hero({ posts = [] }) {
+  const [currentMobileImageIndex, setCurrentMobileImageIndex] = useState(0);
+
   const heroImages = posts && posts.length >= 3 
     ? [posts[0].image, posts[1].image, posts[2].image]
     : [
@@ -17,70 +19,59 @@ export function Hero({ posts = [] }) {
         "/images/blog/landscape-fallback.webp"
       ];
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMobileImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
+
   return (
-    <section className="hero-mobile-container relative w-full max-w-7xl mx-auto px-6 pt-16 lg:pt-24 pb-12 flex flex-col lg:flex-row items-center gap-12 lg:gap-20 overflow-hidden lg:overflow-visible">
+    <section className="hero-mobile-container relative w-full max-w-6xl mx-auto px-6 pt-16 lg:pt-20 pb-12 flex flex-col lg:flex-row items-center gap-10 lg:gap-16 overflow-hidden lg:overflow-visible">
       <style>{`
         .hero-mobile-container {
-          min-height: 85vh;
+          height: 320px;
         }
         .hero-mobile-bg {
           border-radius: 0 0 40px 40px;
           overflow: hidden;
         }
-        .hero-gradient {
-          background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.1) 100%);
-        }
-        .hero-text-mobile-white {
+        .hero-text-mobile-white.title {
           color: white !important;
-          text-shadow: 0 4px 16px rgba(0,0,0,0.4);
+          text-shadow: 0 4px 16px rgba(0,0,0,0.5);
         }
-        .hero-text-container {
-          padding-left: 24px;
-          padding-right: 24px;
-          margin-top: auto;
-          padding-top: 8rem;
-          padding-bottom: 2rem;
-          text-align: center;
+        .hero-text-mobile-white.desc {
+          color: #f3f4f6 !important;
+          text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
-        .hero-button-wrapper {
-          display: flex;
-          justify-content: center;
-          width: 100%;
+        .hero-text-mobile-white.label {
+          color: white !important;
+          text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
+        /* Mobile Specific Overrides */
+        @media (max-width: 1023px) {
+          .hero-mobile-container {
+            padding: 0 !important;
+            justify-content: flex-end !important;
+            align-items: flex-start !important;
+          }
+          .hero-text-container {
+            flex: none !important;
+            padding: 0 24px 32px 24px !important;
+            margin: 0 !important;
+          }
+        }
+
         .hero-desktop-images {
           display: none;
         }
-        .hero-pill-mobile {
-          background: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          color: white !important;
-          padding: 6px 16px;
-          border-radius: 9999px;
-          display: inline-block;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        }
+
         @media (min-width: 1024px) {
           .hero-mobile-container {
-            min-height: auto;
+            height: auto;
           }
           .hero-mobile-bg {
             display: none;
-          }
-          .hero-text-container {
-            padding-left: 0;
-            padding-right: 0;
-            margin-top: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            text-align: left;
-          }
-          .hero-button-wrapper {
-            justify-content: flex-start;
-          }
-          .hero-desktop-images {
-            display: flex;
           }
           .hero-text-mobile-white.title {
             color: var(--blog-title-color) !important;
@@ -90,58 +81,67 @@ export function Hero({ posts = [] }) {
             color: var(--blog-desc-color) !important;
             text-shadow: none;
           }
-          .hero-pill-mobile {
-            background: transparent;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            border: none;
-            color: #00a4c4 !important;
-            padding: 0;
-            display: block;
-            box-shadow: none;
+          .hero-text-mobile-white.label {
+            color: var(--blog-title-color) !important;
+            text-shadow: none;
+          }
+          .hero-desktop-images {
+            display: flex;
           }
         }
       `}</style>
 
-      {/* Mobile Background Image & Overlay (Hidden on Desktop) */}
-      <div className="absolute inset-0 z-0 hero-mobile-bg">
-        <img src={heroImages[0]} alt="Background" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 hero-gradient" />
+      {/* Mobile Background Image (Hidden on Desktop) */}
+      <div className="absolute inset-0 z-0 hero-mobile-bg lg:hidden">
+        {heroImages.map((img, idx) => (
+          <img 
+            key={idx}
+            src={img} 
+            alt={`Background ${idx}`} 
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" 
+            style={{ opacity: currentMobileImageIndex === idx ? 1 : 0 }}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        {/* Navigation Indicators */}
+        <div className="absolute bottom-6 right-6 flex gap-2 z-20">
+          {heroImages.map((_, idx) => (
+            <button 
+              key={idx}
+              onClick={() => setCurrentMobileImageIndex(idx)}
+              className={`w-2 h-2 rounded-full transition-all ${currentMobileImageIndex === idx ? 'bg-white scale-125' : 'bg-white/40'}`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Left Content - Typography */}
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
         className="hero-text-container flex-1 z-10 w-full"
       >
-        <div style={{ marginBottom: '24px' }}>
-          <p className="font-semibold tracking-widest text-sm uppercase" style={{ color: '#00a4c4' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <p className="hero-text-mobile-white label font-bold tracking-widest text-xs uppercase lg:text-[#00a4c4]">
             Our Blog
           </p>
         </div>
         
-        <h1 className="hero-text-mobile-white title text-4xl md:text-6xl lg:text-[80px] font-bold leading-[1.1] mb-6" style={{ color: '#001F3F' }}>
+        <h1 className="hero-text-mobile-white title text-[42px] md:text-5xl lg:text-[64px] font-extrabold leading-[1.1] mb-5">
           Stories that <br />
-          inspire <br className="lg:hidden" /><span className="italic font-light" style={{ color: '#00a4c4' }}>journeys</span>
+          inspire <span className="italic font-light text-cyan-400 lg:text-[#00a4c4]">journeys</span>
         </h1>
         
-        <p className="hero-text-mobile-white desc text-lg md:text-xl max-w-md mx-auto lg:mx-0 mb-8" style={{ marginTop: '24px', marginBottom: '48px', color: '#4b5563' }}>
+        <p className="hero-text-mobile-white desc text-base md:text-lg max-w-md mx-auto lg:mx-0 mb-6" style={{ lineHeight: '1.6' }}>
           Travel guides, hidden gems and real stories from around the world.
         </p>
-        
-
       </motion.div>
 
       {/* Right Content - Images */}
-      <div className="hero-desktop-images flex-1 relative h-[380px] sm:h-[500px] lg:h-[600px] w-full items-center justify-center mt-8 lg:mt-0">
-        {/* Floating Decorative Elements */}
-        <div className="absolute top-10 left-10 flex gap-2 rotate-12 opacity-40">
-          <div className="w-4 h-8 bg-cyan-200 rounded-full"></div>
-          <div className="w-4 h-8 bg-cyan-200 rounded-full mt-4"></div>
-          <div className="w-4 h-8 bg-cyan-200 rounded-full mt-2"></div>
-        </div>
+      <div className="hero-desktop-images flex-1 relative h-[380px] sm:h-[450px] lg:h-[500px] w-full items-center justify-center mt-8 lg:mt-0">
+
         
         {/* Main Image */}
         <motion.div 
@@ -197,7 +197,9 @@ const categories = [
   "All Posts",
   "Experience",
   "Event",
-  "Stay"
+  "Stay",
+  "Food",
+  "Place"
 ];
 
 export function Filters({ searchQuery = "", setSearchQuery = () => {}, selectedCategory = "All Posts", setSelectedCategory = () => {} }) {
@@ -253,26 +255,7 @@ export function Filters({ searchQuery = "", setSearchQuery = () => {}, selectedC
         })}
       </div>
 
-      {/* Search Bar */}
-      <div 
-        className="search-bar-responsive flex items-center rounded-full shadow-sm transition-all w-full"
-        style={{ padding: '4px 4px 4px 20px', border: '1px solid #e5e7eb', backgroundColor: 'transparent' }}
-      >
-        <input 
-          type="text" 
-          placeholder="Search articles..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-transparent border-none outline-none flex-1 font-medium placeholder:text-gray-400"
-          style={{ fontSize: '15px', color: 'var(--blog-title-color)' }}
-        />
-        <button 
-          className="text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0 ml-2 shadow-sm hover:opacity-90"
-          style={{ width: '40px', height: '40px', backgroundColor: '#00a4c4' }}
-        >
-          <Icon name="search" size={18} className="fill-current" />
-        </button>
-      </div>
+
     </section>
   );
 }

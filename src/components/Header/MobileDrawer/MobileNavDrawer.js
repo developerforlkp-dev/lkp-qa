@@ -15,6 +15,7 @@ const MobileNavDrawer = ({
   onLoginClick,
   darkMode,
   isAuthenticated,
+  wishlistCount,
 }) => {
   const scrollRef = useRef(null);
 
@@ -122,6 +123,9 @@ const MobileNavDrawer = ({
                 <Heart size={20} className={styles.strokeIcon} />
               </span>
               <span className={styles.navLabel}>Wishlists</span>
+              {wishlistCount > 0 && (
+                <span className={styles.wishlistBadge}>{wishlistCount > 99 ? "99+" : wishlistCount}</span>
+              )}
             </NavLink>
           </nav>
 
