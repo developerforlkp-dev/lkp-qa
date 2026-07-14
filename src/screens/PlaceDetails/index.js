@@ -411,7 +411,7 @@ function SHdr({ idx, label }) {
 
 /* ─── PLACE SECTIONS ─────────── */
 function PlaceHero({ place, galleryItems, id }) {
-  const { tokens: { A, FG, M, W, B, S } } = useTheme();
+  const { theme, tokens: { A, FG, M, W, B, S } } = useTheme();
   const r = useRef(null);
   const sliderRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: r, offset: ["start start", "end start"] });
@@ -610,6 +610,8 @@ function PlaceHero({ place, galleryItems, id }) {
 
               <Favorite itemType="place" itemId={id}>
                 {({ saved, pending, onClick }) => {
+                  const isDark = theme === "dark";
+                  const textColor = isDark ? FG : (A || "#0097B2");
                   return (
                     <motion.button
                       onClick={(e) => { e.stopPropagation(); onClick(e); }}
@@ -618,8 +620,8 @@ function PlaceHero({ place, galleryItems, id }) {
                         width: 44,
                         height: 44,
                         borderRadius: "50%",
-                        background: "#FFFFFF",
-                        border: `1.5px solid ${A}4D`,
+                        background: isDark ? "#141414" : "#FFFFFF",
+                        border: `1.5px solid ${isDark ? `${A}66` : `${A}4D`}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -631,7 +633,15 @@ function PlaceHero({ place, galleryItems, id }) {
                         outline: "none"
                       }}
                     >
-                      <Heart size={20} color="#0097B2" fill={saved ? "#0097B2" : "none"} />
+                      <style>{`
+                        .desktop-save-icon-${id} svg {
+                          fill: ${saved ? (A || "#0097B2") : textColor};
+                          transition: fill 0.3s ease;
+                        }
+                      `}</style>
+                      <div className={`desktop-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                      </div>
                     </motion.button>
                   );
                 }}
@@ -2212,6 +2222,21 @@ function MobileHero({ place, galleryItems, id }) {
           <ChevronLeft size={22} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
         </button>
         <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
+          <Favorite itemType="place" itemId={id}>
+            {({ saved, onClick }) => (
+              <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+                <style>{`
+                  .mobile-save-icon-alt-${id} svg {
+                    fill: ${saved ? (A || "#0097B2") : (theme === "dark" ? "#FFFFFF" : "#111111")};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
+              </button>
+            )}
+          </Favorite>
           <button onClick={async (e) => { 
             e.stopPropagation(); 
             try {

@@ -998,6 +998,8 @@ function CulinaryHero({ food, galleryItems }) {
       <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
         <Favorite itemType="food" itemId={id}>
           {({ saved, pending, onClick }) => {
+            const isDark = theme === "dark";
+            const textColor = isDark ? FG : (A || "#0097B2");
             return (
               <motion.button
                 onClick={(e) => { e.stopPropagation(); onClick(e); }}
@@ -1006,8 +1008,8 @@ function CulinaryHero({ food, galleryItems }) {
                   width: 44,
                   height: 44,
                   borderRadius: "50%",
-                  background: theme === "dark" ? "#141414" : "#FFFFFF",
-                  border: `1.5px solid ${theme === "dark" ? `${A}66` : `${A}4D`}`,
+                  background: isDark ? "#141414" : "#FFFFFF",
+                  border: `1.5px solid ${isDark ? `${A}66` : `${A}4D`}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1019,7 +1021,15 @@ function CulinaryHero({ food, galleryItems }) {
                   outline: "none"
                 }}
               >
-                <Heart size={20} color="#0097B2" fill={saved ? "#0097B2" : "none"} />
+                <style>{`
+                  .desktop-save-icon-${id} svg {
+                    fill: ${saved ? (A || "#0097B2") : textColor};
+                    transition: fill 0.3s ease;
+                  }
+                `}</style>
+                <div className={`desktop-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                </div>
               </motion.button>
             );
           }}
