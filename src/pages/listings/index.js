@@ -207,6 +207,7 @@ const Listings = () => {
     pricePresetMax: null,
     propertyTypes: [],
     amenities: [],
+    mealPlan: [],
     ratings: [],
     categories: [],
     tags: [],
@@ -309,6 +310,7 @@ const Listings = () => {
     if (filters.priceRange?.min || filters.priceRange?.max) count++;
     if (filters.propertyTypes?.length) count++;
     if (filters.amenities?.length) count++;
+    if (filters.mealPlan?.length) count++;
     if (filters.ratings?.length) count++;
     if (filters.apiCategoryFilter) count++;
     if (filters.dateRange?.startDate) count++;
@@ -430,6 +432,7 @@ const Listings = () => {
       pricePresetMax: null,
       propertyTypes: [],
       amenities: [],
+      mealPlan: [],
       ratings: [],
       categories: [],
       tags: [],
