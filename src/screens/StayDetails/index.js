@@ -1946,6 +1946,7 @@ function PolicyCategoryItem({ category }) {
     generalRules.push({ title: "ID Required at Check-in", valueText: stay?.idRequiredAtCheckIn ? "Yes" : "No" });
     generalRules.push({ title: "Pets Allowed", valueText: stay?.petAllowed ? "Yes" : "No" });
     generalRules.push({ title: "Couple Friendly", valueText: stay?.coupleFriendly ? "Yes" : "No" });
+    generalRules.push({ title: "Unmarried Couples Allowed", valueText: stay?.unmarriedCouplesAllowed ? "Yes" : "No" });
 
     if (generalRules.length > 0) {
       propItems.push({ id: "prop-all", title: null, questions: generalRules });

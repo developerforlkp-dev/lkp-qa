@@ -8,7 +8,9 @@
     border: 1px solid rgba($n6, 0.6)
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04)
     overflow: hidden
-    overflow-x: hidden
+    display: flex
+    flex-direction: column
+    max-height: calc(100vh - 120px)
     +dark
         background: $n1
         border-color: rgba($n3, 0.4)
@@ -64,7 +66,7 @@
 .content
     display: flex
     flex-direction: column
-    max-height: calc(100vh - 40px)
+    flex: 1
     overflow-y: auto
     overflow-x: hidden
     scroll-behavior: smooth

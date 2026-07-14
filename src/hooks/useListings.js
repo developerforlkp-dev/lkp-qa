@@ -110,6 +110,9 @@ export const useListings = ({
         if (effectiveMaxPrice !== undefined) {
           filterPayload.maxPrice = effectiveMaxPrice;
         }
+        if (Array.isArray(filters.mealPlan) && filters.mealPlan.length > 0) {
+          filterPayload.mealPlan = filters.mealPlan.join(",");
+        }
 
         if (mappedNearbyInterest === "FOOD" || mappedNearbyInterest === "PLACES") {
           delete filterPayload.categoryValues;
