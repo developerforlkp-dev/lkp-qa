@@ -865,7 +865,7 @@ function CulinaryHero({ food, galleryItems }) {
 
   if (isMobile) {
     return (
-      <section className="hero-section-wrapper-mobile" style={{ background: BG, minHeight: "100vh", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
+      <section className="hero-section-wrapper-mobile" style={{ background: BG, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
         {/* Full-width screen bleed image slider at the top */}
         <div className="hero-mobile-image-container" style={{ width: "100%", height: "55vh", position: "relative", overflow: "hidden", borderRadius: "0 0 36px 36px" }}>
           <AnimatePresence mode="wait">
@@ -974,30 +974,6 @@ function CulinaryHero({ food, galleryItems }) {
           }}>
             {food?.shortDescription || "Authentic Taste Experience"}
           </div>
-        </div>
-
-        {/* Detailed Description */}
-        <div style={{ padding: "0 24px", marginTop: "16px" }}>
-          <div style={{
-            fontSize: "11px",
-            fontWeight: 800,
-            color: "#0097B2",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            marginBottom: "6px",
-            fontFamily: '"Inter", sans-serif'
-          }}>
-            About This Food
-          </div>
-          <p style={{
-            fontSize: "14px",
-            color: M,
-            lineHeight: 1.6,
-            margin: 0,
-            fontFamily: '"Inter", sans-serif'
-          }}>
-            {food?.detailedDescription || food?.description || "Experience the perfect harmony of flavors, crafted with passion."}
-          </p>
         </div>
 
 
@@ -2243,7 +2219,7 @@ const FoodDetails = () => {
 
         return (
           <div style={{
-            margin: "0",
+            margin: isMobile ? "0 -24px" : "0 -80px",
             overflow: "hidden",
             position: "relative",
             padding: "20px 0",
@@ -2252,8 +2228,8 @@ const FoodDetails = () => {
             borderBottom: `1px solid ${B}`,
           }}>
             {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
             <motion.div
               animate={{ x: ["0%", "-50%"] }}
@@ -2298,7 +2274,7 @@ const FoodDetails = () => {
       <FoodMetadataCard food={food} />
 
       {(() => {
-        const sigRaw = food?.signatureDishes || "";
+        const sigRaw = food?.whatsSpecial || "";
         const dishes = Array.isArray(sigRaw) 
           ? sigRaw 
           : (typeof sigRaw === "string" ? sigRaw.split(",") : []);
@@ -2320,8 +2296,9 @@ const FoodDetails = () => {
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`,
           }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            {/* Left & Right Edge Fades */}
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
             <motion.div
               animate={{ x: ["0%", "-50%"] }}
