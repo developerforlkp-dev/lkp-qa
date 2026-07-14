@@ -658,6 +658,43 @@ export default function MobileExperienceView({
         )}
       </div>
 
+      {(() => {
+        const getCatName = (c) => {
+          if (!c) return "";
+          if (typeof c === "string") return c;
+          return c.name || c.title || "";
+        };
+        
+        let rawCats = Array.isArray(listing?.whatsSpecial) && listing?.whatsSpecial.length > 0
+          ? listing.whatsSpecial.map(getCatName).filter(Boolean)
+          : typeof listing?.whatsSpecial === "string" && listing?.whatsSpecial.trim() !== ""
+            ? listing.whatsSpecial.split(",").map(s => s.trim()).filter(Boolean)
+            : [listing?.category, listing?.subCategory].filter(Boolean).map(getCatName).filter(Boolean);
+            
+        const displayCats = rawCats.length > 0 ? rawCats : ["Nature", "Adventure"];
+        const repeatedCats = Array(12).fill(displayCats).flat();
+        
+        return (
+          <div className="mob-marquee" style={{ 
+            borderColor: B, 
+            background: isDark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.005)",
+            borderTop: `1px solid ${B}`,
+            borderBottom: `1px solid ${B}`
+          }}>
+            <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(displayCats.length * 4, 15)}s` }}>
+              {repeatedCats.map((cat, i) => (
+                <div key={i} className="mob-marquee-item">
+                  <span className="mob-marquee-text" style={{ fontWeight: i % 2 === 0 ? 700 : 300, color: i % 2 === 0 ? FG : M, opacity: i % 2 === 0 ? 1 : 0.75 }}>
+                    {cat}
+                  </span>
+                  <Sparkles size={11} color={A} fill={A} style={{ opacity: 0.6 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ╔═══════════════════════════════════╗
           ║        HOST SECTION               ║
           ╚═══════════════════════════════════╝ */}

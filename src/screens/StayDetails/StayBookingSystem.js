@@ -338,6 +338,25 @@ const StayBookingSystem = ({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
+  const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
+  const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
+
+  const handleAddonsScroll = () => {
+    const container = document.getElementById("stay-header-addons-scroll");
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setShowLeftAddonArrow(scrollLeft > 0);
+      setShowRightAddonArrow(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+    }
+  };
+
+  useEffect(() => {
+    if (show && Array.isArray(stay?.addons) && stay.addons.length > 0) {
+      setTimeout(handleAddonsScroll, 100);
+      window.addEventListener("resize", handleAddonsScroll);
+    }
+    return () => window.removeEventListener("resize", handleAddonsScroll);
+  }, [show, stay?.addons]);
 
   const handleRoomCountChangeWithReset = (roomId, count) => {
     onRoomsCountChange(roomId, count);
@@ -942,7 +961,7 @@ const StayBookingSystem = ({
       });
     }
 
-    const discountableSubtotal = grossSubtotal + addonsTotal;
+    const discountableSubtotal = grossSubtotal;
     const longStayDiscountAmount = discountableSubtotal * (appliedDiscountPercent / 100);
     const billingConfigDiscountAmount = discountableSubtotal * (billingConfigDiscountRate / 100);
     const earlyBirdDiscountAmount = discountableSubtotal * (earlyBirdDiscountPercent / 100);
@@ -952,7 +971,7 @@ const StayBookingSystem = ({
       - longStayDiscountAmount
       - billingConfigDiscountAmount
       - earlyBirdDiscountAmount
-    );
+    ) + addonsTotal;
     const discountAmount =
       longStayDiscountAmount
       + billingConfigDiscountAmount
@@ -2009,7 +2028,7 @@ const StayBookingSystem = ({
                       border-color: ${A};
                     }
                     .stay-modal-addon-image {
-                      width: 64px;
+                      width: 50px;
                       flex-shrink: 0;
                       border-right: 1px solid ${B}55;
                     }
@@ -2024,7 +2043,7 @@ const StayBookingSystem = ({
                       display: flex;
                       flex-direction: column;
                       justify-content: center;
-                      padding: 10px 12px;
+                      padding: 6px 10px;
                     }
                     .stay-modal-addon-title {
                       font-size: 13px;
@@ -2058,10 +2077,13 @@ const StayBookingSystem = ({
                       font-weight: 600;
                       text-transform: uppercase;
                       letter-spacing: 0.05em;
+                      white-space: nowrap;
                     }
                     .stay-modal-addon-action {
                       display: flex;
                       align-items: center;
+                      justify-content: flex-end;
+                      width: 88px;
                       flex-shrink: 0;
                       padding-right: 10px;
                     }
@@ -2100,18 +2122,20 @@ const StayBookingSystem = ({
                     }
                   `}</style>
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <button
-                      className="stay-addon-scroll-btn"
-                      onClick={() => {
-                        const container = document.getElementById("stay-header-addons-scroll");
-                        if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
-                      }}
-                      style={{ left: -18 }}
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
+                    {showLeftAddonArrow && (
+                      <button
+                        className="stay-addon-scroll-btn"
+                        onClick={() => {
+                          const container = document.getElementById("stay-header-addons-scroll");
+                          if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                        }}
+                        style={{ left: -18 }}
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                    )}
 
-                    <div id="stay-header-addons-scroll" style={{
+                    <div id="stay-header-addons-scroll" onScroll={handleAddonsScroll} style={{
                       display: "flex",
                       overflowX: "auto",
                       gap: 16,
@@ -2120,8 +2144,8 @@ const StayBookingSystem = ({
                       scrollbarWidth: "none",
                       msOverflowStyle: "none",
                       width: "100%",
-                      maskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
-                      WebkitMaskImage: "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)"
+                      maskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)",
+                      WebkitMaskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)"
                     }}>
                       {stay.addons.map((item, i) => {
                         const addon = item.addon || item;
@@ -2210,16 +2234,18 @@ const StayBookingSystem = ({
                         );
                       })}
                     </div>
-                    <button
-                      className="stay-addon-scroll-btn"
-                      onClick={() => {
-                        const container = document.getElementById("stay-header-addons-scroll");
-                        if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
-                      }}
-                      style={{ right: -18 }}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
+                    {showRightAddonArrow && (
+                      <button
+                        className="stay-addon-scroll-btn"
+                        onClick={() => {
+                          const container = document.getElementById("stay-header-addons-scroll");
+                          if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                        }}
+                        style={{ right: -18 }}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -2310,7 +2336,7 @@ const StayBookingSystem = ({
                     {/* Section 02: Guests & Accommodations */}
                     <div id="booking-guests-section" style={{ scrollMarginTop: "24px" }}>
                       <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", lineHeight: "1.2" }}>
-                        02. Guests & Accommodations
+                        {isHostelBooking(stay) ? "02. Accommodations" : "02. Guests & Accommodations"}
                       </div>
                       
                       {(() => {
@@ -2354,25 +2380,7 @@ const StayBookingSystem = ({
 
                         return (
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {shouldShowBedCounter ? (
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, transition: "0.2s" }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Beds</p>
-                                <Counter
-                                  value={totalSelectedBeds}
-                                  setValue={(v) => {
-                                    const primaryBed = resolvedSelectedRooms[0];
-                                    if (!primaryBed) return;
-                                    const otherBedsCount = resolvedSelectedRooms
-                                      .slice(1)
-                                      .reduce((sum, room) => sum + Number(room.count || 0), 0);
-                                    const nextPrimaryCount = Math.max(1, v - otherBedsCount);
-                                    handleRoomCountChangeWithReset(primaryBed.roomId || primaryBed.id, nextPrimaryCount);
-                                  }}
-                                  min={1}
-                                  max={Math.max(1, absoluteMaxBeds)}
-                                />
-                              </div>
-                            ) : !isEntirelyBedBased && (
+                            {(!isEntirelyBedBased && !isHostelBooking(stay)) && (
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, transition: "0.2s" }}>
                                   <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Adults</p>
@@ -2529,170 +2537,7 @@ const StayBookingSystem = ({
                       )}
                     </div>
 
-                    {/* Stay Allocation Summary */}
-                    {(() => {
-                      const isEntirelyBedBased = resolvedSelectedRooms.length > 0 && resolvedSelectedRooms.every(r => r.isBedConfig);
-                      const isPropertyBased = isPropertyBasedBooking(stay);
-                      if (isPropertyBased) return null;
 
-                      const totalGuestsCount = (guests.adults || 0) + (guests.children || 0);
-                      const totalRoomsCount = resolvedSelectedRooms.reduce((sum, r) => sum + (r.count || 0), 0);
-                      if (totalRoomsCount === 0) return null;
-
-                      // Chip style helpers
-                      const chipStyle = {
-                        display: "inline-flex",
-                        alignItems: "center",
-                        padding: "3px 8px",
-                        borderRadius: 100,
-                        background: `${A}12`,
-                        border: `1px solid ${A}28`,
-                        color: A,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        whiteSpace: "nowrap",
-                        maxWidth: "100%",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      };
-
-                      // Build compact capacity chips: "[EP • 3 Guests]" per room
-                      const capacityChips = resolvedSelectedRooms.map((r) => {
-                        const cap = r.maxGuests || (r.maxAdults ? r.maxAdults + (r.maxChildren || 0) : 2);
-                        const plan = r.mealPlan || "EP";
-                        return r.isBedConfig ? `${plan} • 1 Bed` : `${plan} • ${cap} Guests`;
-                      });
-
-                      // Build compact room-type chips: "[1x RoomName]"
-                      const roomTypeChips = resolvedSelectedRooms.map((r) => {
-                        const label = r.roomName || r.name || (r.isBedConfig ? "Bed" : "Room");
-                        return `${r.count}x ${label}`;
-                      });
-
-                      // Full room name(s) for tooltip
-                      const fullRoomNamesTitle = resolvedSelectedRooms
-                        .map((r) => `${r.count}x ${r.roomName || r.name || (r.isBedConfig ? "Bed" : "Room")}`)
-                        .join(", ");
-
-                      return (
-                        <div style={{
-                          padding: "14px",
-                          borderRadius: "18px",
-                          background: `linear-gradient(135deg, ${AL}12, ${AL}22)`,
-                          border: `1px solid ${A}22`,
-                          marginTop: "12px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "10px",
-                          minWidth: 0,
-                          overflow: "hidden",
-                        }}>
-                          {/* Title */}
-                          <div style={{ fontSize: 11, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: "1.2" }}>
-                            Stay Allocation Summary
-                          </div>
-
-                          {/* 2-column info grid — minWidth:0 prevents overflow */}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 12px" }}>
-
-                            {/* Guests */}
-                            {!isEntirelyBedBased && (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                                <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Guests</span>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>
-                                  {totalGuestsCount} {totalGuestsCount === 1 ? "Guest" : "Guests"}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Rooms Required */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>
-                                {isEntirelyBedBased ? "Beds Required" : "Rooms Required"}
-                              </span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>
-                                {totalRoomsCount} {isEntirelyBedBased ? (totalRoomsCount === 1 ? "Bed" : "Beds") : (totalRoomsCount === 1 ? "Room" : "Rooms")}
-                              </span>
-                            </div>
-
-                            {/* Room Capacity — compact chips */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>
-                                {isEntirelyBedBased ? "Bed Capacity" : "Room Capacity"}
-                              </span>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}>
-                                {capacityChips.map((chip, i) => (
-                                  <span key={i} style={chipStyle}>{chip}</span>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Room Type — compact chips with truncation */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                              <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>
-                                {isEntirelyBedBased ? "Bed Type" : "Room Type"}
-                              </span>
-                              <div
-                                style={{ display: "flex", flexWrap: "wrap", gap: 4, minWidth: 0 }}
-                                title={fullRoomNamesTitle}
-                              >
-                                {roomTypeChips.map((chip, i) => (
-                                  <span key={i} style={{ ...chipStyle, maxWidth: "100%" }}>{chip}</span>
-                                ))}
-                              </div>
-                            </div>
-
-                          </div>
-
-                          {/* Occupancy & Extra Pricing Breakdown */}
-                          {(!isEntirelyBedBased && (pricing.extraAdultsCount > 0 || pricing.extraChildrenCount > 0)) && (
-                            <>
-                              <div style={{ height: 1, background: `${A}22`, margin: "12px 0 8px" }} />
-                              
-                              {/* Occupancy Summary */}
-                              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                <span style={{ fontSize: 10, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                                  Occupancy Summary
-                                </span>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 12px" }}>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Normal Adults</span>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{pricing.normalAdultsCount} / {pricing.baseAdultsLimit}</span>
-                                  </div>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Extra Adults</span>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: A }}>{pricing.extraAdultsCount} / {pricing.extraAdultsLimit}</span>
-                                  </div>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Normal Children</span>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>{pricing.normalChildrenCount} / {pricing.baseChildrenLimit}</span>
-                                  </div>
-                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.05em" }}>Extra Children</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {/* Add-ons Pricing Breakdown */}
-                          {pricing.addonsTotal > 0 && (
-                            <>
-                              <div style={{ height: 1, background: `${A}22`, margin: "12px 0 8px" }} />
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 10, fontWeight: 800, color: A, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                                  Add-ons Total
-                                </span>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
-                                  + ₹{pricing.addonsTotal.toLocaleString('en-IN')}
-                                </span>
-                              </div>
-                            </>
-                          )}
-
-                        </div>
-                      );
-                    })()}
 
                     {/* Warnings */}
                     {pricing.warning && (

@@ -6,6 +6,7 @@ import TextArea from "../TextArea";
 
 const ConfirmAndPay = ({
   className,
+  children,
   guests,
   title,
   dateValue,
@@ -22,13 +23,68 @@ const ConfirmAndPay = ({
   checkOutDate,
   roomType,
   mealPlan,
+  addonDetails,
+  addOns,
+  currency = "INR",
   // Message state passed down
   messageText,
   setMessageText,
 }) => {
+  const parseNumericAmount = (value) => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    const match = String(value).replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+    return match ? Number(match[0]) : 0;
+  };
+
+  const displayAddons = addonDetails && addonDetails.length > 0
+    ? addonDetails
+    : (addOns || []);
+  
+  const addonsSection = displayAddons.length > 0 && (
+    <div className={styles.addOnsSection}>
+      <div className={styles.addOnsTitle}>Selected Add-ons</div>
+      <div className={styles.addOnsList}>
+        {displayAddons.map((addon, index) => {
+          const addonName = addon.name || addon.addonName || addon.title || "Add-on";
+          const addonQty = addon.quantity || 1;
+          const unitPrice = parseNumericAmount(addon.pricePerUnit ?? addon.price);
+          const subtotal = parseNumericAmount(addon.totalPrice ?? addon.priceValue) || (unitPrice * addonQty);
+
+          return (
+            <div className={styles.addOnItem} key={addon.addonId || index}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                {addon.image && (
+                  <img
+                    src={addon.image}
+                    alt={addonName}
+                    style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, flexShrink: 0, display: "block" }}
+                  />
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div className={styles.addOnItemName}>
+                    {addonName}
+                    <span style={{ opacity: 0.6, marginLeft: 4 }}>×{addonQty}</span>
+                  </div>
+                  {unitPrice > 0 && (
+                    <div style={{ fontSize: 12, color: "#9A9FA5", marginTop: 2 }}>
+                      {currency} {Number(unitPrice).toFixed(2)} / item
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className={styles.addOnItemPrice} style={{ flexShrink: 0 }}>
+                {currency} {Number(subtotal).toFixed(2)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <div className={cn(className, styles.confirm)}>
-      <div className={cn("h2", styles.title)}>Confirm and Pay</div>
       <div className={styles.subtitle}>Almost done! Review your trip details and complete your booking.</div>
       
       <div className={styles.stepper}>
@@ -44,6 +100,8 @@ const ConfirmAndPay = ({
           <div className={styles.stepLabelActive}>Confirm and pay</div>
         </div>
       </div>
+      
+      {children}
 
       <div className={styles.list}>
         <div className={styles.item}>
@@ -133,6 +191,8 @@ const ConfirmAndPay = ({
                 </>
               )}
             </div>
+            
+            {addonsSection}
 
             <div className={styles.messageSection}>
               <div className={styles.category}>Message the host</div>

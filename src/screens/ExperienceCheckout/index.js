@@ -3,6 +3,9 @@ import { useLocation, useHistory } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ExperienceCheckout.module.sass";
 import Control from "../../components/Control";
+import InlineDatePicker from "../../components/InlineDatePicker";
+import GuestPicker from "../../components/GuestPicker";
+import HeadOptions from "../../components/PriceDetails/HeadOptions";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails, getEventAddons } from "../../utils/api";
@@ -825,24 +828,36 @@ const Checkout = () => {
   return (
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
-        <Control
-          className={styles.control}
-          urlHome="/"
-          backUrl={backUrl}
-        />
+        <div className={styles.headerRow}>
+          <Control
+            className={styles.backControl}
+            urlHome="/"
+            backUrl={backUrl}
+          />
+          <h2 className={styles.pageTitle}>{isEventBooking ? "Your event" : "Your trip"}</h2>
+        </div>
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
-            title={isEventBooking ? "Your event" : "Your trip"}
             guests
             dateValue={items[0]?.title}
             timeValue={items[1]?.category === "Time slot" ? items[1]?.title : undefined}
             guestValue={items[2]?.title || items[1]?.title}
             messageText={messageText}
             setMessageText={setMessageText}
-          />
+            addonDetails={addonDetails}
+            addOns={selectedAddOns}
+            currency={paymentData?.currency || "INR"}
+          >
+            <HeadOptions
+              image={listingImage}
+              hostName={hostName}
+              hostAvatar={hostAvatar}
+            />
+          </ConfirmAndPay>
           <PriceDetails
             className={styles.price}
+            hideHeader={true}
             more
             image={listingImage}
             title={listingTitle}

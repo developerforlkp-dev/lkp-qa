@@ -23,6 +23,8 @@ import FleetHome from "./screens/FleetHome";
 import Listings from "./pages/listings";
 import Blog from "./pages/Blog";
 import BlogDetails from "./pages/BlogDetails";
+import ViewDetails from "./screens/ViewDetails";
+
 
 import StayProduct from "./screens/StayProduct";
 import StayDetails from "./screens/StayDetails";
@@ -36,6 +38,7 @@ import TermsOfService from "./screens/TermsOfService";
 import PrivacyPolicy from "./screens/PrivacyPolicy";
 import MobileBottomNavbar from "./components/MobileBottomNavbar";
 import FAQ from "./screens/FAQ";
+import About from "./screens/About";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -204,6 +207,15 @@ function App() {
             />
             <Route
               exact
+              path="/viewdetails"
+              render={() => (
+                <Page separatorHeader>
+                  <ViewDetails />
+                </Page>
+              )}
+            />
+            <Route
+              exact
               path="/host-profile"
               render={() => (
                 <Page>
@@ -293,6 +305,15 @@ function App() {
             />
             <Route
               exact
+              path="/about"
+              render={() => (
+                <Page separatorHeader>
+                  <About />
+                </Page>
+              )}
+            />
+            <Route
+              exact
               path="/blog/:slug"
               render={() => (
                 <Page separatorHeader>
@@ -309,6 +330,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

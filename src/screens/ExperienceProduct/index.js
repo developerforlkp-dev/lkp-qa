@@ -1203,7 +1203,7 @@ const ExperienceProduct = () => {
               display: "grid", 
               gridTemplateColumns: "1.2fr 1fr", 
               gap: "24px", 
-              alignItems: "stretch"
+              alignItems: "flex-start"
             }} className="details-grid-container">
               
               {/* Narrative Block (Left-hand section) */}
@@ -2063,7 +2063,11 @@ const ExperienceProduct = () => {
             if (typeof c === "string") return c;
             return c.name || c.title || "";
           };
-          const rawCats = [listing?.category, listing?.subCategory].filter(Boolean).map(getCatName).filter(Boolean);
+          let rawCats = Array.isArray(listing?.whatsSpecial) && listing?.whatsSpecial.length > 0
+            ? listing.whatsSpecial.map(getCatName).filter(Boolean)
+            : typeof listing?.whatsSpecial === "string" && listing?.whatsSpecial.trim() !== ""
+              ? listing.whatsSpecial.split(",").map(s => s.trim()).filter(Boolean)
+              : [listing?.category, listing?.subCategory].filter(Boolean).map(getCatName).filter(Boolean);
           const displayCats = rawCats.length > 0 ? rawCats : ["Nature", "Adventure"];
           const loopedCats = Array(12).fill(displayCats).flat();
 
