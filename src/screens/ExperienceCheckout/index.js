@@ -870,13 +870,7 @@ const Checkout = () => {
             currency={paymentData?.currency || "INR"}
             hostName={hostName}
             hostAvatar={hostAvatar}
-            cancellationPolicy={
-              isEventBooking && 
-              typeof cancellationPolicy === 'string' && 
-              cancellationPolicy.includes("No valid cancellation policy tiers defined")
-                ? null 
-                : cancellationPolicy
-            }
+            cancellationPolicy={isEventBooking ? null : cancellationPolicy}
             rating={reviewsData.rating}
             reviewsCount={reviewsData.count}
             buttonUrl="/experience-checkout-complete"
