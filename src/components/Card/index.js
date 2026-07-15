@@ -203,20 +203,22 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
                   </span>
                 </div>
               ) : (
-                <div className={styles.newBadge}>
-                  <Icon name="star" />
-                  <span>
-                    {(() => {
-                      const t = wishlistConfig?.itemType || String(item?.itemType || item?.type || "").toLowerCase();
-                      const url = String(item?.url || "").toLowerCase();
-                      if (t === "stay" || url.includes("/stay-details")) return "New Stay";
-                      if (t === "event" || url.includes("/event")) return "New Event";
-                      if (t === "food" || url.includes("/food")) return "New Food";
-                      if (t === "place" || url.includes("/place")) return "New Place";
-                      return "New Experience";
-                    })()}
-                  </span>
-                </div>
+                !location.pathname.includes('/listings') && (
+                  <div className={styles.newBadge}>
+                    <Icon name="star" />
+                    <span>
+                      {(() => {
+                        const t = wishlistConfig?.itemType || String(item?.itemType || item?.type || "").toLowerCase();
+                        const url = String(item?.url || "").toLowerCase();
+                        if (t === "stay" || url.includes("/stay-details")) return "New Stay";
+                        if (t === "event" || url.includes("/event")) return "New Event";
+                        if (t === "food" || url.includes("/food")) return "New Food";
+                        if (t === "place" || url.includes("/place")) return "New Place";
+                        return "New Experience";
+                      })()}
+                    </span>
+                  </div>
+                )
               )
             )}
 

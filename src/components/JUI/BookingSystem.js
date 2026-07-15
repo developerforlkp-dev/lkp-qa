@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useHistory, useLocation } from "react-router-dom";
 import moment from "moment-timezone";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle, ChevronLeft, ChevronRight, Baby } from "lucide-react";
 import { useTheme } from "./Theme";
 import { Rev, Chars } from "./UI";
 
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
+import Dropdown from "../Dropdown";
 import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 import { persistPendingCheckout } from "../../utils/paymentSession";
@@ -4039,52 +4040,57 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 />
                               </div>
                               {childrenAllowed && (
-                                <div style={{ flex: "1 1 140px", display: "flex", flexDirection: "column", gap: 8 }}>
-                                  <div style={{ padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
-                                    <Counter
-                                      value={guests.children}
-                                      setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
-                                      min={0}
-                                      max={childMax}
-                                    />
-                                  </div>
-                                  {isEventBooking && guests.children > 0 && Array.from({ length: guests.children }).map((_, i) => (
-                                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 14px", background: `${B}22`, borderRadius: 12 }}>
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: M }}>Child {i + 1} Age</span>
-                                        <select
-                                          value={guests.childAges?.[i] ?? 0}
-                                          onChange={(e) => updateChildAge(i, Number(e.target.value))}
-                                          style={{
-                                            padding: "4px 8px",
-                                            borderRadius: 8,
-                                            border: `1px solid ${B}`,
-                                            background: BG,
-                                            color: FG,
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                            outline: "none",
-                                            cursor: "pointer"
-                                          }}
-                                        >
-                                          {[...Array(16).keys()].map(age => (
-                                            <option key={age} value={age}>{age} {age === 1 ? 'year' : 'years'}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      {childAgeWarnings[i] === 'adult' && (
-                                        <div style={{ fontSize: 10, color: "#eab308", fontWeight: 500, marginTop: 4 }}>
-                                          Age exceeds child limits. Adult price applied.
-                                        </div>
-                                      )}
-                                      {childAgeWarnings[i] === 'free' && (
-                                        <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 500, marginTop: 4 }}>
-                                          Age below child limits. No charge applied.
-                                        </div>
-                                      )}
+                                <div style={{ flex: "1 1 140px", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
+                                  <Counter
+                                    value={guests.children}
+                                    setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                                    min={0}
+                                    max={childMax}
+                                  />
+                                </div>
+                              )}
+                              
+                              {childrenAllowed && isEventBooking && guests.children > 0 && (
+                                <div style={{ flex: "1 1 100%", padding: "12px 16px", background: "transparent", border: `1px solid ${B}55`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <div style={{ color: A }}>
+                                      <Baby size={20} color={A} />
                                     </div>
-                                  ))}
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                      <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children details</span>
+                                      <span style={{ fontSize: 11, fontWeight: 400, color: M }}>Please select the age for each child.</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div style={{ display: "flex", flexDirection: "column" }}>
+                                    {Array.from({ length: guests.children }).map((_, i) => (
+                                      <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < guests.children - 1 ? `1px solid ${B}44` : 'none' }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }}></div>
+                                            <span style={{ fontSize: 13, fontWeight: 500, color: FG }}>Child {i + 1}</span>
+                                          </div>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                            <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>
+                                              {(guests.childAges?.[i] ?? 0) === 1 ? 'Year' : 'Years'}
+                                            </span>
+                                            <Counter
+                                              value={guests.childAges?.[i] ?? 0}
+                                              setValue={(v) => updateChildAge(i, v)}
+                                              min={0}
+                                              max={15}
+                                            />
+                                          </div>
+                                        </div>
+                                        {childAgeWarnings[i] === 'adult' && (
+                                          <div style={{ fontSize: 11, color: "#eab308", fontWeight: 500, paddingBottom: 8 }}>
+                                            Age exceeds child limits. Adult price applied.
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
