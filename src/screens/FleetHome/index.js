@@ -1004,7 +1004,7 @@ const FleetHome = () => {
           <div id="listings-scroll-target"></div>
 
           {/* Dynamic Sections from API */}
-          <div style={{ minHeight: "100vh" }}>
+          <div style={{ minHeight: "50vh" }}>
             {loading && (
               <LoadingSkeleton variant="homepage" sections={3} count={4} />
             )}
