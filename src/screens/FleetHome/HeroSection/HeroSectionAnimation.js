@@ -178,11 +178,11 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
         gsap.set(detailsActive, { zIndex: 22 });
         gsap.to(detailsActive, { opacity: 1, delay: 0.4, ease: EASE_TYPE });
-        gsap.to(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false });
-        gsap.to(`${detailsActive} .hero-desc`, { y: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false });
+        gsap.to(`${detailsActive} .hero-title-1`, { x: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false });
+        gsap.to(`${detailsActive} .hero-desc`, { x: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false });
         gsap.to(`${detailsActive} .hero-button`, {
-          y: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false,
-          onComplete: function () { gsap.set(this.targets(), { y: 0, clearProps: "will-change" }); }
+          x: 0, opacity: 1, delay: 0.15, duration: 0.7, ease: EASE_TYPE, force3D: true, immediateRender: false,
+          onComplete: function () { gsap.set(this.targets(), { x: 0, clearProps: "will-change" }); }
         });
         gsap.set(detailsInactive, { zIndex: 12 });
 
@@ -204,9 +204,9 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
             gsap.set(getCard(prv), { x: prvCardX, y: thumbnailsY + yOffset, width: config.size, height: config.size, zIndex: config.zIndex, borderRadius: 12, border: 'none', scale: 0.9 });
             gsap.set(getCardContent(prv), { x: prvCardX, y: thumbnailsY + yOffset + config.size + 10, opacity: 1, zIndex: 40 });
             gsap.set(detailsInactive, { opacity: 0 });
-            gsap.set(`${detailsInactive} .hero-title-1`, { y: 50, opacity: 0 });
-            gsap.set(`${detailsInactive} .hero-desc`, { y: 50, opacity: 0 });
-            gsap.set(`${detailsInactive} .hero-button`, { y: 50, opacity: 0 });
+            gsap.set(`${detailsInactive} .hero-title-1`, { x: -30, opacity: 0, y: 0 });
+            gsap.set(`${detailsInactive} .hero-desc`, { x: -30, opacity: 0, y: 0 });
+            gsap.set(`${detailsInactive} .hero-button`, { x: -30, opacity: 0, scale: 1, y: 0 });
             isAnimatingRef.current = false;
             resolve();
           },
@@ -350,13 +350,13 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
       }
 
       gsap.set(detailsActive, { opacity: 1, zIndex: 22 });
-      gsap.set(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1 });
-      gsap.set(`${detailsActive} .hero-desc`, { y: 0, opacity: 1 });
-      gsap.set(`${detailsActive} .hero-button`, { y: 0, opacity: 1 });
+      gsap.set(`${detailsActive} .hero-title-1`, { x: 0, y: 0, opacity: 1 });
+      gsap.set(`${detailsActive} .hero-desc`, { x: 0, y: 0, opacity: 1 });
+      gsap.set(`${detailsActive} .hero-button`, { x: 0, opacity: 1, scale: 1, y: 0 });
       gsap.set(detailsInactive, { opacity: 0, zIndex: 12 });
-      gsap.set(`${detailsInactive} .hero-title-1`, { y: 50, opacity: 0 });
-      gsap.set(`${detailsInactive} .hero-desc`, { y: 50, opacity: 0 });
-      gsap.set(`${detailsInactive} .hero-button`, { y: 50, opacity: 0 });
+      gsap.set(`${detailsInactive} .hero-title-1`, { x: -30, opacity: 0, y: 0 });
+      gsap.set(`${detailsInactive} .hero-desc`, { x: -30, opacity: 0, y: 0 });
+      gsap.set(`${detailsInactive} .hero-button`, { x: -30, opacity: 0, scale: 1, y: 0 });
 
       if (loopTimeoutRef.current) { clearTimeout(loopTimeoutRef.current); }
       loopTimeoutRef.current = setTimeout(() => {
@@ -454,9 +454,9 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
       gsap.set(getCardContent(active), { x: 0, y: 0, opacity: 0, zIndex: 40 });
       gsap.set(detailsActive, { opacity: 1, zIndex: 22, x: 0 });
-      gsap.set(`${detailsActive} .hero-title-1`, { y: 0, opacity: 1 });
-      gsap.set(`${detailsActive} .hero-desc`, { y: 0, opacity: 1 });
-      gsap.set(`${detailsActive} .hero-button`, { y: 0, opacity: 1 });
+      gsap.set(`${detailsActive} .hero-title-1`, { x: 0, y: 0, opacity: 1 });
+      gsap.set(`${detailsActive} .hero-desc`, { x: 0, y: 0, opacity: 1 });
+      gsap.set(`${detailsActive} .hero-button`, { x: 0, opacity: 1, scale: 1, y: 0 });
 
       const initialButton = document.querySelector(`${detailsActive} .hero-button`);
       if (initialButton && destinations[active]) {
