@@ -732,7 +732,7 @@ const SpecCard = ({ label, value, sub, index, A, B, FG, M, W, theme, isCount }) 
       style={{
         border: `1px solid ${hovered ? A : B}`,
         borderRadius: "20px",
-        height: "128px",
+        height: "138px",
         boxSizing: "border-box",
         backgroundColor: hovered
           ? (theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF")
@@ -1572,9 +1572,9 @@ function About({ event }) {
     <>
       <section id="about" style={{ background: BG, padding: "32px 80px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, alignItems: "stretch" }} className="grid-2">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "stretch" }} className="grid-2">
             <div className="narrative-card" style={{
-              padding: "36px 48px",
+              padding: "24px 36px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -1583,18 +1583,17 @@ function About({ event }) {
               boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
               border: `1px solid ${B}`,
               boxSizing: "border-box",
-              height: "100%"
+              height: "fit-content"
             }}>
               <div>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
                   The Event
                 </span>
-                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
-                  Where the ancient <br/>
-                  <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1, margin: "0 0 12px 0", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  Where the ancient <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
                 </h3>
                 <Rev delay={0.25}>
-                  <div style={{ marginBottom: 36 }}>
+                  <div>
                     <p style={{ 
                       color: M, 
                       fontSize: "16px", 
@@ -1603,7 +1602,7 @@ function About({ event }) {
                       fontWeight: 400, 
                       fontFamily: '"Inter", sans-serif',
                       display: "-webkit-box",
-                      WebkitLineClamp: isExpanded ? "unset" : 3,
+                      WebkitLineClamp: isExpanded ? "unset" : 2,
                       WebkitBoxOrient: "vertical",
                       overflow: "hidden",
                       WebkitMaskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
@@ -1621,7 +1620,7 @@ function About({ event }) {
                           fontSize: "14px",
                           fontWeight: 700,
                           padding: 0,
-                          marginTop: 12,
+                          marginTop: 8,
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
