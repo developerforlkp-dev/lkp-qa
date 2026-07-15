@@ -17,6 +17,7 @@ import DetailPageNavPortal from "../../../components/DetailPageNavPortal";
 import Favorite from "../../../components/Favorite";
 import Icon from "../../../components/Icon";
 import FullScreenImage from "../../../components/FullScreenImage";
+import PolicyCategoryItem from "../../../components/PolicyCategoryItem";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -2327,58 +2328,47 @@ function Rules({ event }) {
   
   const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
 
-  const displayRequirements = [...guestRequirements].map(req => ({
-    setting: {
-      title: req.setting?.title || req.title || "Requirement",
-      description: req.setting?.description || req.description
-    },
-    questions: req.questions || []
-  }));
+  const policies = useMemo(() => {
+    const evtItems = [];
+    const guestItems = [];
+    const cancelItems = [];
 
-  if (checkInInstructions) {
-    displayRequirements.push({
-      setting: {
-        title: "Check-in Instructions",
-        description: checkInInstructions
+    if (checkInInstructions) {
+      evtItems.push({ title: "Check-in Instructions", body: checkInInstructions });
+    }
+    if (event?.dressCode && event.dressCode.trim() !== "") {
+      evtItems.push({ title: "Dress Code", body: event.dressCode.trim() });
+    }
+    if (event?.minimumAge != null && event.minimumAge !== "") {
+      evtItems.push({ title: "Minimum Age Requirement", body: `Minimum age for entry is ${event.minimumAge} years old.` });
+    }
+    if (event?.idProofRequired) {
+      evtItems.push({ title: "ID Proof Required", body: "Valid government-issued physical ID card required for verification at check-in." });
+    }
+
+    guestRequirements.forEach((req, i) => {
+      const title = req.setting?.title || req.title || "Requirement";
+      const body = req.setting?.description || req.description || null;
+      const item = { id: i, title, body, questions: req.questions };
+      
+      if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("event")) {
+        evtItems.push(item);
+      } else {
+        guestItems.push(item);
       }
     });
-  }
 
-  if (event?.minimumAge != null && event.minimumAge !== "") {
-    displayRequirements.push({
-      setting: {
-        title: "Minimum Age Requirement",
-        description: `Minimum age for entry is ${event.minimumAge} years old.`
-      }
-    });
-  }
+    if (cancellationPolicy) {
+      cancelItems.push({ title: "Cancellation Policy", body: cancellationPolicy });
+    }
 
-  if (event?.dressCode && event.dressCode.trim() !== "") {
-    displayRequirements.push({
-      setting: {
-        title: "Dress Code",
-        description: event.dressCode.trim()
-      }
-    });
-  }
+    const categories = [];
+    if (evtItems.length > 0) categories.push({ id: 'cat-evt', title: "Event Rules", items: evtItems });
+    if (guestItems.length > 0) categories.push({ id: 'cat-guest', title: "Guest Requirements", items: guestItems });
+    if (cancelItems.length > 0) categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
 
-  if (event?.idProofRequired) {
-    displayRequirements.push({
-      setting: {
-        title: "ID Proof Required",
-        description: "Valid government-issued physical ID card required for verification at check-in."
-      }
-    });
-  }
-
-  if (cancellationPolicy) {
-    displayRequirements.push({
-      setting: {
-        title: "Cancellation Policy",
-        description: cancellationPolicy
-      }
-    });
-  }
+    return categories;
+  }, [event, guestRequirements, checkInInstructions, cancellationPolicy]);
 
   if (isMobile) {
     return (
@@ -2387,9 +2377,9 @@ function Rules({ event }) {
         <h2 className="mob-section-title" style={{ color: FG }}>Things to Keep in Mind</h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {displayRequirements.length > 0 ? (
-            displayRequirements.map((req, i) => (
-              <PolicyItem key={`req-${i}`} req={req} />
+          {policies.length > 0 ? (
+            policies.map((category) => (
+              <PolicyCategoryItem key={category.id} category={category} />
             ))
           ) : (
             <p style={{ color: M, fontSize: 14 }}>No specific guidelines listed for this event.</p>
@@ -2418,9 +2408,9 @@ function Rules({ event }) {
           </Rev>
           <Rev delay={0.2}>
             <div>
-              {displayRequirements.length > 0 ? (
-                displayRequirements.map((req, i) => (
-                  <PolicyItem key={`req-${i}`} req={req} />
+              {policies.length > 0 ? (
+                policies.map((category) => (
+                  <PolicyCategoryItem key={category.id} category={category} />
                 ))
               ) : (
                 <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific guidelines listed for this event.</p>

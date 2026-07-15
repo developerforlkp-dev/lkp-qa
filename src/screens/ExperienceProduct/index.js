@@ -4,6 +4,7 @@ import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2, Building, Map, Globe, Info } from "lucide-react";
+import PolicyCategoryItem from "../../components/PolicyCategoryItem";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -3598,6 +3599,47 @@ function QualityIndexSection({ qualityIndex }) {
 function ExperiencePolicies({ listing }) {
   const { theme, tokens: { FG, W, B, A, M, BG } } = useTheme();
 
+  const policies = useMemo(() => {
+    const expItems = [];
+    const guestItems = [];
+    const cancelItems = [];
+
+    if (Array.isArray(listing?.guestRequirements)) {
+      listing.guestRequirements.forEach((req, i) => {
+        const title = req.setting?.title || "Requirement";
+        const body = req.setting?.description || null;
+        const item = { id: i, title, body, questions: req.questions };
+        
+        if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("experience")) {
+          expItems.push(item);
+        } else {
+          guestItems.push(item);
+        }
+      });
+    }
+
+    if (listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) {
+      cancelItems.push({
+        id: 'cancel',
+        title: "Cancellation Terms",
+        body: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
+      });
+    }
+
+    const categories = [];
+    if (expItems.length > 0) {
+      categories.push({ id: 'cat-exp', title: "Experience Rules", items: expItems });
+    }
+    if (guestItems.length > 0) {
+      categories.push({ id: 'cat-guest', title: "Guest Requirements", items: guestItems });
+    }
+    if (cancelItems.length > 0) {
+      categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
+    }
+
+    return categories;
+  }, [listing]);
+
   return (
     <section className="policies-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
       <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
@@ -3617,22 +3659,12 @@ function ExperiencePolicies({ listing }) {
           </Rev>
           <Rev delay={0.2}>
             <div>
-              {listing?.guestRequirements?.length > 0 ? (
-                listing.guestRequirements.map((req, i) => (
-                  <PolicyItem key={`req-${i}`} req={req} />
+              {policies.length > 0 ? (
+                policies.map((category) => (
+                  <PolicyCategoryItem key={category.id} category={category} />
                 ))
               ) : (
-                <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific requirements listed for this experience.</p>
-              )}
-              {(listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) && (
-                <PolicyItem
-                  req={{
-                    setting: {
-                      title: "Cancellation Policy",
-                      description: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
-                    }
-                  }}
-                />
+                <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific rules or requirements listed.</p>
               )}
             </div>
           </Rev>

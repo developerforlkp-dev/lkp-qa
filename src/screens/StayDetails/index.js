@@ -1949,7 +1949,9 @@ function PolicyCategoryItem({ category }) {
 
     if (generalRules.length > 0) {
       propItems.push({ id: "prop-all", title: null, questions: generalRules });
-      categories.push({ id: 'cat-prop', title: "Property Rules", items: propItems });
+      const isProperty = String(stay?.propertyType || '').toLowerCase() === 'property' || String(stay?.listingType || '').toLowerCase() === 'property';
+      const ruleTitle = isProperty ? "Property Rules" : "Stay Rules";
+      categories.push({ id: 'cat-prop', title: ruleTitle, items: propItems });
     }
 
     // Guest Requirements
