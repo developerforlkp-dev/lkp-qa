@@ -44,7 +44,7 @@ const Page = ({
 
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
-  const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details");
+  const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details") || pathname.startsWith("/wishlists");
   const isHomeRoute = homeRoutes.includes(pathname) || isDetailPage;
 
   useEffect(() => {
@@ -184,7 +184,7 @@ const Page = ({
             padding: 0 16px !important;
           }
           .slim-header-wrapper.is-detail-page img {
-            height: 36px !important;
+            height: 44px !important;
             width: auto !important;
           }
           .slim-header-wrapper.is-detail-page [class*="Header_burger"] {
