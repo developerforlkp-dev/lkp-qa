@@ -215,19 +215,19 @@ ListingsAPI.interceptors.request.use((config) => {
     const token = localStorage.getItem("jwtToken");
     const fullURL = `${config.baseURL}${config.url}`;
 
-    console.log("🌐 Axios Request Interceptor:");
-    console.log("  - Method:", config.method?.toUpperCase());
-    console.log("  - Base URL:", config.baseURL);
-    console.log("  - URL:", config.url);
-    console.log("  - Full URL:", fullURL);
-    console.log("  - Data:", config.data);
-    console.log("  - Headers:", config.headers);
+    // console.log("🌐 Axios Request Interceptor:");
+    // console.log("  - Method:", config.method?.toUpperCase());
+    // console.log("  - Base URL:", config.baseURL);
+    // console.log("  - URL:", config.url);
+    // console.log("  - Full URL:", fullURL);
+    // console.log("  - Data:", config.data);
+    // console.log("  - Headers:", config.headers);
 
     if (token) {
       // Ensure headers object exists
       config.headers = config.headers || {};
       config.headers["Authorization"] = `Bearer ${token}`;
-      console.log("🔑 JWT token attached to request:", config.url);
+      //console.log("🔑 JWT token attached to request:", config.url);
     } else {
       console.warn("⚠️ No JWT token found in localStorage for request:", config.url);
     }
@@ -241,13 +241,13 @@ OrdersAPI.interceptors.request.use((config) => {
     const token = localStorage.getItem("jwtToken");
     const fullURL = `${config.baseURL}${config.url}`;
 
-    console.log("Orders API Request:");
-    console.log("  - Method:", config.method?.toUpperCase());
-    console.log("  - Base URL:", config.baseURL);
-    console.log("  - URL:", config.url);
-    console.log("  - Full URL:", fullURL);
-    console.log("  - Data:", config.data);
-    console.log("  - Headers:", config.headers);
+    // console.log("Orders API Request:");
+    // console.log("  - Method:", config.method?.toUpperCase());
+    // console.log("  - Base URL:", config.baseURL);
+    // console.log("  - URL:", config.url);
+    // console.log("  - Full URL:", fullURL);
+    // console.log("  - Data:", config.data);
+    // console.log("  - Headers:", config.headers);
 
     if (token) {
       config.headers = config.headers || {};
@@ -326,7 +326,7 @@ export const getListings = async (
     // (like the Catalog component) can safely call `.map` without changing
     // the existing UI code.
     const payload = response.data;
-    console.log("✅ Listings fetched (raw):", payload);
+    // console.log("✅ Listings fetched (raw):", payload);
 
     // If payload is already an array - return it
     if (Array.isArray(payload)) return payload;
@@ -404,15 +404,15 @@ export const getFilteredListings = async ({
       params.maxPrice = Number(maxPrice);
     }
 
-    console.log("🔎 Filter API Request:", {
-      endpoint: "/api/public/listings/filter",
-      axiosPath: "/public/listings/filter",
-      params,
-    });
+    // console.log("🔎 Filter API Request:", {
+    //   endpoint: "/api/public/listings/filter",
+    //   axiosPath: "/public/listings/filter",
+    //   params,
+    // });
 
     const response = await ListingsAPI.get("/public/listings/filter", { params });
     const payload = response.data;
-    console.log("✅ Filtered listings fetched (raw):", payload);
+    //console.log("✅ Filtered listings fetched (raw):", payload);
 
     let listings = [];
     let totalCount = null;
@@ -499,7 +499,7 @@ export const filterEventListings = async (filters = {}) => {
       params: filters,
     });
     const payload = response.data;
-    console.log("✅ Event listings filtered (raw):", payload);
+    //console.log("✅ Event listings filtered (raw):", payload);
     return normalizePublicFilterPayload(payload, ["events", "eventListings"]);
   } catch (error) {
     console.error("❌ Error filtering event listings:", error.response?.data || error.message);
@@ -513,7 +513,7 @@ export const filterStayListings = async (filters = {}) => {
       params: filters,
     });
     const payload = response.data;
-    console.log("✅ Stay listings filtered (raw):", payload);
+    //console.log("✅ Stay listings filtered (raw):", payload);
     return normalizePublicFilterPayload(payload, ["stays", "stayListings"]);
   } catch (error) {
     console.error("❌ Error filtering stay listings:", error.response?.data || error.message);
@@ -531,7 +531,7 @@ export const getBusinessInterestFilters = async (businessInterestId) => {
 
     const response = await ListingsAPI.get(`/public/business-interest-filters/${businessInterestId}`);
     const payload = response.data;
-    console.log(`✅ Business interest filters fetched (${businessInterestId}):`, payload);
+    //console.log(`✅ Business interest filters fetched (${businessInterestId}):`, payload);
     return payload;
   } catch (error) {
     console.error("❌ Error fetching business interest filters:", error.response?.data || error.message);
@@ -591,11 +591,11 @@ export const getOrderRefundDetails = async (orderId) => {
 // ✅ Create a stay order
 export const createStayOrder = async (orderData) => {
   try {
-    console.log("📤 Creating stay order:", JSON.stringify(orderData, null, 2));
+    //console.log("📤 Creating stay order:", JSON.stringify(orderData, null, 2));
     // Use ListingsAPI (relative /api path) — the proxy forwards to http://69.62.77.33:8080
     // This avoids direct browser-to-server calls that trigger CORS errors
     const response = await ListingsAPI.post("/orders/stay", orderData);
-    console.log("✅ Stay order created successfully:", response.data);
+    //console.log("✅ Stay order created successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error creating stay order:", error.response?.data || error.message);
@@ -608,7 +608,7 @@ export const getListing = async (id) => {
   try {
     const response = await ListingsAPI.get(`/public/listings/${id}`);
     const payload = response.data;
-    console.log("✅ Listing fetched (raw):", payload);
+    //console.log("✅ Listing fetched (raw):", payload);
 
     // If response is wrapped in an object with a listing property, unwrap
     if (payload && typeof payload === "object") {
@@ -623,6 +623,16 @@ export const getListing = async (id) => {
   }
 };
 
+export const getPolicyDocuments = async () => {
+  try {
+    const response = await ListingsAPI.get(`/public/policy-documents`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching policy documents:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getListingMedia = async (listingId) => {
   try {
     if (!listingId) {
@@ -631,7 +641,7 @@ export const getListingMedia = async (listingId) => {
 
     const response = await ListingsAPI.get(`/listings/${listingId}/media`);
     const payload = response.data;
-    console.log("✅ Listing media fetched (raw):", payload);
+    //console.log("✅ Listing media fetched (raw):", payload);
 
     const mediaArray = Array.isArray(payload)
       ? payload
@@ -660,7 +670,7 @@ export const getListingAddons = async (listingId) => {
     if (!listingId) throw new Error("listingId is required");
     const response = await ListingsAPI.get(`/listings/${listingId}/addons`);
     const payload = response.data;
-    console.log("✅ Listing addons fetched (raw):", payload);
+    //console.log("✅ Listing addons fetched (raw):", payload);
     if (Array.isArray(payload)) return payload;
     if (Array.isArray(payload?.data)) return payload.data;
     if (Array.isArray(payload?.addons)) return payload.addons;
@@ -679,7 +689,7 @@ export const getCustomerOrders = async (limit = 20, page = 1) => {
       params: { limit, offset, _t: Date.now() },
     });
     const payload = response.data;
-    console.log("✅ Customer orders fetched (raw):", payload);
+    //console.log("✅ Customer orders fetched (raw):", payload);
 
     // If payload is already an array - return it
     if (Array.isArray(payload)) return payload;
@@ -704,7 +714,7 @@ export const getSlotDetails = async (slotId) => {
   try {
     const response = await ListingsAPI.get(`/public/listings/slots/${slotId}`);
     const payload = response.data;
-    console.log("✅ Slot details fetched (raw):", payload);
+    //console.log("✅ Slot details fetched (raw):", payload);
 
     // If response is wrapped, unwrap it
     if (payload && typeof payload === "object") {
@@ -727,7 +737,7 @@ export const sendPhoneOTP = async (phone, countryCode = "+91") => {
       phone,
       countryCode,
     });
-    console.log("✅ OTP sent successfully:", response.data);
+    //console.log("✅ OTP sent successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error sending OTP:", error);
@@ -746,7 +756,7 @@ export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName 
       lastName,
       dateOfBirth,
     });
-    console.log("✅ OTP verified successfully:", response.data);
+    //console.log("✅ OTP verified successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error verifying OTP:", error);
@@ -758,10 +768,34 @@ export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName 
 export const requestHostingOtp = async (hostingData) => {
   try {
     const response = await ListingsAPI.post("/public/hosting/request-otp", hostingData);
-    console.log("✅ Hosting OTP requested successfully:", response.data);
+    // console.log("✅ Hosting OTP requested successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error requesting Hosting OTP:", error);
+    throw error;
+  }
+};
+
+// Verify Hosting OTP
+export const verifyHostingOtp = async (sessionId, otp) => {
+  try {
+    const response = await ListingsAPI.post("/public/hosting/verify-otp", { sessionId, otp });
+    //console.log("✅ Hosting OTP verified successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error verifying Hosting OTP:", error);
+    throw error;
+  }
+};
+
+// Resend Hosting OTP
+export const resendHostingOtp = async (sessionId) => {
+  try {
+    const response = await ListingsAPI.post("/public/hosting/resend-otp", { sessionId });
+    //console.log("✅ Hosting OTP resent successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error resending Hosting OTP:", error);
     throw error;
   }
 };
@@ -776,19 +810,19 @@ export const loginWithGoogle = async (idToken, dateOfBirth = "") => {
       ? `${window.location.origin}${baseURL}${url}`
       : `${baseURL}${url}`;
 
-    console.log("📤 Making Google login request:");
-    console.log("  - Base URL:", baseURL);
-    console.log("  - Endpoint:", url);
-    console.log("  - Full URL:", fullURL);
-    console.log("  - Request data:", { idToken: idToken ? `${idToken.substring(0, 20)}...` : "null" });
-    console.log("  - Check Network tab for: POST", fullURL);
+    // console.log("📤 Making Google login request:");
+    // console.log("  - Base URL:", baseURL);
+    // console.log("  - Endpoint:", url);
+    // console.log("  - Full URL:", fullURL);
+    // console.log("  - Request data:", { idToken: idToken ? `${idToken.substring(0, 20)}...` : "null" });
+    // console.log("  - Check Network tab for: POST", fullURL);
 
     const response = await ListingsAPI.post(url, requestData);
 
-    console.log("✅ Google login successful:");
-    console.log("  - Status:", response.status);
-    console.log("  - Response data:", response.data);
-    console.log("  - Full response:", response);
+    // console.log("✅ Google login successful:");
+    // console.log("  - Status:", response.status);
+    // console.log("  - Response data:", response.data);
+    // console.log("  - Full response:", response);
     return response.data;
   } catch (error) {
     console.error("❌ Error with Google login:");
@@ -958,12 +992,12 @@ export const getBillingConfiguration = async (listingId) => {
     }
 
     const billingConfigUrl = `/public/listings/${listingIdStr}/billing-configuration`;
-    console.log("Fetching public billing configuration:", {
-      listingId: listingIdStr,
-      url: billingConfigUrl
-    });
+    // console.log("Fetching public billing configuration:", {
+    //   listingId: listingIdStr,
+    //   url: billingConfigUrl
+    // });
     const response = await ListingsAPI.get(billingConfigUrl);
-    console.log("✅ Billing configuration fetched:", response.data);
+    // console.log("✅ Billing configuration fetched:", response.data);
     return response.data;
   } catch (error) {
     const errorDetails = {
@@ -1007,11 +1041,11 @@ export const getAvailability = async (listingId, startDate, endDate, slotId) => 
       },
     });
 
-    console.log("✅ Availability API Response:", {
-      url: `/public/listings/${listingId}/availability`,
-      params: { startDate, endDate, slotId: slotIdParam },
-      data: response.data
-    });
+    // console.log("✅ Availability API Response:", {
+    //   url: `/public/listings/${listingId}/availability`,
+    //   params: { startDate, endDate, slotId: slotIdParam },
+    //   data: response.data
+    // });
 
     return response.data;
   } catch (error) {
@@ -1029,9 +1063,9 @@ export const getAvailability = async (listingId, startDate, endDate, slotId) => 
 // Create an order
 export const createOrder = async (orderData) => {
   try {
-    console.log("📤 Creating order with data:", JSON.stringify(orderData, null, 2));
+    //console.log("📤 Creating order with data:", JSON.stringify(orderData, null, 2));
     const response = await ListingsAPI.post("/orders", orderData);
-    console.log("✅ Order created successfully:", response.data);
+    //console.log("✅ Order created successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error creating order:", {
@@ -1059,9 +1093,9 @@ export const createOrder = async (orderData) => {
 // Initialize Razorpay payment for an order
 export const initializePayment = async (orderId) => {
   try {
-    console.log(`📤 Initializing payment for order: ${orderId}`);
+    // console.log(`📤 Initializing payment for order: ${orderId}`);
     const response = await ListingsAPI.post(`/orders/${orderId}/initialize-payment`);
-    console.log("✅ Payment initialized successfully:", response.data);
+    //console.log("✅ Payment initialized successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error initializing payment:", {
@@ -1075,9 +1109,9 @@ export const initializePayment = async (orderId) => {
 //test
 export const createEventOrder = async (orderData) => {
   try {
-    console.log("📤 Creating event order with data:", JSON.stringify(orderData, null, 2));
+    //console.log("📤 Creating event order with data:", JSON.stringify(orderData, null, 2));
     const response = await ListingsAPI.post("/orders/event", orderData);
-    console.log("✅ Event order created successfully:", response.data);
+    //console.log("✅ Event order created successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error creating event order:", {
@@ -1104,9 +1138,9 @@ export const createEventOrder = async (orderData) => {
 
 export const precheckEventOrder = async (precheckData) => {
   try {
-    console.log("Creating event precheck with data:", JSON.stringify(precheckData, null, 2));
+    // console.log("Creating event precheck with data:", JSON.stringify(precheckData, null, 2));
     const response = await ListingsAPI.post("/orders/event/precheck", precheckData);
-    console.log("Event precheck success:", response.data);
+    // console.log("Event precheck success:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error during event precheck:", {
@@ -1127,7 +1161,7 @@ export const getEventSlotAvailability = async (eventId) => {
     }
 
     const response = await ListingsAPI.get(`/events/${eventId}/slot-availability`);
-    console.log("Event slot availability fetched:", response.data);
+    //console.log("Event slot availability fetched:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching event slot availability:", error.response?.data || error.message);
@@ -1170,11 +1204,11 @@ export const getListingSlots = async (listingId, startDate, endDate) => {
       },
     });
 
-    console.log("✅ Slots API Response:", {
-      url: `/public/listings/${listingIdStr}/slots`,
-      params: { startDate, endDate: serializedEndDate },
-      data: response.data
-    });
+    // console.log("✅ Slots API Response:", {
+    //   url: `/public/listings/${listingIdStr}/slots`,
+    //   params: { startDate, endDate: serializedEndDate },
+    //   data: response.data
+    // });
 
     return response.data;
   } catch (error) {
@@ -1219,7 +1253,7 @@ export const getOrderDetails = async (orderId) => {
 
     const response = await OrdersAPI.get(`/orders/${orderIdStr}`);
     const payload = response.data;
-    console.log("✅ Order details fetched (raw):", payload);
+    // console.log("✅ Order details fetched (raw):", payload);
 
     // Return the full response object which contains: order, addons, guestAnswers, history
     // The response structure is:
@@ -1263,7 +1297,7 @@ export const getEventOrderDetails = async (orderId) => {
     }
 
     const payload = response.data;
-    console.log("✅ Event order details fetched (raw):", payload);
+    //console.log("✅ Event order details fetched (raw):", payload);
 
     // Normalize common wrappers
     if (payload && typeof payload === "object") {
@@ -1333,7 +1367,7 @@ export const getEventDetails = async (eventId) => {
       response = await ListingsAPI.get(fallbackUrl);
     }
     const payload = response.data;
-    console.log("✅ Event details fetched (raw):", payload);
+    //console.log("✅ Event details fetched (raw):", payload);
 
     // Backend may wrap the event in an envelope shape like { event: {...} }
     // Unwrap so callers receive the actual event object.
@@ -1359,7 +1393,7 @@ export const getEventAddons = async (eventId) => {
     const eventIdStr = (!isNaN(eventIdNum) && eventIdNum > 0) ? String(eventIdNum) : String(eventId);
     const response = await ListingsAPI.get(`/events/${eventIdStr}/public-addons`);
     const payload = response.data;
-    console.log("✅ Event addons fetched (raw):", payload);
+    //console.log("✅ Event addons fetched (raw):", payload);
     if (Array.isArray(payload)) return payload;
     if (Array.isArray(payload?.data)) return payload.data;
     if (Array.isArray(payload?.addons)) return payload.addons;
@@ -1377,7 +1411,7 @@ export const getCompleteExpiredOrders = async () => {
     // The interceptor will automatically add JWT token
     const response = await ListingsAPI.get("/orders/complete-expired");
     const payload = response.data;
-    console.log("✅ Completed/expired orders count fetched (raw):", payload);
+    // console.log("✅ Completed/expired orders count fetched (raw):", payload);
 
     // Return the full response object which contains completedCount
     if (payload && typeof payload === "object") {
@@ -1418,7 +1452,7 @@ export const getCompletedOrders = async (page = 1, limit = 20) => {
       },
     });
     const payload = response.data;
-    console.log("✅ Completed orders fetched (raw):", payload);
+    //console.log("✅ Completed orders fetched (raw):", payload);
 
     // If payload is already an array - return it
     if (Array.isArray(payload)) return payload;
@@ -1507,7 +1541,7 @@ export const submitOrderReview = async (orderId, reviewData, requestConfig = {})
       requestBody.customerId = reviewData.customerId;
     }
 
-    console.log("Submitting review with request body:", requestBody);
+    // console.log("Submitting review with request body:", requestBody);
 
     const submitOnce = () => ListingsAPI.post(
       `/reviews`,
@@ -1525,7 +1559,7 @@ export const submitOrderReview = async (orderId, reviewData, requestConfig = {})
       response = await submitOnce();
     }
 
-    console.log("Review submitted successfully:", response.data);
+    //console.log("Review submitted successfully:", response.data);
     return response.data;
   } catch (error) {
     if (isTransientReviewSubmitError(error)) {
@@ -1557,7 +1591,7 @@ export const getListingReviews = async (listingId) => {
     const listingIdStr = (!isNaN(listingIdNum) && listingIdNum > 0) ? String(listingIdNum) : String(listingId);
 
     const response = await ListingsAPI.get(`/reviews/listing/${listingIdStr}`);
-    console.log(`✅ Reviews fetched for listing ${listingIdStr}:`, response.data);
+    //console.log(`✅ Reviews fetched for listing ${listingIdStr}:`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error fetching reviews for listing ${listingId}:`, error.response?.data || error.message);
@@ -1569,7 +1603,7 @@ export const getListingReviews = async (listingId) => {
 export const getMyReviews = async () => {
   try {
     const response = await ListingsAPI.get(`/reviews/my-reviews`);
-    console.log("✅ Fetched user reviews:", response.data);
+    //console.log("✅ Fetched user reviews:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching user reviews:", error.response?.data || error.message);
@@ -1626,7 +1660,7 @@ export const getHomepageHero = async () => {
   try {
     const response = await ListingsAPI.get("/homepage/hero");
     const payload = response.data;
-    console.log("✅ Homepage hero fetched (raw):", payload);
+    // console.log("✅ Homepage hero fetched (raw):", payload);
 
     if (Array.isArray(payload)) return payload;
     if (payload && typeof payload === "object") {
@@ -1656,7 +1690,7 @@ export const getHomepageSections = async (businessInterestId) => {
       },
     });
     const payload = response.data;
-    console.log("✅ Homepage sections fetched (businessInterestId=" + businessInterestId + "):", payload);
+    //console.log("✅ Homepage sections fetched (businessInterestId=" + businessInterestId + "):", payload);
 
     if (Array.isArray(payload)) return payload;
     if (payload && typeof payload === "object") {
@@ -1685,7 +1719,7 @@ export const getHomepageSectionListings = async (sectionId, limit = 12, offset =
       },
     });
     const payload = response.data;
-    console.log(`✅ Section ${sectionId} listings fetched (raw):`, payload);
+    //console.log(`✅ Section ${sectionId} listings fetched (raw):`, payload);
 
     return payload; // Return the full response object with section info and listings
   } catch (error) {
@@ -1700,7 +1734,7 @@ export const getEventListings = async (limit = 12, offset = 0) => {
       params: { limit, offset },
     });
     const payload = response.data;
-    console.log(`✅ Event listings fetched (raw):`, payload);
+    //console.log(`✅ Event listings fetched (raw):`, payload);
 
     return payload; // Return the full response object with event listings
   } catch (error) {
@@ -1715,7 +1749,7 @@ export const getStayListings = async (limit = 20, offset = 0) => {
       params: { limit, offset },
     });
     const payload = response.data;
-    console.log(`✅ Stay listings fetched (raw):`, payload);
+    //console.log(`✅ Stay listings fetched (raw):`, payload);
 
     // Extract section metadata from backend if present
     const section = payload?.section || null;
@@ -1749,7 +1783,7 @@ export const getStayDetails = async (stayId) => {
 
     const response = await ListingsAPI.get(`/public/stays/${stayIdStr}`);
     const payload = response.data;
-    console.log("✅ Stay details fetched (raw):", payload);
+    //console.log("✅ Stay details fetched (raw):", payload);
 
     if (payload && typeof payload === "object") {
       if (payload.stay) return payload.stay;
@@ -1834,7 +1868,7 @@ export const getEventReviews = async (eventId) => {
     }
     const response = await ListingsAPI.get(`/reviews/event/${eventId}`);
     const payload = response.data;
-    console.log("✅ Event reviews fetched:", payload);
+    //console.log("✅ Event reviews fetched:", payload);
     return payload;
   } catch (error) {
     console.error(`❌ Error fetching reviews for event ${eventId}:`, error.response?.data || error.message);
@@ -1852,7 +1886,7 @@ export const getStayReviews = async (stayId) => {
     }
     const response = await ListingsAPI.get(`/reviews/stay/${stayId}`);
     const payload = response.data;
-    console.log("✅ Stay reviews fetched:", payload);
+    //console.log("✅ Stay reviews fetched:", payload);
     return payload;
   } catch (error) {
     console.error(`❌ Error fetching reviews for stay ${stayId}:`, error.response?.data || error.message);
@@ -1881,7 +1915,7 @@ export const cancelOrder = async (orderId, cancelData) => {
       adminOverride: cancelData.adminOverride || false,
     });
 
-    console.log("✅ Order cancelled successfully:", response.data);
+    //console.log("✅ Order cancelled successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error cancelling order:", error.response?.data || error.message);
@@ -1908,7 +1942,7 @@ export const cancelEventOrder = async (orderId, cancelData) => {
     };
 
     const response = await ListingsAPI.post(`/orders/${orderIdStr}/cancel`, body);
-    console.log("✅ Event order cancelled successfully:", response.data);
+    //console.log("✅ Event order cancelled successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error cancelling event order:", error.response?.data || error.message);
@@ -1922,7 +1956,7 @@ export const getFoodMenus = async (limit = 20, offset = 0) => {
       params: { limit, offset },
     });
     const payload = response.data;
-    console.log(`✅ Food menus fetched (raw):`, payload);
+    //console.log(`✅ Food menus fetched (raw):`, payload);
 
     // Extract section metadata from backend if present
     const section = payload?.section || null;
@@ -1941,7 +1975,7 @@ export const getFoodMenus = async (limit = 20, offset = 0) => {
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
-    console.log(`✅ Food menus normalized:`, finalListings);
+    //console.log(`✅ Food menus normalized:`, finalListings);
     return { section, listings: finalListings };
   } catch (error) {
     console.error(`❌ Error fetching food menus:`, error.response?.data || error.message);
@@ -1955,7 +1989,7 @@ export const filterFoodMenus = async (filters = {}) => {
       params: filters,
     });
     const payload = response.data;
-    console.log(`✅ Food menus filtered (raw):`, payload);
+    //console.log(`✅ Food menus filtered (raw):`, payload);
 
     let listings = [];
     if (Array.isArray(payload)) {
@@ -1971,7 +2005,7 @@ export const filterFoodMenus = async (filters = {}) => {
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
-    console.log(`✅ Food menus filter normalized:`, finalListings);
+    //console.log(`✅ Food menus filter normalized:`, finalListings);
     return { listings: finalListings };
   } catch (error) {
     console.error(`❌ Error filtering food menus:`, error.response?.data || error.message);
@@ -1985,7 +2019,7 @@ export const getPlaces = async (limit = 20, offset = 0) => {
       params: { limit, offset },
     });
     const payload = response.data;
-    console.log(`✅ Places nearby fetched (raw):`, payload);
+    // console.log(`✅ Places nearby fetched (raw):`, payload);
 
     // Extract section metadata from backend if present
     const section = payload?.section || null;
@@ -2004,7 +2038,7 @@ export const getPlaces = async (limit = 20, offset = 0) => {
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
-    console.log(`✅ Places nearby normalized:`, finalListings);
+    //console.log(`✅ Places nearby normalized:`, finalListings);
     return { section, listings: finalListings };
   } catch (error) {
     console.error(`❌ Error fetching places:`, error.response?.data || error.message);
@@ -2018,7 +2052,7 @@ export const filterPlaces = async (filters = {}) => {
       params: filters,
     });
     const payload = response.data;
-    console.log(`✅ Places nearby filtered (raw):`, payload);
+    //console.log(`✅ Places nearby filtered (raw):`, payload);
 
     let listings = [];
     if (Array.isArray(payload)) {
@@ -2034,7 +2068,7 @@ export const filterPlaces = async (filters = {}) => {
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
-    console.log(`✅ Places filter normalized:`, finalListings);
+    //console.log(`✅ Places filter normalized:`, finalListings);
     return { listings: finalListings };
   } catch (error) {
     console.error(`❌ Error filtering places:`, error.response?.data || error.message);
@@ -2074,7 +2108,7 @@ export const searchNearbyListings = async ({
 
     const response = await ListingsAPI.get("/public/search/nearby", { params });
     const payload = response.data;
-    console.log("✅ Nearby search fetched (raw):", payload);
+    //console.log("✅ Nearby search fetched (raw):", payload);
 
     let listings = [];
     let totalCount = null;
@@ -2116,7 +2150,7 @@ export const getFoodDetails = async (foodMenuId) => {
 
     const response = await ListingsAPI.get(`/public/food-menus/${foodMenuId}`);
     const payload = response.data;
-    console.log("✅ Food menu details fetched (raw):", payload);
+    //console.log("✅ Food menu details fetched (raw):", payload);
 
     if (payload && typeof payload === "object") {
       if (payload.foodMenu) return payload.foodMenu;
@@ -2138,7 +2172,7 @@ export const getPlaceDetails = async (placeId) => {
 
     const response = await ListingsAPI.get(`/public/places/${placeId}`);
     const payload = response.data;
-    console.log("✅ Place details fetched (raw):", payload);
+    //console.log("✅ Place details fetched (raw):", payload);
 
     if (payload && typeof payload === "object") {
       if (payload.place) return payload.place;
@@ -2165,7 +2199,7 @@ export const getLeadDetails = async (leadId) => {
     // Call /api/leads/{id} which should be proxied correctly
     const response = await ListingsAPI.get(`/leads/${leadIdStr}`);
     const payload = response.data;
-    console.log("✅ Lead details fetched (raw):", payload);
+    //console.log("✅ Lead details fetched (raw):", payload);
 
     return payload;
   } catch (error) {

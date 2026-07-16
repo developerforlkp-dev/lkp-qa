@@ -211,7 +211,7 @@ const FleetHome = () => {
           if (target) {
             // Use 70px offset so target goes to 70px.
             // This satisfies the rect.bottom < 72 threshold, keeping the sticky header active.
-            const offset = target.getBoundingClientRect().top + window.scrollY - 70; 
+            const offset = target.getBoundingClientRect().top + window.scrollY - 70;
             window.scrollTo({ top: offset, behavior: "smooth" });
           } else {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -454,7 +454,7 @@ const FleetHome = () => {
       try {
         // Step 1: Fetch sections for the selected business interest
         const fetchedSections = await getHomepageSections(businessInterestId);
-        console.log("✅ Fetched homepage sections (businessInterestId=" + businessInterestId + "):", fetchedSections);
+        //console.log("✅ Fetched homepage sections (businessInterestId=" + businessInterestId + "):", fetchedSections);
 
 
         // Sort sections by sortOrder
@@ -471,14 +471,14 @@ const FleetHome = () => {
           const cardStyle = section.cardStyle || "CARD_RECT_VERTICAL_DETAIL";
 
           // Log section card style for debugging
-          console.log(`📋 Section: "${section.sectionTitle}" → Card Style: ${cardStyle}`);
-          console.log(`💰 Price displayed check: "${section.priceStartingFrom}"`);
-          console.log(`📦 Full section object:`, section);
-          console.log(`🔍 Section ${section.sectionId} - "${section.sectionTitle}" full data:`, section);
-          console.log(`💰 priceStartingFrom for section ${section.sectionId}:`, section.priceStartingFrom);
+          // console.log(`📋 Section: "${section.sectionTitle}" → Card Style: ${cardStyle}`);
+          // console.log(`💰 Price displayed check: "${section.priceStartingFrom}"`);
+          // console.log(`📦 Full section object:`, section);
+          // console.log(`🔍 Section ${section.sectionId} - "${section.sectionTitle}" full data:`, section);
+          // console.log(`💰 priceStartingFrom for section ${section.sectionId}:`, section.priceStartingFrom);
           try {
             const sectionData = await getHomepageSectionListings(section.sectionId, 12, 0);
-            console.log(`✅ Section ${section.sectionId} data:`, sectionData);
+            //console.log(`✅ Section ${section.sectionId} data:`, sectionData);
 
 
             // Handle different response structures
@@ -545,7 +545,7 @@ const FleetHome = () => {
 
 
 
-            console.log(`✅ Section ${section.sectionId} has ${listings.length} listings`);
+            //console.log(`✅ Section ${section.sectionId} has ${listings.length} listings`);
 
             // Filter out expired experience listings: if an experience has an end
             // date and that date is before today, remove it from homepage display.
@@ -576,7 +576,7 @@ const FleetHome = () => {
               });
               const afterCount = listings.length;
               if (beforeCount !== afterCount) {
-                console.log(`ℹ️ Filtered ${beforeCount - afterCount} expired experience listing(s) from section ${section.sectionId}`);
+                //console.log(`ℹ️ Filtered ${beforeCount - afterCount} expired experience listing(s) from section ${section.sectionId}`);
               }
             }
 
@@ -604,8 +604,8 @@ const FleetHome = () => {
         });
 
 
-        console.log("✅ Loaded all sections with listings:", resolvedSections);
-        console.log(`✅ Total sections: ${resolvedSections.length}, Sections with listings: ${resolvedSections.filter(s => s.listings && s.listings.length > 0).length}`);
+        //console.log("✅ Loaded all sections with listings:", resolvedSections);
+        //console.log(`✅ Total sections: ${resolvedSections.length}, Sections with listings: ${resolvedSections.filter(s => s.listings && s.listings.length > 0).length}`);
 
 
         setSectionsData(resolvedSections);
@@ -1004,64 +1004,64 @@ const FleetHome = () => {
           <div id="listings-scroll-target"></div>
 
           {/* Dynamic Sections from API */}
-          <div style={{ minHeight: "100vh" }}>
+          <div style={{ minHeight: "50vh" }}>
             {loading && (
               <LoadingSkeleton variant="homepage" sections={3} count={4} />
             )}
 
 
-          {error && (
-            <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
-              <p>⚠️ {error}</p>
-            </div>
-          )}
+            {error && (
+              <div style={{ padding: "1rem", textAlign: "center", backgroundColor: "#fee", color: "#c33" }}>
+                <p>⚠️ {error}</p>
+              </div>
+            )}
 
 
-          {!loading && !error && sectionsData.length === 0 && (
-            <div style={{ padding: "3rem", textAlign: "center" }}>
-              <p>No sections available</p>
-              <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                Check browser console for API response details
-              </p>
-            </div>
-          )}
+            {!loading && !error && sectionsData.length === 0 && (
+              <div style={{ padding: "3rem", textAlign: "center" }}>
+                <p>No sections available</p>
+                <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                  Check browser console for API response details
+                </p>
+              </div>
+            )}
 
 
-          {!loading && !error && sectionsData.length > 0 && sectionsData.every(s => !s.listings || s.listings.length === 0) && (
-            <div style={{ padding: "3rem", textAlign: "center" }}>
-              <p>Sections loaded but no listings found</p>
-              <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                {sectionsData.length} section(s) found. Check browser console for details.
-              </p>
-            </div>
-          )}
+            {!loading && !error && sectionsData.length > 0 && sectionsData.every(s => !s.listings || s.listings.length === 0) && (
+              <div style={{ padding: "3rem", textAlign: "center" }}>
+                <p>Sections loaded but no listings found</p>
+                <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                  {sectionsData.length} section(s) found. Check browser console for details.
+                </p>
+              </div>
+            )}
 
 
-          {!loading &&
-            sectionsData.map((sectionData, index) => {
-              if (!sectionData || !sectionData.section) {
-                console.warn(`⚠️ Skipping invalid section data at index ${index}:`, sectionData);
-                return null;
-              }
+            {!loading &&
+              sectionsData.map((sectionData, index) => {
+                if (!sectionData || !sectionData.section) {
+                  console.warn(`⚠️ Skipping invalid section data at index ${index}:`, sectionData);
+                  return null;
+                }
 
 
-              const isShowCategoriesOnly =
-                sectionData.section.displayMode === "SHOW_CATEGORIES_ONLY";
+                const isShowCategoriesOnly =
+                  sectionData.section.displayMode === "SHOW_CATEGORIES_ONLY";
 
-              if ((!sectionData.listings || sectionData.listings.length === 0) && !isShowCategoriesOnly) {
-                console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
-                return null; // Skip sections with no listings
-              }
+                if ((!sectionData.listings || sectionData.listings.length === 0) && !isShowCategoriesOnly) {
+                  // console.log(`ℹ️ Section "${sectionData.section.sectionTitle || sectionData.section.sectionId}" has no listings, skipping`);
+                  return null; // Skip sections with no listings
+                }
 
 
-              return (
-                <HomepageSectionCard
-                  key={sectionData.section.sectionId || index}
-                  section={sectionData.section}
-                  listings={sectionData.listings}
-                />
-              );
-            })}
+                return (
+                  <HomepageSectionCard
+                    key={sectionData.section.sectionId || index}
+                    section={sectionData.section}
+                    listings={sectionData.listings}
+                  />
+                );
+              })}
           </div>
         </div>
       </div>

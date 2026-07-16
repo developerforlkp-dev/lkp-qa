@@ -2,15 +2,16 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useHistory, useLocation } from "react-router-dom";
 import moment from "moment-timezone";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Ticket, ChefHat, Bed, X, Sparkles, Clock, Users, Star, Plus, Minus, CheckCircle2, ShieldCheck, ChevronDown, Info, AlertCircle, ChevronLeft, ChevronRight, Baby } from "lucide-react";
 import { useTheme } from "./Theme";
 import { Rev, Chars } from "./UI";
 
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
+import Dropdown from "../Dropdown";
 import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
-import { persistPendingCheckout } from "../../utils/paymentSession";
+import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
 
 
@@ -1341,7 +1342,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         const isLoggedIn = !!token && token !== "undefined" && token !== "null";
 
         if (stored?.listingId === currentListingId && isLoggedIn) {
-          console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
+          //console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
 
           pendingRestoreRef.current = stored;
 
@@ -1716,8 +1717,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       .then((payload) => {
         if (cancelled || !isMountedRef.current) return;
         const normalized = normalizeEventAvailability(payload);
-        console.log("Event slot availability raw payload:", payload);
-        console.log("Event slot availability normalized records:", normalized);
+        //console.log("Event slot availability raw payload:", payload);
+        //console.log("Event slot availability normalized records:", normalized);
         setEventAvailabilityRecords(normalized);
 
         if (pendingRestoreRef.current) {
@@ -1776,14 +1777,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       .then((payload) => {
         if (cancelled || !isMountedRef.current) return;
         const normalized = normalizeExperienceSlots(unwrapSlotsPayload(payload), selectedDateKey);
-        console.log("[BookingSystem] getListingSlots debug", {
+        /*console.log("[BookingSystem] getListingSlots debug", {
           selectedDateKey,
           listingId,
           rawPayload: payload,
           unwrappedSlots: unwrapSlotsPayload(payload),
           normalizedSlots: normalized,
           baseTimeSlots,
-        });
+        });*/
         setDateFilteredSlots(normalized);
         setDateFilteredSlotsLoaded(true);
 
@@ -2051,8 +2052,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const isEventTieredChildPricing = isEventBooking && guests.children > 0 && eventChildPriceTotal > 0;
   const actualHasChildPricing = hasChildPricing || isEventTieredChildPricing;
 
-  const baseChildPricePerChild = actualHasChildPricing 
-    ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : parseFloat(rawChildPrice || 0)) 
+  const baseChildPricePerChild = actualHasChildPricing
+    ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : parseFloat(rawChildPrice || 0))
     : baseAdultPricePerPerson;
 
   const data = {
@@ -2083,7 +2084,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   useEffect(() => {
     if (!show || isEventBooking) return;
-    console.log("[BookingSystem] pricing selection debug", {
+    /*console.log("[BookingSystem] pricing selection debug", {
       selectedDateKey,
       startTime,
       guests,
@@ -2110,7 +2111,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       totalEarlyBirdDiscountAmount,
       totalTaxAmount,
       finalTotal,
-    });
+    });*/
   }, [
     show,
     isEventBooking,
@@ -2203,14 +2204,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setGuests((current) => {
       const nextGuests = typeof updater === "function" ? updater(current) : updater;
       const clamped = clampGuestsToSeatLimit(nextGuests);
-      
+
       let nextChildAges = [...(current.childAges || [])];
       if (clamped.children > nextChildAges.length) {
         nextChildAges = [...nextChildAges, ...Array(clamped.children - nextChildAges.length).fill(0)];
       } else if (clamped.children < nextChildAges.length) {
         nextChildAges = nextChildAges.slice(0, clamped.children);
       }
-      
+
       return { ...clamped, childAges: nextChildAges };
     });
   }, [clampGuestsToSeatLimit]);
@@ -2484,6 +2485,101 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           return;
         }
 
+        const previewCurrency = listing?.currency || "INR";
+        const previewBookingData = {
+          checkoutType: "event",
+          eventId: eventIdNum,
+          eventSlotId: eventSlotIdNum,
+          eventSlotIds,
+          listingTitle: listing?.title || "Event Booking",
+          listingImage: listing?.coverPhotoUrl || listing?.listingMedia?.[0]?.url || "",
+          returnTo: `/event?id=${eventIdNum}`,
+          bookingSummary: {
+            date: dateStr,
+            time: selectedEventSlots.map((slot) => slot.startTime || slot.slotName).filter(Boolean).join(", "),
+            guestCount: totalGuests,
+          },
+          guests,
+          selectedAddOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 })),
+          addOnQuantities: selectedAddOns.reduce((acc, a) => {
+            const id = a.addon?.addonId || a.addonId || a.id;
+            if (id) acc[id] = a.quantity || 1;
+            return acc;
+          }, {}),
+          priceDetails: {
+            pricePerPerson: eventGuestPricing.finalUnitPrice,
+            basePricePerTicket: pricePerTicket,
+            totalPrice: finalTotal,
+          },
+          pricing: {
+            currency: previewCurrency,
+            pricePerPerson: eventGuestPricing.finalUnitPrice,
+            basePrice: eventBaseTotal,
+            allowChildPricing: hasChildPricing,
+            adultsCount: guests.adults,
+            childrenCount: guests.children,
+            basePricePerPerson: eventGuestPricing.baseUnitPrice,
+            adultBasePricePerPerson: eventGuestPricing.baseUnitPrice,
+            childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+            baseChildPricePerChild,
+            discount: eventDiscountTotal,
+            promoDiscount: eventPromoDiscountTotal,
+            earlyBirdDiscount: eventEarlyBirdDiscountTotal,
+            discountRate: appliedDiscountRate,
+            tax: eventTaxTotal,
+            taxRate: appliedTaxRate,
+            addonsTotal: addOnsTotal,
+            subtotal: subtotalBeforeAdjustments,
+            total: finalTotal,
+            guestCount: totalGuests,
+          },
+          receipt: [
+            {
+              title: `${previewCurrency} ${eventGuestPricing.baseUnitPrice.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? "ticket" : "tickets"}`,
+              content: `${previewCurrency} ${eventBaseTotal.toFixed(2)}`,
+            },
+            ...(eventEarlyBirdDiscountTotal > 0 ? [{
+              title: `Early Bird Discount (${eventGuestPricing.earlyBirdDiscountRate}%)`,
+              content: `- ${previewCurrency} ${eventEarlyBirdDiscountTotal.toFixed(2)}`,
+            }] : []),
+            ...(eventPromoDiscountTotal > 0 ? [{
+              title: `Promo Discount (${eventGuestPricing.promoDiscountRate}%)`,
+              content: `- ${previewCurrency} ${eventPromoDiscountTotal.toFixed(2)}`,
+            }] : []),
+            ...(eventTaxTotal > 0 ? [{
+              title: `Taxes & Fees (${appliedTaxRate}%)`,
+              content: `+ ${previewCurrency} ${eventTaxTotal.toFixed(2)}`,
+            }] : []),
+            ...(addOnsTotal > 0 ? [{
+              title: "Add-ons",
+              content: `+ ${previewCurrency} ${addOnsTotal.toFixed(2)}`,
+              kind: "addons",
+              showInCheckout: true
+            }] : []),
+            {
+              title: "Total",
+              content: `${previewCurrency} ${finalTotal.toFixed(2)}`,
+            },
+          ],
+          currency: previewCurrency,
+          finalTotal,
+          ticketType: ticketTypeName,
+          ticketTypeId,
+          selectedSlot: selectedEventSlot,
+          selectedSlots: selectedEventSlots,
+          cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
+          orderRequest: payload,
+        };
+
+        clearPendingCheckoutState();
+        persistPendingCheckout({ bookingData: previewBookingData });
+        localStorage.removeItem("frontendPendingBookingState");
+        history.replace("/experience-checkout", {
+          bookingData: previewBookingData,
+          addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
+        });
+        return;
+
         const res = await createEventOrder(payload);
         const order = res?.order || res;
         const payment = res?.payment || res?.data?.payment || res?.order?.payment || order?.payment || null;
@@ -2514,7 +2610,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         const isFreeBooking = finalTotal === 0;
 
         if (!razorpayOrderId && !isFreeBooking) {
-          console.log("ℹ️ Razorpay Order ID not present on order creation; will be initialized on payment checkout.");
+          //console.log("ℹ️ Razorpay Order ID not present on order creation; will be initialized on payment checkout.");
         }
 
         if (razorpayKeyId) {
@@ -2861,10 +2957,30 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     if (privateBooking) orderData.privateBooking = true;
 
     try {
+      const previewBookingData = {
+        ...bookingData,
+        checkoutType: "experience",
+        currency: "INR",
+        orderRequest: orderData,
+      };
+
+      clearPendingCheckoutState();
+      persistPendingCheckout({ bookingData: previewBookingData, saveCheckoutBooking: true });
+      localStorage.removeItem("frontendPendingBookingState");
+      history.push({
+        pathname: "/experience-checkout",
+        search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}`,
+        state: {
+          addOns: selectedAddOns.map(item => item.addon || item),
+          bookingData: previewBookingData,
+        }
+      });
+      return;
+
       if (isMountedRef.current) setBookingLoading(true);
-      console.log("Creating experience order from BookingSystem:", orderData);
+      //console.log("Creating experience order from BookingSystem:", orderData);
       const res = await createOrder(orderData);
-      console.log("Experience order created from BookingSystem:", res);
+      //console.log("Experience order created from BookingSystem:", res);
 
       const order = res?.order || res?.data?.order || res;
       const payment = res?.payment || res?.data?.payment || order?.payment || null;
@@ -2899,7 +3015,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const isFreeBooking = finalTotal === 0;
 
       if (!razorpayOrderId && !isFreeBooking) {
-        console.log("ℹ️ Razorpay Order ID not present on order creation; will be initialized on payment checkout.");
+        //console.log("ℹ️ Razorpay Order ID not present on order creation; will be initialized on payment checkout.");
       }
 
       const paymentData = {
@@ -4039,52 +4155,57 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 />
                               </div>
                               {childrenAllowed && (
-                                <div style={{ flex: "1 1 140px", display: "flex", flexDirection: "column", gap: 8 }}>
-                                  <div style={{ padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
-                                    <Counter
-                                      value={guests.children}
-                                      setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
-                                      min={0}
-                                      max={childMax}
-                                    />
-                                  </div>
-                                  {isEventBooking && guests.children > 0 && Array.from({ length: guests.children }).map((_, i) => (
-                                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 14px", background: `${B}22`, borderRadius: 12 }}>
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: M }}>Child {i + 1} Age</span>
-                                        <select
-                                          value={guests.childAges?.[i] ?? 0}
-                                          onChange={(e) => updateChildAge(i, Number(e.target.value))}
-                                          style={{
-                                            padding: "4px 8px",
-                                            borderRadius: 8,
-                                            border: `1px solid ${B}`,
-                                            background: BG,
-                                            color: FG,
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                            outline: "none",
-                                            cursor: "pointer"
-                                          }}
-                                        >
-                                          {[...Array(16).keys()].map(age => (
-                                            <option key={age} value={age}>{age} {age === 1 ? 'year' : 'years'}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      {childAgeWarnings[i] === 'adult' && (
-                                        <div style={{ fontSize: 10, color: "#eab308", fontWeight: 500, marginTop: 4 }}>
-                                          Age exceeds child limits. Adult price applied.
-                                        </div>
-                                      )}
-                                      {childAgeWarnings[i] === 'free' && (
-                                        <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 500, marginTop: 4 }}>
-                                          Age below child limits. No charge applied.
-                                        </div>
-                                      )}
+                                <div style={{ flex: "1 1 140px", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
+                                  <Counter
+                                    value={guests.children}
+                                    setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                                    min={0}
+                                    max={childMax}
+                                  />
+                                </div>
+                              )}
+
+                              {childrenAllowed && isEventBooking && guests.children > 0 && (
+                                <div style={{ flex: "1 1 100%", padding: "12px 16px", background: "transparent", border: `1px solid ${B}55`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <div style={{ color: A }}>
+                                      <Baby size={20} color={A} />
                                     </div>
-                                  ))}
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                      <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children details</span>
+                                      <span style={{ fontSize: 11, fontWeight: 400, color: M }}>Please select the age for each child.</span>
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: "flex", flexDirection: "column" }}>
+                                    {Array.from({ length: guests.children }).map((_, i) => (
+                                      <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < guests.children - 1 ? `1px solid ${B}44` : 'none' }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }}></div>
+                                            <span style={{ fontSize: 13, fontWeight: 500, color: FG }}>Child {i + 1}</span>
+                                          </div>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                            <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>
+                                              {(guests.childAges?.[i] ?? 0) === 1 ? 'Year' : 'Years'}
+                                            </span>
+                                            <Counter
+                                              value={guests.childAges?.[i] ?? 0}
+                                              setValue={(v) => updateChildAge(i, v)}
+                                              min={0}
+                                              max={15}
+                                            />
+                                          </div>
+                                        </div>
+                                        {childAgeWarnings[i] === 'adult' && (
+                                          <div style={{ fontSize: 11, color: "#eab308", fontWeight: 500, paddingBottom: 8 }}>
+                                            Age exceeds child limits. Adult price applied.
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>

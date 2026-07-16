@@ -192,7 +192,7 @@ const getEntityUrl = (listing, id) => {
 };
 
 const transformListingToCard = (listing, section) => {
-  console.log("Listing Object for Card:", listing);
+  //console.log("Listing Object for Card:", listing);
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
   const primaryCategoryLabel = isShowListingMode(section)
@@ -214,12 +214,12 @@ const transformListingToCard = (listing, section) => {
   const state = listing.state || listing.country || listing.meetingCountry;
   let locationParts = [district, state].filter(Boolean);
   if (locationParts.length === 2 && locationParts[0] === locationParts[1]) {
-      locationParts = [locationParts[0]];
+    locationParts = [locationParts[0]];
   }
   let locationText = locationParts.join(", ") || listing.locationName;
-  
+
   if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
-      locationText = listing.cityArea || listing.state || listing.address || "India";
+    locationText = listing.cityArea || listing.state || listing.address || "India";
   }
 
   // Date Badge formatting (for events)
@@ -234,7 +234,7 @@ const transformListingToCard = (listing, section) => {
           month: d.toLocaleString('en-US', { month: 'short' }).toUpperCase()
         };
       }
-    } catch(e) {}
+    } catch (e) { }
   }
 
   // Tags & Badges
@@ -262,8 +262,8 @@ const transformListingToCard = (listing, section) => {
     src: coverPhotoUrl,
     srcSet: coverPhotoUrl,
     url: getEntityUrl(listing, id, section),
-    location: locationText || null, 
-    priceActual: priceDisplay, 
+    location: locationText || null,
+    priceActual: priceDisplay,
     hasPrice: hasPrice,
     rating: listing.averageRating ?? listing.rating ?? 0,
     reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
@@ -329,12 +329,12 @@ const transformListingToDestinationHorizontal = (listing, section) => {
   const state = listing.state || listing.country || listing.meetingCountry;
   let locationParts = [district, state].filter(Boolean);
   if (locationParts.length === 2 && locationParts[0] === locationParts[1]) {
-      locationParts = [locationParts[0]];
+    locationParts = [locationParts[0]];
   }
   let locationText = locationParts.join(", ") || listing.locationName;
-  
+
   if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
-      locationText = listing.cityArea || listing.state || listing.address || "India";
+    locationText = listing.cityArea || listing.state || listing.address || "India";
   }
 
   return {
@@ -484,28 +484,28 @@ const getRenderListings = (section, listings) => {
 const formatSectionDescription = (text) => {
   if (!text) return { __html: "" };
   const words = text.trim().split(/\s+/);
-  
+
   if (words.length <= 1) {
     return { __html: text };
   }
-  
+
   // Ensure the first row always has fewer words than the second row
   // e.g. 5 words -> 2 and 3. 6 words -> 2 and 4. 7 words -> 3 and 4. 8 words -> 3 and 5.
   const splitIndex = Math.max(1, Math.floor((words.length - 1) / 2));
-  
+
   // Determine how many words to accent at the end
   const accentCount = words.length > 5 ? 3 : 2;
   // Ensure accentIndex is at or after the splitIndex
   const accentIndex = Math.max(splitIndex, words.length - accentCount);
-  
+
   const firstRow = words.slice(0, splitIndex).join(' ');
   const secondRowNormal = words.slice(splitIndex, accentIndex).join(' ');
   const secondRowAccent = words.slice(accentIndex).join(' ');
-  
-  const secondRowHtml = secondRowNormal 
+
+  const secondRowHtml = secondRowNormal
     ? `${secondRowNormal} <span class="${styles.accentWord}">${secondRowAccent}</span>`
     : `<span class="${styles.accentWord}">${secondRowAccent}</span>`;
-  
+
   return { __html: `${firstRow}<br />${secondRowHtml}` };
 };
 
@@ -555,7 +555,7 @@ export const CardGrid = ({ section, listings, className }) => {
 
   let viewAllText = "View all";
   const titleLower = section.sectionTitle?.toLowerCase() || "";
-  
+
   if (titleLower.includes("curated") || titleLower.includes("experience")) {
     viewAllText = "View all experiences";
   } else if (titleLower.includes("events")) {
@@ -572,13 +572,13 @@ export const CardGrid = ({ section, listings, className }) => {
             <div className={styles.sectionPreTitle}>{section.sectionTitle}</div>
           )}
           {section.description && (
-            <h2 
+            <h2
               className={cn("h2", styles.sectionTitle)}
               dangerouslySetInnerHTML={formatSectionDescription(section.description)}
             />
           )}
         </div>
-        
+
         <div className={styles.headerActions}>
           <Link to={sectionListingsUrl} className={styles.viewAllLink}>
             {viewAllText}
@@ -746,10 +746,10 @@ export const HomepageSectionCard = ({ section, listings, className }) => {
   const cardStyle = section.cardStyle || "CARD_RECT_VERTICAL_DETAIL";
 
   // Log section details for debugging the "Starting From" price
-  console.log(`[CardStyles] 📋 Rendering Section: "${section.sectionTitle}"`);
-  console.log(`[CardStyles] 💰 priceStartingFrom:`, section.priceStartingFrom);
-  console.log(`[CardStyles] 🎨 Applied Card Style:`, cardStyle);
-  console.log(`[CardStyles] 📦 Section Data:`, section);
+  // console.log(`[CardStyles] 📋 Rendering Section: "${section.sectionTitle}"`);
+  // console.log(`[CardStyles] 💰 priceStartingFrom:`, section.priceStartingFrom);
+  // console.log(`[CardStyles] 🎨 Applied Card Style:`, cardStyle);
+  // console.log(`[CardStyles] 📦 Section Data:`, section);
 
   // Map API cardStyle values to component card styles (case-sensitive matching)
   // Supports both new descriptive names and old names for backward compatibility

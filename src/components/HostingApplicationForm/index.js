@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import cn from "classnames";
 import styles from "./HostingApplicationForm.module.sass";
 import Icon from "../Icon";
-import { getBusinessInterests, requestHostingOtp } from "../../utils/api";
+import { getBusinessInterests, requestHostingOtp, verifyHostingOtp, resendHostingOtp } from "../../utils/api";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -54,7 +54,7 @@ const HostingApplicationForm = ({ visible, onClose }) => {
     lastName: "",
     accountType: "Individual",
     companyName: "",
-    phoneNumber: "",
+    phoneNumber: "+91",
     altPhoneNumber: "",
     email: "",
     altEmail: "",
@@ -73,6 +73,9 @@ const HostingApplicationForm = ({ visible, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [otp, setOtp] = useState("");
+  const [applicationData, setApplicationData] = useState(null);
   
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
@@ -183,7 +186,7 @@ const HostingApplicationForm = ({ visible, onClose }) => {
         lastName: "",
         accountType: "Individual",
         companyName: "",
-        phoneNumber: "",
+        phoneNumber: "+91",
         altPhoneNumber: "",
         email: "",
         altEmail: "",
@@ -199,12 +202,34 @@ const HostingApplicationForm = ({ visible, onClose }) => {
       });
       setError(null);
       setSuccess(null);
+      setSessionId(null);
+      setOtp("");
+      setApplicationData(null);
       setLoading(false);
     }
   }, [visible]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "firstName" || name === "lastName") {
+      if (value !== "" && !/^[a-zA-Z\s]*$/.test(value)) return;
+    }
+
+    if (name === "phoneNumber") {
+      if (value !== "" && !/^\+?[0-9]*$/.test(value)) return;
+      
+      let val = value;
+      if (!val.startsWith("+91")) {
+        val = "+91";
+      }
+      
+      if (val.length > 13) return;
+      
+      setFormData(prev => ({ ...prev, [name]: val }));
+      return;
+    }
+
     if (name === "state") {
       setFormData(prev => ({ ...prev, [name]: value, district: "" }));
     } else {
@@ -252,8 +277,15 @@ const HostingApplicationForm = ({ visible, onClose }) => {
 
     // Basic required validation
     if (!formData.firstName.trim()) return setError("First Name is required");
+    
     if (!formData.email.trim()) return setError("Email is required");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) return setError("Please enter a valid email address");
+
     if (!formData.phoneNumber.trim()) return setError("Phone Number is required");
+    const phoneRegex = /^\+91[0-9]{10}$/;
+    if (!phoneRegex.test(formData.phoneNumber.trim())) return setError("Phone number must be +91 followed by 10 digits");
+
     if (!formData.address.trim()) return setError("Address is required");
     if (formData.interestIds.length === 0) return setError("Please select at least one Business Interest");
 
@@ -261,9 +293,43 @@ const HostingApplicationForm = ({ visible, onClose }) => {
     try {
       const response = await requestHostingOtp(formData);
       setSuccess(`OTP requested successfully. Sent to ${response.maskedPhone} and ${response.maskedEmail}`);
-      
-      // Optionally we could show an OTP verification step here later, 
-      // but the prompt only asked for success/error handling for now.
+      setSessionId(response.sessionId);
+    } catch (err) {
+      setError(getFriendlyError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!otp || otp.length < 6) return setError("Please enter a valid 6-digit OTP");
+
+    setLoading(true);
+    try {
+      const response = await verifyHostingOtp(sessionId, otp);
+      setApplicationData(response);
+      setSuccess("Application submitted successfully!");
+    } catch (err) {
+      setError(getFriendlyError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    try {
+      const response = await resendHostingOtp(sessionId);
+      setSuccess(`OTP resent successfully.`);
+      if (response.sessionId) {
+        setSessionId(response.sessionId);
+      }
     } catch (err) {
       setError(getFriendlyError(err));
     } finally {
@@ -285,34 +351,76 @@ const HostingApplicationForm = ({ visible, onClose }) => {
           <div className={styles.info}>Join our community and host unique experiences</div>
         </div>
 
-        {success ? (
+        {applicationData ? (
           <div className={styles.success}>
-            <p>{success}</p>
+            <p className={cn("h4", styles.successTitle)}>{success}</p>
+            <div className={styles.applicationDetails}>
+              <p><strong>Application ID:</strong> {applicationData.applicationId}</p>
+              <p><strong>Name:</strong> {applicationData.fullName}</p>
+              <p><strong>Account Type:</strong> {applicationData.accountType}</p>
+              <p><strong>Email:</strong> {applicationData.email}</p>
+              {applicationData.altEmail && <p><strong>Alt Email:</strong> {applicationData.altEmail}</p>}
+              <p><strong>Phone:</strong> {applicationData.phoneNumber}</p>
+              <p><strong>Address:</strong> {applicationData.address}</p>
+              {applicationData.location && <p><strong>Location:</strong> {applicationData.location}</p>}
+              <p><strong>District:</strong> {applicationData.district}</p>
+              <p><strong>State:</strong> {applicationData.state}</p>
+              <p><strong>Pincode:</strong> {applicationData.pincode}</p>
+              <p><strong>Interests:</strong> {applicationData.selectedBusinessInterests?.join(", ")}</p>
+              <p><strong>Submitted Date:</strong> {new Date(applicationData.submittedDate).toLocaleString()}</p>
+            </div>
             <button className={styles.button} onClick={onClose} style={{ marginTop: "24px" }}>
               Close
             </button>
           </div>
+        ) : sessionId ? (
+          <form className={styles.form} onSubmit={handleVerifyOtp}>
+            {success && <div className={styles.successMessage}>{success}</div>}
+            <div className={styles.field}>
+              <label className={styles.label}>Enter OTP *</label>
+              <input 
+                type="text" 
+                className={styles.input} 
+                name="otp" 
+                value={otp} 
+                onChange={(e) => setOtp(e.target.value)} 
+                placeholder="123456" 
+                maxLength={6}
+                disabled={loading} 
+                required 
+              />
+            </div>
+            {error && <div className={styles.error}>{error}</div>}
+            <div className={styles.row}>
+              <button type="submit" className={styles.button} disabled={loading}>
+                {loading ? "Verifying..." : "Verify OTP"}
+              </button>
+              <button type="button" className={cn(styles.button, styles.outlineButton)} onClick={handleResendOtp} disabled={loading} style={{ background: "transparent", color: "#007489", border: "1px solid #007489" }}>
+                Resend OTP
+              </button>
+            </div>
+          </form>
         ) : (
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.row}>
               <div className={styles.field}>
                 <label className={styles.label}>First Name *</label>
-                <input type="text" className={styles.input} name="firstName" value={formData.firstName} onChange={handleChange} placeholder="John" disabled={loading} required />
+                <input type="text" className={styles.input} name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Your Name" disabled={loading} required />
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Last Name</label>
-                <input type="text" className={styles.input} name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Doe" disabled={loading} />
+                <input type="text" className={styles.input} name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Your Last Name" disabled={loading} />
               </div>
             </div>
 
             <div className={styles.row}>
               <div className={styles.field}>
                 <label className={styles.label}>Email *</label>
-                <input type="email" className={styles.input} name="email" value={formData.email} onChange={handleChange} placeholder="john@example.com" disabled={loading} required />
+                <input type="email" className={styles.input} name="email" value={formData.email} onChange={handleChange} placeholder="youremail@gmail.com" disabled={loading} required />
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Phone Number *</label>
-                <input type="tel" className={styles.input} name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="9876543210" disabled={loading} required />
+                <input type="tel" className={styles.input} name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="+919876543210" maxLength={13} disabled={loading} required />
               </div>
             </div>
 
@@ -350,11 +458,11 @@ const HostingApplicationForm = ({ visible, onClose }) => {
             <div className={styles.row}>
               <div className={styles.field}>
                 <label className={styles.label}>City/Location</label>
-                <input type="text" className={styles.input} name="location" value={formData.location} onChange={handleChange} placeholder="Mumbai" disabled={loading} />
+                <input type="text" className={styles.input} name="location" value={formData.location} onChange={handleChange} placeholder="Your City" disabled={loading} />
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Pincode</label>
-                <input type="text" className={styles.input} name="pincode" value={formData.pincode} onChange={handleChange} placeholder="400001" disabled={loading} />
+                <input type="text" className={styles.input} name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Your Pincode" disabled={loading} />
               </div>
             </div>
 

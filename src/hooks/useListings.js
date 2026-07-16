@@ -186,7 +186,7 @@ export const useListings = ({
       // Determine if there are more results
       // Priority: 1. API metadata (hasMore flag), 2. Total count comparison, 3. Array length check
       let shouldHaveMore = false;
-      
+
       if (hasMoreFromAPI !== null) {
         // Use explicit API flag if available
         shouldHaveMore = hasMoreFromAPI;
@@ -211,11 +211,11 @@ export const useListings = ({
           shouldHaveMore = (reset || currentOffset === 0) && listings.length > 0;
         }
       }
-      
+
       setHasMore(shouldHaveMore);
-      
+
       // Log pagination info for debugging
-      console.log("📄 Pagination info:", {
+      /*console.log("📄 Pagination info:", {
         requested: limit,
         received: listings.length,
         offset: nextOffset,
@@ -223,14 +223,14 @@ export const useListings = ({
         hasMoreFromAPI,
         shouldHaveMore,
         reset,
-      });
+      });*/
 
       // Client-side filtering as an extra layer for non-nearby flow.
       // Nearby endpoint is already location-specific and sorted by distance.
       let processedListings = listings;
       if (location && !hasLocationSearch) {
         const query = location.toLowerCase();
-        processedListings = listings.filter(l => 
+        processedListings = listings.filter(l =>
           (l.title && l.title.toLowerCase().includes(query)) ||
           (l.name && l.name.toLowerCase().includes(query)) ||
           (l.city && l.city.toLowerCase().includes(query)) ||
@@ -240,7 +240,7 @@ export const useListings = ({
           (l.host?.displayName && l.host.displayName.toLowerCase().includes(query)) ||
           (l.host?.name && l.host.name.toLowerCase().includes(query))
         );
-        
+
         // If we filtered out everything, but API returned results, 
         // fallback to API results to avoid showing nothing
         if (processedListings.length === 0 && listings.length > 0) {

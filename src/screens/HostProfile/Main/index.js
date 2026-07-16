@@ -34,7 +34,7 @@ const Main = ({ hostId, onLoadingChange }) => {
 
   useEffect(() => {
     let mounted = true;
-    
+
     const loadHostData = async () => {
       if (!hostId) {
         setLoading(false);
@@ -94,7 +94,7 @@ const Main = ({ hostId, onLoadingChange }) => {
       if (!hostId) return;
       try {
         const contentRes = await getHostContent(hostId);
-        console.log("📦 Host content API response:", { hostId, contentRes });
+        //console.log("📦 Host content API response:", { hostId, contentRes });
 
         if (!mounted) return;
 

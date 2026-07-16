@@ -193,12 +193,12 @@ const enrichRawBooking = (apiBooking) => {
       }
     }
   }
-  return { 
+  return {
     id: `bk-${apiBooking.orderId}`,
     orderId: apiBooking.orderId,
     statusTone: status.toLowerCase(),
     status: status,
-    bookingData: apiBooking 
+    bookingData: apiBooking
   };
 };
 
@@ -713,7 +713,7 @@ const actionsByStatus = {
 const isPastStayCheckInTime = (booking) => {
   if (!booking) return false;
   const { bookingData, stayData } = booking;
-  
+
   // Only apply to Stays
   const businessInterestCode = String(bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
   const isStayOrder = businessInterestCode === "STAYS" ||
@@ -732,15 +732,15 @@ const isPastStayCheckInTime = (booking) => {
     bookingData?.checkInDate ||
     bookingData?.bookingDate ||
     stayData?.checkInDate;
-    
+
   if (!checkInDateStr) return false;
 
   const checkInDatetime = new Date(checkInDateStr);
-  
-  const checkInTimeStr = 
-    bookingData?.checkInTime || 
-    bookingData?.bookingTime || 
-    stayData?.checkInTime || 
+
+  const checkInTimeStr =
+    bookingData?.checkInTime ||
+    bookingData?.bookingTime ||
+    stayData?.checkInTime ||
     "14:00:00";
 
   if (checkInTimeStr && typeof checkInTimeStr === 'string' && checkInTimeStr.includes(':')) {
@@ -1166,7 +1166,7 @@ const Main = ({
           eligibleList.map((o) => (o.orderId != null ? Number(o.orderId) : null)).filter(Boolean)
         );
         setOrderIdsEligibleForReview(eligibleIds);
-        console.log("✅ Fetched review eligibility on mount:", eligibleIds.size, "orders");
+        //console.log("✅ Fetched review eligibility on mount:", eligibleIds.size, "orders");
       } catch (error) {
         console.warn("⚠️ Failed to fetch review eligibility on mount:", error);
       }
@@ -1256,7 +1256,7 @@ const Main = ({
       const tabId = booking.statusTone === "upcoming" ? "upcoming"
         : booking.statusTone === "completed" ? "completed"
           : booking.statusTone === "pending" ? "pending"
-          : "cancelled";
+            : "cancelled";
       acc[tabId] = (acc[tabId] || 0) + 1;
       return acc;
     }, {});
@@ -1289,7 +1289,7 @@ const Main = ({
         const tabId = booking.statusTone === "upcoming" ? "upcoming"
           : booking.statusTone === "completed" ? null  // exclude — goes to completed tab
             : booking.statusTone === "pending" ? "pending"
-            : "cancelled";
+              : "cancelled";
         return tabId === displayedTab;
       });
     }
@@ -1393,7 +1393,7 @@ const Main = ({
     setCurrentPage((prev) => Math.max(prev - 1, 1));
     scrollToTop();
   };
-  
+
   const nextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
     scrollToTop();
@@ -1449,7 +1449,7 @@ const Main = ({
           getCompletedOrders(1, 100),
           getEligibleBookings().catch(() => []),
         ]);
-        console.log("✅ Fetched completed orders:", completedOrdersData);
+        //console.log("✅ Fetched completed orders:", completedOrdersData);
 
         if (Array.isArray(completedOrdersData) && completedOrdersData.length > 0) {
           const completedRaw = completedOrdersData.filter(order => order).map(enrichRawBooking);
@@ -1522,11 +1522,11 @@ const Main = ({
       try {
         const preview = await getOrderCancelPreview(booking.orderId);
         setCancelPreview(preview);
-        console.log("🧾 Event cancel preview:", {
+        /*console.log("🧾 Event cancel preview:", {
           orderId: booking.orderId,
           preview,
           booking,
-        });
+        });*/
       } catch (e) {
         console.warn("⚠️ Failed to fetch cancel preview:", e?.response?.data || e?.message || e);
       } finally {
@@ -1550,7 +1550,7 @@ const Main = ({
         setCancelError("Please select or enter a reason for cancellation");
         return;
       }
-      finalReason = selectedReason 
+      finalReason = selectedReason
         ? (cancelReason.trim() ? `${selectedReason} - ${cancelReason.trim()}` : selectedReason)
         : cancelReason.trim();
     }
@@ -1571,12 +1571,12 @@ const Main = ({
 
       const orderIdForCancel = booking.orderId;
       const cancelUrl = `/api/orders/${orderIdForCancel}/cancel`;
-      console.log("🧾 Cancel booking request:", {
+      /*console.log("🧾 Cancel booking request:", {
         url: cancelUrl,
         orderId: orderIdForCancel,
         body: cancelRequestBody,
         booking,
-      });
+      });*/
 
       const isEventOrder = booking?.category === "EVENTS" || booking?.bookingData?.eventId != null;
 
@@ -1648,7 +1648,7 @@ const Main = ({
       return;
     }
 
-    const finalReason = selectedReason 
+    const finalReason = selectedReason
       ? (cancelReason.trim() ? `${selectedReason} - ${cancelReason.trim()}` : selectedReason)
       : cancelReason.trim();
 
@@ -1742,7 +1742,7 @@ const Main = ({
           });
 
           setPaginatedTransformedBookings(updateBooking);
-          console.log(`✅ UI updated for order ${bookingToReview.orderId}: ${rating} stars, ${reviewCount} reviews`);
+          //console.log(`✅ UI updated for order ${bookingToReview.orderId}: ${rating} stars, ${reviewCount} reviews`);
         }
       } catch (refreshErr) {
         console.warn("⚠️ Failed to refresh review summary after submission:", refreshErr);
@@ -2059,7 +2059,7 @@ const Main = ({
               Cancel Booking
             </h2>
             <p className={styles.cancelModalDescription} style={{ fontSize: "14px", color: "#777E90", lineHeight: "1.5" }}>
-              We're sorry to see you go. Please let us know<br/>why you're cancelling this booking.
+              We're sorry to see you go. Please let us know<br />why you're cancelling this booking.
             </p>
           </div>
           <div className={cn(styles.cancelModalBody, styles.cancelModalBodyScrollable)} style={{ padding: "0 32px" }}>
@@ -2072,45 +2072,45 @@ const Main = ({
                   {[...cancellationReasons]
                     .sort((a, b) => (a?.sortOrder || 0) - (b?.sortOrder || 0))
                     .map((reason, idx) => {
-                    const reasonText = typeof reason === 'object' ? (reason.displayName || reason.reason || reason.name || JSON.stringify(reason)) : reason;
-                    const isSelected = selectedReason === reasonText;
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => setSelectedReason(reasonText)}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "18px 20px",
-                          border: `1px solid ${isSelected ? "#0097B2" : "#E6E8EC"}`,
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          backgroundColor: isSelected ? "#F2FBFC" : "#FFFFFF",
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <span style={{ fontSize: "15px", color: "#141416", fontWeight: isSelected ? "500" : "400" }}>
-                          {reasonText}
-                        </span>
-                        <div style={{
-                          width: "20px",
-                          height: "20px",
-                          borderRadius: "50%",
-                          border: `2px solid ${isSelected ? "#0097B2" : "#B1B5C3"}`,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: "#FFFFFF",
-                          flexShrink: 0
-                        }}>
-                          {isSelected && (
-                            <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#0097B2" }} />
-                          )}
+                      const reasonText = typeof reason === 'object' ? (reason.displayName || reason.reason || reason.name || JSON.stringify(reason)) : reason;
+                      const isSelected = selectedReason === reasonText;
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => setSelectedReason(reasonText)}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "18px 20px",
+                            border: `1px solid ${isSelected ? "#0097B2" : "#E6E8EC"}`,
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            backgroundColor: isSelected ? "#F2FBFC" : "#FFFFFF",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <span style={{ fontSize: "15px", color: "#141416", fontWeight: isSelected ? "500" : "400" }}>
+                            {reasonText}
+                          </span>
+                          <div style={{
+                            width: "20px",
+                            height: "20px",
+                            borderRadius: "50%",
+                            border: `2px solid ${isSelected ? "#0097B2" : "#B1B5C3"}`,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            backgroundColor: "#FFFFFF",
+                            flexShrink: 0
+                          }}>
+                            {isSelected && (
+                              <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#0097B2" }} />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className={styles.cancelPolicyText}>
@@ -2118,7 +2118,7 @@ const Main = ({
                 </div>
               )}
             </div>
-            
+
             {selectedReason && selectedReason.toLowerCase().includes("other") && (
               <div className={styles.cancelModalFormGroup} style={{ marginTop: "24px" }}>
                 <label htmlFor="cancelReason" className={styles.cancelModalLabel} style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase", color: "#B1B5C3", marginBottom: "12px" }}>
@@ -2523,8 +2523,8 @@ const Main = ({
         </div>
       </Modal>
 
-      <Modal 
-        visible={messageModalVisible} 
+      <Modal
+        visible={messageModalVisible}
         onClose={() => !isSendingMessage && setMessageModalVisible(false)}
         outerClassName={styles.confirmCancelModalOuter}
       >
@@ -2535,7 +2535,7 @@ const Main = ({
               {bookingToMessage?.title}
             </p>
           </div>
-          
+
           <div className={styles.cancelModalBody} style={{ padding: '24px 32px' }}>
             <div style={{ marginBottom: "0" }}>
               <label className={styles.cancelModalLabel} style={{ fontWeight: '600', marginBottom: '12px', display: 'block', fontSize: '14px' }}>
@@ -2553,16 +2553,16 @@ const Main = ({
           </div>
 
           <div className={styles.cancelModalFooter} style={{ padding: '24px 32px', borderTop: '1px solid #E6E8EC', display: 'flex', gap: '16px', justifyContent: 'flex-end', background: '#F4F5F6' }}>
-            <button 
-              className={cn("button-stroke")} 
+            <button
+              className={cn("button-stroke")}
               style={{ flex: 1, borderRadius: '24px', height: '48px', margin: 0 }}
               onClick={() => setMessageModalVisible(false)}
               disabled={isSendingMessage}
             >
               Cancel
             </button>
-            <button 
-              className={cn("button")} 
+            <button
+              className={cn("button")}
               style={{ flex: 1, borderRadius: '24px', height: '48px', backgroundColor: '#0097B2', color: 'white', border: 'none', margin: 0 }}
               onClick={handleSendMessage}
               disabled={isSendingMessage || !hostMessageText.trim()}

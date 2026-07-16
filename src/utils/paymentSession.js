@@ -138,6 +138,19 @@ export const clearPendingPaymentSession = () => {
   safeStorage.remove(PENDING_PAYMENT_KEY);
 };
 
+export const clearPendingCheckoutState = ({ keepCheckoutBooking = false } = {}) => {
+  safeStorage.remove(PENDING_PAYMENT_KEY);
+  safeStorage.remove(PENDING_ORDER_ID_KEY);
+  safeStorage.remove("razorpayPaymentSuccess");
+  safeStorage.remove("paymentFailed");
+  safeStorage.remove("paymentFailureOrderId");
+  safeStorage.remove("actualPaidAmount");
+
+  if (!keepCheckoutBooking) {
+    safeStorage.remove(CHECKOUT_BOOKING_KEY);
+  }
+};
+
 export const getPendingOrderId = () => safeStorage.get(PENDING_ORDER_ID_KEY);
 
 export const getPendingPayment = () => readJson(PENDING_PAYMENT_KEY);

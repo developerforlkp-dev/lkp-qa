@@ -243,15 +243,20 @@ export default function MobileBottomNavbar() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
+    
+    // Reset footer visibility state on route change
+    setIsFooterVisible(false);
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         setIsFooterVisible(entry.isIntersecting);
       });
-    }, { threshold: 0.05 }); // Trigger when at least 5% of the footer is visible
+    }, { threshold: 0.01 }); // Trigger when at least 1% of the footer is visible
 
     const interval = setInterval(() => {
       const footer = document.getElementById("main-footer");
       if (footer) {
+        observer.disconnect(); // Disconnect from any old elements
         observer.observe(footer);
         clearInterval(interval);
       }
@@ -261,7 +266,7 @@ export default function MobileBottomNavbar() {
       clearInterval(interval);
       observer.disconnect();
     };
-  }, []);
+  }, [location.pathname]);
 
   if (!shouldShowNavbar(location.pathname, location.search)) {
     return null;

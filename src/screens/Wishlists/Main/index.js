@@ -159,11 +159,23 @@ const Main = () => {
   return (
     <div className={cn("section", styles.section)}>
       <div className={cn("container", styles.container)}>
-        <Control
-          className={styles.control}
-          urlHome="/"
-          breadcrumbs={[]}
-        />
+        <div className={styles.mobileHeaderFlex}>
+          <Control
+            className={styles.control}
+            urlHome="/"
+            breadcrumbs={[]}
+          />
+          {!loading && !error && cardItems.length > 0 && (
+            <h1 className={cn("h2", styles.mobileTitle)} style={{ 
+              fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+              fontSize: "28px",
+              lineHeight: "1.1",
+              letterSpacing: "-0.02em"
+            }}>
+              Your <span style={{ fontStyle: "italic", color: "#0097B2" }}>Wishlist</span>
+            </h1>
+          )}
+        </div>
 
         {loading ? (
           <div style={{ paddingTop: "20px", paddingBottom: "60px" }}>

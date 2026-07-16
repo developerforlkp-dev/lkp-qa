@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import { mapApiBlogToComponentFormat } from "../../utils/blogData";
 import { getBlogBySlug } from "../../utils/api";
-import { 
+import {
   Layout1ModernMinimalist,
   Layout2EditorialMagazine,
   Layout3ImmersiveDark
@@ -36,7 +36,7 @@ export default function BlogDetails() {
     const fetchBlog = async () => {
       try {
         const rawBlog = await getBlogBySlug(slug);
-        console.log("🔥 Raw blog data from backend:", rawBlog);
+        //console.log("🔥 Raw blog data from backend:", rawBlog);
         if (!rawBlog) {
           history.push("/blog");
         } else {
@@ -78,7 +78,7 @@ export default function BlogDetails() {
       break;
   }
 
-  console.log("Currently rendering Blog Layout Variant:", variant);
+  //console.log("Currently rendering Blog Layout Variant:", variant);
 
   return (
     <div className="blog-page-root">

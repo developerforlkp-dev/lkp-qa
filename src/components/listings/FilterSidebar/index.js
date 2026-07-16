@@ -298,7 +298,7 @@ const FilterSidebar = ({
           const nextKeys = current.activeKeys.filter((k) => k !== chip.value);
           const nextLabels = current.selectedCategoryLabels.filter((_, i) => i !== idx);
           const nextValues = (current.categoryValues || []).filter((_, i) => i !== idx);
-          
+
           if (nextKeys.length === 0) {
             onFilterChange("apiCategoryFilter", null);
           } else {
@@ -335,11 +335,11 @@ const FilterSidebar = ({
   const primaryCategoryOptions = useMemo(() => {
     const primary = Array.isArray(businessInterestFilters?.primaryCategories)
       ? businessInterestFilters.primaryCategories.map((item) => ({
-          key: `primary-${item.id}`,
-          label: item.name,
-          value: item.id,
-          categoryType: "Primary Category",
-        }))
+        key: `primary-${item.id}`,
+        label: item.name,
+        value: item.id,
+        categoryType: "Primary Category",
+      }))
       : [];
     const normalized = primary
       .map((item) => ({
@@ -353,11 +353,11 @@ const FilterSidebar = ({
   const secondaryCategoryOptions = useMemo(() => {
     const secondary = Array.isArray(businessInterestFilters?.secondaryCategories)
       ? businessInterestFilters.secondaryCategories.map((item) => ({
-          key: `secondary-${item.id}`,
-          label: item.name,
-          value: item.id,
-          categoryType: "Sub Category",
-        }))
+        key: `secondary-${item.id}`,
+        label: item.name,
+        value: item.id,
+        categoryType: "Sub Category",
+      }))
       : [];
     const normalized = secondary
       .map((item) => ({
@@ -371,27 +371,27 @@ const FilterSidebar = ({
   const tagOptions = useMemo(() => {
     const dynamicTags = Array.isArray(businessInterestFilters?.tags)
       ? businessInterestFilters.tags
-          .map((tag) => {
-            const name = typeof tag === "string" ? tag : tag?.name;
-            return name
-              ? {
-                  key: `tag-${name}`,
-                  label: name,
-                  value: name,
-                  categoryType: "Tags",
-                }
-              : null;
-          })
-          .filter(Boolean)
+        .map((tag) => {
+          const name = typeof tag === "string" ? tag : tag?.name;
+          return name
+            ? {
+              key: `tag-${name}`,
+              label: name,
+              value: name,
+              categoryType: "Tags",
+            }
+            : null;
+        })
+        .filter(Boolean)
       : [];
     return (dynamicTags.length > 0
       ? dynamicTags
       : defaultTags.map((tag) => ({
-          key: `tag-${tag}`,
-          label: tag,
-          value: tag,
-          categoryType: "Tags",
-        })))
+        key: `tag-${tag}`,
+        label: tag,
+        value: tag,
+        categoryType: "Tags",
+      })))
       .map((item) => ({
         ...item,
         label: toText(item.label),
@@ -402,28 +402,28 @@ const FilterSidebar = ({
   const specialLabelOptions = useMemo(() => {
     const dynamicLabels = Array.isArray(businessInterestFilters?.specialLabels)
       ? businessInterestFilters.specialLabels
-          .map((label) => {
-            const id = typeof label === "object" ? label?.id : null;
-            const name = typeof label === "string" ? label : label?.name;
-            return name
-              ? {
-                  key: `special-${id ?? name}`,
-                  label: name,
-                  value: id ?? name,
-                  categoryType: "Special Labels",
-                }
-              : null;
-          })
-          .filter(Boolean)
+        .map((label) => {
+          const id = typeof label === "object" ? label?.id : null;
+          const name = typeof label === "string" ? label : label?.name;
+          return name
+            ? {
+              key: `special-${id ?? name}`,
+              label: name,
+              value: id ?? name,
+              categoryType: "Special Labels",
+            }
+            : null;
+        })
+        .filter(Boolean)
       : [];
     return (dynamicLabels.length > 0
       ? dynamicLabels
       : defaultSpecialLabels.map((label) => ({
-          key: `special-${label}`,
-          label,
-          value: label,
-          categoryType: "Special Labels",
-        })))
+        key: `special-${label}`,
+        label,
+        value: label,
+        categoryType: "Special Labels",
+      })))
       .map((item) => ({
         ...item,
         label: toText(item.label),
@@ -434,12 +434,12 @@ const FilterSidebar = ({
   const sortDisplayPairs = useMemo(() => (
     Array.isArray(sortingOptions)
       ? sortingOptions
-          .map((option) => {
-            const raw = toText(option).trim();
-            if (!raw) return null;
-            return { raw, display: formatSortLabel(raw) };
-          })
-          .filter(Boolean)
+        .map((option) => {
+          const raw = toText(option).trim();
+          if (!raw) return null;
+          return { raw, display: formatSortLabel(raw) };
+        })
+        .filter(Boolean)
       : []
   ), [sortingOptions]);
 
@@ -563,7 +563,7 @@ const FilterSidebar = ({
       }
     }
 
-    console.log("[FilterSidebar] Category filter selected:", nextFilter);
+    //console.log("[FilterSidebar] Category filter selected:", nextFilter);
     onFilterChange("apiCategoryFilter", nextFilter);
   };
 

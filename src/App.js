@@ -24,6 +24,8 @@ import Listings from "./pages/listings";
 import Blog from "./pages/Blog";
 import BlogDetails from "./pages/BlogDetails";
 import ViewDetails from "./screens/ViewDetails";
+import PaymentFailed from "./screens/PaymentFailed";
+import NotFound from "./screens/NotFound";
 
 
 import StayProduct from "./screens/StayProduct";
@@ -39,6 +41,7 @@ import PrivacyPolicy from "./screens/PrivacyPolicy";
 import MobileBottomNavbar from "./components/MobileBottomNavbar";
 import FAQ from "./screens/FAQ";
 import About from "./screens/About";
+import CancellationPolicy from "./screens/CancellationPolicy";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -70,7 +73,7 @@ function App() {
 
   // Log for debugging
   if (process.env.REACT_APP_GOOGLE_CLIENT_ID) {
-    console.log("✅ Google Client ID loaded from environment variable");
+    //console.log("✅ Google Client ID loaded from environment variable");
   } else {
     console.warn("⚠️ REACT_APP_GOOGLE_CLIENT_ID not found, using fallback value");
     console.warn("⚠️ For production, set REACT_APP_GOOGLE_CLIENT_ID in your deployment platform");
@@ -280,6 +283,13 @@ function App() {
             />
             <Route
               exact
+              path="/cancellation-policy"
+              render={() => (
+                <CancellationPolicy />
+              )}
+            />
+            <Route
+              exact
               path="/privacy-policy"
               render={() => (
                 <PrivacyPolicy />
@@ -318,6 +328,22 @@ function App() {
               render={() => (
                 <Page separatorHeader>
                   <BlogDetails />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/payment/failed"
+              render={() => (
+                <Page separatorHeader>
+                  <PaymentFailed />
+                </Page>
+              )}
+            />
+            <Route
+              render={() => (
+                <Page>
+                  <NotFound />
                 </Page>
               )}
             />

@@ -10,14 +10,13 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04)
     color: $n1
     transition: all .3s ease
-    transform: translateZ(0)
     -webkit-mask-image: -webkit-radial-gradient(white, black)
     &:hover
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08)
-        transform: translateY(-4px) translateZ(0)
+        transform: translateY(-4px)
         .preview
             img
-                transform: scale(1.05) translateZ(0)
+                transform: scale(1.05)
     +dark
         background: $n1
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2)
@@ -30,8 +29,10 @@
         .preview
             flex-shrink: 0
             width: 256px
+            border-radius: 16px 0 0 16px
             +x
                 width: 100%
+                border-radius: 16px 16px 0 0
             &:before
                 display: none
                 +x
@@ -75,6 +76,9 @@
 .preview
     position: relative
     overflow: hidden
+    border-radius: 24px 24px 0 0
+    -webkit-mask-image: -webkit-radial-gradient(white, black)
+    transform: translateZ(0)
     background: #eef2f7
     &:before
         content: ""
@@ -97,12 +101,9 @@
         object-fit: cover
         opacity: 0
         filter: blur(8px)
-        transform: scale(1.03) translateZ(0)
+        transform: scale(1.03)
         transition: transform .9s ease, opacity .45s ease, filter .45s ease
         border-radius: inherit
-        will-change: transform
-        backface-visibility: hidden
-        -webkit-backface-visibility: hidden
 
 .preview.loaded
     &:after
@@ -111,7 +112,7 @@
     img
         opacity: 1
         filter: blur(0)
-        transform: scale(1) translateZ(0)
+        transform: scale(1)
 
 .category
     position: absolute
@@ -294,6 +295,7 @@
         fill: $n4
 
 .foot
+    margin-top: auto
     padding-top: 16px
     border-top: 1px solid $n6
     +dark
@@ -320,7 +322,7 @@
 .flex
     display: flex
     justify-content: space-between
-    align-items: flex-end
+    align-items: center
     width: 100%
     gap: 8px
     margin-top: 8px
@@ -329,6 +331,7 @@
     +caption-bold-2
     font-size: 14px
     flex-shrink: 0
+    white-space: nowrap
     color: $n2
     +dark
         color: $n8
@@ -355,6 +358,28 @@
         fill: #FFB800
         width: 14px
         height: 14px
+
+.newBadge
+    display: flex
+    align-items: center
+    gap: 4px
+    padding: 4px 10px
+    border: 1px solid rgba(255, 184, 0, 0.4)
+    border-radius: 20px
+    background: transparent
+    flex-shrink: 0
+    svg
+        fill: #FFB800
+        width: 14px
+        height: 14px
+    span
+        font-size: 13px
+        font-weight: 600
+        color: $n2
+        +dark
+            color: $n8
+        text-transform: capitalize
+        letter-spacing: 0.01em
 
 .number
     margin-left: 4px

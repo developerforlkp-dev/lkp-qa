@@ -22,7 +22,7 @@ const Bookings = ({ bookingData = null }) => {
       setOrders(bookingsArray);
       setCompletedOrders([]); // Empty for prop-based data
       setLoading(false);
-      
+
       return;
     }
 
@@ -30,10 +30,10 @@ const Bookings = ({ bookingData = null }) => {
     const fetchOrders = async () => {
       setLoading(true);
       setError(null);
-      
+
       // Check if user is authenticated before making API calls
       const isAuthenticated = typeof window !== "undefined" && !!localStorage.getItem("jwtToken");
-      
+
       if (!isAuthenticated) {
         // If not authenticated, show empty state instead of error
         setOrders([]);
@@ -42,24 +42,24 @@ const Bookings = ({ bookingData = null }) => {
         setLoading(false);
         return;
       }
-      
+
       // Fetch both APIs in parallel for better performance
       // Handle errors independently so one failure doesn't block the other
       const [ordersResult, completedOrdersResult] = await Promise.allSettled([
         getCustomerOrders(100, 1),
         getCompletedOrders(1, 100)
       ]);
-      
+
       // Handle regular orders result
       let fetchedOrders = [];
       if (ordersResult.status === 'fulfilled') {
         fetchedOrders = ordersResult.value;
-        console.log("✅ Fetched orders:", fetchedOrders);
+        //console.log("✅ Fetched orders:", fetchedOrders);
       } else {
         const errorReason = ordersResult.reason;
         // Check if it's an authentication error (401/403)
         const isAuthError = errorReason?.response?.status === 401 || errorReason?.response?.status === 403;
-        
+
         if (isAuthError) {
           // For auth errors, clear token and show empty state
           console.warn("⚠️ Authentication error - showing empty state");
@@ -81,21 +81,21 @@ const Bookings = ({ bookingData = null }) => {
       if (completedOrdersResult.status === 'fulfilled') {
         fetchedCompletedOrders = Array.isArray(completedOrdersResult.value) ? completedOrdersResult.value : [];
         fetchedCompletedCount = fetchedCompletedOrders.length;
-        console.log("✅ Fetched completed orders count:", fetchedCompletedCount);
+        //console.log("✅ Fetched completed orders count:", fetchedCompletedCount);
       } else {
         const errorReason = completedOrdersResult.reason;
         // Check if it's an authentication error
         const isAuthError = errorReason?.response?.status === 401 || errorReason?.response?.status === 403;
-        
+
         if (!isAuthError) {
           console.warn("⚠️ Failed to fetch completed orders:", errorReason);
         }
       }
       setCompletedCount(fetchedCompletedCount);
-      
+
       // Set completed orders
       setCompletedOrders(fetchedCompletedOrders);
-      
+
       setLoading(false);
     };
 
@@ -111,9 +111,9 @@ const Bookings = ({ bookingData = null }) => {
           <p>⚠️ {error}</p>
         </div>
       )}
-      <Main 
-        bookingData={loading ? null : (orders || [])} 
-        completedOrders={loading ? null : (completedOrders || [])} 
+      <Main
+        bookingData={loading ? null : (orders || [])}
+        completedOrders={loading ? null : (completedOrders || [])}
         completedCount={completedCount}
         setCompletedOrders={setCompletedOrders}
       />

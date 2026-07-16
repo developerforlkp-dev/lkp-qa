@@ -5,7 +5,7 @@ import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, I
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
-import { persistPendingCheckout } from "../../utils/paymentSession";
+import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import Counter from "../../components/Counter";
 import LoginPromptModal from "../../components/LoginPromptModal";
 
@@ -1378,6 +1378,99 @@ const StayBookingSystem = ({
               ...(bedConfigsPayload.length > 0 ? { bedConfigs: bedConfigsPayload } : {})
             };
           })();
+
+      const previewSelectedAddOnsData = selectedAddOns.map(id => {
+        const addonData = Array.isArray(stay?.addons) ? stay.addons.find(a => (a.addonId || a.assignmentId || a.id) === id) : null;
+        if (!addonData) return null;
+
+        const isIndividual = addonData.pricingType === "Individual";
+        const quantity = isIndividual ? (addOnQuantities[id] || 1) : 1;
+        const unitPrice = parseFloat(addonData.price || 0);
+        const priceValue = unitPrice * quantity;
+
+        return {
+          id: addonData.addonId || addonData.assignmentId || addonData.id,
+          title: addonData.title || addonData.name || "Addon",
+          name: addonData.title || addonData.name || "Addon",
+          price: unitPrice,
+          pricePerUnit: unitPrice,
+          priceValue,
+          totalPrice: priceValue,
+          currency: addonData.currency || "INR",
+          quantity,
+          pricingType: addonData.pricingType || "Individual",
+        };
+      }).filter(Boolean);
+
+      const previewAddOnsTotalRupees = previewSelectedAddOnsData.reduce((sum, item) => sum + item.priceValue, 0);
+      const previewCurrency = "INR";
+      const nightsFromPreview = Number(pricing.nightsCount || 1) || 1;
+      const previewBaseStayDisplayTotal = isPropertyBased
+        ? Number((pricing.originalPerNight || pricing.basePricePerNight || 0) * nightsFromPreview || 0)
+        : Number((pricing.originalPerNight || 0) * nightsFromPreview || 0);
+
+      const previewReceipt = [
+        { title: `Base Stay (${nightsFromPreview} night${nightsFromPreview !== 1 ? "s" : ""})`, content: `${previewCurrency} ${Number(previewBaseStayDisplayTotal).toFixed(2)}` },
+        { title: "Adults", content: `${guests.adults || 0}` },
+        { title: "Children", content: `${guests.children || 0}` },
+      ];
+      if (Number(extraAdultsCount || 0) > 0) {
+        previewReceipt.push({
+          title: `Extra Adult Charges (${extraAdultsCount} x ${previewCurrency} ${Number(pricing.activeExtraAdultPrice || 0).toFixed(2)} x ${nightsFromPreview} night${nightsFromPreview !== 1 ? "s" : ""})`,
+          content: `${previewCurrency} ${Number(extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromPreview).toFixed(2)}`,
+        });
+      }
+      if (Number(extraChildrenCount || 0) > 0) {
+        previewReceipt.push({
+          title: `Extra Child Charges (${extraChildrenCount} x ${previewCurrency} ${Number(pricing.activeExtraChildPrice || 0).toFixed(2)} x ${nightsFromPreview} night${nightsFromPreview !== 1 ? "s" : ""})`,
+          content: `${previewCurrency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromPreview).toFixed(2)}`,
+        });
+      }
+      if (Number(pricing.earlyBirdDiscountAmount || 0) > 0) {
+        previewReceipt.push({ title: `Early Bird Discount (${Number(pricing.earlyBirdDiscountPercent || 0).toFixed(2)}%)`, content: `- ${previewCurrency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
+      }
+      if (Number(pricing.longStayDiscountAmount || 0) > 0) {
+        previewReceipt.push({ title: `Long Stay Discount (${Number(pricing.discountPercent || 0).toFixed(2)}%)`, content: `- ${previewCurrency} ${Number(pricing.longStayDiscountAmount).toFixed(2)}` });
+      }
+      if (previewAddOnsTotalRupees > 0) {
+        previewReceipt.push({ title: "Add-ons Total", content: `+ ${previewCurrency} ${Number(previewAddOnsTotalRupees).toFixed(2)}` });
+      }
+      if (Number(pricing.taxAmount || 0) > 0) {
+        previewReceipt.push({ title: `Tax (${Number(pricing.taxRate || 0).toFixed(2)}%)`, content: `+ ${previewCurrency} ${Number(pricing.taxAmount).toFixed(2)}` });
+      }
+      previewReceipt.push({ title: "Final Guest Price", content: `${previewCurrency} ${Number(pricing.finalTotal || 0).toFixed(2)}` });
+
+      const previewRoomSummary = isPropertyBased
+        ? "Full Property"
+        : resolvedSelectedRooms.map(r => `${r.count}x ${r.roomName || r.name}`).join(", ");
+      const previewCheckoutExtraAdults = isHostelBooking(stay) ? 0 : extraAdultsCount;
+
+      const previewBookingData = {
+        checkoutType: "stay",
+        stayId: payload.stayId,
+        leadUserId: stay?.leadUserId,
+        listingTitle: stay.propertyName || stay.title || "Stay",
+        listingImage: stay.coverPhotoUrl || stay.coverImageUrl || "",
+        isStay: true,
+        checkInDate: checkInDate.format("MMM DD, YYYY"),
+        checkOutDate: checkOutDate.format("MMM DD, YYYY"),
+        roomType: previewRoomSummary,
+        guests,
+        extraAdults: previewCheckoutExtraAdults,
+        extraChildren: extraChildrenCount,
+        receipt: previewReceipt,
+        totalAmount: pricing.finalTotal || 0,
+        finalTotal: pricing.finalTotal || 0,
+        selectedAddOns: previewSelectedAddOnsData,
+        currency: previewCurrency,
+        orderRequest: payload,
+      };
+
+      clearPendingCheckoutState();
+      persistPendingCheckout({ bookingData: previewBookingData });
+      localStorage.removeItem("frontendPendingBookingState");
+      history.push("/checkout");
+      return;
 
       const response = await createStayOrder(payload);
       const paymentResponse = response?.payment || response?.data?.payment || response;

@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ChevronLeft, ChevronDown, Clock, User, Zap, Baby, Languages,
+  ChevronLeft, ChevronDown, Clock, User, Users, Zap, Baby, Languages,
   ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart, Building, Map, Globe
 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
@@ -747,36 +747,87 @@ export default function MobileExperienceView({
           <h2 className="mob-section-title" style={{ color: FG }}>Things to Keep in Mind</h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {listing?.guestRequirements?.map((req, i) => {
-              const title = req.setting?.title || "Requirement";
-              const desc = req.setting?.description || "";
-              return (
-                <Accordion key={`pol-${i}`} title={title}
-                  icon={<ShieldCheck size={16} color={A} />} borderColor={B} fgColor={FG} mColor={M} accentColor={A}>
-                  {desc && <p>{desc}</p>}
-                  {req.questions?.map((q, qi) => {
-                    const questionTitle = q.title || q.question?.title;
-                    const answerText = q.answer?.valueText || q.valueText;
-                    return (
-                      <div key={qi} style={{ marginTop: 8 }}>
-                        <p style={{ fontWeight: 600, fontSize: 13, color: FG, marginBottom: 4 }}>{questionTitle}</p>
-                        {answerText && (
-                          <span style={{ display: "inline-block", fontSize: 12, padding: "4px 10px", borderRadius: 100, background: AL, color: A, fontWeight: 600, marginRight: 6, marginBottom: 4 }}>
-                            {answerText}
-                          </span>
+            {(() => {
+              const expItems = [];
+              const guestItems = [];
+              const cancelItems = [];
+
+              if (Array.isArray(listing?.guestRequirements)) {
+                listing.guestRequirements.forEach((req) => {
+                  const title = req.setting?.title || "Requirement";
+                  const desc = req.setting?.description || "";
+                  const item = { title, desc, questions: req.questions };
+                  
+                  if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("experience")) {
+                    expItems.push(item);
+                  } else {
+                    guestItems.push(item);
+                  }
+                });
+              }
+
+              if (listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) {
+                cancelItems.push({
+                  title: null,
+                  desc: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
+                });
+              }
+
+              const renderAccordion = (catTitle, items, icon) => {
+                if (!items || items.length === 0) return null;
+                return (
+                  <Accordion key={catTitle} title={catTitle} icon={icon} borderColor={B} fgColor={FG} mColor={M} accentColor={A}>
+                    {items.map((item, idx) => (
+                      <div key={idx} style={{ marginBottom: idx === items.length - 1 ? 0 : 16 }}>
+                        {item.title && item.title !== item.desc && (
+                          <p style={{ fontWeight: 700, fontSize: 14, color: FG, marginBottom: 4 }}>{item.title}</p>
                         )}
+                        {item.desc && (
+                          <div style={{ fontSize: 13, color: M, marginBottom: 8 }}>
+                            {catTitle.toLowerCase().includes('cancellation') && item.desc.split('. ').filter(s => s.trim().length > 0).length > 1 ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                                {item.desc.split('. ').filter(s => s.trim().length > 0).map((sentence, idx) => (
+                                  <div key={idx} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                    <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
+                                    <div style={{ flex: 1 }}>
+                                      {sentence.trim()}{sentence.trim().endsWith('.') ? '' : '.'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ margin: 0 }}>{item.desc}</p>
+                            )}
+                          </div>
+                        )}
+                        {item.questions?.map((q, qi) => {
+                          const questionTitle = q.title || q.question?.title;
+                          const answerText = q.answer?.valueText || q.valueText;
+                          return (
+                            <div key={qi} style={{ marginTop: 8 }}>
+                              <p style={{ fontWeight: 600, fontSize: 13, color: FG, marginBottom: 4 }}>{questionTitle}</p>
+                              {answerText && (
+                                <span style={{ display: "inline-block", fontSize: 12, padding: "4px 10px", borderRadius: 100, background: AL, color: A, fontWeight: 600, marginRight: 6, marginBottom: 4 }}>
+                                  {answerText}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </Accordion>
+                    ))}
+                  </Accordion>
+                );
+              };
+
+              return (
+                <>
+                  {renderAccordion("Experience Rules", expItems, <ShieldCheck size={16} color={A} />)}
+                  {renderAccordion("Guest Requirements", guestItems, <Users size={16} color={A} />)}
+                  {renderAccordion("Cancellation Policy", cancelItems, <Clock size={16} color={A} />)}
+                </>
               );
-            })}
-            {(listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) && (
-              <Accordion title="Cancellation Policy"
-                icon={<Info size={16} color={A} />} borderColor={B} fgColor={FG} mColor={M} accentColor={A}>
-                <p>{listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy}</p>
-              </Accordion>
-            )}
+            })()}
           </div>
         </div>
       )}

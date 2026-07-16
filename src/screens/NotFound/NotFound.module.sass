@@ -1,0 +1,116 @@
+@import ../../styles/helpers
+
+.graphic
+  position: relative
+  width: 100%
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  margin-bottom: 8px
+
+.illustrationImage
+  width: 100%
+  max-width: 280px
+  height: auto
+  object-fit: contain
+  position: relative
+  z-index: 1
+  +m
+    max-width: 200px
+  +dark
+    filter: invert(1) hue-rotate(180deg)
+    mix-blend-mode: screen
+    opacity: 0.9
+
+.huge404
+  position: relative
+  z-index: 2
+  font-size: 140px
+  line-height: 1
+  font-weight: 800
+  letter-spacing: -4px
+  margin-top: -60px
+  margin-bottom: -10px
+  background: linear-gradient(135deg, #0B253A 0%, #0097B2 100%)
+  -webkit-background-clip: text
+  -webkit-text-fill-color: transparent
+  color: transparent
+  +dark
+    background: linear-gradient(135deg, #FFFFFF 0%, #0097B2 100%)
+    -webkit-background-clip: text
+    -webkit-text-fill-color: transparent
+
+.divider
+  display: flex
+  align-items: center
+  width: 100%
+  max-width: 600px
+  margin: 0 auto 16px
+  color: #64748B
+  font-size: 12px
+  font-weight: 500
+  
+  &::before, &::after
+    content: ''
+    flex: 1
+    height: 1px
+    background: #E2E8F0
+    +dark
+      background: $n3
+      
+  span
+    padding: 0 12px
+
+.quickLinks
+  display: flex
+  gap: 12px
+  justify-content: center
+  width: 100%
+  margin-bottom: 24px
+  +m
+    flex-wrap: wrap
+
+.quickCard
+  display: flex
+  align-items: center
+  gap: 10px
+  background: $n8
+  border: 1px solid #E2E8F0
+  border-radius: 8px
+  padding: 10px 14px
+  width: 160px
+  text-decoration: none
+  transition: box-shadow 0.2s
+  cursor: pointer
+  
+  &:hover
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05)
+    
+  +dark
+    background: $n2
+    border-color: $n3
+
+.cardIcon
+  fill: #00A3A6
+  flex-shrink: 0
+
+.cardText
+  display: flex
+  flex-direction: column
+  text-align: left
+  
+  strong
+    font-size: 12px
+    color: #0B253A
+    margin-bottom: 2px
+    white-space: nowrap
+    +dark
+      color: $n8
+      
+  span
+    font-size: 10px
+    color: #64748B
+    white-space: nowrap
+    +dark
+      color: $n4

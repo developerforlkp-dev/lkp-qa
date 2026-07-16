@@ -61,7 +61,7 @@ const isSearchCategoryType = (categoryType) => {
 const Listings = () => {
   const location = useLocation();
   const history = useHistory();
-  
+
   // Get search params from URL or location state
   const searchParams = new URLSearchParams(location.search);
   const locationState = location.state || {};
@@ -78,28 +78,28 @@ const Listings = () => {
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
-  
+
   // Track the actual search query that has been submitted
   const [activeSearch, setActiveSearch] = useState(searchLocation);
-  
-  const initialDate = searchParams.get("date") 
-    ? moment(searchParams.get("date")).toDate() 
+
+  const initialDate = searchParams.get("date")
+    ? moment(searchParams.get("date")).toDate()
     : (locationState.dateRange?.startDate ? moment(locationState.dateRange.startDate).toDate() : null);
-    
+
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  
+
   const initialGuestsStr = searchParams.get("guests");
   const initialAdultsStr = searchParams.get("adults");
   const initialChildrenStr = searchParams.get("children");
-  
+
   const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: parseInt(initialAdultsStr) || 0, children: parseInt(initialChildrenStr) || 0, infants: 0, pets: 0 }
-    : (initialGuestsStr 
-        ? { adults: parseInt(initialGuestsStr), children: 0, infants: 0, pets: 0 }
-        : (locationState.guests || { adults: 1, children: 0, infants: 0, pets: 0 }));
+    : (initialGuestsStr
+      ? { adults: parseInt(initialGuestsStr), children: 0, infants: 0, pets: 0 }
+      : (locationState.guests || { adults: 1, children: 0, infants: 0, pets: 0 }));
 
   const [guests, setGuests] = useState(initialGuests);
-  
+
   const businessInterest = searchParams.get("businessInterest") || locationState.businessInterest || "EXPERIENCE";
   const businessInterestIdParam = searchParams.get("businessInterestId");
   const categoryTypeParam = searchParams.get("categoryType") || "";
@@ -175,10 +175,10 @@ const Listings = () => {
         const response = await getBusinessInterestFilters(resolvedBusinessInterestId);
         if (!mounted) return;
         setBusinessInterestFilters(response || null);
-        console.log(
+        /*console.log(
           `[Listings] business-interest-filters response (businessInterestId=${resolvedBusinessInterestId}):`,
           response
-        );
+        );*/
       } catch (error) {
         console.warn(
           `[Listings] Failed to fetch business-interest-filters for businessInterestId=${resolvedBusinessInterestId}:`,
@@ -372,7 +372,7 @@ const Listings = () => {
     businessInterest: businessInterest,
     categoryFilter: effectiveCategoryFilter,
   });
-  
+
   // eslint-disable-next-line no-unused-vars
   const totalCount = listings.length;
 
@@ -478,8 +478,8 @@ const Listings = () => {
   };
 
   // Format selected date for display
-  const formattedDate = selectedDate 
-    ? moment(selectedDate).format("MMM DD, YYYY") 
+  const formattedDate = selectedDate
+    ? moment(selectedDate).format("MMM DD, YYYY")
     : "Select date";
 
   // Format guest count for display
@@ -756,9 +756,9 @@ const Listings = () => {
             <Icon name="arrow-right" size="20" />
             <div className={styles.searchFieldContent}>
               <div className={styles.searchLabel}>Where to?</div>
-              <input 
-                type="text" 
-                placeholder="Search Destination" 
+              <input
+                type="text"
+                placeholder="Search Destination"
                 className={styles.searchInput}
                 value={searchLocation}
                 onChange={(e) => {
@@ -831,13 +831,13 @@ const Listings = () => {
           {showDateAndGuest && (
             <>
               <div className={styles.searchDivider}></div>
-              <div 
+              <div
                 className={styles.searchField}
                 ref={dateItemRef}
                 style={{ position: "relative" }}
               >
                 <Icon name="calendar" size="20" />
-                <div 
+                <div
                   className={styles.searchFieldContent}
                   onClick={() => setShowDatePicker(!showDatePicker)}
                   style={{ cursor: "pointer" }}
@@ -856,13 +856,13 @@ const Listings = () => {
                 />
               </div>
               <div className={styles.searchDivider}></div>
-              <div 
+              <div
                 className={styles.searchField}
                 ref={guestItemRef}
                 style={{ position: "relative" }}
               >
                 <Icon name="user" size="20" />
-                <div 
+                <div
                   className={styles.searchFieldContent}
                   onClick={() => setShowGuestPicker(!showGuestPicker)}
                   style={{ cursor: "pointer" }}
@@ -919,7 +919,7 @@ const Listings = () => {
           ))}
         </div>
       </div>
-      
+
       <div className={styles.body}>
         <div className={cn("container", styles.container)}>
           <div className={cn(styles.layout, { [styles.withMap]: showMap })}>
@@ -936,7 +936,7 @@ const Listings = () => {
                 businessInterestFilters={businessInterestFilters}
               />
             </aside>
-            
+
             {/* Main Content Area */}
             <main className={styles.main}>
               {(filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel) && (
@@ -961,10 +961,10 @@ const Listings = () => {
                     aria-label="Grid view"
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <rect x="1" y="1" width="6" height="6" rx="1.5"/>
-                      <rect x="9" y="1" width="6" height="6" rx="1.5"/>
-                      <rect x="1" y="9" width="6" height="6" rx="1.5"/>
-                      <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+                      <rect x="1" y="1" width="6" height="6" rx="1.5" />
+                      <rect x="9" y="1" width="6" height="6" rx="1.5" />
+                      <rect x="1" y="9" width="6" height="6" rx="1.5" />
+                      <rect x="9" y="9" width="6" height="6" rx="1.5" />
                     </svg>
                   </button>
                   <button
@@ -974,9 +974,9 @@ const Listings = () => {
                     aria-label="List view"
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <rect x="1" y="2" width="14" height="2" rx="1"/>
-                      <rect x="1" y="7" width="14" height="2" rx="1"/>
-                      <rect x="1" y="12" width="14" height="2" rx="1"/>
+                      <rect x="1" y="2" width="14" height="2" rx="1" />
+                      <rect x="1" y="7" width="14" height="2" rx="1" />
+                      <rect x="1" y="12" width="14" height="2" rx="1" />
                     </svg>
                   </button>
                 </div>
@@ -993,7 +993,7 @@ const Listings = () => {
                 listView={viewMode === "list"}
               />
             </main>
-            
+
             {/* Map View - Right Side (Desktop) */}
             {showMap && (
               <aside className={cn(styles.mapSidebar, "desktop-show")}>
@@ -1012,7 +1012,7 @@ const Listings = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile Filter Bottom Sheet */}
       <MobileFilterModal
         visible={showMobileFilters}
@@ -1027,7 +1027,7 @@ const Listings = () => {
         businessInterestFilters={businessInterestFilters}
         activeFilterCount={activeFilterCount}
       />
-      
+
 
     </div>
   );

@@ -841,28 +841,6 @@ const Checkout = () => {
     };
   }, [bookingData, selectedAddOns, stayDetails, pendingOrderDetails]);
 
-  useEffect(() => {
-    if (computedFinalAmount == null || !paymentData) return;
-
-    const adjustedAmount = paymentData?.paymentMethod === "razorpay"
-      ? Math.round(computedFinalAmount * 100)
-      : computedFinalAmount;
-
-    if (Number(paymentData.amount) === Number(adjustedAmount)) return;
-
-    const nextPaymentData = {
-      ...paymentData,
-      amount: adjustedAmount,
-    };
-
-    setPaymentData(nextPaymentData);
-    try {
-      localStorage.setItem("pendingPayment", JSON.stringify(nextPaymentData));
-    } catch (e) {
-      console.error("Error updating payment data:", e);
-    }
-  }, [computedFinalAmount, paymentData]);
-
   if (checkingPayment) {
     return (
       <div className={cn("section-mb80", styles.section)} style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -878,15 +856,11 @@ const Checkout = () => {
   const isStayBooking = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
   const tripTitle = isStayBooking ? "Your stay" : "Your trip";
   const isAmountInPaise = paymentData?.paymentMethod === "razorpay";
-  const effectivePaymentData = computedFinalAmount != null && paymentData
-    ? {
-        ...paymentData,
-        amount: isAmountInPaise ? Math.round(computedFinalAmount * 100) : computedFinalAmount,
-      }
-    : paymentData;
+  const effectivePaymentData = paymentData;
   const resolvedAmountToPay = computedFinalAmount != null
     ? (isAmountInPaise ? Math.round(computedFinalAmount * 100) : computedFinalAmount)
     : paymentData?.amount;
+  const resolvedCurrency = paymentData?.currency || bookingData?.currency || "INR";
 
   // Get first image
   const getListingImage = () => {
@@ -966,7 +940,7 @@ const Checkout = () => {
             setMessageText={setMessageText}
             addonDetails={selectedAddOns}
             addOns={selectedAddOns}
-            currency={paymentData?.currency || "INR"}
+            currency={resolvedCurrency}
             datePicker={(
               <InlineDatePicker
                 visible={showDatePicker}
@@ -1002,13 +976,14 @@ const Checkout = () => {
             addonDetails={selectedAddOns}
             amountToPay={resolvedAmountToPay}
             amountInPaise={isAmountInPaise}
-            currency={paymentData?.currency || "INR"}
+            currency={resolvedCurrency}
             hostName={hostName}
             hostAvatar={hostAvatar}
             cancellationPolicy={bookingData?.cancellationPolicySummary || stayDetails?.cancellationPolicySummary}
             buttonUrl="/checkout-complete"
             paymentData={effectivePaymentData}
             messageText={messageText}
+            bookingData={bookingData}
           />
         </div>
       </div>

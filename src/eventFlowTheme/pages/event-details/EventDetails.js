@@ -17,6 +17,7 @@ import DetailPageNavPortal from "../../../components/DetailPageNavPortal";
 import Favorite from "../../../components/Favorite";
 import Icon from "../../../components/Icon";
 import FullScreenImage from "../../../components/FullScreenImage";
+import PolicyCategoryItem from "../../../components/PolicyCategoryItem";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -488,33 +489,33 @@ function SpinBadge({ event }) {
     return sum + (Number.isFinite(totalTickets) ? totalTickets : 0);
   }, 0);
   const participantCount = event?.participantCount ?? (guestCount > 0 ? guestCount : 0);
-  
+
   return (
-    <div style={{ 
-      position: "relative", 
-      width: 140, 
-      height: 140, 
-      borderRadius: "50%", 
-      background: theme === "dark" ? "rgba(15, 23, 42, 0.85)" : "rgba(255, 255, 255, 0.9)", 
+    <div style={{
+      position: "relative",
+      width: 140,
+      height: 140,
+      borderRadius: "50%",
+      background: theme === "dark" ? "rgba(15, 23, 42, 0.85)" : "rgba(255, 255, 255, 0.9)",
       border: `2px solid ${A}33`,
       boxShadow: "0 10px 30px rgba(0,0,0,0.15), inset 0 0 20px rgba(0,151,178,0.1)",
       backdropFilter: "blur(12px)",
       WebkitBackdropFilter: "blur(12px)",
-      display: "flex", 
-      flexDirection: "column", 
-      alignItems: "center", 
-      justifyContent: "center" 
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center"
     }}>
-      <motion.div 
-        animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.6, 0.3] }} 
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} 
-        style={{ 
-          position: "absolute", 
-          inset: -6, 
-          borderRadius: "50%", 
+      <motion.div
+        animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          inset: -6,
+          borderRadius: "50%",
           border: `1.5px solid ${A}20`,
           pointerEvents: "none"
-        }} 
+        }}
       />
       <span className="font-display" style={{ fontSize: "28px", fontWeight: 800, color: A, lineHeight: 1 }}>
         {participantCount}
@@ -553,12 +554,12 @@ function ImageRing({ event }) {
           const finalSrc = src.startsWith('http') ? src : `https://picsum.photos/seed/${src}/200/300`;
 
           return (
-            <div 
-              key={i} 
+            <div
+              key={i}
               style={{ position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`, zIndex: 5 }}
             >
               <div className="counter-rotating-card">
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.6, zIndex: 100 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                   style={{ width: 84, height: 110, borderRadius: 16, border: `1px solid ${B}`, overflow: "hidden", backgroundColor: "#000", boxShadow: "0 12px 40px -10px rgba(0,0,0,0.3)", cursor: "pointer" }}
@@ -686,20 +687,20 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
 const HighlightCard = ({ children, A, B, FG, M, W, theme }) => {
   const [hovered, setHovered] = useState(false);
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       whileHover={{ y: -6, scale: 1.02, boxShadow: theme === "dark" ? `0 20px 40px -15px ${A}30` : `0 20px 40px -15px rgba(15, 23, 42, 0.12)` }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      style={{ 
+      style={{
         background: hovered
           ? (theme === "dark" ? "rgba(255,255,255,0.06)" : "#FFFFFF")
-          : (theme === "dark" ? "linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 100%)" : "linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%)"), 
-        border: `1px solid ${hovered ? A : B}`, 
-        borderRadius: "24px", 
-        padding: "24px 28px", 
+          : (theme === "dark" ? "linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 100%)" : "linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%)"),
+        border: `1px solid ${hovered ? A : B}`,
+        borderRadius: "24px",
+        padding: "24px 28px",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         display: "flex",
@@ -731,7 +732,7 @@ const SpecCard = ({ label, value, sub, index, A, B, FG, M, W, theme, isCount }) 
       style={{
         border: `1px solid ${hovered ? A : B}`,
         borderRadius: "20px",
-        height: "128px",
+        height: "138px",
         boxSizing: "border-box",
         backgroundColor: hovered
           ? (theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF")
@@ -804,7 +805,7 @@ function MobileHero({ event, heroRef }) {
   const title = event?.title || "SOLSTICE";
   const date = event?.startDate ? event.startDate.split('-').reverse().join('.') : "21.06.26";
   const venueStr = event?.venueFullAddress || "Mumbai";
-  
+
   const getVenueParts = () => {
     let cleanStr = stripPinAndCountry(venueStr);
     const parts = cleanStr.split(',').map(p => p.trim()).filter(Boolean);
@@ -885,20 +886,20 @@ function MobileHero({ event, heroRef }) {
       marginBottom: 0
     }}>
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%)", borderBottomLeftRadius: 36, borderBottomRightRadius: 36 }} />
-      
+
       {/* Image Ring Overlay for Mobile */}
-      <div style={{ 
-        position: "absolute", 
-        top: "40%", 
+      <div style={{
+        position: "absolute",
+        top: "40%",
         right: "-70px",
-        transform: "translateY(-50%) scale(0.55)", 
+        transform: "translateY(-50%) scale(0.55)",
         transformOrigin: "center right",
         zIndex: 5,
-        pointerEvents: "none" 
+        pointerEvents: "none"
       }}>
         <ImageRing event={event} />
       </div>
-      
+
       {/* Top Controls */}
       <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 10 }}>
         <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
@@ -949,48 +950,48 @@ function MobileHero({ event, heroRef }) {
       }}>
         {/* Date Card */}
         <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
-           <div style={{ 
-              background: W, 
-              borderRadius: 12, 
-              width: 44, 
-              height: 48, 
-              display: "flex", 
-              flexDirection: "column", 
-              alignItems: "center", 
-              overflow: "hidden",
-              flexShrink: 0,
-              border: `1px solid ${B}`
-            }}>
-              <span style={{ fontSize: 9, fontWeight: 800, background: A, color: W, width: "100%", textAlign: "center", padding: "4px 0", letterSpacing: "0.1em" }}>{dateMonth}</span>
-              <span style={{ fontSize: 16, fontWeight: 800, color: FG, marginTop: 2 }}>{dateDay}</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>DATE</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{date}</span>
-              <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayTime}</span>
-            </div>
+          <div style={{
+            background: W,
+            borderRadius: 12,
+            width: 44,
+            height: 48,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            overflow: "hidden",
+            flexShrink: 0,
+            border: `1px solid ${B}`
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 800, background: A, color: W, width: "100%", textAlign: "center", padding: "4px 0", letterSpacing: "0.1em" }}>{dateMonth}</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: FG, marginTop: 2 }}>{dateDay}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>DATE</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{date}</span>
+            <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayTime}</span>
+          </div>
         </div>
 
         {/* Venue Card */}
         <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
-           <div style={{ 
-              background: `${A}15`, 
-              borderRadius: 12, 
-              width: 44, 
-              height: 48, 
-              display: "flex", 
-              alignItems: "center",
-              justifyContent: "center",
-              color: A,
-              flexShrink: 0
-            }}>
-              <MapPin size={22} strokeWidth={2.5} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>VENUE</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueMain}</span>
-              <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueSub}</span>
-            </div>
+          <div style={{
+            background: `${A}15`,
+            borderRadius: 12,
+            width: 44,
+            height: 48,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: A,
+            flexShrink: 0
+          }}>
+            <MapPin size={22} strokeWidth={2.5} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>VENUE</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueMain}</span>
+            <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueSub}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1211,13 +1212,13 @@ function Hero({ event, heroRef }) {
       </div>
 
       <div style={{ position: "relative", zIndex: 2, width: "100%", display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center", padding: "32px 40px" }}>
-        
+
         {/* Asymmetric Split Layout Container */}
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 64, alignItems: "center" }} className="grid-2">
-          
+
           {/* Left Column: General Info & Redesigned Card Details */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            
+
 
             {/* Event Name Heading */}
             <div style={{ overflow: "hidden", marginBottom: 12 }}>
@@ -1245,19 +1246,19 @@ function Hero({ event, heroRef }) {
                 } else {
                   displayTitle = title;
                 }
-                
+
                 return (
-                  <motion.h1 
-                    initial={{ y: "100%" }} 
-                    animate={{ y: 0 }} 
-                    transition={{ duration: 1, ease: E }} 
-                    className="hero-title" 
-                    style={{ 
-                      fontSize: "clamp(2.5rem, 5vw, 4.5rem)", 
-                      fontWeight: 700, 
-                      lineHeight: 0.95, 
-                      color: FG, 
-                      margin: 0, 
+                  <motion.h1
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    transition={{ duration: 1, ease: E }}
+                    className="hero-title"
+                    style={{
+                      fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+                      fontWeight: 700,
+                      lineHeight: 0.95,
+                      color: FG,
+                      margin: 0,
                       letterSpacing: "-0.01em",
                       fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
                     }}
@@ -1282,39 +1283,39 @@ function Hero({ event, heroRef }) {
                 {(hovered) => (
                   <>
                     {/* Custom Designer Calendar Slip Badge */}
-                    <div style={{ 
-                      background: theme === "dark" ? "rgba(15, 23, 42, 0.7)" : "#FFFFFF", 
-                      borderRadius: "16px", 
-                      width: "58px", 
-                      height: "62px", 
-                      display: "flex", 
-                      flexDirection: "column", 
-                      alignItems: "center", 
-                      overflow: "hidden", 
+                    <div style={{
+                      background: theme === "dark" ? "rgba(15, 23, 42, 0.7)" : "#FFFFFF",
+                      borderRadius: "16px",
+                      width: "58px",
+                      height: "62px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      overflow: "hidden",
                       boxShadow: hovered ? `0 8px 25px ${A}30` : `0 8px 20px ${A}15`,
                       border: `1px solid ${hovered ? A : B}`,
                       flexShrink: 0,
                       transition: "all 0.3s"
                     }}>
-                      <span style={{ 
-                        fontSize: "8px", 
-                        fontWeight: 900, 
-                        background: hovered ? `linear-gradient(90deg, ${A}, ${A})` : `linear-gradient(90deg, ${A}dd, ${A})`, 
+                      <span style={{
+                        fontSize: "8px",
+                        fontWeight: 900,
+                        background: hovered ? `linear-gradient(90deg, ${A}, ${A})` : `linear-gradient(90deg, ${A}dd, ${A})`,
                         color: W,
-                        width: "100%", 
-                        textAlign: "center", 
-                        padding: "5px 0 4px", 
+                        width: "100%",
+                        textAlign: "center",
+                        padding: "5px 0 4px",
                         letterSpacing: "0.15em",
                         textTransform: "uppercase",
                         transition: "all 0.3s"
                       }}>
                         {dateMonth}
                       </span>
-                      <span style={{ 
-                        fontSize: "22px", 
-                        fontWeight: 850, 
-                        lineHeight: 1.1, 
-                        marginTop: 4, 
+                      <span style={{
+                        fontSize: "22px",
+                        fontWeight: 850,
+                        lineHeight: 1.1,
+                        marginTop: 4,
                         color: hovered ? A : FG,
                         fontFamily: "var(--font-fraunces, Georgia, serif)",
                         transition: "color 0.3s"
@@ -1341,14 +1342,14 @@ function Hero({ event, heroRef }) {
                 {(hovered) => (
                   <>
                     {/* Location Icon Container */}
-                    <div style={{ 
-                      background: hovered ? `${A}24` : `${A}12`, 
-                      color: A, 
-                      borderRadius: "16px", 
-                      width: "58px", 
-                      height: "62px", 
-                      display: "flex", 
-                      alignItems: "center", 
+                    <div style={{
+                      background: hovered ? `${A}24` : `${A}12`,
+                      color: A,
+                      borderRadius: "16px",
+                      width: "58px",
+                      height: "62px",
+                      display: "flex",
+                      alignItems: "center",
                       justifyContent: "center",
                       border: hovered ? `1.5px solid ${A}48` : `1.5px solid ${A}24`,
                       boxShadow: hovered ? `0 8px 25px ${A}15` : `0 8px 20px ${A}08`,
@@ -1360,13 +1361,13 @@ function Hero({ event, heroRef }) {
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: "9px", letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: A }}>WHERE</span>
-                      <span style={{ 
-                        fontSize: "16px", 
-                        fontWeight: 800, 
-                        color: hovered ? A : FG, 
-                        whiteSpace: "nowrap", 
-                        overflow: "hidden", 
-                        textOverflow: "ellipsis", 
+                      <span style={{
+                        fontSize: "16px",
+                        fontWeight: 800,
+                        color: hovered ? A : FG,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
                         letterSpacing: "-0.01em",
                         transition: "color 0.3s"
                       }} title={venueMain}>
@@ -1387,7 +1388,7 @@ function Hero({ event, heroRef }) {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
             {/* Soft Glow Ambient Backdrop */}
             <div style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: `${A}10`, filter: "blur(50px)", zIndex: 0 }} />
-            
+
             <div style={{ position: "relative", zIndex: 1 }} className="float-anim">
               <ImageRing event={event} />
             </div>
@@ -1402,7 +1403,7 @@ function Hero({ event, heroRef }) {
 
 function PremiumMarquee({ items }) {
   const { theme, tokens: { B, BG, FG, M } } = useTheme();
-  
+
   const rawTags = items && items.length > 0 ? items : ["Experience", "Premium", "Event", "Curated", "Editorial"];
   // Duplicate to ensure infinite seamless scrolling loop
   const loopedTags = Array(24).fill(rawTags).flat();
@@ -1522,7 +1523,7 @@ function About({ event }) {
           Where the ancient <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
         </h2>
         <div style={{ marginBottom: 16 }}>
-          <p className="mob-section-desc" style={{ 
+          <p className="mob-section-desc" style={{
             color: M,
             display: "-webkit-box",
             WebkitLineClamp: isExpanded ? "unset" : 3,
@@ -1533,7 +1534,7 @@ function About({ event }) {
             maskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)"
           }}>{desc}</p>
           {desc?.length > 150 && (
-            <button 
+            <button
               onClick={() => setIsExpanded(!isExpanded)}
               style={{
                 background: "none",
@@ -1571,9 +1572,9 @@ function About({ event }) {
     <>
       <section id="about" style={{ background: BG, padding: "32px 80px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, alignItems: "stretch" }} className="grid-2">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "stretch" }} className="grid-2">
             <div className="narrative-card" style={{
-              padding: "36px 48px",
+              padding: "24px 36px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -1582,27 +1583,26 @@ function About({ event }) {
               boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
               border: `1px solid ${B}`,
               boxSizing: "border-box",
-              height: "100%"
+              height: "fit-content"
             }}>
               <div>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "12px", fontFamily: '"Inter", sans-serif' }}>
                   The Event
                 </span>
-                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
-                  Where the ancient <br/>
-                  <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1, margin: "0 0 12px 0", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  Where the ancient <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
                 </h3>
                 <Rev delay={0.25}>
-                  <div style={{ marginBottom: 36 }}>
-                    <p style={{ 
-                      color: M, 
-                      fontSize: "16px", 
-                      lineHeight: "1.7", 
-                      margin: 0, 
-                      fontWeight: 400, 
+                  <div>
+                    <p style={{
+                      color: M,
+                      fontSize: "16px",
+                      lineHeight: "1.7",
+                      margin: 0,
+                      fontWeight: 400,
                       fontFamily: '"Inter", sans-serif',
                       display: "-webkit-box",
-                      WebkitLineClamp: isExpanded ? "unset" : 3,
+                      WebkitLineClamp: isExpanded ? "unset" : 2,
                       WebkitBoxOrient: "vertical",
                       overflow: "hidden",
                       WebkitMaskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
@@ -1611,7 +1611,7 @@ function About({ event }) {
                       {desc}
                     </p>
                     {desc?.length > 150 && (
-                      <button 
+                      <button
                         onClick={() => setIsExpanded(!isExpanded)}
                         style={{
                           background: "none",
@@ -1620,7 +1620,7 @@ function About({ event }) {
                           fontSize: "14px",
                           fontWeight: 700,
                           padding: 0,
-                          marginTop: 12,
+                          marginTop: 8,
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
@@ -2060,17 +2060,17 @@ function Venue({ event, hostName }) {
           </div>
 
           {/* Main Card Container */}
-          <div style={{ 
-            background: W, 
-            borderRadius: 24, 
-            border: `1px solid ${B}`, 
-            padding: 16, 
-            display: "grid", 
-            gridTemplateColumns: "1fr 1fr", 
+          <div style={{
+            background: W,
+            borderRadius: 24,
+            border: `1px solid ${B}`,
+            padding: 16,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
             gap: 32,
             boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
           }} className="prep-grid">
-            
+
             {/* LEFT: Map */}
             <Rev delay={0.1} style={{ height: "100%" }}>
               <div style={{ height: "100%", minHeight: 320, position: "relative", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
@@ -2112,7 +2112,7 @@ function Venue({ event, hostName }) {
                 )}
               </div>
             </Rev>
-            
+
             {/* RIGHT: Details List */}
             <Rev delay={0.2} style={{ height: "100%" }}>
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
@@ -2273,7 +2273,7 @@ function PolicyItem({ req }) {
         }}>
           {getIcon()}
         </div>
-        
+
         <div style={{ flex: 1 }}>
           <span style={{ fontSize: 16, fontWeight: 500, color: FG, display: "block", fontFamily: '"Inter", sans-serif' }}>{title}</span>
         </div>
@@ -2338,61 +2338,50 @@ function Rules({ event }) {
 
   const checkInInstructions = event?.checkInInstructions || event?.checkinInstructions;
   const cancellationPolicy = event?.cancellationPolicySummary || event?.cancellationPolicy || event?.cancellationPolicyText;
-  
+
   const guestRequirements = Array.isArray(event?.guestRequirements) ? event.guestRequirements : [];
 
-  const displayRequirements = [...guestRequirements].map(req => ({
-    setting: {
-      title: req.setting?.title || req.title || "Requirement",
-      description: req.setting?.description || req.description
-    },
-    questions: req.questions || []
-  }));
+  const policies = useMemo(() => {
+    const evtItems = [];
+    const guestItems = [];
+    const cancelItems = [];
 
-  if (checkInInstructions) {
-    displayRequirements.push({
-      setting: {
-        title: "Check-in Instructions",
-        description: checkInInstructions
+    if (checkInInstructions) {
+      evtItems.push({ title: "Check-in Instructions", body: checkInInstructions });
+    }
+    if (event?.dressCode && event.dressCode.trim() !== "") {
+      evtItems.push({ title: "Dress Code", body: event.dressCode.trim() });
+    }
+    if (event?.minimumAge != null && event.minimumAge !== "") {
+      evtItems.push({ title: "Minimum Age Requirement", body: `Minimum age for entry is ${event.minimumAge} years old.` });
+    }
+    if (event?.idProofRequired) {
+      evtItems.push({ title: "ID Proof Required", body: "Valid government-issued physical ID card required for verification at check-in." });
+    }
+
+    guestRequirements.forEach((req, i) => {
+      const title = req.setting?.title || req.title || "Requirement";
+      const body = req.setting?.description || req.description || null;
+      const item = { id: i, title, body, questions: req.questions };
+
+      if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("event")) {
+        evtItems.push(item);
+      } else {
+        guestItems.push(item);
       }
     });
-  }
 
-  if (event?.minimumAge != null && event.minimumAge !== "") {
-    displayRequirements.push({
-      setting: {
-        title: "Minimum Age Requirement",
-        description: `Minimum age for entry is ${event.minimumAge} years old.`
-      }
-    });
-  }
+    if (cancellationPolicy) {
+      cancelItems.push({ title: "Cancellation Policy", body: cancellationPolicy });
+    }
 
-  if (event?.dressCode && event.dressCode.trim() !== "") {
-    displayRequirements.push({
-      setting: {
-        title: "Dress Code",
-        description: event.dressCode.trim()
-      }
-    });
-  }
+    const categories = [];
+    if (evtItems.length > 0) categories.push({ id: 'cat-evt', title: "Event Rules", items: evtItems });
+    if (guestItems.length > 0) categories.push({ id: 'cat-guest', title: "Guest Requirements", items: guestItems });
+    if (cancelItems.length > 0) categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
 
-  if (event?.idProofRequired) {
-    displayRequirements.push({
-      setting: {
-        title: "ID Proof Required",
-        description: "Valid government-issued physical ID card required for verification at check-in."
-      }
-    });
-  }
-
-  if (cancellationPolicy) {
-    displayRequirements.push({
-      setting: {
-        title: "Cancellation Policy",
-        description: cancellationPolicy
-      }
-    });
-  }
+    return categories;
+  }, [event, guestRequirements, checkInInstructions, cancellationPolicy]);
 
   if (isMobile) {
     return (
@@ -2401,9 +2390,9 @@ function Rules({ event }) {
         <h2 className="mob-section-title" style={{ color: FG }}>Things to Keep in Mind</h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {displayRequirements.length > 0 ? (
-            displayRequirements.map((req, i) => (
-              <PolicyItem key={`req-${i}`} req={req} />
+          {policies.length > 0 ? (
+            policies.map((category) => (
+              <PolicyCategoryItem key={category.id} category={category} />
             ))
           ) : (
             <p style={{ color: M, fontSize: 14 }}>No specific guidelines listed for this event.</p>
@@ -2432,9 +2421,9 @@ function Rules({ event }) {
           </Rev>
           <Rev delay={0.2}>
             <div>
-              {displayRequirements.length > 0 ? (
-                displayRequirements.map((req, i) => (
-                  <PolicyItem key={`req-${i}`} req={req} />
+              {policies.length > 0 ? (
+                policies.map((category) => (
+                  <PolicyCategoryItem key={category.id} category={category} />
                 ))
               ) : (
                 <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific guidelines listed for this event.</p>
@@ -2507,13 +2496,13 @@ function HostDetails({ event, hostName }) {
     <section className="host-quality-section" style={{ background: W, padding: "32px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
-          
+
           {/* Host Profile (40%) */}
           <Rev delay={0.1} style={{ height: "100%" }}>
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <div 
+              <div
                 style={{
-                  background: theme === "dark" 
+                  background: theme === "dark"
                     ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
                     : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
                   border: `1px solid ${B}`,
@@ -2529,15 +2518,15 @@ function HostDetails({ event, hostName }) {
                   flexDirection: "column",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.borderColor = A; 
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = A;
                   e.currentTarget.style.transform = "translateY(-2px)";
                   e.currentTarget.style.boxShadow = theme === "dark"
                     ? `0 24px 48px ${A}15`
                     : `0 24px 48px rgba(15, 23, 42, 0.08)`;
                 }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.borderColor = B; 
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = B;
                   e.currentTarget.style.transform = "translateY(0)";
                   e.currentTarget.style.boxShadow = theme === "dark"
                     ? "0 20px 40px rgba(0, 0, 0, 0.3)"
@@ -2555,17 +2544,17 @@ function HostDetails({ event, hostName }) {
                 }} />
 
                 {/* Top Section: Avatar, Name & Metrics (With subtle tint background) */}
-                <div style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center", 
-                  gap: 16, 
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 16,
                   width: "100%",
                   padding: "20px 20px 16px 20px",
                   background: theme === "dark" ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.01)",
                   borderBottom: `1px solid ${B}`
                 }}>
-                  
+
                   {/* Avatar & Info */}
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     {/* Profile Avatar with Custom Ring */}
@@ -2591,21 +2580,21 @@ function HostDetails({ event, hostName }) {
                           src={formatImageUrl(hostProfile?.profileImageUrl || hostProfile?.host?.profileImageUrl || host?.profileImageUrl || host?.avatar || host?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
                           style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                           alt={displayHostName}
-                          onError={(e) => { 
-                            e.target.onerror = null; 
-                            e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`;
                           }}
                         />
                       </div>
                       {/* Floating Verified Check badge */}
-                      <div style={{ 
-                        position: "absolute", 
-                        bottom: -1, 
-                        right: -1, 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: "50%", 
-                        background: "#10B981", 
+                      <div style={{
+                        position: "absolute",
+                        bottom: -1,
+                        right: -1,
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: "#10B981",
                         border: `1.5px solid ${W}`,
                         display: "flex",
                         alignItems: "center",
@@ -2637,13 +2626,13 @@ function HostDetails({ event, hostName }) {
                       >
                         {displayHostName}
                       </h3>
-                      
+
                       {/* Superhost Badge under the name */}
-                      <span style={{ 
-                        fontSize: "8.5px", 
-                        letterSpacing: "0.04em", 
-                        textTransform: "uppercase", 
-                        color: "#7C3AED", 
+                      <span style={{
+                        fontSize: "8.5px",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        color: "#7C3AED",
                         background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
                         border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
                         borderRadius: "5px",
@@ -2702,7 +2691,7 @@ function HostDetails({ event, hostName }) {
                 </div>
 
                 {/* Bottom Section: Quote-styled Bio */}
-                <div style={{ 
+                <div style={{
                   flex: 1,
                   display: "flex",
                   alignItems: "center",
@@ -2734,7 +2723,7 @@ function HostDetails({ event, hostName }) {
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <div style={{
                 padding: "24px 32px",
-                background: theme === "dark" 
+                background: theme === "dark"
                   ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
                   : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
                 backdropFilter: "blur(25px) saturate(160%)",
@@ -2752,20 +2741,20 @@ function HostDetails({ event, hostName }) {
                 overflow: "hidden",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
               }}
-              onMouseEnter={(e) => { 
-                e.currentTarget.style.borderColor = A; 
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? `0 24px 48px ${A}15`
-                  : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-              }}
-              onMouseLeave={(e) => { 
-                e.currentTarget.style.borderColor = B; 
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)";
-              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = A;
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = theme === "dark"
+                    ? `0 24px 48px ${A}15`
+                    : `0 24px 48px rgba(15, 23, 42, 0.08)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = B;
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = theme === "dark"
+                    ? "0 20px 40px rgba(0, 0, 0, 0.3)"
+                    : "0 20px 40px rgba(15, 23, 42, 0.04)";
+                }}
               >
                 {event?.lkpQualityIndex ? (
                   <>
@@ -2836,7 +2825,7 @@ function HostDetails({ event, hostName }) {
                         <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
                         <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
                       </div>
-                      
+
                       <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
                         {event.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
                       </p>
@@ -3057,7 +3046,7 @@ function EventReviews({ reviews = [] }) {
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{
                   width: "360px",
-                  background: theme === "dark" 
+                  background: theme === "dark"
                     ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
                     : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
                   backdropFilter: "blur(20px)",
@@ -3093,11 +3082,11 @@ function EventReviews({ reviews = [] }) {
                 <div style={{ position: "relative", zIndex: 2 }}>
                   <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
                     {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={14} 
-                        style={{ fill: i < rating ? "#F59E0B" : "transparent" }} 
-                        color={i < rating ? "#F59E0B" : M} 
+                      <Star
+                        key={i}
+                        size={14}
+                        style={{ fill: i < rating ? "#F59E0B" : "transparent" }}
+                        color={i < rating ? "#F59E0B" : M}
                       />
                     ))}
                   </div>
@@ -3115,7 +3104,7 @@ function EventReviews({ reviews = [] }) {
                     </div>
                   )}
                 </div>
-                
+
                 <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
                   <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
                     {name.charAt(0).toUpperCase()}
@@ -3141,7 +3130,7 @@ function EventBookingPopup({ event }) {
   const initialAdultsStr = queryParams.get("adults");
   const initialChildrenStr = queryParams.get("children");
   const initialGuestsStr = queryParams.get("guests");
-  
+
   const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? { adults: Number(initialGuestsStr), children: 0 } : null);
@@ -3676,7 +3665,7 @@ export default function EventDetails() {
       try {
         setLoading(true);
         const data = await getEventDetails(eventId);
-        console.log("DEBUG: Event Details Data:", data);
+        //console.log("DEBUG: Event Details Data:", data);
         let eventAddons = [];
         try {
           eventAddons = await getEventAddons(eventId);

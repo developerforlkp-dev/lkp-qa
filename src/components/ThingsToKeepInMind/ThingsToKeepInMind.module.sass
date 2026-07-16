@@ -1,0 +1,80 @@
+@import ../../styles/helpers
+
+.container
+    display: flex
+    flex-direction: column
+    gap: 12px
+    width: 100%
+
+.policyItem
+    border-radius: 16px
+    overflow: hidden
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)
+    position: relative
+    border: 1px solid transparent
+    background: transparent
+
+.policyHeader
+    width: 100%
+    display: flex
+    align-items: center
+    gap: 16px
+    padding: 20px 24px
+    cursor: pointer
+    text-align: left
+    user-select: none
+    background: transparent
+    border: none
+    outline: none
+    +m
+        padding: 16px 20px
+    
+.iconWrapper
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 44px
+    height: 44px
+    border-radius: 12px
+    flex-shrink: 0
+    transition: all 0.3s ease
+    +m
+        width: 36px
+        height: 36px
+
+.titleContent
+    flex: 1
+    display: flex
+    flex-direction: column
+    justify-content: center
+
+.title
+    font-size: 16px
+    font-weight: 600
+    font-family: "Inter", sans-serif
+    line-height: 1.4
+
+.chevronWrapper
+    flex-shrink: 0
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 32px
+    height: 32px
+    border-radius: 50%
+    transition: all 0.3s ease
+
+.contentWrapper
+    overflow: hidden
+
+.contentInner
+    padding: 0 24px 24px 84px
+    +m
+        padding: 0 20px 20px 72px
+
+.description
+    font-size: 14px
+    line-height: 1.6
+    white-space: pre-line
+    margin: 0
+    font-family: "Inter", sans-serif

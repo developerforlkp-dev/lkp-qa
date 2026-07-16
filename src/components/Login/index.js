@@ -159,8 +159,8 @@ const Login = ({ onClose }) => {
       setLoading(true);
       setError("");
 
-      console.log("🔵 Google OAuth token received");
-      
+      //console.log("🔵 Google OAuth token received");
+
       // Send access token to backend
       if (!tokenResponse?.credential) {
         throw new Error("No Google ID token received");
@@ -373,7 +373,7 @@ const Login = ({ onClose }) => {
 
       if (token) {
         localStorage.setItem("jwtToken", token);
-        console.log("✅ JWT token stored in localStorage");
+        //console.log("✅ JWT token stored in localStorage");
       } else {
         console.warn("⚠️ No JWT token found in response:", response);
       }
@@ -389,7 +389,7 @@ const Login = ({ onClose }) => {
         ...(response.user || response.data?.user || {})
       };
       localStorage.setItem("userInfo", JSON.stringify(userInfo));
-      console.log("✅ User info stored in localStorage:", userInfo);
+      //console.log("✅ User info stored in localStorage:", userInfo);
 
       // Close modal and reload to update header
       if (onClose) {
@@ -422,7 +422,7 @@ const Login = ({ onClose }) => {
         <div className={styles.item}>
           <div className={cn("h3", styles.title)}>Sign up on Little Known Planet</div>
           <div className={styles.info}>Login with your Google account</div>
-          
+
           <div className={styles.btns}>
             <div style={{
               width: '350px',

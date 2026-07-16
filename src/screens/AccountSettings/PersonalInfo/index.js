@@ -5,10 +5,10 @@ import { useHistory } from "react-router-dom";
 import TextInput from "../../../components/TextInput";
 import Icon from "../../../components/Icon";
 import Loader from "../../../components/Loader";
-import { 
-  getCustomerProfile, 
-  updateCustomerProfile, 
-  uploadCustomerAvatar 
+import {
+  getCustomerProfile,
+  updateCustomerProfile,
+  uploadCustomerAvatar
 } from "../../../utils/api";
 
 const PersonalInfo = () => {
@@ -18,7 +18,7 @@ const PersonalInfo = () => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [success, setSuccess] = useState(false);
-  
+
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
@@ -44,23 +44,23 @@ const PersonalInfo = () => {
       setLoading(true);
       const data = await getCustomerProfile();
       if (data && data.customer) {
-        const { 
-          firstName, 
-          lastName, 
-          email, 
-          phone, 
-          avatarUrl, 
-          countryCode, 
-          isEmailVerified, 
-          isPhoneVerified, 
+        const {
+          firstName,
+          lastName,
+          email,
+          phone,
+          avatarUrl,
+          countryCode,
+          isEmailVerified,
+          isPhoneVerified,
           customerId,
           instagram,
           facebook,
           linkedin,
           twitter
         } = data.customer;
-        
-        console.log("✅ Profile loaded:", data.customer);
+
+        //console.log("✅ Profile loaded:", data.customer);
         setProfile({
           firstName: firstName || "",
           lastName: lastName || "",
@@ -93,7 +93,7 @@ const PersonalInfo = () => {
     e.preventDefault();
     try {
       setUpdating(true);
-      
+
       // Strictly only 6 fields as requested by the backend spec
       const requestBody = {
         firstName: profile.firstName || "",
@@ -125,15 +125,15 @@ const PersonalInfo = () => {
 
     try {
       setUploading(true);
-      
+
       // Local preview
       const localUrl = URL.createObjectURL(file);
       setPreviewUrl(localUrl);
-      
-      console.log("⬆️ Uploading avatar file:", file.name);
+
+      //console.log("⬆️ Uploading avatar file:", file.name);
       const result = await uploadCustomerAvatar(file);
-      console.log("✅ Avatar upload result:", result);
-      
+      //console.log("✅ Avatar upload result:", result);
+
       // Assuming result contains the new avatarUrl
       if (result && (result.avatarUrl || result.url)) {
         const newUrl = result.avatarUrl || result.url;
@@ -168,15 +168,15 @@ const PersonalInfo = () => {
       <div className={styles.avatarSection}>
         <div className={styles.avatar}>
           {previewUrl || (profile.avatarUrl && profile.avatarUrl.trim() !== "") ? (
-            <img 
-              src={previewUrl || profile.avatarUrl} 
-              alt="Avatar" 
+            <img
+              src={previewUrl || profile.avatarUrl}
+              alt="Avatar"
               onLoad={() => {
                 if (previewUrl || profile.avatarUrl) {
-                  console.log("🖼️ Avatar image rendered:", previewUrl || profile.avatarUrl);
+                  //console.log("🖼️ Avatar image rendered:", previewUrl || profile.avatarUrl);
                 }
               }}
-              onError={(e) => { 
+              onError={(e) => {
                 console.warn("⚠️ Avatar failed to load, clearing URL to trigger initial fallback:", previewUrl || profile.avatarUrl);
                 if (previewUrl) setPreviewUrl(null);
                 setProfile(prev => ({ ...prev, avatarUrl: "" }));
@@ -194,10 +194,10 @@ const PersonalInfo = () => {
           <div className={styles.avatarAction}>
             <label className={cn("button-stroke button-small", styles.button)}>
               <span>{uploading ? "Uploading..." : "Upload new picture"}</span>
-              <input 
-                type="file" 
-                className={styles.avatarInput} 
-                onChange={handleAvatarChange} 
+              <input
+                type="file"
+                className={styles.avatarInput}
+                onChange={handleAvatarChange}
                 accept="image/*"
               />
             </label>
@@ -333,7 +333,7 @@ const PersonalInfo = () => {
           </div>
         </div>
       </div>
-      
+
       <div className={styles.controls}>
         <div className={styles.btns}>
           <button className={cn("button", styles.button)} type="submit" disabled={updating}>

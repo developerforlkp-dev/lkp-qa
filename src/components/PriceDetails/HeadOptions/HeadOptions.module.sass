@@ -3,11 +3,16 @@
 .preview
     margin: 0 auto 16px auto
     max-width: 85%
+    +m
+        max-width: none
+        margin: 0 -24px 16px -24px
     img
         width: 100%
         border-radius: 16px
         aspect-ratio: 16 / 9
         object-fit: cover
+        +m
+            border-radius: 0
 
 .title
     margin-bottom: 12px

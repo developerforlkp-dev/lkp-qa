@@ -81,7 +81,7 @@ const ExperienceCheckoutComplete = () => {
         const parsed = JSON.parse(pendingPayment);
         setPaymentData(parsed);
         // Debug: log payment data to see what fields are available
-        console.log("💰 Payment Data from localStorage:", parsed);
+        //console.log("💰 Payment Data from localStorage:", parsed);
       }
     } catch { }
     // Read the actual paid amount that was passed from checkout page
@@ -95,7 +95,7 @@ const ExperienceCheckoutComplete = () => {
           paidAmount: parsed.amount,
           currency: parsed.currency || prev?.currency || "INR"
         }));
-        console.log("✅ Actual paid amount from checkout:", parsed);
+        //console.log("✅ Actual paid amount from checkout:", parsed);
       }
     } catch (e) {
       console.error("Error reading actual paid amount:", e);
@@ -191,12 +191,12 @@ const ExperienceCheckoutComplete = () => {
     if (amount === undefined || amount === null || isNaN(amount)) return null;
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) return null;
-    
+
     // If we explicitly know it's in paise (like from Razorpay paymentData)
     if (alreadyInPaise) {
       return `${currency} ${(numAmount / 100).toFixed(2)}`;
     }
-    
+
     // For normal values already in rupees
     return `${currency} ${numAmount.toFixed(2)}`;
   };
@@ -247,12 +247,12 @@ const ExperienceCheckoutComplete = () => {
     let amountPaid = "—";
 
     // Debug: log receipt and payment data
-    if (booking?.receipt) {
-      console.log("🧾 Receipt data:", booking.receipt);
-    }
-    if (paymentData) {
-      console.log("💳 Payment data:", paymentData);
-    }
+    // if (booking?.receipt) {
+    //   console.log("🧾 Receipt data:", booking.receipt);
+    // }
+    // if (paymentData) {
+    //   console.log("💳 Payment data:", paymentData);
+    // }
 
     // Priority 1: Use paidAmount from paymentData (passed from checkout page)
     // This is the actual amount that was paid (after discount)
@@ -260,7 +260,7 @@ const ExperienceCheckoutComplete = () => {
       const formatted = formatAmount(paymentData.paidAmount, paymentData.currency || "INR", true);
       if (formatted) {
         amountPaid = formatted;
-        console.log("✅ Using paidAmount from paymentData (passed from checkout):", paymentData.paidAmount);
+        // console.log("✅ Using paidAmount from paymentData (passed from checkout):", paymentData.paidAmount);
       }
     }
 
@@ -269,7 +269,7 @@ const ExperienceCheckoutComplete = () => {
       const formatted = formatAmount(paymentData.finalAmount, paymentData.currency || "INR", true);
       if (formatted) {
         amountPaid = formatted;
-        console.log("✅ Using finalAmount from paymentData:", paymentData.finalAmount);
+        //console.log("✅ Using finalAmount from paymentData:", paymentData.finalAmount);
       }
     }
 
@@ -280,11 +280,11 @@ const ExperienceCheckoutComplete = () => {
         const formatted = formatAmount(paidAmount, paymentData.currency || "INR", true);
         if (formatted) {
           amountPaid = formatted;
-          console.log("✅ Calculated from paymentData (amount - discount):", {
-            total: paymentData.amount,
-            discount: paymentData.discount,
-            paidAmount
-          });
+          // console.log("✅ Calculated from paymentData (amount - discount):", {
+          //   total: paymentData.amount,
+          //   discount: paymentData.discount,
+          //   paidAmount
+          // });
         }
       } catch (e) {
         console.error("❌ Error calculating from paymentData:", e);
@@ -300,7 +300,7 @@ const ExperienceCheckoutComplete = () => {
 
       if (paidRow?.content) {
         amountPaid = paidRow.content;
-        console.log("✅ Found paid row in receipt:", paidRow);
+        //console.log("✅ Found paid row in receipt:", paidRow);
       }
     }
 
@@ -324,7 +324,7 @@ const ExperienceCheckoutComplete = () => {
             const paidAmount = total - discount;
             const currency = totalRow.content.replace(/[\d,.\s]/g, '').trim() || paymentData?.currency || "INR";
             amountPaid = `${currency} ${paidAmount.toFixed(2)}`;
-            console.log("✅ Calculated from receipt (total - discount):", { total, discount, paidAmount });
+            //  console.log("✅ Calculated from receipt (total - discount):", { total, discount, paidAmount });
           }
         } catch (e) {
           console.error("❌ Error calculating from receipt:", e);
@@ -350,11 +350,11 @@ const ExperienceCheckoutComplete = () => {
             const formatted = formatAmount(paidAmount, paymentData.currency || "INR", true);
             if (formatted) {
               amountPaid = formatted;
-              console.log("✅ Calculated from paymentData.amount and receipt discount:", {
-                total: paymentData.amount,
-                discountInPaise,
-                paidAmount
-              });
+              //   console.log("✅ Calculated from paymentData.amount and receipt discount:", {
+              //     total: paymentData.amount,
+              //     discountInPaise,
+              //     paidAmount
+              //   });
             }
           }
         } catch (e) {
@@ -368,7 +368,7 @@ const ExperienceCheckoutComplete = () => {
       const formatted = formatAmount(paymentData.amount, paymentData.currency || "INR", true);
       if (formatted) {
         amountPaid = formatted;
-        console.log("⚠️ Using paymentData.amount as fallback (might be total):", paymentData.amount);
+        //console.log("⚠️ Using paymentData.amount as fallback (might be total):", paymentData.amount);
       }
     }
 
@@ -377,7 +377,7 @@ const ExperienceCheckoutComplete = () => {
       const totalRow = booking.receipt.find((r) => r.title?.toLowerCase() === "total");
       if (totalRow?.content) {
         amountPaid = totalRow.content;
-        console.log("⚠️ Using receipt total as last resort:", totalRow.content);
+        //console.log("⚠️ Using receipt total as last resort:", totalRow.content);
       }
     }
 
@@ -387,7 +387,7 @@ const ExperienceCheckoutComplete = () => {
       amountPaid = "Free";
     }
 
-    console.log("💰 Final amount paid:", amountPaid);
+    //console.log("💰 Final amount paid:", amountPaid);
 
     return [
       {

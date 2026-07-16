@@ -30,7 +30,7 @@
     position: absolute
     top: 50%
     left: 60px
-    max-width: 480px
+    max-width: 380px
     width: 28%
     min-width: 280px
     transform: translateY(-50%)
@@ -72,46 +72,52 @@
 
 .title1
     font-weight: 700
-    font-size: 40px
+    font-size: 46px
     font-family: "Cormorant Garamond", "Playfair Display", serif
     letter-spacing: -0.03em
-    line-height: 0.95
+    line-height: 0.85
     color: #11284B
     opacity: 1
     padding-bottom: 2px
-    max-width: 500px
+    max-width: 360px
     word-wrap: break-word
     white-space: normal
     +d
-        font-size: 32px
+        font-size: 38px
+        max-width: 320px
     +t
-        font-size: clamp(28px, 3.5vw, 36px)
+        font-size: clamp(32px, 3.5vw, 42px)
+        max-width: 260px
     +m
-        font-size: clamp(26px, 7vw, 32px)
-        line-height: 1
+        font-size: clamp(28px, 7vw, 36px)
+        line-height: 0.9
         padding-bottom: 2px
+        max-width: 100%
 
 // Global classes for GSAP selectors
 :global(.hero-title-1)
     font-weight: 700
-    font-size: 40px
+    font-size: 46px
     font-family: "Cormorant Garamond", "Playfair Display", serif
     letter-spacing: -0.03em
-    line-height: 0.95
+    line-height: 0.85
     color: #11284B
     opacity: 1
     padding-bottom: 2px
-    max-width: 500px
+    max-width: 360px
     word-wrap: break-word
     white-space: normal
     +d
-        font-size: 32px
+        font-size: 38px
+        max-width: 320px
     +t
-        font-size: clamp(28px, 3.5vw, 36px)
+        font-size: clamp(32px, 3.5vw, 42px)
+        max-width: 260px
     +m
-        font-size: clamp(26px, 7vw, 32px)
-        line-height: 1
+        font-size: clamp(28px, 7vw, 36px)
+        line-height: 0.9
         padding-bottom: 2px
+        max-width: 100%
 
 :global(.hero-accent-word)
     font-style: italic
@@ -132,7 +138,7 @@
         background-position: 0% 50%
 
 .desc
-    margin-top: 4px
+    margin-top: 8px
     max-width: 440px
     font-family: "Inter", "Plus Jakarta Sans", sans-serif
     font-size: 13px
@@ -155,7 +161,7 @@
         display: none
 
 :global(.hero-desc)
-    margin-top: 4px
+    margin-top: 8px
     max-width: 440px
     font-family: "Inter", "Plus Jakarta Sans", sans-serif
     font-size: 13px
@@ -178,7 +184,7 @@
         display: none
 
 .button, :global(.hero-button)
-    margin-top: 12px
+    margin-top: 16px
     display: inline-flex
     align-items: center
     justify-content: space-between
@@ -195,7 +201,8 @@
     line-height: 1.4
     color: #ffffff
     cursor: pointer
-    transition: all 0.3s ease
+    translate: 0 0
+    transition: background 0.3s ease, box-shadow 0.3s ease, translate 0.3s ease
     white-space: nowrap
     opacity: 1
     will-change: transform, opacity
@@ -211,9 +218,9 @@
     &:hover
         background: #008199
         box-shadow: 0 12px 32px rgba(0, 151, 178, 0.4)
-        transform: translateY(-2px)
+        translate: 0 -2px
     &:active
-        transform: translateY(0)
+        translate: 0 0
         box-shadow: 0 4px 16px rgba(0, 151, 178, 0.3)
 
 .buttonIcon

@@ -961,11 +961,11 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
 function MobileAboutSection({ stay }) {
   const { tokens: { A, FG, M } } = useTheme();
   const [expanded, setExpanded] = useState(false);
-  
+
   const description = stay?.detailedDescription || stay?.description || stay?.shortDescription || "A luxury stay with modern amenities and premium comfort. Perfect for a peaceful escape surrounded by nature and privacy.";
   const isLong = description.length > 150;
   const displayText = (!expanded && isLong) ? description.slice(0, 150) + "..." : description;
-  
+
   return (
     <div className="mobile-about-section">
       <span style={{ display: "block", fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
@@ -1000,14 +1000,14 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
     const collected = [];
     const cover = stay?.coverPhotoUrl || stay?.coverImageUrl || stay?.coverPhoto || stay?.coverImage || stay?.imageUrl || "";
     if (cover) collected.push(fixImageUrl(cover));
-    
+
     if (Array.isArray(galleryItems) && galleryItems.length > 0) {
       galleryItems.forEach(img => {
         const url = fixImageUrl(img);
         if (url && !collected.includes(url)) collected.push(url);
       });
     }
-    
+
     if (collected.length === 0) {
       collected.push("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=");
     }
@@ -1063,10 +1063,10 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
   return (
     <section ref={heroRef} style={{ position: "relative", height: isMobile ? "auto" : "75vh", background: "transparent", overflow: "visible", padding: "0", zIndex: 50 }}>
       <div className="premium-hero-grid" style={isMobile ? { position: "relative", height: "55vh" } : {}}>
-        
+
         {/* Main Cover Image View */}
         <div className="hero-spotlight" onClick={() => openFullscreen(activeIdx)} style={{ cursor: "pointer", height: isMobile ? "100%" : undefined }}>
-          
+
           {/* Mobile Top Controls */}
           {isMobile && (
             <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 70, pointerEvents: "none" }}>
@@ -1089,15 +1089,15 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
                     </button>
                   )}
                 </Favorite>
-                <button onClick={async (e) => { 
-                  e.stopPropagation(); 
+                <button onClick={async (e) => {
+                  e.stopPropagation();
                   try {
                     if (navigator.share) {
                       await navigator.share({ title, text: stay?.shortDescription || stay?.description || "", url: window.location.href });
                     } else {
                       await navigator.clipboard.writeText(window.location.href);
                     }
-                  } catch (_) {}
+                  } catch (_) { }
                 }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
                   <Share2 size={20} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
                 </button>
@@ -1120,10 +1120,10 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
                     : "0 6px 18px rgba(15,15,15,0.12)";
 
                   return (
-                    <motion.button 
+                    <motion.button
                       whileHover={{ scale: 1.05, background: surfaceHover }}
                       whileTap={{ scale: 0.86 }}
-                      onClick={(e) => { e.stopPropagation(); onClick(e); }} 
+                      onClick={(e) => { e.stopPropagation(); onClick(e); }}
                       style={{ width: 44, height: 44, borderRadius: "50%", background: surface, border: `1.5px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", transition: "background 0.35s ease, border-color 0.35s ease" }}
                     >
                       <style>{`
@@ -1272,7 +1272,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
                 const titleText = title || "";
                 const words = titleText.trim().split(/\s+/);
                 let displayTitle;
-                
+
                 if (words.length >= 2) {
                   const lastWord = words.pop();
                   displayTitle = (
@@ -1525,10 +1525,10 @@ function StayAmenities({ stay }) {
   return (
     <section style={{ background: "transparent", padding: isMobile ? "16px 24px" : "0px 80px", boxSizing: "border-box", overflow: "hidden" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        
+
         <Soul y={isMobile ? 30 : 60} s={0.03}>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            
+
             {/* 1. Full-Width Highlights Banner (Moved to top) */}
             <Rev className="highlights-banner">
               {highlights.map((h, i) => {
@@ -1839,9 +1839,22 @@ function PolicyCategoryItem({ category }) {
                     <span style={{ fontSize: "14px", fontWeight: 700, color: FG, display: "block", marginBottom: 6 }}>{item.title}</span>
                   )}
                   {item.body && (
-                    <p style={{ fontSize: 13, color: M, lineHeight: 1.6, whiteSpace: "pre-line", margin: 0 }}>
-                      {item.body}
-                    </p>
+                    <div style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0 }}>
+                      {category.title?.toLowerCase().includes('cancellation') && item.body.split('. ').filter(s => s.trim().length > 0).length > 1 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                          {item.body.split('. ').filter(s => s.trim().length > 0).map((sentence, idx) => (
+                            <div key={idx} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                              <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
+                              <div style={{ flex: 1 }}>
+                                {sentence.trim()}{sentence.trim().endsWith('.') ? '' : '.'}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, whiteSpace: "pre-line" }}>{item.body}</p>
+                      )}
+                    </div>
                   )}
                   {item.questions && item.questions.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
@@ -1872,7 +1885,7 @@ function PolicyCategoryItem({ category }) {
   );
 }
 
-  function StayPolicies({ stay }) {
+function StayPolicies({ stay }) {
   const { tokens: { FG, W, B, A, M, BG }, theme } = useTheme();
   const { isMobile } = useWindowSize();
 
@@ -1910,15 +1923,15 @@ function PolicyCategoryItem({ category }) {
     // Property Rules
     const propItems = [];
     const generalRules = [];
-    
+
     if (stay?.privacyAndPolicy?.propertyRulesTemplate && stay.privacyAndPolicy.propertyRulesTemplate !== "No property rules defined.") {
       const lines = stay.privacyAndPolicy.propertyRulesTemplate.split('\n').map(l => l.trim()).filter(Boolean);
       lines.forEach((line) => {
         if (line.toLowerCase() === "check-in and check-out" || line.toLowerCase() === "property rules") return;
-        
+
         const colonIdx = line.indexOf(':');
         const isTimeFormat = colonIdx > 0 && colonIdx + 1 < line.length && /\d/.test(line[colonIdx + 1]);
-        
+
         if (colonIdx > 0 && colonIdx < 60 && !isTimeFormat) {
           generalRules.push({ title: line.substring(0, colonIdx).trim(), valueText: line.substring(colonIdx + 1).trim() });
         } else {
@@ -1939,7 +1952,7 @@ function PolicyCategoryItem({ category }) {
         generalRules.push({ title: "Check-out", valueText: "By 11:00 AM" });
       }
     }
-    
+
     if (stay?.ageRestriction != null && stay.ageRestriction !== "") {
       generalRules.push({ title: "Minimum Age", valueText: `${stay.ageRestriction}+` });
     }
@@ -1950,7 +1963,9 @@ function PolicyCategoryItem({ category }) {
 
     if (generalRules.length > 0) {
       propItems.push({ id: "prop-all", title: null, questions: generalRules });
-      categories.push({ id: 'cat-prop', title: "Property Rules", items: propItems });
+      const isProperty = String(stay?.propertyType || '').toLowerCase() === 'property' || String(stay?.listingType || '').toLowerCase() === 'property';
+      const ruleTitle = isProperty ? "Property Rules" : "Stay Rules";
+      categories.push({ id: 'cat-prop', title: ruleTitle, items: propItems });
     }
 
     // Guest Requirements
@@ -1983,9 +1998,9 @@ function PolicyCategoryItem({ category }) {
       stay?.cancellationPolicyText;
 
     if (summaryText && summaryText.trim().length > 5 && !summaryText.toLowerCase().includes("no cancellation policy summary")) {
-      cancelItems.push({ id: 'cancel-1', title: "Cancellation Terms", body: summaryText });
+      cancelItems.push({ id: 'cancel-1', title: null, body: summaryText });
     } else if (templateText && templateText.trim().length > 0 && !templateText.toLowerCase().includes("no cancellation policy rules")) {
-      cancelItems.push({ id: 'cancel-1', title: "Cancellation Terms", body: templateText });
+      cancelItems.push({ id: 'cancel-1', title: null, body: templateText });
     } else {
       const rawCancelRules = stay?.cancellationPolicyRules || stay?.cancellationPolicyRule || stay?.cancellationRules || findArrayWithKey(stay, 'policyRule');
       if (Array.isArray(rawCancelRules) && rawCancelRules.length > 0) {
@@ -2072,13 +2087,13 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
     <section className="host-quality-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
       <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "4fr 6fr", gap: 64 }} className="host-quality-grid">
-          
+
           {/* Host Profile (40%) */}
           <div style={{ display: "flex", flexDirection: "column", gap: 24, width: "100%" }}>
             <Rev delay={0.1}>
-              <div 
+              <div
                 style={{
-                  background: theme === "dark" 
+                  background: theme === "dark"
                     ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
                     : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
                   border: `1px solid ${B}`,
@@ -2093,15 +2108,15 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                   minHeight: 250,
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.borderColor = A; 
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = A;
                   e.currentTarget.style.transform = "translateY(-2px)";
                   e.currentTarget.style.boxShadow = theme === "dark"
                     ? `0 24px 48px ${A}15`
                     : `0 24px 48px rgba(15, 23, 42, 0.08)`;
                 }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.borderColor = B; 
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = B;
                   e.currentTarget.style.transform = "translateY(0)";
                   e.currentTarget.style.boxShadow = theme === "dark"
                     ? "0 20px 40px rgba(0, 0, 0, 0.3)"
@@ -2117,17 +2132,17 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                   background: `linear-gradient(90deg, ${A} 0%, #8B5CF6 100%)`
                 }} />
 
-                <div style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center", 
-                  gap: 16, 
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 16,
                   width: "100%",
                   padding: "20px 20px 16px 20px",
                   background: theme === "dark" ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.01)",
                   borderBottom: `1px solid ${B}`
                 }}>
-                  
+
                   {/* Avatar & Info */}
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{
@@ -2152,20 +2167,20 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                           src={hostAvatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(primaryName)}&backgroundColor=0097B2&color=ffffff`}
                           style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                           alt={primaryName}
-                          onError={(e) => { 
-                            e.target.onerror = null; 
-                            e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(primaryName)}&backgroundColor=0097B2&color=ffffff`; 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(primaryName)}&backgroundColor=0097B2&color=ffffff`;
                           }}
                         />
                       </div>
-                      <div style={{ 
-                        position: "absolute", 
-                        bottom: -1, 
-                        right: -1, 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: "50%", 
-                        background: "#10B981", 
+                      <div style={{
+                        position: "absolute",
+                        bottom: -1,
+                        right: -1,
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: "#10B981",
                         border: `1.5px solid ${W}`,
                         display: "flex",
                         alignItems: "center",
@@ -2196,11 +2211,11 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                       >
                         {primaryName}
                       </h3>
-                      <span style={{ 
-                        fontSize: "8.5px", 
-                        letterSpacing: "0.04em", 
-                        textTransform: "uppercase", 
-                        color: "#7C3AED", 
+                      <span style={{
+                        fontSize: "8.5px",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        color: "#7C3AED",
                         background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
                         border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
                         borderRadius: "5px",
@@ -2253,7 +2268,7 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                 </div>
 
                 {/* Bio */}
-                <div style={{ 
+                <div style={{
                   flex: 1,
                   display: "flex",
                   alignItems: "center",
@@ -2286,7 +2301,7 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <div style={{
                 padding: "24px 32px",
-                background: theme === "dark" 
+                background: theme === "dark"
                   ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
                   : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
                 backdropFilter: "blur(25px) saturate(160%)",
@@ -2304,20 +2319,20 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                 overflow: "hidden",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
               }}
-              onMouseEnter={(e) => { 
-                e.currentTarget.style.borderColor = A; 
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? `0 24px 48px ${A}15`
-                  : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-              }}
-              onMouseLeave={(e) => { 
-                e.currentTarget.style.borderColor = B; 
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)";
-              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = A;
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = theme === "dark"
+                    ? `0 24px 48px ${A}15`
+                    : `0 24px 48px rgba(15, 23, 42, 0.08)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = B;
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = theme === "dark"
+                    ? "0 20px 40px rgba(0, 0, 0, 0.3)"
+                    : "0 20px 40px rgba(15, 23, 42, 0.04)";
+                }}
               >
                 {stay?.lkpQualityIndex ? (
                   <>
@@ -2388,7 +2403,7 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                         <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
                         <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
                       </div>
-                      
+
                       <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
                         {stay.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
                       </p>
@@ -2482,8 +2497,8 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
   const { theme, tokens: { A, AL, BG, FG, M, S, B, W } } = useTheme();
 
   const activeAddons = useMemo(() => {
-    return Array.isArray(stay?.addons) 
-      ? stay.addons.filter(a => a.isActive || a.status === 'Active') 
+    return Array.isArray(stay?.addons)
+      ? stay.addons.filter(a => a.isActive || a.status === 'Active')
       : [];
   }, [stay]);
 
@@ -2493,7 +2508,7 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
     <div style={{ background: BG, padding: isMobile ? "80px 16px 40px" : "140px 36px 80px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <SHdr idx="03" label="Enhance Your Stay" />
-        
+
         <Rev delay={0.4} style={{ marginTop: 40 }}>
           <div style={{ background: W, border: `1px solid ${B}`, padding: isMobile ? "32px 20px" : "64px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2.5fr", gap: isMobile ? 32 : 80 }} className="details-inner">
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
@@ -2502,7 +2517,7 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
                 Elevate your stay with our thoughtfully curated selection of premium amenities and personalized services.
               </p>
             </div>
-            
+
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 32 }}>
               {activeAddons.map(addon => {
                 const addonId = addon.addonId || addon.assignmentId || addon.id;
@@ -2511,7 +2526,7 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
                 const qty = isIndividual ? (addOnQuantities[addonId] || 1) : 1;
                 const price = parseFloat(addon.price || 0);
                 const imageUrl = Array.isArray(addon.imageUrls) && addon.imageUrls[0] ? fixImageUrl(addon.imageUrls[0]) : null;
-                
+
                 return (
                   <motion.div
                     key={addonId}
@@ -2764,7 +2779,7 @@ const StayDetails = () => {
         const isLoggedIn = !!token && token !== "undefined" && token !== "null";
 
         if (stored?.listingId === String(id) && stored?.type === "stay" && isLoggedIn) {
-          console.log("🔄 Restoring stay persistent booking state after auth redirect:", stored);
+          //console.log("🔄 Restoring stay persistent booking state after auth redirect:", stored);
           if (stored.checkInDate) {
             const pCheckIn = moment(stored.checkInDate);
             if (pCheckIn.isValid()) setCheckInDate(pCheckIn);
@@ -2800,7 +2815,7 @@ const StayDetails = () => {
         if (data) {
           setStay(data);
           // DEBUG: Log full stay payload to identify exact field names for rules/policies
-          console.log("🏨 STAY FULL PAYLOAD:", JSON.stringify(data, null, 2));
+          //console.log("🏨 STAY FULL PAYLOAD:", JSON.stringify(data, null, 2));
           const galleryImages = [];
           const cover = data.coverPhotoUrl || data.coverImageUrl || data.coverPhoto || data.coverImage || data.cover;
           if (cover) galleryImages.push(fixImageUrl(cover));
@@ -2833,7 +2848,7 @@ const StayDetails = () => {
                 return String(bStayId) === String(id);
               });
               setEligibleBookings(filtered);
-              console.log(`✅ Stay review eligibility: ${filtered.length} eligible bookings found`);
+              //console.log(`✅ Stay review eligibility: ${filtered.length} eligible bookings found`);
             }
           }).catch(e => console.warn("❌ Error fetching stay eligibility:", e));
         }
@@ -2964,7 +2979,7 @@ const StayDetails = () => {
         const rawTags = Array.isArray(stay?.tags) && stay.tags.length > 0
           ? stay.tags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
           : ["Bespoke Service", "Privacy Guaranteed", "Direct Connection", "Luxury Accommodations", "Stunning Views", "Premium Amenities"];
-        
+
         // Duplicate to ensure infinite seamless scrolling loop
         const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
 
@@ -3028,276 +3043,276 @@ const StayDetails = () => {
 
       {/* ADDONS SECTION */}
       {(() => {
-        const activeAddons = Array.isArray(stay?.addons) 
+        const activeAddons = Array.isArray(stay?.addons)
           ? stay.addons.filter(a => a.isActive || a.status === 'Active' || a.addon?.isActive || a.addon?.status === 'Active')
           : [];
         if (activeAddons.length === 0) return null;
 
         return (
-        <section className="addons-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "64px 0" }}>
-          <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
-                  Enhance Your Stay
-                </span>
-                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
-                  Make it Yours
-                </h3>
-                <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
-                  Curated add-ons to make your stay even more special.
-                </p>
-              </div>
-              {!isMobile && activeAddons.length > 2 && (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <button
-                      type="button"
-                      onClick={() => scrollAddonsSlider("left")}
-                      style={{
-                        width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                        color: M, transition: "0.3s", outline: "none"
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollAddonsSlider("right")}
-                      style={{
-                        width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                        color: M, transition: "0.3s", outline: "none"
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                  <div style={{ fontSize: "12px", fontFamily: '"Inter", sans-serif', fontWeight: 600, paddingRight: 4 }}>
-                    <span style={{ color: A }}>{Math.min(currentAddonIndex, Math.max(1, activeAddons.length))}</span> <span style={{ color: M }}>/ {Math.max(1, activeAddons.length)}</span>
-                  </div>
+          <section className="addons-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "64px 0" }}>
+            <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
+                    Enhance Your Stay
+                  </span>
+                  <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                    Make it Yours
+                  </h3>
+                  <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
+                    Curated add-ons to make your stay even more special.
+                  </p>
                 </div>
-              )}
-            </div>
-            
-            {(() => {
-              const addonsList = activeAddons;
-              const showScroll = addonsList.length > 2;
-
-              return (
-                <div
-                  ref={addonsSliderRef}
-                  className={showScroll ? "no-scrollbar" : ""}
-                  onScroll={(e) => {
-                    if (!showScroll) return;
-                    const container = e.target;
-                    const stepSize = (container.clientWidth + 20) / 2;
-                    let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
-                    
-                    if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
-                      newIndex = addonsList.length;
-                    } else {
-                      newIndex = Math.min(addonsList.length, newIndex);
-                    }
-
-                    if (newIndex !== currentAddonIndex) {
-                      setCurrentAddonIndex(newIndex);
-                    }
-                  }}
-                  style={showScroll && !isMobile ? {
-                    display: "flex",
-                    gap: "20px",
-                    overflowX: "auto",
-                    overflowY: "hidden",
-                    paddingBottom: "12px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                    scrollBehavior: "smooth",
-                    scrollSnapType: "x mandatory"
-                  } : {
-                    display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(320px, 1fr))",
-                    gap: "20px"
-                  }}
-                >
-                  {addonsList.map((item, i) => {
-                    const addon = item.addon || item;
-                    const addonId = addon.addonId || item.assignmentId || addon.id || item.id;
-                    const pricingType = addon.pricingType || item.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                    const addonImage = addon.imageUrl || (Array.isArray(addon.imageUrls) && addon.imageUrls[0]) || addon.image || (Array.isArray(item.imageUrls) && item.imageUrls[0]) || item.imageUrl;
-
-                    return (
-                      <motion.div
-                        key={addonId}
-                        className="addon-item"
-                        whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
-                        transition={{ duration: 0.2 }}
+                {!isMobile && activeAddons.length > 2 && (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => scrollAddonsSlider("left")}
                         style={{
-                          display: "flex",
-                          flexDirection: "row",
-                          minHeight: isMobile ? "auto" : "115px",
-                          height: "auto",
-                          width: isMobile ? "100%" : (showScroll ? "calc((100% - 20px) / 2)" : "100%"),
-                          flexShrink: 0,
-                          background: W,
-                          borderRadius: "16px",
-                          border: `1px solid ${selectedAddOns.includes(addonId) ? A : "transparent"}`,
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-                          transition: "box-shadow 0.3s, border-color 0.3s",
-                          overflow: "hidden",
-                          boxSizing: "border-box",
-                          scrollSnapAlign: "start"
+                          width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                          color: M, transition: "0.3s", outline: "none"
                         }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
                       >
-                        {/* Left side: Image */}
-                        <div style={{ width: isMobile ? "64px" : "160px", height: isMobile ? "64px" : "100%", margin: isMobile ? "16px 0 16px 16px" : 0, borderRadius: isMobile ? "8px" : 0, flexShrink: 0, overflow: "hidden", background: W, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {addonImage ? (
-                            <img
-                              src={addonImage}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-                              alt={addon.title || addon.name}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/images/content/placeholder.jpg";
-                              }}
-                            />
-                          ) : (
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: `${A}08` }}>
-                              <Plus size={24} color={A} />
-                            </div>
-                          )}
-                        </div>
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollAddonsSlider("right")}
+                        style={{
+                          width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                          color: M, transition: "0.3s", outline: "none"
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                    <div style={{ fontSize: "12px", fontFamily: '"Inter", sans-serif', fontWeight: 600, paddingRight: 4 }}>
+                      <span style={{ color: A }}>{Math.min(currentAddonIndex, Math.max(1, activeAddons.length))}</span> <span style={{ color: M }}>/ {Math.max(1, activeAddons.length)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                        {/* Right side: Content */}
-                        <div style={{ flex: 1, minWidth: 0, padding: isMobile ? "12px 16px 12px 8px" : "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: isMobile ? "center" : "stretch", boxSizing: "border-box" }}>
-                          
-                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: isMobile ? "4px" : "6px", flex: 1, minWidth: 0, paddingRight: isMobile ? "12px" : "16px" }}>
-                            {!isMobile && (
-                              <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
-                                {pricingType}
-                              </div>
-                            )}
-                            <h4 style={{ fontSize: isMobile ? "15px" : "18px", fontWeight: 700, color: FG, margin: isMobile ? 0 : "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
-                              {addon.title || addon.name}
-                            </h4>
-                            {isMobile ? (
-                              <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                                <span style={{ fontSize: "14px", fontWeight: 700, color: FG }}>₹{Number(addon.price || 0).toLocaleString()}</span>
-                                <span style={{ fontSize: "11px", color: M, fontWeight: 500 }}>/{pricingType === "Group" ? "group" : "person"}</span>
-                              </div>
+              {(() => {
+                const addonsList = activeAddons;
+                const showScroll = addonsList.length > 2;
+
+                return (
+                  <div
+                    ref={addonsSliderRef}
+                    className={showScroll ? "no-scrollbar" : ""}
+                    onScroll={(e) => {
+                      if (!showScroll) return;
+                      const container = e.target;
+                      const stepSize = (container.clientWidth + 20) / 2;
+                      let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
+
+                      if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
+                        newIndex = addonsList.length;
+                      } else {
+                        newIndex = Math.min(addonsList.length, newIndex);
+                      }
+
+                      if (newIndex !== currentAddonIndex) {
+                        setCurrentAddonIndex(newIndex);
+                      }
+                    }}
+                    style={showScroll && !isMobile ? {
+                      display: "flex",
+                      gap: "20px",
+                      overflowX: "auto",
+                      overflowY: "hidden",
+                      paddingBottom: "12px",
+                      width: "100%",
+                      boxSizing: "border-box",
+                      scrollBehavior: "smooth",
+                      scrollSnapType: "x mandatory"
+                    } : {
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(320px, 1fr))",
+                      gap: "20px"
+                    }}
+                  >
+                    {addonsList.map((item, i) => {
+                      const addon = item.addon || item;
+                      const addonId = addon.addonId || item.assignmentId || addon.id || item.id;
+                      const pricingType = addon.pricingType || item.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                      const addonImage = addon.imageUrl || (Array.isArray(addon.imageUrls) && addon.imageUrls[0]) || addon.image || (Array.isArray(item.imageUrls) && item.imageUrls[0]) || item.imageUrl;
+
+                      return (
+                        <motion.div
+                          key={addonId}
+                          className="addon-item"
+                          whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
+                          transition={{ duration: 0.2 }}
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            minHeight: isMobile ? "auto" : "115px",
+                            height: "auto",
+                            width: isMobile ? "100%" : (showScroll ? "calc((100% - 20px) / 2)" : "100%"),
+                            flexShrink: 0,
+                            background: W,
+                            borderRadius: "16px",
+                            border: `1px solid ${selectedAddOns.includes(addonId) ? A : "transparent"}`,
+                            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                            transition: "box-shadow 0.3s, border-color 0.3s",
+                            overflow: "hidden",
+                            boxSizing: "border-box",
+                            scrollSnapAlign: "start"
+                          }}
+                        >
+                          {/* Left side: Image */}
+                          <div style={{ width: isMobile ? "64px" : "160px", height: isMobile ? "64px" : "100%", margin: isMobile ? "16px 0 16px 16px" : 0, borderRadius: isMobile ? "8px" : 0, flexShrink: 0, overflow: "hidden", background: W, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {addonImage ? (
+                              <img
+                                src={addonImage}
+                                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                                alt={addon.title || addon.name}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "/images/content/placeholder.jpg";
+                                }}
+                              />
                             ) : (
-                              <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
-                                {addon.briefDescription || addon.description}
-                              </p>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: `${A}08` }}>
+                                <Plus size={24} color={A} />
+                              </div>
                             )}
                           </div>
 
-                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", minWidth: isMobile ? "auto" : "90px" }}>
-                            {!isMobile && (
-                              <div style={{ fontSize: "16px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', marginBottom: "12px" }}>
-                                ₹{Number(addon.price || 0).toFixed(2)}
-                              </div>
-                            )}
+                          {/* Right side: Content */}
+                          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? "12px 16px 12px 8px" : "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: isMobile ? "center" : "stretch", boxSizing: "border-box" }}>
 
-                            <div className="addon-actions" style={{ flexShrink: 0 }}>
-                              {selectedAddOns.includes(addonId) ? (
-                                pricingType === "Group" ? (
+                            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: isMobile ? "4px" : "6px", flex: 1, minWidth: 0, paddingRight: isMobile ? "12px" : "16px" }}>
+                              {!isMobile && (
+                                <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
+                                  {pricingType}
+                                </div>
+                              )}
+                              <h4 style={{ fontSize: isMobile ? "15px" : "18px", fontWeight: 700, color: FG, margin: isMobile ? 0 : "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
+                                {addon.title || addon.name}
+                              </h4>
+                              {isMobile ? (
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                                  <span style={{ fontSize: "14px", fontWeight: 700, color: FG }}>₹{Number(addon.price || 0).toLocaleString()}</span>
+                                  <span style={{ fontSize: "11px", color: M, fontWeight: 500 }}>/{pricingType === "Group" ? "group" : "person"}</span>
+                                </div>
+                              ) : (
+                                <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
+                                  {addon.briefDescription || addon.description}
+                                </p>
+                              )}
+                            </div>
+
+                            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", minWidth: isMobile ? "auto" : "90px" }}>
+                              {!isMobile && (
+                                <div style={{ fontSize: "16px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', marginBottom: "12px" }}>
+                                  ₹{Number(addon.price || 0).toFixed(2)}
+                                </div>
+                              )}
+
+                              <div className="addon-actions" style={{ flexShrink: 0 }}>
+                                {selectedAddOns.includes(addonId) ? (
+                                  pricingType === "Group" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleAddOn(addonId, pricingType)}
+                                      style={{
+                                        background: `${A}15`,
+                                        color: A,
+                                        border: `1px solid ${A}50`,
+                                        borderRadius: 100,
+                                        padding: "6px 16px",
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        textTransform: "uppercase",
+                                        transition: "all 0.2s",
+                                        outline: "none"
+                                      }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
+                                    >
+                                      Remove
+                                    </button>
+                                  ) : (
+                                    <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "4px 8px", border: `1px solid ${A}` }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddOnQuantityChange(addonId, (addOnQuantities[addonId] || 1) - 1)}
+                                        style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                      >
+                                        <Minus size={14} />
+                                      </button>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
+                                        {addOnQuantities[addonId] || 1}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddOnQuantityChange(addonId, (addOnQuantities[addonId] || 1) + 1)}
+                                        style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                      >
+                                        <Plus size={14} />
+                                      </button>
+                                    </div>
+                                  )
+                                ) : (
                                   <button
                                     type="button"
                                     onClick={() => handleToggleAddOn(addonId, pricingType)}
-                                    style={{
-                                      background: `${A}15`,
+                                    style={isMobile ? {
+                                      background: "transparent",
                                       color: A,
-                                      border: `1px solid ${A}50`,
-                                      borderRadius: 100,
-                                      padding: "6px 16px",
-                                      fontSize: 12,
+                                      border: `1px solid ${A}`,
+                                      borderRadius: "100px",
+                                      padding: "6px 20px",
+                                      fontSize: "12px",
                                       fontWeight: 700,
+                                      fontFamily: '"Inter", sans-serif',
                                       cursor: "pointer",
-                                      textTransform: "uppercase",
-                                      transition: "all 0.2s",
+                                      outline: "none"
+                                    } : {
+                                      background: "#007B8F",
+                                      color: "#FFFFFF",
+                                      border: "none",
+                                      borderRadius: "100px",
+                                      padding: "6px 20px",
+                                      fontSize: "12px",
+                                      fontWeight: 700,
+                                      fontFamily: '"Inter", sans-serif',
+                                      cursor: "pointer",
                                       outline: "none"
                                     }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
                                   >
-                                    Remove
+                                    Add
                                   </button>
-                                ) : (
-                                  <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "4px 8px", border: `1px solid ${A}` }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAddOnQuantityChange(addonId, (addOnQuantities[addonId] || 1) - 1)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
-                                    >
-                                      <Minus size={14} />
-                                    </button>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
-                                      {addOnQuantities[addonId] || 1}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAddOnQuantityChange(addonId, (addOnQuantities[addonId] || 1) + 1)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
-                                    >
-                                      <Plus size={14} />
-                                    </button>
-                                  </div>
-                                )
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleAddOn(addonId, pricingType)}
-                                  style={isMobile ? {
-                                    background: "transparent",
-                                    color: A,
-                                    border: `1px solid ${A}`,
-                                    borderRadius: "100px",
-                                    padding: "6px 20px",
-                                    fontSize: "12px",
-                                    fontWeight: 700,
-                                    fontFamily: '"Inter", sans-serif',
-                                    cursor: "pointer",
-                                    outline: "none"
-                                  } : {
-                                    background: "#007B8F",
-                                    color: "#FFFFFF",
-                                    border: "none",
-                                    borderRadius: "100px",
-                                    padding: "6px 20px",
-                                    fontSize: "12px",
-                                    fontWeight: 700,
-                                    fontFamily: '"Inter", sans-serif',
-                                    cursor: "pointer",
-                                    outline: "none"
-                                  }}
-                                >
-                                  Add
-                                </button>
-                              )}
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </div>
-        </section>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </section>
         );
       })()}
 
 
       <div style={{ background: W, padding: isMobile ? "32px 24px" : "64px 0" }}>
         <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-          
+
           <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: "40px" }}>
             <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
               Stay In Style
@@ -3328,7 +3343,7 @@ const StayDetails = () => {
           : typeof stay?.whatsSpecial === "string" && stay.whatsSpecial.trim() !== ""
             ? stay.whatsSpecial.split(",").map((s) => s.trim()).filter(Boolean)
             : ["Bespoke Service", "Privacy Guaranteed", "Direct Connection", "Luxury Accommodations", "Stunning Views", "Premium Amenities"];
-        
+
         // Duplicate to ensure infinite seamless scrolling loop
         const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
 
@@ -3443,11 +3458,11 @@ const StayDetails = () => {
             currentListingId={currentListingId}
             title="More Stays You May Like"
             sectionStyle={{ padding: isMobile ? "0 0 0 20px" : "0px", background: "transparent" }}
-            titleStyle={{ 
-              fontSize: isMobile ? "clamp(1.6rem, 7vw, 2.2rem)" : "clamp(2.5rem, 4vw, 3.5rem)", 
-              fontWeight: 700, 
-              lineHeight: 1.1, 
-              fontFamily: '"Cormorant Garamond", "Playfair Display", serif', 
+            titleStyle={{
+              fontSize: isMobile ? "clamp(1.6rem, 7vw, 2.2rem)" : "clamp(2.5rem, 4vw, 3.5rem)",
+              fontWeight: 700,
+              lineHeight: 1.1,
+              fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
               letterSpacing: "-0.02em",
               color: FG,
               margin: 0
@@ -4310,7 +4325,7 @@ function PropertyStayCard({ stay }) {
   const totalPhotos = Math.max(1, allImages.length);
 
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ y: -1, boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}
       transition={{ duration: 0.3 }}
       className={roomStyles.card}
@@ -4332,7 +4347,7 @@ function PropertyStayCard({ stay }) {
       }}
     >
       {/* Left: Image Mosaic */}
-      <div 
+      <div
         onMouseEnter={() => setIsImgHovered(true)}
         onMouseLeave={() => setIsImgHovered(false)}
         onClick={() => setShowModal(true)}
@@ -4396,12 +4411,12 @@ function PropertyStayCard({ stay }) {
 
       {/* Middle: Content details */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: isMobile ? "16px" : "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
-        
+
         <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "10px" : "12px" }}>
           <h4 style={{ fontSize: isMobile ? "24px" : "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
             {propertyName}
           </h4>
-          
+
           <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "4px" }}>
             {/* Checkin/Checkout prominent display */}
             <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "13px", fontWeight: 600, color: FG, fontFamily: '"Inter", sans-serif' }}>
@@ -4414,7 +4429,7 @@ function PropertyStayCard({ stay }) {
                 <span>Check-out: {checkOutText}</span>
               </div>
             </div>
-            
+
             {/* Amenities Row */}
             <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {amenities.map((amenity, idx) => (
@@ -4428,7 +4443,7 @@ function PropertyStayCard({ stay }) {
           <p style={{ fontSize: "13px", color: M, margin: 0, flex: 1, paddingRight: isMobile ? "0" : "16px", lineHeight: 1.5 }}>
             Entire-property booking with curated comfort and premium amenities.
           </p>
-          
+
           <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end", flexShrink: 0 }}>
             <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: M, marginBottom: "4px" }}>
               STARTING FROM
@@ -4531,7 +4546,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
   return (
     <section className="testimonials-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0", overflow: "hidden" }}>
       <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-        
+
         {/* Header and Scroll Buttons */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -4601,7 +4616,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 style={{
                   width: "360px",
-                  background: theme === "dark" 
+                  background: theme === "dark"
                     ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
                     : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
                   backdropFilter: "blur(20px)",
@@ -4637,11 +4652,11 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                 <div style={{ position: "relative", zIndex: 2 }}>
                   <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
                     {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={14} 
-                        style={{ fill: i < rating ? "#F59E0B" : "transparent" }} 
-                        color={i < rating ? "#F59E0B" : M} 
+                      <Star
+                        key={i}
+                        size={14}
+                        style={{ fill: i < rating ? "#F59E0B" : "transparent" }}
+                        color={i < rating ? "#F59E0B" : M}
                       />
                     ))}
                   </div>
@@ -4659,7 +4674,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
                     </div>
                   )}
                 </div>
-                
+
                 <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
                   <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
                     {name.charAt(0).toUpperCase()}
@@ -4777,7 +4792,7 @@ function StayLocation({ stay }) {
   return (
     <section className="prep-section" style={{ background: theme === 'dark' ? BG : W, padding: isMobile ? "48px 24px" : "64px 0" }}>
       <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-        
+
         {/* Header Area */}
         <div style={{ marginBottom: 32 }}>
           <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
@@ -4786,17 +4801,17 @@ function StayLocation({ stay }) {
         </div>
 
         {/* Main Card Container */}
-        <div style={{ 
-          background: isMobile ? "transparent" : (theme === 'dark' ? '#0A0A0A' : '#FFFFFF'), 
-          borderRadius: isMobile ? 0 : 24, 
-          border: isMobile ? "none" : `1px solid ${B}`, 
-          padding: isMobile ? "16px 0 0 0" : 16, 
-          display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+        <div style={{
+          background: isMobile ? "transparent" : (theme === 'dark' ? '#0A0A0A' : '#FFFFFF'),
+          borderRadius: isMobile ? 0 : 24,
+          border: isMobile ? "none" : `1px solid ${B}`,
+          padding: isMobile ? "16px 0 0 0" : 16,
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: isMobile ? 24 : 32,
           boxShadow: isMobile || theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
         }} className="prep-grid">
-          
+
           {/* LEFT: Map */}
           <Rev delay={0.1} style={{ height: "100%" }}>
             <div style={{ height: isMobile ? "240px" : "100%", minHeight: isMobile ? "240px" : 320, position: "relative", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
@@ -4830,7 +4845,7 @@ function StayLocation({ stay }) {
               />
             </div>
           </Rev>
-          
+
           {/* RIGHT: Details List */}
           <Rev delay={0.2} style={{ height: "100%" }}>
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: isMobile ? "0" : "16px 16px 16px 0" }}>

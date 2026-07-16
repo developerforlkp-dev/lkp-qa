@@ -91,6 +91,8 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
             } else {
               setShowMobileSearch(false);
             }
+          } else {
+            setShowMobileSearch(false);
           }
           ticking = false;
         });

@@ -9,7 +9,7 @@ import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
-import { persistPendingCheckout } from "../../utils/paymentSession";
+import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -340,15 +340,15 @@ const BookingSidebar = ({
 
   const capacityInfo = useMemo(() => {
     const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
-    
+
     let allowedAdults = null;
     let allowedChildren = null;
-    
+
     if (isPropertyBased) {
       const baseAdultsLimit = stay?.maxAdults || stay?.maxGuests || 1;
       const extraAdultsLimit = stay?.maxExtraAdults || stay?.maxExtraAdultsAllowed || stay?.maxExtraBeds || 0;
       allowedAdults = baseAdultsLimit + extraAdultsLimit;
-      
+
       const baseChildrenLimit = stay?.maxChildren || 0;
       const extraChildrenLimit = stay?.maxExtraChildren || stay?.maxExtraChildrenAllowed || 0;
       allowedChildren = baseChildrenLimit + extraChildrenLimit;
@@ -356,7 +356,7 @@ const BookingSidebar = ({
       allowedAdults = selectedRoom.maxAdults || 2;
       allowedChildren = selectedRoom.maxChildren !== undefined ? selectedRoom.maxChildren : 0;
     }
-    
+
     return { allowedAdults, allowedChildren };
   }, [stay, selectedRoom]);
 
@@ -515,11 +515,11 @@ const BookingSidebar = ({
 
   const activeSeason = useMemo(() => {
     if (!checkInDate || !stay?.seasonalPeriods) {
-      console.log('Season check skipped:', { checkInDate, hasSeasonalPeriods: !!stay?.seasonalPeriods });
+      //console.log('Season check skipped:', { checkInDate, hasSeasonalPeriods: !!stay?.seasonalPeriods });
       return null;
     }
     const found = stay.seasonalPeriods.find((p) => isInSeasonRange(checkInDate, p));
-    console.log('Season found for checkInDate', checkInDate, ':', found);
+    //console.log('Season found for checkInDate', checkInDate, ':', found);
     return found;
   }, [checkInDate, stay?.seasonalPeriods]);
 
@@ -528,7 +528,7 @@ const BookingSidebar = ({
     : null;
 
   if (checkInDate) {
-    console.log('activeSeasonData resolved as:', activeSeasonData, 'for tempId:', activeSeason?.tempId);
+    //console.log('activeSeasonData resolved as:', activeSeasonData, 'for tempId:', activeSeason?.tempId);
   }
 
 
@@ -1818,7 +1818,7 @@ const StayProduct = () => {
     setAvailabilityLoading(true);
     try {
       const result = await getStayRoomAvailability(stayId, checkInDate, checkOutDate);
-      console.log("Stay availability result:", result);
+      //console.log("Stay availability result:", result);
 
       if (result?.rooms) {
         setAvailableRooms(enrichRoomsWithCatalog(result.rooms));
@@ -1841,12 +1841,12 @@ const StayProduct = () => {
     const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
     let allowedAdults = 99;
     let allowedChildren = 99;
-    
+
     if (isPropertyBased) {
       const baseAdultsLimit = stay?.maxAdults || stay?.maxGuests || 1;
       const extraAdultsLimit = stay?.maxExtraAdults || stay?.maxExtraAdultsAllowed || stay?.maxExtraBeds || 0;
       allowedAdults = baseAdultsLimit + extraAdultsLimit;
-      
+
       const baseChildrenLimit = stay?.maxChildren || 0;
       const extraChildrenLimit = stay?.maxExtraChildren || stay?.maxExtraChildrenAllowed || 0;
       allowedChildren = baseChildrenLimit + extraChildrenLimit;
@@ -2061,12 +2061,116 @@ const StayProduct = () => {
       };
     }
 
-    console.log("📤 Stay booking payload:", bookingPayload);
+    //console.log("📤 Stay booking payload:", bookingPayload);
+
+    // Defer order creation until the final pay click on Confirm and Pay.
+    const getMealLabel = (code) => ({
+      EP: "EP (Room Only)", CP: "CP (Breakfast)", BB: "BB (Bed & Breakfast)",
+      MAP: "MAP (Half Board)", AP: "AP (Full Board)"
+    }[code] || code);
+
+    const roomLabel = selectedRoom
+      ? (selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || `Room ${selectedRoom.roomId || selectedRoom.id}`)
+      : null;
+
+    const mealCode = isRoomBased && selectedRoom
+      ? (inferMealPlanCode(selectedRoom) || (Number(selectedRoom.bbPrice) > 0 ? "BB" : Number(selectedRoom.cpPrice) > 0 ? "CP" : Number(selectedRoom.mapPrice) > 0 ? "MAP" : "EP"))
+      : null;
+
+    const rawCoverImg =
+      stay?.coverImageUrl ||
+      stay?.coverPhotoUrl ||
+      (Array.isArray(stay?.listingMedia) && stay.listingMedia[0]
+        ? (stay.listingMedia[0].url || stay.listingMedia[0].blobName || stay.listingMedia[0].fileUrl)
+        : null) ||
+      (Array.isArray(stay?.media) && stay.media[0]
+        ? (stay.media[0].url || stay.media[0].blobName || stay.media[0].fileUrl)
+        : null) ||
+      (Array.isArray(stay?.images) && stay.images[0]
+        ? (stay.images[0].url || stay.images[0].blobName || stay.images[0].fileUrl || (typeof stay.images[0] === "string" ? stay.images[0] : null))
+        : null) ||
+      (Array.isArray(stay?.propertyImages) && stay.propertyImages[0]
+        ? (stay.propertyImages[0].url || stay.propertyImages[0].blobName || stay.propertyImages[0].fileUrl || (typeof stay.propertyImages[0] === "string" ? stay.propertyImages[0] : null))
+        : null) ||
+      "";
+    const coverImg = formatImageUrl(rawCoverImg) || "";
+
+    const rawRoomImg = selectedRoom
+      ? (selectedRoom.photoUrl || selectedRoom.imageUrl || selectedRoom.coverPhotoUrl ||
+        (Array.isArray(selectedRoom.images) && selectedRoom.images[0]
+          ? (selectedRoom.images[0].url || selectedRoom.images[0].blobName || selectedRoom.images[0].fileUrl || (typeof selectedRoom.images[0] === "string" ? selectedRoom.images[0] : null))
+          : null))
+      : null;
+    const roomImg = formatImageUrl(rawRoomImg) || coverImg;
+
+    const currency = "INR";
+    const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+    const frontendReceipt = frontendBreakdown ? [
+      { title: `Base Stay (${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`, content: formatMoney(frontendBreakdown.baseStayTotal) },
+      { title: "Adults", content: `${guests?.adults || 0}` },
+      { title: "Children", content: `${guests?.children || 0}` },
+    ] : [];
+    if (frontendBreakdown && frontendBreakdown.extraAdults > 0) {
+      frontendReceipt.push({
+        title: `Extra Adult Charges (${frontendBreakdown.extraAdults} x ${formatMoney(frontendBreakdown.extraAdultPrice)} x ${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`,
+        content: formatMoney(frontendBreakdown.extraAdultTotal),
+      });
+    }
+    if (frontendBreakdown && frontendBreakdown.extraChildren > 0) {
+      frontendReceipt.push({
+        title: `Extra Child Charges (${frontendBreakdown.extraChildren} x ${formatMoney(frontendBreakdown.extraChildPrice)} x ${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`,
+        content: formatMoney(frontendBreakdown.extraChildTotal),
+      });
+    }
+    if ((frontendBreakdown?.discountAmount || 0) > 0) {
+      frontendReceipt.push({
+        title: "Discounts",
+        content: `- ${formatMoney(frontendBreakdown.discountAmount)}`,
+      });
+    }
+    if ((frontendBreakdown?.taxAmount || 0) > 0) {
+      frontendReceipt.push({
+        title: `Tax (${Number(frontendBreakdown?.taxRate || 0).toFixed(2)}%)`,
+        content: `+ ${formatMoney(frontendBreakdown.taxAmount)}`,
+      });
+    }
+    if (frontendBreakdown) {
+      frontendReceipt.push({ title: "Final Guest Price", content: formatMoney(frontendBreakdown.finalGuestPrice) });
+    }
+
+    const stayBookingData = {
+      checkoutType: "stay",
+      stayId: Number(stayId),
+      listingTitle: stay?.propertyName || stay?.title || stay?.name || "Stay",
+      listingImage: coverImg,
+      roomImage: roomImg,
+      isStay: true,
+      checkInDate: checkInDate ? new Date(checkInDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,
+      checkOutDate: checkOutDate ? new Date(checkOutDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,
+      roomType: roomLabel,
+      roomsBooked: bookingInfo?.roomsNeeded || 1,
+      mealPlan: mealCode ? getMealLabel(mealCode) : null,
+      guests,
+      bookingSummary: {
+        guestCount: (guests?.adults || 0) + (guests?.children || 0),
+      },
+      receipt: frontendReceipt,
+      totalAmount: frontendBreakdown?.finalGuestPrice || 0,
+      finalTotal: frontendBreakdown?.finalGuestPrice || 0,
+      currency,
+      orderRequest: bookingPayload,
+      timestamp: new Date().toISOString(),
+    };
+
+    clearPendingCheckoutState();
+    persistPendingCheckout({ bookingData: stayBookingData });
+    history.push("/checkout");
+    return;
 
     setAvailabilityLoading(true);
     try {
       const response = await createStayOrder(bookingPayload);
-      console.log("✅ Stay order created:", response);
+      //console.log("✅ Stay order created:", response);
 
       const orderId = response?.orderId || response?.id || response?.order?.orderId || response?.order?.id || response?.data?.orderId || response?.data?.id || null;
       if (orderId) {
@@ -2243,11 +2347,11 @@ const StayProduct = () => {
         receipt: frontendReceipt.length > 0
           ? frontendReceipt
           : (backendReceipt.length > 0
-          ? backendReceipt
-          : (backendTotalRupees != null ? [
-            { title: "Stay total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
-            { title: "Total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
-          ] : [])),
+            ? backendReceipt
+            : (backendTotalRupees != null ? [
+              { title: "Stay total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
+              { title: "Total", content: `${currency} ${Number(backendTotalRupees).toFixed(2)}` },
+            ] : [])),
         timestamp: new Date().toISOString(),
       };
       persistPendingCheckout({
@@ -2344,15 +2448,15 @@ const StayProduct = () => {
 
   const ReviewsSection = ({ reviews, stayId }) => {
     const { tokens: { A, FG, M, B, W, S, BG, AL } } = { tokens: { A: "#3772FF", FG: "#23262F", M: "#777E90", B: "#E6E8EC", W: "#FFFFFF", S: "#F4F5F6", BG: "#FCFCFD", AL: "#F4F5F6" } };
-    
+
     const normalizedReviews = Array.isArray(reviews) ? reviews : (reviews?.reviews || []);
     const ratingSummary = !Array.isArray(reviews) ? (reviews?.summary || reviews?.ratingSummary) : null;
-    
+
     const avgRating = ratingSummary?.averageRating || 0;
     const totalReviews = ratingSummary?.totalReviews || normalizedReviews.length;
     const ratingDistribution = ratingSummary?.ratingDistribution || [];
     const hasReviews = normalizedReviews.length > 0;
-    
+
     const displayReviews = normalizedReviews.slice(0, 2);
     const hasMore = normalizedReviews.length > 2;
 
@@ -2364,7 +2468,7 @@ const StayProduct = () => {
             <div style={{ flex: 1, height: 1, background: B }} />
           </div>
         </div>
-        
+
         <div className={styles.reviewsGrid}>
           {/* Left: Summary */}
           <div>
@@ -2429,9 +2533,9 @@ const StayProduct = () => {
                 </div>
               ))
             )}
-            
+
             {hasMore && (
-              <button 
+              <button
                 className="button-stroke"
                 onClick={() => history.push(`/reviews/stay/${stayId}`)}
                 style={{ alignSelf: "flex-start", borderRadius: 100, padding: "12px 32px", fontWeight: 700, fontSize: 12, border: `2px solid ${B}`, background: "none", cursor: "pointer" }}

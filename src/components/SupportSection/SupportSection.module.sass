@@ -1,0 +1,119 @@
+@import ../../styles/helpers
+
+.supportBox
+  display: flex
+  align-items: center
+  justify-content: space-between
+  background: #F8FAFC
+  border-radius: 12px
+  padding: 16px 24px
+  width: 100%
+  border: 1px solid #E2E8F0
+  +m
+    flex-direction: column
+    gap: 16px
+    align-items: flex-start
+  +dark
+    background: $n2
+    border-color: $n3
+
+.supportLeft
+  display: flex
+  align-items: center
+  gap: 12px
+
+.supportPlanet
+  width: 36px
+  height: 36px
+  background: rgba(#0B253A, 0.05)
+  border-radius: 50%
+  display: flex
+  align-items: center
+  justify-content: center
+  position: relative
+  &::before
+    content: ''
+    position: absolute
+    width: 44px
+    height: 4px
+    background: rgba(#0B253A, 0.1)
+    transform: rotate(-15deg)
+    border-radius: 50%
+    
+.supportIcon
+  fill: #00A3A6
+  width: 20px
+  height: 20px
+
+.supportText
+  display: flex
+  flex-direction: column
+  text-align: left
+  
+  strong
+    font-size: 14px
+    color: #0B253A
+    margin-bottom: 2px
+    +dark
+      color: $n8
+  
+  span
+    font-size: 12px
+    color: #64748B
+    +dark
+      color: $n4
+
+.supportRight
+  display: flex
+  align-items: center
+  gap: 20px
+
+.chatButton
+  background: $n8
+  border: 1px solid #E2E8F0
+  border-radius: 6px
+  padding: 8px 16px
+  display: flex
+  align-items: center
+  gap: 8px
+  font-size: 12px
+  font-weight: 600
+  color: #00A3A6
+  cursor: pointer
+  &:hover
+    background: #F8FAFC
+  +dark
+    background: $n2
+    border-color: $n3
+
+.chatIcon
+  fill: #00A3A6
+  width: 14px
+  height: 14px
+
+.emailContact
+  display: flex
+  align-items: center
+  gap: 8px
+
+.emailIcon
+  fill: #00A3A6
+
+.emailText
+  display: flex
+  flex-direction: column
+  text-align: left
+  
+  strong
+    font-size: 12px
+    color: #0B253A
+    margin-bottom: 2px
+    +dark
+      color: $n8
+  
+  a
+    font-size: 11px
+    color: #00A3A6
+    text-decoration: none
+    &:hover
+      text-decoration: underline

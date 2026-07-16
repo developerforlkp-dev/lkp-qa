@@ -1,9 +1,40 @@
 @import ../../../styles/helpers
 
+.mobileHeaderFlex
+    display: block
+    +m
+        display: flex
+        align-items: center
+        gap: 16px
+        margin-top: 84px // 60px to clear the floating header + 24px original spacing
+        margin-bottom: 24px
+
+.mobileTitle
+    display: none
+    +m
+        display: block
+        margin: 0
+        padding-top: 2px // align perfectly with the newly sized back button
+
 .control
     margin-bottom: 48px
     +m
-        margin-bottom: 24px
+        margin-bottom: 0
+        flex-shrink: 0
+        padding: 0 // Override the default 16px vertical padding from Control component
+        // Hide the "Back" text and format the icon-only button
+        button
+            padding: 0
+            width: 36px
+            height: 36px
+            border-radius: 50%
+            display: flex
+            align-items: center
+            justify-content: center
+            span
+                display: none
+            svg
+                margin: 0 !important // Override global button svg:first-child margin
 
 .head
     display: flex
@@ -18,6 +49,8 @@
 
 .title
     margin-bottom: 12px
+    +m
+        display: none
 
 .counter
     +body-bold-2
@@ -80,9 +113,9 @@
         flex: 0 0 calc(50% - 30px)
         width: calc(50% - 30px)
     +m
-        flex: 0 0 calc(100% - 30px)
-        width: calc(100% - 30px)
-        margin: 32px 15px 0
+        flex: 0 0 100%
+        width: 100%
+        margin: 24px 0 0
 
 .flight
     &:not(:last-child)

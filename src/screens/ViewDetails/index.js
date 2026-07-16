@@ -310,11 +310,11 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     const mappedStatus = statusMap[normalizedStatus] || "Pending";
 
     // Log status mapping for debugging
-    console.log("📊 Status mapping:", {
-      originalOrderStatus: orderStatus,
-      normalizedStatus: normalizedStatus,
-      mappedStatus: mappedStatus,
-    });
+    //console.log("📊 Status mapping:", {
+    //   originalOrderStatus: orderStatus,
+    //    normalizedStatus: normalizedStatus,
+    //   mappedStatus: mappedStatus,
+    // });
 
     return mappedStatus;
   };
@@ -814,7 +814,7 @@ const getReceiptPercent = (amount, base) => {
   const numericAmount = getReceiptNumericAmount(amount);
   const numericBase = getReceiptNumericAmount(base);
   if (!numericAmount || !numericBase) return null;
-  return ((Math.abs(numericAmount) / numericBase) * 100).toFixed(2);
+  return Math.round((Math.abs(numericAmount) / numericBase) * 100);
 };
 
 const numberToWordsBelowThousand = (value) => {
@@ -937,50 +937,39 @@ const normalizePolicyTextList = (...values) => {
 };
 
 const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPreview }) => {
+  // First, check if there's a specifically applied policy from a cancellation action
+  const appliedPolicy = cancelPreview?.policyUsed || 
+    cancelPreview?.policyApplied || 
+    refundDetails?.appliedRefundPolicy || 
+    refundDetails?.appliedRefundPolicyName || 
+    refundDetails?.appliedPolicy || 
+    refundDetails?.refundPolicyName || 
+    refundDetails?.policyName || 
+    refundDetails?.policyLabel || 
+    refundDetails?.refundPolicy || 
+    refundDetails?.refundPolicyText;
+
+  if (appliedPolicy && typeof appliedPolicy === "string" && appliedPolicy.trim()) {
+    return [appliedPolicy.trim()];
+  }
+
+  // Next, if there's a specifically determined policy in the normalized notes, use just the primary one
+  if (booking?.notes?.cancellationPolicy && booking.notes.cancellationPolicy.length > 0) {
+    return [booking.notes.cancellationPolicy[0]];
+  }
+
+  // Fallback to checking the property data, picking the most specific summary first
   const listingData = booking?.listingData || booking?.originalData?.listingData || null;
   const stayData = booking?.stayData || booking?.originalData?.stayData || null;
   const eventData = booking?.eventData || booking?.originalData?.eventData || null;
 
-  return normalizePolicyTextList(
-    listingData?.cancellationPolicySummary,
-    listingData?.cancellationPolicyText,
-    listingData?.cancellationPolicy,
-    listingData?.cancellationPolicyTemplate,
-    listingData?.policySummary,
-    listingData?.policyText,
-    stayData?.cancellationPolicySummary,
-    stayData?.cancellationPolicyTemplate,
-    stayData?.cancellationPolicyText,
-    stayData?.cancellationPolicy,
-    stayData?.privacyAndPolicy?.cancellationPolicySummary,
-    stayData?.privacyAndPolicy?.cancellationPolicyTemplate,
-    stayData?.privacyAndPolicy?.cancellationPolicyText,
-    stayData?.privacyAndPolicy?.cancellationPolicy,
-    stayData?.listing?.cancellationPolicySummary,
-    stayData?.listing?.cancellationPolicyTemplate,
-    stayData?.listing?.cancellationPolicyText,
-    stayData?.listing?.cancellationPolicy,
-    stayData?.cancellationPolicyRules,
-    stayData?.cancellationPolicyRule,
-    stayData?.cancellationRules,
-    eventData?.cancellationPolicySummary,
-    eventData?.cancellationPolicyText,
-    eventData?.cancellationPolicy,
-    eventData?.refundPolicyText,
-    eventData?.refundPolicy,
-    eventData?.policyText,
-    refundDetails?.appliedRefundPolicy,
-    refundDetails?.appliedRefundPolicyName,
-    refundDetails?.appliedPolicy,
-    refundDetails?.refundPolicyName,
-    refundDetails?.policyName,
-    refundDetails?.policyLabel,
-    refundDetails?.refundPolicy,
-    refundDetails?.refundPolicyText,
-    cancelPreview?.policyUsed,
-    cancelPreview?.policyApplied,
-    booking?.notes?.cancellationPolicy
+  const policies = normalizePolicyTextList(
+    stayData?.cancellationPolicySummary || stayData?.cancellationPolicyTemplate || stayData?.cancellationPolicyText || stayData?.cancellationPolicy,
+    eventData?.cancellationPolicySummary || eventData?.cancellationPolicyText || eventData?.cancellationPolicy,
+    listingData?.cancellationPolicySummary || listingData?.cancellationPolicyText || listingData?.cancellationPolicy
   );
+
+  return policies.length > 0 ? [policies[0]] : [];
 };
 
 const ViewDetails = () => {
@@ -1102,7 +1091,8 @@ const ViewDetails = () => {
       ? `${booking.reservationDate || booking.startDate} | ${booking.startTime} - ${booking.endTime}`
       : `${booking.reservationDate || booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
     const discountPercent = getReceiptPercent(discountAmount, subtotalAmount);
-    const taxPercent = getReceiptPercent(taxAmount, subtotalAmount);
+    const taxBaseAmount = subtotalAmount - (getReceiptNumericAmount(discountAmount) || 0);
+    const taxPercent = getReceiptPercent(taxAmount, taxBaseAmount > 0 ? taxBaseAmount : subtotalAmount);
     const companyWebsite =
       (typeof window !== "undefined" && window.location?.origin) ||
       "https://www.littleknownplanet.com";
@@ -1122,11 +1112,21 @@ const ViewDetails = () => {
         label: "Total",
         value: formatReceiptMoney(subtotalAmount, currency),
       },
-      ...(getReceiptNumericAmount(discountAmount) > 0 ? [{
-        label: `Discount${discountPercent ? ` (${discountPercent}%)` : ""}`,
-        value: `- ${formatReceiptMoney(discountAmount, currency)}`,
-        isNegative: true,
-      }] : []),
+      ...(Array.isArray(booking.discounts) && booking.discounts.length > 0
+        ? booking.discounts.map(d => {
+            const numericD = getReceiptNumericAmount(d.amount);
+            const dPct = d.percentage ? ` (${d.percentage}%)` : (numericD && subtotalAmount ? ` (${Math.round((numericD / subtotalAmount) * 100)}%)` : "");
+            return {
+              label: `${d.name || "Discount"}${dPct}`,
+              value: `- ${formatReceiptMoney(d.amount || 0, currency)}`,
+              isNegative: true,
+            };
+          })
+        : getReceiptNumericAmount(discountAmount) > 0 ? [{
+          label: `Discount${discountPercent ? ` (${discountPercent}%)` : ""}`,
+          value: `- ${formatReceiptMoney(discountAmount, currency)}`,
+          isNegative: true,
+        }] : []),
       ...(getReceiptNumericAmount(taxAmount) > 0 ? [{
         label: `Taxes${taxPercent ? ` (${taxPercent}%)` : ""}`,
         value: formatReceiptMoney(taxAmount, currency),
@@ -1748,7 +1748,7 @@ const ViewDetails = () => {
       setLoading(true);
       setError(null);
 
-      console.log("🔍 Loading booking with bookingId:", bookingId);
+      //console.log("🔍 Loading booking with bookingId:", bookingId);
 
       try {
         // Extract orderId from bookingId (e.g., "bk-57" -> 57)
@@ -1767,7 +1767,7 @@ const ViewDetails = () => {
           }
         }
 
-        console.log("🔍 Extracted orderId:", orderId);
+        //console.log("🔍 Extracted orderId:", orderId);
 
         if (!orderId || isNaN(orderId)) {
           const errorMsg = `Invalid booking ID format: "${bookingId}". Expected format: "bk-57" or "57"`;
@@ -1785,13 +1785,13 @@ const ViewDetails = () => {
         // Use event-specific API if type=event
         try {
           if (bookingType === "event") {
-            console.log("📦 Fetching EVENT order details for orderId:", orderId);
+            //console.log("📦 Fetching EVENT order details for orderId:", orderId);
             orderResponse = await getEventOrderDetails(orderId);
-            console.log("✅ Event order details fetched from API:", orderResponse);
+            //console.log("✅ Event order details fetched from API:", orderResponse);
           } else {
-            console.log("📦 Fetching regular order details for orderId:", orderId);
+            //console.log("📦 Fetching regular order details for orderId:", orderId);
             orderResponse = await getOrderDetails(orderId);
-            console.log("✅ Order details fetched from API:", orderResponse);
+            // console.log("✅ Order details fetched from API:", orderResponse);
           }
 
           // The response structure can be:
@@ -1801,17 +1801,17 @@ const ViewDetails = () => {
             if (orderResponse.order) {
               // Wrapped in order property
               apiBookingData = orderResponse.order;
-              console.log("✅ Order data extracted from order property:", apiBookingData);
+              // console.log("✅ Order data extracted from order property:", apiBookingData);
             } else if (orderResponse.orderId) {
               // Direct order object
               apiBookingData = orderResponse;
-              console.log("✅ Order data is direct object:", apiBookingData);
+              //console.log("✅ Order data is direct object:", apiBookingData);
             }
 
             if (apiBookingData) {
-              console.log("✅ Order data extracted:", apiBookingData);
-              console.log("✅ Order addons:", orderResponse.addons || apiBookingData.addons);
-              console.log("✅ Order history:", orderResponse.history);
+              // console.log("✅ Order data extracted:", apiBookingData);
+              // console.log("✅ Order addons:", orderResponse.addons || apiBookingData.addons);
+              // console.log("✅ Order history:", orderResponse.history);
             }
           }
         } catch (apiErr) {
@@ -1874,7 +1874,7 @@ const ViewDetails = () => {
             endTime: apiBookingData.timeSlotEndTime,
             maxSeats: apiBookingData.timeSlotMaxSeats,
           };
-          console.log("✅ Using time slot from order data:", slotDetails);
+          //console.log("✅ Using time slot from order data:", slotDetails);
         }
 
         // Merge addons from orderResponse if available (they might be in response root or in order.addons)
@@ -1905,7 +1905,7 @@ const ViewDetails = () => {
 
           if (embeddedEvent && typeof embeddedEvent === "object") {
             eventData = embeddedEvent;
-            console.log("✅ Using embedded event details from event-details API response:", eventData);
+            // console.log("✅ Using embedded event details from event-details API response:", eventData);
           }
         }
 
@@ -1928,9 +1928,9 @@ const ViewDetails = () => {
           if (eventIdForDetails) {
             try {
               if (!hasTitle || !hasImage) {
-                console.log(`📦 Enriching event details for eventId: ${eventIdForDetails}`);
+                // console.log(`📦 Enriching event details for eventId: ${eventIdForDetails}`);
               } else {
-                console.log(`📦 Refreshing event details for eventId: ${eventIdForDetails} (override image/title if different)`);
+                // console.log(`📦 Refreshing event details for eventId: ${eventIdForDetails} (override image/title if different)`);
               }
               const enriched = await getEventDetails(eventIdForDetails);
               const embedded = eventData || {};
@@ -1946,7 +1946,7 @@ const ViewDetails = () => {
                 title: enriched?.title ?? embedded?.title,
                 eventTitle: enriched?.eventTitle ?? embedded?.eventTitle,
               };
-              console.log("✅ Event details enriched from /events/{id}:", eventData);
+              //console.log("✅ Event details enriched from /events/{id}:", eventData);
             } catch (eventError) {
               console.warn(`⚠️ Failed to enrich event details for eventId ${eventIdForDetails}:`, eventError.message);
             }
@@ -1956,9 +1956,9 @@ const ViewDetails = () => {
         // Fallback: Fetch event details by eventId if not embedded
         if (isEventOrder && !eventData && apiBookingData.eventId) {
           try {
-            console.log(`📦 Fetching event details for eventId: ${apiBookingData.eventId}`);
+            //console.log(`📦 Fetching event details for eventId: ${apiBookingData.eventId}`);
             eventData = await getEventDetails(apiBookingData.eventId);
-            console.log(`✅ Fetched event details for eventId ${apiBookingData.eventId}:`, eventData);
+            // console.log(`✅ Fetched event details for eventId ${apiBookingData.eventId}:`, eventData);
           } catch (eventError) {
             console.warn(`⚠️ Failed to fetch event details for eventId ${apiBookingData.eventId}:`, eventError.message);
             // Create a fallback eventData object from order fields
@@ -1979,7 +1979,7 @@ const ViewDetails = () => {
         if (!isEventOrder && apiBookingData.listingId) {
           try {
             listingData = await getListing(apiBookingData.listingId);
-            console.log(`✅ Fetched listing ${apiBookingData.listingId} for order details`);
+            // console.log(`✅ Fetched listing ${apiBookingData.listingId} for order details`);
           } catch (error) {
             console.warn(`⚠️ Failed to fetch listing data for order ${apiBookingData.orderId}:`, error.message);
             // Create a fallback listingData object from order fields
@@ -2020,7 +2020,7 @@ const ViewDetails = () => {
         if (resolvedStayId != null) {
           try {
             stayData = await getStayDetails(resolvedStayId);
-            console.log(`✅ Fetched stay ${resolvedStayId} for order details`);
+            // console.log(`✅ Fetched stay ${resolvedStayId} for order details`);
           } catch (error) {
             console.warn(`⚠️ Failed to fetch stay data for order ${apiBookingData.orderId}:`, error.message);
           }
@@ -2054,7 +2054,7 @@ const ViewDetails = () => {
         }
 
 
-        console.log("✅ Using data:", isEventOrder ? "eventData" : (listingData ? "listingData from API" : "listingData from order fields"));
+        // console.log("✅ Using data:", isEventOrder ? "eventData" : (listingData ? "listingData from API" : "listingData from order fields"));
 
         // Fetch user profile to ensure synced data
         let profile = null;
@@ -2063,7 +2063,7 @@ const ViewDetails = () => {
           if (profileData && profileData.customer) {
             profile = profileData.customer;
             setUserProfile(profile);
-            console.log("✅ Current user profile fetched for sync:", profile);
+            //console.log("✅ Current user profile fetched for sync:", profile);
           }
         } catch (profileErr) {
           console.warn("⚠️ Failed to fetch user profile for sync:", profileErr.message);
@@ -2093,9 +2093,9 @@ const ViewDetails = () => {
           }
 
           transformed = transformBookingData(mergedApiBookingData, listingData, eventData, stayData, reviewData, profile);
-          console.log("✅ Transformed booking data:", transformed);
-          console.log("✅ Original API booking data paymentMethod:", apiBookingData.paymentMethod);
-          console.log("✅ Transformed paymentMethod:", transformed.paymentMethod);
+          // console.log("✅ Transformed booking data:", transformed);
+          //  console.log("✅ Original API booking data paymentMethod:", apiBookingData.paymentMethod);
+          //  console.log("✅ Transformed paymentMethod:", transformed.paymentMethod);
 
           // Add slot time information from order data
           if (apiBookingData.timeSlotStartTime || apiBookingData.timeSlotEndTime) {
@@ -2113,12 +2113,12 @@ const ViewDetails = () => {
 
             if (apiBookingData.timeSlotStartTime) {
               transformed.startTime = formatSlotTime(apiBookingData.timeSlotStartTime);
-              console.log("✅ Set start time from order:", apiBookingData.timeSlotStartTime, "->", transformed.startTime);
+              //console.log("✅ Set start time from order:", apiBookingData.timeSlotStartTime, "->", transformed.startTime);
             }
 
             if (apiBookingData.timeSlotEndTime) {
               transformed.endTime = formatSlotTime(apiBookingData.timeSlotEndTime);
-              console.log("✅ Set end time from order:", apiBookingData.timeSlotEndTime, "->", transformed.endTime);
+              //console.log("✅ Set end time from order:", apiBookingData.timeSlotEndTime, "->", transformed.endTime);
             }
           }
 
@@ -2128,7 +2128,7 @@ const ViewDetails = () => {
           }
 
           setBooking(transformed);
-          console.log("✅ Booking set successfully");
+          // console.log("✅ Booking set successfully");
         } catch (transformErr) {
           console.error("❌ Error transforming booking data:", transformErr);
           setError(`Failed to process booking data: ${transformErr.message}`);
@@ -2475,13 +2475,13 @@ const ViewDetails = () => {
         }
       }
 
-      console.log("📤 Submitting review with data:", {
-        orderId: booking.orderId,
-        rating: reviewRating,
-        comment: reviewText,
-        listingId: listingId,
-        customerId: customerId,
-      });
+      //console.log("📤 Submitting review with data:", {
+      //  orderId: booking.orderId,
+      //  rating: reviewRating,
+      //  comment: reviewText,
+      // listingId: listingId,
+      //  customerId: customerId,
+      // });
 
       await submitOrderReview(booking.orderId, {
         rating: reviewRating,
@@ -2498,7 +2498,7 @@ const ViewDetails = () => {
       setReviewSubmitted(true);
       setReviewText("");
       setReviewRating(0);
-      console.log("✅ Review submitted successfully");
+      //console.log("✅ Review submitted successfully");
     } catch (err) {
       console.error("❌ Error submitting review:", err);
       const errorMessage = err.response?.data?.error ||
@@ -2694,6 +2694,28 @@ const ViewDetails = () => {
   ).toLowerCase().trim();
   const isCancelledBooking = bookingStatusLower === "cancelled" || bookingStatusLower === "canceled";
 
+  const getConfirmCancelSummaryRows = (preview) => {
+    if (!preview || typeof preview !== "object") return [];
+
+    const policyUsed = preview.policyUsed || preview.policyApplied;
+    const appliedPercentage =
+      preview.policyUsed?.percentage ??
+      preview.policyApplied?.percentage ??
+      (preview.cancellationFeePercentage != null
+        ? 100 - Number(preview.cancellationFeePercentage || 0)
+        : null);
+
+    return [
+      { label: "Total amount", value: formatCancelPreviewMoney(preview.totalPaid) },
+      { label: "Refund amount", value: formatCancelPreviewMoney(preview.refundAmount) },
+      { label: "Refund policy used", value: formatRefundPolicyUsed(appliedPercentage) },
+      { label: "Policy window used", value: formatPolicyWindow(policyUsed) },
+      { label: "Booking date", value: formatCancelPreviewDate(preview.bookingDate) },
+    ];
+  };
+
+  const confirmCancelSummaryRows = cancelPreview ? getConfirmCancelSummaryRows(cancelPreview) : [];
+
   return (
     <div className={cn("section", styles.section)}>
       <div className={cn("container", styles.container)}>
@@ -2720,7 +2742,7 @@ const ViewDetails = () => {
             src={booking.bannerImage.src}
             alt={booking.bannerImage.alt}
             onLoad={() => {
-              console.log("✅ Banner image loaded:", booking.bannerImage.src);
+              //console.log("✅ Banner image loaded:", booking.bannerImage.src);
             }}
             onError={(e) => {
               console.warn("⚠️ Banner image failed to load:", booking.bannerImage.src);
@@ -2828,12 +2850,12 @@ const ViewDetails = () => {
                     booking.originalData?.paymentMethod ||
                     booking.originalData?.payment_method
                   );
-                  console.log("✅ Displaying payment method:", {
-                    bookingPaymentMethod: booking.paymentMethod,
-                    originalPaymentMethod: booking.originalData?.paymentMethod,
-                    originalPayment_method: booking.originalData?.payment_method,
-                    final: paymentMethod
-                  });
+                  // console.log("✅ Displaying payment method:", {
+                  //   bookingPaymentMethod: booking.paymentMethod,
+                  //   originalPaymentMethod: booking.originalData?.paymentMethod,
+                  //   originalPayment_method: booking.originalData?.payment_method,
+                  //   final: paymentMethod
+                  // });
                   return paymentMethod || "Not specified";
                 })()}
               </div>
@@ -3330,7 +3352,7 @@ const ViewDetails = () => {
       >
         <div className={cn(styles.cancelModalContent, styles.cancelModalContentScrollable)}>
           <div className={styles.cancelModalHeader}>
-            <h2 className={styles.cancelModalTitle} style={{ fontFamily: "Playfair Display, Lora, Georgia, serif", fontSize: "28px", fontWeight: "600", color: "#141416", marginBottom: "12px" }}>
+            <h2 className={styles.cancelModalTitle} style={{ fontSize: "28px", fontWeight: "600", color: "#141416", marginBottom: "12px" }}>
               Cancel Booking
             </h2>
             <p className={styles.cancelModalDescription} style={{ fontSize: "14px", color: "#777E90", lineHeight: "1.5" }}>
@@ -3365,7 +3387,7 @@ const ViewDetails = () => {
                             transition: "all 0.2s ease"
                           }}
                         >
-                          <span style={{ fontSize: "15px", color: "#141416", fontFamily: "Playfair Display, Lora, Georgia, serif", fontWeight: isSelected ? "500" : "400" }}>
+                          <span style={{ fontSize: "15px", color: "#141416", fontWeight: isSelected ? "500" : "400" }}>
                             {reasonText}
                           </span>
                           <div style={{
@@ -3453,17 +3475,40 @@ const ViewDetails = () => {
         onClose={handleCloseConfirmCancelModal}
         outerClassName={styles.confirmCancelModalOuter}
       >
-        <div className={styles.cancelModalContent}>
+        <div className={styles.confirmCancelModalContent || styles.cancelModalContent}>
           <div className={styles.cancelModalHeader}>
             <h2 className={styles.cancelModalTitle}>Confirm Cancellation</h2>
             <p className={styles.cancelModalDescription}>
               {booking ? `Cancel "${booking.title}" and apply the previewed cancellation policy?` : "Confirm this cancellation?"}
             </p>
           </div>
-          <div className={styles.confirmCancelSummary} style={{ padding: "16px", background: "rgba(244, 245, 246, 0.03)", borderRadius: "8px", marginTop: "16px" }}>
-            <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#E65100" }}>
-              Are you sure you want to cancel this booking? This action cannot be undone.
-            </p>
+          <div className={styles.confirmCancelSummary}>
+            {cancelPreviewLoading ? (
+              <p style={{ margin: 0, fontSize: "14px", color: "#777E90" }}>
+                Loading cancellation preview...
+              </p>
+            ) : confirmCancelSummaryRows.length > 0 ? (
+              <>
+                {confirmCancelSummaryRows.map((row) => (
+                  <div className={styles.confirmCancelSummaryRow} key={row.label}>
+                    <span className={styles.confirmCancelSummaryLabel}>{row.label}</span>
+                    <span className={styles.confirmCancelSummaryValue}>{row.value}</span>
+                  </div>
+                ))}
+                <div className={styles.confirmCancelSummaryRow}>
+                  <span className={styles.confirmCancelSummaryLabel} style={{ fontWeight: 600, color: "#141416" }}>
+                    Important
+                  </span>
+                  <span className={styles.confirmCancelSummaryValue} style={{ color: "#0097B2", fontWeight: 500 }}>
+                    This cancellation cannot be undone.
+                  </span>
+                </div>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontSize: "14px", color: "#777E90" }}>
+                No preview available.
+              </p>
+            )}
           </div>
           <div className={styles.cancelModalFooter}>
             <button
@@ -3745,7 +3790,7 @@ const ViewDetails = () => {
                       {receiptViewModel.cancellationPolicies
                         .flatMap((item) =>
                           String(item)
-                            .split(", ")
+                            .split("\n")
                             .map((part) => part.trim())
                             .filter(Boolean)
                         )

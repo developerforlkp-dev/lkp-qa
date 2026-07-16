@@ -4,6 +4,7 @@ import moment from "moment";
 import cn from "classnames";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ArrowDown, Check, Zap, MapPin, ChevronDown, Clock, User, Users, Camera, Coffee, Phone, Mail, Plus, Minus, Baby, Languages, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, Star, Compass, Share2, Building, Map, Globe, Info } from "lucide-react";
+import PolicyCategoryItem from "../../components/PolicyCategoryItem";
 import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
@@ -551,7 +552,7 @@ const ExperienceProduct = () => {
   const initialGuestsStr = params.get("guests");
   const initialAdultsStr = params.get("adults");
   const initialChildrenStr = params.get("children");
-  const initialGuests = initialAdultsStr || initialChildrenStr 
+  const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? Number(initialGuestsStr) : null);
 
@@ -690,7 +691,7 @@ const ExperienceProduct = () => {
             const aData = a.addon || a;
             return aData.pricingType === "Group" || aData.priceType === "per_booking";
           });
-          
+
           if (otherGroupItem) {
             const otherData = otherGroupItem.addon || otherGroupItem;
             return [...prev.filter(a => {
@@ -776,7 +777,7 @@ const ExperienceProduct = () => {
           // Fetch dynamic reviews for the listing
           getListingReviews(id).then(resp => {
             if (mounted && resp) {
-              console.log(`💬 Fetched reviews for ${id}:`, resp);
+              //console.log(`💬 Fetched reviews for ${id}:`, resp);
               if (resp.reviews) setReviews(resp.reviews);
               else if (Array.isArray(resp)) setReviews(resp);
 
@@ -981,7 +982,7 @@ const ExperienceProduct = () => {
                     const titleText = listing?.title || "";
                     const words = titleText.trim().split(/\s+/);
                     let displayTitle;
-                    
+
                     // Match the homepage accent word logic (last word is italic and cyan)
                     if (words.length >= 2) {
                       const lastWord = words.pop();
@@ -1045,10 +1046,10 @@ const ExperienceProduct = () => {
                         : "0 6px 18px rgba(15,15,15,0.12)";
 
                       return (
-                        <motion.button 
+                        <motion.button
                           whileHover={{ scale: 1.05, background: surfaceHover }}
                           whileTap={{ scale: 0.86 }}
-                          onClick={(e) => { e.stopPropagation(); onClick(e); }} 
+                          onClick={(e) => { e.stopPropagation(); onClick(e); }}
                           style={{ width: 44, height: 44, borderRadius: "50%", background: surface, border: `1.5px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadow, cursor: "pointer", position: "relative", zIndex: 200, transition: "background 0.35s ease, border-color 0.35s ease" }}
                         >
                           <style>{`
@@ -1199,13 +1200,13 @@ const ExperienceProduct = () => {
         {/* DETAILS SECTION */}
         <section className="details-section" style={{ background: BG, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: "1.2fr 1fr", 
-              gap: "24px", 
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1.2fr 1fr",
+              gap: "24px",
               alignItems: "flex-start"
             }} className="details-grid-container">
-              
+
               {/* Narrative Block (Left-hand section) */}
               <div className="narrative-card" style={{
                 padding: "36px 48px",
@@ -1269,7 +1270,7 @@ const ExperienceProduct = () => {
 
               {/* Overview Cards (6-block flat facts grid) */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gridAutoRows: "1fr", gap: "16px" }} className="facts-grid">
-                
+
                 {/* Fact 1: Duration */}
                 <div className="fact-card" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", textAlign: "left", borderRadius: "16px", border: `1px solid ${B}`, background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', height: "100%", boxSizing: "border-box" }}>
                   <Clock size={24} color={A} fill="transparent" style={{ marginBottom: "16px" }} />
@@ -1307,10 +1308,10 @@ const ExperienceProduct = () => {
                     const list = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0
                       ? listing.languagesOffered
                       : (typeof listing?.languages === "string" ? listing.languages.split(",").map(s => s.trim()) : ["English"]);
-                    
+
                     const displayStr = list.slice(0, 2).join(", ");
                     const hasMore = list.length > 2;
-                    
+
                     return (
                       <>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-start", width: "100%", marginBottom: 6 }}>
@@ -1429,7 +1430,7 @@ const ExperienceProduct = () => {
             : (Array.isArray(displayTags) && displayTags.length > 0
               ? displayTags.map((t) => (typeof t === "string" ? t : t?.name || t?.tag || t?.label || t?.value || "")).filter(Boolean)
               : ["Valparai Trekking", "Nature & Wildlife", "Mountain Adventure", "Western Ghats Trails", "Scenic Tea Estates", "Eco Tourism India"]);
-          
+
           // Duplicate to ensure infinite seamless scrolling loop
           const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags];
 
@@ -1497,7 +1498,7 @@ const ExperienceProduct = () => {
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
             <Rev delay={0.4}>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                
+
                 {/* Header Area */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
                   <div>
@@ -1512,7 +1513,7 @@ const ExperienceProduct = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Activities List */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {(listing?.keyActivities || []).map((it, i) => {
@@ -1539,27 +1540,27 @@ const ExperienceProduct = () => {
                       >
                         {activityImageUrl && (
                           <div
-                            style={{ 
-                              width: "220px", 
-                              alignSelf: "stretch", 
-                              flexShrink: 0, 
+                            style={{
+                              width: "220px",
+                              alignSelf: "stretch",
+                              flexShrink: 0,
                               cursor: "pointer",
                               position: "relative",
                               overflow: "hidden"
                             }}
                             onMouseOver={(e) => {
-                               const overlay = e.currentTarget.querySelector('.gallery-overlay');
-                               if (overlay) overlay.style.opacity = "1";
+                              const overlay = e.currentTarget.querySelector('.gallery-overlay');
+                              if (overlay) overlay.style.opacity = "1";
                             }}
                             onMouseOut={(e) => {
-                               const overlay = e.currentTarget.querySelector('.gallery-overlay');
-                               if (overlay) overlay.style.opacity = "0";
+                              const overlay = e.currentTarget.querySelector('.gallery-overlay');
+                              if (overlay) overlay.style.opacity = "0";
                             }}
-                            onClick={() => { 
+                            onClick={() => {
                               const imgs = getActivityImages(it);
                               setSelectedActivityImages(imgs);
                               setActivityPhotoIndex(0);
-                              setActivityPhotoVisible(true); 
+                              setActivityPhotoVisible(true);
                             }}
                           >
                             <img
@@ -1582,11 +1583,11 @@ const ExperienceProduct = () => {
                             </div>
                           </div>
                         )}
-                        
-                          <div style={{ flex: 1, padding: "24px 32px", display: "flex", alignItems: "center", position: "relative" }}>
-                            
-                            <div style={{ display: "flex", width: "100%", alignItems: "center" }}>
-                            
+
+                        <div style={{ flex: 1, padding: "24px 32px", display: "flex", alignItems: "center", position: "relative" }}>
+
+                          <div style={{ display: "flex", width: "100%", alignItems: "center" }}>
+
                             {/* Text Content */}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: "11px", fontWeight: 600, color: A, marginBottom: "8px", fontFamily: '"Inter", sans-serif', letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "normal", wordWrap: "break-word" }}>
@@ -1594,15 +1595,15 @@ const ExperienceProduct = () => {
                               </div>
                               {(it.description || it.pilot || it.briefDescription) && (
                                 <div>
-                                  <p style={{ 
-                                    color: M, 
-                                    fontSize: 16, 
-                                    lineHeight: "1.6", 
-                                    margin: 0, 
-                                    fontWeight: 400, 
-                                    fontFamily: '"Inter", sans-serif', 
-                                    maxWidth: "600px", 
-                                    whiteSpace: "normal", 
+                                  <p style={{
+                                    color: M,
+                                    fontSize: 16,
+                                    lineHeight: "1.6",
+                                    margin: 0,
+                                    fontWeight: 400,
+                                    fontFamily: '"Inter", sans-serif',
+                                    maxWidth: "600px",
+                                    whiteSpace: "normal",
                                     wordWrap: "break-word",
                                     display: "-webkit-box",
                                     WebkitLineClamp: expandedActivities[i] ? "none" : 2,
@@ -1617,10 +1618,10 @@ const ExperienceProduct = () => {
                                       onClick={() => setExpandedActivities(prev => ({ ...prev, [i]: !prev[i] }))}
                                       style={{
                                         background: "none",
-                                      border: "none",
-                                      padding: "8px 0 0 0",
-                                      color: A,
-                                      fontSize: "12px",
+                                        border: "none",
+                                        padding: "8px 0 0 0",
+                                        color: A,
+                                        fontSize: "12px",
                                         fontWeight: 700,
                                         fontFamily: '"Inter", sans-serif',
                                         cursor: "pointer",
@@ -1704,7 +1705,7 @@ const ExperienceProduct = () => {
                 </div>
               </div>
             </div>
-            
+
             {(() => {
               const addonsList = listing?.addons || [];
               const showScroll = addonsList.length > 2;
@@ -1718,7 +1719,7 @@ const ExperienceProduct = () => {
                     const container = e.target;
                     const stepSize = (container.clientWidth + 20) / 2;
                     let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
-                    
+
                     // If we have hit the far right boundary, show the maximum number
                     if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
                       newIndex = addonsList.length;
@@ -1797,7 +1798,7 @@ const ExperienceProduct = () => {
 
                         {/* Right side: Content info columns */}
                         <div style={{ flex: 1, minWidth: 0, padding: "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", boxSizing: "border-box" }}>
-                          
+
                           <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "6px", flex: 1, minWidth: 0, paddingRight: "16px" }}>
                             <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
                               {pricingType}
@@ -1913,7 +1914,7 @@ const ExperienceProduct = () => {
         {/* PREPARATION SECTION */}
         <section className="prep-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            
+
             {/* Header Area */}
             <div style={{ marginBottom: 32 }}>
               <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
@@ -1922,17 +1923,17 @@ const ExperienceProduct = () => {
             </div>
 
             {/* Main Card Container */}
-            <div style={{ 
-              background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF', 
-              borderRadius: 24, 
-              border: `1px solid ${B}`, 
-              padding: 16, 
-              display: "grid", 
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+            <div style={{
+              background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF',
+              borderRadius: 24,
+              border: `1px solid ${B}`,
+              padding: 16,
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
               gap: isMobile ? 24 : 32,
               boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
             }} className="prep-grid">
-              
+
               {/* LEFT: Map */}
               <Rev delay={0.1} style={{ height: "100%" }}>
                 <div style={{ height: "100%", minHeight: 320, position: "relative", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
@@ -1956,7 +1957,7 @@ const ExperienceProduct = () => {
                   </div>
                   {listing?.meetingLatitude && listing?.meetingLongitude ? (
                     <iframe
-                       width="100%"
+                      width="100%"
                       height="100%"
                       frameBorder="0"
                       style={{ border: 0 }}
@@ -1974,7 +1975,7 @@ const ExperienceProduct = () => {
                   )}
                 </div>
               </Rev>
-              
+
               {/* RIGHT: Details List */}
               <Rev delay={0.2} style={{ height: "100%" }}>
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
@@ -2038,7 +2039,7 @@ const ExperienceProduct = () => {
                         </div>
                       </li>
                     )}
-                    
+
                     {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress) && (
                       <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -2136,13 +2137,13 @@ const ExperienceProduct = () => {
           <section className="host-quality-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
             <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
-                
+
                 {/* Host Profile (40%) */}
                 <Rev delay={0.1} style={{ height: "100%" }}>
                   <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                    <div 
+                    <div
                       style={{
-                        background: theme === "dark" 
+                        background: theme === "dark"
                           ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
                           : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
                         border: `1px solid ${B}`,
@@ -2158,15 +2159,15 @@ const ExperienceProduct = () => {
                         flexDirection: "column",
                         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                       }}
-                      onMouseEnter={(e) => { 
-                        e.currentTarget.style.borderColor = A; 
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = A;
                         e.currentTarget.style.transform = "translateY(-2px)";
                         e.currentTarget.style.boxShadow = theme === "dark"
                           ? `0 24px 48px ${A}15`
                           : `0 24px 48px rgba(15, 23, 42, 0.08)`;
                       }}
-                      onMouseLeave={(e) => { 
-                        e.currentTarget.style.borderColor = B; 
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = B;
                         e.currentTarget.style.transform = "translateY(0)";
                         e.currentTarget.style.boxShadow = theme === "dark"
                           ? "0 20px 40px rgba(0, 0, 0, 0.3)"
@@ -2184,17 +2185,17 @@ const ExperienceProduct = () => {
                       }} />
 
                       {/* Top Section: Avatar, Name & Metrics (With subtle tint background) */}
-                      <div style={{ 
-                        display: "flex", 
-                        justifyContent: "space-between", 
-                        alignItems: "center", 
-                        gap: 16, 
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 16,
                         width: "100%",
                         padding: "20px 20px 16px 20px",
                         background: theme === "dark" ? "rgba(255, 255, 255, 0.015)" : "rgba(0, 0, 0, 0.01)",
                         borderBottom: `1px solid ${B}`
                       }}>
-                        
+
                         {/* Avatar & Info */}
                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           {/* Profile Avatar with Custom Ring */}
@@ -2220,21 +2221,21 @@ const ExperienceProduct = () => {
                                 src={formatImageUrl(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
                                 style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                                 alt={displayHostName}
-                                onError={(e) => { 
-                                  e.target.onerror = null; 
-                                  e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; 
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`;
                                 }}
                               />
                             </div>
                             {/* Floating Verified Check badge */}
-                            <div style={{ 
-                              position: "absolute", 
-                              bottom: -1, 
-                              right: -1, 
-                              width: 16, 
-                              height: 16, 
-                              borderRadius: "50%", 
-                              background: "#10B981", 
+                            <div style={{
+                              position: "absolute",
+                              bottom: -1,
+                              right: -1,
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              background: "#10B981",
                               border: `1.5px solid ${W}`,
                               display: "flex",
                               alignItems: "center",
@@ -2266,13 +2267,13 @@ const ExperienceProduct = () => {
                             >
                               {displayHostName}
                             </h3>
-                            
+
                             {/* Superhost Badge under the name */}
-                            <span style={{ 
-                              fontSize: "8.5px", 
-                              letterSpacing: "0.04em", 
-                              textTransform: "uppercase", 
-                              color: "#7C3AED", 
+                            <span style={{
+                              fontSize: "8.5px",
+                              letterSpacing: "0.04em",
+                              textTransform: "uppercase",
+                              color: "#7C3AED",
                               background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
                               border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
                               borderRadius: "5px",
@@ -2331,7 +2332,7 @@ const ExperienceProduct = () => {
                       </div>
 
                       {/* Bottom Section: Quote-styled Bio */}
-                      <div style={{ 
+                      <div style={{
                         flex: 1,
                         display: "flex",
                         alignItems: "center",
@@ -2363,7 +2364,7 @@ const ExperienceProduct = () => {
                   <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                     <div style={{
                       padding: "24px 32px",
-                      background: theme === "dark" 
+                      background: theme === "dark"
                         ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
                         : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
                       backdropFilter: "blur(25px) saturate(160%)",
@@ -2381,20 +2382,20 @@ const ExperienceProduct = () => {
                       overflow: "hidden",
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                     }}
-                    onMouseEnter={(e) => { 
-                      e.currentTarget.style.borderColor = A; 
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = theme === "dark"
-                        ? `0 24px 48px ${A}15`
-                        : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-                    }}
-                    onMouseLeave={(e) => { 
-                      e.currentTarget.style.borderColor = B; 
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = theme === "dark"
-                        ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                        : "0 20px 40px rgba(15, 23, 42, 0.04)";
-                    }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = A;
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = theme === "dark"
+                          ? `0 24px 48px ${A}15`
+                          : `0 24px 48px rgba(15, 23, 42, 0.08)`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = B;
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = theme === "dark"
+                          ? "0 20px 40px rgba(0, 0, 0, 0.3)"
+                          : "0 20px 40px rgba(15, 23, 42, 0.04)";
+                      }}
                     >
                       {listing?.lkpQualityIndex ? (
                         <>
@@ -2465,7 +2466,7 @@ const ExperienceProduct = () => {
                               <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
                               <h4 style={{ fontSize: 18, fontWeight: 600, color: FG, margin: 0, fontFamily: '"Inter", sans-serif' }}>Verified Trust Score</h4>
                             </div>
-                            
+
                             <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
                               {listing.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
                             </p>
@@ -2607,7 +2608,7 @@ const ExperienceProduct = () => {
                         </button>
                       </div>
                     </div>
-                    
+
                     <div
                       ref={sliderRef}
                       style={{
@@ -2636,7 +2637,7 @@ const ExperienceProduct = () => {
                             transition={{ duration: 0.3, ease: "easeOut" }}
                             style={{
                               width: "360px",
-                              background: theme === "dark" 
+                              background: theme === "dark"
                                 ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
                                 : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
                               backdropFilter: "blur(20px)",
@@ -2689,7 +2690,7 @@ const ExperienceProduct = () => {
                                 </div>
                               )}
                             </div>
-                            
+
                             <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
                               <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
                                 {name.charAt(0).toUpperCase()}
@@ -2745,11 +2746,11 @@ const ExperienceProduct = () => {
               fallbackSpecialLabelValues={fallbackSpecialLabelValues}
               title="More Experiences You May Like"
               sectionStyle={{ padding: "0px", background: "transparent" }}
-              titleStyle={{ 
-                fontSize: "clamp(2.5rem, 4vw, 3.5rem)", 
-                fontWeight: 700, 
-                lineHeight: 1.1, 
-                fontFamily: '"Cormorant Garamond", "Playfair Display", serif', 
+              titleStyle={{
+                fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
+                fontWeight: 700,
+                lineHeight: 1.1,
+                fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
                 letterSpacing: "-0.02em",
                 color: FG
               }}
@@ -3156,7 +3157,7 @@ function PolicyItem({ req }) {
         }}>
           {getIcon()}
         </div>
-        
+
         <div style={{ flex: 1 }}>
           <span style={{ fontSize: 16, fontWeight: 500, color: FG, display: "block", fontFamily: '"Inter", sans-serif' }}>{title}</span>
         </div>
@@ -3602,6 +3603,47 @@ function QualityIndexSection({ qualityIndex }) {
 function ExperiencePolicies({ listing }) {
   const { theme, tokens: { FG, W, B, A, M, BG } } = useTheme();
 
+  const policies = useMemo(() => {
+    const expItems = [];
+    const guestItems = [];
+    const cancelItems = [];
+
+    if (Array.isArray(listing?.guestRequirements)) {
+      listing.guestRequirements.forEach((req, i) => {
+        const title = req.setting?.title || "Requirement";
+        const body = req.setting?.description || null;
+        const item = { id: i, title, body, questions: req.questions };
+
+        if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("experience")) {
+          expItems.push(item);
+        } else {
+          guestItems.push(item);
+        }
+      });
+    }
+
+    if (listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) {
+      cancelItems.push({
+        id: 'cancel',
+        title: null,
+        body: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
+      });
+    }
+
+    const categories = [];
+    if (expItems.length > 0) {
+      categories.push({ id: 'cat-exp', title: "Experience Rules", items: expItems });
+    }
+    if (guestItems.length > 0) {
+      categories.push({ id: 'cat-guest', title: "Guest Requirements", items: guestItems });
+    }
+    if (cancelItems.length > 0) {
+      categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
+    }
+
+    return categories;
+  }, [listing]);
+
   return (
     <section className="policies-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
       <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
@@ -3621,22 +3663,12 @@ function ExperiencePolicies({ listing }) {
           </Rev>
           <Rev delay={0.2}>
             <div>
-              {listing?.guestRequirements?.length > 0 ? (
-                listing.guestRequirements.map((req, i) => (
-                  <PolicyItem key={`req-${i}`} req={req} />
+              {policies.length > 0 ? (
+                policies.map((category) => (
+                  <PolicyCategoryItem key={category.id} category={category} />
                 ))
               ) : (
-                <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific requirements listed for this experience.</p>
-              )}
-              {(listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) && (
-                <PolicyItem
-                  req={{
-                    setting: {
-                      title: "Cancellation Policy",
-                      description: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
-                    }
-                  }}
-                />
+                <p style={{ color: M, fontSize: 14, padding: "40px 0" }}>No specific rules or requirements listed.</p>
               )}
             </div>
           </Rev>
@@ -3754,11 +3786,11 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
             <div>
               <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
                 {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    size={16} 
-                    fill={i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent"} 
-                    color={i < Math.round(summary.averageRating) ? "#F59E0B" : M} 
+                  <Star
+                    key={i}
+                    size={16}
+                    fill={i < Math.round(summary.averageRating) ? "#F59E0B" : "transparent"}
+                    color={i < Math.round(summary.averageRating) ? "#F59E0B" : M}
                   />
                 ))}
               </div>
@@ -3781,14 +3813,14 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <div>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 2 , fontFamily: '"Inter", sans-serif' }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 2, fontFamily: '"Inter", sans-serif' }}>{rev.customerName || rev.author || "Verified Guest"}</h4>
                       <div style={{ display: "flex", gap: 4 }}>
                         {[...Array(5)].map((_, si) => (
-                          <Star 
-                            key={si} 
-                            size={14} 
-                            fill={si < (rev.rating || 5) ? "#F59E0B" : "transparent"} 
-                            color={si < (rev.rating || 5) ? "#F59E0B" : M} 
+                          <Star
+                            key={si}
+                            size={14}
+                            fill={si < (rev.rating || 5) ? "#F59E0B" : "transparent"}
+                            color={si < (rev.rating || 5) ? "#F59E0B" : M}
                           />
                         ))}
                       </div>
