@@ -814,7 +814,7 @@ const getReceiptPercent = (amount, base) => {
   const numericAmount = getReceiptNumericAmount(amount);
   const numericBase = getReceiptNumericAmount(base);
   if (!numericAmount || !numericBase) return null;
-  return ((Math.abs(numericAmount) / numericBase) * 100).toFixed(2);
+  return Math.round((Math.abs(numericAmount) / numericBase) * 100);
 };
 
 const numberToWordsBelowThousand = (value) => {
@@ -937,50 +937,39 @@ const normalizePolicyTextList = (...values) => {
 };
 
 const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPreview }) => {
+  // First, check if there's a specifically applied policy from a cancellation action
+  const appliedPolicy = cancelPreview?.policyUsed || 
+    cancelPreview?.policyApplied || 
+    refundDetails?.appliedRefundPolicy || 
+    refundDetails?.appliedRefundPolicyName || 
+    refundDetails?.appliedPolicy || 
+    refundDetails?.refundPolicyName || 
+    refundDetails?.policyName || 
+    refundDetails?.policyLabel || 
+    refundDetails?.refundPolicy || 
+    refundDetails?.refundPolicyText;
+
+  if (appliedPolicy && typeof appliedPolicy === "string" && appliedPolicy.trim()) {
+    return [appliedPolicy.trim()];
+  }
+
+  // Next, if there's a specifically determined policy in the normalized notes, use just the primary one
+  if (booking?.notes?.cancellationPolicy && booking.notes.cancellationPolicy.length > 0) {
+    return [booking.notes.cancellationPolicy[0]];
+  }
+
+  // Fallback to checking the property data, picking the most specific summary first
   const listingData = booking?.listingData || booking?.originalData?.listingData || null;
   const stayData = booking?.stayData || booking?.originalData?.stayData || null;
   const eventData = booking?.eventData || booking?.originalData?.eventData || null;
 
-  return normalizePolicyTextList(
-    listingData?.cancellationPolicySummary,
-    listingData?.cancellationPolicyText,
-    listingData?.cancellationPolicy,
-    listingData?.cancellationPolicyTemplate,
-    listingData?.policySummary,
-    listingData?.policyText,
-    stayData?.cancellationPolicySummary,
-    stayData?.cancellationPolicyTemplate,
-    stayData?.cancellationPolicyText,
-    stayData?.cancellationPolicy,
-    stayData?.privacyAndPolicy?.cancellationPolicySummary,
-    stayData?.privacyAndPolicy?.cancellationPolicyTemplate,
-    stayData?.privacyAndPolicy?.cancellationPolicyText,
-    stayData?.privacyAndPolicy?.cancellationPolicy,
-    stayData?.listing?.cancellationPolicySummary,
-    stayData?.listing?.cancellationPolicyTemplate,
-    stayData?.listing?.cancellationPolicyText,
-    stayData?.listing?.cancellationPolicy,
-    stayData?.cancellationPolicyRules,
-    stayData?.cancellationPolicyRule,
-    stayData?.cancellationRules,
-    eventData?.cancellationPolicySummary,
-    eventData?.cancellationPolicyText,
-    eventData?.cancellationPolicy,
-    eventData?.refundPolicyText,
-    eventData?.refundPolicy,
-    eventData?.policyText,
-    refundDetails?.appliedRefundPolicy,
-    refundDetails?.appliedRefundPolicyName,
-    refundDetails?.appliedPolicy,
-    refundDetails?.refundPolicyName,
-    refundDetails?.policyName,
-    refundDetails?.policyLabel,
-    refundDetails?.refundPolicy,
-    refundDetails?.refundPolicyText,
-    cancelPreview?.policyUsed,
-    cancelPreview?.policyApplied,
-    booking?.notes?.cancellationPolicy
+  const policies = normalizePolicyTextList(
+    stayData?.cancellationPolicySummary || stayData?.cancellationPolicyTemplate || stayData?.cancellationPolicyText || stayData?.cancellationPolicy,
+    eventData?.cancellationPolicySummary || eventData?.cancellationPolicyText || eventData?.cancellationPolicy,
+    listingData?.cancellationPolicySummary || listingData?.cancellationPolicyText || listingData?.cancellationPolicy
   );
+
+  return policies.length > 0 ? [policies[0]] : [];
 };
 
 const ViewDetails = () => {
@@ -1102,7 +1091,8 @@ const ViewDetails = () => {
       ? `${booking.reservationDate || booking.startDate} | ${booking.startTime} - ${booking.endTime}`
       : `${booking.reservationDate || booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
     const discountPercent = getReceiptPercent(discountAmount, subtotalAmount);
-    const taxPercent = getReceiptPercent(taxAmount, subtotalAmount);
+    const taxBaseAmount = subtotalAmount - (getReceiptNumericAmount(discountAmount) || 0);
+    const taxPercent = getReceiptPercent(taxAmount, taxBaseAmount > 0 ? taxBaseAmount : subtotalAmount);
     const companyWebsite =
       (typeof window !== "undefined" && window.location?.origin) ||
       "https://www.littleknownplanet.com";
@@ -1122,11 +1112,21 @@ const ViewDetails = () => {
         label: "Total",
         value: formatReceiptMoney(subtotalAmount, currency),
       },
-      ...(getReceiptNumericAmount(discountAmount) > 0 ? [{
-        label: `Discount${discountPercent ? ` (${discountPercent}%)` : ""}`,
-        value: `- ${formatReceiptMoney(discountAmount, currency)}`,
-        isNegative: true,
-      }] : []),
+      ...(Array.isArray(booking.discounts) && booking.discounts.length > 0
+        ? booking.discounts.map(d => {
+            const numericD = getReceiptNumericAmount(d.amount);
+            const dPct = d.percentage ? ` (${d.percentage}%)` : (numericD && subtotalAmount ? ` (${Math.round((numericD / subtotalAmount) * 100)}%)` : "");
+            return {
+              label: `${d.name || "Discount"}${dPct}`,
+              value: `- ${formatReceiptMoney(d.amount || 0, currency)}`,
+              isNegative: true,
+            };
+          })
+        : getReceiptNumericAmount(discountAmount) > 0 ? [{
+          label: `Discount${discountPercent ? ` (${discountPercent}%)` : ""}`,
+          value: `- ${formatReceiptMoney(discountAmount, currency)}`,
+          isNegative: true,
+        }] : []),
       ...(getReceiptNumericAmount(taxAmount) > 0 ? [{
         label: `Taxes${taxPercent ? ` (${taxPercent}%)` : ""}`,
         value: formatReceiptMoney(taxAmount, currency),
@@ -3790,7 +3790,7 @@ const ViewDetails = () => {
                       {receiptViewModel.cancellationPolicies
                         .flatMap((item) =>
                           String(item)
-                            .split(", ")
+                            .split("\n")
                             .map((part) => part.trim())
                             .filter(Boolean)
                         )
