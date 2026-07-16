@@ -2694,6 +2694,28 @@ const ViewDetails = () => {
   ).toLowerCase().trim();
   const isCancelledBooking = bookingStatusLower === "cancelled" || bookingStatusLower === "canceled";
 
+  const getConfirmCancelSummaryRows = (preview) => {
+    if (!preview || typeof preview !== "object") return [];
+
+    const policyUsed = preview.policyUsed || preview.policyApplied;
+    const appliedPercentage =
+      preview.policyUsed?.percentage ??
+      preview.policyApplied?.percentage ??
+      (preview.cancellationFeePercentage != null
+        ? 100 - Number(preview.cancellationFeePercentage || 0)
+        : null);
+
+    return [
+      { label: "Total amount", value: formatCancelPreviewMoney(preview.totalPaid) },
+      { label: "Refund amount", value: formatCancelPreviewMoney(preview.refundAmount) },
+      { label: "Refund policy used", value: formatRefundPolicyUsed(appliedPercentage) },
+      { label: "Policy window used", value: formatPolicyWindow(policyUsed) },
+      { label: "Booking date", value: formatCancelPreviewDate(preview.bookingDate) },
+    ];
+  };
+
+  const confirmCancelSummaryRows = cancelPreview ? getConfirmCancelSummaryRows(cancelPreview) : [];
+
   return (
     <div className={cn("section", styles.section)}>
       <div className={cn("container", styles.container)}>
@@ -3330,7 +3352,7 @@ const ViewDetails = () => {
       >
         <div className={cn(styles.cancelModalContent, styles.cancelModalContentScrollable)}>
           <div className={styles.cancelModalHeader}>
-            <h2 className={styles.cancelModalTitle} style={{ fontFamily: "Playfair Display, Lora, Georgia, serif", fontSize: "28px", fontWeight: "600", color: "#141416", marginBottom: "12px" }}>
+            <h2 className={styles.cancelModalTitle} style={{ fontSize: "28px", fontWeight: "600", color: "#141416", marginBottom: "12px" }}>
               Cancel Booking
             </h2>
             <p className={styles.cancelModalDescription} style={{ fontSize: "14px", color: "#777E90", lineHeight: "1.5" }}>
@@ -3365,7 +3387,7 @@ const ViewDetails = () => {
                             transition: "all 0.2s ease"
                           }}
                         >
-                          <span style={{ fontSize: "15px", color: "#141416", fontFamily: "Playfair Display, Lora, Georgia, serif", fontWeight: isSelected ? "500" : "400" }}>
+                          <span style={{ fontSize: "15px", color: "#141416", fontWeight: isSelected ? "500" : "400" }}>
                             {reasonText}
                           </span>
                           <div style={{
@@ -3453,17 +3475,40 @@ const ViewDetails = () => {
         onClose={handleCloseConfirmCancelModal}
         outerClassName={styles.confirmCancelModalOuter}
       >
-        <div className={styles.cancelModalContent}>
+        <div className={styles.confirmCancelModalContent || styles.cancelModalContent}>
           <div className={styles.cancelModalHeader}>
             <h2 className={styles.cancelModalTitle}>Confirm Cancellation</h2>
             <p className={styles.cancelModalDescription}>
               {booking ? `Cancel "${booking.title}" and apply the previewed cancellation policy?` : "Confirm this cancellation?"}
             </p>
           </div>
-          <div className={styles.confirmCancelSummary} style={{ padding: "16px", background: "rgba(244, 245, 246, 0.03)", borderRadius: "8px", marginTop: "16px" }}>
-            <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#E65100" }}>
-              Are you sure you want to cancel this booking? This action cannot be undone.
-            </p>
+          <div className={styles.confirmCancelSummary}>
+            {cancelPreviewLoading ? (
+              <p style={{ margin: 0, fontSize: "14px", color: "#777E90" }}>
+                Loading cancellation preview...
+              </p>
+            ) : confirmCancelSummaryRows.length > 0 ? (
+              <>
+                {confirmCancelSummaryRows.map((row) => (
+                  <div className={styles.confirmCancelSummaryRow} key={row.label}>
+                    <span className={styles.confirmCancelSummaryLabel}>{row.label}</span>
+                    <span className={styles.confirmCancelSummaryValue}>{row.value}</span>
+                  </div>
+                ))}
+                <div className={styles.confirmCancelSummaryRow}>
+                  <span className={styles.confirmCancelSummaryLabel} style={{ fontWeight: 600, color: "#141416" }}>
+                    Important
+                  </span>
+                  <span className={styles.confirmCancelSummaryValue} style={{ color: "#0097B2", fontWeight: 500 }}>
+                    This cancellation cannot be undone.
+                  </span>
+                </div>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontSize: "14px", color: "#777E90" }}>
+                No preview available.
+              </p>
+            )}
           </div>
           <div className={styles.cancelModalFooter}>
             <button
