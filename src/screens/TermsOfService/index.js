@@ -4,8 +4,10 @@ import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import { ArrowUp } from "lucide-react";
 import Page from "../../components/Page";
 import { getPolicyDocuments } from "../../utils/api";
+import { useTheme } from "../../components/JUI/Theme";
 
 const TermsOfService = () => {
+  const { tokens } = useTheme();
   const [documentHtml, setDocumentHtml] = useState("");
   const [title, setTitle] = useState("Terms & Conditions");
   const [loading, setLoading] = useState(true);
@@ -72,14 +74,14 @@ const TermsOfService = () => {
           left: 0,
           right: 0,
           height: "4px",
-          background: "#0097B2",
+          background: tokens.A,
           transformOrigin: "0%",
           scaleX,
           zIndex: 9999
         }}
       />
 
-      <div style={{ background: "#FAFAFA", minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: "#333333", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
         <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
           <motion.div 
@@ -91,7 +93,7 @@ const TermsOfService = () => {
             <h1 className="font-display" style={{ 
               fontSize: "clamp(3.5rem, 7vw, 5.5rem)",
               fontWeight: 400, 
-              color: "#2D3239", 
+              color: tokens.A, 
               letterSpacing: "-0.02em",
               marginBottom: "0px",
               fontFamily: "Georgia, serif"
@@ -100,20 +102,20 @@ const TermsOfService = () => {
             </h1>
           </motion.div>
 
-          <div style={{ display: "flex", flexDirection: "column", background: "#FFFFFF", padding: "40px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)" }}>
+          <div style={{ display: "flex", flexDirection: "column", background: tokens.BG, padding: "40px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)", border: `1px solid ${tokens.B}` }}>
             {loading ? (
-              <p style={{ textAlign: "center", color: "#666" }}>Loading...</p>
+              <p style={{ textAlign: "center", color: tokens.M }}>Loading...</p>
             ) : documentHtml ? (
               <div 
                 style={{ 
-                  color: "#4A4A4A", 
+                  color: tokens.FG, 
                   fontSize: "16px", 
                   lineHeight: 1.9,
                 }}
                 dangerouslySetInnerHTML={{ __html: documentHtml }} 
               />
             ) : (
-              <p style={{ textAlign: "center", color: "#666" }}>Failed to load content.</p>
+              <p style={{ textAlign: "center", color: tokens.M }}>Failed to load content.</p>
             )}
           </div>
 
@@ -135,11 +137,11 @@ const TermsOfService = () => {
               width: "50px",
               height: "50px",
               borderRadius: "50%",
-              background: "rgba(255, 255, 255, 0.85)",
+              background: tokens.BG,
               backdropFilter: "blur(12px)",
               WebkitBackdropFilter: "blur(12px)",
-              border: "1px solid rgba(0, 151, 178, 0.2)",
-              color: "#0097B2",
+              border: `1px solid rgba(0, 151, 178, 0.2)`,
+              color: tokens.A,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
