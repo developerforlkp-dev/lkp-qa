@@ -2470,124 +2470,13 @@ function MobileGallery({ galleryItems }) {
       {/* Lightbox Modal */}
       <AnimatePresence>
         {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.95)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              zIndex: 10000,
-              padding: "24px 16px"
-            }}
-          >
-            {/* Top Bar */}
-            <div style={{ display: "flex", justifycontent: "space-between", alignItems: "center", color: "#FFF" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.05em" }}>
-                {activeIdx + 1} / {galleryItems.length}
-              </span>
-              <button
-                onClick={() => setLightboxOpen(false)}
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer"
-                }}
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Main Image */}
-            <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <button
-                onClick={prevImg}
-                style={{
-                  position: "absolute",
-                  left: 8,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10
-                }}
-              >
-                <ChevronLeft size={24} />
-              </button>
-
-              <motion.img
-                key={activeIdx}
-                src={galleryItems[activeIdx]}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: 12 }}
-                alt=""
-              />
-
-              <button
-                onClick={nextImg}
-                style={{
-                  position: "absolute",
-                  right: 8,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10
-                }}
-              >
-                <ChevronRight size={24} />
-              </button>
-            </div>
-
-            {/* Bottom Bar Indicator */}
-            <div style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 8,
-              overflowX: "auto",
-              paddingBottom: 8
-            }}>
-              {galleryItems.map((_, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: idx === activeIdx ? A : "rgba(255,255,255,0.3)",
-                    transition: "all 0.3s"
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
+          <FullScreenImage
+            src={galleryItems[activeIdx]}
+            items={galleryItems}
+            currentIndex={activeIdx}
+            onNavigate={setActiveIdx}
+            onClose={() => setLightboxOpen(false)}
+          />
         )}
       </AnimatePresence>
     </section>
