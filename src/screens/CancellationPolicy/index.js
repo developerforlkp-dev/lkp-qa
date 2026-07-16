@@ -6,10 +6,10 @@ import Page from "../../components/Page";
 import { getPolicyDocuments } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
 
-const TermsOfService = () => {
+const CancellationPolicy = () => {
   const { tokens } = useTheme();
   const [documentHtml, setDocumentHtml] = useState("");
-  const [title, setTitle] = useState("Terms & Conditions");
+  const [title, setTitle] = useState("Cancellation Policy");
   const [loading, setLoading] = useState(true);
   const [showTopBtn, setShowTopBtn] = useState(false);
   
@@ -26,14 +26,14 @@ const TermsOfService = () => {
     const fetchPolicy = async () => {
       try {
         const data = await getPolicyDocuments();
-        if (data && data.termsAndConditions) {
-          setDocumentHtml(data.termsAndConditions.contentHtml || "");
-          if (data.termsAndConditions.title) {
-            setTitle(data.termsAndConditions.title);
+        if (data && data.cancellationPolicy) {
+          setDocumentHtml(data.cancellationPolicy.contentHtml || "");
+          if (data.cancellationPolicy.title) {
+            setTitle(data.cancellationPolicy.title);
           }
         }
       } catch (error) {
-        console.error("Failed to load Terms & Conditions", error);
+        console.error("Failed to load Cancellation Policy", error);
       } finally {
         setLoading(false);
       }
@@ -63,7 +63,7 @@ const TermsOfService = () => {
     <Page>
       <Helmet>
         <title>{title} | Little Known Planet</title>
-        <meta name="description" content={`Review the ${title} for using Little Known Planet services.`} />
+        <meta name="description" content={`Review the ${title} for Little Known Planet.`} />
       </Helmet>
       
       {/* Top Progress Bar */}
@@ -161,4 +161,4 @@ const TermsOfService = () => {
   );
 };
 
-export default TermsOfService;
+export default CancellationPolicy;

@@ -127,7 +127,7 @@ export function Footer() {
             
             <FooterCol title="Support"><ul>
                 <li><Link to="/faq">FAQ</Link></li>
-                <li><Link to="/terms-of-service">Cancellation Policy</Link></li>
+                <li><Link to="/cancellation-policy">Cancellation Policy</Link></li>
                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
                 <li><Link to="/terms-of-service">Terms & Conditions</Link></li>
               </ul></FooterCol>

@@ -630,6 +630,16 @@ export const getListing = async (id) => {
   }
 };
 
+export const getPolicyDocuments = async () => {
+  try {
+    const response = await ListingsAPI.get(`/public/policy-documents`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching policy documents:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getListingMedia = async (listingId) => {
   try {
     if (!listingId) {

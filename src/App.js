@@ -41,6 +41,7 @@ import PrivacyPolicy from "./screens/PrivacyPolicy";
 import MobileBottomNavbar from "./components/MobileBottomNavbar";
 import FAQ from "./screens/FAQ";
 import About from "./screens/About";
+import CancellationPolicy from "./screens/CancellationPolicy";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -278,6 +279,13 @@ function App() {
               path="/terms-of-service"
               render={() => (
                 <TermsOfService />
+              )}
+            />
+            <Route
+              exact
+              path="/cancellation-policy"
+              render={() => (
+                <CancellationPolicy />
               )}
             />
             <Route
