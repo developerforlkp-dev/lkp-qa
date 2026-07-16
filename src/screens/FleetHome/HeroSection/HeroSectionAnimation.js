@@ -373,7 +373,7 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
     // ── Build DOM ─────────────────────────────────────────────────────────────
 
     const cardsHTML = destinations.map((dest, index) =>
-      `<div class="hero-card" id="hero-card-${index}" style="background-image:url(${dest.image})"></div>`
+      `<div class="hero-card" id="hero-card-${index}" style="background-image:url('${dest.image}')"></div>`
     ).join('');
     const cardContentsHTML = destinations.map((_, index) =>
       `<div class="hero-card-content" id="hero-card-content-${index}"></div>`
