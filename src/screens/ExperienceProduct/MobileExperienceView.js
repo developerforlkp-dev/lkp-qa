@@ -126,7 +126,7 @@ export default function MobileExperienceView({
   const initialGuestsStr = queryParams.get("guests");
   const initialAdultsStr = queryParams.get("adults");
   const initialChildrenStr = queryParams.get("children");
-  const initialGuests = initialAdultsStr || initialChildrenStr 
+  const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? Number(initialGuestsStr) : null);
 
@@ -241,16 +241,16 @@ export default function MobileExperienceView({
             <Favorite itemType="listing" itemId={id}>
               {({ saved, onClick }) => (
                 <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", flexShrink: 0 }}>
-                <style>{`
+                  <style>{`
                   .exp-save-icon-${id} svg {
                     fill: ${saved ? "#0097B2" : (isDark ? "#FFFFFF" : "#111111")};
                     transition: fill 0.3s ease;
                   }
                 `}</style>
-                <div className={`exp-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
-                </div>
-              </button>
+                  <div className={`exp-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                  </div>
+                </button>
               )}
             </Favorite>
             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
@@ -422,7 +422,7 @@ export default function MobileExperienceView({
               const imgUrl = actImg(act);
               const isExpanded = expandedActivities[i];
               const actDesc = act.description || act.pilot || act.briefDescription || act.about || "";
-              
+
               return (
                 <div key={i} style={{ display: "flex", gap: 16, position: "relative", zIndex: 1, alignItems: "flex-start" }}>
                   {/* Step Marker */}
@@ -456,7 +456,7 @@ export default function MobileExperienceView({
                     overflow: "hidden"
                   }}>
                     {imgUrl && (
-                      <div 
+                      <div
                         style={{ margin: "-16px -14px 16px -14px", height: 160, overflow: "hidden", cursor: "pointer", position: "relative" }}
                         onClick={() => {
                           const imgs = actImages(act);
@@ -471,7 +471,7 @@ export default function MobileExperienceView({
                         </div>
                       </div>
                     )}
-                    <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 6, margin: "0 0 6px 0" }}>{act.name || act.title || `Activity ${i + 1}`}</h4>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: A, marginBottom: 6, margin: "0 0 6px 0", fontFamily: '"Inter", sans-serif' }}>{act.name || act.title || `Activity ${i + 1}`}</div>
                     <p style={{ fontSize: 11, color: M, lineHeight: 1.6, margin: 0 }}>{actDesc}</p>
                   </div>
                 </div>
@@ -481,9 +481,7 @@ export default function MobileExperienceView({
         </div>
       )}
 
-      {/* ╔═══════════════════════════════════╗
-          ║          ADD-ONS SECTION           ║
-          ╚═══════════════════════════════════╝ */}
+
       {addons.length > 0 && (
         <div className="mob-section" style={{ background: BG }}>
           <span className="mob-section-eyebrow" style={{ color: A }}>Enhance Your Experience</span>
@@ -676,19 +674,19 @@ export default function MobileExperienceView({
           if (typeof c === "string") return c;
           return c.name || c.title || "";
         };
-        
+
         let rawCats = Array.isArray(listing?.whatsSpecial) && listing?.whatsSpecial.length > 0
           ? listing.whatsSpecial.map(getCatName).filter(Boolean)
           : typeof listing?.whatsSpecial === "string" && listing?.whatsSpecial.trim() !== ""
             ? listing.whatsSpecial.split(",").map(s => s.trim()).filter(Boolean)
             : [listing?.category, listing?.subCategory].filter(Boolean).map(getCatName).filter(Boolean);
-            
+
         const displayCats = rawCats.length > 0 ? rawCats : ["Nature", "Adventure"];
         const repeatedCats = Array(12).fill(displayCats).flat();
-        
+
         return (
-          <div className="mob-marquee" style={{ 
-            borderColor: B, 
+          <div className="mob-marquee" style={{
+            borderColor: B,
             background: isDark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.005)",
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`
@@ -769,7 +767,7 @@ export default function MobileExperienceView({
                   const title = req.setting?.title || "Requirement";
                   const desc = req.setting?.description || "";
                   const item = { title, desc, questions: req.questions };
-                  
+
                   if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("experience")) {
                     expItems.push(item);
                   } else {
