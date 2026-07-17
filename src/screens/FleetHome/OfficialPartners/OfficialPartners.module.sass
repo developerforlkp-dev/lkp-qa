@@ -1,0 +1,335 @@
+@import ../../../styles/helpers
+
+.partnersSection
+    width: 100%
+    max-width: 1920px
+    margin: 0 auto
+    padding: 64px 0 48px
+    display: flex
+    flex-direction: column
+    align-items: center
+    position: relative
+    overflow: hidden
+    +d
+        padding: 56px 0 40px
+    +t
+        padding: 48px 0 36px
+    +m
+        padding: 40px 0 32px
+
+// Diamond decoration at top
+.diamondIcon
+    margin-bottom: 24px
+    display: flex
+    align-items: center
+    justify-content: center
+    opacity: 0.5
+    +m
+        margin-bottom: 16px
+    svg
+        width: 14px
+        height: 14px
+        +m
+            width: 12px
+            height: 12px
+
+.preTitle
+    font-family: 'Inter', 'DM Sans', sans-serif
+    font-size: 13px
+    font-weight: 700
+    letter-spacing: 0.2em
+    text-transform: uppercase
+    color: #0097B2
+    margin-bottom: 16px
+    text-align: center
+    padding: 0 20px
+    +m
+        font-size: 11px
+        letter-spacing: 0.18em
+        margin-bottom: 12px
+
+.mainHeading
+    font-family: "Cormorant Garamond", "Playfair Display", serif
+    font-size: 38px
+    font-weight: 700
+    line-height: 1.15
+    letter-spacing: -0.02em
+    color: $n2
+    text-align: center
+    margin-bottom: 16px
+    padding: 0 20px
+    +dark
+        color: $n8
+    +d
+        font-size: 34px
+    +t
+        font-size: 30px
+    +m
+        font-size: 24px
+        margin-bottom: 12px
+        line-height: 1.2
+
+.subtitle
+    font-family: 'Inter', 'DM Sans', sans-serif
+    font-size: 15px
+    font-weight: 400
+    line-height: 1.6
+    color: $n4
+    text-align: center
+    margin-bottom: 40px
+    padding: 0 20px
+    +dark
+        color: $n5
+    +t
+        font-size: 14px
+        margin-bottom: 32px
+    +m
+        font-size: 13px
+        margin-bottom: 24px
+        br
+            display: none
+
+// ── Marquee Container ──────────────────────────────────────
+.marqueeContainer
+    position: relative
+    width: 100%
+    overflow: hidden
+    margin-bottom: 40px
+    padding: 4px 0
+    +m
+        margin-bottom: 28px
+
+// Fade edges for seamless look
+.fadeLeft,
+.fadeRight
+    position: absolute
+    top: 0
+    bottom: 0
+    width: 80px
+    z-index: 2
+    pointer-events: none
+    +m
+        width: 40px
+
+.fadeLeft
+    left: 0
+    background: linear-gradient(90deg, $n8 0%, rgba(252,252,253,0) 100%)
+    +dark
+        background: linear-gradient(90deg, $n1 0%, rgba(20,20,22,0) 100%)
+
+.fadeRight
+    right: 0
+    background: linear-gradient(270deg, $n8 0%, rgba(252,252,253,0) 100%)
+    +dark
+        background: linear-gradient(270deg, $n1 0%, rgba(20,20,22,0) 100%)
+
+// Marquee track with infinite scroll animation
+.marqueeTrack
+    display: flex
+    align-items: stretch
+    gap: 0
+    width: max-content
+    animation: marqueeScroll 30s linear infinite
+    &:hover
+        animation-play-state: paused
+
+@keyframes marqueeScroll
+    0%
+        transform: translateX(0)
+    100%
+        transform: translateX(-50%)
+
+// Logo Card
+.logoCard
+    flex: 0 0 auto
+    width: 140px
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    padding: 20px 12px 14px
+    position: relative
+    transition: background 0.2s ease
+    cursor: default
+    border-right: 1px solid $n6
+    +dark
+        border-right-color: $n3
+    +d
+        width: 130px
+        padding: 18px 10px 12px
+    +t
+        width: 120px
+        padding: 16px 8px 10px
+    +m
+        width: 110px
+        padding: 14px 8px 10px
+    &:hover
+        background: rgba($n7, 0.6)
+        +dark
+            background: rgba($n3, 0.4)
+
+.logoWrapper
+    width: 100px
+    height: 60px
+    display: flex
+    align-items: center
+    justify-content: center
+    margin-bottom: 8px
+    +d
+        width: 90px
+        height: 54px
+    +t
+        width: 80px
+        height: 48px
+    +m
+        width: 72px
+        height: 44px
+        margin-bottom: 6px
+
+.logoImage
+    max-width: 100%
+    max-height: 100%
+    object-fit: contain
+    filter: none
+    transition: all 0.2s ease
+    border-radius: 4px
+    +dark
+        filter: brightness(0) invert(1) opacity(0.85)
+
+.logoFallback
+    width: 100%
+    height: 100%
+    display: flex
+    align-items: center
+    justify-content: center
+    font-family: 'Inter', 'DM Sans', sans-serif
+    font-size: 12px
+    font-weight: 700
+    letter-spacing: 0.05em
+    text-transform: uppercase
+    color: $n3
+    text-align: center
+    +dark
+        color: $n6
+
+.brandName
+    font-family: 'Inter', 'DM Sans', sans-serif
+    font-size: 12px
+    font-weight: 500
+    color: $n4
+    text-align: center
+    line-height: 1.3
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    max-width: 100%
+    +dark
+        color: $n5
+    +m
+        font-size: 10px
+
+// ── Trust Badge ──────────────────────────────────────
+.trustBadge
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 32px
+    width: 100%
+    max-width: 640px
+    margin: 0 auto
+    padding: 0 20px
+    +m
+        flex-direction: column
+        gap: 20px
+        max-width: 320px
+
+.trustLeft
+    display: flex
+    align-items: center
+    gap: 10px
+
+.leafIcon
+    width: 24px
+    height: 24px
+    flex-shrink: 0
+    opacity: 0.8
+
+.leafIconRight
+    width: 24px
+    height: 24px
+    flex-shrink: 0
+    opacity: 0.8
+
+.verifiedCount
+    display: flex
+    flex-direction: column
+    align-items: center
+
+.countNumber
+    font-family: "Cormorant Garamond", "Playfair Display", serif
+    font-size: 32px
+    font-weight: 700
+    line-height: 1
+    color: $n2
+    +dark
+        color: $n8
+    +m
+        font-size: 28px
+
+.countLabel
+    font-family: 'Inter', 'DM Sans', sans-serif
+    font-size: 11px
+    font-weight: 500
+    color: $n4
+    letter-spacing: 0.02em
+    white-space: nowrap
+    +dark
+        color: $n5
+
+.trustDivider
+    width: 1px
+    height: 48px
+    background: $n6
+    flex-shrink: 0
+    +dark
+        background: $n3
+    +m
+        width: 80px
+        height: 1px
+
+.trustRight
+    display: flex
+    align-items: center
+    gap: 12px
+    +m
+        flex-direction: column
+        text-align: center
+
+.shieldIcon
+    width: 36px
+    height: 36px
+    display: flex
+    align-items: center
+    justify-content: center
+    flex-shrink: 0
+    +m
+        width: 32px
+        height: 32px
+    svg
+        width: 28px
+        height: 28px
+        +m
+            width: 24px
+            height: 24px
+
+.trustText
+    font-family: 'Inter', 'DM Sans', sans-serif
+    font-size: 13px
+    font-weight: 400
+    line-height: 1.5
+    color: $n4
+    +dark
+        color: $n5
+    +m
+        font-size: 12px
+        text-align: center

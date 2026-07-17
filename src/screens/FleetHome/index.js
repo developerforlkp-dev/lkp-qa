@@ -17,6 +17,7 @@ import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
+import OfficialPartners from "./OfficialPartners";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -1063,6 +1064,9 @@ const FleetHome = () => {
                 );
               })}
           </div>
+
+          {/* Official Partners Section - just above footer */}
+          {!loading && <OfficialPartners />}
         </div>
       </div>
     </LayoutGroup>
