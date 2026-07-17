@@ -2561,7 +2561,7 @@ function MobileItinerary({ place }) {
                   </div>
                 </div>
               )}
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 6, margin: "0 0 6px 0" }}>{s.title || s.name}</h4>
+              <div style={{ fontSize: 14, fontWeight: 700, color: A, marginBottom: 6, margin: "0 0 6px 0", fontFamily: '"Inter", sans-serif' }}>{s.title || s.name}</div>
               <p style={{ fontSize: 11, color: M, lineHeight: 1.6, margin: 0 }}>{s.desc || s.description || s.briefDescription}</p>
             </div>
           </div>
