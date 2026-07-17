@@ -2232,26 +2232,32 @@ const ViewDetails = () => {
   const formatPolicyWindow = (policy) => {
     if (!policy || typeof policy !== "object") return "";
 
-    const minDays = policy.minDaysBeforeStart ?? policy.minDays;
-    const maxDays = policy.maxDaysBeforeStart ?? policy.maxDays;
+    const timeUnit = String(policy.timeUnit || "").trim().toUpperCase();
+    const defaultUnitSingular = timeUnit === "HOUR" ? "hour" : "day";
+    const defaultUnitPlural = timeUnit === "HOUR" ? "hours" : "days";
+    const unitSingular = policy.timeUnitLabel || defaultUnitSingular;
+    const unitPlural = policy.timeUnitLabelPlural || defaultUnitPlural;
+    const minValue = policy.minValue ?? policy.minDaysBeforeStart ?? policy.minDays;
+    const maxValue = policy.maxValue ?? policy.maxDaysBeforeStart ?? policy.maxDays;
+    const formatUnit = (value) => Number(value) === 1 ? unitSingular : unitPlural;
 
-    if (minDays != null && maxDays != null) {
-      if (Number(minDays) === 0 && Number(maxDays) === 0) {
+    if (minValue != null && maxValue != null) {
+      if (Number(minValue) === 0 && Number(maxValue) === 0) {
         return "on the start date";
       }
-      return `${minDays} to ${maxDays} days before start`;
+      return `${minValue} to ${maxValue} ${formatUnit(maxValue)} before start`;
     }
-    if (minDays != null) {
-      if (Number(minDays) === 0) {
+    if (minValue != null) {
+      if (Number(minValue) === 0) {
         return "any time before start";
       }
-      return `${minDays}+ days before start`;
+      return `${minValue}+ ${formatUnit(minValue)} before start`;
     }
-    if (maxDays != null) {
-      if (Number(maxDays) === 0) {
+    if (maxValue != null) {
+      if (Number(maxValue) === 0) {
         return "up to the start date";
       }
-      return `up to ${maxDays} days before start`;
+      return `up to ${maxValue} ${formatUnit(maxValue)} before start`;
     }
 
     return "";

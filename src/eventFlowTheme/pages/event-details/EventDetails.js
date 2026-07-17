@@ -3193,7 +3193,7 @@ function EventBookingPopup({ event }) {
         childPricingTiers: Array.isArray(ticket.childPricingTiers) ? ticket.childPricingTiers :
           Array.isArray(ticket.child_pricing_tiers) ? ticket.child_pricing_tiers : [],
         ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
-        ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
+        ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate,
         applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
           Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
             Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
@@ -3233,7 +3233,7 @@ function EventBookingPopup({ event }) {
     price: ticketPrice,
     b2cPrice: ticketPrice,
     ticketSaleStartDate: event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
-    ticketSaleEndDate: event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
+    ticketSaleEndDate: event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate,
     pricing: {
       ...(event?.pricing || {}),
       basePrice: ticketPrice

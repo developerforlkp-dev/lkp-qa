@@ -197,17 +197,19 @@ const getExperienceBookingCutoffHours = (slot) => {
     schedule.booking_cutoff_time;
 
   if (rawValue == null || rawValue === "") return null;
-  if (typeof rawValue === "number" && Number.isFinite(rawValue)) return rawValue;
+  if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
+    return rawValue > 0 ? rawValue : null;
+  }
 
   const text = String(rawValue).trim();
   if (!text) return null;
   const numeric = Number(text);
-  if (Number.isFinite(numeric)) return numeric;
+  if (Number.isFinite(numeric)) return numeric > 0 ? numeric : null;
 
   const match = text.match(/(\d+(?:\.\d+)?)/);
   if (!match) return null;
   const parsed = Number(match[1]);
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
 const getTicketId = (ticket) => {
