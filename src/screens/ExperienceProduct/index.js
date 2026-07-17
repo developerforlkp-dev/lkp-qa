@@ -9,7 +9,7 @@ import { useTheme } from "../../components/JUI/Theme";
 import { Cursor, ProgressBar, Rev, Chars, Mq, SHdr, E, Soul } from "../../components/JUI/UI";
 import ShareButton from "../../components/ShareButton";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
-import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import Icon from "../../components/Icon";
 import {
   getListing,
@@ -544,7 +544,11 @@ const ExperienceProduct = () => {
   const isMobile = useIsMobile();
 
   if (loading && !listing) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}><Loader /></div>;
+    return (
+      <div style={{ minHeight: '100vh', background: BG }}>
+        <LoadingSkeleton variant="experience" />
+      </div>
+    );
   }
 
   const description = listing?.description || listing?.aboutListing || "";

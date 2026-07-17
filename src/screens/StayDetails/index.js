@@ -12,7 +12,7 @@ import {
 import moment from "moment";
 import cn from "classnames";
 import Page from "../../components/Page";
-import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
 import roomStyles from "./RoomCards.module.sass";
@@ -2946,8 +2946,8 @@ const StayDetails = () => {
 
   if (loading && !stay && !unavailablePopupOpen) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader />
+      <div style={{ minHeight: '100vh' }}>
+        <LoadingSkeleton variant="stay" />
       </div>
     );
   }

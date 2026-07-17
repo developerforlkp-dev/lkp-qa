@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
 import { Footer } from "../../components/JUI/Footer";
@@ -3186,8 +3187,8 @@ const PlaceDetails = () => {
 
   if (!place && !unavailablePopupOpen) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader />
+      <div style={{ minHeight: '100vh' }}>
+        <LoadingSkeleton variant="place" />
       </div>
     );
   }

@@ -717,3 +717,115 @@
         width: 95%
     &:nth-child(4)
         width: 70%
+// -------------------------------------------------------------------------------
+// NEW DYNAMIC SKELETONS FOR DETAIL PAGES
+// -------------------------------------------------------------------------------
+
+.placeSkeleton
+    padding: 0
+    display: flex
+    flex-direction: column
+    gap: 24px
+.placeHeroBanner
+    width: 100%
+    height: 60vh
+    border-radius: 0
+    margin-bottom: 0
+.placeMarquee
+    height: 40px
+    width: 100%
+.placeContent
+    padding: 24px 80px
+    display: flex
+    flex-direction: column
+    gap: 16px
+    +m
+        padding: 24px 16px
+.placeTitle
+    height: 48px
+    width: 60%
+    border-radius: 8px
+.placeTextLine
+    height: 16px
+    width: 100%
+    border-radius: 4px
+    &:nth-child(2)
+        width: 90%
+    &:nth-child(3)
+        width: 80%
+
+.foodSkeleton
+    padding: 0
+.foodHeroBanner
+    width: 100%
+    height: 500px
+    border-radius: 0
+    +m
+        height: 350px
+.foodContentGrid
+    display: grid
+    grid-template-columns: 1fr 380px
+    gap: 48px
+    padding: 40px 80px
+    +m
+        grid-template-columns: 1fr
+        padding: 24px 16px
+.foodMainContent
+    display: flex
+    flex-direction: column
+    gap: 16px
+.foodTitle
+    height: 56px
+    width: 70%
+    border-radius: 8px
+    margin-bottom: 24px
+.foodTextLine
+    height: 16px
+    border-radius: 4px
+    width: 100%
+    &:nth-child(3)
+        width: 85%
+.foodSidebarCard
+    height: 450px
+    border-radius: 24px
+    border: 1px solid rgba($n6, 0.4)
+    +dark
+        border-color: rgba($n3, 0.3)
+
+.eventSkeleton
+    padding: 0
+.eventHeroBanner
+    width: 100%
+    height: 400px
+    border-radius: 0
+    +m
+        height: 250px
+.eventContentGrid
+    display: grid
+    grid-template-columns: 1fr 380px
+    gap: 48px
+    padding: 40px 80px
+    +m
+        grid-template-columns: 1fr
+        padding: 24px 16px
+.eventMainContent
+    display: flex
+    flex-direction: column
+    gap: 16px
+.eventTitle
+    height: 64px
+    width: 80%
+    border-radius: 8px
+    margin-bottom: 24px
+.eventTextLine
+    height: 18px
+    border-radius: 4px
+    width: 100%
+    &:nth-child(3)
+        width: 90%
+.eventSidebarCard
+    height: 500px
+    border-radius: 24px
+    border: 1px solid rgba($n6, 0.4)
+    +dark
+        border-color: rgba($n3, 0.3)

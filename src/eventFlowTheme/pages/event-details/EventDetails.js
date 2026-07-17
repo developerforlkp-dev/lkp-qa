@@ -8,7 +8,7 @@ import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
-import Loader from "../../../components/Loader";
+import LoadingSkeleton from "../../../components/LoadingSkeleton";
 import RelatedListingsStrip from "../../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../../utils/scrollLock";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
@@ -3705,8 +3705,8 @@ export default function EventDetails() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}>
-        <Loader />
+      <div style={{ minHeight: '100vh', background: BG }}>
+        <LoadingSkeleton variant="event" />
       </div>
     );
   }

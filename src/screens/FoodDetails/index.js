@@ -9,7 +9,7 @@ import {
   Users, DollarSign, GlassWater, CloudSun, Tag, Heart
 } from "lucide-react";
 import cn from "classnames";
-import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
@@ -2214,8 +2214,8 @@ const FoodDetails = () => {
 
   if (loading && !food && !unavailablePopupOpen) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader />
+      <div style={{ minHeight: '100vh' }}>
+        <LoadingSkeleton variant="food" />
       </div>
     );
   }
