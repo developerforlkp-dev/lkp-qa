@@ -2372,7 +2372,7 @@ function Rules({ event }) {
     });
 
     if (cancellationPolicy) {
-      cancelItems.push({ title: "Cancellation Policy", body: cancellationPolicy });
+      cancelItems.push({ title: null, body: cancellationPolicy });
     }
 
     const categories = [];

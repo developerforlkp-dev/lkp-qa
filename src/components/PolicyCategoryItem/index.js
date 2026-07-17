@@ -91,13 +91,13 @@ function PolicyCategoryItem({ category }) {
                   )}
                   {item.body && (
                     <div style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0 }}>
-                      {category.title?.toLowerCase().includes('cancellation') && item.body.split('. ').filter(s => s.trim().length > 0).length > 1 ? (
+                      {category.title?.toLowerCase().includes('cancellation') && (item.body.includes('\n') || item.body.split('. ').filter(s => s.trim().length > 0).length > 1) ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-                          {item.body.split('. ').filter(s => s.trim().length > 0).map((sentence, idx) => (
+                          {(item.body.includes('\n') ? item.body.split('\n') : item.body.split('. ')).filter(s => s.trim().length > 0).map((sentence, idx) => (
                             <div key={idx} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                               <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
                               <div style={{ flex: 1 }}>
-                                {sentence.trim()}{sentence.trim().endsWith('.') ? '' : '.'}
+                                {sentence.trim()}{(!item.body.includes('\n') && !sentence.trim().endsWith('.')) ? '.' : ''}
                               </div>
                             </div>
                           ))}
