@@ -8,7 +8,7 @@ import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
-import Loader from "../../../components/Loader";
+import LoadingSkeleton from "../../../components/LoadingSkeleton";
 import RelatedListingsStrip from "../../../components/RelatedListingsStrip";
 import { lockBodyScroll } from "../../../utils/scrollLock";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
@@ -2372,7 +2372,7 @@ function Rules({ event }) {
     });
 
     if (cancellationPolicy) {
-      cancelItems.push({ title: "Cancellation Policy", body: cancellationPolicy });
+      cancelItems.push({ title: null, body: cancellationPolicy });
     }
 
     const categories = [];
@@ -3193,7 +3193,7 @@ function EventBookingPopup({ event }) {
         childPricingTiers: Array.isArray(ticket.childPricingTiers) ? ticket.childPricingTiers :
           Array.isArray(ticket.child_pricing_tiers) ? ticket.child_pricing_tiers : [],
         ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
-        ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
+        ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate,
         applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
           Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
             Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
@@ -3233,7 +3233,7 @@ function EventBookingPopup({ event }) {
     price: ticketPrice,
     b2cPrice: ticketPrice,
     ticketSaleStartDate: event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
-    ticketSaleEndDate: event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate || event?.bookingCutoffTime,
+    ticketSaleEndDate: event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate,
     pricing: {
       ...(event?.pricing || {}),
       basePrice: ticketPrice
@@ -3705,8 +3705,8 @@ export default function EventDetails() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: BG }}>
-        <Loader />
+      <div style={{ minHeight: '100vh', background: BG }}>
+        <LoadingSkeleton variant="event" />
       </div>
     );
   }
@@ -3739,6 +3739,8 @@ export default function EventDetails() {
           primaryCategoryId={primaryCategoryId}
           currentListingId={currentListingId}
           title="More Events You Might Like"
+          sectionStyle={isMobile ? { padding: "32px 20px" } : { padding: "32px 80px" }}
+          titleStyle={isMobile ? { fontSize: "clamp(1.6rem, 7vw, 2.2rem)", marginBottom: "16px" } : { fontSize: "clamp(2.5rem, 4vw, 3.5rem)" }}
         />
         <Footer />
       </div>

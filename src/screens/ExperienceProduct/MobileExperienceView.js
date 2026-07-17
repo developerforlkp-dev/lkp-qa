@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft, ChevronDown, Clock, User, Users, Zap, Baby, Languages,
-  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart, Building, Map, Globe
+  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart, Building, Map, Globe, Camera
 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import PhotoView from "../../components/PhotoView";
@@ -126,7 +126,7 @@ export default function MobileExperienceView({
   const initialGuestsStr = queryParams.get("guests");
   const initialAdultsStr = queryParams.get("adults");
   const initialChildrenStr = queryParams.get("children");
-  const initialGuests = initialAdultsStr || initialChildrenStr 
+  const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? Number(initialGuestsStr) : null);
 
@@ -241,16 +241,16 @@ export default function MobileExperienceView({
             <Favorite itemType="listing" itemId={id}>
               {({ saved, onClick }) => (
                 <button onClick={onClick} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", flexShrink: 0 }}>
-                <style>{`
+                  <style>{`
                   .exp-save-icon-${id} svg {
                     fill: ${saved ? "#0097B2" : (isDark ? "#FFFFFF" : "#111111")};
                     transition: fill 0.3s ease;
                   }
                 `}</style>
-                <div className={`exp-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
-                </div>
-              </button>
+                  <div className={`exp-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                  </div>
+                </button>
               )}
             </Favorite>
             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShare(); }} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
@@ -405,62 +405,74 @@ export default function MobileExperienceView({
         <div className="mob-section" style={{ background: BG }}>
           <span className="mob-section-eyebrow" style={{ color: A }}>The Experience Journey</span>
           <h2 className="mob-section-title" style={{ color: FG }}>How It Unfolds</h2>
-          <p className="mob-section-desc" style={{ color: M, marginBottom: 24 }}>
-            {activities.length} carefully curated experience{activities.length > 1 ? "s" : ""} await you.
-          </p>
 
-          <div className="mob-timeline">
-            <div style={{ position: "absolute", left: 7, top: 12, bottom: 12, width: 2, background: `${A}30`, borderRadius: 2 }} />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 24, position: "relative" }}>
+            {/* Vertical Line */}
+            <div style={{
+              position: "absolute",
+              left: 17,
+              top: 8,
+              bottom: 8,
+              width: 2,
+              background: `linear-gradient(to bottom, ${A}, ${B})`
+            }} />
+
             {activities.map((act, i) => {
               const imgUrl = actImg(act);
               const isExpanded = expandedActivities[i];
               const actDesc = act.description || act.pilot || act.briefDescription || act.about || "";
+
               return (
-                <div key={i} className="mob-tl-item" style={{ animationDelay: `${i * 0.1}s`, padding: "12px 0" }}>
-                  <div className="mob-tl-dot" style={{ borderColor: A, background: BG }} />
-                  <div className="mob-tl-content">
-                    <div className="mob-tl-card" style={{ background: "transparent", border: "none", boxShadow: "none" }}>
-                      {imgUrl && (
-                        <img
-                          className="mob-tl-img"
-                          src={imgUrl}
-                          alt={act.name || act.title}
-                          loading="lazy"
-                          onClick={() => {
-                            const imgs = actImages(act);
-                            setSelectedActivityImages(imgs);
-                            setActivityPhotoIndex(0);
-                            setActivityPhotoVisible(true);
-                          }}
-                        />
-                      )}
-                      <div className="mob-tl-body">
-                        <div className="mob-tl-meta" style={{ color: A, fontWeight: 700, fontSize: 14 }}>
-                          <Compass size={14} />
-                          <span>{act.name || act.title || `Activity ${i + 1}`}</span>
+                <div key={i} style={{ display: "flex", gap: 16, position: "relative", zIndex: 1, alignItems: "flex-start" }}>
+                  {/* Step Marker */}
+                  <div style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    background: W,
+                    border: `2px solid ${A}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    color: A,
+                    flexShrink: 0,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                    marginTop: imgUrl ? 16 : 0
+                  }}>
+                    {i + 1}
+                  </div>
+
+                  {/* Content */}
+                  <div style={{
+                    background: S,
+                    border: `1.5px solid ${B}`,
+                    borderRadius: 20,
+                    padding: "16px 14px",
+                    flex: 1,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.01)",
+                    overflow: "hidden"
+                  }}>
+                    {imgUrl && (
+                      <div
+                        style={{ margin: "-16px -14px 16px -14px", height: 160, overflow: "hidden", cursor: "pointer", position: "relative" }}
+                        onClick={() => {
+                          const imgs = actImages(act);
+                          setSelectedActivityImages(imgs);
+                          setActivityPhotoIndex(0);
+                          setActivityPhotoVisible(true);
+                        }}
+                      >
+                        <img src={imgUrl} alt={act.name || act.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)" }}>
+                          <Camera size={12} /> GALLERY
                         </div>
-                        {actDesc && (
-                          <>
-                            <p className="mob-tl-desc" style={{ color: M, WebkitLineClamp: isExpanded ? "unset" : 2 }}>{actDesc}</p>
-                            {actDesc.length > 120 && (
-                              <button onClick={() => setExpandedActivities(p => ({ ...p, [i]: !p[i] }))}
-                                style={{ background: "none", border: "none", color: A, fontSize: 12, fontWeight: 700, padding: "8px 0 0", cursor: "pointer", outline: "none" }}>
-                                {isExpanded ? "Show Less" : "Read More"}
-                              </button>
-                            )}
-                          </>
-                        )}
-                        {act.duration && (
-                          <div className="mob-tl-meta" style={{ color: M, marginTop: 8 }}>
-                            <Clock size={12} />
-                            <span>{act.duration} {act.durationUnit || "min"}</span>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                    {i < activities.length - 1 && (
-                      <div style={{ height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", marginTop: 16, borderRadius: 1 }} />
                     )}
+                    <div style={{ fontSize: 14, fontWeight: 700, color: A, marginBottom: 6, margin: "0 0 6px 0", fontFamily: '"Inter", sans-serif' }}>{act.name || act.title || `Activity ${i + 1}`}</div>
+                    <p style={{ fontSize: 11, color: M, lineHeight: 1.6, margin: 0 }}>{actDesc}</p>
                   </div>
                 </div>
               );
@@ -469,9 +481,7 @@ export default function MobileExperienceView({
         </div>
       )}
 
-      {/* ╔═══════════════════════════════════╗
-          ║          ADD-ONS SECTION           ║
-          ╚═══════════════════════════════════╝ */}
+
       {addons.length > 0 && (
         <div className="mob-section" style={{ background: BG }}>
           <span className="mob-section-eyebrow" style={{ color: A }}>Enhance Your Experience</span>
@@ -664,19 +674,19 @@ export default function MobileExperienceView({
           if (typeof c === "string") return c;
           return c.name || c.title || "";
         };
-        
+
         let rawCats = Array.isArray(listing?.whatsSpecial) && listing?.whatsSpecial.length > 0
           ? listing.whatsSpecial.map(getCatName).filter(Boolean)
           : typeof listing?.whatsSpecial === "string" && listing?.whatsSpecial.trim() !== ""
             ? listing.whatsSpecial.split(",").map(s => s.trim()).filter(Boolean)
             : [listing?.category, listing?.subCategory].filter(Boolean).map(getCatName).filter(Boolean);
-            
+
         const displayCats = rawCats.length > 0 ? rawCats : ["Nature", "Adventure"];
         const repeatedCats = Array(12).fill(displayCats).flat();
-        
+
         return (
-          <div className="mob-marquee" style={{ 
-            borderColor: B, 
+          <div className="mob-marquee" style={{
+            borderColor: B,
             background: isDark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.005)",
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`
@@ -757,7 +767,7 @@ export default function MobileExperienceView({
                   const title = req.setting?.title || "Requirement";
                   const desc = req.setting?.description || "";
                   const item = { title, desc, questions: req.questions };
-                  
+
                   if (title.toLowerCase().includes("rule") || title.toLowerCase().includes("guideline") || title.toLowerCase().includes("experience")) {
                     expItems.push(item);
                   } else {
@@ -867,7 +877,7 @@ export default function MobileExperienceView({
                     <p className="mob-review-name" style={{ color: FG }}>{rev.customerName || rev.author || "Verified Guest"}</p>
                     <div className="mob-review-stars" style={{ display: "flex", gap: 2, marginTop: 4 }}>
                       {[...Array(5)].map((_, si) => (
-                        <Star key={si} size={10} color={si < (rev.rating || 5) ? "#F59E0B" : "#CBD5E1"} fill={si < (rev.rating || 5) ? "#F59E0B" : "transparent"} />
+                        <Star key={si} size={10} color={si < (rev.rating || 5) ? "#F59E0B" : "#CBD5E1"} style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} />
                       ))}
                     </div>
                   </div>

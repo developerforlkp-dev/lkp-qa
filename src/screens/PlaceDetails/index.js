@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import Browse from "../../components/Browse";
 import { browse2 } from "../../mocks/browse";
 import { Footer } from "../../components/JUI/Footer";
@@ -412,6 +413,7 @@ function SHdr({ idx, label }) {
 /* ─── PLACE SECTIONS ─────────── */
 function PlaceHero({ place, galleryItems, id }) {
   const { theme, tokens: { A, FG, M, W, B, S } } = useTheme();
+  const { isMobile } = useWindowSize();
   const r = useRef(null);
   const sliderRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: r, offset: ["start start", "end start"] });
@@ -528,6 +530,87 @@ function PlaceHero({ place, galleryItems, id }) {
       }
     } catch (_) { }
   };
+
+  if (isMobile) {
+    return (
+      <section style={{ position: "relative", width: "100%", background: W, paddingBottom: 24 }}>
+        {/* Mobile Cover Image Wrapper */}
+        <div style={{ position: "relative", width: "100%", height: "40vh", overflow: "hidden" }}>
+           <motion.img 
+             key={activeIdx}
+             src={baseItems[activeIdx]} 
+             style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+             initial={{ opacity: 0.8 }}
+             animate={{ opacity: 1 }}
+             transition={{ duration: 0.3 }}
+             alt="Cover"
+           />
+           {/* Mobile Top Header Overlay */}
+           <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 12, zIndex: 50 }}>
+              <Favorite itemType="place" itemId={id}>
+                {({ saved, onClick }) => (
+                  <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 40, height: 40, borderRadius: "50%", background: theme === "dark" ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
+                    <Icon name={saved ? "heart-fill" : "heart"} size={20} color={saved ? A : FG} />
+                  </button>
+                )}
+              </Favorite>
+              <button onClick={handleShare} style={{ width: 40, height: 40, borderRadius: "50%", background: theme === "dark" ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
+                <Share2 size={18} color={FG} />
+              </button>
+           </div>
+           
+           {/* Mobile Gradient Overlay */}
+           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)", pointerEvents: "none" }} />
+           
+           {/* Mobile Title */}
+           <div style={{ position: "absolute", bottom: 40, left: 20, right: 20, zIndex: 10 }}>
+              <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#FFF", fontWeight: 700, marginBottom: 8, opacity: 0.8 }}>
+                {toDisplayString(place?.category) || "DESTINATION"}
+              </p>
+              <h1 className="font-display" style={{ fontSize: "2.2rem", fontWeight: 800, color: "#FFF", lineHeight: 1.1, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+                {placeName}
+              </h1>
+           </div>
+           
+           {/* Mobile Dots */}
+           {baseItems.length > 1 && (
+             <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, zIndex: 10 }}>
+               {baseItems.slice(0, 5).map((_, i) => (
+                 <div key={i} onClick={() => openLightbox(i)} style={{ width: activeIdx === i ? 20 : 8, height: 8, borderRadius: 4, background: activeIdx === i ? A : "rgba(255,255,255,0.5)", transition: "all 0.3s", cursor: "pointer" }} />
+               ))}
+             </div>
+           )}
+        </div>
+        
+        {/* Mobile Thumbnail Strip below image */}
+        <div className="hide-scrollbar" style={{ display: "flex", gap: 8, padding: "16px", overflowX: "auto" }}>
+          {baseItems.slice(0, 5).map((imgUrl, i) => (
+             <div key={i} onClick={() => setActiveIdx(i)} style={{ width: 64, height: 64, borderRadius: 12, overflow: "hidden", flexShrink: 0, border: activeIdx === i ? `2px solid ${A}` : "2px solid transparent", transition: "all 0.3s", cursor: "pointer" }}>
+               <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+             </div>
+          ))}
+          {baseItems.length > 5 && (
+             <div onClick={() => openLightbox(0)} style={{ width: 64, height: 64, borderRadius: 12, flexShrink: 0, background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: FG, cursor: "pointer" }}>
+               +{baseItems.length - 5}
+             </div>
+          )}
+        </div>
+
+        {/* Global Modal Trigger */}
+        <AnimatePresence>
+          {lightboxOpen && (
+            <FullScreenImage
+              src={baseItems[activeIdx]}
+              items={baseItems}
+              currentIndex={activeIdx}
+              onNavigate={setActiveIdx}
+              onClose={() => setLightboxOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+      </section>
+    );
+  }
 
   return (
     <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
@@ -902,123 +985,13 @@ function PlaceHero({ place, galleryItems, id }) {
       {/* Desktop Lightbox Modal */}
       <AnimatePresence>
         {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.95)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              zIndex: 10000,
-              padding: "24px 36px",
-              boxSizing: "border-box"
-            }}
-          >
-            {/* Top Bar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#FFF", width: "100%" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.05em" }}>
-                {activeIdx + 1} / {baseItems.length}
-              </span>
-              <button
-                onClick={() => setLightboxOpen(false)}
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  outline: "none"
-                }}
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Main Image */}
-            <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <button
-                onClick={prevImg}
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 50,
-                  height: 50,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10,
-                  outline: "none"
-                }}
-              >
-                <ChevronLeft size={28} />
-              </button>
-
-              <motion.img
-                key={activeIdx}
-                src={baseItems[activeIdx]}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                style={{ maxWidth: "85%", maxHeight: "75vh", objectFit: "contain", borderRadius: 16 }}
-                alt=""
-              />
-
-              <button
-                onClick={nextImg}
-                style={{
-                  position: "absolute",
-                  right: 16,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 50,
-                  height: 50,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10,
-                  outline: "none"
-                }}
-              >
-                <ChevronRight size={28} />
-              </button>
-            </div>
-
-            {/* Indicator dots */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-              {baseItems.map((_, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: idx === activeIdx ? A : "rgba(255,255,255,0.3)",
-                    transition: "all 0.3s",
-                    cursor: "pointer"
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
+          <FullScreenImage
+            src={baseItems[activeIdx]}
+            items={baseItems}
+            currentIndex={activeIdx}
+            onNavigate={setActiveIdx}
+            onClose={() => setLightboxOpen(false)}
+          />
         )}
       </AnimatePresence>
 
@@ -2498,124 +2471,13 @@ function MobileGallery({ galleryItems }) {
       {/* Lightbox Modal */}
       <AnimatePresence>
         {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.95)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              zIndex: 10000,
-              padding: "24px 16px"
-            }}
-          >
-            {/* Top Bar */}
-            <div style={{ display: "flex", justifycontent: "space-between", alignItems: "center", color: "#FFF" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.05em" }}>
-                {activeIdx + 1} / {galleryItems.length}
-              </span>
-              <button
-                onClick={() => setLightboxOpen(false)}
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer"
-                }}
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Main Image */}
-            <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <button
-                onClick={prevImg}
-                style={{
-                  position: "absolute",
-                  left: 8,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10
-                }}
-              >
-                <ChevronLeft size={24} />
-              </button>
-
-              <motion.img
-                key={activeIdx}
-                src={galleryItems[activeIdx]}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: 12 }}
-                alt=""
-              />
-
-              <button
-                onClick={nextImg}
-                style={{
-                  position: "absolute",
-                  right: 8,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "none",
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#FFF",
-                  cursor: "pointer",
-                  zIndex: 10
-                }}
-              >
-                <ChevronRight size={24} />
-              </button>
-            </div>
-
-            {/* Bottom Bar Indicator */}
-            <div style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 8,
-              overflowX: "auto",
-              paddingBottom: 8
-            }}>
-              {galleryItems.map((_, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: idx === activeIdx ? A : "rgba(255,255,255,0.3)",
-                    transition: "all 0.3s"
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
+          <FullScreenImage
+            src={galleryItems[activeIdx]}
+            items={galleryItems}
+            currentIndex={activeIdx}
+            onNavigate={setActiveIdx}
+            onClose={() => setLightboxOpen(false)}
+          />
         )}
       </AnimatePresence>
     </section>
@@ -2699,7 +2561,7 @@ function MobileItinerary({ place }) {
                   </div>
                 </div>
               )}
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: FG, marginBottom: 6, margin: "0 0 6px 0" }}>{s.title || s.name}</h4>
+              <div style={{ fontSize: 14, fontWeight: 700, color: A, marginBottom: 6, margin: "0 0 6px 0", fontFamily: '"Inter", sans-serif' }}>{s.title || s.name}</div>
               <p style={{ fontSize: 11, color: M, lineHeight: 1.6, margin: 0 }}>{s.desc || s.description || s.briefDescription}</p>
             </div>
           </div>
@@ -3148,16 +3010,17 @@ function MobilePlaceDetails({
       {/* Community Feedback */}
       <MobileCommunityFeedback />
 
-      {/* 8. Booking / CTA */}
-      <MobileCTA place={place} />
+      {/* 8. Booking / CTA Removed as requested */}
 
       {/* 9. Related Listings Strip */}
-      <div style={{ padding: "0 16px" }}>
+      <div>
         <RelatedListingsStrip
           businessInterestId={4}
           primaryCategoryId={primaryCategoryId}
           currentListingId={currentListingId}
           title="More Places To Explore"
+          sectionStyle={{ padding: "40px 16px" }}
+          titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, marginBottom: "32px", fontFamily: "Poppins, sans-serif" }}
         />
       </div>
 
@@ -3325,8 +3188,8 @@ const PlaceDetails = () => {
 
   if (!place && !unavailablePopupOpen) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader />
+      <div style={{ minHeight: '100vh' }}>
+        <LoadingSkeleton variant="place" />
       </div>
     );
   }
@@ -3386,6 +3249,8 @@ const PlaceDetails = () => {
         primaryCategoryId={primaryCategoryId}
         currentListingId={currentListingId}
         title="More Places To Explore"
+        sectionStyle={{ padding: "48px 80px" }}
+        titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, marginBottom: "32px", fontFamily: "Poppins, sans-serif" }}
       />
 
       <Footer />

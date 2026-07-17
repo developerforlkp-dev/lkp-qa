@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   getCustomerWishlistStatus,
   isSupportedWishlistItemType,
@@ -50,55 +50,71 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
   const [saved, setSaved] = useState(Boolean(initialSaved));
   const [loading, setLoading] = useState(Boolean(supported && hasValidToken() && !wishlistCache.has(key)));
   const [pending, setPending] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const syncSaved = useCallback(async (force = false) => {
     if (!supported) {
-      setSaved(false);
-      setLoading(false);
+      if (isMounted.current) {
+        setSaved(false);
+        setLoading(false);
+      }
       return false;
     }
 
     if (!hasValidToken()) {
       wishlistCache.delete(key);
-      setSaved(false);
-      setLoading(false);
+      if (isMounted.current) {
+        setSaved(false);
+        setLoading(false);
+      }
       return false;
     }
 
     if (!force && wishlistCache.has(key)) {
       const cached = Boolean(wishlistCache.get(key));
-      setSaved(cached);
-      setLoading(false);
+      if (isMounted.current) {
+        setSaved(cached);
+        setLoading(false);
+      }
       return cached;
     }
 
-    setLoading(true);
+    if (isMounted.current) setLoading(true);
     try {
       const response = await getCustomerWishlistStatus(normalizedType, itemId);
       const nextSaved = Boolean(response?.saved);
       wishlistCache.set(key, nextSaved);
-      setSaved(nextSaved);
+      if (isMounted.current) setSaved(nextSaved);
       return nextSaved;
     } catch (error) {
       if (error?.response?.status === 401 || error?.response?.status === 403 || error?.response?.status === 400) {
         wishlistCache.delete(key);
-        setSaved(false);
+        if (isMounted.current) setSaved(false);
         return false;
       }
       console.warn("Failed to sync wishlist status:", error);
       return false;
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
   }, [itemId, key, normalizedType, supported]);
 
   useEffect(() => {
     if (supported) {
-      setSaved(Boolean(initialSaved));
+      if (isMounted.current) setSaved(Boolean(initialSaved));
       syncSaved();
     } else {
-      setSaved(false);
-      setLoading(false);
+      if (isMounted.current) {
+        setSaved(false);
+        setLoading(false);
+      }
     }
   }, [initialSaved, supported, syncSaved]);
 
@@ -111,8 +127,10 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       if (detail.key === key || (detail.itemType === normalizedType && String(detail.itemId) === String(itemId))) {
         if (typeof detail.saved === "boolean") {
           wishlistCache.set(key, detail.saved);
-          setSaved(detail.saved);
-          setLoading(false);
+          if (isMounted.current) {
+            setSaved(detail.saved);
+            setLoading(false);
+          }
         }
       }
     };
@@ -138,7 +156,7 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       return { requiresAuth: true };
     }
 
-    setPending(true);
+    if (isMounted.current) setPending(true);
     try {
       const nextSaved = !saved;
       if (saved) {
@@ -148,7 +166,7 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       }
 
       wishlistCache.set(key, nextSaved);
-      setSaved(nextSaved);
+      if (isMounted.current) setSaved(nextSaved);
       dispatchWishlistChange({
         key,
         itemType: normalizedType,
@@ -157,7 +175,7 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       });
       return { saved: nextSaved };
     } finally {
-      setPending(false);
+      if (isMounted.current) setPending(false);
     }
   }, [itemId, key, normalizedType, saved, supported]);
 

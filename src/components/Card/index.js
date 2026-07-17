@@ -70,7 +70,6 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     if (item.status && String(item.status).toLowerCase() === "closed") return true;
     
     // Check various end dates to see if booking/ticketing is closed
-    if (item.bookingCutoffTime && new Date(item.bookingCutoffTime) < now) return true;
     if (item.bookingEndDate && new Date(item.bookingEndDate) < now) return true;
     if (item.endDate && new Date(item.endDate) < now) return true;
 

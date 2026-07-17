@@ -324,6 +324,55 @@ const CardsSkeleton = ({ count = 4 }) => (
   </div>
 );
 
+// ─── NEW DYNAMIC SKELETONS ───────────────────────────────────────────────────
+
+const PlaceSkeleton = () => (
+  <div className={styles.placeSkeleton}>
+    <Shimmer className={styles.placeHeroBanner} />
+    <Shimmer className={styles.placeMarquee} />
+    <div className={styles.placeContent}>
+      <Shimmer className={styles.placeTitle} />
+      <Shimmer className={styles.placeTextLine} />
+      <Shimmer className={styles.placeTextLine} />
+      <Shimmer className={styles.placeTextLine} />
+    </div>
+  </div>
+);
+
+const FoodSkeleton = () => (
+  <div className={styles.foodSkeleton}>
+    <Shimmer className={styles.foodHeroBanner} />
+    <div className={styles.foodContentGrid}>
+      <div className={styles.foodMainContent}>
+         <Shimmer className={styles.foodTitle} />
+         <Shimmer className={styles.foodTextLine} />
+         <Shimmer className={styles.foodTextLine} />
+         <Shimmer className={styles.foodTextLine} />
+      </div>
+      <div className={styles.foodSidebar}>
+         <Shimmer className={styles.foodSidebarCard} />
+      </div>
+    </div>
+  </div>
+);
+
+const EventSkeleton = () => (
+  <div className={styles.eventSkeleton}>
+    <Shimmer className={styles.eventHeroBanner} />
+    <div className={styles.eventContentGrid}>
+      <div className={styles.eventMainContent}>
+         <Shimmer className={styles.eventTitle} />
+         <Shimmer className={styles.eventTextLine} />
+         <Shimmer className={styles.eventTextLine} />
+         <Shimmer className={styles.eventTextLine} />
+      </div>
+      <div className={styles.eventSidebar}>
+         <Shimmer className={styles.eventSidebarCard} />
+      </div>
+    </div>
+  </div>
+);
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const LoadingSkeleton = ({ variant = "homepage", count, sections }) => {
@@ -345,6 +394,12 @@ const LoadingSkeleton = ({ variant = "homepage", count, sections }) => {
         return <StaySkeleton />;
       case "experience":
         return <ExperienceSkeleton />;
+      case "place":
+        return <PlaceSkeleton />;
+      case "food":
+        return <FoodSkeleton />;
+      case "event":
+        return <EventSkeleton />;
       case "completed":
         return <CompletedSkeleton count={count || 3} />;
       case "cards":

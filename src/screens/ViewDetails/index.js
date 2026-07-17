@@ -1112,23 +1112,13 @@ const ViewDetails = () => {
         label: "Total",
         value: formatReceiptMoney(subtotalAmount, currency),
       },
-      ...(Array.isArray(booking.discounts) && booking.discounts.length > 0
-        ? booking.discounts.map(d => {
-            const numericD = getReceiptNumericAmount(d.amount);
-            const dPct = d.percentage ? ` (${d.percentage}%)` : (numericD && subtotalAmount ? ` (${Math.round((numericD / subtotalAmount) * 100)}%)` : "");
-            return {
-              label: `${d.name || "Discount"}${dPct}`,
-              value: `- ${formatReceiptMoney(d.amount || 0, currency)}`,
-              isNegative: true,
-            };
-          })
-        : getReceiptNumericAmount(discountAmount) > 0 ? [{
-          label: `Discount${discountPercent ? ` (${discountPercent}%)` : ""}`,
-          value: `- ${formatReceiptMoney(discountAmount, currency)}`,
-          isNegative: true,
-        }] : []),
+      ...(getReceiptNumericAmount(discountAmount) > 0 ? [{
+        label: `Discount`,
+        value: `- ${formatReceiptMoney(discountAmount, currency)}`,
+        isNegative: true,
+      }] : []),
       ...(getReceiptNumericAmount(taxAmount) > 0 ? [{
-        label: `Taxes${taxPercent ? ` (${taxPercent}%)` : ""}`,
+        label: `Taxes`,
         value: formatReceiptMoney(taxAmount, currency),
       }] : []),
       {
@@ -1150,9 +1140,6 @@ const ViewDetails = () => {
         : `Paid${booking.paymentMethod ? ` via ${booking.paymentMethod}` : ""}`,
       billTo: {
         name: booking.guest?.name || "Guest",
-        line1: propertySubtitle,
-        line2: [booking.location?.address, booking.location?.city].filter(Boolean).join(", ") || "Address unavailable",
-        line3: booking.location?.country || "",
         phone: booking.guest?.phone || "Phone unavailable",
         email: booking.guest?.email || "Email unavailable",
       },
@@ -2245,26 +2232,32 @@ const ViewDetails = () => {
   const formatPolicyWindow = (policy) => {
     if (!policy || typeof policy !== "object") return "";
 
-    const minDays = policy.minDaysBeforeStart ?? policy.minDays;
-    const maxDays = policy.maxDaysBeforeStart ?? policy.maxDays;
+    const timeUnit = String(policy.timeUnit || "").trim().toUpperCase();
+    const defaultUnitSingular = timeUnit === "HOUR" ? "hour" : "day";
+    const defaultUnitPlural = timeUnit === "HOUR" ? "hours" : "days";
+    const unitSingular = policy.timeUnitLabel || defaultUnitSingular;
+    const unitPlural = policy.timeUnitLabelPlural || defaultUnitPlural;
+    const minValue = policy.minValue ?? policy.minDaysBeforeStart ?? policy.minDays;
+    const maxValue = policy.maxValue ?? policy.maxDaysBeforeStart ?? policy.maxDays;
+    const formatUnit = (value) => Number(value) === 1 ? unitSingular : unitPlural;
 
-    if (minDays != null && maxDays != null) {
-      if (Number(minDays) === 0 && Number(maxDays) === 0) {
+    if (minValue != null && maxValue != null) {
+      if (Number(minValue) === 0 && Number(maxValue) === 0) {
         return "on the start date";
       }
-      return `${minDays} to ${maxDays} days before start`;
+      return `${minValue} to ${maxValue} ${formatUnit(maxValue)} before start`;
     }
-    if (minDays != null) {
-      if (Number(minDays) === 0) {
+    if (minValue != null) {
+      if (Number(minValue) === 0) {
         return "any time before start";
       }
-      return `${minDays}+ days before start`;
+      return `${minValue}+ ${formatUnit(minValue)} before start`;
     }
-    if (maxDays != null) {
-      if (Number(maxDays) === 0) {
+    if (maxValue != null) {
+      if (Number(maxValue) === 0) {
         return "up to the start date";
       }
-      return `up to ${maxDays} days before start`;
+      return `up to ${maxValue} ${formatUnit(maxValue)} before start`;
     }
 
     return "";

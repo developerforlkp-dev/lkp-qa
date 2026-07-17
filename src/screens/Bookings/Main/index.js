@@ -7,6 +7,7 @@ import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
 import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, getCancellationReasons, sendOrderMessage } from "../../../utils/api";
 import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../../utils/paymentSession";
+import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import Rating from "../../../components/Rating";
 import LoadingSkeleton from "../../../components/LoadingSkeleton";
 
@@ -58,26 +59,32 @@ const formatCancelPreviewDate = (value) => {
 const formatPolicyWindow = (policy) => {
   if (!policy || typeof policy !== "object") return "N/A";
 
-  const minDays = policy.minDaysBeforeStart ?? policy.minDays;
-  const maxDays = policy.maxDaysBeforeStart ?? policy.maxDays;
+  const timeUnit = String(policy.timeUnit || "").trim().toUpperCase();
+  const defaultUnitSingular = timeUnit === "HOUR" ? "hour" : "day";
+  const defaultUnitPlural = timeUnit === "HOUR" ? "hours" : "days";
+  const unitSingular = policy.timeUnitLabel || defaultUnitSingular;
+  const unitPlural = policy.timeUnitLabelPlural || defaultUnitPlural;
+  const minValue = policy.minValue ?? policy.minDaysBeforeStart ?? policy.minDays;
+  const maxValue = policy.maxValue ?? policy.maxDaysBeforeStart ?? policy.maxDays;
+  const formatUnit = (value) => Number(value) === 1 ? unitSingular : unitPlural;
 
-  if (minDays != null && maxDays != null) {
-    if (Number(minDays) === 0 && Number(maxDays) === 0) {
+  if (minValue != null && maxValue != null) {
+    if (Number(minValue) === 0 && Number(maxValue) === 0) {
       return "On the start date";
     }
-    return `${minDays} to ${maxDays} days before start`;
+    return `${minValue} to ${maxValue} ${formatUnit(maxValue)} before start`;
   }
-  if (minDays != null) {
-    if (Number(minDays) === 0) {
+  if (minValue != null) {
+    if (Number(minValue) === 0) {
       return "Any time before start";
     }
-    return `${minDays}+ days before start`;
+    return `${minValue}+ ${formatUnit(minValue)} before start`;
   }
-  if (maxDays != null) {
-    if (Number(maxDays) === 0) {
+  if (maxValue != null) {
+    if (Number(maxValue) === 0) {
       return "Up to the start date";
     }
-    return `Up to ${maxDays} days before start`;
+    return `Up to ${maxValue} ${formatUnit(maxValue)} before start`;
   }
   return "N/A";
 };
@@ -692,6 +699,199 @@ const tabs = [
   { id: "cancelled", label: "Cancelled" },
 ];
 
+const getResolvedStayId = (bookingData) => {
+  if (bookingData?.stayId != null) return bookingData.stayId;
+  const rooms = bookingData?.stayOrderRooms || bookingData?.rooms || bookingData?.room || [];
+  if (Array.isArray(rooms) && rooms.length > 0) {
+    const roomStayId = rooms[0]?.stayId ?? rooms[0]?.stay_id ?? rooms[0]?.propertyId;
+    if (roomStayId != null) return roomStayId;
+  }
+  return bookingData?.propertyId ?? bookingData?.stay_id ?? null;
+};
+
+const getBookingGuests = (bookingData) => {
+  const guestSource = bookingData?.guests || {};
+  const children = Number(
+    guestSource?.children ??
+    bookingData?.pricing?.childrenCount ??
+    bookingData?.childrenCount ??
+    bookingData?.childCount ??
+    bookingData?.children ??
+    0
+  ) || 0;
+  const adults =
+    Number(
+      guestSource?.adults ??
+      bookingData?.pricing?.adultsCount ??
+      bookingData?.adultsCount ??
+      bookingData?.adultCount ??
+      bookingData?.adults ??
+      0
+    ) ||
+    Math.max(0, (Number(bookingData?.guestCount ?? bookingData?.numberOfGuests ?? 0) || 0) - children);
+
+  const summaryGuestCount =
+    Number(bookingData?.bookingSummary?.guestCount ?? bookingData?.pricing?.guestCount ?? guestSource?.guests ?? 0) || 0;
+  const resolvedAdults = adults > 0 ? adults : Math.max(0, summaryGuestCount - children);
+
+  return {
+    adults: resolvedAdults,
+    children,
+    infants: 0,
+    childAges: [],
+  };
+};
+
+const buildPendingBookingRestoreState = (booking) => {
+  const bookingData = booking?.bookingData || {};
+  const businessInterestCode = String(
+    bookingData?.businessInterestCode || booking?.category || ""
+  ).toUpperCase();
+  const isStayOrder = businessInterestCode === "STAYS" || getResolvedStayId(bookingData) != null;
+  const guests = getBookingGuests(bookingData);
+
+  if (isStayOrder) {
+    const stayId = getResolvedStayId(bookingData);
+    const stayRooms = Array.isArray(bookingData?.stayOrderRooms)
+      ? bookingData.stayOrderRooms
+      : (Array.isArray(bookingData?.rooms) ? bookingData.rooms : []);
+    const selectedRooms = Array.isArray(bookingData?.stayOrderRooms)
+      ? bookingData.stayOrderRooms
+          .map((room) => {
+            const roomId = room?.roomId ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId ?? room?.id;
+            if (roomId == null) return null;
+            return {
+              roomId: String(roomId),
+              mealPlan: room?.mealPlan || room?.mealPlanCode || room?.meal_plan || "EP",
+              count: Math.max(1, Number(room?.numberOfRooms ?? room?.roomCount ?? room?.count ?? 1) || 1),
+            };
+          })
+          .filter(Boolean)
+      : [];
+
+    if (stayId == null) return null;
+
+    return {
+      detailUrl: `/stay-details?id=${encodeURIComponent(stayId)}`,
+      storageState: {
+        listingId: String(stayId),
+        type: "stay",
+        checkInDate:
+          bookingData?.checkInDate ||
+          bookingData?.checkinDate ||
+          stayRooms?.[0]?.checkInDate ||
+          stayRooms?.[0]?.checkinDate ||
+          stayRooms?.[0]?.check_in_date ||
+          null,
+        checkOutDate:
+          bookingData?.checkOutDate ||
+          bookingData?.checkoutDate ||
+          stayRooms?.[0]?.checkOutDate ||
+          stayRooms?.[0]?.checkoutDate ||
+          stayRooms?.[0]?.check_out_date ||
+          null,
+        guests: {
+          adults: guests.adults,
+          children: guests.children,
+        },
+        selectedRooms,
+      },
+    };
+  }
+
+  const listingId =
+    bookingData?.listingId ??
+    bookingData?.experienceId ??
+    bookingData?.eventId ??
+    booking?.listingData?.listingId ??
+    booking?.listingData?.id ??
+    booking?.eventData?.eventId ??
+    booking?.eventData?.id;
+
+  if (listingId == null) return null;
+
+  const isEventOrder =
+    businessInterestCode === "EVENTS" ||
+    businessInterestCode === "EVENT" ||
+    bookingData?.eventId != null;
+
+  const bookingTime =
+    bookingData?.selectedTimeSlot ||
+    bookingData?.bookingSummary?.time ||
+    bookingData?.bookingSlot?.slotName ||
+    bookingData?.bookingTime ||
+    bookingData?.timeSlotName ||
+    bookingData?.bookingSlot?.name ||
+    bookingData?.bookingSlotName ||
+    null;
+
+  const eventSlotId =
+    bookingData?.bookingSlotId ??
+    bookingData?.eventSlotId ??
+    bookingData?.slotId ??
+    bookingData?.bookingSlot?.id ??
+    null;
+
+  return {
+    detailUrl: buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId),
+    storageState: {
+      listingId: String(listingId),
+      type: isEventOrder ? "event" : "experience",
+      startDate: bookingData?.selectedDate || bookingData?.bookingDate || bookingData?.eventDate || bookingData?.bookingSummary?.date || null,
+      startTime: bookingTime,
+      selectedSlotId: eventSlotId != null ? String(eventSlotId) : null,
+      selectedSlotLabel:
+        bookingData?.selectedTimeSlot ||
+        bookingData?.bookingSlot?.slotName ||
+        bookingData?.bookingSlot?.name ||
+        bookingData?.bookingSlotName ||
+        null,
+      selectedTimeValue: bookingData?.bookingTime || null,
+      guests,
+      selectedTicketTypeId:
+        bookingData?.ticketTypeId != null
+          ? String(bookingData.ticketTypeId)
+          : (bookingData?.tickets?.[0]?.ticketTypeId != null ? String(bookingData.tickets[0].ticketTypeId) : ""),
+      selectedEventSlotIds: isEventOrder
+        ? (
+            Array.isArray(bookingData?.eventSlotIds) && bookingData.eventSlotIds.length > 0
+              ? bookingData.eventSlotIds.map((slotId) => String(slotId))
+              : (eventSlotId != null ? [String(eventSlotId)] : [])
+          )
+        : [],
+      privateBooking: Boolean(bookingData?.privateBooking),
+      selectedAddOns: Array.isArray(bookingData?.addons)
+        ? bookingData.addons
+            .map((addon) => addon?.addonId ?? addon?.id)
+            .filter((addonId) => addonId != null)
+        : [],
+    },
+  };
+};
+
+const buildPendingBookingFallbackUrl = (booking) => {
+  const bookingData = booking?.bookingData || {};
+  const stayId = getResolvedStayId(bookingData);
+  if (stayId != null) {
+    return `/stay-details?id=${encodeURIComponent(stayId)}`;
+  }
+
+  const listingId =
+    bookingData?.listingId ??
+    bookingData?.experienceId ??
+    bookingData?.eventId ??
+    booking?.listingData?.listingId ??
+    booking?.listingData?.id ??
+    booking?.eventData?.eventId ??
+    booking?.eventData?.id;
+
+  if (listingId != null) {
+    return buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId);
+  }
+
+  return null;
+};
+
 const actionsByStatus = {
   Upcoming: [
     { label: "View Details", variant: "primary" },
@@ -800,7 +1000,18 @@ const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
     actions = actions.filter((a) => a.label === "View Details");
   } else if (tabId === "pending") {
     const validActions = actions.filter((a) => a.label === "View Details");
-    if (booking?.category === "EXPERIENCE" && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
+    const businessInterestCode = String(
+      booking?.bookingData?.businessInterestCode || booking?.category || ""
+    ).toUpperCase();
+    const isStayOrder =
+      businessInterestCode === "STAYS" ||
+      getResolvedStayId(booking?.bookingData) != null;
+    const isExperienceLikeOrder =
+      businessInterestCode === "EXPERIENCE" ||
+      businessInterestCode === "EVENTS" ||
+      businessInterestCode === "EVENT";
+
+    if ((isStayOrder || isExperienceLikeOrder) && String(booking?.bookingData?.orderStatus || "").toUpperCase() === "PENDING") {
       validActions.unshift({ label: "Check Availability", variant: "secondary" });
     }
     actions = validActions;
@@ -971,6 +1182,26 @@ const Main = ({
   };
 
   const handleCheckAvailability = async (booking) => {
+    const pendingRestore = buildPendingBookingRestoreState(booking);
+    const redirectUrl = pendingRestore?.detailUrl || buildPendingBookingFallbackUrl(booking);
+
+    if (pendingRestore?.storageState) {
+      try {
+        localStorage.setItem("frontendPendingBookingState", JSON.stringify(pendingRestore.storageState));
+      } catch (error) {
+        console.error("Failed to persist pending booking state:", error);
+      }
+    }
+
+    if (redirectUrl) {
+      history.push(redirectUrl, {
+        openReserveModal: true,
+        source: "check-availability",
+        orderId: booking?.orderId,
+      });
+      return;
+    }
+
     if (isCheckingAvailability) return;
     setIsCheckingAvailability(true);
     setCheckingOrderId(booking.orderId);

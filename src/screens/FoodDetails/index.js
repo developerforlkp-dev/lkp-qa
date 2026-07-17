@@ -9,7 +9,7 @@ import {
   Users, DollarSign, GlassWater, CloudSun, Tag, Heart
 } from "lucide-react";
 import cn from "classnames";
-import Loader from "../../components/Loader";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
@@ -1594,13 +1594,6 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                         <a href={websiteUrl} target="_blank" rel="noreferrer" style={{ color: A, textDecoration: "none" }}>{websiteUrl}</a>
                       </div>
                     )}
-                    {instaHandle && instaHandle !== "@culinary_craft" && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                        <Instagram size={14} color={A} />
-                        <span style={{ color: M, fontWeight: 600 }}>Instagram:</span>
-                        <a href={`https://instagram.com/${instaHandle.replace("@", "")}`} target="_blank" rel="noreferrer" style={{ color: A, textDecoration: "none" }}>{instaHandle}</a>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -2214,8 +2207,8 @@ const FoodDetails = () => {
 
   if (loading && !food && !unavailablePopupOpen) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader />
+      <div style={{ minHeight: '100vh' }}>
+        <LoadingSkeleton variant="food" />
       </div>
     );
   }
@@ -2386,6 +2379,8 @@ const FoodDetails = () => {
         primaryCategoryId={primaryCategoryId}
         currentListingId={currentListingId}
         title="More Food Experiences"
+        sectionStyle={isMobile ? { padding: "32px 24px" } : { padding: "32px 80px" }}
+        titleStyle={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.2rem)" : "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: 32, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
       />
 
       <Footer />

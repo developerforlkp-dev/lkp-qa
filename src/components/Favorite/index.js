@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import cn from "classnames";
 import styles from "./Favorite.module.sass";
 import Icon from "../Icon";
@@ -27,6 +27,14 @@ const Favorite = ({
 }) => {
   const [loginVisible, setLoginVisible] = useState(false);
   const [pendingAfterLogin, setPendingAfterLogin] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
   const {
     saved,
     loading,
@@ -56,8 +64,10 @@ const Favorite = ({
     try {
       const result = await toggleSaved();
       if (result?.requiresAuth) {
-        setPendingAfterLogin(true);
-        setLoginVisible(true);
+        if (isMounted.current) {
+          setPendingAfterLogin(true);
+          setLoginVisible(true);
+        }
         return;
       }
       if (typeof onToggle === "function" && typeof result?.saved === "boolean") {
@@ -65,18 +75,20 @@ const Favorite = ({
       }
     } catch (error) {
       if (error?.response?.status === 401 || error?.response?.status === 403) {
-        setPendingAfterLogin(true);
-        setLoginVisible(true);
+        if (isMounted.current) {
+          setPendingAfterLogin(true);
+          setLoginVisible(true);
+        }
       }
     }
   };
 
   const handleLoginClose = async () => {
-    setLoginVisible(false);
+    if (isMounted.current) setLoginVisible(false);
     const loggedIn = hasValidToken();
     await refreshSaved(true).catch(() => {});
     if (pendingAfterLogin && loggedIn) {
-      setPendingAfterLogin(false);
+      if (isMounted.current) setPendingAfterLogin(false);
       try {
         const result = await toggleSaved();
         if (typeof onToggle === "function" && typeof result?.saved === "boolean") {
@@ -85,7 +97,7 @@ const Favorite = ({
       } catch (_) {}
       return;
     }
-    setPendingAfterLogin(false);
+    if (isMounted.current) setPendingAfterLogin(false);
   };
 
   return (
