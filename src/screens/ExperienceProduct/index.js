@@ -2374,7 +2374,7 @@ const ExperienceProduct = () => {
                             <div style={{ position: "relative", zIndex: 2 }}>
                               <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
                                 {[...Array(5)].map((_, i) => (
-                                  <Star key={i} size={14} fill={i < rating ? "#F59E0B" : "none"} color={i < rating ? "#F59E0B" : M} />
+                                  <Star key={i} size={14} style={{ fill: i < rating ? "#F59E0B" : "transparent" }} color={i < rating ? "#F59E0B" : M} />
                                 ))}
                               </div>
                               <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: vendorResponse ? 3 : 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
