@@ -116,27 +116,48 @@ const OfficialPartners = () => {
       {/* Trust Badge Row */}
       <div className={styles.trustBadge}>
         <div className={styles.trustLeft}>
-          {/* Leaf decorations */}
-          <svg className={styles.leafIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22L6.66 19.7C7.14 19.87 7.64 20 8.17 20C12.17 20 15.87 16.64 17.47 14.36C20.37 10.16 21.07 5 21.07 5C21.07 5 17.07 5 17 8Z" fill="#0097B2" opacity="0.7"/>
-            <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22L6.66 19.7C7.14 19.87 7.64 20 8.17 20C12.17 20 15.87 16.64 17.47 14.36C20.37 10.16 21.07 5 21.07 5C21.07 5 17.07 5 17 8Z" fill="none" stroke="#0097B2" strokeWidth="0.5" opacity="0.3"/>
+          {/* Left laurel wreath */}
+          <svg className={styles.laurelLeft} width="32" height="56" viewBox="0 0 32 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M28 4C28 4 22 8 20 14C18 20 20 26 20 26" stroke="#0097B2" strokeWidth="1.2" fill="none" opacity="0.6"/>
+            <path d="M26 6C24 8 22 12 22 16" stroke="#0097B2" strokeWidth="1" fill="none" opacity="0.4"/>
+            <ellipse cx="24" cy="8" rx="4" ry="2.5" transform="rotate(-30 24 8)" fill="#0097B2" opacity="0.5"/>
+            <ellipse cx="21" cy="14" rx="4" ry="2.5" transform="rotate(-20 21 14)" fill="#0097B2" opacity="0.45"/>
+            <ellipse cx="19" cy="21" rx="4" ry="2.5" transform="rotate(-10 19 21)" fill="#0097B2" opacity="0.4"/>
+            <ellipse cx="18" cy="28" rx="3.5" ry="2.2" transform="rotate(-5 18 28)" fill="#0097B2" opacity="0.35"/>
+            <ellipse cx="18" cy="35" rx="3.5" ry="2.2" transform="rotate(0 18 35)" fill="#0097B2" opacity="0.3"/>
+            <ellipse cx="19" cy="42" rx="3.5" ry="2.2" transform="rotate(10 19 42)" fill="#0097B2" opacity="0.3"/>
+            <path d="M20 26C20 26 18 32 18 38C18 44 20 50 22 52" stroke="#0097B2" strokeWidth="1.2" fill="none" opacity="0.5"/>
           </svg>
+
           <div className={styles.verifiedCount}>
             <span className={styles.countNumber}>25+</span>
             <span className={styles.countLabel}>Verified Partners</span>
           </div>
-          <svg className={styles.leafIconRight} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 8C16 10 18.1 16.17 20.18 21.34L18.29 22L17.34 19.7C16.86 19.87 16.36 20 15.83 20C11.83 20 8.13 16.64 6.53 14.36C3.63 10.16 2.93 5 2.93 5C2.93 5 6.93 5 7 8Z" fill="#0097B2" opacity="0.7"/>
-            <path d="M7 8C16 10 18.1 16.17 20.18 21.34L18.29 22L17.34 19.7C16.86 19.87 16.36 20 15.83 20C11.83 20 8.13 16.64 6.53 14.36C3.63 10.16 2.93 5 2.93 5C2.93 5 6.93 5 7 8Z" fill="none" stroke="#0097B2" strokeWidth="0.5" opacity="0.3"/>
+
+          {/* Right laurel wreath */}
+          <svg className={styles.laurelRight} width="32" height="56" viewBox="0 0 32 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4C4 4 10 8 12 14C14 20 12 26 12 26" stroke="#0097B2" strokeWidth="1.2" fill="none" opacity="0.6"/>
+            <path d="M6 6C8 8 10 12 10 16" stroke="#0097B2" strokeWidth="1" fill="none" opacity="0.4"/>
+            <ellipse cx="8" cy="8" rx="4" ry="2.5" transform="rotate(30 8 8)" fill="#0097B2" opacity="0.5"/>
+            <ellipse cx="11" cy="14" rx="4" ry="2.5" transform="rotate(20 11 14)" fill="#0097B2" opacity="0.45"/>
+            <ellipse cx="13" cy="21" rx="4" ry="2.5" transform="rotate(10 13 21)" fill="#0097B2" opacity="0.4"/>
+            <ellipse cx="14" cy="28" rx="3.5" ry="2.2" transform="rotate(5 14 28)" fill="#0097B2" opacity="0.35"/>
+            <ellipse cx="14" cy="35" rx="3.5" ry="2.2" transform="rotate(0 14 35)" fill="#0097B2" opacity="0.3"/>
+            <ellipse cx="13" cy="42" rx="3.5" ry="2.2" transform="rotate(-10 13 42)" fill="#0097B2" opacity="0.3"/>
+            <path d="M12 26C12 26 14 32 14 38C14 44 12 50 10 52" stroke="#0097B2" strokeWidth="1.2" fill="none" opacity="0.5"/>
           </svg>
         </div>
+
         <div className={styles.trustDivider} />
+
         <div className={styles.trustRight}>
-          {/* Shield / Check Icon */}
+          {/* Shield check icon — filled cyan circle */}
           <div className={styles.shieldIcon}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="#0097B2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(0,151,178,0.08)"/>
-              <path d="M9 12L11 14L15 10" stroke="#0097B2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="18" cy="18" r="18" fill="#0097B2" opacity="0.12"/>
+              <circle cx="18" cy="18" r="14" fill="#0097B2" opacity="0.08"/>
+              <path d="M18 28C18 28 25 24.5 25 18.5V12.5L18 10L11 12.5V18.5C11 24.5 18 28 18 28Z" stroke="#0097B2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(0,151,178,0.1)"/>
+              <path d="M14.5 18.5L17 21L22 16" stroke="#0097B2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <p className={styles.trustText}>
@@ -151,3 +172,4 @@ const OfficialPartners = () => {
 };
 
 export default OfficialPartners;
+

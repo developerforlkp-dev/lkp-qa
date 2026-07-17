@@ -99,29 +99,31 @@
     +m
         margin-bottom: 28px
 
-// Fade edges for seamless look
+// Fade edges — use page background, NOT cyan
 .fadeLeft,
 .fadeRight
     position: absolute
     top: 0
     bottom: 0
-    width: 80px
+    width: 100px
     z-index: 2
     pointer-events: none
+    +t
+        width: 60px
     +m
-        width: 40px
+        width: 32px
 
 .fadeLeft
     left: 0
-    background: linear-gradient(90deg, $n8 0%, rgba(252,252,253,0) 100%)
+    background: linear-gradient(90deg, #FCFCFD 0%, rgba(252,252,253,0) 100%)
     +dark
-        background: linear-gradient(90deg, $n1 0%, rgba(20,20,22,0) 100%)
+        background: linear-gradient(90deg, #070B14 0%, rgba(7,11,20,0) 100%)
 
 .fadeRight
     right: 0
-    background: linear-gradient(270deg, $n8 0%, rgba(252,252,253,0) 100%)
+    background: linear-gradient(270deg, #FCFCFD 0%, rgba(252,252,253,0) 100%)
     +dark
-        background: linear-gradient(270deg, $n1 0%, rgba(20,20,22,0) 100%)
+        background: linear-gradient(270deg, #070B14 0%, rgba(7,11,20,0) 100%)
 
 // Marquee track with infinite scroll animation
 .marqueeTrack
@@ -233,11 +235,13 @@
     display: flex
     align-items: center
     justify-content: center
-    gap: 32px
+    gap: 40px
     width: 100%
-    max-width: 640px
+    max-width: 700px
     margin: 0 auto
     padding: 0 20px
+    +t
+        gap: 28px
     +m
         flex-direction: column
         gap: 20px
@@ -246,28 +250,34 @@
 .trustLeft
     display: flex
     align-items: center
-    gap: 10px
+    gap: 4px
 
-.leafIcon
-    width: 24px
-    height: 24px
+// Laurel wreath SVGs
+.laurelLeft
+    width: 28px
+    height: 48px
     flex-shrink: 0
-    opacity: 0.8
+    +m
+        width: 22px
+        height: 40px
 
-.leafIconRight
-    width: 24px
-    height: 24px
+.laurelRight
+    width: 28px
+    height: 48px
     flex-shrink: 0
-    opacity: 0.8
+    +m
+        width: 22px
+        height: 40px
 
 .verifiedCount
     display: flex
     flex-direction: column
     align-items: center
+    padding: 0 2px
 
 .countNumber
     font-family: "Cormorant Garamond", "Playfair Display", serif
-    font-size: 32px
+    font-size: 34px
     font-weight: 700
     line-height: 1
     color: $n2
@@ -283,12 +293,15 @@
     color: $n4
     letter-spacing: 0.02em
     white-space: nowrap
+    margin-top: 2px
     +dark
         color: $n5
+    +m
+        font-size: 10px
 
 .trustDivider
     width: 1px
-    height: 48px
+    height: 52px
     background: $n6
     flex-shrink: 0
     +dark
@@ -300,36 +313,37 @@
 .trustRight
     display: flex
     align-items: center
-    gap: 12px
+    gap: 14px
     +m
         flex-direction: column
         text-align: center
+        gap: 10px
 
 .shieldIcon
-    width: 36px
-    height: 36px
+    width: 40px
+    height: 40px
     display: flex
     align-items: center
     justify-content: center
     flex-shrink: 0
     +m
-        width: 32px
-        height: 32px
+        width: 36px
+        height: 36px
     svg
-        width: 28px
-        height: 28px
+        width: 36px
+        height: 36px
         +m
-            width: 24px
-            height: 24px
+            width: 32px
+            height: 32px
 
 .trustText
     font-family: 'Inter', 'DM Sans', sans-serif
-    font-size: 13px
+    font-size: 14px
     font-weight: 400
-    line-height: 1.5
-    color: $n4
+    line-height: 1.55
+    color: $n4 !important
     +dark
-        color: $n5
+        color: $n5 !important
     +m
         font-size: 12px
         text-align: center
