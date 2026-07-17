@@ -187,6 +187,29 @@ const mergeDefinedSlotFields = (baseSlot, overrideSlot) => {
   return merged;
 };
 
+const getExperienceBookingCutoffHours = (slot) => {
+  if (!slot || typeof slot !== "object") return null;
+  const schedule = slot.schedule || {};
+  const rawValue =
+    slot.bookingCutoffTime ??
+    slot.booking_cutoff_time ??
+    schedule.bookingCutoffTime ??
+    schedule.booking_cutoff_time;
+
+  if (rawValue == null || rawValue === "") return null;
+  if (typeof rawValue === "number" && Number.isFinite(rawValue)) return rawValue;
+
+  const text = String(rawValue).trim();
+  if (!text) return null;
+  const numeric = Number(text);
+  if (Number.isFinite(numeric)) return numeric;
+
+  const match = text.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const getTicketId = (ticket) => {
   if (ticket === null || ticket === undefined) return null;
   const raw = ticket.ticketTypeId ?? ticket.ticket_type_id ?? ticket.typeId ?? ticket.id;
@@ -416,8 +439,7 @@ const getTicketSaleWindow = (listing, ticket) => {
     ticket?.saleEndDate ??
     listing?.ticketSaleEndDate ??
     listing?.ticket_sale_end_date ??
-    listing?.saleEndDate ??
-    listing?.bookingCutoffTime
+    listing?.saleEndDate
   );
   const now = new Date();
 
@@ -1656,9 +1678,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           const [h, m] = String(startTime).split(":").map(Number);
           if (Number.isFinite(h) && Number.isFinite(m)) {
             const slotMinutes = h * 60 + m;
-            const cutoffHours = Number(slot.bookingCutoffHours || slot.booking_cutoff_hours) || 0;
-            const cutoffMinutes = cutoffHours * 60;
-            if (slotMinutes - cutoffMinutes <= currentMinutes) return false;
+            const cutoffHours = getExperienceBookingCutoffHours(slot);
+            if (cutoffHours != null) {
+              if (slotMinutes - (cutoffHours * 60) <= currentMinutes) return false;
+            } else if (slotMinutes <= currentMinutes) {
+              return false;
+            }
           }
         }
 
@@ -1729,9 +1754,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (startTime) {
         const [h, m] = startTime.split(':').map(Number);
         const slotMinutes = h * 60 + m;
-        const cutoffHours = Number(slot.bookingCutoffHours || slot.booking_cutoff_hours) || 0;
-        const cutoffMinutes = cutoffHours * 60;
-        if (slotMinutes - cutoffMinutes <= currentMinutes) {
+        const cutoffHours = getExperienceBookingCutoffHours(slot);
+        if (cutoffHours != null) {
+          if (slotMinutes - (cutoffHours * 60) <= currentMinutes) return false;
+        } else if (slotMinutes <= currentMinutes) {
           return false;
         }
       }
@@ -2303,14 +2329,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     const errors = {};
 
-    // Check Cut-off time
     if (!isEventBooking && startDate && startTime && timeSlots && timeSlots.length > 0) {
       const selectedSlotObj = timeSlots.find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
       const baseSlotObj = (listing?.timeSlots || []).find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
+      const cutoffHours = getExperienceBookingCutoffHours(selectedSlotObj) ?? getExperienceBookingCutoffHours(baseSlotObj);
 
-      const cutoffTimeValue = selectedSlotObj?.bookingCutoffTime || selectedSlotObj?.booking_cutoff_time || baseSlotObj?.bookingCutoffTime || baseSlotObj?.booking_cutoff_time || selectedSlotObj?.bookingCutoffHours || baseSlotObj?.bookingCutoffHours;
-
-      if (cutoffTimeValue) {
+      if (cutoffHours != null) {
         const now = moment().tz('Asia/Kolkata');
         let slotDateTime = moment(startDate).tz('Asia/Kolkata');
         const parsedTime = moment(startTime, ['HH:mm', 'HH:mm:ss', 'hh:mm A', 'h:mm A']);
@@ -2321,30 +2345,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           slotDateTime = slotDateTime.hours(hours || 0).minutes(minutes || 0).seconds(0);
         }
 
-        let cutoffHours = 0;
-        let cutoffMinutes = 0;
-        if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
-          const parts = cutoffTimeValue.split(':').map(Number);
-          cutoffHours = parts[0] || 0;
-          cutoffMinutes = parts[1] || 0;
-        } else {
-          cutoffHours = Number(cutoffTimeValue) || 0;
-        }
-
-        const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours').subtract(cutoffMinutes, 'minutes');
-
+        const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours');
         if (now.isAfter(cutoffDateTime)) {
-          let displayCutoff = String(cutoffTimeValue);
-          if (typeof cutoffTimeValue === 'string' && cutoffTimeValue.includes(':')) {
-            const parts = cutoffTimeValue.split(':');
-            const h = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10);
-            displayCutoff = `${h > 0 ? h + ' hour(s)' : ''} ${m > 0 ? m + ' minute(s)' : ''}`.trim() || '0 hours';
-          } else {
-            displayCutoff = `${cutoffTimeValue} hour(s)`;
-          }
-
-          showErrorPopup(`You can no longer reserve this slot as the booking cut-off time (${displayCutoff} prior) has passed.`, "Booking Cut-off Passed");
+          showErrorPopup(`You can no longer reserve this slot because the booking cut-off of ${cutoffHours} hour(s) before the slot has passed.`, "Booking Cut-off Passed");
           return;
         }
       }
