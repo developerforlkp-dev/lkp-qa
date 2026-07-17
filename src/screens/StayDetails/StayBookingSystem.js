@@ -1021,18 +1021,19 @@ const StayBookingSystem = ({
     const longStayDiscountAmount = discountableSubtotal * (appliedDiscountPercent / 100);
     const billingConfigDiscountAmount = discountableSubtotal * (billingConfigDiscountRate / 100);
     const earlyBirdDiscountAmount = discountableSubtotal * (earlyBirdDiscountPercent / 100);
-    const preTaxSubtotal = Math.max(
+    const discountedBaseSubtotal = Math.max(
       0,
       discountableSubtotal
       - longStayDiscountAmount
       - billingConfigDiscountAmount
       - earlyBirdDiscountAmount
-    ) + addonsTotal;
+    );
+    const preTaxSubtotal = discountedBaseSubtotal + addonsTotal;
     const discountAmount =
       longStayDiscountAmount
       + billingConfigDiscountAmount
       + earlyBirdDiscountAmount;
-    const discountedPerNight = Math.max(0, preTaxSubtotal - addonsTotal) / nights;
+    const discountedPerNight = discountedBaseSubtotal / nights;
 
     // Taxes from stay config; fallback to legacy 18% GST + 2% service charge
     const configuredTaxRate = Array.isArray(stay?.taxes)
