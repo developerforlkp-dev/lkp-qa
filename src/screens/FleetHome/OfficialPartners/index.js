@@ -1,53 +1,57 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./OfficialPartners.module.sass";
-
-// Hardcoded partner data — will later be replaced with API fetch for real logos (webp) and names
-const partners = [
-  {
-    id: 1,
-    name: "Taj",
-    logo: "/images/partners/taj.webp",
-  },
-  {
-    id: 2,
-    name: "StayVista",
-    logo: "/images/partners/stayvista.webp",
-  },
-  {
-    id: 3,
-    name: "CGH Earth",
-    logo: "/images/partners/cghearth.webp",
-  },
-  {
-    id: 4,
-    name: "Marriott",
-    logo: "/images/partners/marriott.webp",
-  },
-  {
-    id: 5,
-    name: "Airbnb",
-    logo: "/images/partners/airbnb.webp",
-  },
-  {
-    id: 6,
-    name: "Club Mahindra",
-    logo: "/images/partners/clubmahindra.webp",
-  },
-  {
-    id: 7,
-    name: "The Leela",
-    logo: "/images/partners/theleela.webp",
-  },
-  {
-    id: 8,
-    name: "Hyatt",
-    logo: "/images/partners/hyatt.webp",
-  },
-];
+import { ListingsAPI, DEFAULT_API_BASE_URL, normalizePublicImageUrl } from "../../../utils/api";
 
 const OfficialPartners = () => {
-  // Double the partners array for seamless marquee loop
-  const marqueePartners = [...partners, ...partners];
+  const [partners, setPartners] = useState([]);
+
+  useEffect(() => {
+    const fetchPartners = async () => {
+      try {
+        const response = await ListingsAPI.get("/public/lkp-partner-documents");
+        
+        let data = response.data;
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          if (Array.isArray(data.data)) data = data.data;
+          else if (Array.isArray(data.documents)) data = data.documents;
+        }
+        
+        if (Array.isArray(data)) {
+          const baseUrl = DEFAULT_API_BASE_URL.replace(/\/api\/?$/, "");
+          
+          const formattedPartners = data.map(item => {
+            const id = item.documentId || item.id || item._id;
+            
+            // If the API gives a relative path like "/api/public/...", make it absolute
+            let logoUrl = "";
+            if (item.documentUrl || item.downloadUrl) {
+              const relUrl = item.documentUrl || item.downloadUrl;
+              logoUrl = relUrl.startsWith("/") ? `${baseUrl}${relUrl}` : relUrl;
+            } else if (item.logo) {
+              logoUrl = normalizePublicImageUrl(item.logo);
+            }
+            
+            return {
+              id: id,
+              name: item.title || item.documentName || item.name || "Partner",
+              logo: logoUrl
+            };
+          });
+          setPartners(formattedPartners);
+        }
+      } catch (error) {
+        console.error("Failed to fetch partner documents:", error);
+      }
+    };
+    
+    fetchPartners();
+  }, []);
+
+  if (partners.length === 0) return null;
+
+  // Repeat the partners array enough times to ensure seamless infinite marquee loop
+  // even if the API only returns a few partners.
+  const marqueePartners = Array(10).fill(partners).flat();
 
   return (
     <section className={styles.partnersSection} id="official-partners">
@@ -130,7 +134,7 @@ const OfficialPartners = () => {
           </svg>
 
           <div className={styles.verifiedCount}>
-            <span className={styles.countNumber}>25+</span>
+            <span className={styles.countNumber}>{partners.length}+</span>
             <span className={styles.countLabel}>Verified Partners</span>
           </div>
 
