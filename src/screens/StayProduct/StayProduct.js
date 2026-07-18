@@ -149,6 +149,26 @@ const inferMealPlanCode = (room) => {
   return planCodes[0] || "EP";
 };
 
+const DEFAULT_MEAL_PLAN_LABELS = {
+  EP: "EP (Room Only)",
+  CP: "CP (Breakfast)",
+  BB: "BB (Bed & Breakfast)",
+  MAP: "MAP (Half Board)",
+  AP: "AP (Full Board)",
+};
+
+const getMealPlanDisplayLabel = (code, ...pricingSources) => {
+  for (const source of pricingSources) {
+    const customLabel =
+      source?.[code]?.displayName ||
+      source?.[code]?.display_name ||
+      source?.[code]?.name;
+    if (customLabel) return customLabel;
+  }
+
+  return DEFAULT_MEAL_PLAN_LABELS[code] || code;
+};
+
 // Gallery Component
 const Gallery = ({ images }) => {
   if (!images || images.length === 0) {
@@ -1277,25 +1297,25 @@ const RoomCard = ({
         <div className={styles.mealPlansRow}>
           {Number(room.epPrice) > 0 && (
             <div className={styles.mealPlanItem}>
-              <span className={styles.mealPlanName}>EP (Room Only)</span>
+              <span className={styles.mealPlanName}>{getMealPlanDisplayLabel("EP", room.mealPlanPricing, stay?.mealPlanPricing)}</span>
               <span className={styles.mealPlanPrice}>₹{Number(room.epPrice).toLocaleString("en-IN")}</span>
             </div>
           )}
           {Number(room.cpPrice) > 0 && (
             <div className={styles.mealPlanItem}>
-              <span className={styles.mealPlanName}>CP (Breakfast)</span>
+              <span className={styles.mealPlanName}>{getMealPlanDisplayLabel("CP", room.mealPlanPricing, stay?.mealPlanPricing)}</span>
               <span className={styles.mealPlanPrice}>₹{Number(room.cpPrice).toLocaleString("en-IN")}</span>
             </div>
           )}
           {Number(room.mapPrice) > 0 && (
             <div className={styles.mealPlanItem}>
-              <span className={styles.mealPlanName}>MAP (Half Board)</span>
+              <span className={styles.mealPlanName}>{getMealPlanDisplayLabel("MAP", room.mealPlanPricing, stay?.mealPlanPricing)}</span>
               <span className={styles.mealPlanPrice}>₹{Number(room.mapPrice).toLocaleString("en-IN")}</span>
             </div>
           )}
           {Number(room.apPrice) > 0 && (
             <div className={styles.mealPlanItem}>
-              <span className={styles.mealPlanName}>AP (Full Board)</span>
+              <span className={styles.mealPlanName}>{getMealPlanDisplayLabel("AP", room.mealPlanPricing, stay?.mealPlanPricing)}</span>
               <span className={styles.mealPlanPrice}>₹{Number(room.apPrice).toLocaleString("en-IN")}</span>
             </div>
           )}
@@ -2064,10 +2084,8 @@ const StayProduct = () => {
     //console.log("📤 Stay booking payload:", bookingPayload);
 
     // Defer order creation until the final pay click on Confirm and Pay.
-    const getMealLabel = (code) => ({
-      EP: "EP (Room Only)", CP: "CP (Breakfast)", BB: "BB (Bed & Breakfast)",
-      MAP: "MAP (Half Board)", AP: "AP (Full Board)"
-    }[code] || code);
+    const getMealLabel = (code) =>
+      getMealPlanDisplayLabel(code, selectedRoom?.mealPlanPricing, stay?.mealPlanPricing);
 
     const roomLabel = selectedRoom
       ? (selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || `Room ${selectedRoom.roomId || selectedRoom.id}`)
@@ -2226,10 +2244,8 @@ const StayProduct = () => {
       }
 
       // Save booking summary for the checkout page display
-      const getMealLabel = (code) => ({
-        EP: "EP (Room Only)", CP: "CP (Breakfast)", BB: "BB (Bed & Breakfast)",
-        MAP: "MAP (Half Board)", AP: "AP (Full Board)"
-      }[code] || code);
+      const getMealLabel = (code) =>
+        getMealPlanDisplayLabel(code, selectedRoom?.mealPlanPricing, stay?.mealPlanPricing);
 
       const roomLabel = selectedRoom
         ? (selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || `Room ${selectedRoom.roomId || selectedRoom.id}`)

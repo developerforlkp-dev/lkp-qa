@@ -936,6 +936,7 @@ const Checkout = () => {
             checkOutDate={bookingData?.checkOutDate}
             roomType={bookingData?.roomType}
             mealPlan={bookingData?.mealPlan}
+            childAges={bookingData?.childAges || []}
             messageText={messageText}
             setMessageText={setMessageText}
             addonDetails={selectedAddOns}

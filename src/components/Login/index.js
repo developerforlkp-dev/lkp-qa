@@ -47,6 +47,35 @@ const getFriendlyOtpError = (err) => {
   return "We couldn’t verify your code right now. Please try again.";
 };
 
+const getDateOfBirthValidationError = (dateOfBirth) => {
+  if (!dateOfBirth) {
+    return "Please enter your date of birth";
+  }
+
+  const birthDate = new Date(dateOfBirth);
+
+  if (Number.isNaN(birthDate.getTime())) {
+    return "Please enter a valid date of birth";
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  if (age < 18) {
+    return "You must be at least 18 years of age.";
+  }
+
+  return "";
+};
+
 const Login = ({ onClose }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]); // 6-digit OTP
@@ -62,6 +91,11 @@ const Login = ({ onClose }) => {
   const countryCode = "+91";
   const isMountedRef = useRef(true);
   const otpFocusTimeoutRef = useRef(null);
+  const maxDateOfBirth = new Date(
+    Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000
+  )
+    .toISOString()
+    .split("T")[0];
 
   // Responsive scale for Google Login button
   const [googleScale, setGoogleScale] = useState(
@@ -220,21 +254,9 @@ const Login = ({ onClose }) => {
     if (!isMountedRef.current) return;
     setError("");
 
-    if (!dateOfBirth) {
-      setError("Please enter your date of birth");
-      return;
-    }
-
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
-    if (age < 18) {
-      setError("You must be at least 18 years of age.");
+    const dobError = getDateOfBirthValidationError(dateOfBirth);
+    if (dobError) {
+      setError(dobError);
       return;
     }
 
@@ -343,6 +365,12 @@ const Login = ({ onClose }) => {
       return;
     }
 
+    const dobError = getDateOfBirthValidationError(dateOfBirth);
+    if (dobError) {
+      setError(dobError);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await verifyPhoneOTP(
@@ -350,7 +378,8 @@ const Login = ({ onClose }) => {
         otpString,
         countryCode,
         firstName.trim(),
-        lastName.trim()
+        lastName.trim(),
+        dateOfBirth
       );
 
       // Store JWT token if provided in response
@@ -549,11 +578,22 @@ const Login = ({ onClose }) => {
                 disabled={loading}
               />
             </div>
+            <div className={styles.field}>
+              <input
+                type="date"
+                className={styles.input}
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                disabled={loading}
+                max={maxDateOfBirth}
+                required
+              />
+            </div>
             {error && <div className={styles.error}>{error}</div>}
             <button
               type="submit"
               className={cn("button", styles.button)}
-              disabled={loading || otp.join("").length !== 6}
+              disabled={loading || otp.join("").length !== 6 || !dateOfBirth}
             >
               {loading ? "Verifying..." : "Continue"}
             </button>
@@ -606,6 +646,7 @@ const Login = ({ onClose }) => {
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
                 disabled={loading}
+                max={maxDateOfBirth}
                 required
               />
             </div>

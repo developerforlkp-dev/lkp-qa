@@ -206,6 +206,107 @@ const isInSeasonRange = (dateValue, season) => {
   return check.isSameOrAfter(start, "day") && check.isSameOrBefore(end, "day");
 };
 
+const DEFAULT_MEAL_PLAN_LABELS = {
+  EP: "EP (Room Only)",
+  BB: "BB (Bed & Breakfast)",
+  CP: "CP (Breakfast)",
+  MAP: "MAP (Half Board)",
+  AP: "AP (Full Board)",
+};
+
+const getMealPlanDisplayLabel = (code, ...pricingSources) => {
+  for (const source of pricingSources) {
+    const customLabel =
+      source?.[code]?.displayName ||
+      source?.[code]?.display_name ||
+      source?.[code]?.name;
+    if (customLabel) return customLabel;
+  }
+
+  return DEFAULT_MEAL_PLAN_LABELS[code] || code;
+};
+
+const syncChildAges = (ages, childrenCount) => {
+  const safeCount = Math.max(0, Number(childrenCount || 0));
+  const next = Array.isArray(ages) ? ages.slice(0, safeCount) : [];
+
+  while (next.length < safeCount) {
+    next.push("");
+  }
+
+  return next;
+};
+
+const getChildAgePolicyTiers = (stay) => {
+  const policies = stay?.childAgePolicy || stay?.child_age_policy || [];
+  if (!Array.isArray(policies)) return [];
+
+  return policies
+    .filter((policy) => {
+      const type = String(policy?.policyType || policy?.policy_type || "").toLowerCase();
+      return type === "child_rate";
+    })
+    .map((policy) => {
+      const fromAge = Number(policy?.fromAge ?? policy?.from_age);
+      const toAge = Number(policy?.toAge ?? policy?.to_age);
+      const price = Number(
+        policy?.b2cPrice ??
+        policy?.price ??
+        policy?.rate ??
+        policy?.currentRate ??
+        policy?.amount ??
+        0
+      );
+
+      return {
+        fromAge,
+        toAge,
+        price: Number.isFinite(price) ? price : 0,
+      };
+    })
+    .filter((tier) => Number.isFinite(tier.fromAge) && Number.isFinite(tier.toAge));
+};
+
+const getChildAgeTierForAge = (stay, age) => {
+  const numericAge = Number(age);
+  if (!Number.isFinite(numericAge)) return null;
+
+  return getChildAgePolicyTiers(stay).find(
+    (tier) => numericAge >= tier.fromAge && numericAge <= tier.toAge
+  ) || null;
+};
+
+const buildChildAgePricing = (stay, childAges, fallbackPrice = 0) => {
+  const normalizedAges = (Array.isArray(childAges) ? childAges : [])
+    .map((age) => (age === "" || age === null || age === undefined ? null : Number(age)));
+
+  const breakdown = normalizedAges.map((age, index) => {
+    const tier = age === null ? null : getChildAgeTierForAge(stay, age);
+    const price = tier ? Number(tier.price || 0) : Number(fallbackPrice || 0);
+
+    return {
+      index,
+      age,
+      tier,
+      price: Number.isFinite(price) ? price : 0,
+      isTierPrice: Boolean(tier),
+    };
+  });
+
+  return {
+    breakdown,
+    matchedCount: breakdown.filter((item) => item.isTierPrice).length,
+    totalPerNight: breakdown.reduce((sum, item) => sum + item.price, 0),
+  };
+};
+
+const formatChildAgesLabel = (childAges) => {
+  const validAges = (Array.isArray(childAges) ? childAges : [])
+    .filter((age) => age !== "" && age !== null && age !== undefined);
+
+  return validAges.length > 0 ? validAges.join(", ") : "Not provided";
+};
+
 const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => {
   const roomInstances = [];
   selectedRooms.forEach(sel => {
@@ -314,6 +415,27 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
   };
 };
 
+const mapChildAgesToRoomAllocations = (allocations, childAges) => {
+  const ageQueue = (Array.isArray(childAges) ? childAges : [])
+    .filter((age) => age !== "" && age !== null && age !== undefined)
+    .map((age) => Number(age));
+
+  const perRoom = {};
+
+  (Array.isArray(allocations) ? allocations : []).forEach((allocation) => {
+    const roomKey = String(allocation?.roomId ?? "");
+    if (!roomKey) return;
+    if (!perRoom[roomKey]) perRoom[roomKey] = [];
+
+    const childrenCount = Number(allocation?.children || 0);
+    for (let index = 0; index < childrenCount && ageQueue.length > 0; index += 1) {
+      perRoom[roomKey].push(ageQueue.shift());
+    }
+  });
+
+  return perRoom;
+};
+
 const getStoredStayGuests = (storedGuests) => {
   if (!storedGuests || typeof storedGuests !== "object") return null;
   const adults = Number(storedGuests.adults || 0) || 0;
@@ -366,6 +488,8 @@ const StayBookingSystem = ({
   setCheckOutDate,
   guests,
   setGuests,
+  childAges,
+  setChildAges,
   selectedRooms, // Array of {roomId, mealPlan, count}
   setSelectedRooms,
   onRoomsCountChange,
@@ -469,6 +593,9 @@ const StayBookingSystem = ({
           }
           const restoredGuests = getStoredStayGuests(stored.guests);
           if (restoredGuests) setGuests(restoredGuests);
+          if (Array.isArray(stored.childAges)) {
+            setChildAges(syncChildAges(stored.childAges, stored?.guests?.children || 0));
+          }
           const restoredRooms = getStoredStayRooms(stored.selectedRooms, stay);
           if (restoredRooms.length > 0) setSelectedRooms(restoredRooms);
           setShow(true);
@@ -476,7 +603,7 @@ const StayBookingSystem = ({
         }
       }
     } catch (e) {}
-  }, [setCheckInDate, setCheckOutDate, setGuests, setSelectedRooms, stay, stay?.stayId, stay?.id]);
+  }, [setCheckInDate, setCheckOutDate, setGuests, setChildAges, setSelectedRooms, stay, stay?.stayId, stay?.id]);
 
   useEffect(() => {
     if (show) {
@@ -775,6 +902,11 @@ const StayBookingSystem = ({
       };
     });
   }, [stay, isEntirelyBedBased, totalSelectedBeds, setGuests]);
+
+  useEffect(() => {
+    if (typeof setChildAges !== "function") return;
+    setChildAges((prev) => syncChildAges(prev, guests?.children || 0));
+  }, [guests?.children, setChildAges]);
 
   const nightsCount = useMemo(() => {
     if (!checkInDate || !checkOutDate) return 0;
@@ -1093,6 +1225,19 @@ const StayBookingSystem = ({
       }
     }
 
+    const childAgePricing = buildChildAgePricing(stay, childAges, finalExtraCP);
+    const hasTierBasedChildPricing = childAgePricing.matchedCount > 0;
+    const computedExtraChildrenCount = isPropertyBased
+      ? Math.max(0, (guests?.children || 0) - totalBaseChildrenLimit)
+      : totalExtraChildrenAllocated;
+    const computedChildChargePerNight = hasTierBasedChildPricing
+      ? childAgePricing.totalPerNight
+      : computedExtraChildrenCount * finalExtraCP;
+
+    if (hasTierBasedChildPricing) {
+      totalOriginalPerNight = totalOriginalPerNight - (computedExtraChildrenCount * finalExtraCP) + computedChildChargePerNight;
+    }
+
     const nights = Math.max(1, nightsCount);
     const grossSubtotal = totalOriginalPerNight * nights;
     let addonsTotal = 0;
@@ -1144,9 +1289,7 @@ const StayBookingSystem = ({
     const extraAdultsCount = isPropertyBased
       ? Math.max(0, (guests?.adults || 1) - totalBaseAdultsLimit)
       : totalExtraAdultsAllocated;
-    const extraChildrenCount = isPropertyBased
-      ? Math.max(0, (guests?.children || 0) - totalBaseChildrenLimit)
-      : totalExtraChildrenAllocated;
+    const extraChildrenCount = hasTierBasedChildPricing ? 0 : computedExtraChildrenCount;
 
     const normalAdultsCount = Math.max(0, (guests?.adults || 1) - extraAdultsCount);
     const normalChildrenCount = Math.max(0, (guests?.children || 0) - extraChildrenCount);
@@ -1175,13 +1318,16 @@ const StayBookingSystem = ({
       extraChildrenLimit: totalExtraChildrenLimit,
       activeExtraAdultPrice: finalExtraAP,
       activeExtraChildPrice: finalExtraCP,
+      childAges: syncChildAges(childAges, guests?.children || 0),
+      childAgePricing,
+      childAgeChargePerNight: computedChildChargePerNight,
       extraAdultsCount,
       extraChildrenCount,
       normalAdultsCount,
       normalChildrenCount,
       addonsTotal
     };
-  }, [stay, resolvedSelectedRooms, checkInDate, guests, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities]);
+  }, [stay, resolvedSelectedRooms, checkInDate, guests, childAges, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities]);
 
   const capacityFeedback = useMemo(() => {
     const isEntirelyBedBased = resolvedSelectedRooms.length > 0 && resolvedSelectedRooms.every(r => r.isBedConfig);
@@ -1386,6 +1532,7 @@ const StayBookingSystem = ({
           checkInDate: checkInDate ? checkInDate.format("YYYY-MM-DD") : null,
           checkOutDate: checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null,
           guests,
+          childAges,
           selectedRooms,
         };
         try {
@@ -1417,7 +1564,6 @@ const StayBookingSystem = ({
       setValidationError("At least 1 adult is required.");
       return;
     }
-
     setLoading(true);
     setBookingErrorPopup({ visible: false, title: "", message: "" });
     try {
@@ -1443,6 +1589,9 @@ const StayBookingSystem = ({
             };
           }).filter(Boolean)
         : [];
+      const normalizedChildAges = syncChildAges(childAges, guests.children || 0)
+        .filter((age) => age !== "" && age !== null && age !== undefined)
+        .map((age) => Number(age));
 
       const payloadBase = {
         stayId: Number(stay.stayId || stay.id),
@@ -1464,9 +1613,11 @@ const StayBookingSystem = ({
             ...payloadBase,
             extraAdults: extraAdultsCount,
             extraChildren: extraChildrenCount,
+            childAges: normalizedChildAges,
           }
         : (() => {
             const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
+            const roomChildAges = mapChildAgesToRoomAllocations(distribution.allocations, normalizedChildAges);
             const grouped = {};
             if (distribution.success) {
               distribution.allocations.forEach(alloc => {
@@ -1518,6 +1669,7 @@ const StayBookingSystem = ({
                   roomsBooked: r.count,
                   adults: grp.adults,
                   children: grp.children,
+                  childAges: roomChildAges[String(r.roomId || r.id)] || [],
                   mealPlanCode: r.mealPlan || "EP",
                   extraBeds: Number(r.extraBeds || 0),
                   extraAdults: isHostel ? 0 : grp.extraAdults,
@@ -1568,16 +1720,22 @@ const StayBookingSystem = ({
         { title: "Adults", content: `${guests.adults || 0}` },
         { title: "Children", content: `${guests.children || 0}` },
       ];
+      if ((guests.children || 0) > 0) {
+        previewReceipt.push({
+          title: "Child Ages",
+          content: formatChildAgesLabel(childAges),
+        });
+      }
       if (Number(extraAdultsCount || 0) > 0) {
         previewReceipt.push({
           title: `Extra Adult Charges (${extraAdultsCount} x ${previewCurrency} ${Number(pricing.activeExtraAdultPrice || 0).toFixed(2)} x ${nightsFromPreview} night${nightsFromPreview !== 1 ? "s" : ""})`,
           content: `${previewCurrency} ${Number(extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromPreview).toFixed(2)}`,
         });
       }
-      if (Number(extraChildrenCount || 0) > 0) {
+      if (Number(pricing.childAgeChargePerNight || 0) > 0) {
         previewReceipt.push({
-          title: `Extra Child Charges (${extraChildrenCount} x ${previewCurrency} ${Number(pricing.activeExtraChildPrice || 0).toFixed(2)} x ${nightsFromPreview} night${nightsFromPreview !== 1 ? "s" : ""})`,
-          content: `${previewCurrency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromPreview).toFixed(2)}`,
+          title: "Child Age Charges",
+          content: `${previewCurrency} ${Number((pricing.childAgeChargePerNight || 0) * nightsFromPreview).toFixed(2)}`,
         });
       }
       if (Number(pricing.earlyBirdDiscountAmount || 0) > 0) {
@@ -1610,6 +1768,7 @@ const StayBookingSystem = ({
         checkOutDate: checkOutDate.format("MMM DD, YYYY"),
         roomType: previewRoomSummary,
         guests,
+        childAges: normalizedChildAges,
         extraAdults: previewCheckoutExtraAdults,
         extraChildren: extraChildrenCount,
         receipt: previewReceipt,
@@ -2768,7 +2927,13 @@ const StayBookingSystem = ({
                                   </div>
                                   <div>
                                     <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>{room.roomName || room.name}</p>
-                                    <p style={{ fontSize: 10, fontWeight: 500, color: M }}>{room.mealPlan || "EP"}</p>
+                                    <p style={{ fontSize: 10, fontWeight: 500, color: M }}>
+                                      {getMealPlanDisplayLabel(
+                                        room.mealPlan || "EP",
+                                        room.mealPlanPricing,
+                                        stay?.mealPlanPricing
+                                      )}
+                                    </p>
                                   </div>
                                 </div>
                                 <Counter 

@@ -23,6 +23,7 @@ const ConfirmAndPay = ({
   checkOutDate,
   roomType,
   mealPlan,
+  childAges = [],
   addonDetails,
   addOns,
   currency = "INR",
@@ -144,6 +145,15 @@ const ConfirmAndPay = ({
                         <div className={styles.info}>Meal plan</div>
                       </div>
                       <div className={styles.value}>{mealPlan}</div>
+                    </div>
+                  )}
+                  {childAges.length > 0 && (
+                    <div className={styles.tripCard}>
+                      <div className={styles.cardHeader}>
+                        <Icon name="user" size="24" />
+                        <div className={styles.info}>Child ages</div>
+                      </div>
+                      <div className={styles.value}>{childAges.join(", ")}</div>
                     </div>
                   )}
                 </>

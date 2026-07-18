@@ -48,7 +48,18 @@ const MEAL_PLAN_LABELS = {
   AP: "AP – Full Board (All Meals)",
 };
 
-const getMealPlanLabel = (code) => MEAL_PLAN_LABELS[code] || code;
+const getDefaultMealPlanLabel = (code) => MEAL_PLAN_LABELS[code] || code;
+
+const getMealPlanLabel = (code, ...pricingSources) => {
+  for (const source of pricingSources) {
+    const customLabel =
+      source?.[code]?.displayName ||
+      source?.[code]?.display_name ||
+      source?.[code]?.name;
+    if (customLabel) return customLabel;
+  }
+  return getDefaultMealPlanLabel(code);
+};
 
 const formatPrice = (raw) => {
   const n = parseFloat(raw);
@@ -451,13 +462,16 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             </div>
             {allPlans.length > 1 ? (
               <CustomDropdown
-                options={allPlans.map((c) => ({ value: c, label: getMealPlanLabel(c) }))}
+                options={allPlans.map((c) => ({
+                  value: c,
+                  label: getMealPlanLabel(c, room.mealPlanPricing, listing?.mealPlanPricing),
+                }))}
                 value={plan}
                 onChange={handlePlanChange}
               />
             ) : (
               <div style={{ padding: "8px 12px", borderRadius: "8px", background: W, border: `1px solid ${B}`, color: FG, fontSize: "13px", fontWeight: 600 }}>
-                {getMealPlanLabel(allPlans[0])}
+                {getMealPlanLabel(allPlans[0], room.mealPlanPricing, listing?.mealPlanPricing)}
               </div>
             )}
           </div>
