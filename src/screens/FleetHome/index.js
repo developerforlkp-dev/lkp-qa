@@ -1066,7 +1066,7 @@ const FleetHome = () => {
           </div>
 
           {/* Official Partners Section - just above footer */}
-          {!loading && <OfficialPartners />}
+          {!loading && isHomepage && <OfficialPartners />}
         </div>
       </div>
     </LayoutGroup>

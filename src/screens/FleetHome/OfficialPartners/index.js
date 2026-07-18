@@ -49,9 +49,20 @@ const OfficialPartners = () => {
 
   if (partners.length === 0) return null;
 
+  // Split partners if there are more than 10
+  let topPartners = partners;
+  let bottomPartners = [];
+  
+  if (partners.length > 10) {
+    const mid = Math.ceil(partners.length / 2);
+    topPartners = partners.slice(0, mid);
+    bottomPartners = partners.slice(mid);
+  }
+
   // Repeat the partners array enough times to ensure seamless infinite marquee loop
   // even if the API only returns a few partners.
-  const marqueePartners = Array(10).fill(partners).flat();
+  const marqueeTop = Array(10).fill(topPartners).flat();
+  const marqueeBottom = bottomPartners.length > 0 ? Array(10).fill(bottomPartners).flat() : [];
 
   return (
     <section className={styles.partnersSection} id="official-partners">
@@ -94,8 +105,8 @@ const OfficialPartners = () => {
         <div className={styles.fadeRight} />
 
         <div className={styles.marqueeTrack}>
-          {marqueePartners.map((partner, index) => (
-            <div key={`${partner.id}-${index}`} className={styles.logoCard}>
+          {marqueeTop.map((partner, index) => (
+            <div key={`top-${partner.id}-${index}`} className={styles.logoCard}>
               <div className={styles.logoWrapper}>
                 <img
                   src={partner.logo}
@@ -115,6 +126,31 @@ const OfficialPartners = () => {
             </div>
           ))}
         </div>
+
+        {marqueeBottom.length > 0 && (
+          <div className={`${styles.marqueeTrack} ${styles.marqueeTrackReverse}`}>
+            {marqueeBottom.map((partner, index) => (
+              <div key={`bottom-${partner.id}-${index}`} className={styles.logoCard}>
+                <div className={styles.logoWrapper}>
+                  <img
+                    src={partner.logo}
+                    alt={partner.name}
+                    className={styles.logoImage}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "flex";
+                    }}
+                  />
+                  <div className={styles.logoFallback} style={{ display: "none" }}>
+                    {partner.name}
+                  </div>
+                </div>
+                <span className={styles.brandName}>{partner.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Trust Badge Row */}
