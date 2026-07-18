@@ -2677,6 +2677,7 @@ const StayDetails = () => {
   const [checkInDate, setCheckInDate] = useState(null);
   const [checkOutDate, setCheckOutDate] = useState(null);
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
+  const [childAges, setChildAges] = useState([]);
   const [selectedRooms, setSelectedRooms] = useState([]); // Array of {roomId, mealPlan, count}
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
@@ -2790,6 +2791,7 @@ const StayDetails = () => {
             if (pCheckOut.isValid()) setCheckOutDate(pCheckOut);
           }
           if (stored.guests) setGuests(stored.guests);
+          if (Array.isArray(stored.childAges)) setChildAges(stored.childAges);
           if (Array.isArray(stored.selectedRooms)) {
             setSelectedRooms(stored.selectedRooms);
           }
@@ -3437,6 +3439,8 @@ const StayDetails = () => {
         setCheckOutDate={setCheckOutDate}
         guests={guests}
         setGuests={setGuests}
+        childAges={childAges}
+        setChildAges={setChildAges}
         selectedRooms={selectedRooms}
         setSelectedRooms={setSelectedRooms}
         onRoomsCountChange={handleRoomCountChange}
