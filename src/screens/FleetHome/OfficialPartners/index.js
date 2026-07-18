@@ -134,7 +134,7 @@ const OfficialPartners = () => {
           </svg>
 
           <div className={styles.verifiedCount}>
-            <span className={styles.countNumber}>{partners.length}+</span>
+            <span className={styles.countNumber}>{partners.length}</span>
             <span className={styles.countLabel}>Verified Partners</span>
           </div>
 
