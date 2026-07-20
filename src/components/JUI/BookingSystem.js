@@ -657,6 +657,69 @@ const resolveStoredExperienceSlot = (slots = [], stored = {}) => {
   }) || null;
 };
 
+const resolveStoredEventSlot = (slots = [], stored = {}) => {
+  if (!Array.isArray(slots) || slots.length === 0 || !stored || typeof stored !== "object") return null;
+
+  const storedIds = [
+    ...(Array.isArray(stored.selectedEventSlotIds) ? stored.selectedEventSlotIds : []),
+    stored.selectedSlotId,
+  ]
+    .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+    .map((value) => String(value));
+  const storedLabel = String(stored.selectedSlotLabel || stored.startTime || "").trim().toLowerCase();
+  const storedTime = normalizeBookingTime(stored.selectedTimeValue || stored.startTime || "");
+
+  return slots.find((slot) => {
+    const slotIds = [
+      slot?.eventSlotId,
+      slot?.slotId,
+      slot?.id,
+    ]
+      .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+      .map((value) => String(value));
+    if (storedIds.length > 0 && slotIds.some((slotId) => storedIds.includes(slotId))) return true;
+
+    const slotLabel = String(slot?.slotName || slot?.name || slot?.label || "").trim().toLowerCase();
+    if (storedLabel && slotLabel && slotLabel === storedLabel) return true;
+
+    const slotTime = normalizeBookingTime(
+      slot?.startTime || slot?.start_time || slot?.slotStartTime || slot?.time || slot?.slotName || ""
+    );
+    if (storedTime && slotTime && storedTime === slotTime) return true;
+
+    return false;
+  }) || null;
+};
+
+const resolveStoredEventTicketId = (tickets = [], stored = {}) => {
+  if (!Array.isArray(tickets) || tickets.length === 0 || !stored || typeof stored !== "object") return "";
+
+  const storedTicketId = stored.selectedTicketTypeId != null ? String(stored.selectedTicketTypeId).trim() : "";
+  const storedTicketName = String(stored.selectedTicketTypeName || "").trim().toLowerCase();
+
+  const matchedTicket = tickets.find((ticket, index) => {
+    const ticketIds = [
+      ticket?.id,
+      ticket?.ticketId,
+      ticket?.ticketTypeId,
+      ticket?.ticket_type_id,
+      ticket?.typeId,
+    ]
+      .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+      .map((value) => String(value));
+    if (storedTicketId && ticketIds.includes(storedTicketId)) return true;
+
+    const ticketName = String(getTicketName(ticket, index) || "").trim().toLowerCase();
+    if (storedTicketName && ticketName && (ticketName === storedTicketName || ticketName.includes(storedTicketName) || storedTicketName.includes(ticketName))) return true;
+
+    return false;
+  });
+
+  return matchedTicket
+    ? String(matchedTicket?.id ?? matchedTicket?.ticketId ?? matchedTicket?.ticketTypeId ?? matchedTicket?.typeId ?? "")
+    : "";
+};
+
 /**
  * Robustly format a "HH:mm[:ss]" string into "h:mm AM/PM".
  * Returns the original string if it doesn't match the time format.
@@ -1272,17 +1335,33 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [show, listing?.addons, handleAddonsScroll]);
 
   // Sync external open state
+  const externalOpenHandledRef = useRef(false);
   useEffect(() => {
-    if (externalOpen === true && !show) {
+    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
+      externalOpenHandledRef.current = true;
       setShow(true);
     }
+  }, [externalOpen, show]);
+
+  useEffect(() => {
+    if (externalOpen !== true) {
+      externalOpenHandledRef.current = false;
+    }
   }, [externalOpen]);
+
+  const closeBookingModal = useCallback(() => {
+    externalOpenHandledRef.current = false;
+    setShow(false);
+    if (onExternalOpenChange) {
+      onExternalOpenChange(false);
+    }
+  }, [onExternalOpenChange]);
 
   useEffect(() => {
     if (onExternalOpenChange) {
       onExternalOpenChange(show);
     }
-  }, [show]);
+  }, [onExternalOpenChange, show]);
 
   // Real State management
   const [startDate, setStartDate] = useState(() => initialDate ? moment(initialDate) : null);
@@ -1312,6 +1391,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [showDateWarning, setShowDateWarning] = useState(false);
   const [errorPopup, setErrorPopup] = useState({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" });
   const pendingRestoreRef = useRef(null);
+  const pendingEventTicketRestoreRef = useRef(null);
 
 
 
@@ -1472,6 +1552,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           //console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
 
           pendingRestoreRef.current = stored;
+          pendingEventTicketRestoreRef.current = stored;
 
           if (stored.startDate) {
             const parsedDate = moment(stored.startDate);
@@ -1479,8 +1560,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               setStartDate(parsedDate);
             }
           }
-          if (stored.selectedTicketTypeId !== undefined) setSelectedTicketTypeId(stored.selectedTicketTypeId);
-
           // Clear so it does not persist across future completely independent user visits
           localStorage.removeItem("frontendPendingBookingState");
 
@@ -1493,9 +1572,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
   }, [listing?.listingId, listing?.id, listing?.eventId, listing?.stayId]);
 
-  const selectedTicket = useMemo(() => (
-    eventTickets.find(ticket => String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId) === String(selectedTicketTypeId)) || eventTickets[0] || null
-  ), [eventTickets, selectedTicketTypeId]);
+  const selectedTicket = useMemo(() => {
+    if (!isEventBooking) return null;
+    if (selectedTicketTypeId) {
+      return eventTickets.find(
+        (ticket) => String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId) === String(selectedTicketTypeId)
+      ) || null;
+    }
+    return eventTickets.length === 1 ? eventTickets[0] : null;
+  }, [eventTickets, isEventBooking, selectedTicketTypeId]);
   const ticketSaleWindow = useMemo(() => (
     isEventBooking ? getTicketSaleWindow(listing, selectedTicket) : { isOpen: true, status: "open", message: "" }
   ), [isEventBooking, listing, selectedTicket]);
@@ -1846,10 +1931,27 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         if (pendingRestoreRef.current) {
           const stored = pendingRestoreRef.current;
           pendingRestoreRef.current = null;
-          if (Array.isArray(stored.selectedEventSlotIds) && stored.selectedEventSlotIds.length > 0) {
-            setSelectedEventSlotIds(stored.selectedEventSlotIds);
+          const resolvedStoredSlot = resolveStoredEventSlot(eventSlots, stored);
+          if (resolvedStoredSlot) {
+            const resolvedSlotId = String(
+              resolvedStoredSlot.eventSlotId ??
+              resolvedStoredSlot.slotId ??
+              resolvedStoredSlot.id
+            );
+            setSelectedEventSlotIds([resolvedSlotId]);
+            setStartTime(
+              resolvedStoredSlot.slotName ||
+              resolvedStoredSlot.name ||
+              resolvedStoredSlot.label ||
+              stored.selectedSlotLabel ||
+              stored.startTime ||
+              null
+            );
+          } else if (Array.isArray(stored.selectedEventSlotIds) && stored.selectedEventSlotIds.length > 0) {
+            setSelectedEventSlotIds(stored.selectedEventSlotIds.map((value) => String(value)));
           }
-          if (stored.startTime !== undefined) setStartTime(stored.startTime);
+          pendingEventTicketRestoreRef.current = stored;
+          if (!resolvedStoredSlot && stored.startTime !== undefined) setStartTime(stored.startTime);
           const restoredGuests = getStoredGuestSelection(stored.guests);
           if (restoredGuests) setGuests(restoredGuests);
           if (stored.privateBooking !== undefined) setPrivateBooking(stored.privateBooking);
@@ -1986,6 +2088,36 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   useEffect(() => {
     if (!isEventBooking) return;
+    if (pendingEventTicketRestoreRef.current) {
+      const availableTickets = ticketsForSelectedSlot.length > 0 ? ticketsForSelectedSlot : eventTickets;
+      const restoredTicketId = resolveStoredEventTicketId(
+        availableTickets,
+        pendingEventTicketRestoreRef.current
+      );
+      if (restoredTicketId) {
+        if (selectedTicketTypeId !== restoredTicketId) {
+          setSelectedTicketTypeId(restoredTicketId);
+        }
+        pendingEventTicketRestoreRef.current = null;
+        return;
+      }
+      if (availableTickets.length > 0) {
+        const fallbackTicketId = String(
+          availableTickets[0]?.id ??
+          availableTickets[0]?.ticketId ??
+          availableTickets[0]?.ticketTypeId ??
+          availableTickets[0]?.typeId ??
+          ""
+        );
+        if (fallbackTicketId) {
+          if (selectedTicketTypeId !== fallbackTicketId) {
+            setSelectedTicketTypeId(fallbackTicketId);
+          }
+          pendingEventTicketRestoreRef.current = null;
+          return;
+        }
+      }
+    }
     if (ticketsForSelectedSlot.length === 1) {
       const onlyTicket = ticketsForSelectedSlot[0];
       const onlyTicketId = String(onlyTicket.id ?? onlyTicket.ticketTypeId ?? onlyTicket.typeId ?? "ticket-0");
@@ -3350,7 +3482,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              onClick={() => setShow(false)}
+              onClick={closeBookingModal}
               style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)" }}
             />
 
@@ -3416,7 +3548,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     </div>
 
                     <div style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-                      <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
+                      <button type="button" onClick={closeBookingModal} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
                         <X size={18} />
                       </button>
                     </div>
@@ -3692,7 +3824,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           All available dates and time slots for this experience have passed. Please check back later or contact the host for upcoming schedules.
                         </div>
                         <button
-                          onClick={() => setShow(false)}
+                          onClick={closeBookingModal}
                           style={{ marginTop: 8, padding: "12px 32px", background: A, color: "#fff", border: "none", borderRadius: 16, fontSize: 15, fontWeight: 800, cursor: "pointer" }}
                         >
                           Close
@@ -4237,14 +4369,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}
                             </div>
                             <div
-                              title={!(startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
+                              title={!(
+                                isEventBooking
+                                  ? (startDate && selectedEventSlotIds.length > 0 && selectedTicketTypeId)
+                                  : (startDate && startTime)
+                              ) ? (isEventBooking ? "Please select slot and ticket first" : "Please select date and time first") : undefined}
                               style={{
                                 display: "flex",
                                 flexWrap: "wrap",
                                 gap: 8,
                                 alignItems: "flex-start",
-                                opacity: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? 1 : 0.5,
-                                pointerEvents: (startDate && startTime && (isEventBooking ? selectedTicketTypeId : true)) ? "auto" : "none",
+                                opacity: (
+                                  isEventBooking
+                                    ? (startDate && selectedEventSlotIds.length > 0 && selectedTicketTypeId)
+                                    : (startDate && startTime)
+                                ) ? 1 : 0.5,
+                                pointerEvents: (
+                                  isEventBooking
+                                    ? (startDate && selectedEventSlotIds.length > 0 && selectedTicketTypeId)
+                                    : (startDate && startTime)
+                                ) ? "auto" : "none",
                                 transition: "0.3s"
                               }}
                             >

@@ -2218,6 +2218,16 @@ export const sendOrderMessage = async (orderId, messageText) => {
   }
 };
 
+export const getOrderMessages = async (orderId) => {
+  try {
+    const response = await ListingsAPI.get(`/orders/${orderId}/messages`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching order messages:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getCancellationReasons = async () => {
   try {
     const response = await ListingsAPI.get("/listing-admin-config/cancellation-reasons");

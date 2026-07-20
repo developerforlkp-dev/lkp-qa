@@ -3126,6 +3126,7 @@ function EventReviews({ reviews = [] }) {
 function EventBookingPopup({ event }) {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
+  const [bookingModalOpen, setBookingModalOpen] = useState(Boolean(location.state?.openReserveModal));
   const initialDateStr = queryParams.get("date");
   const initialAdultsStr = queryParams.get("adults");
   const initialChildrenStr = queryParams.get("children");
@@ -3246,7 +3247,7 @@ function EventBookingPopup({ event }) {
     host: event?.hostProfile?.host || event?.host || {}
   };
 
-  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} />;
+  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} externalOpen={bookingModalOpen} onExternalOpenChange={setBookingModalOpen} />;
 }
 
 function Tickets({ event }) {

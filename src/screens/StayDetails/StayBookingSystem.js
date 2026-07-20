@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight, Tag } from "lucide-react";
@@ -466,13 +466,25 @@ const getStoredStayRooms = (storedRooms, stay) => {
 
   return storedRooms
     .map((room) => {
-      const roomId = room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId;
-      if (roomId == null) return null;
-      const normalizedRoomId = String(roomId);
-      if (validRoomIds.size > 0 && !validRoomIds.has(normalizedRoomId)) return null;
+      const candidateIds = [
+        room?.bedConfigId,
+        room?.roomId,
+        room?.id,
+        room?.roomTypeId,
+        room?.room_type_id,
+      ]
+        .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+        .map((value) => String(value));
+      if (candidateIds.length === 0) return null;
+
+      const normalizedRoomId = candidateIds.find((candidateId) => validRoomIds.size === 0 || validRoomIds.has(candidateId));
+      if (!normalizedRoomId) return null;
 
       return {
         roomId: normalizedRoomId,
+        bedConfigId: room?.bedConfigId != null ? String(room.bedConfigId) : null,
+        roomTypeId: room?.roomTypeId != null ? String(room.roomTypeId) : (room?.room_type_id != null ? String(room.room_type_id) : null),
+        roomName: room?.roomName || room?.name || room?.roomTypeName || room?.bedType || null,
         mealPlan: room?.mealPlan || room?.mealPlanCode || room?.meal_plan || "EP",
         count: Math.max(1, Number(room?.count ?? room?.roomCount ?? room?.numberOfRooms ?? 1) || 1),
       };
@@ -496,7 +508,9 @@ const StayBookingSystem = ({
   selectedAddOns = [],
   addOnQuantities = {},
   onAddOnQuantityChange,
-  onToggleAddOn
+  onToggleAddOn,
+  externalOpen,
+  onExternalOpenChange,
 }) => {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
@@ -508,6 +522,34 @@ const StayBookingSystem = ({
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
   const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
   const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
+  const externalOpenHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
+      externalOpenHandledRef.current = true;
+      setShow(true);
+    }
+  }, [externalOpen, show]);
+
+  useEffect(() => {
+    if (externalOpen !== true) {
+      externalOpenHandledRef.current = false;
+    }
+  }, [externalOpen]);
+
+  const closeBookingModal = useCallback(() => {
+    externalOpenHandledRef.current = false;
+    setShow(false);
+    if (onExternalOpenChange) {
+      onExternalOpenChange(false);
+    }
+  }, [onExternalOpenChange]);
+
+  useEffect(() => {
+    if (onExternalOpenChange) {
+      onExternalOpenChange(show);
+    }
+  }, [onExternalOpenChange, show]);
 
   const handleAddonsScroll = () => {
     const container = document.getElementById("stay-header-addons-scroll");
@@ -2359,7 +2401,7 @@ const StayBookingSystem = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              onClick={() => setShow(false)}
+              onClick={closeBookingModal}
               style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }} 
             />
             
@@ -2403,7 +2445,7 @@ const StayBookingSystem = ({
                     <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>/ night</span>
                   </div>
                 </div>
-                <button onClick={() => setShow(false)} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG }}>
+                <button type="button" onClick={closeBookingModal} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG }}>
                   <X size={18} />
                 </button>
               </div>

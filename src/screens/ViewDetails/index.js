@@ -4,7 +4,7 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons, getOrderMessages } from "../../utils/api";
 import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../utils/paymentSession";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
@@ -129,6 +129,92 @@ const isPaymentFailed = (paymentStatus) => {
   if (!paymentStatus) return false;
   const normalizedStatus = String(paymentStatus).toUpperCase().trim();
   return normalizedStatus === "FAILED" || normalizedStatus === "FAILURE";
+};
+
+const normalizeOrderMessages = (payload) => {
+  const source =
+    (Array.isArray(payload) && payload) ||
+    (Array.isArray(payload?.messages) && payload.messages) ||
+    (Array.isArray(payload?.data?.messages) && payload.data.messages) ||
+    (Array.isArray(payload?.data) && payload.data) ||
+    [];
+
+  return source
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+
+      const messageText =
+        item.messageText ||
+        item.message ||
+        item.text ||
+        item.content ||
+        "";
+
+      const senderName =
+        item.senderLabel ||
+        item.senderName ||
+        item.customerName ||
+        item.hostName ||
+        item.createdByName ||
+        item.userName ||
+        item.sender?.name ||
+        item.createdBy?.name ||
+        "User";
+
+      const senderTypeRaw =
+        item.senderActorType ||
+        item.senderType ||
+        item.senderRole ||
+        item.role ||
+        item.userType ||
+        item.messageBy ||
+        "";
+
+      const senderType = String(senderTypeRaw).toLowerCase();
+      const isProviderActor =
+        senderType.includes("provider") ||
+        senderType.includes("host") ||
+        senderType.includes("lead-user") ||
+        senderType.includes("lead_user") ||
+        senderType.includes("vendor-staff") ||
+        senderType.includes("vendor_staff");
+      const isCustomerActor = senderType.includes("customer");
+      const isStaffActor =
+        senderType.includes("vendor-staff") ||
+        senderType.includes("vendor_staff") ||
+        senderType.includes("staff");
+      const isHostActor =
+        senderType.includes("provider") ||
+        senderType.includes("host") ||
+        senderType.includes("lead-user") ||
+        senderType.includes("lead_user");
+      const senderRoleLabel =
+        isCustomerActor ? "Customer" : isStaffActor ? "Staff" : isHostActor ? "Host" : "User";
+
+      return {
+        id: item.id || item.messageId || item.orderMessageId || `msg-${index}`,
+        text: String(messageText).trim(),
+        senderName: String(senderName).trim(),
+        senderLabel: senderRoleLabel,
+        senderActorType: senderTypeRaw || null,
+        createdAt: item.createdAt || item.sentAt || item.messageTime || item.timestamp || null,
+        isHost: isProviderActor,
+      };
+    })
+    .filter((item) => item && item.text);
+};
+
+const formatMessageDateTime = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 // Transform API booking data to component format
@@ -1026,6 +1112,9 @@ const ViewDetails = () => {
   const [reviewModalComment, setReviewModalComment] = useState("");
   const [reviewModalError, setReviewModalError] = useState(null);
   const [isSubmittingReviewModal, setIsSubmittingReviewModal] = useState(false);
+  const [orderMessages, setOrderMessages] = useState([]);
+  const [orderMessagesLoading, setOrderMessagesLoading] = useState(false);
+  const [orderMessagesError, setOrderMessagesError] = useState(null);
 
   // isCompletedOrder: true if backend status is COMPLETED, OR if the booking has been date-overridden to "Completed"
   const isCompletedOrder =
@@ -1767,6 +1856,9 @@ const ViewDetails = () => {
         let apiBookingData = null;
         let orderResponse = null;
         let slotDetails = null;
+        setOrderMessages([]);
+        setOrderMessagesError(null);
+        setOrderMessagesLoading(true);
 
         // Fetch order details directly from API
         // Use event-specific API if type=event
@@ -1850,6 +1942,16 @@ const ViewDetails = () => {
           }
           setLoading(false);
           return;
+        }
+
+        try {
+          const messagesPayload = await getOrderMessages(orderId);
+          setOrderMessages(normalizeOrderMessages(messagesPayload));
+        } catch (messagesError) {
+          console.warn("Failed to fetch order messages:", messagesError?.message || messagesError);
+          setOrderMessagesError("Could not load order messages.");
+        } finally {
+          setOrderMessagesLoading(false);
         }
 
         // Use time slot information from order response
@@ -3088,6 +3190,32 @@ const ViewDetails = () => {
             </div>
           </div>
         )}
+
+        <div className={cn(styles.card, styles.messagesCard)}>
+          <h2 className={styles.cardTitle}>Order Messages</h2>
+          {orderMessagesLoading ? (
+            <p className={styles.messagesEmpty}>Loading messages...</p>
+          ) : orderMessagesError ? (
+            <p className={styles.messagesEmpty}>{orderMessagesError}</p>
+          ) : orderMessages.length === 0 ? (
+            <p className={styles.messagesEmpty}>No messages found for this order.</p>
+          ) : (
+            <div className={styles.messagesList}>
+              {orderMessages.map((message) => (
+                <div key={message.id} className={styles.messageItem}>
+                  <div className={styles.messageMeta}>
+                    <span className={styles.messageSender}>{message.senderName}</span>
+                    <span className={styles.messageRole}>{message.senderLabel}</span>
+                    {formatMessageDateTime(message.createdAt) && (
+                      <span className={styles.messageTime}>{formatMessageDateTime(message.createdAt)}</span>
+                    )}
+                  </div>
+                  <p className={styles.messageText}>{message.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className={cn(styles.card, styles.notesCard)}>
           <h2 className={styles.cardTitle}>Important Notes & Terms</h2>

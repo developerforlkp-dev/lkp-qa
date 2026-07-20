@@ -2660,6 +2660,7 @@ const StayDetails = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const id = params.get("id");
+  const [bookingModalOpen, setBookingModalOpen] = useState(Boolean(location.state?.openReserveModal));
 
   const [stay, setStay] = useState(null);
   const [hostData, setHostData] = useState(null);
@@ -3448,6 +3449,8 @@ const StayDetails = () => {
         addOnQuantities={addOnQuantities}
         onAddOnQuantityChange={handleAddOnQuantityChange}
         onToggleAddOn={handleToggleAddOn}
+        externalOpen={bookingModalOpen}
+        onExternalOpenChange={setBookingModalOpen}
       />
 
       <div className="related-listings-wrapper" style={{ padding: isMobile ? "24px 0" : "64px 0", background: theme === 'dark' ? BG : W }}>

@@ -13,6 +13,7 @@ import LoadingSkeleton from "../../components/LoadingSkeleton";
 import Icon from "../../components/Icon";
 import {
   getListing,
+  getEventDetails,
   getHost,
   getHostContent,
   getLeadDetails,
@@ -252,6 +253,23 @@ const ExperienceProduct = () => {
   const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? Number(initialGuestsStr) : null);
+  const routeType = String(params.get("type") || location.state?.type || "").trim().toLowerCase();
+  const [bookingModalOpen, setBookingModalOpen] = useState(Boolean(location.state?.openReserveModal));
+  const persistedPendingBookingType = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const storedRaw = window.localStorage.getItem("frontendPendingBookingState");
+      if (!storedRaw) return "";
+      const stored = JSON.parse(storedRaw);
+      const storedListingId = String(stored?.listingId || "").trim();
+      if (!storedListingId || storedListingId !== String(id)) return "";
+      return String(stored?.type || "").trim().toLowerCase();
+    } catch (error) {
+      console.warn("Failed to read pending booking state:", error);
+      return "";
+    }
+  }, [id]);
+  const isEventDetailPage = routeType === "event" || persistedPendingBookingType === "event";
 
   const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const [listing, setListing] = useState(null);
@@ -364,7 +382,7 @@ const ExperienceProduct = () => {
   };
 
   // Dynamic browser tab title
-  useDocumentTitle(listing?.title, "Experiences");
+  useDocumentTitle(listing?.title, isEventDetailPage ? "Events" : "Experiences");
 
   const handleUpdateAddonQuantity = (rawAddon, delta) => {
     const addonData = rawAddon.addon || rawAddon;
@@ -436,7 +454,7 @@ const ExperienceProduct = () => {
 
     const load = async () => {
       try {
-        const data = await getListing(id);
+        const data = isEventDetailPage ? await getEventDetails(id) : await getListing(id);
         if (!mounted) return;
 
         if (isListingUnavailable(data)) {
@@ -527,7 +545,7 @@ const ExperienceProduct = () => {
     };
     load();
     return () => { mounted = false; };
-  }, [history, id]);
+  }, [history, id, isEventDetailPage, location.pathname]);
 
   const handleUnavailablePopupClose = () => {
     setUnavailablePopupOpen(false);
@@ -2430,10 +2448,13 @@ const ExperienceProduct = () => {
 
         <BookingSystem
           listing={listing}
+          type={isEventDetailPage ? "event" : "experience"}
           selectedAddOns={selectedAddOns}
           onUpdateAddonQuantity={handleUpdateAddonQuantity}
           initialDate={initialDateStr}
           initialGuests={initialGuests}
+          externalOpen={bookingModalOpen}
+          onExternalOpenChange={setBookingModalOpen}
         />
 
         <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>

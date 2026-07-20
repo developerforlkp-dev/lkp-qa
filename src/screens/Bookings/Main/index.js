@@ -752,50 +752,10 @@ const buildPendingBookingRestoreState = (booking) => {
 
   if (isStayOrder) {
     const stayId = getResolvedStayId(bookingData);
-    const stayRooms = Array.isArray(bookingData?.stayOrderRooms)
-      ? bookingData.stayOrderRooms
-      : (Array.isArray(bookingData?.rooms) ? bookingData.rooms : []);
-    const selectedRooms = Array.isArray(bookingData?.stayOrderRooms)
-      ? bookingData.stayOrderRooms
-          .map((room) => {
-            const roomId = room?.roomId ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId ?? room?.id;
-            if (roomId == null) return null;
-            return {
-              roomId: String(roomId),
-              mealPlan: room?.mealPlan || room?.mealPlanCode || room?.meal_plan || "EP",
-              count: Math.max(1, Number(room?.numberOfRooms ?? room?.roomCount ?? room?.count ?? 1) || 1),
-            };
-          })
-          .filter(Boolean)
-      : [];
-
     if (stayId == null) return null;
 
     return {
       detailUrl: `/stay-details?id=${encodeURIComponent(stayId)}`,
-      storageState: {
-        listingId: String(stayId),
-        type: "stay",
-        checkInDate:
-          bookingData?.checkInDate ||
-          bookingData?.checkinDate ||
-          stayRooms?.[0]?.checkInDate ||
-          stayRooms?.[0]?.checkinDate ||
-          stayRooms?.[0]?.check_in_date ||
-          null,
-        checkOutDate:
-          bookingData?.checkOutDate ||
-          bookingData?.checkoutDate ||
-          stayRooms?.[0]?.checkOutDate ||
-          stayRooms?.[0]?.checkoutDate ||
-          stayRooms?.[0]?.check_out_date ||
-          null,
-        guests: {
-          adults: guests.adults,
-          children: guests.children,
-        },
-        selectedRooms,
-      },
     };
   }
 
@@ -815,57 +775,10 @@ const buildPendingBookingRestoreState = (booking) => {
     businessInterestCode === "EVENT" ||
     bookingData?.eventId != null;
 
-  const bookingTime =
-    bookingData?.selectedTimeSlot ||
-    bookingData?.bookingSummary?.time ||
-    bookingData?.bookingSlot?.slotName ||
-    bookingData?.bookingTime ||
-    bookingData?.timeSlotName ||
-    bookingData?.bookingSlot?.name ||
-    bookingData?.bookingSlotName ||
-    null;
-
-  const eventSlotId =
-    bookingData?.bookingSlotId ??
-    bookingData?.eventSlotId ??
-    bookingData?.slotId ??
-    bookingData?.bookingSlot?.id ??
-    null;
-
   return {
-    detailUrl: buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId),
-    storageState: {
-      listingId: String(listingId),
-      type: isEventOrder ? "event" : "experience",
-      startDate: bookingData?.selectedDate || bookingData?.bookingDate || bookingData?.eventDate || bookingData?.bookingSummary?.date || null,
-      startTime: bookingTime,
-      selectedSlotId: eventSlotId != null ? String(eventSlotId) : null,
-      selectedSlotLabel:
-        bookingData?.selectedTimeSlot ||
-        bookingData?.bookingSlot?.slotName ||
-        bookingData?.bookingSlot?.name ||
-        bookingData?.bookingSlotName ||
-        null,
-      selectedTimeValue: bookingData?.bookingTime || null,
-      guests,
-      selectedTicketTypeId:
-        bookingData?.ticketTypeId != null
-          ? String(bookingData.ticketTypeId)
-          : (bookingData?.tickets?.[0]?.ticketTypeId != null ? String(bookingData.tickets[0].ticketTypeId) : ""),
-      selectedEventSlotIds: isEventOrder
-        ? (
-            Array.isArray(bookingData?.eventSlotIds) && bookingData.eventSlotIds.length > 0
-              ? bookingData.eventSlotIds.map((slotId) => String(slotId))
-              : (eventSlotId != null ? [String(eventSlotId)] : [])
-          )
-        : [],
-      privateBooking: Boolean(bookingData?.privateBooking),
-      selectedAddOns: Array.isArray(bookingData?.addons)
-        ? bookingData.addons
-            .map((addon) => addon?.addonId ?? addon?.id)
-            .filter((addonId) => addonId != null)
-        : [],
-    },
+    detailUrl: isEventOrder
+      ? `/event?id=${encodeURIComponent(listingId)}`
+      : buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId),
   };
 };
 
@@ -884,9 +797,20 @@ const buildPendingBookingFallbackUrl = (booking) => {
     booking?.listingData?.id ??
     booking?.eventData?.eventId ??
     booking?.eventData?.id;
+  const businessInterestCode = String(
+    bookingData?.businessInterestCode ||
+    booking?.category ||
+    ""
+  ).trim().toUpperCase();
+  const isEventOrder =
+    businessInterestCode === "EVENTS" ||
+    businessInterestCode === "EVENT" ||
+    bookingData?.eventId != null;
 
   if (listingId != null) {
-    return buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId);
+    return isEventOrder
+      ? `/event?id=${encodeURIComponent(listingId)}`
+      : buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId);
   }
 
   return null;
