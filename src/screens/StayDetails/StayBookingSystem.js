@@ -9,6 +9,31 @@ import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/p
 import Counter from "../../components/Counter";
 import LoginPromptModal from "../../components/LoginPromptModal";
 
+const getStoredBookingActionMeta = (stored) => {
+  if (!stored || typeof stored !== "object") return null;
+  if (!stored.bookingAction && !stored.sourceOrderId) return null;
+
+  return {
+    bookingAction: stored.bookingAction || "edit",
+    bookingActionRequired: Boolean(stored.bookingActionRequired),
+    sourceOrderId: stored.sourceOrderId ?? null,
+    sourceBookingDate: stored.sourceBookingDate ?? null,
+  };
+};
+
+const applyBookingActionMeta = (payload, bookingActionMeta) => {
+  if (!bookingActionMeta?.bookingAction) return payload;
+
+  return {
+    ...payload,
+    bookingAction: bookingActionMeta.bookingAction,
+    bookingActionRequired: Boolean(bookingActionMeta.bookingActionRequired),
+    sourceOrderId: bookingActionMeta.sourceOrderId ?? null,
+    originalOrderId: bookingActionMeta.sourceOrderId ?? null,
+    sourceBookingDate: bookingActionMeta.sourceBookingDate ?? null,
+  };
+};
+
 export const StayInlineCalendar = ({ 
   checkInDate, 
   checkOutDate, 
@@ -506,6 +531,7 @@ const StayBookingSystem = ({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
+  const [bookingActionMeta, setBookingActionMeta] = useState(null);
   const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
   const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
 
@@ -583,6 +609,7 @@ const StayBookingSystem = ({
         const isLoggedIn = !!token && token !== "undefined" && token !== "null";
 
         if (stored?.listingId === String(stay?.stayId || stay?.id) && stored?.type === "stay" && isLoggedIn) {
+          setBookingActionMeta(getStoredBookingActionMeta(stored));
           if (stored.checkInDate) {
             const parsedCheckIn = moment(stored.checkInDate);
             if (parsedCheckIn.isValid()) setCheckInDate(parsedCheckIn);
@@ -1534,6 +1561,7 @@ const StayBookingSystem = ({
           guests,
           childAges,
           selectedRooms,
+          ...bookingActionMeta,
         };
         try {
           localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
@@ -1608,7 +1636,7 @@ const StayBookingSystem = ({
         addons: backendAddOns,
       };
 
-      const payload = isPropertyBased
+      const payload = applyBookingActionMeta(isPropertyBased
         ? {
             ...payloadBase,
             extraAdults: extraAdultsCount,
@@ -1683,7 +1711,7 @@ const StayBookingSystem = ({
               rooms: roomsPayload,
               ...(bedConfigsPayload.length > 0 ? { bedConfigs: bedConfigsPayload } : {})
             };
-          })();
+          })(), bookingActionMeta);
 
       const previewSelectedAddOnsData = selectedAddOns.map(id => {
         const addonData = Array.isArray(stay?.addons) ? stay.addons.find(a => (a.addonId || a.assignmentId || a.id) === id) : null;
@@ -1777,6 +1805,7 @@ const StayBookingSystem = ({
         selectedAddOns: previewSelectedAddOnsData,
         currency: previewCurrency,
         orderRequest: payload,
+        bookingActionMeta,
       };
 
       clearPendingCheckoutState();
@@ -2165,6 +2194,7 @@ const StayBookingSystem = ({
             checkOutDate: checkOutDate ? checkOutDate.format("YYYY-MM-DD") : null,
             guests,
             selectedRooms,
+            ...bookingActionMeta,
           };
           try {
             localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));

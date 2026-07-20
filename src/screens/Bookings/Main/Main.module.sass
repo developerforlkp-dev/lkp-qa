@@ -191,6 +191,46 @@
     opacity: 1
     transition: opacity .2s ease
 
+.bookingActionOptions
+    display: flex
+    flex-direction: column
+    gap: 12px
+    padding: 0 32px 8px
+    +m
+        padding: 0 20px 8px
+
+.bookingActionCard
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    gap: 6px
+    width: 100%
+    padding: 16px 18px
+    border: 1px solid $n6
+    border-radius: 14px
+    background: $n8
+    text-align: left
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease
+    +dark
+        background: $n1
+        border-color: $n3
+    &:hover
+        border-color: $p4
+        box-shadow: 0 8px 20px rgba(0, 151, 178, 0.12)
+        transform: translateY(-1px)
+
+.bookingActionCardTitle
+    +body-bold-2
+    color: $n2
+    +dark
+        color: $n8
+
+.bookingActionCardText
+    +caption-1
+    color: $n4
+    +dark
+        color: $n5
+
 .fadeOut
     opacity: 0
 

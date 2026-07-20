@@ -96,6 +96,62 @@ const formatRefundPolicyUsed = (percentage) => {
   return `${numericValue}% refund`;
 };
 
+const BOOKING_ACTION_REFERENCE_DATE = new Date("2026-07-20T00:00:00");
+
+const parseBookingActionDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
+  const normalizedValue =
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? `${value}T00:00:00`
+      : value;
+
+  const parsed = new Date(normalizedValue);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getBookingActionDate = (booking) => {
+  const bookingData = booking?.bookingData || {};
+  const stayRooms = Array.isArray(bookingData?.stayOrderRooms) ? bookingData.stayOrderRooms : [];
+
+  return parseBookingActionDate(
+    stayRooms[0]?.checkInDate ||
+    stayRooms[0]?.checkinDate ||
+    stayRooms[0]?.check_in_date ||
+    bookingData?.checkInDate ||
+    bookingData?.selectedDate ||
+    bookingData?.bookingDate ||
+    bookingData?.eventDate ||
+    bookingData?.bookingSummary?.date ||
+    null
+  );
+};
+
+const getBookingActionContext = (booking) => {
+  const bookingDate = getBookingActionDate(booking);
+  const referenceDay = new Date(BOOKING_ACTION_REFERENCE_DATE);
+  referenceDay.setHours(0, 0, 0, 0);
+
+  if (!bookingDate) {
+    return {
+      bookingDate: null,
+      bookingActionRequired: false,
+      availableActions: ["edit", "change"],
+    };
+  }
+
+  const bookingDay = new Date(bookingDate);
+  bookingDay.setHours(0, 0, 0, 0);
+  const isPastBooking = bookingDay < referenceDay;
+
+  return {
+    bookingDate,
+    bookingActionRequired: isPastBooking,
+    availableActions: isPastBooking ? ["change"] : ["edit", "change"],
+  };
+};
+
 const getCancelPreviewRows = (preview) => {
   if (!preview || typeof preview !== "object") return [];
 
@@ -742,13 +798,17 @@ const getBookingGuests = (bookingData) => {
   };
 };
 
-const buildPendingBookingRestoreState = (booking) => {
+const buildPendingBookingRestoreState = (booking, bookingAction = "edit") => {
   const bookingData = booking?.bookingData || {};
   const businessInterestCode = String(
     bookingData?.businessInterestCode || booking?.category || ""
   ).toUpperCase();
   const isStayOrder = businessInterestCode === "STAYS" || getResolvedStayId(bookingData) != null;
   const guests = getBookingGuests(bookingData);
+  const actionContext = getBookingActionContext(booking);
+  const bookingDate = actionContext.bookingDate;
+  const bookingActionRequired = actionContext.bookingActionRequired;
+  const shouldPrefillBookingDetails = bookingAction !== "change";
 
   if (isStayOrder) {
     const stayId = getResolvedStayId(bookingData);
@@ -776,25 +836,37 @@ const buildPendingBookingRestoreState = (booking) => {
       storageState: {
         listingId: String(stayId),
         type: "stay",
-        checkInDate:
-          bookingData?.checkInDate ||
-          bookingData?.checkinDate ||
-          stayRooms?.[0]?.checkInDate ||
-          stayRooms?.[0]?.checkinDate ||
-          stayRooms?.[0]?.check_in_date ||
-          null,
-        checkOutDate:
-          bookingData?.checkOutDate ||
-          bookingData?.checkoutDate ||
-          stayRooms?.[0]?.checkOutDate ||
-          stayRooms?.[0]?.checkoutDate ||
-          stayRooms?.[0]?.check_out_date ||
-          null,
-        guests: {
-          adults: guests.adults,
-          children: guests.children,
-        },
-        selectedRooms,
+        checkInDate: shouldPrefillBookingDetails
+          ? (
+              bookingData?.checkInDate ||
+              bookingData?.checkinDate ||
+              stayRooms?.[0]?.checkInDate ||
+              stayRooms?.[0]?.checkinDate ||
+              stayRooms?.[0]?.check_in_date ||
+              null
+            )
+          : null,
+        checkOutDate: shouldPrefillBookingDetails
+          ? (
+              bookingData?.checkOutDate ||
+              bookingData?.checkoutDate ||
+              stayRooms?.[0]?.checkOutDate ||
+              stayRooms?.[0]?.checkoutDate ||
+              stayRooms?.[0]?.check_out_date ||
+              null
+            )
+          : null,
+        guests: shouldPrefillBookingDetails
+          ? {
+              adults: guests.adults,
+              children: guests.children,
+            }
+          : null,
+        selectedRooms: shouldPrefillBookingDetails ? selectedRooms : [],
+        bookingAction,
+        bookingActionRequired,
+        sourceOrderId: booking?.orderId ?? bookingData?.orderId ?? null,
+        sourceBookingDate: bookingDate ? bookingDate.toISOString() : null,
       },
     };
   }
@@ -837,34 +909,46 @@ const buildPendingBookingRestoreState = (booking) => {
     storageState: {
       listingId: String(listingId),
       type: isEventOrder ? "event" : "experience",
-      startDate: bookingData?.selectedDate || bookingData?.bookingDate || bookingData?.eventDate || bookingData?.bookingSummary?.date || null,
-      startTime: bookingTime,
-      selectedSlotId: eventSlotId != null ? String(eventSlotId) : null,
-      selectedSlotLabel:
-        bookingData?.selectedTimeSlot ||
-        bookingData?.bookingSlot?.slotName ||
-        bookingData?.bookingSlot?.name ||
-        bookingData?.bookingSlotName ||
-        null,
-      selectedTimeValue: bookingData?.bookingTime || null,
-      guests,
-      selectedTicketTypeId:
-        bookingData?.ticketTypeId != null
-          ? String(bookingData.ticketTypeId)
-          : (bookingData?.tickets?.[0]?.ticketTypeId != null ? String(bookingData.tickets[0].ticketTypeId) : ""),
-      selectedEventSlotIds: isEventOrder
+      startDate: shouldPrefillBookingDetails
+        ? (bookingData?.selectedDate || bookingData?.bookingDate || bookingData?.eventDate || bookingData?.bookingSummary?.date || null)
+        : null,
+      startTime: shouldPrefillBookingDetails ? bookingTime : null,
+      selectedSlotId: shouldPrefillBookingDetails && eventSlotId != null ? String(eventSlotId) : null,
+      selectedSlotLabel: shouldPrefillBookingDetails
+        ? (
+            bookingData?.selectedTimeSlot ||
+            bookingData?.bookingSlot?.slotName ||
+            bookingData?.bookingSlot?.name ||
+            bookingData?.bookingSlotName ||
+            null
+          )
+        : null,
+      selectedTimeValue: shouldPrefillBookingDetails ? (bookingData?.bookingTime || null) : null,
+      guests: shouldPrefillBookingDetails ? guests : null,
+      selectedTicketTypeId: shouldPrefillBookingDetails
+        ? (
+            bookingData?.ticketTypeId != null
+              ? String(bookingData.ticketTypeId)
+              : (bookingData?.tickets?.[0]?.ticketTypeId != null ? String(bookingData.tickets[0].ticketTypeId) : "")
+          )
+        : "",
+      selectedEventSlotIds: shouldPrefillBookingDetails && isEventOrder
         ? (
             Array.isArray(bookingData?.eventSlotIds) && bookingData.eventSlotIds.length > 0
               ? bookingData.eventSlotIds.map((slotId) => String(slotId))
               : (eventSlotId != null ? [String(eventSlotId)] : [])
           )
         : [],
-      privateBooking: Boolean(bookingData?.privateBooking),
-      selectedAddOns: Array.isArray(bookingData?.addons)
+      privateBooking: shouldPrefillBookingDetails ? Boolean(bookingData?.privateBooking) : false,
+      selectedAddOns: shouldPrefillBookingDetails && Array.isArray(bookingData?.addons)
         ? bookingData.addons
             .map((addon) => addon?.addonId ?? addon?.id)
             .filter((addonId) => addonId != null)
         : [],
+      bookingAction,
+      bookingActionRequired,
+      sourceOrderId: booking?.orderId ?? bookingData?.orderId ?? null,
+      sourceBookingDate: bookingDate ? bookingDate.toISOString() : null,
     },
   };
 };
@@ -1086,6 +1170,8 @@ const Main = ({
   const [confirmPayModalVisible, setConfirmPayModalVisible] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState(null);
   const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
+  const [bookingActionModalVisible, setBookingActionModalVisible] = useState(false);
+  const [bookingActionSelection, setBookingActionSelection] = useState(null);
 
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [bookingToMessage, setBookingToMessage] = useState(null);
@@ -1181,8 +1267,8 @@ const Main = ({
     }
   };
 
-  const handleCheckAvailability = async (booking) => {
-    const pendingRestore = buildPendingBookingRestoreState(booking);
+  const continueBookingAction = async (booking, bookingAction) => {
+    const pendingRestore = buildPendingBookingRestoreState(booking, bookingAction);
     const redirectUrl = pendingRestore?.detailUrl || buildPendingBookingFallbackUrl(booking);
 
     if (pendingRestore?.storageState) {
@@ -1255,6 +1341,21 @@ const Main = ({
       setIsCheckingAvailability(false);
       setCheckingOrderId(null);
     }
+  };
+
+  const handleCheckAvailability = async (booking) => {
+    setBookingActionSelection({
+      booking,
+      ...getBookingActionContext(booking),
+    });
+    setBookingActionModalVisible(true);
+  };
+
+  const handleBookingActionConfirm = async (bookingAction) => {
+    if (!bookingActionSelection?.booking) return;
+    setBookingActionModalVisible(false);
+    await continueBookingAction(bookingActionSelection.booking, bookingAction);
+    setBookingActionSelection(null);
   };
 
   const ensureRazorpayScript = () =>
@@ -2531,6 +2632,68 @@ const Main = ({
               disabled={isSubmittingReview || reviewRating < 1 || reviewRating > 5}
             >
               {isSubmittingReview ? "Submitting..." : "Post it!"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        visible={bookingActionModalVisible}
+        onClose={() => {
+          if (isCheckingAvailability) return;
+          setBookingActionModalVisible(false);
+          setBookingActionSelection(null);
+        }}
+        outerClassName={styles.cancelModalOuter}
+      >
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>
+              {bookingActionSelection?.bookingActionRequired ? "Change Booking Required" : "Update Booking"}
+            </h2>
+            <p className={styles.cancelModalDescription}>
+              {bookingActionSelection?.bookingActionRequired
+                ? "This booking date is before July 20, 2026, so change booking is mandatory before you continue."
+                : "This booking is in the future. Choose whether you want to edit the booking details or change the booking."}
+            </p>
+          </div>
+          <div className={styles.bookingActionOptions}>
+            {!bookingActionSelection?.bookingActionRequired && (
+              <button
+                type="button"
+                className={styles.bookingActionCard}
+                onClick={() => handleBookingActionConfirm("edit")}
+                disabled={isCheckingAvailability}
+              >
+                <span className={styles.bookingActionCardTitle}>Edit Booking Details</span>
+                <span className={styles.bookingActionCardText}>
+                  Reopen this booking with its current details so you can update them.
+                </span>
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.bookingActionCard}
+              onClick={() => handleBookingActionConfirm("change")}
+              disabled={isCheckingAvailability}
+            >
+              <span className={styles.bookingActionCardTitle}>Change Booking</span>
+              <span className={styles.bookingActionCardText}>
+                Continue with the booking change flow and create the updated booking from there.
+              </span>
+            </button>
+          </div>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => {
+                setBookingActionModalVisible(false);
+                setBookingActionSelection(null);
+              }}
+              disabled={isCheckingAvailability}
+            >
+              Cancel
             </button>
           </div>
         </div>
