@@ -11,6 +11,15 @@ import {
   uploadCustomerAvatar
 } from "../../../utils/api";
 
+const COUNTRY_CODE_OPTIONS = [
+  { value: "+91", label: "India (+91)" },
+  { value: "+1", label: "United States (+1)" },
+  { value: "+44", label: "United Kingdom (+44)" },
+  { value: "+61", label: "Australia (+61)" },
+  { value: "+65", label: "Singapore (+65)" },
+  { value: "+971", label: "UAE (+971)" }
+];
+
 const PersonalInfo = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(true);
@@ -34,6 +43,12 @@ const PersonalInfo = () => {
     linkedin: "",
     twitter: ""
   });
+
+  const countryCodeOptions = COUNTRY_CODE_OPTIONS.some(
+    (option) => option.value === profile.countryCode
+  )
+    ? COUNTRY_CODE_OPTIONS
+    : [{ value: profile.countryCode, label: `Current (${profile.countryCode})` }, ...COUNTRY_CODE_OPTIONS];
 
   useEffect(() => {
     fetchProfile();
@@ -113,7 +128,17 @@ const PersonalInfo = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile.");
+      const fieldErrors = error?.response?.data?.fieldErrors;
+      const firstFieldError = fieldErrors
+        ? Object.values(fieldErrors).flat().find(Boolean)
+        : "";
+      const errorMessage =
+        firstFieldError ||
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update profile.";
+      alert(errorMessage);
     } finally {
       setUpdating(false);
     }
@@ -246,15 +271,35 @@ const PersonalInfo = () => {
                     </div>
                   )}
                 </div>
-                <TextInput
-                  className={styles.field}
-                  name="phone"
-                  value={profile.phone}
-                  onChange={handleChange}
-                  type="tel"
-                  placeholder="Phone number"
-                  required
-                />
+                <div className={styles.phoneRow}>
+                  <div className={styles.countryCodeField}>
+                    <div className={styles.selectWrap}>
+                      <select
+                        id="countryCode"
+                        name="countryCode"
+                        className={styles.select}
+                        value={profile.countryCode}
+                        onChange={handleChange}
+                        required
+                      >
+                        {countryCodeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <TextInput
+                    className={cn(styles.field, styles.phoneField)}
+                    name="phone"
+                    value={profile.phone}
+                    onChange={handleChange}
+                    type="tel"
+                    placeholder="Phone number"
+                    required
+                  />
+                </div>
               </div>
               <div className={styles.col}>
                 <div className={styles.labelWrapper}>
