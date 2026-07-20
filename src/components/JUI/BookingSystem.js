@@ -237,6 +237,71 @@ const getExperienceBookingCutoffHours = (slot) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
+const BOOKING_TIMEZONE = "Asia/Kolkata";
+
+const getIndiaNow = () => moment().tz(BOOKING_TIMEZONE);
+
+const getIndiaDateKey = (value = null) => (
+  (value ? moment(value) : getIndiaNow()).tz(BOOKING_TIMEZONE).format("YYYY-MM-DD")
+);
+
+const getSlotStartTimeValue = (slot, fallback = null) => (
+  slot?.startTime ??
+  slot?.start_time ??
+  slot?.slotStartTime ??
+  slot?.slot_start_time ??
+  slot?.time ??
+  fallback
+);
+
+const getSlotCutoffMoment = (dateKey, startTime, cutoffConfig) => {
+  if (!dateKey || !startTime) return null;
+
+  const [year, month, day] = String(dateKey).split("-").map(Number);
+  const normalizedTime = String(startTime).trim().toUpperCase();
+  const meridiemMatch = normalizedTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !meridiemMatch) {
+    return null;
+  }
+
+  let hours = Number(meridiemMatch[1] || 0);
+  const minutes = Number(meridiemMatch[2] || 0);
+  const seconds = Number(meridiemMatch[3] || 0);
+  const meridiem = meridiemMatch[4] || null;
+
+  if (meridiem === "AM") {
+    hours = hours === 12 ? 0 : hours;
+  } else if (meridiem === "PM") {
+    hours = hours === 12 ? 12 : hours + 12;
+  }
+
+  const slotDateTime = moment.tz(
+    {
+      year,
+      month: Math.max(0, month - 1),
+      date: day,
+      hour: Number.isFinite(hours) ? hours : 0,
+      minute: Number.isFinite(minutes) ? minutes : 0,
+      second: Number.isFinite(seconds) ? seconds : 0,
+      millisecond: 0,
+    },
+    BOOKING_TIMEZONE
+  );
+  if (!slotDateTime.isValid()) return null;
+
+  if (cutoffConfig == null) {
+    return slotDateTime;
+  }
+
+  const numericCutoff = Number(cutoffConfig);
+  if (!Number.isFinite(numericCutoff) || numericCutoff <= 0) {
+    return slotDateTime;
+  }
+
+  return slotDateTime.clone().subtract(numericCutoff, "hours");
+};
+
 const getTicketId = (ticket) => {
   if (ticket === null || ticket === undefined) return null;
   const raw = ticket.ticketTypeId ?? ticket.ticket_type_id ?? ticket.typeId ?? ticket.id;
@@ -1093,7 +1158,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
     if (selectedDate && typeof selectedDate.toDate === "function") return selectedDate.toDate();
     if (selectedDate) return makeLocalDate(getDateKey(selectedDate));
 
-    const todayKey = getDateKey(new Date());
+    const todayKey = getIndiaDateKey();
     const availableKeys = [...availableDateKeys]
       .filter((key) => {
         if (key < todayKey) return false;
@@ -1119,8 +1184,8 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   const selectedKey = getDateKey(selectedDate);
 
   // Today's date key (YYYY-MM-DD) for past-date comparison
-  const todayKey = getDateKey(new Date());
-  const now = new Date();
+  const todayKey = getIndiaDateKey();
+  const now = getIndiaNow().toDate();
   const isViewingCurrentOrPastMonth =
     year < now.getFullYear() ||
     (year === now.getFullYear() && month <= now.getMonth());
@@ -1675,9 +1740,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [baseTimeSlots, dateFilteredSlots, isEventBooking, listing]);
 
   const hasTodayValidSlots = useMemo(() => {
-    const today = new Date();
-    const todayKey = getDateKey(today);
-    const currentMinutes = today.getHours() * 60 + today.getMinutes();
+    const indiaNow = getIndiaNow();
+    const todayKey = getIndiaDateKey(indiaNow);
     const todayFullyBookedSlotIds = collectFullyBookedSlotIdsForDate(listing, todayKey);
 
     if (isEventBooking) {
@@ -1704,15 +1768,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
         const startTime = slot.startTime || slot.start_time || slot.slotStartTime || slot.time;
         if (startTime) {
-          const [h, m] = String(startTime).split(":").map(Number);
-          if (Number.isFinite(h) && Number.isFinite(m)) {
-            const slotMinutes = h * 60 + m;
-            const cutoffHours = getExperienceBookingCutoffHours(slot);
-            if (cutoffHours != null) {
-              if (slotMinutes - (cutoffHours * 60) <= currentMinutes) return false;
-            } else if (slotMinutes <= currentMinutes) {
-              return false;
-            }
+          const slotStartTimeValue = getSlotStartTimeValue(slot, startTime);
+          const cutoffMoment = getSlotCutoffMoment(todayKey, String(slotStartTimeValue), getExperienceBookingCutoffHours(slot));
+          if (cutoffMoment && indiaNow.isAfter(cutoffMoment)) {
+            return false;
           }
         }
 
@@ -1722,7 +1781,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       return validEventSlots.length > 0;
     }
 
-    const weekday = today.getDay();
+    const weekday = indiaNow.day();
 
     const schedules = [
       ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
@@ -1757,11 +1816,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const slotEnd = slot.endDate || slot.end_date || schedule.endDate || schedule.end_date;
       if (slotStart) {
         const start = makeLocalDate(getDateKey(slotStart));
-        if (today < start) return false;
+        if (indiaNow.toDate() < start) return false;
       }
       if (slotEnd) {
         const end = makeLocalDate(getDateKey(slotEnd));
-        if (today > end) return false;
+        if (indiaNow.toDate() > end) return false;
       }
 
       // 4. Check bookings/availability
@@ -1781,12 +1840,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       // 5. Check time validity (future slots only)
       const startTime = slot.startTime || slot.start_time || schedule.startTime || schedule.start_time;
       if (startTime) {
-        const [h, m] = startTime.split(':').map(Number);
-        const slotMinutes = h * 60 + m;
-        const cutoffHours = getExperienceBookingCutoffHours(slot);
-        if (cutoffHours != null) {
-          if (slotMinutes - (cutoffHours * 60) <= currentMinutes) return false;
-        } else if (slotMinutes <= currentMinutes) {
+        const slotStartTimeValue = getSlotStartTimeValue(slot, startTime);
+        const cutoffMoment = getSlotCutoffMoment(todayKey, String(slotStartTimeValue), getExperienceBookingCutoffHours(slot));
+        if (cutoffMoment && indiaNow.isAfter(cutoffMoment)) {
           return false;
         }
       }
@@ -2363,23 +2419,41 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const selectedSlotObj = timeSlots.find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
       const baseSlotObj = (listing?.timeSlots || []).find(s => (s.slotName === startTime || s.slot_name === startTime || s.startTime === startTime || s.start_time === startTime || s.id?.toString() === startTime || s.slotId?.toString() === startTime));
       const cutoffHours = getExperienceBookingCutoffHours(selectedSlotObj) ?? getExperienceBookingCutoffHours(baseSlotObj);
+      const selectedDateKey = getIndiaDateKey(startDate);
+      const resolvedSlotStartTime = getSlotStartTimeValue(selectedSlotObj, getSlotStartTimeValue(baseSlotObj, startTime));
+      const cutoffMoment = getSlotCutoffMoment(selectedDateKey, String(resolvedSlotStartTime), cutoffHours);
+      const debugSlot = selectedSlotObj || baseSlotObj || null;
 
-      if (cutoffHours != null) {
-        const now = moment().tz('Asia/Kolkata');
-        let slotDateTime = moment(startDate).tz('Asia/Kolkata');
-        const parsedTime = moment(startTime, ['HH:mm', 'HH:mm:ss', 'hh:mm A', 'h:mm A']);
-        if (parsedTime.isValid()) {
-          slotDateTime = slotDateTime.hours(parsedTime.hours()).minutes(parsedTime.minutes()).seconds(0);
-        } else {
-          const [hours, minutes] = startTime.split(':').map(Number);
-          slotDateTime = slotDateTime.hours(hours || 0).minutes(minutes || 0).seconds(0);
-        }
+      console.log("[BookingSystem cutoff debug]", {
+        selectedSlotId:
+          debugSlot?.id ??
+          debugSlot?.slotId ??
+          debugSlot?.slot_id ??
+          debugSlot?.eventSlotId ??
+          null,
+        selectedSlotStartTime:
+          debugSlot?.startTime ??
+          debugSlot?.start_time ??
+          debugSlot?.slotStartTime ??
+          debugSlot?.time ??
+          startTime ??
+          null,
+        resolvedSlotStartTime,
+        selectedDateKey,
+        configuredCutoffHours: cutoffHours,
+        parsedDateParts: { year: selectedDateKey?.slice(0, 4), month: selectedDateKey?.slice(5, 7), day: selectedDateKey?.slice(8, 10) },
+        computedCutoffMoment: cutoffMoment ? cutoffMoment.format() : null,
+        currentIndiaTime: getIndiaNow().format(),
+        timezone: BOOKING_TIMEZONE,
+        selectedSlotSnapshot: debugSlot,
+      });
 
-        const cutoffDateTime = slotDateTime.clone().subtract(cutoffHours, 'hours');
-        if (now.isAfter(cutoffDateTime)) {
-          showErrorPopup(`You can no longer reserve this slot because the booking cut-off of ${cutoffHours} hour(s) before the slot has passed.`, "Booking Cut-off Passed");
-          return;
-        }
+      if (cutoffMoment && getIndiaNow().isAfter(cutoffMoment)) {
+        showErrorPopup(
+          `You can no longer reserve this slot because the slot start time has already passed in ${BOOKING_TIMEZONE}.`,
+          "Booking Closed"
+        );
+        return;
       }
     }
 
@@ -3195,7 +3269,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const isExperienceClosed = useMemo(() => {
     if (isEventBooking) return false;
     if (experienceAvailableDateKeys.size === 0) return false; // no date info, don't block
-    const todayKey = moment().format("YYYY-MM-DD");
+    const todayKey = getIndiaDateKey();
     // If every available date key is strictly before today, it's closed
     return [...experienceAvailableDateKeys].every(key => key < todayKey);
   }, [isEventBooking, experienceAvailableDateKeys]);
@@ -3802,7 +3876,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                       }}
                                       isBlockedDay={(date) => {
                                         const key = date.format("YYYY-MM-DD");
-                                        const todayKey = moment().startOf('day').format("YYYY-MM-DD");
+                                        const todayKey = getIndiaDateKey();
                                         if (key < todayKey) return true;
                                         const availableKeys = isEventBooking ? eventAvailableDateKeys : experienceAvailableDateKeys;
                                         if (!availableKeys.has(key)) return true;
