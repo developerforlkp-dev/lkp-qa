@@ -126,6 +126,57 @@
     +hairline-2
     color: $n5
 
+.phoneRow
+    display: flex
+    gap: 12px
+    align-items: flex-end
+    +m
+        flex-direction: column
+        align-items: stretch
+
+.countryCodeField
+    flex: 0 0 140px
+    +m
+        flex: 1 1 auto
+
+.phoneField
+    flex: 1 1 auto
+    margin-bottom: 0 !important
+
+.selectWrap
+    position: relative
+
+.select
+    width: 100%
+    height: 48px
+    padding: 0 40px 0 14px
+    border-radius: 12px
+    border: 2px solid $n6
+    background: none
+    +poppins
+    +caption-bold-1
+    color: $n2
+    appearance: none
+    transition: border-color .2s
+    +dark
+        border-color: $n3
+        color: $n8
+    &:focus
+        border-color: $n4
+        outline: none
+
+.selectWrap:after
+    content: ""
+    position: absolute
+    top: 50%
+    right: 16px
+    width: 8px
+    height: 8px
+    border-right: 2px solid $n4
+    border-bottom: 2px solid $n4
+    transform: translateY(-70%) rotate(45deg)
+    pointer-events: none
+
 .controls
     display: flex
     flex-direction: column
