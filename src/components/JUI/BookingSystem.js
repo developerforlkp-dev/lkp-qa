@@ -30,31 +30,6 @@ const asDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-const getStoredBookingActionMeta = (stored) => {
-  if (!stored || typeof stored !== "object") return null;
-  if (!stored.bookingAction && !stored.sourceOrderId) return null;
-
-  return {
-    bookingAction: stored.bookingAction || "edit",
-    bookingActionRequired: Boolean(stored.bookingActionRequired),
-    sourceOrderId: stored.sourceOrderId ?? null,
-    sourceBookingDate: stored.sourceBookingDate ?? null,
-  };
-};
-
-const applyBookingActionMeta = (payload, bookingActionMeta) => {
-  if (!bookingActionMeta?.bookingAction) return payload;
-
-  return {
-    ...payload,
-    bookingAction: bookingActionMeta.bookingAction,
-    bookingActionRequired: Boolean(bookingActionMeta.bookingActionRequired),
-    sourceOrderId: bookingActionMeta.sourceOrderId ?? null,
-    originalOrderId: bookingActionMeta.sourceOrderId ?? null,
-    sourceBookingDate: bookingActionMeta.sourceBookingDate ?? null,
-  };
-};
-
 const formatSaleDate = (date) => (
   date
     ? date.toLocaleString("en-IN", {
@@ -1482,7 +1457,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [isTicketDropdownOpen, setIsTicketDropdownOpen] = useState(false);
   const [selectedEventSlotIds, setSelectedEventSlotIds] = useState([]);
   const selectedEventSlotId = selectedEventSlotIds[0] || "";
-  const [bookingActionMeta, setBookingActionMeta] = useState(null);
 
   // Rehydrate booking selection state if returning from successful authentication redirect
   useEffect(() => {
@@ -1498,7 +1472,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           //console.log("🔄 Restoring persistent booking state after auth redirect:", stored);
 
           pendingRestoreRef.current = stored;
-          setBookingActionMeta(getStoredBookingActionMeta(stored));
 
           if (stored.startDate) {
             const parsedDate = moment(stored.startDate);
@@ -2402,7 +2375,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           selectedEventSlotIds,
           privateBooking,
           selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
-          ...bookingActionMeta,
         };
         try {
           localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
@@ -2568,7 +2540,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         };
       }).filter(Boolean);
 
-      const payload = applyBookingActionMeta({
+      const payload = {
         eventId: eventIdNum,
         eventSlotId: eventSlotIdNum,
         eventSlotIds,
@@ -2593,7 +2565,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         childAges: guests.childAges || [],
         appliedDiscountCode: null,
         notes: null,
-      }, bookingActionMeta);
+      };
 
 
       try {
@@ -2719,7 +2691,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           selectedSlots: selectedEventSlots,
           cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
           orderRequest: payload,
-          bookingActionMeta,
         };
 
         clearPendingCheckoutState();
@@ -2911,7 +2882,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               selectedEventSlotIds,
               privateBooking,
               selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
-              ...bookingActionMeta,
             };
             try {
               localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));
@@ -3088,7 +3058,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       }
     })();
 
-    const orderData = applyBookingActionMeta({
+    const orderData = {
       listingId: Number(listingId),
       bookingDate: dateStr,
       bookingTime,
@@ -3105,7 +3075,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       paymentMethod: "razorpay",
       addons,
       guestAnswers: [],
-    }, bookingActionMeta);
+    };
     if (privateBooking) orderData.privateBooking = true;
 
     try {
@@ -3114,7 +3084,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         checkoutType: "experience",
         currency: "INR",
         orderRequest: orderData,
-        bookingActionMeta,
       };
 
       clearPendingCheckoutState();
@@ -3230,7 +3199,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             selectedEventSlotIds,
             privateBooking,
             selectedAddOns: selectedAddOns.map(a => a?.addon?.addonId || a?.addonId || a?.id),
-            ...bookingActionMeta,
           };
           try {
             localStorage.setItem("frontendPendingBookingState", JSON.stringify(stateToStore));

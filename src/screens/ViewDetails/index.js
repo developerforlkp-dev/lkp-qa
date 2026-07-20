@@ -1,265 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocation, Link, useHistory } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
 import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons } from "../../utils/api";
 import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../utils/paymentSession";
-import { buildExperienceUrl } from "../../utils/experienceUrl";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import html2pdf from "html2pdf.js";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
-
-const BOOKING_ACTION_REFERENCE_DATE = new Date("2026-07-20T00:00:00");
-
-const parseBookingActionDate = (value) => {
-  if (!value) return null;
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
-
-  const normalizedValue =
-    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
-      ? `${value}T00:00:00`
-      : value;
-
-  const parsed = new Date(normalizedValue);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
-const getResolvedStayId = (bookingData = {}) => {
-  if (!bookingData || typeof bookingData !== "object") return null;
-  if (bookingData.stayId != null) return bookingData.stayId;
-  if (bookingData.propertyId != null) return bookingData.propertyId;
-  if (bookingData.stay_id != null) return bookingData.stay_id;
-
-  const stayRooms = Array.isArray(bookingData.stayOrderRooms) ? bookingData.stayOrderRooms : [];
-  if (stayRooms[0]?.stayId != null) return stayRooms[0].stayId;
-  if (stayRooms[0]?.stay_id != null) return stayRooms[0].stay_id;
-  if (stayRooms[0]?.propertyId != null) return stayRooms[0].propertyId;
-
-  return null;
-};
-
-const getBookingGuests = (bookingData = {}) => {
-  const guestSource = bookingData?.guests || bookingData?.guestBreakdown || {};
-  const children =
-    Number(
-      guestSource?.children ??
-      bookingData?.pricing?.childrenCount ??
-      bookingData?.childrenCount ??
-      bookingData?.childCount ??
-      bookingData?.children ??
-      0
-    ) || 0;
-  const adults =
-    Number(
-      guestSource?.adults ??
-      bookingData?.pricing?.adultsCount ??
-      bookingData?.adultsCount ??
-      bookingData?.adultCount ??
-      bookingData?.adults ??
-      0
-    ) ||
-    Math.max(0, (Number(bookingData?.guestCount ?? bookingData?.numberOfGuests ?? 0) || 0) - children);
-
-  return {
-    adults,
-    children,
-    infants: 0,
-    childAges: Array.isArray(bookingData?.childAges) ? bookingData.childAges : [],
-  };
-};
-
-const getBookingActionContext = (booking) => {
-  const bookingData = booking?.originalData || {};
-  const stayRooms = Array.isArray(bookingData?.stayOrderRooms) ? bookingData.stayOrderRooms : [];
-  const bookingDate = parseBookingActionDate(
-    stayRooms[0]?.checkInDate ||
-    stayRooms[0]?.checkinDate ||
-    stayRooms[0]?.check_in_date ||
-    bookingData?.checkInDate ||
-    bookingData?.selectedDate ||
-    bookingData?.bookingDate ||
-    bookingData?.eventDate ||
-    bookingData?.bookingSummary?.date ||
-    null
-  );
-
-  const referenceDay = new Date(BOOKING_ACTION_REFERENCE_DATE);
-  referenceDay.setHours(0, 0, 0, 0);
-
-  if (!bookingDate) {
-    return {
-      bookingDate: null,
-      bookingActionRequired: false,
-    };
-  }
-
-  const bookingDay = new Date(bookingDate);
-  bookingDay.setHours(0, 0, 0, 0);
-
-  return {
-    bookingDate,
-    bookingActionRequired: bookingDay < referenceDay,
-  };
-};
-
-const buildPendingBookingRestoreState = (booking, bookingAction = "edit") => {
-  const bookingData = booking?.originalData || {};
-  const businessInterestCode = String(
-    bookingData?.businessInterestCode || booking?.category || ""
-  ).toUpperCase();
-  const isStayOrder = businessInterestCode === "STAYS" || getResolvedStayId(bookingData) != null;
-  const guests = getBookingGuests(bookingData);
-  const actionContext = getBookingActionContext(booking);
-  const bookingDate = actionContext.bookingDate;
-  const bookingActionRequired = actionContext.bookingActionRequired;
-  const shouldPrefillBookingDetails = bookingAction !== "change";
-
-  if (isStayOrder) {
-    const stayId = getResolvedStayId(bookingData);
-    const stayRooms = Array.isArray(bookingData?.stayOrderRooms)
-      ? bookingData.stayOrderRooms
-      : (Array.isArray(bookingData?.rooms) ? bookingData.rooms : []);
-    const selectedRooms = Array.isArray(bookingData?.stayOrderRooms)
-      ? bookingData.stayOrderRooms
-          .map((room) => {
-            const roomId = room?.roomId ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId ?? room?.id;
-            if (roomId == null) return null;
-            return {
-              roomId: String(roomId),
-              mealPlan: room?.mealPlan || room?.mealPlanCode || room?.meal_plan || "EP",
-              count: Math.max(1, Number(room?.numberOfRooms ?? room?.roomCount ?? room?.count ?? 1) || 1),
-            };
-          })
-          .filter(Boolean)
-      : [];
-
-    if (stayId == null) return null;
-
-    return {
-      detailUrl: `/stay-details?id=${encodeURIComponent(stayId)}`,
-      storageState: {
-        listingId: String(stayId),
-        type: "stay",
-        checkInDate: shouldPrefillBookingDetails
-          ? (
-              bookingData?.checkInDate ||
-              bookingData?.checkinDate ||
-              stayRooms?.[0]?.checkInDate ||
-              stayRooms?.[0]?.checkinDate ||
-              stayRooms?.[0]?.check_in_date ||
-              null
-            )
-          : null,
-        checkOutDate: shouldPrefillBookingDetails
-          ? (
-              bookingData?.checkOutDate ||
-              bookingData?.checkoutDate ||
-              stayRooms?.[0]?.checkOutDate ||
-              stayRooms?.[0]?.checkoutDate ||
-              stayRooms?.[0]?.check_out_date ||
-              null
-            )
-          : null,
-        guests: shouldPrefillBookingDetails
-          ? {
-              adults: guests.adults,
-              children: guests.children,
-            }
-          : null,
-        childAges: shouldPrefillBookingDetails ? guests.childAges : [],
-        selectedRooms: shouldPrefillBookingDetails ? selectedRooms : [],
-        bookingAction,
-        bookingActionRequired,
-        sourceOrderId: booking?.orderId ?? bookingData?.orderId ?? null,
-        sourceBookingDate: bookingDate ? bookingDate.toISOString() : null,
-      },
-    };
-  }
-
-  const listingId =
-    bookingData?.listingId ??
-    bookingData?.experienceId ??
-    bookingData?.eventId ??
-    booking?.listingData?.listingId ??
-    booking?.listingData?.id ??
-    booking?.eventData?.eventId ??
-    booking?.eventData?.id;
-
-  if (listingId == null) return null;
-
-  const isEventOrder =
-    businessInterestCode === "EVENTS" ||
-    businessInterestCode === "EVENT" ||
-    bookingData?.eventId != null;
-
-  const bookingTime =
-    bookingData?.selectedTimeSlot ||
-    bookingData?.bookingSummary?.time ||
-    bookingData?.bookingSlot?.slotName ||
-    bookingData?.bookingTime ||
-    bookingData?.timeSlotName ||
-    bookingData?.bookingSlot?.name ||
-    bookingData?.bookingSlotName ||
-    null;
-
-  const eventSlotId =
-    bookingData?.bookingSlotId ??
-    bookingData?.eventSlotId ??
-    bookingData?.slotId ??
-    bookingData?.bookingSlot?.id ??
-    null;
-
-  return {
-    detailUrl: buildExperienceUrl(booking?.title || bookingData?.listingTitle || "experience", listingId),
-    storageState: {
-      listingId: String(listingId),
-      type: isEventOrder ? "event" : "experience",
-      startDate: shouldPrefillBookingDetails
-        ? (bookingData?.selectedDate || bookingData?.bookingDate || bookingData?.eventDate || bookingData?.bookingSummary?.date || null)
-        : null,
-      startTime: shouldPrefillBookingDetails ? bookingTime : null,
-      selectedSlotId: shouldPrefillBookingDetails && eventSlotId != null ? String(eventSlotId) : null,
-      selectedSlotLabel: shouldPrefillBookingDetails
-        ? (
-            bookingData?.selectedTimeSlot ||
-            bookingData?.bookingSlot?.slotName ||
-            bookingData?.bookingSlot?.name ||
-            bookingData?.bookingSlotName ||
-            null
-          )
-        : null,
-      selectedTimeValue: shouldPrefillBookingDetails ? (bookingData?.bookingTime || null) : null,
-      guests: shouldPrefillBookingDetails ? guests : null,
-      selectedTicketTypeId: shouldPrefillBookingDetails
-        ? (
-            bookingData?.ticketTypeId != null
-              ? String(bookingData.ticketTypeId)
-              : (bookingData?.tickets?.[0]?.ticketTypeId != null ? String(bookingData.tickets[0].ticketTypeId) : "")
-          )
-        : "",
-      selectedEventSlotIds: shouldPrefillBookingDetails && isEventOrder
-        ? (
-            Array.isArray(bookingData?.eventSlotIds) && bookingData.eventSlotIds.length > 0
-              ? bookingData.eventSlotIds.map((slotId) => String(slotId))
-              : (eventSlotId != null ? [String(eventSlotId)] : [])
-          )
-        : [],
-      privateBooking: shouldPrefillBookingDetails ? Boolean(bookingData?.privateBooking) : false,
-      selectedAddOns: shouldPrefillBookingDetails && Array.isArray(bookingData?.addons)
-        ? bookingData.addons
-            .map((addon) => addon?.addonId ?? addon?.id)
-            .filter((addonId) => addonId != null)
-        : [],
-      bookingAction,
-      bookingActionRequired,
-      sourceOrderId: booking?.orderId ?? bookingData?.orderId ?? null,
-      sourceBookingDate: bookingDate ? bookingDate.toISOString() : null,
-    },
-  };
-};
 
 // Helper 
 const formatMoney = (amount, currency = "INR") => {
@@ -1224,7 +974,6 @@ const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPrevie
 
 const ViewDetails = () => {
   const location = useLocation();
-  const history = useHistory();
   const params = new URLSearchParams(location.search);
   const bookingId = params.get("id") || "bk-up-001";
   const bookingType = params.get("type"); // "event" for event orders
@@ -1270,8 +1019,6 @@ const ViewDetails = () => {
   const [hasAutopaid, setHasAutopaid] = useState(false);
   const [priceChangedData, setPriceChangedData] = useState(null);
   const [confirmPayModalVisible, setConfirmPayModalVisible] = useState(false);
-  const [bookingActionModalVisible, setBookingActionModalVisible] = useState(false);
-  const [bookingActionSelection, setBookingActionSelection] = useState(null);
 
   // Review modal state (for Leave Review button in action card)
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
@@ -1906,41 +1653,8 @@ const ViewDetails = () => {
     }
   };
 
-  const handleCheckAvailabilityAndProceed = async (bookingAction = null) => {
+  const handleCheckAvailabilityAndProceed = async () => {
     if (!booking?.orderId || isCheckingAvailability || isConfirmingBooking) return;
-
-    const normalizedBookingAction =
-      typeof bookingAction === "string" ? bookingAction : null;
-
-    if (!normalizedBookingAction) {
-      setBookingActionSelection(getBookingActionContext(booking));
-      setBookingActionModalVisible(true);
-      return;
-    }
-
-    if (normalizedBookingAction !== "__direct__") {
-      const pendingRestore = buildPendingBookingRestoreState(booking, normalizedBookingAction);
-      const redirectUrl = pendingRestore?.detailUrl;
-
-      if (pendingRestore?.storageState) {
-        try {
-          localStorage.setItem("frontendPendingBookingState", JSON.stringify(pendingRestore.storageState));
-        } catch (storageError) {
-          console.error("Failed to persist pending booking state:", storageError);
-        }
-      }
-
-      if (redirectUrl) {
-        setBookingActionModalVisible(false);
-        setBookingActionSelection(null);
-        history.push(redirectUrl, {
-          openReserveModal: true,
-          source: "check-availability",
-          orderId: booking?.orderId,
-        });
-        return;
-      }
-    }
 
     setIsCheckingAvailability(true);
     try {
@@ -2423,7 +2137,7 @@ const ViewDetails = () => {
     const autoPayParam = new URLSearchParams(location.search).get("autopay") === "true";
     if (autoPayParam && booking && !loading && !error && !hasAutopaid) {
       setHasAutopaid(true);
-      handleCheckAvailabilityAndProceed("__direct__");
+      handleCheckAvailabilityAndProceed();
     }
   }, [booking, loading, error, hasAutopaid, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -3301,13 +3015,13 @@ const ViewDetails = () => {
                   <button
                     type="button"
                     className={cn("button", styles.payNowBtn)}
-                    onClick={() => handleCheckAvailabilityAndProceed()}
+                    onClick={handleCheckAvailabilityAndProceed}
                     disabled={isCheckingAvailability || isConfirmingBooking}
                     style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
                   >
                     {isCheckingAvailability
                       ? "Checking Availability..."
-                      : (isConfirmingBooking ? "Opening Payment..." : "Check Availability")}
+                      : (isConfirmingBooking ? "Opening Payment..." : "Check Availability & Pay Now")}
                   </button>
                 </div>
               )}
@@ -3497,68 +3211,6 @@ const ViewDetails = () => {
           </div>
         )}
       </div>
-
-      <Modal
-        visible={bookingActionModalVisible}
-        onClose={() => {
-          if (isCheckingAvailability) return;
-          setBookingActionModalVisible(false);
-          setBookingActionSelection(null);
-        }}
-        outerClassName={styles.cancelModalOuter}
-      >
-        <div className={styles.cancelModalContent}>
-          <div className={styles.cancelModalHeader}>
-            <h2 className={styles.cancelModalTitle}>
-              {bookingActionSelection?.bookingActionRequired ? "Change Booking Required" : "Update Booking"}
-            </h2>
-            <p className={styles.cancelModalDescription}>
-              {bookingActionSelection?.bookingActionRequired
-                ? "This booking date is before Monday, July 20, 2026, so change booking is mandatory before you continue."
-                : "This booking is after Monday, July 20, 2026. Choose whether you want to edit the booking details or change the booking."}
-            </p>
-          </div>
-          <div className={styles.bookingActionOptions}>
-            {!bookingActionSelection?.bookingActionRequired && (
-              <button
-                type="button"
-                className={styles.bookingActionCard}
-                onClick={() => handleCheckAvailabilityAndProceed("edit")}
-                disabled={isCheckingAvailability}
-              >
-                <span className={styles.bookingActionCardTitle}>Edit Booking Details</span>
-                <span className={styles.bookingActionCardText}>
-                  Reopen this booking with its current details so you can update them.
-                </span>
-              </button>
-            )}
-            <button
-              type="button"
-              className={styles.bookingActionCard}
-              onClick={() => handleCheckAvailabilityAndProceed("change")}
-              disabled={isCheckingAvailability}
-            >
-              <span className={styles.bookingActionCardTitle}>Change Booking</span>
-              <span className={styles.bookingActionCardText}>
-                Continue with the booking change flow and create the updated booking from there.
-              </span>
-            </button>
-          </div>
-          <div className={styles.cancelModalFooter}>
-            <button
-              type="button"
-              className={cn("button-stroke", styles.cancelModalBtn)}
-              onClick={() => {
-                setBookingActionModalVisible(false);
-                setBookingActionSelection(null);
-              }}
-              disabled={isCheckingAvailability}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Cancellation Modal */}
       <Modal
