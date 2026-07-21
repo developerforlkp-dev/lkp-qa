@@ -233,10 +233,7 @@ export default function MobileExperienceView({
         <div className="mob-hero-gradient" />
 
         {/* Top controls */}
-        <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 10 }}>
-          <button onClick={() => history.goBack()} style={{ width: 44, height: 44, borderRadius: "50%", background: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <ChevronLeft size={22} color={isDark ? "#FFFFFF" : "#111111"} />
-          </button>
+        <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "flex-end", zIndex: 10 }}>
           <div style={{ display: "flex", gap: 12 }}>
             <Favorite itemType="listing" itemId={id}>
               {({ saved, onClick }) => (
