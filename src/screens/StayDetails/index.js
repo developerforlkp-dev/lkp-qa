@@ -1070,10 +1070,7 @@ function StayHeroCarousel({ stay, galleryItems = [], heroRef }) {
 
           {/* Mobile Top Controls */}
           {isMobile && (
-            <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "space-between", zIndex: 70, pointerEvents: "none" }}>
-              <button onClick={(e) => { e.stopPropagation(); history.goBack(); }} style={{ pointerEvents: "auto", width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
-                <ChevronLeft size={22} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
-              </button>
+            <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "flex-end", zIndex: 70, pointerEvents: "none" }}>
               <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
                 <Favorite itemType="stay" itemId={stayWishlistId}>
                   {({ saved, onClick }) => (

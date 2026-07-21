@@ -137,6 +137,7 @@ const Page = ({
             leftContent={headerLeftContent}
             hideBookings={hideBookings}
             isBlogPage={isBlogPage}
+            isDetailPage={isDetailPage}
           />
         </motion.div>
       )}

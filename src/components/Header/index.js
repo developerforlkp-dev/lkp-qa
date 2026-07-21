@@ -28,12 +28,14 @@ const items = [
   },
 ];
 
-const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings, isBlogPage }) => {
+const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings, isBlogPage, isDetailPage }) => {
   const history = useHistory();
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const darkMode = useDarkMode(false);
+
+  const useMobileHeader = isBlogPage || isDetailPage;
 
   // Check if user is authenticated (has JWT token)
   const isAuthenticated = () => {
@@ -139,7 +141,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
             leftContent
           ) : (
             <>
-              {isBlogPage && (
+              {useMobileHeader && (
                 <button
                   className={styles.mobileBackButton}
                   onClick={() => history.goBack()}
@@ -148,7 +150,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
                   <ChevronLeft size={22} className={styles.backIcon} />
                 </button>
               )}
-              <Link className={cn(styles.logo, { [styles.blogMobileLogo]: isBlogPage })} to="/">
+              <Link className={cn(styles.logo, { [styles.blogMobileLogo]: useMobileHeader })} to="/">
                 <Image
                   className={styles.pic}
                   src="/images/littleplanet-logo.svg"
@@ -219,7 +221,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
 
             {/* Burger — mobile only, opens the slide-in drawer */}
             <button
-              className={cn(styles.burger, { [styles.active]: visibleNav, [styles.blogBurger]: isBlogPage })}
+              className={cn(styles.burger, { [styles.active]: visibleNav, [styles.blogBurger]: useMobileHeader })}
               onClick={() => setVisibleNav(true)}
               aria-label="Open menu"
             ></button>
