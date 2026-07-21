@@ -61,6 +61,7 @@ const isSearchCategoryType = (categoryType) => {
 const Listings = () => {
   const location = useLocation();
   const history = useHistory();
+  const categoryNavRef = useRef(null);
 
   // Get search params from URL or location state
   const searchParams = new URLSearchParams(location.search);
@@ -296,6 +297,20 @@ const Listings = () => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!categoryNavRef.current) return;
+    // We use a small timeout to ensure the DOM has updated with the active class
+    const timer = setTimeout(() => {
+      if (categoryNavRef.current) {
+        const activeTab = categoryNavRef.current.querySelector(`[class*="categoryNavItemActive"]`);
+        if (activeTab) {
+          activeTab.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [businessInterest]);
 
   // Sort chip quick-filter options
   const sortChips = [
@@ -730,7 +745,7 @@ const Listings = () => {
           </div>,
           portalTarget
         ) : (
-          <div className={styles.categoryNav}>
+          <div className={styles.categoryNav} ref={categoryNavRef}>
             {categoryOptions.map((opt) => {
               const isActive = String(businessInterest || "").toUpperCase().includes(opt.id);
               return (
