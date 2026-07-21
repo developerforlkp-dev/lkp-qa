@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./DestinationCard.module.sass";
@@ -6,6 +6,12 @@ import styles from "./DestinationCard.module.sass";
 const DestinationCard = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const finalSrc = imageError ? defaultImage : item.src;
   const finalSrcSet = imageError ? undefined : (item.srcSet ? `${item.srcSet} 2x` : undefined);
@@ -13,7 +19,7 @@ const DestinationCard = ({ className, item }) => {
     <Link 
       className={cn(className, styles.card)} 
       to={item.url || "/experience-category"}
-      target="_blank"
+      target={isMobile ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >
       <div className={cn(styles.imageWrapper, { [styles.loaded]: imageLoaded })}>

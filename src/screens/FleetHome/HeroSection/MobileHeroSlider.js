@@ -49,7 +49,7 @@ const MobileHeroSlider = ({ destinations, onReady }) => {
     e.stopPropagation();
     if (link) {
       if (link.startsWith('http://') || link.startsWith('https://')) {
-        window.open(link, '_blank', 'noopener,noreferrer');
+        window.open(link, '_self', 'noopener,noreferrer');
       } else {
         history.push(link);
       }
