@@ -136,6 +136,7 @@ const Page = ({
             hasScrolled={scrolled}
             leftContent={headerLeftContent}
             hideBookings={hideBookings}
+            isBlogPage={isBlogPage}
           />
         </motion.div>
       )}
