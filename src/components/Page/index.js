@@ -17,7 +17,8 @@ const Page = ({
   hideHeaderOnMobile,
   hideHeader,
   headerLeftContent,
-  hideBookings
+  hideBookings,
+  isFilterPage
 }) => {
   const { pathname } = useLocation();
   const { tokens: { B, BG }, theme } = useTheme();
@@ -138,6 +139,7 @@ const Page = ({
             hideBookings={hideBookings}
             isBlogPage={isBlogPage}
             isDetailPage={isDetailPage}
+            isFilterPage={isFilterPage}
           />
         </motion.div>
       )}

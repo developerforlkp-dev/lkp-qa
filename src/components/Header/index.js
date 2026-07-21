@@ -28,7 +28,7 @@ const items = [
   },
 ];
 
-const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings, isBlogPage, isDetailPage }) => {
+const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings, isBlogPage, isDetailPage, isFilterPage }) => {
   const history = useHistory();
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -150,7 +150,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
                   <ChevronLeft size={22} className={styles.backIcon} />
                 </button>
               )}
-              <Link className={cn(styles.logo, { [styles.blogMobileLogo]: useMobileHeader })} to="/">
+              <Link className={cn(styles.logo, { [styles.blogMobileLogo]: useMobileHeader || isFilterPage, [styles.filterPageLogo]: isFilterPage })} to="/">
                 <Image
                   className={styles.pic}
                   src="/images/littleplanet-logo.svg"

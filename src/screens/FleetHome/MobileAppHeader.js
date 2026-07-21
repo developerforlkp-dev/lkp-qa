@@ -5,6 +5,8 @@ import { Search, Heart, Menu, User } from "lucide-react";
 import { getCustomerWishlistItems } from "../../utils/api";
 import styles from "./MobileAppHeader.module.sass";
 
+// Triggering hot reload for logo styles
+
 const MobileAppHeader = ({
   onSearchClick,
   isStickyNav,

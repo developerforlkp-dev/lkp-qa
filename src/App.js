@@ -240,7 +240,7 @@ function App() {
               exact
               path="/listings"
               render={() => (
-                <Page>
+                <Page isFilterPage={true}>
                   <Listings />
                 </Page>
               )}
