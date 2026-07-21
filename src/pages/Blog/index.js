@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
 import { Hero, Filters, BlogGrid as Grid } from "../../components/Blog/BlogComponents";
 import { getBlogs } from "../../utils/api";
 import { mapApiBlogToComponentFormat } from "../../utils/blogData";
 import { blogTailwindCss } from "../../styles/blogTailwindString";
 
 export default function Blog() {
-  const history = useHistory();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,14 +57,7 @@ export default function Blog() {
   });
 
   return (
-    <div className="blog-page-root" style={{ position: "relative" }}>
-      {/* Mobile Back Button matching StayDetails */}
-      <div className="md:hidden" style={{ position: "absolute", top: 24, left: 20, zIndex: 70 }}>
-        <button onClick={(e) => { e.stopPropagation(); history.goBack(); }} style={{ pointerEvents: "auto", width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.9)", border: "1px solid #EAEAEA", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
-          <ChevronLeft size={22} color="#111111" />
-        </button>
-      </div>
-
+    <div className="blog-page-root">
       <main className="flex min-h-screen flex-col items-center pt-2">
         <Hero posts={posts} />
         <Filters 
