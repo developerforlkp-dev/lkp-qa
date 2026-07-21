@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import styles from "./Header.module.sass";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useHistory } from "react-router-dom";
 import Image from "../Image";
 import Notification from "./Notification";
 import User from "./User";
@@ -12,6 +12,7 @@ import useDarkMode from "use-dark-mode";
 import MobileNavDrawer from "./MobileDrawer/MobileNavDrawer";
 import { getCustomerWishlistItems } from "../../utils/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 
 
 
@@ -27,7 +28,8 @@ const items = [
   },
 ];
 
-const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings }) => {
+const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage, hasScrolled, leftContent, hideBookings, isBlogPage }) => {
+  const history = useHistory();
   const [visibleNav, setVisibleNav] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -136,14 +138,25 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
           {leftContent ? (
             leftContent
           ) : (
-            <Link className={styles.logo} to="/">
-              <Image
-                className={styles.pic}
-                src="/images/littleplanet-logo.svg"
-                srcDark="/images/littleplanet-logo.svg"
-                alt="FleetHome"
-              />
-            </Link>
+            <>
+              {isBlogPage && (
+                <button
+                  className={styles.mobileBackButton}
+                  onClick={() => history.goBack()}
+                  aria-label="Go back"
+                >
+                  <ChevronLeft size={22} className={styles.backIcon} />
+                </button>
+              )}
+              <Link className={cn(styles.logo, { [styles.blogMobileLogo]: isBlogPage })} to="/">
+                <Image
+                  className={styles.pic}
+                  src="/images/littleplanet-logo.svg"
+                  srcDark="/images/littleplanet-logo.svg"
+                  alt="FleetHome"
+                />
+              </Link>
+            </>
           )}
 
           {/* Desktop nav wrapper — hidden on mobile */}
@@ -206,7 +219,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
 
             {/* Burger — mobile only, opens the slide-in drawer */}
             <button
-              className={cn(styles.burger, { [styles.active]: visibleNav })}
+              className={cn(styles.burger, { [styles.active]: visibleNav, [styles.blogBurger]: isBlogPage })}
               onClick={() => setVisibleNav(true)}
               aria-label="Open menu"
             ></button>

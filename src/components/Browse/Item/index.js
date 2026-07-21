@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./Item.module.sass";
@@ -7,6 +7,12 @@ import Icon from "../../Icon";
 const Item = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const finalSrc = imageError ? defaultImage : item.src;
   const finalSrcSet = imageError ? undefined : `${item.srcSet} 2x`;
@@ -27,7 +33,7 @@ const Item = ({ className, item }) => {
     <Link 
       className={cn(className, styles.item)} 
       to={item.url}
-      target={window.innerWidth <= 768 ? "_self" : "_blank"}
+      target={isMobile ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>

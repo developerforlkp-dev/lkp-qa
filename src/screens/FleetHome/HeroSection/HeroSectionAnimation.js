@@ -549,7 +549,8 @@ const HeroSectionAnimation = ({ containerRef, destinations = [], onReady }) => {
 
       if (link) {
         if (link.startsWith('http://') || link.startsWith('https://')) {
-          window.open(link, '_blank', 'noopener,noreferrer');
+          const target = window.innerWidth <= 768 ? '_self' : '_blank';
+          window.open(link, target, 'noopener,noreferrer');
         } else {
           history.push(link);
         }

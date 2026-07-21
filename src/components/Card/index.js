@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./Card.module.sass";
@@ -40,6 +40,12 @@ const getWishlistConfig = (item) => {
 const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
   
@@ -111,7 +117,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
         { [styles.car]: car }
       )}
       to={getDestinationUrl()}
-      target={window.innerWidth <= 768 ? "_self" : "_blank"}
+      target={isMobile ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >
       <div className={cn(styles.preview, { [styles.loaded]: imageLoaded })}>

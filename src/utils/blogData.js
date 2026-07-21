@@ -396,6 +396,19 @@ export function mapApiBlogToComponentFormat(apiBlog) {
   // Unwrap images that are wrapped in <p> tags
   processedContent = processedContent.replace(/<p>\s*(<img[^>]+>)\s*<\/p>/gi, '$1');
   
+  // Deduplicate images: keep only the first occurrence of each image URL
+  const seenImages = new Set();
+  processedContent = processedContent.replace(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi, (match, src) => {
+    if (seenImages.has(src)) {
+      return '';
+    }
+    seenImages.add(src);
+    return match;
+  });
+
+  // Clean up any empty paragraphs left behind
+  processedContent = processedContent.replace(/<p>\s*<\/p>/gi, '');
+
   // Wrap consecutive img tags (2 or more) in a beautiful gallery grid
   processedContent = processedContent.replace(/(?:<img[^>]+>\s*){2,}/gi, (match) => {
     return `<div class="blog-gallery-grid">${match}</div>`;
@@ -411,12 +424,14 @@ export function mapApiBlogToComponentFormat(apiBlog) {
     return match ? parseInt(match[0], 10) : null;
   };
 
+  const isHeroImageInContent = apiBlog.coverImageUrl && processedContent.includes(apiBlog.coverImageUrl);
+
   return {
     id: apiBlog.blogPostId || Math.random(),
     layoutId: parseLayoutId(apiBlog),
     slug: apiBlog.slug,
     image: imageUrl,
-    heroImage: imageUrl,
+    heroImage: isHeroImageInContent ? null : imageUrl,
     galleryImages: [imageUrl, imageUrl, imageUrl],
     category: apiBlog.category || 'Experience',
     title: apiBlog.title || 'Untitled',

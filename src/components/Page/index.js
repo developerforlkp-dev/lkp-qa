@@ -45,6 +45,7 @@ const Page = ({
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
   const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details") || pathname.startsWith("/wishlists");
+  const isBlogPage = pathname.startsWith("/blog");
   const isHomeRoute = homeRoutes.includes(pathname) || isDetailPage;
 
   useEffect(() => {
@@ -98,7 +99,7 @@ const Page = ({
       {/* Header Background Layer (Under the Hero) */}
       {!hideHeader && (
         <div 
-          className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible, "is-detail-page": isDetailPage })}
+          className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible, "is-detail-page": isDetailPage, "is-blog-page": isBlogPage })}
           style={{ 
             position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, 
             height: (scrolled || separatorHeader) ? "70px" : "0px",
@@ -113,7 +114,7 @@ const Page = ({
       {/* Header Content Layer (Above the Hero) */}
       {!hideHeader && (
         <motion.div
-          className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && !isHomeRoute, "is-detail-page": isDetailPage })}
+          className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && (!isHomeRoute || isDetailPage || isBlogPage), "is-detail-page": isDetailPage, "is-blog-page": isBlogPage })}
           initial={{ y: -70, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.85, ease: E }}
@@ -135,6 +136,7 @@ const Page = ({
             hasScrolled={scrolled}
             leftContent={headerLeftContent}
             hideBookings={hideBookings}
+            isBlogPage={isBlogPage}
           />
         </motion.div>
       )}
@@ -171,23 +173,23 @@ const Page = ({
         }
         
         @media (max-width: 768px) {
-          .slim-header-bg.is-detail-page {
+          .slim-header-bg.is-detail-page, .slim-header-bg.is-blog-page {
             height: 60px !important;
           }
-          .slim-header-wrapper.is-detail-page {
+          .slim-header-wrapper.is-detail-page, .slim-header-wrapper.is-blog-page {
             margin-top: ${separatorHeader ? "-60px" : "0"} !important;
           }
-          .slim-header-wrapper.is-detail-page > div {
+          .slim-header-wrapper.is-detail-page > div, .slim-header-wrapper.is-blog-page > div {
             padding: 12px 0 !important;
           }
-          .slim-header-wrapper.is-detail-page [class*="Header_container"] {
+          .slim-header-wrapper.is-detail-page [class*="Header_container"], .slim-header-wrapper.is-blog-page [class*="Header_container"] {
             padding: 0 16px !important;
           }
-          .slim-header-wrapper.is-detail-page img {
+          .slim-header-wrapper.is-detail-page img, .slim-header-wrapper.is-blog-page img {
             height: 44px !important;
             width: auto !important;
           }
-          .slim-header-wrapper.is-detail-page [class*="Header_burger"] {
+          .slim-header-wrapper.is-detail-page [class*="Header_burger"], .slim-header-wrapper.is-blog-page [class*="Header_burger"] {
              transform: none;
              margin-top: 0;
           }

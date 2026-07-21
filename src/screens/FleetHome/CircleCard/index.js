@@ -1,15 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./CircleCard.module.sass";
 
 const CircleCard = ({ className, item }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   return (
     <Link 
       className={cn(className, styles.card)} 
       to={item.url || "/experience-category"}
-      target="_blank"
+      target={isMobile ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >
       <div className={cn(styles.imageWrapper, { [styles.loaded]: imageLoaded })}>
