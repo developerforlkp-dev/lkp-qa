@@ -770,7 +770,7 @@ const Listings = () => {
           <div className={styles.searchField} ref={destinationRef}>
             <Icon name="arrow-right" size="20" />
             <div className={styles.searchFieldContent}>
-              <div className={styles.searchLabel}>Where to?</div>
+              <div className={styles.searchLabel}>Where would you like to go?</div>
               <input
                 type="text"
                 placeholder="Search Destination"
@@ -857,7 +857,7 @@ const Listings = () => {
                   onClick={() => setShowDatePicker(!showDatePicker)}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className={styles.searchLabel}>Check-in</div>
+                  <div className={styles.searchLabel}>When?</div>
                   <div className={styles.searchInput}>
                     {formattedDate}
                   </div>
