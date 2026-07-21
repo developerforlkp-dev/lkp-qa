@@ -280,14 +280,16 @@ export function Layout1ModernMinimalist({ post }) {
           </div>
         </motion.div>
 
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="blog-hero-image-container"
-        >
-          <img src={post.heroImage} alt={post.title} className="blog-hero-image" />
-        </motion.div>
+        {post.heroImage && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="blog-hero-image-container"
+          >
+            <img src={post.heroImage} alt={post.title} className="blog-hero-image" />
+          </motion.div>
+        )}
 
         <div className="blog-content-wrapper">
           
@@ -538,9 +540,11 @@ export function Layout2EditorialMagazine({ post }) {
               <span style={{ color: '#00A4C4', display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={16} />{post.readTime}</span>
             </div>
           </div>
-          <div className="l2-hero-image-wrap">
-            <img src={post.heroImage} alt={post.title} />
-          </div>
+          {post.heroImage && (
+            <div className="l2-hero-image-wrap">
+              <img src={post.heroImage} alt={post.title} />
+            </div>
+          )}
         </motion.div>
 
         <div className="l2-content-grid">
@@ -728,9 +732,11 @@ export function Layout3ImmersiveDark({ post }) {
       `}</style>
 
       <div className="l3-hero">
-        <div className="l3-hero-bg">
-          <img src={post.heroImage} alt={post.title} />
-        </div>
+        {post.heroImage && (
+          <div className="l3-hero-bg">
+            <img src={post.heroImage} alt={post.title} />
+          </div>
+        )}
         <div className="l3-hero-overlay"></div>
         
         <motion.div 
