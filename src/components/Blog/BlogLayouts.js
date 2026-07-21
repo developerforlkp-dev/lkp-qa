@@ -729,6 +729,40 @@ export function Layout3ImmersiveDark({ post }) {
           margin: 40px 0;
           box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
+        .l3-tags-container {
+          margin-top: 60px;
+          padding-top: 40px;
+          border-top: 1px solid #EAEAEA;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+        }
+        .dark-mode .l3-tags-container {
+          border-top-color: #333;
+        }
+        .l3-tag {
+          background: #F5F5F5;
+          color: #555;
+          padding: 8px 20px;
+          border-radius: 30px;
+          font-size: 14px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+        .l3-tag:hover {
+          background: #00A4C4;
+          color: #FFF;
+        }
+        .dark-mode .l3-tag {
+          background: #222;
+          color: #AAA;
+        }
+        .dark-mode .l3-tag:hover {
+          background: #00A4C4;
+          color: #FFF;
+        }
       `}</style>
 
       <div className="l3-hero">
@@ -770,7 +804,16 @@ export function Layout3ImmersiveDark({ post }) {
             </div>
           ))}
 
-          
+          {post.tags && post.tags.length > 0 && (
+            <div className="l3-tags-container">
+              <span style={{ fontSize: '15px', fontWeight: 'bold', marginRight: '8px' }}>Tags:</span>
+              {post.tags.map((tag, i) => (
+                <Link to={`/blog?tag=${tag}`} key={i} className="l3-tag">
+                  {tag}
+                </Link>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
