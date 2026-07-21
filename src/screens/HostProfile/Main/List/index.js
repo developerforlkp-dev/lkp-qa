@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import cn from "classnames";
 import styles from "./List.module.sass";
 import Card from "../../../../components/Card";
@@ -102,6 +102,14 @@ const tabs = [
 
 const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const activeTab = tabs[activeIndex];
   const activeRawListings = Array.isArray(listingsByType?.[activeTab.key])
     ? listingsByType[activeTab.key]
@@ -132,7 +140,7 @@ const List = ({ className, listingsByType = {}, hostName = "Host" }) => {
         {transformedListings.length > 0 ? (
           <div className={styles.grid}>
             {transformedListings.map((item) => (
-              <Card className={styles.card} item={item} key={item.id} hideWishlist={true} />
+              <Card className={styles.card} item={item} key={item.id} hideWishlist={true} hidePrice={isMobile} />
             ))}
           </div>
         ) : (
