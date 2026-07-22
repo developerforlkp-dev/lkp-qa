@@ -54,13 +54,13 @@ const NotFound = () => {
             <span>Explore Our Stories</span>
           </div>
         </Link>
-        <button onClick={() => alert("Support popup triggered")} className={styles.quickCard} style={{ textAlign: 'left' }}>
+        <Link to="/support" className={styles.quickCard} style={{ textAlign: 'left' }}>
           <Icon name="phone" size="20" className={styles.cardIcon} />
           <div className={styles.cardText}>
             <strong>Need Help?</strong>
             <span>Contact Support</span>
           </div>
-        </button>
+        </Link>
       </div>
     </StatusLayout>
   );

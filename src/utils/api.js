@@ -923,6 +923,72 @@ export const getSupportGuest = async () => {
   }
 };
 
+export const createSupportTicket = async (payload) => {
+  try {
+    const formData = new FormData();
+
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") return;
+
+      if (key === "attachments") {
+        if (Array.isArray(value)) {
+          value.forEach((file) => {
+            if (file instanceof File) {
+              formData.append("attachments", file);
+            }
+          });
+        }
+        return;
+      }
+
+      formData.append(key, value);
+    });
+
+    const response = await ListingsAPI.post("/public/support/tickets", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating support ticket:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getCustomerSupportTickets = async () => {
+  try {
+    const response = await ListingsAPI.get("/customers/support/tickets");
+    return Array.isArray(response?.data) ? response.data : [];
+  } catch (error) {
+    console.error("Error fetching customer support tickets:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getCustomerSupportTicketDetails = async (ticketId) => {
+  try {
+    const response = await ListingsAPI.get(`/customers/support/tickets/${encodeURIComponent(ticketId)}`);
+    return response?.data || null;
+  } catch (error) {
+    console.error("Error fetching customer support ticket details:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const downloadCustomerSupportTicketAttachment = async (ticketId, attachmentId) => {
+  try {
+    const response = await ListingsAPI.get(
+      `/customers/support/tickets/${encodeURIComponent(ticketId)}/attachments/${attachmentId}`,
+      { responseType: "blob" }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error downloading customer support ticket attachment:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getCustomerWishlistStatus = async (itemType, itemId) => {
   const normalizedType = normalizeWishlistItemType(itemType);
   if (!normalizedType || itemId == null || itemId === "") {

@@ -42,6 +42,7 @@ import MobileBottomNavbar from "./components/MobileBottomNavbar";
 import FAQ from "./screens/FAQ";
 import About from "./screens/About";
 import CancellationPolicy from "./screens/CancellationPolicy";
+import Support from "./screens/Support";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -319,6 +320,15 @@ function App() {
               render={() => (
                 <Page separatorHeader>
                   <About />
+                </Page>
+              )}
+            />
+            <Route
+              exact
+              path="/support"
+              render={() => (
+                <Page separatorHeader>
+                  <Support />
                 </Page>
               )}
             />
