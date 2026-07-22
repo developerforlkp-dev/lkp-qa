@@ -3005,7 +3005,7 @@ function MobilePlaceDetails({
       <LocationSection place={place} />
 
       {/* Community Feedback */}
-      <MobileCommunityFeedback />
+      {/* <MobileCommunityFeedback /> */}
 
       {/* 8. Booking / CTA Removed as requested */}
 
@@ -3239,7 +3239,7 @@ const PlaceDetails = () => {
       <PremiumMarquee items={place?.whatsSpecial} isMobile={false} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
       <LocationSection place={place} />
 
-      <CommunityFeedback />
+      {/* <CommunityFeedback /> */}
 
       <RelatedListingsStrip
         businessInterestId={4}
