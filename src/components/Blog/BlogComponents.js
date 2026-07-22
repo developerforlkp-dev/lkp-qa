@@ -8,7 +8,7 @@ import { posts } from "../../utils/blogData";
 import Icon from "../Icon";
 
 // ── Hero ──
-export function Hero({ posts = [] }) {
+export function Hero({ posts = [], loading = false }) {
   const [currentMobileImageIndex, setCurrentMobileImageIndex] = useState(0);
 
   const heroImages = posts && posts.length >= 3 
@@ -93,27 +93,33 @@ export function Hero({ posts = [] }) {
 
       {/* Mobile Background Image (Hidden on Desktop) */}
       <div className="absolute inset-0 z-0 hero-mobile-bg lg:hidden">
-        {heroImages.map((img, idx) => (
-          <img 
-            key={idx}
-            src={img} 
-            alt={`Background ${idx}`} 
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" 
-            style={{ opacity: currentMobileImageIndex === idx ? 1 : 0 }}
-          />
-        ))}
+        {loading ? (
+           <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse" />
+        ) : (
+          heroImages.map((img, idx) => (
+            <img 
+              key={idx}
+              src={img} 
+              alt={`Background ${idx}`} 
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" 
+              style={{ opacity: currentMobileImageIndex === idx ? 1 : 0 }}
+            />
+          ))
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
         {/* Navigation Indicators */}
-        <div className="absolute bottom-6 right-6 flex gap-2 z-20">
-          {heroImages.map((_, idx) => (
-            <button 
-              key={idx}
-              onClick={() => setCurrentMobileImageIndex(idx)}
-              className={`w-2 h-2 rounded-full transition-all ${currentMobileImageIndex === idx ? 'bg-white scale-125' : 'bg-white/40'}`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
-        </div>
+        {!loading && (
+          <div className="absolute bottom-6 right-6 flex gap-2 z-20">
+            {heroImages.map((_, idx) => (
+              <button 
+                key={idx}
+                onClick={() => setCurrentMobileImageIndex(idx)}
+                className={`w-2 h-2 rounded-full transition-all ${currentMobileImageIndex === idx ? 'bg-white scale-125' : 'bg-white/40'}`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Left Content - Typography */}
@@ -150,11 +156,15 @@ export function Hero({ posts = [] }) {
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           className="absolute top-0 lg:top-10 left-[10%] lg:left-0 w-[80%] lg:w-[60%] h-[55%] lg:h-[80%] z-10 overflow-hidden rounded-[140px_140px_20px_20px] lg:rounded-[140px_40px_140px_40px]"
         >
-          <img 
-            src={heroImages[0]} 
-            alt="Hero blog post 1" 
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          {loading ? (
+             <div className="w-full h-full bg-gray-200 animate-pulse" />
+          ) : (
+            <img 
+              src={heroImages[0]} 
+              alt="Hero blog post 1" 
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )}
         </motion.div>
 
         {/* Second Image (Circle) */}
@@ -165,11 +175,15 @@ export function Hero({ posts = [] }) {
           className="absolute bottom-4 left-0 lg:left-auto lg:top-0 right-auto lg:right-4 w-[45%] h-[40%] lg:h-[45%] z-20 rounded-full overflow-hidden shadow-xl"
           style={{ border: '6px solid white', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}
         >
-          <img 
-            src={heroImages[1]} 
-            alt="Hero blog post 2" 
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          {loading ? (
+             <div className="w-full h-full bg-gray-200 animate-pulse" />
+          ) : (
+            <img 
+              src={heroImages[1]} 
+              alt="Hero blog post 2" 
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )}
         </motion.div>
 
         {/* Third Image */}
@@ -180,11 +194,15 @@ export function Hero({ posts = [] }) {
           className="absolute bottom-0 right-[5%] lg:right-0 w-[45%] lg:w-[55%] h-[45%] lg:h-[45%] z-20 overflow-hidden shadow-xl rounded-[60px_60px_40px_40px] lg:rounded-[60px_100px_40px_120px]"
           style={{ border: '6px solid white', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}
         >
-          <img 
-            src={heroImages[2]} 
-            alt="Hero blog post 3" 
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          {loading ? (
+             <div className="w-full h-full bg-gray-200 animate-pulse" />
+          ) : (
+            <img 
+              src={heroImages[2]} 
+              alt="Hero blog post 3" 
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )}
         </motion.div>
       </div>
     </section>

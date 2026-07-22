@@ -59,7 +59,7 @@ export default function Blog() {
   return (
     <div className="blog-page-root">
       <main className="flex min-h-screen flex-col items-center pt-2">
-        <Hero posts={posts} />
+        <Hero posts={posts} loading={loading} />
         <Filters 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
