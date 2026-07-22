@@ -243,10 +243,35 @@ const FilterSidebar = ({
 
     // API Category Filter
     if (filters?.apiCategoryFilter) {
-      const { activeKeys, selectedCategoryLabels } = filters.apiCategoryFilter;
+      const { activeKeys, selectedCategoryLabels, categoryType, categoryValues } = filters.apiCategoryFilter;
       if (Array.isArray(activeKeys) && Array.isArray(selectedCategoryLabels)) {
         activeKeys.forEach((key, idx) => {
-          const label = selectedCategoryLabels[idx];
+          let label = selectedCategoryLabels[idx];
+          
+          if (businessInterestFilters && categoryValues) {
+            let options = [];
+            if (categoryType === "Primary Category" || categoryType === "PRIMARY") {
+              options = businessInterestFilters.primaryCategories || [];
+            } else if (categoryType === "Sub Category" || categoryType === "SUB") {
+              options = businessInterestFilters.secondaryCategories || [];
+            } else if (categoryType === "Tags" || categoryType === "TAGS") {
+              options = businessInterestFilters.tags || [];
+            } else if (categoryType === "Special Labels" || categoryType === "SPECIAL") {
+              options = businessInterestFilters.specialLabels || [];
+            }
+            
+            const val = categoryValues[idx];
+            if (val !== undefined && options.length > 0) {
+              const found = options.find(opt => {
+                const optId = opt.id ?? opt.name ?? opt;
+                return String(optId) === String(val);
+              });
+              if (found) {
+                label = found.name || found;
+              }
+            }
+          }
+
           if (label) {
             chips.push({
               type: "apiCategoryFilter",
@@ -275,7 +300,7 @@ const FilterSidebar = ({
     }
 
     return chips;
-  }, [filters]);
+  }, [filters, businessInterestFilters]);
 
   const handleRemoveChip = (chip) => {
     if (chip.type === "ratings") {

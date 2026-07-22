@@ -696,6 +696,41 @@ const Listings = () => {
     });
   };
 
+  const displayCategoryTitle = useMemo(() => {
+    const defaultTitle = filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel;
+    
+    if (!filters.apiCategoryFilter?.categoryValues || filters.apiCategoryFilter.categoryValues.length === 0) {
+      return defaultTitle;
+    }
+    
+    if (businessInterestFilters) {
+      const type = filters.apiCategoryFilter.categoryType;
+      let options = [];
+      if (type === "Primary Category" || type === "PRIMARY") {
+        options = businessInterestFilters.primaryCategories || [];
+      } else if (type === "Sub Category" || type === "SUB") {
+        options = businessInterestFilters.secondaryCategories || [];
+      } else if (type === "Tags" || type === "TAGS") {
+        options = businessInterestFilters.tags || [];
+      } else if (type === "Special Labels" || type === "SPECIAL") {
+        options = businessInterestFilters.specialLabels || [];
+      }
+      
+      if (options.length > 0) {
+        const labels = filters.apiCategoryFilter.categoryValues.map(val => {
+          const found = options.find(opt => {
+            const optId = opt.id ?? opt.name ?? opt;
+            return String(optId) === String(val);
+          });
+          return found ? (found.name || found) : val;
+        });
+        return labels.join(", ");
+      }
+    }
+    
+    return defaultTitle;
+  }, [filters.apiCategoryFilter, businessInterestFilters, selectedCategoryLabel]);
+
   return (
     <div className={cn("section", styles.section)}>
       {/* Mobile sticky search header — shown on scroll, mobile only */}
@@ -954,9 +989,9 @@ const Listings = () => {
 
             {/* Main Content Area */}
             <main className={styles.main}>
-              {(filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel) && (
+              {displayCategoryTitle && (
                 <div className={styles.categoryFilterTitle}>
-                  Filtered by category: {filters.apiCategoryFilter?.selectedCategoryLabel || selectedCategoryLabel}
+                  Filtered by category: {displayCategoryTitle}
                 </div>
               )}
 
