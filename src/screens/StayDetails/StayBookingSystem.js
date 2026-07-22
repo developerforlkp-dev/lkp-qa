@@ -2428,7 +2428,7 @@ const StayBookingSystem = ({
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "16px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "16px 28px 8px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <h2 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2, lineHeight: "1.2" }}>
                     Reserve Your Stay
@@ -2452,7 +2452,7 @@ const StayBookingSystem = ({
 
               {/* Addons Scrollable Banner */}
               {Array.isArray(stay?.addons) && stay.addons.length > 0 && (
-                <div style={{ background: BG, borderBottom: `1px solid ${B}88`, padding: "12px 28px" }}>
+                <div style={{ background: BG, borderBottom: `1px solid ${B}88`, padding: "8px 28px 12px 28px" }}>
                   <style>{`
                     .stay-modal-addon-item {
                       flex: 0 0 auto;
@@ -2980,8 +2980,14 @@ const StayBookingSystem = ({
                                 </div>
                                 <Counter 
                                   value={room.count} 
-                                  setValue={(v) => handleRoomCountChangeWithReset(room.roomId || room.id, v)} 
-                                  min={1} 
+                                  setValue={(v) => {
+                                    if (v === 0) {
+                                      setSelectedRooms(prev => prev.filter(r => (r.roomId || r.id) !== (room.roomId || room.id)));
+                                    } else {
+                                      handleRoomCountChangeWithReset(room.roomId || room.id, v);
+                                    }
+                                  }} 
+                                  min={resolvedSelectedRooms.length > 1 ? 0 : 1} 
                                   max={Number(room.units || room.totalRooms || room.availableRooms || 99)} 
                                 />
                               </div>
