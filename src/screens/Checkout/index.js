@@ -171,6 +171,24 @@ const getOrderNumericValue = (orderDetails, ...keys) => {
   return 0;
 };
 
+const getBookingStoredFinalTotal = (bookingData) => {
+  const candidates = [
+    bookingData?.finalTotal,
+    bookingData?.totalAmount,
+    bookingData?.pricing?.finalTotal,
+    bookingData?.pricing?.total,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
 const reorderPriceRows = (rows, computedTotal = null) => {
   const primaryRows = [];
   const addOnRows = [];
@@ -585,6 +603,7 @@ const Checkout = () => {
     };
 
     const isStay = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
+    const storedFinalTotal = getBookingStoredFinalTotal(bookingData);
 
     if (isStay && bookingData?.receipt && Array.isArray(bookingData.receipt) && stayDetails) {
       const rows = bookingData.receipt.map((r) => ({ title: r.title, value: r.content }));
@@ -789,9 +808,12 @@ const Checkout = () => {
         .filter((r) => /discount/i.test(String(r.title || "")))
         .reduce((sum, r) => sum + Math.abs(parseAmount(r.value)), 0);
       const correctedFinalAmount = Math.max(0, discountableAmount - totalDiscountAmount + correctedTax);
+      const authoritativeFinalAmount = storedFinalTotal != null
+        ? storedFinalTotal
+        : correctedFinalAmount;
       rows.push({
         title: "Final Guest Price",
-        value: formatInr(correctedFinalAmount),
+        value: formatInr(authoritativeFinalAmount),
       });
 
       const normalizedRows = rows.map((row) => {
@@ -810,7 +832,7 @@ const Checkout = () => {
           normalizedRows,
           Math.max(0, baseAmount + extraAmount + addOnsAmount)
         ),
-        computedFinalAmount: correctedFinalAmount,
+        computedFinalAmount: authoritativeFinalAmount,
       };
     }
 
@@ -821,7 +843,7 @@ const Checkout = () => {
       }));
       return {
         table: reorderPriceRows(rows),
-        computedFinalAmount: null,
+        computedFinalAmount: storedFinalTotal,
       };
     }
 

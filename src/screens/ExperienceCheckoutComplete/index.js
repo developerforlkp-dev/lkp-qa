@@ -19,6 +19,24 @@ const formatImageUrl = (url) => {
   return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
+const getStoredBookingTotal = (booking) => {
+  const candidates = [
+    booking?.finalTotal,
+    booking?.totalAmount,
+    booking?.pricing?.finalTotal,
+    booking?.pricing?.total,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
 const ExperienceCheckoutComplete = () => {
   const [booking, setBooking] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(null);
@@ -372,12 +390,24 @@ const ExperienceCheckoutComplete = () => {
       }
     }
 
-    // Priority 8: Use receipt total as last resort
+    // Priority 8: Use receipt final/total as fallback
     if (amountPaid === "—" && booking?.receipt && Array.isArray(booking.receipt)) {
-      const totalRow = booking.receipt.find((r) => r.title?.toLowerCase() === "total");
+      const totalRow = booking.receipt.find((r) => {
+        const title = String(r?.title || "").toLowerCase();
+        return title === "total" || title.includes("final guest price") || title.includes("stay total") || title.includes("grand total");
+      });
       if (totalRow?.content) {
         amountPaid = totalRow.content;
         //console.log("⚠️ Using receipt total as last resort:", totalRow.content);
+      }
+    }
+
+    // Priority 9: Use saved booking final total from confirm and pay
+    if (amountPaid === "—") {
+      const storedTotal = getStoredBookingTotal(booking);
+      const formatted = formatAmount(storedTotal, paymentData?.currency || booking?.currency || "INR");
+      if (formatted) {
+        amountPaid = formatted;
       }
     }
 

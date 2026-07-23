@@ -2047,8 +2047,8 @@ function LocationSection({ place }) {
                 <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
                   <div style={{
                     position: "absolute",
-                    bottom: 16,
-                    left: 16,
+                    top: 16,
+                    right: 16,
                     zIndex: 10,
                     background: W,
                     padding: "10px 16px",
@@ -3005,7 +3005,7 @@ function MobilePlaceDetails({
       <LocationSection place={place} />
 
       {/* Community Feedback */}
-      <MobileCommunityFeedback />
+      {/* <MobileCommunityFeedback /> */}
 
       {/* 8. Booking / CTA Removed as requested */}
 
@@ -3239,7 +3239,7 @@ const PlaceDetails = () => {
       <PremiumMarquee items={place?.whatsSpecial} isMobile={false} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
       <LocationSection place={place} />
 
-      <CommunityFeedback />
+      {/* <CommunityFeedback /> */}
 
       <RelatedListingsStrip
         businessInterestId={4}

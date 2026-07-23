@@ -1,0 +1,870 @@
+@import ../../styles/helpers
+
+.container
+  max-width: 1240px
+  margin: 0 auto
+  padding: 136px 24px 88px
+  +m
+    padding: 92px 16px 56px
+
+.hero
+  margin-bottom: 36px
+
+.heroBadge
+  display: inline-flex
+  align-items: center
+  padding: 8px 14px
+  border-radius: 999px
+  background: rgba(0, 151, 178, 0.08)
+  border: 1px solid rgba(0, 151, 178, 0.14)
+  color: #007f96
+  font-size: 12px
+  font-weight: 800
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  margin-bottom: 16px
+
+.title
+  margin: 0 0 12px
+  font-size: 52px
+  line-height: 1.04
+  letter-spacing: -0.03em
+  color: #0b2239
+  font-weight: 800
+  font-family: var(--font-fraunces, Georgia, serif)
+  +m
+    font-size: 36px
+
+.subtitle
+  max-width: 760px
+  margin: 0
+  font-size: 17px
+  line-height: 1.7
+  color: #5f7288
+
+.layout
+  display: grid
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.8fr)
+  gap: 24px
+  align-items: start
+  +t
+    grid-template-columns: 1fr
+
+.formCard,
+.sideCard
+  background: #fff
+  border: 1px solid #e2edf3
+  border-radius: 28px
+  box-shadow: 0 18px 48px rgba(4, 24, 39, 0.06)
+  +dark
+    background: $n2
+    border-color: $n3
+
+.formCard
+  padding: 32px
+  +m
+    padding: 22px
+
+.sidePanel
+  display: flex
+  flex-direction: column
+  gap: 18px
+
+.sideCard
+  padding: 24px
+  
+  h3
+    margin: 0 0 10px
+    font-size: 20px
+    color: #0b2239
+    +dark
+      color: $n8
+
+  p
+    margin: 0
+    font-size: 14px
+    line-height: 1.7
+    color: #65768b
+    +dark
+      color: $n4
+
+.cardHeader
+  display: flex
+  justify-content: space-between
+  align-items: flex-start
+  gap: 16px
+  margin-bottom: 24px
+  +m
+    flex-direction: column
+
+.cardTitle
+  margin: 0 0 8px
+  font-size: 28px
+  color: #0b2239
+  +dark
+    color: $n8
+
+.cardSubtitle
+  margin: 0
+  color: #65768b
+  font-size: 14px
+  line-height: 1.7
+  +dark
+    color: $n4
+
+.prefillBadge
+  display: inline-flex
+  align-items: center
+  padding: 8px 12px
+  border-radius: 999px
+  background: #f4fbfd
+  color: #00839b
+  font-size: 12px
+  font-weight: 700
+  white-space: nowrap
+
+.successBox,
+.formError
+  border-radius: 16px
+  padding: 16px 18px
+  margin-bottom: 20px
+
+.successBox
+  display: flex
+  align-items: flex-start
+  gap: 12px
+  background: #edfdf4
+  border: 1px solid #b6efce
+  color: #18643b
+  
+  strong,
+  span
+    display: block
+  
+  span
+    margin-top: 4px
+    font-size: 13px
+
+.formError
+  background: #fff1f2
+  border: 1px solid #fecdd3
+  color: #be123c
+  font-size: 14px
+  line-height: 1.6
+
+.form
+  display: flex
+  flex-direction: column
+  gap: 24px
+
+.grid
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 18px
+  +m
+    grid-template-columns: 1fr
+
+.field
+  display: flex
+  flex-direction: column
+  gap: 8px
+
+  label
+    font-size: 13px
+    font-weight: 700
+    color: #18334c
+    +dark
+      color: $n8
+
+  input,
+  select,
+  textarea
+    width: 100%
+    border: 1px solid #d7e6ee
+    border-radius: 16px
+    background: #fcfeff
+    color: #0f2b43
+    font-size: 15px
+    line-height: 1.5
+    padding: 14px 16px
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease
+    appearance: none
+    +dark
+      background: $n3
+      border-color: $n4
+      color: $n8
+
+    &:focus
+      outline: none
+      border-color: #0097b2
+      box-shadow: 0 0 0 4px rgba(0, 151, 178, 0.12)
+
+    &:disabled
+      opacity: 0.7
+      cursor: not-allowed
+
+  textarea
+    resize: vertical
+    min-height: 120px
+
+.fullWidth
+  grid-column: 1 / -1
+
+.errorText
+  font-size: 12px
+  font-weight: 600
+  color: #d11a2a
+
+.attachmentsHeader
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  +m
+    flex-direction: column
+    align-items: flex-start
+
+.attachmentHint
+  font-size: 12px
+  font-weight: 700
+  color: #5f7288
+
+.filePicker,
+.removeAttachmentButton
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  gap: 6px
+  border: none
+  cursor: pointer
+  transition: transform .18s ease, opacity .18s ease, background .18s ease
+
+  &:disabled
+    cursor: not-allowed
+    opacity: 0.5
+
+.filePicker
+  background: #eaf8fb
+  color: #00839b
+  border-radius: 999px
+  padding: 10px 14px
+  font-size: 12px
+  font-weight: 800
+  text-transform: uppercase
+  letter-spacing: 0.05em
+  text-decoration: none
+  width: fit-content
+
+.attachmentsList
+  display: flex
+  flex-direction: column
+  gap: 10px
+
+.hiddenFileInput
+  display: none
+
+.attachmentRow
+  display: flex
+  align-items: flex-start
+  justify-content: space-between
+  gap: 10px
+  padding: 12px 14px
+  border-radius: 16px
+  border: 1px solid #d7e6ee
+  background: #fcfeff
+
+.attachmentMeta
+  display: flex
+  flex-direction: column
+  gap: 4px
+  min-width: 0
+
+  strong
+    font-size: 14px
+    color: #0f2b43
+    word-break: break-word
+
+  span
+    font-size: 12px
+    color: #5f7288
+
+.removeAttachmentButton
+  width: 42px
+  height: 42px
+  border-radius: 14px
+  background: #fff1f2
+  color: #d11a2a
+  flex-shrink: 0
+
+.emptyAttachments
+  padding: 14px 16px
+  border-radius: 16px
+  border: 1px dashed #c7d8e2
+  background: #f9fcfe
+  color: #718499
+  font-size: 14px
+
+.submitButton
+  align-self: flex-start
+  border: none
+  border-radius: 999px
+  padding: 15px 24px
+  background: linear-gradient(135deg, #0097b2, #046a7c)
+  color: #fff
+  font-size: 14px
+  font-weight: 800
+  letter-spacing: 0.05em
+  text-transform: uppercase
+  cursor: pointer
+  box-shadow: 0 16px 30px rgba(0, 151, 178, 0.22)
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease
+  +m
+    width: 100%
+    justify-content: center
+
+  &:hover:not(:disabled)
+    transform: translateY(-1px)
+    box-shadow: 0 20px 36px rgba(0, 151, 178, 0.28)
+
+  &:disabled
+    opacity: 0.7
+    cursor: not-allowed
+
+.contactList,
+.faqPreviewList
+  display: flex
+  flex-direction: column
+  gap: 12px
+  margin-top: 16px
+
+.contactCard
+  padding: 16px
+  border-radius: 18px
+  border: 1px solid #e6f0f5
+  background: #fbfeff
+  display: flex
+  flex-direction: column
+  gap: 8px
+
+  strong
+    color: #11304a
+    font-size: 15px
+    +dark
+      color: $n8
+
+  a
+    display: inline-flex
+    align-items: center
+    gap: 8px
+    text-decoration: none
+    color: #00839b
+    font-size: 14px
+    font-weight: 600
+
+.faqPreviewItem
+  padding: 16px
+  border-radius: 18px
+  background: #f9fcfe
+  border: 1px solid #e6f0f5
+
+  strong
+    display: block
+    font-size: 14px
+    color: #14304b
+    margin-bottom: 6px
+    +dark
+      color: $n8
+
+  span
+    display: block
+    color: #62758b
+    font-size: 13px
+    line-height: 1.6
+    +dark
+      color: $n4
+
+.tipList
+  margin: 16px 0 0
+  padding-left: 18px
+  color: #62758b
+  display: flex
+  flex-direction: column
+  gap: 10px
+  font-size: 14px
+  line-height: 1.7
+  +dark
+    color: $n4
+
+.mutedBox
+  margin-top: 16px
+  padding: 16px
+  border-radius: 18px
+  border: 1px dashed #c7d8e2
+  color: #718499
+  background: #f9fcfe
+  font-size: 14px
+  line-height: 1.6
+
+.tabs
+  display: flex
+  flex-wrap: wrap
+  gap: 12px
+  margin-bottom: 24px
+
+.tabButton
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-height: 48px
+  padding: 0 22px
+  border-radius: 999px
+  border: 1px solid #cfe1e9
+  background: #f8fcfe
+  color: #4b6480
+  font-size: 13px
+  font-weight: 800
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  transition: all .18s ease
+
+  &:hover
+    border-color: #8ed1dd
+    color: #046a7c
+
+.tabButtonActive
+  border-color: #0097b2
+  background: #eff8fb
+  color: #046a7c
+  box-shadow: 0 12px 24px rgba(0, 151, 178, 0.12)
+
+.ticketsSection
+  margin-top: 8px
+
+.sectionHeader
+  margin-bottom: 24px
+
+.sectionBadge
+  display: inline-flex
+  align-items: center
+  padding: 8px 14px
+  border-radius: 999px
+  background: rgba(4, 106, 124, 0.08)
+  border: 1px solid rgba(4, 106, 124, 0.14)
+  color: #046a7c
+  font-size: 12px
+  font-weight: 800
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  margin-bottom: 14px
+
+.sectionTitle
+  margin: 0 0 8px
+  font-size: 34px
+  color: #0b2239
+  font-family: var(--font-fraunces, Georgia, serif)
+  +dark
+    color: $n8
+
+.sectionSubtitle
+  margin: 0
+  max-width: 760px
+  font-size: 15px
+  line-height: 1.7
+  color: #62758b
+  +dark
+    color: $n4
+
+.ticketHub
+  display: grid
+  grid-template-columns: minmax(290px, 0.75fr) minmax(0, 1.35fr)
+  gap: 24px
+  align-items: start
+  +t
+    grid-template-columns: 1fr
+
+.ticketListCard,
+.ticketDetailCard
+  background: #fff
+  border: 1px solid #e2edf3
+  border-radius: 28px
+  box-shadow: 0 18px 48px rgba(4, 24, 39, 0.06)
+  +dark
+    background: $n2
+    border-color: $n3
+
+.ticketListCard
+  padding: 24px
+
+.ticketDetailCard
+  padding: 28px
+  min-height: 320px
+
+.ticketListHeader,
+.detailPanelHeader,
+.ticketMetaRow,
+.timelineHeader
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+
+.ticketListHeader
+  margin-bottom: 16px
+
+  h3
+    margin: 0
+    font-size: 22px
+    color: #0f2b43
+    +dark
+      color: $n8
+
+  span
+    font-size: 13px
+    font-weight: 700
+    color: #62758b
+
+.ticketList
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.ticketListItem
+  width: 100%
+  text-align: left
+  border: 1px solid #dce8ef
+  border-radius: 20px
+  background: #fbfeff
+  padding: 16px
+  cursor: pointer
+  transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease
+
+  &:hover
+    border-color: #9ad6e1
+    transform: translateY(-1px)
+    box-shadow: 0 12px 24px rgba(0, 151, 178, 0.08)
+
+.ticketListItemActive
+  border-color: #0097b2
+  box-shadow: 0 14px 28px rgba(0, 151, 178, 0.12)
+  background: #f4fbfd
+
+.ticketListTop
+  display: flex
+  align-items: flex-start
+  justify-content: space-between
+  gap: 12px
+  margin-bottom: 10px
+
+  strong
+    font-size: 15px
+    color: #0f2b43
+    +dark
+      color: $n8
+
+.ticketListMeta
+  display: flex
+  flex-wrap: wrap
+  gap: 12px
+  margin-bottom: 8px
+
+  span
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    font-size: 12px
+    color: #62758b
+
+.ticketListCategory
+  font-size: 13px
+  color: #046a7c
+  font-weight: 700
+
+.statusBadge
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  padding: 6px 10px
+  border-radius: 999px
+  font-size: 11px
+  font-weight: 800
+  letter-spacing: 0.05em
+  text-transform: uppercase
+  white-space: nowrap
+
+.statusOpen
+  background: #fff7ed
+  color: #c2410c
+
+.statusResolved
+  background: #edfdf4
+  color: #166534
+
+.statusNeutral
+  background: #f1f5f9
+  color: #475569
+
+.ticketDetailHeader
+  margin-bottom: 20px
+
+  h3
+    margin: 10px 0 8px
+    font-size: 28px
+    color: #0b2239
+    +dark
+      color: $n8
+
+  p
+    margin: 0
+    font-size: 15px
+    line-height: 1.7
+    color: #62758b
+    +dark
+      color: $n4
+
+.ticketIdentifier
+  font-size: 13px
+  font-weight: 800
+  color: #046a7c
+  letter-spacing: 0.08em
+  text-transform: uppercase
+
+.ticketContextRow
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+  margin-bottom: 10px
+
+  span
+    display: inline-flex
+    align-items: center
+    padding: 6px 10px
+    border-radius: 999px
+    background: #eff8fb
+    color: #046a7c
+    font-size: 11px
+    font-weight: 800
+    letter-spacing: 0.04em
+
+.ticketCreatedRow
+  margin-bottom: 12px
+  font-size: 14px
+  font-weight: 700
+  color: #35516d
+
+.ticketSummaryGrid
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 14px
+  margin-bottom: 24px
+  +m
+    grid-template-columns: 1fr
+
+.summaryCard
+  display: flex
+  flex-direction: column
+  gap: 6px
+  padding: 16px
+  border-radius: 18px
+  border: 1px solid #e3edf2
+  background: #fbfeff
+
+  strong
+    font-size: 15px
+    color: #0f2b43
+    +dark
+      color: $n8
+
+  span
+    font-size: 13px
+    line-height: 1.6
+    color: #62758b
+    +dark
+      color: $n4
+
+.summaryLabel
+  font-size: 11px !important
+  font-weight: 800
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  color: #718499 !important
+
+.detailColumns
+  display: grid
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr)
+  gap: 18px
+  +t
+    grid-template-columns: 1fr
+
+.detailPanel
+  padding: 20px
+  border-radius: 22px
+  border: 1px solid #e3edf2
+  background: #fcfeff
+
+.detailPanelHeader
+  margin-bottom: 16px
+
+  h4
+    margin: 0
+    font-size: 18px
+    color: #0f2b43
+    +dark
+      color: $n8
+
+  span
+    font-size: 12px
+    font-weight: 700
+    color: #62758b
+
+.timeline
+  display: flex
+  flex-direction: column
+  gap: 16px
+  max-height: 520px
+  overflow-y: auto
+  padding-right: 8px
+
+  &::-webkit-scrollbar
+    width: 8px
+
+  &::-webkit-scrollbar-thumb
+    background: rgba(4, 106, 124, 0.24)
+    border-radius: 999px
+
+  &::-webkit-scrollbar-track
+    background: transparent
+
+.timelineItem
+  display: grid
+  grid-template-columns: 18px minmax(0, 1fr)
+  gap: 12px
+
+.timelineDot
+  width: 12px
+  height: 12px
+  border-radius: 50%
+  background: #0097b2
+  margin-top: 12px
+  box-shadow: 0 0 0 4px rgba(0, 151, 178, 0.12)
+
+.timelineCard
+  padding: 16px
+  border-radius: 18px
+  border: 1px solid #dce8ef
+  background: #fff
+
+  p
+    margin: 10px 0 0
+    font-size: 14px
+    line-height: 1.7
+    color: #42586f
+    +dark
+      color: $n4
+
+.timelineHeader
+  strong
+    font-size: 14px
+    color: #0f2b43
+    +dark
+      color: $n8
+
+  span
+    font-size: 12px
+    color: #62758b
+
+.timelineTag
+  margin-top: 10px
+  display: inline-flex
+  align-items: center
+  gap: 6px
+  padding: 6px 10px
+  border-radius: 999px
+  background: #eff8fb
+  color: #046a7c
+  font-size: 11px
+  font-weight: 800
+  letter-spacing: 0.05em
+  text-transform: uppercase
+
+.attachmentDownloadList
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.downloadRow
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  padding: 12px 14px
+  border-radius: 16px
+  border: 1px solid #dce8ef
+  background: #fff
+  +m
+    align-items: flex-start
+
+.downloadMeta
+  display: flex
+  flex-direction: column
+  gap: 3px
+  min-width: 0
+  flex: 1
+
+  strong
+    font-size: 13px
+    color: #0f2b43
+    line-height: 1.35
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    +dark
+      color: $n8
+
+  span
+    font-size: 11px
+    line-height: 1.4
+    color: #62758b
+
+.downloadButton
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  gap: 6px
+  border: none
+  border-radius: 999px
+  background: #eaf8fb
+  color: #046a7c
+  padding: 10px 14px
+  font-size: 11px
+  font-weight: 800
+  letter-spacing: 0.05em
+  text-transform: uppercase
+  cursor: pointer
+  white-space: nowrap
+  flex-shrink: 0
+
+  &:disabled
+    opacity: 0.6
+    cursor: not-allowed
+
+.stateBox,
+.errorPanel,
+.inlineError
+  padding: 16px
+  border-radius: 18px
+  font-size: 14px
+  line-height: 1.6
+
+.stateBox
+  border: 1px dashed #c7d8e2
+  background: #f9fcfe
+  color: #718499
+
+.errorPanel,
+.inlineError
+  border: 1px solid #fecdd3
+  background: #fff1f2
+  color: #be123c
+
+.inlineError
+  margin-bottom: 12px

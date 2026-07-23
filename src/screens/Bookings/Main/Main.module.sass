@@ -616,6 +616,10 @@ button.actionButton.button.button-small
     +dark
         background: rgba(0, 151, 178, 0.1)
         border-color: rgba(0, 151, 178, 0.24)
+    &.transparent
+        background: transparent
+        padding: 0
+        border: none
 
 .cancelPolicyLabel
     +body-bold-2
@@ -624,6 +628,71 @@ button.actionButton.button.button-small
     color: $n2
     +dark
         color: $n8
+    &.uppercase
+        font-size: 11px
+        font-weight: 700
+        letter-spacing: 1px
+        text-transform: uppercase
+        color: $n4
+        margin-bottom: 16px
+        +dark
+            color: $n5
+
+.reasonList
+    display: flex
+    flex-direction: column
+    gap: 10px
+
+.reasonItem
+    display: flex
+    justify-content: space-between
+    align-items: center
+    padding: 18px 20px
+    border: 1px solid $n6
+    border-radius: 8px
+    cursor: pointer
+    background-color: $n8
+    transition: all 0.2s ease
+    +dark
+        border-color: $n3
+        background-color: $n1
+    &.active
+        border-color: $p4
+        background-color: rgba($p4, 0.05)
+        +dark
+            border-color: $p4
+            background-color: rgba($p4, 0.1)
+
+.reasonText
+    font-size: 15px
+    color: $n2
+    font-weight: 400
+    +dark
+        color: $n8
+    &.active
+        font-weight: 500
+
+.reasonRadio
+    width: 20px
+    height: 20px
+    border-radius: 50%
+    border: 2px solid $n5
+    display: flex
+    justify-content: center
+    align-items: center
+    background-color: $n8
+    flex-shrink: 0
+    +dark
+        background-color: $n1
+        border-color: $n4
+    &.active
+        border-color: $p4
+
+.reasonRadioInner
+    width: 10px
+    height: 10px
+    border-radius: 50%
+    background-color: $p4
 
 .cancelPolicyText
     +body-2

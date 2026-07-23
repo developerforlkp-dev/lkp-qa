@@ -77,11 +77,12 @@ const getBusinessInterestCode = (filterId) => {
 
 const mapBusinessInterestCodeToFilterId = (code) => {
   const normalized = String(code || "").toUpperCase().trim();
+  if (normalized === "EXPERIENCE" || normalized === "EXPERIENCES") return "experience";
   if (normalized === "EVENT" || normalized === "EVENTS") return "events";
   if (normalized === "STAY" || normalized === "STAYS") return "stays";
   if (normalized === "FOOD") return "food";
   if (normalized === "PLACE" || normalized === "PLACES") return "places";
-  return "experience";
+  return null;
 };
 
 const FleetHome = () => {
@@ -309,6 +310,7 @@ const FleetHome = () => {
         const activeMap = {};
         interests.forEach((interest) => {
           const filterId = mapBusinessInterestCodeToFilterId(interest?.code);
+          if (!filterId) return;
           availabilityMap[filterId] = Boolean(interest?.isEnabledForListings);
           activeMap[filterId] = Boolean(interest?.isActive);
         });

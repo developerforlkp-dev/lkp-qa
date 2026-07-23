@@ -1,5 +1,5 @@
 import React from "react";
-import cn from "classnames";
+import { Link } from "react-router-dom";
 import styles from "./SupportSection.module.sass";
 import Icon from "../Icon";
 
@@ -16,10 +16,10 @@ const SupportSection = ({ title = "Need Help?", description = "Our support team 
         </div>
       </div>
       <div className={styles.supportRight}>
-        <button className={styles.chatButton} onClick={() => alert("Support popup triggered")}>
+        <Link to="/support" className={styles.chatButton}>
           <Icon name="comment" size="16" className={styles.chatIcon} />
-          Chat with us
-        </button>
+          Raise a ticket
+        </Link>
         <div className={styles.emailContact}>
           <Icon name="email" size="20" className={styles.emailIcon} />
           <div className={styles.emailText}>

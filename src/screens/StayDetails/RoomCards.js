@@ -61,10 +61,17 @@ const getMealPlanLabel = (code, ...pricingSources) => {
   return getDefaultMealPlanLabel(code);
 };
 
-const formatPrice = (raw) => {
+const formatPrice = (raw, { preserveFraction = false } = {}) => {
   const n = parseFloat(raw);
-  if (!n || isNaN(n)) return null;
-  return n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  if (!Number.isFinite(n)) return null;
+
+  const hasFraction = Math.abs(n % 1) > 0.001;
+  const fractionDigits = preserveFraction && hasFraction ? 2 : 0;
+
+  return n.toLocaleString("en-IN", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
 };
 
 const AMENITY_ICONS = {
@@ -281,8 +288,13 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   const rawPrice = plan ? getPriceForPlan(room, plan) : room.b2cPrice || room.price;
   const discountRate = getBillingConfigDiscountRate(listing);
   const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
+  const hasDiscount =
+    discountRate > 0 &&
+    rawPrice != null &&
+    discountedRawPrice != null &&
+    discountedRawPrice < Number(rawPrice);
   const displayPrice = formatPrice(rawPrice);
-  const discountedDisplayPrice = formatPrice(discountedRawPrice);
+  const discountedDisplayPrice = formatPrice(discountedRawPrice, { preserveFraction: hasDiscount });
 
   const name = room.roomName || room.roomTypeName || room.name || "Room";
   const capacity = room.maxGuests || (room.maxAdults ? room.maxAdults + (room.maxChildren || 0) : null);
@@ -484,12 +496,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
           <div style={{ fontSize: "24px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', lineHeight: 1 }}>
             {displayPrice ? (
               <>
-                {discountRate > 0 && discountedDisplayPrice && (
+                {hasDiscount && (
                   <span style={{ fontSize: "14px", color: M, textDecoration: "line-through", marginRight: "8px" }}>
                     {"\u20B9"}{displayPrice}
                   </span>
                 )}
-                {"\u20B9"}{discountRate > 0 && discountedDisplayPrice ? discountedDisplayPrice : displayPrice}
+                {"\u20B9"}{hasDiscount ? discountedDisplayPrice : displayPrice}
                 <span style={{ fontSize: "12px", fontWeight: 500, color: M }}> / night</span>
               </>
             ) : (

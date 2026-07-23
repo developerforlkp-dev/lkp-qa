@@ -608,28 +608,52 @@ export const CardGrid = ({ section, listings, className }) => {
  * CARD_OVAL_VERTICAL_NODETAIL - Oval/circular image cards with vertical layout, minimal details
  */
 export const CardDestination = ({ section, listings, className }) => {
+  const scrollRef = useRef(null);
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
+
+  let viewAllText = "View all";
+  const titleLower = section.sectionTitle?.toLowerCase() || "";
+
+  if (titleLower.includes("curated") || titleLower.includes("experience")) {
+    viewAllText = "View all experiences";
+  } else if (titleLower.includes("events")) {
+    viewAllText = "View all events";
+  } else if (titleLower.includes("stays")) {
+    viewAllText = "View all stays";
+  }
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <div className={styles.sectionTitleWrapper}>
-          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
-            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-          </Link>
-          {section.priceStartingFrom && (
-            <div className={styles.priceStarting}>
-              Starts from <span>₹{section.priceStartingFrom}</span>
-            </div>
+        <div className={styles.titleBlock}>
+          {section.sectionTitle && (
+            <div className={styles.sectionPreTitle}>{section.sectionTitle}</div>
+          )}
+          {section.description && (
+            <h2
+              className={cn("h2", styles.sectionTitle)}
+              dangerouslySetInnerHTML={formatSectionDescription(section.description)}
+            />
           )}
         </div>
-        {section.description && (
-          <p className={styles.sectionSubtitle}>{section.description}</p>
-        )}
+
+        <div className={styles.headerActions}>
+          <Link to={sectionListingsUrl} className={styles.viewAllLink}>
+            {viewAllText}
+          </Link>
+          <div className={styles.sliderArrows}>
+            <button onClick={() => scrollRef.current?.scrollLeft()} className={styles.sliderArrow} aria-label="Previous">
+              <Icon name="arrow-prev" size="14" />
+            </button>
+            <button onClick={() => scrollRef.current?.scrollRight()} className={styles.sliderArrow} aria-label="Next">
+              <Icon name="arrow-next" size="14" />
+            </button>
+          </div>
+        </div>
       </div>
       <div className={styles.horizontalScrollWrapper}>
-        <HorizontalScroll className={styles.horizontalScroll} gap={24}>
+        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} className={styles.horizontalScroll} gap={24}>
           {destinationItems.map((item) => (
             <DestinationCard
               className={styles.destinationCard}
@@ -647,28 +671,52 @@ export const CardDestination = ({ section, listings, className }) => {
  * CARD_CIRCLE_NODETAIL - Perfect circle image cards with vertical layout, minimal details
  */
 export const CardCircle = ({ section, listings, className }) => {
+  const scrollRef = useRef(null);
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
+
+  let viewAllText = "View all";
+  const titleLower = section.sectionTitle?.toLowerCase() || "";
+
+  if (titleLower.includes("curated") || titleLower.includes("experience")) {
+    viewAllText = "View all experiences";
+  } else if (titleLower.includes("events")) {
+    viewAllText = "View all events";
+  } else if (titleLower.includes("stays")) {
+    viewAllText = "View all stays";
+  }
 
   return (
     <section className={cn(styles.categorySection, className)}>
       <div className={styles.sectionHeader}>
-        <div className={styles.sectionTitleWrapper}>
-          <Link to={sectionListingsUrl} className={styles.sectionTitleLink}>
-            <h2 className={cn("h2", styles.sectionTitle)}>{section.sectionTitle}</h2>
-          </Link>
-          {section.priceStartingFrom && (
-            <div className={styles.priceStarting}>
-              Starts from <span>₹{section.priceStartingFrom}</span>
-            </div>
+        <div className={styles.titleBlock}>
+          {section.sectionTitle && (
+            <div className={styles.sectionPreTitle}>{section.sectionTitle}</div>
+          )}
+          {section.description && (
+            <h2
+              className={cn("h2", styles.sectionTitle)}
+              dangerouslySetInnerHTML={formatSectionDescription(section.description)}
+            />
           )}
         </div>
-        {section.description && (
-          <p className={styles.sectionSubtitle}>{section.description}</p>
-        )}
+
+        <div className={styles.headerActions}>
+          <Link to={sectionListingsUrl} className={styles.viewAllLink}>
+            {viewAllText}
+          </Link>
+          <div className={styles.sliderArrows}>
+            <button onClick={() => scrollRef.current?.scrollLeft()} className={styles.sliderArrow} aria-label="Previous">
+              <Icon name="arrow-prev" size="14" />
+            </button>
+            <button onClick={() => scrollRef.current?.scrollRight()} className={styles.sliderArrow} aria-label="Next">
+              <Icon name="arrow-next" size="14" />
+            </button>
+          </div>
+        </div>
       </div>
       <div className={styles.horizontalScrollWrapper}>
-        <HorizontalScroll className={styles.horizontalScroll} gap={24}>
+        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} className={styles.horizontalScroll} gap={24}>
           {destinationItems.map((item) => (
             <CircleCard
               className={styles.destinationCard}

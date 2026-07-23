@@ -138,13 +138,15 @@ export const clearPendingPaymentSession = () => {
   safeStorage.remove(PENDING_PAYMENT_KEY);
 };
 
-export const clearPendingCheckoutState = ({ keepCheckoutBooking = false } = {}) => {
+export const clearPendingCheckoutState = ({ keepCheckoutBooking = false, keepActualPaidAmount = false } = {}) => {
   safeStorage.remove(PENDING_PAYMENT_KEY);
   safeStorage.remove(PENDING_ORDER_ID_KEY);
   safeStorage.remove("razorpayPaymentSuccess");
   safeStorage.remove("paymentFailed");
   safeStorage.remove("paymentFailureOrderId");
-  safeStorage.remove("actualPaidAmount");
+  if (!keepActualPaidAmount) {
+    safeStorage.remove("actualPaidAmount");
+  }
 
   if (!keepCheckoutBooking) {
     safeStorage.remove(CHECKOUT_BOOKING_KEY);

@@ -2210,20 +2210,20 @@ const Main = ({
       >
         <div className={cn(styles.cancelModalContent, styles.cancelModalContentScrollable)}>
           <div className={styles.cancelModalHeader}>
-            <h2 className={styles.cancelModalTitle} style={{ fontSize: "28px", fontWeight: "600", color: "#141416", marginBottom: "12px" }}>
+            <h2 className={styles.cancelModalTitle}>
               Cancel Booking
             </h2>
-            <p className={styles.cancelModalDescription} style={{ fontSize: "14px", color: "#777E90", lineHeight: "1.5" }}>
+            <p className={styles.cancelModalDescription}>
               We're sorry to see you go. Please let us know<br />why you're cancelling this booking.
             </p>
           </div>
-          <div className={cn(styles.cancelModalBody, styles.cancelModalBodyScrollable)} style={{ padding: "0 32px" }}>
-            <div className={styles.cancelPolicyBox} style={{ background: "transparent", padding: 0, border: "none", marginBottom: "24px" }}>
-              <div className={styles.cancelPolicyLabel} style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase", color: "#B1B5C3", marginBottom: "16px" }}>
+          <div className={cn(styles.cancelModalBody, styles.cancelModalBodyScrollable)}>
+            <div className={cn(styles.cancelPolicyBox, styles.transparent)}>
+              <div className={cn(styles.cancelPolicyLabel, styles.uppercase)}>
                 Select a reason
               </div>
               {cancellationReasons.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div className={styles.reasonList}>
                   {[...cancellationReasons]
                     .sort((a, b) => (a?.sortOrder || 0) - (b?.sortOrder || 0))
                     .map((reason, idx) => {
@@ -2233,34 +2233,14 @@ const Main = ({
                         <div
                           key={idx}
                           onClick={() => setSelectedReason(reasonText)}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            padding: "18px 20px",
-                            border: `1px solid ${isSelected ? "#0097B2" : "#E6E8EC"}`,
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            backgroundColor: isSelected ? "#F2FBFC" : "#FFFFFF",
-                            transition: "all 0.2s ease"
-                          }}
+                          className={cn(styles.reasonItem, { [styles.active]: isSelected })}
                         >
-                          <span style={{ fontSize: "15px", color: "#141416", fontWeight: isSelected ? "500" : "400" }}>
+                          <span className={cn(styles.reasonText, { [styles.active]: isSelected })}>
                             {reasonText}
                           </span>
-                          <div style={{
-                            width: "20px",
-                            height: "20px",
-                            borderRadius: "50%",
-                            border: `2px solid ${isSelected ? "#0097B2" : "#B1B5C3"}`,
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            backgroundColor: "#FFFFFF",
-                            flexShrink: 0
-                          }}>
+                          <div className={cn(styles.reasonRadio, { [styles.active]: isSelected })}>
                             {isSelected && (
-                              <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#0097B2" }} />
+                              <div className={styles.reasonRadioInner} />
                             )}
                           </div>
                         </div>

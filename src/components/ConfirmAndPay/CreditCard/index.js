@@ -303,7 +303,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         if (bookingData) {
           localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
         }
-        clearPendingCheckoutState({ keepCheckoutBooking: true });
+        clearPendingCheckoutState({ keepCheckoutBooking: true, keepActualPaidAmount: true });
         history.replace(buttonUrl);
       } catch (error) {
         console.error("Failed to finish free booking:", error);
@@ -369,7 +369,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
             console.error("Failed to persist payment success state:", error);
           }
 
-          clearPendingCheckoutState({ keepCheckoutBooking: true });
+          clearPendingCheckoutState({ keepCheckoutBooking: true, keepActualPaidAmount: true });
           history.replace(buttonUrl);
         },
         modal: {

@@ -160,6 +160,15 @@ const isPropertyBasedBooking = (stay) => {
   return scope.includes("property");
 };
 
+const isHotelBooking = (stay) => {
+  const scope = getBookingScopeValue(stay);
+  return scope.includes("hotel");
+};
+
+const shouldUseChildAgeSelector = (stay) => (
+  isPropertyBasedBooking(stay) || isHotelBooking(stay)
+);
+
 const isHostelBooking = (stay) => {
   const scope = getBookingScopeValue(stay);
   return scope.includes("hostel");
@@ -276,26 +285,73 @@ const getChildAgeTierForAge = (stay, age) => {
   ) || null;
 };
 
-const buildChildAgePricing = (stay, childAges, fallbackPrice = 0) => {
+const getChildAgePolicyBounds = (stay) => {
+  const tiers = getChildAgePolicyTiers(stay);
+  if (tiers.length === 0) return null;
+
+  return tiers.reduce((acc, tier) => ({
+    minAge: Math.min(acc.minAge, tier.fromAge),
+    maxAge: Math.max(acc.maxAge, tier.toAge),
+  }), {
+    minAge: tiers[0].fromAge,
+    maxAge: tiers[0].toAge,
+  });
+};
+
+const getSelectableChildAges = (stay) => {
+  const bounds = getChildAgePolicyBounds(stay);
+  if (!bounds) {
+    return Array.from({ length: 13 }, (_, age) => age);
+  }
+
+  return Array.from({ length: Math.max(0, bounds.maxAge) + 1 }, (_, age) => age);
+};
+
+const buildChildAgePricing = (
+  stay,
+  childAges,
+  extraChildStartIndex = 0,
+  extraChildCount = 0,
+  extraChildPrice = 0,
+  extraAdultPrice = 0
+) => {
   const normalizedAges = (Array.isArray(childAges) ? childAges : [])
+    .slice(extraChildStartIndex, extraChildStartIndex + Math.max(0, Number(extraChildCount || 0)))
     .map((age) => (age === "" || age === null || age === undefined ? null : Number(age)));
+  const ageBounds = getChildAgePolicyBounds(stay);
 
   const breakdown = normalizedAges.map((age, index) => {
     const tier = age === null ? null : getChildAgeTierForAge(stay, age);
-    const price = tier ? Number(tier.price || 0) : Number(fallbackPrice || 0);
+    const isWithinChildRateRange = Boolean(tier);
+    const isAboveChildRateRange = age !== null && (
+      ageBounds ? age > ageBounds.maxAge : true
+    );
+    const price = age === null
+      ? 0
+      : isWithinChildRateRange
+        ? Number(extraChildPrice || 0)
+        : isAboveChildRateRange
+          ? Number(extraAdultPrice || 0)
+          : 0;
 
     return {
-      index,
+      index: extraChildStartIndex + index,
       age,
       tier,
       price: Number.isFinite(price) ? price : 0,
-      isTierPrice: Boolean(tier),
+      pricingType: age === null
+        ? "unknown"
+        : isWithinChildRateRange
+          ? "extra_child"
+          : ageBounds && age < ageBounds.minAge
+            ? "free"
+            : "extra_adult",
     };
   });
 
   return {
     breakdown,
-    matchedCount: breakdown.filter((item) => item.isTierPrice).length,
+    matchedCount: breakdown.filter((item) => item.pricingType === "extra_child").length,
     totalPerNight: breakdown.reduce((sum, item) => sum + item.price, 0),
   };
 };
@@ -1267,16 +1323,25 @@ const StayBookingSystem = ({
       }
     }
 
-    const childAgePricing = buildChildAgePricing(stay, childAges, finalExtraCP);
-    const hasTierBasedChildPricing = childAgePricing.matchedCount > 0;
     const computedExtraChildrenCount = isPropertyBased
       ? Math.max(0, (guests?.children || 0) - totalBaseChildrenLimit)
       : totalExtraChildrenAllocated;
-    const computedChildChargePerNight = hasTierBasedChildPricing
+    const useChildAgeSelector = shouldUseChildAgeSelector(stay);
+    const childAgePricing = useChildAgeSelector
+      ? buildChildAgePricing(
+          stay,
+          childAges,
+          totalBaseChildrenLimit,
+          computedExtraChildrenCount,
+          finalExtraCP,
+          finalExtraAP
+        )
+      : { breakdown: [], matchedCount: 0, totalPerNight: computedExtraChildrenCount * finalExtraCP };
+    const computedChildChargePerNight = computedExtraChildrenCount > 0
       ? childAgePricing.totalPerNight
-      : computedExtraChildrenCount * finalExtraCP;
+      : 0;
 
-    if (hasTierBasedChildPricing) {
+    if (useChildAgeSelector && computedExtraChildrenCount > 0) {
       totalOriginalPerNight = totalOriginalPerNight - (computedExtraChildrenCount * finalExtraCP) + computedChildChargePerNight;
     }
 
@@ -1331,7 +1396,7 @@ const StayBookingSystem = ({
     const extraAdultsCount = isPropertyBased
       ? Math.max(0, (guests?.adults || 1) - totalBaseAdultsLimit)
       : totalExtraAdultsAllocated;
-    const extraChildrenCount = hasTierBasedChildPricing ? 0 : computedExtraChildrenCount;
+    const extraChildrenCount = computedExtraChildrenCount;
 
     const normalAdultsCount = Math.max(0, (guests?.adults || 1) - extraAdultsCount);
     const normalChildrenCount = Math.max(0, (guests?.children || 0) - extraChildrenCount);
@@ -1354,6 +1419,7 @@ const StayBookingSystem = ({
       gst: configuredTaxRate > 0 ? totalTax : gst,
       serviceFee: configuredTaxRate > 0 ? 0 : serviceFee,
       taxRate: effectiveTaxRate,
+      taxAmount: totalTax,
       baseAdultsLimit: totalBaseAdultsLimit,
       extraAdultsLimit: totalExtraAdultsLimit,
       baseChildrenLimit: totalBaseChildrenLimit,
@@ -1370,6 +1436,16 @@ const StayBookingSystem = ({
       addonsTotal
     };
   }, [stay, resolvedSelectedRooms, checkInDate, guests, childAges, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities]);
+
+  const extraChildAgeIndexes = useMemo(() => {
+    const startIndex = Math.max(0, Number(pricing.baseChildrenLimit || 0));
+    const count = Math.max(0, Number(pricing.extraChildrenCount || 0));
+    return Array.from({ length: count }, (_, index) => startIndex + index);
+  }, [pricing.baseChildrenLimit, pricing.extraChildrenCount]);
+
+  const canUseChildAgeSelector = useMemo(() => shouldUseChildAgeSelector(stay), [stay]);
+  const extraChildPolicyBounds = useMemo(() => getChildAgePolicyBounds(stay), [stay]);
+  const selectableChildAges = useMemo(() => getSelectableChildAges(stay), [stay]);
 
   const capacityFeedback = useMemo(() => {
     const isEntirelyBedBased = resolvedSelectedRooms.length > 0 && resolvedSelectedRooms.every(r => r.isBedConfig);
@@ -1613,6 +1689,21 @@ const StayBookingSystem = ({
       const isHostel = isHostelBooking(stay);
       const extraAdultsCount = isHostel ? 0 : Math.max(0, (guests.adults || 1) - pricing.baseAdultsLimit);
       const extraChildrenCount = Math.max(0, (guests.children || 0) - pricing.baseChildrenLimit);
+      if (canUseChildAgeSelector) {
+        const requiredExtraChildAgeIndexes = Array.from(
+          { length: extraChildrenCount },
+          (_, index) => Number(pricing.baseChildrenLimit || 0) + index
+        );
+        const hasMissingExtraChildAge = requiredExtraChildAgeIndexes.some((index) => {
+          const age = childAges?.[index];
+          return age === "" || age === null || age === undefined;
+        });
+
+        if (hasMissingExtraChildAge) {
+          setValidationError("Please select the age for each extra child.");
+          return;
+        }
+      }
 
       const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
       const customerName = userInfo.name || (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || userInfo.customerName || "Guest User";
@@ -1764,8 +1855,12 @@ const StayBookingSystem = ({
       ];
       if ((guests.children || 0) > 0) {
         previewReceipt.push({
-          title: "Child Ages",
-          content: formatChildAgesLabel(childAges),
+          title: canUseChildAgeSelector && extraChildAgeIndexes.length > 0 ? "Extra Child Ages" : "Child Ages",
+          content: formatChildAgesLabel(
+            canUseChildAgeSelector && extraChildAgeIndexes.length > 0
+              ? extraChildAgeIndexes.map((index) => childAges?.[index])
+              : childAges
+          ),
         });
       }
       if (Number(extraAdultsCount || 0) > 0) {
@@ -1774,9 +1869,9 @@ const StayBookingSystem = ({
           content: `${previewCurrency} ${Number(extraAdultsCount * (pricing.activeExtraAdultPrice || 0) * nightsFromPreview).toFixed(2)}`,
         });
       }
-      if (Number(pricing.childAgeChargePerNight || 0) > 0) {
+      if (canUseChildAgeSelector && Number(pricing.childAgeChargePerNight || 0) > 0) {
         previewReceipt.push({
-          title: "Child Age Charges",
+          title: "Extra Child Age Charges",
           content: `${previewCurrency} ${Number((pricing.childAgeChargePerNight || 0) * nightsFromPreview).toFixed(2)}`,
         });
       }
@@ -2428,7 +2523,7 @@ const StayBookingSystem = ({
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "16px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "16px 28px 8px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <h2 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2, lineHeight: "1.2" }}>
                     Reserve Your Stay
@@ -2452,7 +2547,7 @@ const StayBookingSystem = ({
 
               {/* Addons Scrollable Banner */}
               {Array.isArray(stay?.addons) && stay.addons.length > 0 && (
-                <div style={{ background: BG, borderBottom: `1px solid ${B}88`, padding: "12px 28px" }}>
+                <div style={{ background: BG, borderBottom: `1px solid ${B}88`, padding: "8px 28px 12px 28px" }}>
                   <style>{`
                     .stay-modal-addon-item {
                       flex: 0 0 auto;
@@ -2875,6 +2970,60 @@ const StayBookingSystem = ({
                                 <span style={{ fontSize: 11, fontWeight: 700, color: A }}>LONG STAY DISCOUNT APPLIED ({pricing.discountPercent}%)</span>
                               </div>
                             )}
+
+                            {canUseChildAgeSelector && extraChildAgeIndexes.length > 0 && (
+                              <div style={{ marginTop: 6, padding: "12px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                  <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Extra child age</p>
+                                  <p style={{ fontSize: 11, fontWeight: 500, color: M, margin: 0, lineHeight: 1.45 }}>
+                                    {extraChildPolicyBounds
+                                      ? `${guestAgeLabels.children} use extra child rate. Ages below ${extraChildPolicyBounds.minAge} are free.`
+                                      : "Select the age for each extra child."}
+                                  </p>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+                                  {extraChildAgeIndexes.map((childIndex, extraIndex) => (
+                                    <label key={`extra-child-age-${childIndex}`} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                      <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>
+                                        Extra Child {extraIndex + 1}
+                                      </span>
+                                      <select
+                                        value={childAges?.[childIndex] ?? ""}
+                                        onChange={(event) => {
+                                          const { value } = event.target;
+                                          setChildAges((prev) => {
+                                            const next = syncChildAges(prev, guests?.children || 0);
+                                            next[childIndex] = value;
+                                            return next;
+                                          });
+                                          setValidationError("");
+                                        }}
+                                        style={{
+                                          width: "100%",
+                                          padding: "10px 12px",
+                                          borderRadius: 12,
+                                          border: `1px solid ${B}`,
+                                          background: S,
+                                          color: FG,
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          outline: "none",
+                                          cursor: "pointer"
+                                        }}
+                                      >
+                                        <option value="">Select age</option>
+                                        {selectableChildAges.map((age) => (
+                                          <option key={`child-age-option-${childIndex}-${age}`} value={age}>
+                                            {age} year{age === 1 ? "" : "s"}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -2980,8 +3129,14 @@ const StayBookingSystem = ({
                                 </div>
                                 <Counter 
                                   value={room.count} 
-                                  setValue={(v) => handleRoomCountChangeWithReset(room.roomId || room.id, v)} 
-                                  min={1} 
+                                  setValue={(v) => {
+                                    if (v === 0) {
+                                      setSelectedRooms(prev => prev.filter(r => (r.roomId || r.id) !== (room.roomId || room.id)));
+                                    } else {
+                                      handleRoomCountChangeWithReset(room.roomId || room.id, v);
+                                    }
+                                  }} 
+                                  min={resolvedSelectedRooms.length > 1 ? 0 : 1} 
                                   max={Number(room.units || room.totalRooms || room.availableRooms || 99)} 
                                 />
                               </div>

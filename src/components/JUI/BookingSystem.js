@@ -4444,16 +4444,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                     </div>
                                   </div>
 
-                                  <div style={{ display: "flex", flexDirection: "column" }}>
+                                  <div className="child-age-grid">
                                     {Array.from({ length: guests.children }).map((_, i) => (
                                       <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < guests.children - 1 ? `1px solid ${B}44` : 'none' }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }}></div>
-                                            <span style={{ fontSize: 13, fontWeight: 500, color: FG }}>Child {i + 1}</span>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", gap: 4, borderBottom: i < guests.children - 1 ? `1px solid ${B}44` : 'none' }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: A, flexShrink: 0 }}></div>
+                                            <span style={{ fontSize: 13, fontWeight: 500, color: FG, whiteSpace: "nowrap" }}>Child {i + 1}</span>
                                           </div>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                            <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                            <span style={{ fontSize: 11, color: M, fontWeight: 500, whiteSpace: "nowrap" }}>
                                               {(guests.childAges?.[i] ?? 0) === 1 ? 'Year' : 'Years'}
                                             </span>
                                             <Counter
@@ -4750,6 +4750,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         .booking-modal-content::-webkit-scrollbar {
           width: 6px;
         }
+        .child-age-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          column-gap: 24px;
+        }
         .booking-modal-container::-webkit-scrollbar-thumb,
         .booking-modal-content::-webkit-scrollbar-thumb {
           background: ${B};
@@ -4767,6 +4772,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           }
           .addon-scroll-btn {
             display: none !important;
+          }
+          .child-age-grid {
+            grid-template-columns: 1fr !important;
           }
           .booking-grid { grid-template-columns: 1fr !important; }
           .booking-modal-header { padding: 24px 20px !important; }

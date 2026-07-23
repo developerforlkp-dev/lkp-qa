@@ -3597,6 +3597,23 @@ function PropertyModal({ stay, onClose }) {
     : 0;
   const discountedPriceValue =
     priceValue != null ? Math.max(0, Number(priceValue) * (1 - discountRate / 100)) : null;
+  const hasDiscount =
+    discountRate > 0 &&
+    priceValue != null &&
+    discountedPriceValue != null &&
+    discountedPriceValue < Number(priceValue);
+  const formatStayPrice = (value, { preserveFraction = false } = {}) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return null;
+
+    const hasFraction = Math.abs(numericValue % 1) > 0.001;
+    const fractionDigits = preserveFraction && hasFraction ? 2 : 0;
+
+    return numericValue.toLocaleString("en-IN", {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    });
+  };
 
   const allImages = [];
   const coverPhoto = stay.coverPhotoUrl || stay.coverImageUrl || stay.coverPhoto || stay.coverImage || stay.imageUrl;
@@ -3793,12 +3810,12 @@ function PropertyModal({ stay, onClose }) {
                   <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 4 }}>
                     {priceValue != null ? (
                       <>
-                        {discountRate > 0 && (
+                        {hasDiscount && (
                           <span style={{ fontSize: 11, color: M, textDecoration: "line-through", fontWeight: 500 }}>
                             ₹{Number(priceValue).toLocaleString("en-IN")}
                           </span>
                         )}
-                        <span>₹{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")}</span>
+                        <span>₹{formatStayPrice(hasDiscount ? discountedPriceValue : priceValue, { preserveFraction: hasDiscount })}</span>
                       </>
                     ) : (
                       "On Request"
@@ -4013,6 +4030,23 @@ function PropertyStayCard({ stay }) {
     : 0;
   const discountedPriceValue =
     priceValue != null ? Math.max(0, Number(priceValue) * (1 - discountRate / 100)) : null;
+  const hasDiscount =
+    discountRate > 0 &&
+    priceValue != null &&
+    discountedPriceValue != null &&
+    discountedPriceValue < Number(priceValue);
+  const formatStayPrice = (value, { preserveFraction = false } = {}) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return null;
+
+    const hasFraction = Math.abs(numericValue % 1) > 0.001;
+    const fractionDigits = preserveFraction && hasFraction ? 2 : 0;
+
+    return numericValue.toLocaleString("en-IN", {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    });
+  };
   const showSeasonal = seasonalB2CPrice != null;
   const propertyName = stay?.propertyName || stay?.title || stay?.name || "Property Stay";
 
@@ -4156,12 +4190,12 @@ function PropertyStayCard({ stay }) {
             <div style={{ fontSize: "24px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', lineHeight: 1 }}>
               {priceValue != null ? (
                 <>
-                  {discountRate > 0 && discountedPriceValue && (
+                  {hasDiscount && (
                     <span style={{ fontSize: "14px", color: M, textDecoration: "line-through", marginRight: "8px" }}>
-                      {"\u20B9"}{Number(priceValue).toLocaleString("en-IN")}
+                      {"\u20B9"}{formatStayPrice(priceValue)}
                     </span>
                   )}
-                  {"\u20B9"}{Number(discountRate > 0 ? discountedPriceValue : priceValue).toLocaleString("en-IN")}
+                  {"\u20B9"}{formatStayPrice(hasDiscount ? discountedPriceValue : priceValue, { preserveFraction: hasDiscount })}
                   <span style={{ fontSize: "12px", fontWeight: 500, color: M }}> / night</span>
                 </>
               ) : (
