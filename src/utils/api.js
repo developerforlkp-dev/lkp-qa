@@ -881,16 +881,31 @@ export const updateCustomerProfile = async (profileData) => {
 };
 
 // Image upload for avatar
-export const uploadCustomerAvatar = async (file) => {
+export const uploadCustomerAvatar = async (file, options = {}) => {
+  const { hasExistingAvatar = false } = options;
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const config = {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  };
+
   try {
-    const formData = new FormData();
-    formData.append("avatar", file);
-    const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
+    if (hasExistingAvatar) {
+      const response = await ListingsAPI.put("/customers/auth/me/avatar", formData, config);
+      return response.data;
+    }
+
+    try {
+      const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, config);
+      return response.data;
+    } catch (postError) {
+      console.warn("⚠️ POST avatar upload failed, retrying with PUT:", postError.response?.data || postError.message);
+      const response = await ListingsAPI.put("/customers/auth/me/avatar", formData, config);
+      return response.data;
+    }
   } catch (error) {
     console.error("❌ Error uploading customer avatar:", error.response?.data || error.message);
     throw error;

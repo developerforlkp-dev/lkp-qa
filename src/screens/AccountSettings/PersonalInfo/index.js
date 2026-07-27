@@ -27,6 +27,7 @@ const PersonalInfo = () => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [avatarSuccess, setAvatarSuccess] = useState(false);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -108,6 +109,7 @@ const PersonalInfo = () => {
     e.preventDefault();
     try {
       setUpdating(true);
+      setAvatarSuccess(false);
 
       // Strictly only 6 fields as requested by the backend spec
       const requestBody = {
@@ -150,13 +152,16 @@ const PersonalInfo = () => {
 
     try {
       setUploading(true);
+      setAvatarSuccess(false);
 
       // Local preview
       const localUrl = URL.createObjectURL(file);
       setPreviewUrl(localUrl);
 
       //console.log("⬆️ Uploading avatar file:", file.name);
-      const result = await uploadCustomerAvatar(file);
+      const result = await uploadCustomerAvatar(file, {
+        hasExistingAvatar: Boolean(profile.avatarUrl && profile.avatarUrl.trim() !== ""),
+      });
       //console.log("✅ Avatar upload result:", result);
 
       // Assuming result contains the new avatarUrl
@@ -164,9 +169,13 @@ const PersonalInfo = () => {
         const newUrl = result.avatarUrl || result.url;
         setProfile(prev => ({ ...prev, avatarUrl: newUrl }));
         setPreviewUrl(null); // Clear preview once we have the real URL
+        setAvatarSuccess(true);
+        setTimeout(() => setAvatarSuccess(false), 3000);
       } else {
         // Fallback or re-fetch
-        fetchProfile();
+        await fetchProfile();
+        setAvatarSuccess(true);
+        setTimeout(() => setAvatarSuccess(false), 3000);
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
@@ -227,6 +236,12 @@ const PersonalInfo = () => {
               />
             </label>
           </div>
+          {avatarSuccess && (
+            <div className={styles.successMessage}>
+              <Icon name="check-circle" size="20" />
+              <span>Profile picture updated successfully!</span>
+            </div>
+          )}
         </div>
       </div>
 
