@@ -477,6 +477,11 @@ export function Layout2EditorialMagazine({ post }) {
           .l2-content-grid {
             grid-template-columns: 300px 1fr;
           }
+          .l2-sidebar {
+            position: sticky;
+            top: 120px;
+            align-self: start;
+          }
         }
         .l2-sidebar-title {
           color: #00A4C4;
@@ -548,11 +553,12 @@ export function Layout2EditorialMagazine({ post }) {
         </motion.div>
 
         <div className="l2-content-grid">
-          <div>
-            <div className="l2-sidebar-title">Summary</div>
-            <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.6', marginBottom: '40px' }}>
-              {post.description}
-            </p>
+          <div className="l2-sidebar">
+            {post.image && (
+              <div style={{ marginBottom: '40px' }}>
+                <img src={post.image} alt={post.title || "Content"} style={{ width: '100%', borderRadius: '20px', objectFit: 'cover' }} />
+              </div>
+            )}
             
             {post.tags && post.tags.length > 0 && (
               <>

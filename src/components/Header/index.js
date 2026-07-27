@@ -166,7 +166,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
             {/* Desktop nav links can go here */}
           </div>
 
-          <div className={cn(styles.rightMenu, { [styles.glassmorphic]: isHomepage && !hasScrolled })}>
+          <div className={cn(styles.rightMenu, { [styles.glassmorphic]: isHomepage && !hasScrolled, [styles.blogRightMenu]: useMobileHeader })}>
             <button
               type="button"
               className={styles.themeToggle}

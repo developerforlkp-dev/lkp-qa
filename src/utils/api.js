@@ -603,6 +603,18 @@ export const createStayOrder = async (orderData) => {
   }
 };
 
+export const saveGuestDetails = async (orderId, data) => {
+  try {
+    if (!orderId) throw new Error("orderId is required");
+    const orderIdStr = String(orderId);
+    const response = await ListingsAPI.post(`/orders/${orderIdStr}/checkout/guest-details`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error saving guest details:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Function to get single listing by id
 export const getListing = async (id) => {
   try {
@@ -872,7 +884,7 @@ export const updateCustomerProfile = async (profileData) => {
 export const uploadCustomerAvatar = async (file) => {
   try {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("avatar", file);
     const response = await ListingsAPI.post("/customers/auth/me/avatar", formData, {
       headers: {
         "Content-Type": "multipart/form-data",

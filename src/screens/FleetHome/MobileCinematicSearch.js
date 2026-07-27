@@ -1606,37 +1606,22 @@ export default function MobileCinematicSearch({
 
               {/* Header */}
               <div className="mcsh-sheet-header">
-                <div className="mcsh-header-text-wrap">
-                  <AnimatePresence mode="wait">
+                <div className="mcsh-header-text-wrap" style={{ display: "grid", gridTemplateColumns: "1fr" }}>
+                  <AnimatePresence>
                     <motion.div
                       key={activeFilter}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      style={{ display: "flex", flexDirection: "column", gap: "4px", gridArea: "1 / 1" }}
                     >
-                      <motion.span
-                        className="mcsh-sheet-title"
-                        variants={{
-                          initial: { opacity: 0, y: 8 },
-                          animate: { opacity: 1, y: 0 },
-                          exit: { opacity: 0, y: -8 },
-                        }}
-                        transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}
-                      >
+                      <span className="mcsh-sheet-title">
                         {currentConfig.title}
-                      </motion.span>
-                      <motion.span
-                        className="mcsh-sheet-subtitle"
-                        variants={{
-                          initial: { opacity: 0 },
-                          animate: { opacity: 1 },
-                          exit: { opacity: 0 },
-                        }}
-                        transition={{ duration: 0.22, ease: "easeInOut" }}
-                      >
+                      </span>
+                      <span className="mcsh-sheet-subtitle">
                         {currentConfig.subtitle}
-                      </motion.span>
+                      </span>
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -1659,7 +1644,11 @@ export default function MobileCinematicSearch({
                     return (
                       <button
                         key={sec.id}
-                        onClick={() => onFilterClick?.(sec.id, true)}
+                        onClick={() => {
+                          if (isEnabledForListings) {
+                            onFilterClick?.(sec.id, true);
+                          }
+                        }}
                         disabled={!isEnabledForListings}
                         className={cn("mcsh-switcher-btn", { active: isActive })}
                         type="button"

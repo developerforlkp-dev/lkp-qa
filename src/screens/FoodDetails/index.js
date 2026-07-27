@@ -2251,13 +2251,13 @@ const FoodDetails = () => {
             overflow: "hidden",
             position: "relative",
             padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
+            background: "var(--BG)",
+            borderTop: `1px solid var(--B)`,
+            borderBottom: `1px solid var(--B)`,
           }}>
             {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
             <motion.div
               animate={{ x: ["0%", "-50%"] }}
@@ -2281,7 +2281,7 @@ const FoodDetails = () => {
                       style={{
                         fontSize: "18px",
                         fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
+                        color: isEven ? "var(--FG)" : "var(--M)",
                         fontFamily: "Poppins, sans-serif",
                         letterSpacing: "0.12em",
                         textTransform: "uppercase",
@@ -2320,13 +2320,13 @@ const FoodDetails = () => {
             overflow: "hidden",
             position: "relative",
             padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
+            background: "var(--BG)",
+            borderTop: `1px solid var(--B)`,
+            borderBottom: `1px solid var(--B)`,
           }}>
             {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
             <motion.div
               animate={{ x: ["0%", "-50%"] }}
@@ -2349,7 +2349,7 @@ const FoodDetails = () => {
                       style={{
                         fontSize: "18px",
                         fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
+                        color: isEven ? "var(--FG)" : "var(--M)",
                         fontFamily: '"Inter", sans-serif',
                         letterSpacing: "0.12em",
                         textTransform: "uppercase",

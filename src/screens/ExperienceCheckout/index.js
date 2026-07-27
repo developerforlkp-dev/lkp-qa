@@ -41,6 +41,20 @@ const toPositiveNumber = (...values) => {
   return 0;
 };
 
+const toFiniteNumberOrNull = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue)) {
+      return numericValue;
+    }
+  }
+  return null;
+};
+
+const hasDefinedValue = (...values) =>
+  values.some((value) => value !== null && value !== undefined && value !== "");
+
 
 const Checkout = () => {
   const location = useLocation();
@@ -53,6 +67,30 @@ const Checkout = () => {
   const [addonDetails, setAddonDetails] = useState([]);
   const [reviewsData, setReviewsData] = useState({ rating: null, count: 0 });
   const [messageText, setMessageText] = useState("");
+  const [guestDetails, setGuestDetails] = useState({
+    title: "Mr",
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobileNumber: "",
+    countryCode: "+91",
+    additionalGuests: [],
+    gstDetails: { companyName: "", gstNumber: "" },
+  });
+  const [guestErrors, setGuestErrors] = useState({});
+
+  const handleGuestValidationFailed = (errors, firstErrorField) => {
+    setGuestErrors(errors || {});
+    if (firstErrorField) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrorField);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus({ preventScroll: true });
+        }
+      }, 100);
+    }
+  };
 
   // Initialize add-ons from location state
   useEffect(() => {
@@ -529,8 +567,24 @@ const Checkout = () => {
         const totalG = (adults + children) || Number(pricing.guestCount || 1);
 
         if (children > 0) {
-          const ppp = pricing.adultBasePricePerPerson || pricing.basePricePerPerson || pricing.pricePerPerson || (basePrice / totalG);
-          const cpp = pricing.baseChildPricePerChild || pricing.childPricePerChild || ppp;
+          const ppp = toFiniteNumberOrNull(
+            pricing.adultBasePricePerPerson,
+            pricing.basePricePerPerson,
+            pricing.pricePerPerson,
+            totalG > 0 ? (basePrice / totalG) : null
+          ) || 0;
+          const childPriceCandidates = [
+            pricing.baseChildPricePerChild,
+            pricing.childPricePerChild,
+            bookingData?.pricing?.baseChildPricePerChild,
+            bookingData?.pricing?.childPricePerChild,
+            bookingData?.childPricePerChild,
+            bookingData?.priceDetails?.childPricePerChild,
+            bookingData?.orderRequest?.childPricePerChild,
+          ];
+          const hasExplicitChildPrice = hasDefinedValue(...childPriceCandidates);
+          const resolvedChildPrice = toFiniteNumberOrNull(...childPriceCandidates);
+          const cpp = hasExplicitChildPrice ? (resolvedChildPrice ?? 0) : ppp;
 
           if (adults > 0) {
             rows.push({ title: `Adults (${fmt(ppp)} x ${adults})`, value: fmt(ppp * adults) });
@@ -847,6 +901,10 @@ const Checkout = () => {
             guestValue={items[2]?.title || items[1]?.title}
             messageText={messageText}
             setMessageText={setMessageText}
+            guestDetails={guestDetails}
+            setGuestDetails={setGuestDetails}
+            guestErrors={guestErrors}
+            numberOfGuests={(bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0) || bookingData?.bookingSummary?.guestCount || bookingData?.guests?.guests || 1}
             addonDetails={addonDetails}
             addOns={selectedAddOns}
             currency={resolvedCurrency}
@@ -879,6 +937,8 @@ const Checkout = () => {
             paymentData={paymentData}
             messageText={messageText}
             bookingData={bookingData}
+            guestDetails={guestDetails}
+            onGuestValidationFailed={handleGuestValidationFailed}
           />
         </div>
       </div>

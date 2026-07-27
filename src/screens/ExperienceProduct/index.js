@@ -2455,6 +2455,8 @@ const ExperienceProduct = () => {
           initialGuests={initialGuests}
           externalOpen={bookingModalOpen}
           onExternalOpenChange={setBookingModalOpen}
+          hostName={displayHostName}
+          hostAvatar={formatImageUrl(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar)}
         />
 
         <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>

@@ -915,6 +915,60 @@ const isPastStayCheckOutTime = (booking) => {
   return new Date() >= checkOutDatetime;
 };
 
+const isPastExperienceStartTime = (booking) => {
+  if (!booking) return false;
+  const { bookingData } = booking;
+
+  const businessInterestCode = String(bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
+  const isExperienceLikeOrder =
+    businessInterestCode === "EXPERIENCE" ||
+    businessInterestCode === "EVENTS" ||
+    businessInterestCode === "EVENT" ||
+    bookingData?.eventId != null;
+
+  if (!isExperienceLikeOrder) return false;
+
+  const status = booking.statusTone || booking.status?.toLowerCase();
+  if (status === "cancelled" || status === "canceled" || status === "completed") {
+    return false;
+  }
+
+  const startDateStr =
+    bookingData?.bookingDate ||
+    bookingData?.startDate ||
+    booking?.startDate;
+
+  if (!startDateStr) return false;
+
+  const startDatetime = new Date(startDateStr);
+  if (isNaN(startDatetime.getTime())) return false; // invalid date
+
+  const startTimeStr =
+    bookingData?.bookingTime ||
+    bookingData?.startTime ||
+    bookingData?.bookingSlot?.name ||
+    bookingData?.bookingSlot?.startTime ||
+    "00:00:00";
+
+  if (startTimeStr && typeof startTimeStr === 'string') {
+    const timeMatch = startTimeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+      const ampm = timeMatch[4] ? timeMatch[4].toLowerCase() : null;
+
+      if (ampm === 'pm' && hours < 12) hours += 12;
+      if (ampm === 'am' && hours === 12) hours = 0;
+
+      startDatetime.setHours(hours, minutes, 0, 0);
+    } else {
+      startDatetime.setHours(0, 0, 0, 0);
+    }
+  }
+
+  return new Date() >= startDatetime;
+};
+
 const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
   const baseActions = actionsByStatus[booking?.status] || [];
 
@@ -948,7 +1002,7 @@ const getAllowedActionsForTab = (tabId, booking, orderIdsEligibleForReview) => {
     });
   }
 
-  if (isPastStayCheckInTime(booking)) {
+  if (isPastStayCheckInTime(booking) || isPastExperienceStartTime(booking)) {
     actions = actions.filter((a) => a.label !== "Cancel Booking");
   }
 

@@ -1,0 +1,110 @@
+@import ../../styles/helpers
+
+.formWrapper
+  margin-top: 24px
+  margin-bottom: 24px
+
+.sectionTitle
+  +body-bold-1
+  margin-bottom: 24px
+  color: $n2
+  +dark
+    color: $n8
+
+.group
+  margin-bottom: 24px
+  padding-bottom: 24px
+  border-bottom: 1px solid $n6
+  +dark
+    border-color: $n3
+  &:last-child
+    border-bottom: none
+    margin-bottom: 0
+    padding-bottom: 0
+
+.subtitle
+  +body-bold-2
+  margin-bottom: 16px
+  color: $n2
+  +dark
+    color: $n8
+
+.row
+  display: flex
+  margin: 0 -8px 16px
+  +m
+    flex-direction: column
+    margin: 0
+  
+  & > div
+    padding: 0 8px
+    +m
+      padding: 0
+      margin-bottom: 16px
+
+.colTitle
+  flex: 0 0 100px
+  max-width: 100px
+  +m
+    max-width: 100%
+
+.colField
+  flex: 1
+  min-width: 0
+
+.colFieldHalf
+  flex: 0 0 50%
+  max-width: 50%
+  +m
+    max-width: 100%
+
+.colCode
+  flex: 0 0 100px
+  max-width: 100px
+  +m
+    max-width: 100%
+
+.colPhone
+  flex: 1
+  min-width: 0
+
+.label
+  +poppins
+  +caption-bold-1
+  font-weight: 600
+  color: $n3
+  margin-bottom: 12px
+  +dark
+    color: $n6
+
+.select
+  width: 100%
+  height: 48px
+  padding: 0 14px
+  border-radius: 12px
+  border: 2px solid $n6
+  background: transparent
+  +poppins
+  +body-2
+  font-weight: 500
+  color: $n2
+  transition: all .2s
+  -webkit-appearance: none
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/200.svg' width='10' height='6' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M9.207.793a1 1 0 0 0-1.414 0L5 3.586 2.207.793A1 1 0 1 0 .793 2.207l3.5 3.5a1 1 0 0 0 1.414 0l3.5-3.5a1 1 0 0 0 0-1.414z' fill='%23777E90'/%3E%3C/svg%3E")
+  background-repeat: no-repeat
+  background-position: calc(100% - 16px) center
+  background-size: 10px 6px
+
+  +dark
+    border-color: $n3
+    color: $n8
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/200.svg' width='10' height='6' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M9.207.793a1 1 0 0 0-1.414 0L5 3.586 2.207.793A1 1 0 1 0 .793 2.207l3.5 3.5a1 1 0 0 0 1.414 0l3.5-3.5a1 1 0 0 0 0-1.414z' fill='%23E6E8EC'/%3E%3C/svg%3E")
+
+  &:focus
+    border-color: $n4
+    outline: none
+    +dark
+      border-color: $n5
+
+.additionalGuestGroup
+  margin-bottom: 16px

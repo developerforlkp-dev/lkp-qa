@@ -930,6 +930,8 @@ export default function MobileExperienceView({
         onExternalOpenChange={setBookingOpen}
         initialDate={initialDateStr}
         initialGuests={initialGuests}
+        hostName={displayHostName}
+        hostAvatar={parentFmt(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar)}
       />
 
       {/* Spacer for sticky CTA */}

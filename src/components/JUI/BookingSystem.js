@@ -1306,7 +1306,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   );
 }
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger, initialDate, initialGuests }) {
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests }) {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
@@ -1397,6 +1397,41 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
 
   const isEventBooking = type === "event";
+  const eventScheduleType = String(
+    listing?.eventScheduleType ||
+    listing?.scheduleType ||
+    listing?.event_schedule_type ||
+    ""
+  ).trim().toLowerCase();
+  const lockedSingleEventDate = useMemo(() => {
+    if (!isEventBooking || eventScheduleType !== "single") return null;
+    const rawDate =
+      listing?.startDate ||
+      listing?.eventStartDate ||
+      listing?.bookingStartDate ||
+      listing?.eventDate ||
+      listing?.date;
+    if (!rawDate) return null;
+    const parsed = moment(rawDate);
+    return parsed.isValid() ? parsed : null;
+  }, [
+    eventScheduleType,
+    isEventBooking,
+    listing?.bookingStartDate,
+    listing?.date,
+    listing?.eventDate,
+    listing?.eventStartDate,
+    listing?.startDate,
+  ]);
+  const isSingleEventSchedule = Boolean(lockedSingleEventDate);
+
+  useEffect(() => {
+    if (!isSingleEventSchedule || !lockedSingleEventDate) return;
+    setStartDate((current) => {
+      if (current && moment(current).isSame(lockedSingleEventDate, "day")) return current;
+      return lockedSingleEventDate.clone();
+    });
+  }, [isSingleEventSchedule, lockedSingleEventDate]);
 
   const getBusinessInterestLabel = useCallback(() => {
     const normalizedType = String(type || "").trim().toLowerCase();
@@ -2250,6 +2285,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       ?? listing?.pricing?.childPricePerChild
       ?? 0
     );
+  const eventChildPricingTiers = isEventBooking && selectedTicket
+    ? (selectedTicket.childPricingTiers || selectedTicket.child_pricing_tiers || [])
+    : [];
+  const eventHasExplicitChildPrice = isEventBooking && selectedTicket
+    ? Object.prototype.hasOwnProperty.call(selectedTicket, "childPrice") ||
+      Object.prototype.hasOwnProperty.call(selectedTicket, "child_price") ||
+      eventChildPricingTiers.length > 0
+    : false;
   const allowChildPricing = asBoolean(
     isEventBooking
       ? (listing?.allowChildPricing ?? listing?.childPricingAllowed)
@@ -2267,7 +2310,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   // Effective per-child price (after discount + tax), fallback to adult price if no child price set
   const effectiveChildPrice = childGuestPricing
     ? childGuestPricing.finalUnitPrice
-    : extractedPrice;
+    : (eventHasExplicitChildPrice ? Number(rawChildPrice || 0) : extractedPrice);
+  const experienceChildPricingTiers = !isEventBooking
+    ? (selectedSlotData?.childPricingTiers || selectedSlotData?.child_pricing_tiers || [])
+    : [];
   const childAgeFrom = asNumber(
     selectedSlotData?.childAgeFrom
     ?? listing?.childAgeFrom
@@ -2284,12 +2330,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const baseAdultPricePerPerson = parseFloat(effectiveRawPrice || 0);
 
   let eventChildPriceTotal = 0;
+  let experienceChildPriceTotal = 0;
   const childAgeWarnings = {};
   if (isEventBooking && selectedTicket && guests.children > 0) {
     for (let i = 0; i < guests.children; i++) {
       const age = guests.childAges?.[i] ?? 0;
       let matchedPrice = 0; // Default price is 0 if no tier matches
-      const tiers = selectedTicket.childPricingTiers || selectedTicket.child_pricing_tiers || [];
+      const tiers = eventChildPricingTiers;
       const tier = tiers.find(t => age >= (t.ageFrom ?? t.age_from ?? 0) && age <= (t.ageTo ?? t.age_to ?? 100));
       if (tier) {
         matchedPrice = Number(tier.pricePerChild ?? tier.price_per_child ?? tier.price ?? 0);
@@ -2307,12 +2354,54 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       eventChildPriceTotal += matchedPrice;
     }
   }
+  if (!isEventBooking && guests.children > 0) {
+    const tiers = Array.isArray(experienceChildPricingTiers) ? experienceChildPricingTiers : [];
+    for (let i = 0; i < guests.children; i++) {
+      const age = guests.childAges?.[i] ?? 0;
+      let matchedPrice = null;
 
-  const isEventTieredChildPricing = isEventBooking && guests.children > 0 && eventChildPriceTotal > 0;
-  const actualHasChildPricing = hasChildPricing || isEventTieredChildPricing;
+      if (allowChildPricing && tiers.length > 0 && age > 0) {
+        const tier = tiers.find((item) => {
+          const min = asNumber(item?.ageFrom ?? item?.age_from);
+          const max = asNumber(item?.ageTo ?? item?.age_to);
+          if (min == null || max == null) return false;
+          return age >= min && age <= max;
+        });
+        if (tier) {
+          matchedPrice = Number(tier?.pricePerChild ?? tier?.price_per_child ?? tier?.price ?? 0);
+        } else {
+          const minAge = Math.min(...tiers.map((item) => asNumber(item?.ageFrom ?? item?.age_from) ?? 0));
+          const maxAge = Math.max(...tiers.map((item) => asNumber(item?.ageTo ?? item?.age_to) ?? 0));
+          if (age > maxAge) {
+            matchedPrice = Number(effectiveRawPrice || 0);
+            childAgeWarnings[i] = "adult";
+          } else if (age < minAge) {
+            matchedPrice = 0;
+            childAgeWarnings[i] = "free";
+          }
+        }
+      }
+
+      if (matchedPrice == null) {
+        matchedPrice = allowChildPricing ? Number(rawChildPrice || 0) : Number(effectiveRawPrice || 0);
+      }
+
+      experienceChildPriceTotal += matchedPrice;
+    }
+  }
+
+  const isEventTieredChildPricing = isEventBooking && guests.children > 0 && eventChildPricingTiers.length > 0;
+  const isExperienceTieredChildPricing = !isEventBooking && guests.children > 0 && experienceChildPricingTiers.length > 0;
+  const actualHasChildPricing = hasChildPricing || eventHasExplicitChildPrice || isEventTieredChildPricing || isExperienceTieredChildPricing;
 
   const baseChildPricePerChild = actualHasChildPricing
-    ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : parseFloat(rawChildPrice || 0))
+    ? (
+      isEventTieredChildPricing
+        ? (eventChildPriceTotal / guests.children)
+        : isExperienceTieredChildPricing
+          ? (experienceChildPriceTotal / guests.children)
+          : parseFloat(rawChildPrice || 0)
+    )
     : baseAdultPricePerPerson;
 
   const data = {
@@ -2323,10 +2412,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   // Compute totals with child pricing split
   const adultSubtotal = parseFloat(extractedPrice || 0) * guests.adults;
-  const childSubtotal = isEventBooking ? eventChildPriceTotal : effectiveChildPrice * guests.children;
+  const childSubtotal = isEventBooking
+    ? eventChildPriceTotal
+    : (isExperienceTieredChildPricing ? experienceChildPriceTotal : effectiveChildPrice * guests.children);
   const baseTotal = adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
-    ? (baseAdultPricePerPerson * guests.adults) + (baseChildPricePerChild * guests.children)
+    ? (baseAdultPricePerPerson * guests.adults) + (isExperienceTieredChildPricing ? experienceChildPriceTotal : (baseChildPricePerChild * guests.children))
     : ((eventGuestPricing.baseUnitPrice * guests.adults) + eventChildPriceTotal);
   const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
@@ -2579,6 +2670,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
 
     if (guests.adults < 1) errors.adults = "Please add at least 1 adult.";
+    if (guests.children > 0) {
+      const missingChildAge = Array.from({ length: guests.children }).some((_, index) => {
+        const age = guests.childAges?.[index];
+        return !Number.isFinite(Number(age)) || Number(age) <= 0;
+      });
+      if (missingChildAge) {
+        errors.children = "Please select the age for each child.";
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -2769,12 +2869,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             currency: previewCurrency,
             pricePerPerson: eventGuestPricing.finalUnitPrice,
             basePrice: eventBaseTotal,
-            allowChildPricing: hasChildPricing,
+            allowChildPricing: actualHasChildPricing,
             adultsCount: guests.adults,
             childrenCount: guests.children,
             basePricePerPerson: eventGuestPricing.baseUnitPrice,
             adultBasePricePerPerson: eventGuestPricing.baseUnitPrice,
-            childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+            childPricePerChild: actualHasChildPricing
+              ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : effectiveChildPrice)
+              : 0,
             baseChildPricePerChild,
             discount: eventDiscountTotal,
             promoDiscount: eventPromoDiscountTotal,
@@ -2900,12 +3002,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             pricePerPerson: eventGuestPricing.finalUnitPrice,
             basePrice: eventBaseTotal,
             // Adult/child split for checkout page
-            allowChildPricing: hasChildPricing,
+            allowChildPricing: actualHasChildPricing,
             adultsCount: guests.adults,
             childrenCount: guests.children,
             basePricePerPerson: eventGuestPricing.baseUnitPrice,
             adultBasePricePerPerson: eventGuestPricing.baseUnitPrice,
-            childPricePerChild: hasChildPricing ? effectiveChildPrice : 0,
+            childPricePerChild: actualHasChildPricing
+              ? (isEventTieredChildPricing ? (eventChildPriceTotal / guests.children) : effectiveChildPrice)
+              : 0,
             baseChildPricePerChild: baseChildPricePerChild,
             discount: eventDiscountTotal,
             promoDiscount: eventPromoDiscountTotal,
@@ -3128,11 +3232,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       listingId: listingId,
       listingTitle: listing?.title || listing?.name || "Experience",
       listingImage: listing?.coverPhotoUrl || listing?.listingMedia?.[0]?.url || "",
-      hostName: listing?.host?.firstName ? `${listing?.host?.firstName} ${listing?.host?.lastName || ""}`.trim() : "Host",
-      hostAvatar: listing?.host?.profilePhotoUrl || "/images/content/avatar.jpg",
+      hostName: externalHostName || (listing?.host?.firstName ? `${listing?.host?.firstName} ${listing?.host?.lastName || ""}`.trim() : "Host"),
+      hostAvatar: externalHostAvatar || listing?.host?.profilePhotoUrl || "/images/content/avatar.jpg",
       selectedDate: dateStr,
       selectedTimeSlot: startTime,
       guests: guestsObj,
+      childAges: guests.childAges || [],
       selectedAddOns: selectedAddOns.map(a => (a.addon?.addonId || a.addonId || a.id)),
       addOnQuantities: addOnQuantities,
       receipt: receipt,
@@ -3198,6 +3303,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       guestCount: totalGuests,
       childCount: guests.children || 0,
       childPricePerChild: Number(actualHasChildPricing ? baseChildPricePerChild : 0),
+      childAges: guests.childAges || [],
       customer: {
         name: userInfo.name || (userInfo.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || "Guest User",
         email: userInfo.email || userInfo.customerEmail || "guest@example.com",
@@ -3843,7 +3949,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setStartDate(null);
+                                      if (!isSingleEventSchedule) {
+                                        setStartDate(null);
+                                      }
                                       setStartTime(null);
                                       setSelectedEventSlotIds([]);
                                       setSelectedTicketTypeId("");
@@ -3869,14 +3977,19 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               </div>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                                 <div
-                                  onClick={() => setShowDatePicker(true)}
+                                  onClick={() => {
+                                    if (!isSingleEventSchedule) {
+                                      setShowDatePicker(true);
+                                    }
+                                  }}
                                   style={{
                                     padding: "10px 14px",
                                     background: BG,
                                     borderRadius: 16,
                                     border: `1px solid ${validationErrors.date ? E : B}`,
-                                    cursor: "pointer",
+                                    cursor: isSingleEventSchedule ? "default" : "pointer",
                                     transition: "0.2s",
+                                    opacity: isSingleEventSchedule ? 0.85 : 1,
                                   }}
                                 >
                                   <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Date</p>
@@ -3923,7 +4036,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             </div>
 
                             <AnimatePresence>
-                              {showDatePicker && (
+                              {showDatePicker && !isSingleEventSchedule && (
                                 <motion.div
                                   initial={{ opacity: 0 }}
                                   animate={{ opacity: 1 }}
@@ -4432,7 +4545,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 </div>
                               )}
 
-                              {childrenAllowed && isEventBooking && guests.children > 0 && (
+                              {childrenAllowed && guests.children > 0 && (
                                 <div style={{ flex: "1 1 100%", padding: "12px 16px", background: "transparent", border: `1px solid ${B}55`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                     <div style={{ color: A }}>
@@ -4443,6 +4556,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                       <span style={{ fontSize: 11, fontWeight: 400, color: M }}>Please select the age for each child.</span>
                                     </div>
                                   </div>
+
+                                  {validationErrors.children && (
+                                    <div style={{ fontSize: 11, color: E, fontWeight: 600 }}>
+                                      {validationErrors.children}
+                                    </div>
+                                  )}
 
                                   <div className="child-age-grid">
                                     {Array.from({ length: guests.children }).map((_, i) => (
@@ -4458,8 +4577,23 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                             </span>
                                             <Counter
                                               value={guests.childAges?.[i] ?? 0}
-                                              setValue={(v) => updateChildAge(i, v)}
-                                              min={0}
+                                              setValue={(v) => {
+                                                updateChildAge(i, v);
+                                                setValidationErrors(prev => {
+                                                  const next = { ...prev };
+                                                  const nextAges = [...(guests.childAges || [])];
+                                                  nextAges[i] = Number(v);
+                                                  const hasMissing = Array.from({ length: guests.children }).some((_, index) => {
+                                                    const age = nextAges[index];
+                                                    return !Number.isFinite(Number(age)) || Number(age) <= 0;
+                                                  });
+                                                  if (!hasMissing) {
+                                                    delete next.children;
+                                                  }
+                                                  return next;
+                                                });
+                                              }}
+                                              min={1}
                                               max={15}
                                             />
                                           </div>

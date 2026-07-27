@@ -18,6 +18,7 @@ import RoomCards from "./RoomCards";
 import roomStyles from "./RoomCards.module.sass";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
+import StayItinerary from "./StayItinerary";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
@@ -2807,6 +2808,7 @@ const StayDetails = () => {
         if (!id) return;
         setLoading(true);
         const data = await getStayDetails(id);
+        console.log("Stay API Data:", data);
         if (!mounted) return;
         if (isStayUnavailable(data)) {
           showUnavailablePopupAndRedirect();
@@ -3406,6 +3408,8 @@ const StayDetails = () => {
         );
       })()}
 
+      <StayItinerary itinerary={stay?.itinerary} />
+
       <StayLocation stay={stay} />
 
       <StayPolicies stay={stay} />
@@ -3951,6 +3955,7 @@ function PropertyStayCard({ stay }) {
   const [showModal, setShowModal] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [isImgHovered, setIsImgHovered] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   const toDateOnly = (value) => {
     if (!value) return null;
@@ -4049,6 +4054,8 @@ function PropertyStayCard({ stay }) {
   };
   const showSeasonal = seasonalB2CPrice != null;
   const propertyName = stay?.propertyName || stay?.title || stay?.name || "Property Stay";
+  const includedMaxAdults = Number(stay?.maxAdults ?? stay?.maxGuests ?? 0) || 0;
+  const includedMaxChildren = Number(stay?.maxChildren ?? 0) || 0;
 
   const list = stay?.amenities || stay?.propertyAmenities || stay?.stayAmenities || stay?.amenityList || [];
   const amenities = extractList(list);
@@ -4171,16 +4178,24 @@ function PropertyStayCard({ stay }) {
 
             {/* Amenities Row */}
             <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              {amenities.map((amenity, idx) => (
+              {(showAllAmenities ? amenities : amenities.slice(0, 5)).map((amenity, idx) => (
                 <span key={idx} style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>{amenity}</span>
               ))}
+              {!showAllAmenities && amenities.length > 5 && (
+                <span 
+                  onClick={() => setShowAllAmenities(true)} 
+                  style={{ cursor: "pointer", flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}
+                >
+                  +{amenities.length - 5} more
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "flex-end", justifyContent: "space-between", marginTop: isMobile ? "16px" : "24px", gap: isMobile ? "16px" : "0" }}>
           <p style={{ fontSize: "13px", color: M, margin: 0, flex: 1, paddingRight: isMobile ? "0" : "16px", lineHeight: 1.5 }}>
-            Entire-property booking with curated comfort and premium amenities.
+            This price is inclusive of up to {includedMaxAdults} adults and {includedMaxChildren} children.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end", flexShrink: 0 }}>

@@ -3,7 +3,7 @@ import cn from "classnames";
 import styles from "./TextInput.module.sass";
 import Icon from "../Icon";
 
-const TextInput = ({ className, label, empty, view, ...props }) => {
+const TextInput = ({ className, label, empty, view, error, ...props }) => {
   return (
     <div
       className={cn(
@@ -15,13 +15,14 @@ const TextInput = ({ className, label, empty, view, ...props }) => {
     >
       {label && <div className={styles.label}>{label}</div>}
       <div className={styles.wrap}>
-        <input className={styles.input} {...props} />
+        <input className={cn(styles.input, { [styles.inputError]: error })} {...props} />
         {view && (
           <button className={styles.toggle}>
             <Icon name="eye" size="24" />
           </button>
         )}
       </div>
+      {error && <div className={styles.errorText}>{error}</div>}
     </div>
   );
 };

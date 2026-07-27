@@ -946,7 +946,7 @@ function MobileHero({ event, heroRef }) {
         zIndex: 20
       }}>
         {/* Date Card */}
-        <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
+        <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", minWidth: 0 }}>
           <div style={{
             background: W,
             borderRadius: 12,
@@ -962,7 +962,7 @@ function MobileHero({ event, heroRef }) {
             <span style={{ fontSize: 9, fontWeight: 800, background: A, color: W, width: "100%", textAlign: "center", padding: "4px 0", letterSpacing: "0.1em" }}>{dateMonth}</span>
             <span style={{ fontSize: 16, fontWeight: 800, color: FG, marginTop: 2 }}>{dateDay}</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
             <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>DATE</span>
             <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{date}</span>
             <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayTime}</span>
@@ -970,7 +970,7 @@ function MobileHero({ event, heroRef }) {
         </div>
 
         {/* Venue Card */}
-        <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
+        <div style={{ background: W, borderRadius: 20, padding: "12px 10px", display: "flex", gap: 10, alignItems: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", minWidth: 0 }}>
           <div style={{
             background: `${A}15`,
             borderRadius: 12,
@@ -984,7 +984,7 @@ function MobileHero({ event, heroRef }) {
           }}>
             <MapPin size={22} strokeWidth={2.5} />
           </div>
-          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
             <span style={{ fontSize: 9, letterSpacing: "0.1em", fontWeight: 800, color: A }}>VENUE</span>
             <span style={{ fontSize: 12, fontWeight: 800, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueMain}</span>
             <span style={{ fontSize: 10, color: M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{venueSub}</span>
@@ -2447,7 +2447,7 @@ function HostDetails({ event, hostName }) {
     event?.leadUserId ||
     event?.host?.leadUserId ||
     event?.hostId;
-  const hostDescription = host?.bio || host?.description || host?.about || host?.summary || event?.organizerDescription || "Curators of memorable experiences, thoughtful gatherings, and community-led moments.";
+  const hostDescription = host?.bio || host?.description || host?.about || host?.summary || "";
   const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
   const hostPhone = host?.phone || host?.phoneNumber || event?.host?.phone || event?.host?.phoneNumber || "";
   const hostEmail = host?.email || event?.host?.email || "";
@@ -2474,9 +2474,11 @@ function HostDetails({ event, hostName }) {
           </div>
           <h3 className="mob-host-name" style={{ color: FG }}>{displayHostName}</h3>
           <p className="mob-host-label" style={{ color: A }}>{hostSubtitle}</p>
-          <p style={{ color: M, fontSize: 13, marginTop: 12, textAlign: "center", maxWidth: "100%" }}>
-            {hostDescription && hostDescription.length > 150 ? hostDescription.substring(0, 150) + "..." : hostDescription}
-          </p>
+          {hostDescription ? (
+            <p style={{ color: M, fontSize: 13, marginTop: 12, textAlign: "center", maxWidth: "100%" }}>
+              {hostDescription.length > 150 ? hostDescription.substring(0, 150) + "..." : hostDescription}
+            </p>
+          ) : null}
 
 
 
@@ -2696,20 +2698,22 @@ function HostDetails({ event, hostName }) {
                   borderLeft: `3px solid ${A}`,
                   margin: "12px 20px"
                 }}>
-                  <p style={{
-                    fontSize: "12.5px",
-                    color: M,
-                    lineHeight: 1.55,
-                    margin: 0,
-                    fontWeight: 400,
-                    fontStyle: "italic",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical"
-                  }}>
-                    "{hostDescription}"
-                  </p>
+                  {hostDescription ? (
+                    <p style={{
+                      fontSize: "12.5px",
+                      color: M,
+                      lineHeight: 1.55,
+                      margin: 0,
+                      fontWeight: 400,
+                      fontStyle: "italic",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical"
+                    }}>
+                      "{hostDescription}"
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>

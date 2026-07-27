@@ -1384,7 +1384,28 @@ const StayBookingSystem = ({
 
     // Taxes from stay config; fallback to legacy 18% GST + 2% service charge
     const configuredTaxRate = Array.isArray(stay?.taxes)
-      ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+      ? stay.taxes.reduce((sum, t) => {
+          const payer = String(
+            t?.paidBy ??
+            t?.paid_by ??
+            t?.payer ??
+            t?.taxPayer ??
+            t?.tax_payer ??
+            t?.borneBy ??
+            t?.borne_by ??
+            t?.applicableTo ??
+            t?.applicable_to ??
+            t?.target ??
+            t?.type ??
+            t?.category ??
+            ""
+          ).toLowerCase().trim();
+          if (/host|vendor|owner|property/i.test(payer)) {
+            return sum;
+          }
+          const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
+          return sum + (Number.isFinite(rate) ? rate : 0);
+        }, 0)
       : 0;
     const effectiveTaxRate = configuredTaxRate > 0 ? configuredTaxRate : 20;
 
@@ -1733,6 +1754,7 @@ const StayBookingSystem = ({
         numberOfGuests: (guests.adults || 1) + (guests.children || 0),
         adults: guests.adults || 1,
         children: guests.children || 0,
+        childAges: normalizedChildAges,
         customerName,
         customerEmail,
         customerPhone,
@@ -1844,9 +1866,14 @@ const StayBookingSystem = ({
       const previewAddOnsTotalRupees = previewSelectedAddOnsData.reduce((sum, item) => sum + item.priceValue, 0);
       const previewCurrency = "INR";
       const nightsFromPreview = Number(pricing.nightsCount || 1) || 1;
-      const previewBaseStayDisplayTotal = isPropertyBased
+      const previewExtraAdultsTotal = Number(extraAdultsCount || 0) * Number(pricing.activeExtraAdultPrice || 0) * nightsFromPreview;
+      const previewExtraChildrenTotal = (canUseChildAgeSelector && Number(pricing.childAgeChargePerNight || 0) > 0)
+        ? Number((pricing.childAgeChargePerNight || 0) * nightsFromPreview)
+        : 0;
+      const previewRawBase = isPropertyBased
         ? Number((pricing.originalPerNight || pricing.basePricePerNight || 0) * nightsFromPreview || 0)
         : Number((pricing.originalPerNight || 0) * nightsFromPreview || 0);
+      const previewBaseStayDisplayTotal = Math.max(0, previewRawBase - previewExtraAdultsTotal - previewExtraChildrenTotal);
 
       const previewReceipt = [
         { title: `Base Stay (${nightsFromPreview} night${nightsFromPreview !== 1 ? "s" : ""})`, content: `${previewCurrency} ${Number(previewBaseStayDisplayTotal).toFixed(2)}` },
@@ -2164,7 +2191,7 @@ const StayBookingSystem = ({
       const nightlyBaseOnly = Math.max(0, Number(nightlyFromOrder || 0) - nightlyExtras);
       const fallbackBaseStayTotal = Math.max(0, Number(nightlyBaseOnly || 0) * Number(nightsFromOrder || 1));
       const baseStayDisplayTotal = isPropertyBased
-        ? (firstNumber(propertyBaseNightly != null ? propertyBaseNightly * nightsFromOrder : null, basePrice, fallbackBaseStayTotal) || 0)
+        ? (firstNumber(propertyBaseNightly != null ? Math.max(0, (propertyBaseNightly - nightlyExtras) * nightsFromOrder) : null, basePrice, fallbackBaseStayTotal) || 0)
         : fallbackBaseStayTotal;
 
       const frontendReceipt = [
@@ -2185,7 +2212,28 @@ const StayBookingSystem = ({
         });
       }
       const taxRate = Array.isArray(stay?.taxes)
-        ? stay.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        ? stay.taxes.reduce((sum, t) => {
+            const payer = String(
+              t?.paidBy ??
+              t?.paid_by ??
+              t?.payer ??
+              t?.taxPayer ??
+              t?.tax_payer ??
+              t?.borneBy ??
+              t?.borne_by ??
+              t?.applicableTo ??
+              t?.applicable_to ??
+              t?.target ??
+              t?.type ??
+              t?.category ??
+              ""
+            ).toLowerCase().trim();
+            if (/host|vendor|owner|property/i.test(payer)) {
+              return sum;
+            }
+            const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
+            return sum + (Number.isFinite(rate) ? rate : 0);
+          }, 0)
         : 0;
 
       // Display calculation should use gross stay total = base + extra adults + extra children

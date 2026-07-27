@@ -8,7 +8,20 @@ import {
   getCustomerSupportTickets,
   getSupportGuest,
 } from "../../utils/api";
+import Dropdown from "../../components/Dropdown";
 import styles from "./Support.module.sass";
+
+const getPhoneLimit = (countryCode) => {
+  switch (countryCode) {
+    case "+91": return 10;
+    case "+1": return 10;
+    case "+44": return 11;
+    case "+61": return 9;
+    case "+65": return 8;
+    case "+971": return 9;
+    default: return 15;
+  }
+};
 
 const DEFAULT_COUNTRY_CODE = "+91";
 
@@ -318,13 +331,22 @@ const Support = () => {
     const nextErrors = {};
 
     if (!form.customerName.trim()) nextErrors.customerName = "Customer name is required.";
-    if (!form.customerPhone.trim()) nextErrors.customerPhone = "Phone number is required.";
+    
+    const phoneLimit = getPhoneLimit(form.customerCountryCode);
+    if (!form.customerPhone.trim()) {
+      nextErrors.customerPhone = "Phone number is required.";
+    } else if (form.customerPhone.trim().length !== phoneLimit && !(form.customerCountryCode === "+44" && form.customerPhone.trim().length === 10)) {
+      nextErrors.customerPhone = `Phone number must be exactly ${phoneLimit} digits.`;
+    }
+    
     if (!form.customerCountryCode.trim()) nextErrors.customerCountryCode = "Country code is required.";
     if (!form.issueCategory.trim()) nextErrors.issueCategory = "Issue category is required.";
     if (!form.subject.trim()) nextErrors.subject = "Subject is required.";
     if (!form.description.trim()) nextErrors.description = "Description is required.";
 
-    if (form.customerEmail.trim() && !EMAIL_REGEX.test(form.customerEmail.trim())) {
+    if (!form.customerEmail.trim()) {
+      nextErrors.customerEmail = "Customer email is required.";
+    } else if (!EMAIL_REGEX.test(form.customerEmail.trim())) {
       nextErrors.customerEmail = "Please enter a valid email address.";
     }
 
@@ -518,7 +540,7 @@ const Support = () => {
               </div>
 
               <div className={styles.field}>
-                <label htmlFor="customerEmail">Customer Email</label>
+                <label htmlFor="customerEmail">Customer Email *</label>
                 <input
                   id="customerEmail"
                   type="email"
@@ -531,18 +553,15 @@ const Support = () => {
 
               <div className={styles.field}>
                 <label htmlFor="customerCountryCode">Country Code *</label>
-                <select
-                  id="customerCountryCode"
-                  value={form.customerCountryCode}
-                  onChange={(e) => setFieldValue("customerCountryCode", e.target.value)}
-                  disabled={submitting}
-                >
-                  {countryCodeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown
+                  className={styles.dropdown}
+                  value={countryCodeOptions.find(opt => opt.value === form.customerCountryCode)?.label || form.customerCountryCode}
+                  setValue={(label) => {
+                    const selected = countryCodeOptions.find(opt => opt.label === label);
+                    setFieldValue("customerCountryCode", selected ? selected.value : label);
+                  }}
+                  options={countryCodeOptions.map(opt => opt.label)}
+                />
                 {errors.customerCountryCode ? <span className={styles.errorText}>{errors.customerCountryCode}</span> : null}
               </div>
 
@@ -552,7 +571,13 @@ const Support = () => {
                   id="customerPhone"
                   type="tel"
                   value={form.customerPhone}
-                  onChange={(e) => setFieldValue("customerPhone", e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const limit = getPhoneLimit(form.customerCountryCode);
+                    if (val === '' || (/^\d+$/.test(val) && val.length <= limit)) {
+                      setFieldValue("customerPhone", val);
+                    }
+                  }}
                   disabled={submitting}
                 />
                 {errors.customerPhone ? <span className={styles.errorText}>{errors.customerPhone}</span> : null}
@@ -560,33 +585,28 @@ const Support = () => {
 
               <div className={`${styles.field} ${styles.fullWidth}`}>
                 <label htmlFor="issueCategory">Issue Category *</label>
-                <select
-                  id="issueCategory"
-                  value={form.issueCategory}
-                  onChange={(e) => setFieldValue("issueCategory", e.target.value)}
-                  disabled={submitting}
-                >
-                  <option value="">Select an issue category</option>
-                  {ISSUE_CATEGORY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown
+                  className={styles.dropdown}
+                  value={form.issueCategory || "Select an issue category"}
+                  setValue={(val) => setFieldValue("issueCategory", val === "Select an issue category" ? "" : val)}
+                  options={["Select an issue category", ...ISSUE_CATEGORY_OPTIONS]}
+                />
                 {errors.issueCategory ? <span className={styles.errorText}>{errors.issueCategory}</span> : null}
               </div>
 
-              <div className={`${styles.field} ${styles.fullWidth}`}>
-                <label htmlFor="customIssueText">Custom Issue Text</label>
-                <textarea
-                  id="customIssueText"
-                  rows="3"
-                  placeholder="Add any quick context that helps classify the issue."
-                  value={form.customIssueText}
-                  onChange={(e) => setFieldValue("customIssueText", e.target.value)}
-                  disabled={submitting}
-                />
-              </div>
+              {form.issueCategory === "Other" && (
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label htmlFor="customIssueText">Custom Issue Text</label>
+                  <textarea
+                    id="customIssueText"
+                    rows="3"
+                    placeholder="Add any quick context that helps classify the issue."
+                    value={form.customIssueText}
+                    onChange={(e) => setFieldValue("customIssueText", e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+              )}
 
               <div className={`${styles.field} ${styles.fullWidth}`}>
                 <label htmlFor="subject">Subject *</label>
@@ -665,32 +685,6 @@ const Support = () => {
 
         <aside className={styles.sidePanel}>
           <div className={styles.sideCard}>
-            <h3>Need direct support?</h3>
-            <p>Our team can also help through the support contacts below while your ticket is being reviewed.</p>
-            <div className={styles.contactList}>
-              {contacts.length > 0 ? contacts.map((contact) => (
-                <div key={contact.supportContactId || contact.email || contact.phoneNumber} className={styles.contactCard}>
-                  <strong>{contact.name || "Support Team"}</strong>
-                  {contact.email ? (
-                    <a href={`mailto:${contact.email}`}>
-                      <Mail size={14} />
-                      <span>{contact.email}</span>
-                    </a>
-                  ) : null}
-                  {contact.phoneNumber ? (
-                    <a href={`tel:${contact.phoneNumber}`}>
-                      <Phone size={14} />
-                      <span>{contact.phoneNumber}</span>
-                    </a>
-                  ) : null}
-                </div>
-              )) : (
-                <div className={styles.mutedBox}>Support contact details will appear here when available.</div>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.sideCard}>
             <h3>Before you submit</h3>
             <ul className={styles.tipList}>
               <li>Include the booking, order, or listing reference if you have one.</li>
@@ -699,21 +693,7 @@ const Support = () => {
             </ul>
           </div>
 
-          <div className={styles.sideCard}>
-            <h3>Popular FAQ topics</h3>
-            {faqs.length > 0 ? (
-              <div className={styles.faqPreviewList}>
-                {faqs.slice(0, 3).map((faq) => (
-                  <div key={faq.supportFaqId} className={styles.faqPreviewItem}>
-                    <strong>{faq.question}</strong>
-                    <span>{faq.answer}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.mutedBox}>FAQ content is not available right now.</div>
-            )}
-          </div>
+
         </aside>
       </div>
       ) : null}

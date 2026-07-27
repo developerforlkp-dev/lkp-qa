@@ -141,13 +141,19 @@ const getPropertyBaseNightlyPrice = (stayDetails, checkInDate) => {
     return stayDate >= start && stayDate <= end;
   });
 
+  const activeSeasonData = activeSeason
+    ? ((stayDetails?.propertySeasonalPricing || {})[activeSeason?.periodId || activeSeason?.id || activeSeason?.tempId] ||
+       (stayDetails?.seasonalPricing || {})[activeSeason?.periodId || activeSeason?.id || activeSeason?.tempId] ||
+       activeSeason)
+    : null;
+
   return (
-    asNumber(activeSeason?.fullPropertyHikePrice) ??
-    asNumber(activeSeason?.hikePrice) ??
-    asNumber(activeSeason?.fullPropertyB2cPrice) ??
-    asNumber(activeSeason?.fullPropertyb2cPrice) ??
-    asNumber(activeSeason?.full_property_b2c_price) ??
-    asNumber(activeSeason?.b2cPrice) ??
+    asNumber(activeSeasonData?.fullPropertyHikePrice) ??
+    asNumber(activeSeasonData?.hikePrice) ??
+    asNumber(activeSeasonData?.fullPropertyB2cPrice) ??
+    asNumber(activeSeasonData?.fullPropertyb2cPrice) ??
+    asNumber(activeSeasonData?.full_property_b2c_price) ??
+    asNumber(activeSeasonData?.b2cPrice) ??
     asNumber(stayDetails?.fullPropertyHikePrice) ??
     asNumber(stayDetails?.fullPropertyB2cPrice) ??
     asNumber(stayDetails?.fullPropertyb2cPrice) ??
@@ -243,6 +249,30 @@ const Checkout = () => {
   const [pendingOrderDetails, setPendingOrderDetails] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [messageText, setMessageText] = useState("");
+  const [guestDetails, setGuestDetails] = useState({
+    title: "Mr",
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobileNumber: "",
+    countryCode: "+91",
+    additionalGuests: [],
+    gstDetails: { companyName: "", gstNumber: "" },
+  });
+  const [guestErrors, setGuestErrors] = useState({});
+
+  const handleGuestValidationFailed = (errors, firstErrorField) => {
+    setGuestErrors(errors || {});
+    if (firstErrorField) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrorField);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus({ preventScroll: true });
+        }
+      }, 100);
+    }
+  };
 
   // Edit functionality state
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -630,9 +660,10 @@ const Checkout = () => {
             getPropertyBaseNightlyPrice(stayDetails, bookingData?.checkInDate) * nights
           )
         : 0;
-      let baseAmount = propertyBaseFromApi > 0
-        ? propertyBaseFromApi
-        : parseAmount(baseRow?.value);
+      const rawBaseFromReceipt = parseAmount(baseRow?.value);
+      let baseAmount = rawBaseFromReceipt > 0
+        ? rawBaseFromReceipt
+        : (propertyBaseFromApi > 0 ? propertyBaseFromApi : 0);
 
       const discountTiers = Array.isArray(stayDetails?.discountTiers) ? stayDetails.discountTiers : [];
       const activeTier = discountTiers.find((t) => {
@@ -653,7 +684,12 @@ const Checkout = () => {
         0
       ) || 0;
 
-      const extraRows = rows.filter((r) => /extra adult|extra child/i.test(String(r.title || "")));
+      const extraRows = rows.filter((r) => {
+        const title = String(r?.title || "");
+        const isExtraGuestRow = /extra adult|extra child/i.test(title);
+        const isAgeInfoOnlyRow = /\bages?\b/i.test(title) && !/\b(charge|price|fee)s?\b/i.test(title);
+        return isExtraGuestRow && !isAgeInfoOnlyRow;
+      });
       const extraAmount = extraRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
       const addOnRows = rows.filter((r) => /add[\s-]?ons?/i.test(String(r.title || "")));
       const receiptAddOnsAmount = addOnRows.reduce((sum, r) => sum + parseAmount(r.value), 0);
@@ -697,7 +733,28 @@ const Checkout = () => {
         : 0;
 
       const taxRate = Array.isArray(stayDetails?.taxes)
-        ? stayDetails.taxes.reduce((sum, t) => sum + Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? 0), 0)
+        ? stayDetails.taxes.reduce((sum, t) => {
+            const payer = String(
+              t?.paidBy ??
+              t?.paid_by ??
+              t?.payer ??
+              t?.taxPayer ??
+              t?.tax_payer ??
+              t?.borneBy ??
+              t?.borne_by ??
+              t?.applicableTo ??
+              t?.applicable_to ??
+              t?.target ??
+              t?.type ??
+              t?.category ??
+              ""
+            ).toLowerCase().trim();
+            if (/host|vendor|owner|property/i.test(payer)) {
+              return sum;
+            }
+            const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
+            return sum + (Number.isFinite(rate) ? rate : 0);
+          }, 0)
         : 0;
 
       // Keep base stay as pure room charge (no discount/tax mixed in)
@@ -950,17 +1007,21 @@ const Checkout = () => {
             guests={!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate)}
             dateValue={items[0]?.title}
             timeValue={items[1]?.category === "Time slot" ? items[1]?.title : undefined}
-            guestValue={items[2]?.title || items[1]?.title} // fallback if there's no time slot
+            guestValue={items[2]?.title}
             onEditDate={() => setShowDatePicker(true)}
             onEditGuests={() => setShowGuestPicker(true)}
-            isStay={!!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate)}
+            messageText={messageText}
+            setMessageText={setMessageText}
+            guestDetails={guestDetails}
+            setGuestDetails={setGuestDetails}
+            guestErrors={guestErrors}
+            numberOfGuests={(bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0) || bookingData?.bookingSummary?.guestCount || bookingData?.guests?.guests || 1}
+            isStay={isStayBooking}
             checkInDate={bookingData?.checkInDate}
             checkOutDate={bookingData?.checkOutDate}
             roomType={bookingData?.roomType}
             mealPlan={bookingData?.mealPlan}
             childAges={bookingData?.childAges || []}
-            messageText={messageText}
-            setMessageText={setMessageText}
             addonDetails={selectedAddOns}
             addOns={selectedAddOns}
             currency={resolvedCurrency}
@@ -1007,6 +1068,9 @@ const Checkout = () => {
             paymentData={effectivePaymentData}
             messageText={messageText}
             bookingData={bookingData}
+            isStay={true}
+            guestDetails={guestDetails}
+            onGuestValidationFailed={handleGuestValidationFailed}
           />
         </div>
       </div>

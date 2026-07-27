@@ -265,6 +265,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [showDesc, setShowDesc] = useState(false);
   const [isImgHovered, setIsImgHovered] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   const isBedBased = room.isBedConfig || (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0));
 
@@ -427,13 +428,33 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
             
             {/* Amenities Row */}
             <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              {room.bedType && <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>{room.bedType}</span>}
-              {room.roomSize && <span style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>{room.roomSize} sq ft</span>}
-              {features.map((f, i) => (
-                <span key={i} style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>
-                  {f}
-                </span>
-              ))}
+              {(() => {
+                const chips = [];
+                if (room.bedType) chips.push({ type: 'bed', val: room.bedType });
+                if (room.roomSize) chips.push({ type: 'size', val: room.roomSize });
+                features.forEach(f => chips.push({ type: 'feature', val: f }));
+                
+                const visibleChips = showAllAmenities ? chips : chips.slice(0, 5);
+                const hiddenCount = chips.length - 5;
+                
+                return (
+                  <>
+                    {visibleChips.map((chip, i) => (
+                      <span key={i} style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>
+                        {chip.type === 'size' ? `${chip.val} sq ft` : chip.val}
+                      </span>
+                    ))}
+                    {!showAllAmenities && hiddenCount > 0 && (
+                      <span 
+                        onClick={() => setShowAllAmenities(true)} 
+                        style={{ cursor: "pointer", flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}
+                      >
+                        +{hiddenCount} more
+                      </span>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           </div>
         </div>

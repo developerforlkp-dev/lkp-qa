@@ -55,6 +55,12 @@ const filterOptions = [
   },
 ];
 
+const createDefaultBusinessInterestMap = (defaultValue = true) =>
+  filterOptions.reduce((acc, filter) => {
+    acc[filter.id] = defaultValue;
+    return acc;
+  }, {});
+
 
 /// Business Interest IDs
 // Experience → 1, Events → 2, Stays → 3, Places → 4, Food → 5
@@ -306,8 +312,8 @@ const FleetHome = () => {
     const loadBusinessInterests = async () => {
       try {
         const interests = await getBusinessInterests();
-        const availabilityMap = {};
-        const activeMap = {};
+        const availabilityMap = createDefaultBusinessInterestMap(true);
+        const activeMap = createDefaultBusinessInterestMap(true);
         interests.forEach((interest) => {
           const filterId = mapBusinessInterestCodeToFilterId(interest?.code);
           if (!filterId) return;
@@ -325,6 +331,7 @@ const FleetHome = () => {
   }, []);
 
   const visibleFilterOptions = filterOptions.filter((filter) => businessInterestActiveMap[filter.id] !== false);
+  const isActiveFilterListingsEnabled = businessInterestAvailability[activeFilter] !== false;
 
   useEffect(() => {
     if (visibleFilterOptions.length === 0) return;
@@ -443,7 +450,12 @@ const FleetHome = () => {
   // Fetch homepage sections and their listings
   // Business interest IDs: 1=Experience, 2=Events, 3=Stays, 4=Places, 5=Food
   useEffect(() => {
-
+    if (!isActiveFilterListingsEnabled) {
+      setSectionsData([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     const businessInterestId = getBusinessInterestId(activeFilter) ?? (activeFilter === "experience" ? 1 : null);
     if (businessInterestId == null) {
       // Any other filter that doesn't have a dedicated fetch block or businessInterestId
@@ -633,7 +645,7 @@ const FleetHome = () => {
     };
 
     loadHomepageData();
-  }, [activeFilter]);
+  }, [activeFilter, isActiveFilterListingsEnabled]);
 
   // ── Explore By Cards Micro-Interaction ─────────────────────────────────────
   useEffect(() => {
@@ -1020,7 +1032,16 @@ const FleetHome = () => {
             )}
 
 
-            {!loading && !error && sectionsData.length === 0 && (
+            {!loading && !error && !isActiveFilterListingsEnabled && (
+              <div style={{ padding: "3rem", textAlign: "center" }}>
+                <p>Coming soon</p>
+                <p style={{ fontSize: "14px", color: "#666", marginTop: "8px" }}>
+                  {sectionTitleMap[activeFilter] || "This category"} will be available soon.
+                </p>
+              </div>
+            )}
+
+            {!loading && !error && isActiveFilterListingsEnabled && sectionsData.length === 0 && (
               <div style={{ padding: "3rem", textAlign: "center" }}>
                 <p>No sections available</p>
                 <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
@@ -1041,6 +1062,7 @@ const FleetHome = () => {
 
 
             {!loading &&
+              isActiveFilterListingsEnabled &&
               sectionsData.map((sectionData, index) => {
                 if (!sectionData || !sectionData.section) {
                   console.warn(`⚠️ Skipping invalid section data at index ${index}:`, sectionData);

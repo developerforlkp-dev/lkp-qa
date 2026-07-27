@@ -3,9 +3,9 @@
 .container
   max-width: 1240px
   margin: 0 auto
-  padding: 136px 24px 88px
+  padding: 80px 24px 88px
   +m
-    padding: 92px 16px 56px
+    padding: 40px 16px 56px
 
 .hero
   margin-bottom: 36px
@@ -32,6 +32,8 @@
   color: #0b2239
   font-weight: 800
   font-family: var(--font-fraunces, Georgia, serif)
+  +dark
+    color: $n8
   +m
     font-size: 36px
 
@@ -41,6 +43,8 @@
   font-size: 17px
   line-height: 1.7
   color: #5f7288
+  +dark
+    color: $n4
 
 .layout
   display: grid
@@ -69,6 +73,8 @@
   display: flex
   flex-direction: column
   gap: 18px
+  position: sticky
+  top: 110px
 
 .sideCard
   padding: 24px
@@ -254,6 +260,9 @@
   letter-spacing: 0.05em
   text-decoration: none
   width: fit-content
+  +dark
+    background: rgba(0, 151, 178, 0.2)
+    color: #8ed1dd
 
 .attachmentsList
   display: flex
@@ -303,6 +312,10 @@
   background: #f9fcfe
   color: #718499
   font-size: 14px
+  +dark
+    background: $n3
+    border-color: $n4
+    color: $n5
 
 .submitButton
   align-self: flex-start
@@ -345,6 +358,9 @@
   display: flex
   flex-direction: column
   gap: 8px
+  +dark
+    background: $n3
+    border-color: $n4
 
   strong
     color: #11304a
@@ -366,6 +382,9 @@
   border-radius: 18px
   background: #f9fcfe
   border: 1px solid #e6f0f5
+  +dark
+    background: $n3
+    border-color: $n4
 
   strong
     display: block
@@ -404,6 +423,10 @@
   background: #f9fcfe
   font-size: 14px
   line-height: 1.6
+  +dark
+    background: $n3
+    border-color: $n4
+    color: $n5
 
 .tabs
   display: flex
@@ -537,6 +560,9 @@
   padding: 16px
   cursor: pointer
   transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease
+  +dark
+    background: $n3
+    border-color: $n4
 
   &:hover
     border-color: #9ad6e1

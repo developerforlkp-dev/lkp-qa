@@ -14,6 +14,12 @@ const filterOptions = [
   { id: "places", label: "Places" },
 ];
 
+const createDefaultBusinessInterestMap = (defaultValue = true) =>
+  filterOptions.reduce((acc, filter) => {
+    acc[filter.id] = defaultValue;
+    return acc;
+  }, {});
+
 const mapBusinessInterestCodeToFilterId = (code) => {
   const normalized = String(code || "").toUpperCase().trim();
   if (normalized === "EXPERIENCE" || normalized === "EXPERIENCES") return "experience";
@@ -96,8 +102,8 @@ export default function MobileBottomNavbar() {
     const loadBusinessInterests = async () => {
       try {
         const interests = await getBusinessInterests();
-        const availabilityMap = {};
-        const activeMap = {};
+        const availabilityMap = createDefaultBusinessInterestMap(true);
+        const activeMap = createDefaultBusinessInterestMap(true);
         interests.forEach((interest) => {
           const filterId = mapBusinessInterestCodeToFilterId(interest?.code);
           if (!filterId) return;
