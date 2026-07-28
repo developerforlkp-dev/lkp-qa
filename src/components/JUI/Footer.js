@@ -123,7 +123,6 @@ export function Footer() {
                 <li><Link to="/about">About Little Known Planet</Link></li>
                 <li><button onClick={() => setIsHostingFormVisible(true)} className={styles.linkButton}>Become a Host</button></li>
                 <li><button onClick={() => setIsContactModalVisible(true)} className={styles.linkButton}>Contact Us</button></li>
-                <li><Link to="/support">Raise a Ticket</Link></li>
               </ul></FooterCol>
             
             <FooterCol title="Support"><ul>

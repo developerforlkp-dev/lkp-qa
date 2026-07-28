@@ -191,6 +191,10 @@ const getExperienceBookingCutoffHours = (slot) => {
   if (!slot || typeof slot !== "object") return null;
   const schedule = slot.schedule || {};
   const rawValue =
+    slot.bookingCutoffHours ??
+    slot.booking_cutoff_hours ??
+    schedule.bookingCutoffHours ??
+    schedule.booking_cutoff_hours ??
     slot.bookingCutoffTime ??
     slot.booking_cutoff_time ??
     schedule.bookingCutoffTime ??

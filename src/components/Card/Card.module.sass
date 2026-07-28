@@ -329,6 +329,8 @@
     width: 100%
     gap: 8px
     margin-top: 8px
+    +m
+        gap: 4px
 
 .cost
     +caption-bold-2
@@ -338,6 +340,8 @@
     color: $n2
     +dark
         color: $n8
+    +m
+        font-size: 12px
     &.locationText
         display: flex
         align-items: center
@@ -371,10 +375,16 @@
     border-radius: 20px
     background: transparent
     flex-shrink: 0
+    +m
+        padding: 4px 6px
+        gap: 2px
     svg
         fill: #FFB800
         width: 14px
         height: 14px
+        +m
+            width: 12px
+            height: 12px
     span
         font-size: 13px
         font-weight: 600
@@ -383,6 +393,8 @@
             color: $n8
         text-transform: capitalize
         letter-spacing: 0.01em
+        +m
+            font-size: 11px
 
 .number
     margin-left: 4px

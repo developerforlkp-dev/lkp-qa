@@ -385,27 +385,7 @@ export default function RelatedListingsStrip({
           </div>
         </div>
         <div style={{ position: "relative" }}>
-          {/* Left and Right Fade Overlays */}
-          <div style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: "40px",
-            background: "linear-gradient(to right, var(--W, #ffffff) 10%, transparent 100%)",
-            pointerEvents: "none",
-            zIndex: 5
-          }} />
-          <div style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: "40px",
-            background: "linear-gradient(to left, var(--W, #ffffff) 10%, transparent 100%)",
-            pointerEvents: "none",
-            zIndex: 5
-          }} />
+          {/* Left and Right Fade Overlays Removed */}
 
           <div
             ref={railRef}

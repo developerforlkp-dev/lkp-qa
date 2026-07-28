@@ -259,55 +259,52 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       profileData.customerId === apiBooking.customer?.customerId ||
       !apiBooking.customerId); // Fallback if customerId is missing in booking but it's the user's booking
 
-  const customerName = useProfileInfo
-    ? [profileData.firstName, profileData.lastName].filter(Boolean).join(" ")
-    : pickText(
-      apiBooking?.customerName,
-      apiBooking?.customerFullName,
-      apiBooking?.guestName,
-      apiBooking?.userName,
-      apiBooking?.fullName,
-      apiBooking?.name,
-      [apiBooking?.firstName, apiBooking?.lastName].filter(Boolean).join(" "),
-      [apiBooking?.customerFirstName, apiBooking?.customerLastName].filter(Boolean).join(" "),
-      customerObj?.name,
-      customerObj?.fullName,
-      [customerObj?.firstName, customerObj?.lastName].filter(Boolean).join(" "),
-      customerObj?.customerName,
-      customerObj?.guestName
-    );
+  const customerName = pickText(
+    [customerObj?.firstName, customerObj?.lastName].filter(Boolean).join(" "),
+    customerObj?.name,
+    customerObj?.fullName,
+    customerObj?.customerName,
+    customerObj?.guestName,
+    [apiBooking?.firstName, apiBooking?.lastName].filter(Boolean).join(" "),
+    apiBooking?.customerName,
+    apiBooking?.customerFullName,
+    apiBooking?.guestName,
+    apiBooking?.userName,
+    apiBooking?.fullName,
+    apiBooking?.name,
+    [apiBooking?.customerFirstName, apiBooking?.customerLastName].filter(Boolean).join(" "),
+    useProfileInfo ? [profileData.firstName, profileData.lastName].filter(Boolean).join(" ") : null
+  );
   const formattedCustomerName = formatPersonName(customerName);
 
-  const customerPhone = useProfileInfo
-    ? (profileData.phone || profileData.mobile || "")
-    : pickText(
-      apiBooking?.customerPhone,
-      apiBooking?.phoneNumber,
-      apiBooking?.phone,
-      apiBooking?.mobile,
-      apiBooking?.mobileNumber,
-      apiBooking?.contactNumber,
-      apiBooking?.customerMobile,
-      customerObj?.phone,
-      customerObj?.phoneNumber,
-      customerObj?.mobile,
-      customerObj?.mobileNumber,
-      customerObj?.contactNumber
-    );
+  const customerPhone = pickText(
+    customerObj?.mobileNumber,
+    customerObj?.mobile,
+    customerObj?.phone,
+    customerObj?.phoneNumber,
+    customerObj?.contactNumber,
+    apiBooking?.customerPhone,
+    apiBooking?.phoneNumber,
+    apiBooking?.phone,
+    apiBooking?.mobile,
+    apiBooking?.mobileNumber,
+    apiBooking?.contactNumber,
+    apiBooking?.customerMobile,
+    useProfileInfo ? (profileData.phone || profileData.mobile || "") : null
+  );
 
-  const customerEmail = useProfileInfo
-    ? (profileData.email || "")
-    : pickText(
-      apiBooking?.customerEmail,
-      apiBooking?.email,
-      apiBooking?.emailId,
-      apiBooking?.emailAddress,
-      apiBooking?.mailId,
-      customerObj?.email,
-      customerObj?.emailId,
-      customerObj?.emailAddress,
-      customerObj?.mailId
-    );
+  const customerEmail = pickText(
+    customerObj?.email,
+    customerObj?.emailId,
+    customerObj?.emailAddress,
+    customerObj?.mailId,
+    apiBooking?.customerEmail,
+    apiBooking?.email,
+    apiBooking?.emailId,
+    apiBooking?.emailAddress,
+    apiBooking?.mailId,
+    useProfileInfo ? (profileData.email || "") : null
+  );
   // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
   const formatDate = (dateString) => {
     if (!dateString) return "";

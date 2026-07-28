@@ -86,9 +86,9 @@ const StayItinerary = ({ itinerary }) => {
                 
                 {/* SVG Curve to next item (Desktop only) */}
                 {!isLast && (
-                  <svg className="stay-itinerary-svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", top: 24, left: 0, width: "100%", height: "calc(100% + 80px)", pointerEvents: "none", zIndex: 0, overflow: "visible" }}>
+                  <svg className="stay-itinerary-svg" width="400" height="100%" viewBox="0 0 400 100" preserveAspectRatio="none" style={{ position: "absolute", top: 24, left: "50%", transform: "translateX(-50%)", width: "400px", height: "calc(100% + 80px)", pointerEvents: "none", zIndex: 0, overflow: "visible" }}>
                     <path
-                      d={isEven ? "M 55.33 0 C 55.33 50, 44.67 50, 44.67 100" : "M 44.67 0 C 44.67 50, 55.33 50, 55.33 100"}
+                      d={isEven ? "M 304 0 C 304 50, 96 50, 96 100" : "M 96 0 C 96 50, 304 50, 304 100"}
                       fill="none"
                       stroke={tokens.A}
                       strokeWidth="2"
@@ -100,7 +100,7 @@ const StayItinerary = ({ itinerary }) => {
                 )}
 
                 {/* Image Column */}
-                <div className="stay-itinerary-image-col" style={{ flex: 1, display: "flex", justifyContent: isEven ? "flex-end" : "flex-start", padding: isEven ? "0 40px 0 0" : "0 0 0 40px", zIndex: 1 }}>
+                <div className="stay-itinerary-image-col" style={{ flex: 1, display: "flex", justifyContent: isEven ? "flex-end" : "flex-start", padding: isEven ? "0 80px 0 0" : "0 0 0 80px", zIndex: 1 }}>
                   <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} style={{ width: "100%", maxWidth: 400, height: 240, borderRadius: 24, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.08)" }}>
                     <div 
                       className="itinerary-image-wrapper"
@@ -125,7 +125,7 @@ const StayItinerary = ({ itinerary }) => {
                 </div>
 
                 {/* Text Column */}
-                <div className="stay-itinerary-text-col" style={{ flex: 1, padding: isEven ? "0 0 0 40px" : "0 40px 0 0", display: "flex", flexDirection: "column", alignItems: isEven ? "flex-start" : "flex-end", textAlign: isEven ? "left" : "right", zIndex: 1 }}>
+                <div className="stay-itinerary-text-col" style={{ flex: 1, padding: isEven ? "0 0 0 80px" : "0 80px 0 0", display: "flex", flexDirection: "column", alignItems: isEven ? "flex-start" : "flex-end", textAlign: isEven ? "left" : "right", zIndex: 1 }}>
                   <motion.div initial={{ opacity: 0, x: isEven ? 20 : -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: isEven ? "flex-start" : "flex-end" }}>
                     
                     {/* Icon & Time */}

@@ -705,16 +705,12 @@ const Listings = () => {
     
     if (businessInterestFilters) {
       const type = filters.apiCategoryFilter.categoryType;
-      let options = [];
-      if (type === "Primary Category" || type === "PRIMARY") {
-        options = businessInterestFilters.primaryCategories || [];
-      } else if (type === "Sub Category" || type === "SUB") {
-        options = businessInterestFilters.secondaryCategories || [];
-      } else if (type === "Tags" || type === "TAGS") {
-        options = businessInterestFilters.tags || [];
-      } else if (type === "Special Labels" || type === "SPECIAL") {
-        options = businessInterestFilters.specialLabels || [];
-      }
+      let options = [
+        ...(businessInterestFilters.primaryCategories || []),
+        ...(businessInterestFilters.secondaryCategories || []),
+        ...(businessInterestFilters.tags || []),
+        ...(businessInterestFilters.specialLabels || [])
+      ];
       
       if (options.length > 0) {
         const labels = filters.apiCategoryFilter.categoryValues.map(val => {

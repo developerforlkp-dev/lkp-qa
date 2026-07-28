@@ -23,11 +23,12 @@ const hasRenderableCover = (url) => {
 };
 
 const getIdByType = (listing, type) => {
-  if (type === "events") return listing?.eventId ?? listing?.event_id ?? listing?.id;
-  if (type === "stays") return listing?.stayId ?? listing?.stay_id ?? listing?.id;
-  if (type === "places") return listing?.placeId ?? listing?.place_id ?? listing?.id;
-  if (type === "foodMenus") return listing?.foodMenuId ?? listing?.food_menu_id ?? listing?.id;
-  return listing?.listingId ?? listing?.listing_id ?? listing?.id;
+  const commonId = listing?.itemId ?? listing?.id ?? listing?._id;
+  if (type === "events") return listing?.eventId ?? listing?.event_id ?? commonId;
+  if (type === "stays") return listing?.stayId ?? listing?.stay_id ?? commonId;
+  if (type === "places") return listing?.placeId ?? listing?.place_id ?? commonId;
+  if (type === "foodMenus") return listing?.foodMenuId ?? listing?.food_menu_id ?? commonId;
+  return listing?.experienceId ?? listing?.listingId ?? listing?.listing_id ?? commonId;
 };
 
 const getTitleByType = (listing, type) => {

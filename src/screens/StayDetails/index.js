@@ -4146,7 +4146,7 @@ function PropertyStayCard({ stay }) {
               transition={{ duration: 0.2 }}
               style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.2)" }}
             >
-              <div style={{ padding: "10px 20px", borderRadius: "100px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", color: FG, fontSize: "12px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", textTransform: "uppercase", letterSpacing: "0.05em", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+              <div style={{ padding: "10px 20px", borderRadius: "100px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", color: "#141416", fontSize: "12px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", textTransform: "uppercase", letterSpacing: "0.05em", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 View Gallery
               </div>
@@ -4238,6 +4238,33 @@ function PropertyStayCard({ stay }) {
     </motion.div>
   );
 }
+const ExpandableReviewText = ({ text, vendorResponse, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+  
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+      <p style={{ 
+        fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, 
+        overflow: "hidden", 
+        display: expanded ? "block" : "-webkit-box", 
+        WebkitLineClamp: expanded ? "unset" : (vendorResponse ? 3 : 4), 
+        WebkitBoxOrient: "vertical", 
+        fontWeight: 400 
+      }}>
+        &ldquo;{text}&rdquo;
+      </p>
+      {isLong && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};
 
 function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubmitted }) {
   const { isMobile } = useWindowSize();
@@ -4291,157 +4318,157 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
   }, [reviews]);
 
   const hasReviews = normalizedReviews.length > 0;
-  const displayReviews = hasReviews ? normalizedReviews : [
-    { customerName: "Aarav Sharma", comment: "An absolutely incredible stay. The host was warm, accommodating, and the attention to detail was unmatched.", rating: 5 },
-    { customerName: "Priya Patel", comment: "Highly curated interiors, breathtaking views, and wonderful local insights. Can't wait to book this again!", rating: 5 },
-    { customerName: "Vikram Malhotra", comment: "Top tier service! The scheduling was seamless and the guides were exceptionally knowledgeable.", rating: 5 }
-  ];
+  const displayReviews = normalizedReviews;
+
+  if (!hasReviews && eligibleBookings.length === 0) return null;
 
   return (
     <section className="testimonials-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0", overflow: "hidden" }}>
       <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
 
         {/* Header and Scroll Buttons */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
-              Guest Feedback
-            </span>
-            <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, margin: 0, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
-              What people say
-            </h3>
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              type="button"
-              onClick={() => scrollSlider("left")}
+        {hasReviews && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>
+                  Guest Feedback
+                </span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, margin: 0, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  What people say
+                </h3>
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => scrollSlider("left")}
+                  style={{
+                    width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                    color: FG, transition: "0.3s", outline: "none"
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollSlider("right")}
+                  style={{
+                    width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                    color: FG, transition: "0.3s", outline: "none"
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Reviews Slider */}
+            <div
+              ref={sliderRef}
               style={{
-                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                color: FG, transition: "0.3s", outline: "none"
+                position: "relative",
+                overflowX: "auto",
+                margin: isMobile ? "24px -24px 0" : "24px -80px 0",
+                padding: isMobile ? "20px 24px" : "20px 80px",
+                display: "flex",
+                gap: 24,
+                scrollBehavior: "smooth",
+                msOverflowStyle: "none",
+                scrollbarWidth: "none"
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
+              className="no-scrollbar"
             >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollSlider("right")}
-              style={{
-                width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                color: FG, transition: "0.3s", outline: "none"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = FG; }}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
+              {displayReviews.map((rev, idx) => {
+                const name = rev.customerName || rev.author || "Guest";
+                const rating = Number(rev.rating) || 5;
+                const text = rev.comment || rev.text || "";
+                const vendorResponse = rev.vendorResponse || rev.hostResponse || rev.reply || "";
 
-        {/* Reviews Slider */}
-        <div
-          ref={sliderRef}
-          style={{
-            position: "relative",
-            overflowX: "auto",
-            margin: isMobile ? "24px -24px 0" : "24px -80px 0",
-            padding: isMobile ? "20px 24px" : "20px 80px",
-            display: "flex",
-            gap: 24,
-            scrollBehavior: "smooth",
-            msOverflowStyle: "none",
-            scrollbarWidth: "none"
-          }}
-          className="no-scrollbar"
-        >
-          {displayReviews.map((rev, idx) => {
-            const name = rev.customerName || rev.author || "Guest";
-            const rating = Number(rev.rating) || 5;
-            const text = rev.comment || rev.text || "";
-            const vendorResponse = rev.vendorResponse || rev.hostResponse || rev.reply || "";
+                return (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    style={{
+                      width: "360px",
+                      background: theme === "dark"
+                        ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
+                        : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
+                      backdropFilter: "blur(20px)",
+                      WebkitBackdropFilter: "blur(20px)",
+                      border: `1px solid ${B}`,
+                      borderRadius: "24px",
+                      padding: "28px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: 16,
+                      flexShrink: 0,
+                      position: "relative",
+                      overflow: "hidden",
+                      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
+                  >
+                    {/* Stylized background quote mark */}
+                    <span style={{
+                      position: "absolute",
+                      top: -5,
+                      right: 20,
+                      fontSize: 90,
+                      color: `${A}15`,
+                      fontFamily: "Georgia, serif",
+                      pointerEvents: "none",
+                      lineHeight: 1,
+                      userSelect: "none"
+                    }}>“</span>
 
-            return (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                style={{
-                  width: "360px",
-                  background: theme === "dark"
-                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                    : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  border: `1px solid ${B}`,
-                  borderRadius: "24px",
-                  padding: "28px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexShrink: 0,
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
-              >
-                {/* Stylized background quote mark */}
-                <span style={{
-                  position: "absolute",
-                  top: -5,
-                  right: 20,
-                  fontSize: 90,
-                  color: `${A}15`,
-                  fontFamily: "Georgia, serif",
-                  pointerEvents: "none",
-                  lineHeight: 1,
-                  userSelect: "none"
-                }}>“</span>
-
-                <div style={{ position: "relative", zIndex: 2 }}>
-                  <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={14}
-                        style={{ fill: i < rating ? "#F59E0B" : "transparent" }}
-                        color={i < rating ? "#F59E0B" : M}
-                      />
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: vendorResponse ? 3 : 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
-                    &ldquo;{text}&rdquo;
-                  </p>
-                  {vendorResponse && (
-                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${B}`, opacity: 0.96 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-                        Response from Host
+                    <div style={{ position: "relative", zIndex: 2 }}>
+                      <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            style={{ fill: i < rating ? "#F59E0B" : "transparent" }}
+                            color={i < rating ? "#F59E0B" : M}
+                          />
+                        ))}
                       </div>
-                      <p style={{ fontSize: 12.5, color: FG, margin: 0, lineHeight: 1.6 }}>
-                        {vendorResponse}
-                      </p>
+                      <ExpandableReviewText text={text} vendorResponse={vendorResponse} FG={FG} A={A} />
+                      {vendorResponse && (
+                        <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${B}`, opacity: 0.96 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                            Response from Host
+                          </div>
+                          <p style={{ fontSize: 12.5, color: FG, margin: 0, lineHeight: 1.6 }}>
+                            {vendorResponse}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
-                    {name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
-                    <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${B}`, paddingTop: 16, position: "relative", zIndex: 2 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 13, fontWeight: 700 }}>
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
+                        <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Verified Explorer</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* Submit Review Button & Form Container */}
         {eligibleBookings.length > 0 && (

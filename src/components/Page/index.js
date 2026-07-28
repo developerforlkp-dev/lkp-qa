@@ -46,7 +46,7 @@ const Page = ({
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
   const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details") || pathname.startsWith("/wishlists");
-  const isBlogPage = pathname.startsWith("/blog");
+  const isBlogPage = pathname.startsWith("/blog") || pathname.startsWith("/account-settings") || pathname.startsWith("/about") || pathname.startsWith("/support") || pathname.startsWith("/faq") || pathname.startsWith("/cancellation-policy") || pathname.startsWith("/terms-of-service") || pathname.startsWith("/privacy-policy");
   const isHomeRoute = homeRoutes.includes(pathname) || isDetailPage;
 
   useEffect(() => {

@@ -421,7 +421,7 @@ const ExperienceCheckoutComplete = () => {
 
     return [
       {
-        title: "Booking code:",
+        title: "Payment ID:",
         content:
           paymentSuccess?.razorpay_payment_id ||
           paymentSuccess?.payment_id ||

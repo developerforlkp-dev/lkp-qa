@@ -4,6 +4,7 @@ import { useHistory } from "react-router-dom";
 import styles from "./CreditCard.module.sass";
 import TextInput from "../../TextInput";
 import Checkbox from "../../Checkbox";
+import Modal from "../../Modal";
 import {
   createEventOrder,
   createOrder,
@@ -173,6 +174,7 @@ const ensureRazorpaySession = async ({ orderId, payment, bookingData }) => {
 const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null, messageText = "", bookingData: bookingDataProp = null, guestDetails = null, onGuestValidationFailed }) => {
   const [save, setSave] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorModalMsg, setErrorModalMsg] = useState("");
   const history = useHistory();
 
   const ensureRazorpayScript = () =>
@@ -212,6 +214,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       if (!guestDetails.email) {
         errors.email = "Email is required";
         if (!firstErrorField) firstErrorField = "guest-field-email";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestDetails.email)) {
+        errors.email = "Please enter a valid email address";
+        if (!firstErrorField) firstErrorField = "guest-field-email";
       }
       
       const phoneDigits = guestDetails.mobileNumber?.replace(/\D/g, "") || "";
@@ -223,9 +228,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         if (!firstErrorField) firstErrorField = "guest-field-mobileNumber";
       }
       
-      const extraGuestsCount = Math.max(0, totalGuestsNum - 1);
-      for (let i = 0; i < extraGuestsCount; i++) {
-        const ag = guestDetails.additionalGuests?.[i];
+      const additionalGuests = guestDetails.additionalGuests || [];
+      for (let i = 0; i < additionalGuests.length; i++) {
+        const ag = additionalGuests[i];
         if (!ag || !ag.firstName) {
           errors[`ag-${i}-firstName`] = "First name is required";
           if (!firstErrorField) firstErrorField = `guest-field-ag-${i}-firstName`;
@@ -240,7 +245,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         if (onGuestValidationFailed) {
           onGuestValidationFailed(errors, firstErrorField);
         } else {
-          alert("Please fill all mandatory Guest Details.");
+          setErrorModalMsg("Please fill all mandatory Guest Details.");
         }
         return;
       } else {
@@ -261,7 +266,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 
     if (!payment || payment.paymentMethod !== "razorpay") {
       if (!bookingData) {
-        alert("Could not find your pending booking. Please book again.");
+        setErrorModalMsg("Could not find your pending booking. Please book again.");
         setIsProcessing(false);
         return;
       }
@@ -311,12 +316,6 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       }
       
       if (orderId && guestDetails) {
-        const extraGuestsCount = Math.max(0, totalGuestsNum - 1);
-        const processedAdditionalGuests = [];
-        for (let i = 0; i < extraGuestsCount; i++) {
-          processedAdditionalGuests.push(guestDetails.additionalGuests?.[i] || { title: "Mr", firstName: "", lastName: "" });
-        }
-        
         const payload = {
           numberOfGuests: totalGuestsNum,
           guestDetails: {
@@ -326,16 +325,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
             email: guestDetails.email,
             mobileNumber: guestDetails.mobileNumber,
             countryCode: guestDetails.countryCode || "+91",
-            additionalGuests: processedAdditionalGuests,
+            additionalGuests: guestDetails.additionalGuests || [],
           }
         };
-        
-        if (guestDetails.gstDetails?.companyName && guestDetails.gstDetails?.gstNumber) {
-          payload.guestDetails.gstDetails = {
-            companyName: guestDetails.gstDetails.companyName,
-            gstNumber: guestDetails.gstDetails.gstNumber
-          };
-        }
         
         await saveGuestDetails(orderId, payload);
       }
@@ -355,13 +347,13 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         apiErrorMsg = JSON.stringify(respData);
       }
       
-      alert(apiErrorMsg || (hasOrderId ? getInitializePaymentErrorMessage(error) : getOrderCreationErrorMessage(error)));
+      setErrorModalMsg(apiErrorMsg || (hasOrderId ? getInitializePaymentErrorMessage(error) : getOrderCreationErrorMessage(error)));
       setIsProcessing(false);
       return;
     }
 
     if (isExpiredHold(holdExpiresAt)) {
-      alert("Hold expired, recheck availability.");
+      setErrorModalMsg("Hold expired, recheck availability.");
       setIsProcessing(false);
       return;
     }
@@ -381,13 +373,13 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
     const isFreeBooking = Number(amount || 0) <= 0;
 
     if (!razorpayOrderId && !isFreeBooking) {
-      alert("Could not initialize payment. Please try booking again.");
+      setErrorModalMsg("Could not initialize payment. Please try booking again.");
       setIsProcessing(false);
       return;
     }
 
     if (!razorpayKeyId && !isFreeBooking) {
-      alert("Payment configuration error. Please try booking again.");
+      setErrorModalMsg("Payment configuration error. Please try booking again.");
       setIsProcessing(false);
       return;
     }
@@ -411,7 +403,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         history.replace(buttonUrl);
       } catch (error) {
         console.error("Failed to finish free booking:", error);
-        alert("Booking was created, but we could not finish the checkout state. Please refresh and try again.");
+        setErrorModalMsg("Booking was created, but we could not finish the checkout state. Please refresh and try again.");
       } finally {
         setIsProcessing(false);
       }
@@ -487,7 +479,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       rzp.open();
     } catch (error) {
       console.error("Failed to open Razorpay checkout:", error);
-      alert("Unable to start payment. Please check your internet connection and try again.");
+      setErrorModalMsg("Unable to start payment. Please check your internet connection and try again.");
       setIsProcessing(false);
     }
   };
@@ -561,6 +553,22 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           {isProcessing ? "Processing..." : "Confirm and pay"}
         </button>
       </div>
+      <Modal visible={!!errorModalMsg} onClose={() => setErrorModalMsg("")}>
+        <div style={{ padding: "24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ marginBottom: "16px", color: "#E02E2E" }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3 style={{ marginBottom: "16px", fontSize: "20px", fontWeight: "600" }}>Oops!</h3>
+          <p style={{ marginBottom: "24px", fontSize: "16px", color: "#4A4A4A", wordBreak: "break-word" }}>{errorModalMsg}</p>
+          <button className="button" onClick={() => setErrorModalMsg("")} style={{ width: "100%" }}>
+            Okay
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };

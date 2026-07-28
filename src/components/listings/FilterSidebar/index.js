@@ -249,16 +249,12 @@ const FilterSidebar = ({
           let label = selectedCategoryLabels[idx];
           
           if (businessInterestFilters && categoryValues) {
-            let options = [];
-            if (categoryType === "Primary Category" || categoryType === "PRIMARY") {
-              options = businessInterestFilters.primaryCategories || [];
-            } else if (categoryType === "Sub Category" || categoryType === "SUB") {
-              options = businessInterestFilters.secondaryCategories || [];
-            } else if (categoryType === "Tags" || categoryType === "TAGS") {
-              options = businessInterestFilters.tags || [];
-            } else if (categoryType === "Special Labels" || categoryType === "SPECIAL") {
-              options = businessInterestFilters.specialLabels || [];
-            }
+            let options = [
+              ...(businessInterestFilters.primaryCategories || []),
+              ...(businessInterestFilters.secondaryCategories || []),
+              ...(businessInterestFilters.tags || []),
+              ...(businessInterestFilters.specialLabels || [])
+            ];
             
             const val = categoryValues[idx];
             if (val !== undefined && options.length > 0) {

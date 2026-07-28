@@ -2524,6 +2524,8 @@ const StayProduct = () => {
     const displayReviews = normalizedReviews.slice(0, 2);
     const hasMore = normalizedReviews.length > 2;
 
+    if (!hasReviews) return null;
+
     return (
       <section style={{ background: BG, padding: "80px 0 160px", borderTop: `1px solid ${B}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>

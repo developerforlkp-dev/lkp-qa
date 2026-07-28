@@ -1006,7 +1006,7 @@ function PlaceDescription({ place }) {
   const description = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
 
   const facts = [
-    { label: "Timings", val: place?.timings || place?.openingHours || "06:00 - 20:00", icon: Clock },
+    { label: "Timings", val: (place?.openingTime && place?.closingTime) ? `${place.openingTime} - ${place.closingTime}` : (place?.timings || place?.openingHours || "06:00 - 20:00"), icon: Clock },
     { label: "Entry Fee", val: place?.entryFee || "Free Entry", icon: Ticket },
     { label: "Best Time", val: place?.bestTimeToVisit || "Year Round", icon: Star },
     { label: "Rating", val: `${place?.rating || place?.averageRating || "4.8"} Rating`, icon: Check },
@@ -1335,9 +1335,12 @@ function VisitorInformation({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
   const { isMobile } = useWindowSize();
 
-  const formattedTown = place?.nearestTown?.split('/')[0]?.trim() || "MUNNAR";
-  const formattedAirport = place?.nearestAirport ? place.nearestAirport.split('(')[0].replace("International Airport", "").trim().toUpperCase() : "COCHIN";
-  const formattedRailway = place?.nearestRailway ? place.nearestRailway.split('(')[0].replace("Railway Station", "").trim() : "ALUVA";
+  const townName = place?.nearestTowns?.[0]?.name || place?.nearestTown;
+  const formattedTown = townName ? townName.split('/')[0]?.trim() : "MUNNAR";
+  const airportName = place?.nearestAirports?.[0]?.name || place?.nearestAirport;
+  const formattedAirport = airportName ? airportName.split('(')[0].replace("International Airport", "").trim().toUpperCase() : "COCHIN";
+  const railwayName = place?.nearestRailwayStations?.[0]?.name || place?.nearestRailway;
+  const formattedRailway = railwayName ? railwayName.split('(')[0].replace("Railway Station", "").trim() : "ALUVA";
 
   const suitabilityTags = useMemo(() => {
     const raw = place?.suitableFor;
@@ -1432,8 +1435,8 @@ function VisitorInformation({ place }) {
                     </div>
                     <div>
                       <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Support Hotline</span>
-                      <a href={`tel:${place?.phone || "+914842567890"}`} style={{ fontSize: 14, fontWeight: 750, color: A, textDecoration: "none" }}>
-                        {place?.phone || "+91 484 256 7890"}
+                      <a href={`tel:${place?.contactInfo || place?.phone || "+914842567890"}`} style={{ fontSize: 14, fontWeight: 750, color: A, textDecoration: "none" }}>
+                        {place?.contactInfo || place?.phone || "+91 484 256 7890"}
                       </a>
                     </div>
                     <div>
@@ -1552,7 +1555,7 @@ function VisitorInformation({ place }) {
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Airport Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedAirport} Airport</span>
+                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedAirport}</span>
                       </div>
                     </div>
                   </div>
@@ -1648,11 +1651,17 @@ function VisitorInformation({ place }) {
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
                       <span style={{ fontSize: 12, color: M }}>Wheelchair</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.wheelchair || "Accessible"}</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{typeof place?.wheelchairAccess === 'boolean' ? (place?.wheelchairAccess ? 'Accessible' : 'Not Accessible') : (place?.wheelchairAccess || place?.wheelchair || "Accessible")}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
-                      <span style={{ fontSize: 12, color: M }}>Age Restriction</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.minAge || "All Ages"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}`, gap: 16 }}>
+                      <span style={{ fontSize: 12, color: M, flexShrink: 0 }}>Age Restriction</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12, textAlign: "right", wordBreak: "break-word" }}>
+                        {place?.ageRestriction || place?.minAge 
+                          ? (isNaN(place?.ageRestriction || place?.minAge) 
+                              ? (place?.ageRestriction || place?.minAge) 
+                              : `${place?.ageRestriction || place?.minAge} Years+`) 
+                          : "All Ages"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1742,11 +1751,11 @@ function VisitorInformation({ place }) {
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: M }}>Closing Hour</span>
-                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.closeTime || "04:30 PM"}</span>
+                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.closingTime || place?.closeTime || "04:30 PM"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: M }}>Closed On</span>
-                      <span style={{ fontWeight: 850, color: A, fontSize: 13, textTransform: "uppercase" }}>{place?.closedDays || "None"}</span>
+                      <span style={{ fontWeight: 850, color: A, fontSize: 13, textTransform: "uppercase" }}>{Array.isArray(place?.closedDays) ? place?.closedDays.join(', ') : (place?.closedDays || "None")}</span>
                     </div>
                   </div>
                 </div>

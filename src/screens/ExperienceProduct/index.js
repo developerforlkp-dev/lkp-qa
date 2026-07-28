@@ -2395,9 +2395,7 @@ const ExperienceProduct = () => {
                                   <Star key={i} size={14} style={{ fill: i < rating ? "#F59E0B" : "transparent" }} color={i < rating ? "#F59E0B" : M} />
                                 ))}
                               </div>
-                              <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: vendorResponse ? 3 : 4, WebkitBoxOrient: "vertical", fontWeight: 400 }}>
-                                &ldquo;{text}&rdquo;
-                              </p>
+                              <ExpandableReviewText text={text} vendorResponse={vendorResponse} FG={FG} A={A} />
                               {vendorResponse && (
                                 <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${B}`, opacity: 0.96 }}>
                                   <div style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
@@ -3553,9 +3551,7 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
                       {rev.createdAt ? moment(rev.createdAt).format("MMM YYYY") : "Recently"}
                     </span>
                   </div>
-                  <p style={{ fontSize: 13, color: FG, lineHeight: 1.6, fontStyle: "italic", opacity: 0.9 }}>
-                    &ldquo;{rev.comment || rev.text}&rdquo;
-                  </p>
+                  <ExpandableReviewText text={rev.comment || rev.text} vendorResponse={rev.vendorResponse} FG={FG} A={A} />
                   {rev?.vendorResponse && (
                     <div style={{ marginTop: 12, padding: "12px 16px", background: AL, borderLeft: `3px solid ${A}`, borderRadius: "0 8px 8px 0" }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Response from Host</div>
@@ -3585,6 +3581,34 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
     </div>
   );
 }
+
+const ExpandableReviewText = ({ text, vendorResponse, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+  
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+      <p style={{ 
+        fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, 
+        overflow: "hidden", 
+        display: expanded ? "block" : "-webkit-box", 
+        WebkitLineClamp: expanded ? "unset" : (vendorResponse ? 3 : 4), 
+        WebkitBoxOrient: "vertical", 
+        fontWeight: 400 
+      }}>
+        &ldquo;{text}&rdquo;
+      </p>
+      {isLong && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};
 
 export default ExperienceProduct;
 

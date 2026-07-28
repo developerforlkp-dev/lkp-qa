@@ -539,7 +539,7 @@ function ImageRing({ event }) {
   const media = Array.isArray(event?.media) ? event.media : [];
   const ringImages = media.length > 0
     ? [...media].slice(0, 6).map(m => m.url)
-    : ["abstract", "art", "concert", "crowd", "dancer", "venue"];
+    : [];
 
   const R = 150;
   return (
@@ -551,7 +551,7 @@ function ImageRing({ event }) {
           const y = (Math.sin(ang) * R).toFixed(3);
 
           // If we are using placeholders, construct the URL
-          const finalSrc = src.startsWith('http') ? src : `https://picsum.photos/seed/${src}/200/300`;
+          const finalSrc = src;
 
           return (
             <div
@@ -847,7 +847,7 @@ function MobileHero({ event, heroRef }) {
       item?.images?.[0],
     ];
     const found = candidates.find((v) => v != null && String(v).trim());
-    return found || "https://picsum.photos/seed/lkp/800/800";
+    return found || "";
   };
   const bgImage = formatImageUrl(getImageUrl(event));
 
@@ -873,7 +873,7 @@ function MobileHero({ event, heroRef }) {
       width: "100%",
       minHeight: "450px",
       height: "60vh",
-      backgroundImage: `url(${bgImage})`,
+      backgroundImage: bgImage ? `url(${bgImage})` : "none",
       backgroundSize: "cover",
       backgroundPosition: "center",
       borderBottomLeftRadius: 36,
@@ -1720,12 +1720,7 @@ function Gallery({ event }) {
   const dynamicCols = chunkMedia(eventMedia, 4);
 
   // Fallback to reference images if no media is provided
-  const GALLERY_COLS = useMemo(() => dynamicCols || [
-    [{ src: "https://picsum.photos/seed/a1/300/400", label: "Live", h: 420 }, { src: "https://picsum.photos/seed/a2/300/500", label: "Audience", h: 560 }, { src: "https://picsum.photos/seed/a3/300/300", label: "Art", h: 320 }],
-    [{ src: "https://picsum.photos/seed/b1/300/500", label: "Painting", h: 520 }, { src: "https://picsum.photos/seed/b2/300/400", label: "Venue", h: 380 }, { src: "https://picsum.photos/seed/b3/300/400", label: "Movement", h: 400 }],
-    [{ src: "https://picsum.photos/seed/c1/300/400", label: "Guests", h: 380 }, { src: "https://picsum.photos/seed/c2/300/600", label: "Sonic", h: 540 }, { src: "https://picsum.photos/seed/c3/300/400", label: "Canvas", h: 420 }],
-    [{ src: "https://picsum.photos/seed/d1/300/500", label: "Heritage", h: 480 }, { src: "https://picsum.photos/seed/d2/300/400", label: "Expression", h: 420 }, { src: "https://picsum.photos/seed/d3/300/300", label: "Energy", h: 360 }],
-  ], [dynamicCols]);
+  const GALLERY_COLS = useMemo(() => dynamicCols || [], [dynamicCols]);
 
   const allImageUrls = useMemo(() => {
     return GALLERY_COLS.flat().map(img => img.src);
@@ -1736,6 +1731,8 @@ function Gallery({ event }) {
     setPhotoViewIndex(index !== -1 ? index : 0);
     setPhotoViewVisible(true);
   };
+
+  if (eventMedia.length === 0) return null;
 
   return (
     <section id="gallery" style={{ backgroundColor: BG, padding: isMobile ? "24px 20px 32px" : "24px 80px 32px", overflow: "hidden" }}>
@@ -1793,17 +1790,15 @@ function Artists({ event }) {
   const eventArtists = Array.isArray(event?.artists) ? event.artists :
     Array.isArray(event?.lineup) ? event.lineup : [];
 
-  const ARTISTS = eventArtists.length > 0 ? eventArtists.map((a, i) => ({
+  if (eventArtists.length === 0) return null;
+
+  const ARTISTS = eventArtists.map((a, i) => ({
     id: a.id || `artist-${i}`,
     name: a.name || a.artistName || "Guest Artist",
     origin: a.origin || a.location || "",
     bio: a.bio || a.description || "Performing live at Solstice.",
-    image: formatImageUrl(a.photoUrl || a.imageUrl || a.profileImage || a.avatar || a.photo || a.artistImage) || `https://picsum.photos/seed/artist-${a.name || i}/600/450`
-  })) : [
-    { id: 1, name: "Aroha Ngata", origin: "NZL", bio: "A pioneer of immersive soundscapes blurring the boundary between music and architecture.", tags: ["Electronic", "Ambient", "Installation"], image: "https://picsum.photos/seed/aroha/600/450" },
-    { id: 2, name: "Ravi Khanna", origin: "IND", bio: "Tabla maestro meets modular synthesizer — live sets that are meditations in controlled chaos.", tags: ["Classical", "Electronic", "Tabla"], image: "https://picsum.photos/seed/ravi/600/450" },
-    { id: 3, name: "Lena Solberg", origin: "NOR", bio: "Creates monumental paintings in real-time, her canvas as large as the wall behind her.", tags: ["Live Art", "Abstract", "Performance"], image: "https://picsum.photos/seed/lena/600/450" },
-  ];
+    image: formatImageUrl(a.photoUrl || a.imageUrl || a.profileImage || a.avatar || a.photo || a.artistImage) || ""
+  }));
 
   const handleMouseMove = (e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -1867,7 +1862,7 @@ function Artists({ event }) {
                 <div>
                   <motion.p animate={{ color: hov === a.id ? A : B }} style={{ fontFamily: "monospace", fontSize: 10 }}>{String(i + 1).padStart(2, "0")}</motion.p>
                 </div>
-                <div>
+                <div onMouseEnter={() => setHov(null)} onMouseLeave={() => setHov(a.id)}>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
                     <motion.h3 animate={{ color: hov === a.id ? A : FG }} style={{ fontSize: "18px", fontWeight: 700, fontFamily: '"Inter", sans-serif', margin: "4px 0 0 0", lineHeight: 1 }}>{a.name}</motion.h3>
                   </div>

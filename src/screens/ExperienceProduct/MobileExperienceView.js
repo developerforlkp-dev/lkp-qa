@@ -882,9 +882,7 @@ export default function MobileExperienceView({
                     {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Recently"}
                   </span>
                 </div>
-                <p className="mob-review-text" style={{ color: FG }}>
-                  &ldquo;{rev.comment || rev.text}&rdquo;
-                </p>
+                <ExpandableReviewText text={rev.comment || rev.text} vendorResponse={rev.vendorResponse || rev.hostResponse || rev.reply} FG={FG} A={A} />
               </div>
             ))}
           </div>
@@ -990,3 +988,31 @@ export default function MobileExperienceView({
     </div>
   );
 }
+const ExpandableReviewText = ({ text, vendorResponse, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+  
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+      <p className="mob-review-text" style={{ 
+        color: FG, margin: 0, 
+        overflow: "hidden", 
+        display: expanded ? "block" : "-webkit-box", 
+        WebkitLineClamp: expanded ? "unset" : (vendorResponse ? 3 : 4), 
+        WebkitBoxOrient: "vertical",
+        fontSize: 14,
+        lineHeight: 1.5
+      }}>
+        &ldquo;{text}&rdquo;
+      </p>
+      {isLong && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};

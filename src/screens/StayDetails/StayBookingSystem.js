@@ -33,20 +33,32 @@ export const StayInlineCalendar = ({
 
   const isRange = checkInDate && checkOutDate;
 
-  const cells = [
-    ...Array.from({ length: firstDay }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, index) => {
-      const day = index + 1;
-      const mDate = moment([year, month, day]);
-      const key = mDate.format("YYYY-MM-DD");
-      const isPast = key < todayKey;
-      const isBlocked = isBlockedDay(mDate);
-      const isSelected = key === checkInKey || key === checkOutKey;
-      const isInRange = isRange && key > checkInKey && key < checkOutKey;
-      
-      return { day, key, mDate, isPast, isBlocked, isSelected, isInRange };
-    }),
-  ];
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const nextMonthDaysCount = 42 - (firstDay + daysInMonth);
+
+  const createCell = (y, m, d, isOverflow) => {
+    const mDate = moment(new Date(y, m, d));
+    const key = mDate.format("YYYY-MM-DD");
+    const isPast = key < todayKey;
+    const isBlocked = isBlockedDay(mDate);
+    const isSelected = key === checkInKey || key === checkOutKey;
+    const isInRange = isRange && key > checkInKey && key < checkOutKey;
+    return { day: d, key, mDate, isPast, isBlocked, isSelected, isInRange, isOverflow };
+  };
+
+  const prevMonthCells = Array.from({ length: firstDay }, (_, i) => 
+    createCell(year, month - 1, daysInPrevMonth - firstDay + i + 1, true)
+  );
+  
+  const currentMonthCells = Array.from({ length: daysInMonth }, (_, i) => 
+    createCell(year, month, i + 1, false)
+  );
+
+  const nextMonthCells = Array.from({ length: nextMonthDaysCount }, (_, i) => 
+    createCell(year, month + 1, i + 1, true)
+  );
+
+  const cells = [...prevMonthCells, ...currentMonthCells, ...nextMonthCells];
 
   return (
     <div style={{ background: S, borderRadius: 24, padding: "16px", border: `1px solid ${B}` }}>
@@ -75,7 +87,6 @@ export const StayInlineCalendar = ({
           <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: M, marginBottom: 8 }}>{d}</div>
         ))}
         {cells.map((cell, i) => {
-          if (!cell) return <div key={`empty-${i}`} />;
           const isRangeComplete = checkInDate && checkOutDate;
           let disabled = cell.isPast;
           if (!disabled) {
@@ -108,11 +119,12 @@ export const StayInlineCalendar = ({
               onClick={() => !disabled && onDateSelect(cell.mDate)}
               disabled={disabled}
               style={{
-                aspectRatio: "1/1",
+                height: 40,
                 border: "none",
                 borderRadius: cell.isSelected ? 10 : 6,
                 background: cell.isSelected ? A : cell.isInRange ? AL : "transparent",
                 color: textColor,
+                opacity: (cell.isOverflow && !cell.isSelected && !cell.isInRange) ? 0.8 : 1,
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: disabled ? "not-allowed" : "pointer",
@@ -742,15 +754,13 @@ const StayBookingSystem = ({
         if (checkOutDate && date.isSameOrAfter(checkOutDate, 'day')) {
           setCheckOutDate(null);
           setSelectionMode("check-out");
-          setShowCalendarModal(false);
         } else if (checkOutDate) {
           // If checkout is still valid after changing check-in, finalize again
           setSelectionMode("done");
           setShowCalendarModal(false);
         } else {
-          // STEP 2: Automatic switch to Check-out mode and close modal
+          // STEP 2: Automatic switch to Check-out mode
           setSelectionMode("check-out");
-          setShowCalendarModal(false);
         }
       }
     } else {
@@ -2561,6 +2571,7 @@ const StayBookingSystem = ({
                 overflow: "hidden",
                 width: "95%",
                 maxWidth: 480,
+                minHeight: "min(650px, 85vh)",
                 maxHeight: "calc(100vh - 40px)",
                 border: `1px solid ${B}`,
                 boxShadow: `0 30px 60px rgba(0,0,0,0.5), 0 0 100px ${A}11`,
@@ -3429,11 +3440,52 @@ const StayBookingSystem = ({
                 boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: FG }}>
-                  {selectionMode === "check-in" ? "Select Check-in Date" : "Select Check-out Date"}
-                </h3>
-                <button onClick={() => setShowCalendarModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: M, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selectionMode}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: FG, display: "flex", alignItems: "center", gap: 8 }}>
+                      {selectionMode === "check-in" ? (
+                        <span style={{ color: A }}>
+                          Step 1: Check-in
+                        </span>
+                      ) : (
+                        <>
+                          <span style={{ color: A }}>
+                            Step 2: Check-out
+                          </span>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
+                            style={{ 
+                              background: A, 
+                              color: BG, 
+                              fontSize: 10, 
+                              padding: "2px 8px", 
+                              borderRadius: 100,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px"
+                            }}
+                          >
+                            Next
+                          </motion.div>
+                        </>
+                      )}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: 13, color: M, fontWeight: 600 }}>
+                      {selectionMode === "check-in" ? "When will you arrive?" : "When will you leave?"}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+
+                <button onClick={() => setShowCalendarModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: M, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 4 }}>
                   <X size={20} />
                 </button>
               </div>
