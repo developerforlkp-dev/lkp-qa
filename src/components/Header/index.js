@@ -35,7 +35,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const darkMode = useDarkMode(false);
 
-  const useMobileHeader = isBlogPage || isDetailPage;
+  const useMobileHeader = isBlogPage || isDetailPage || isFilterPage;
 
   // Check if user is authenticated (has JWT token)
   const isAuthenticated = () => {

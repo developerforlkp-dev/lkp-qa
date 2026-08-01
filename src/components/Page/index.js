@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { withRouter, useLocation } from "react-router-dom";
 import { clearAllBodyScrollLocks } from "body-scroll-lock";
 import { motion } from "framer-motion";
@@ -46,7 +46,7 @@ const Page = ({
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
   const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details") || pathname.startsWith("/wishlists");
-  const isBlogPage = pathname.startsWith("/blog") || pathname.startsWith("/account-settings") || pathname.startsWith("/about") || pathname.startsWith("/support") || pathname.startsWith("/faq") || pathname.startsWith("/cancellation-policy") || pathname.startsWith("/terms-of-service") || pathname.startsWith("/privacy-policy");
+  const isBlogPage = pathname.startsWith("/blog") || pathname.startsWith("/bookings") || pathname.startsWith("/account-settings") || pathname.startsWith("/about") || pathname.startsWith("/support") || pathname.startsWith("/faq") || pathname.startsWith("/cancellation-policy") || pathname.startsWith("/terms-of-service") || pathname.startsWith("/privacy-policy");
   const isHomeRoute = homeRoutes.includes(pathname) || isDetailPage;
 
   useEffect(() => {
@@ -55,8 +55,17 @@ const Page = ({
   }, [pathname]);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", handleScroll);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 40);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -69,12 +78,13 @@ const Page = ({
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
+          const currentScrollY = Math.max(0, window.scrollY);
           const lastScrollY = lastScrollYRef.current;
           const diff = currentScrollY - lastScrollY;
 
           if (currentScrollY <= 50) {
             setHeaderVisible(true);
+            lastScrollYRef.current = currentScrollY;
           } else if (Math.abs(diff) > threshold) {
             if (diff > 0) {
               setHeaderVisible(false);
@@ -95,12 +105,14 @@ const Page = ({
 
   const E = [0.22, 1, 0.36, 1];
 
+  const memoizedChildren = useMemo(() => children, [children]);
+
   return (
     <div className={styles.page}>
       {/* Header Background Layer (Under the Hero) */}
       {!hideHeader && (
         <div 
-          className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible, "is-detail-page": isDetailPage, "is-blog-page": isBlogPage })}
+          className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible, "is-detail-page": isDetailPage, "is-blog-page": isBlogPage, "is-filter-page": isFilterPage })}
           style={{ 
             position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, 
             height: (scrolled || separatorHeader) ? "70px" : "0px",
@@ -115,7 +127,7 @@ const Page = ({
       {/* Header Content Layer (Above the Hero) */}
       {!hideHeader && (
         <motion.div
-          className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && (!isHomeRoute || isDetailPage || isBlogPage), "is-detail-page": isDetailPage, "is-blog-page": isBlogPage })}
+          className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && (!isHomeRoute || isDetailPage || isBlogPage || isFilterPage), "is-detail-page": isDetailPage, "is-blog-page": isBlogPage, "is-filter-page": isFilterPage })}
           initial={{ y: -70, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.85, ease: E }}
@@ -145,7 +157,7 @@ const Page = ({
       )}
       
       <div className={styles.inner}>
-        {children}
+        {memoizedChildren}
       </div>
 
       {!fooferHide && <Footer />}
@@ -176,23 +188,23 @@ const Page = ({
         }
         
         @media (max-width: 768px) {
-          .slim-header-bg.is-detail-page, .slim-header-bg.is-blog-page {
+          .slim-header-bg.is-detail-page, .slim-header-bg.is-blog-page, .slim-header-bg.is-filter-page {
             height: 60px !important;
           }
-          .slim-header-wrapper.is-detail-page, .slim-header-wrapper.is-blog-page {
+          .slim-header-wrapper.is-detail-page, .slim-header-wrapper.is-blog-page, .slim-header-wrapper.is-filter-page {
             margin-top: ${separatorHeader ? "-60px" : "0"} !important;
           }
-          .slim-header-wrapper.is-detail-page > div, .slim-header-wrapper.is-blog-page > div {
+          .slim-header-wrapper.is-detail-page > div, .slim-header-wrapper.is-blog-page > div, .slim-header-wrapper.is-filter-page > div {
             padding: 12px 0 !important;
           }
-          .slim-header-wrapper.is-detail-page [class*="Header_container"], .slim-header-wrapper.is-blog-page [class*="Header_container"] {
+          .slim-header-wrapper.is-detail-page [class*="Header_container"], .slim-header-wrapper.is-blog-page [class*="Header_container"], .slim-header-wrapper.is-filter-page [class*="Header_container"] {
             padding: 0 16px !important;
           }
-          .slim-header-wrapper.is-detail-page img, .slim-header-wrapper.is-blog-page img {
+          .slim-header-wrapper.is-detail-page img, .slim-header-wrapper.is-blog-page img, .slim-header-wrapper.is-filter-page img {
             height: 44px !important;
             width: auto !important;
           }
-          .slim-header-wrapper.is-detail-page [class*="Header_burger"], .slim-header-wrapper.is-blog-page [class*="Header_burger"] {
+          .slim-header-wrapper.is-detail-page [class*="Header_burger"], .slim-header-wrapper.is-blog-page [class*="Header_burger"], .slim-header-wrapper.is-filter-page [class*="Header_burger"] {
              transform: none;
              margin-top: 0;
           }

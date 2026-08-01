@@ -562,26 +562,59 @@ const getStoredStayRooms = (storedRooms, stay) => {
 
 const StayBookingSystem = ({
   stay,
-  checkInDate,
-  setCheckInDate,
-  checkOutDate,
-  setCheckOutDate,
-  guests,
-  setGuests,
-  childAges,
-  setChildAges,
-  selectedRooms, // Array of {roomId, mealPlan, count}
-  setSelectedRooms,
-  onRoomsCountChange,
-  selectedAddOns = [],
-  addOnQuantities = {},
-  onAddOnQuantityChange,
-  onToggleAddOn,
+  // These were originally controlled props, but since this is a standalone rebooking modal,
+  // we ignore the parent's dummy props and manage our own state internally.
+  checkInDate: _unused1,
+  setCheckInDate: _unused2,
+  checkOutDate: _unused3,
+  setCheckOutDate: _unused4,
+  guests: _unused5,
+  setGuests: _unused6,
+  childAges: _unused7,
+  setChildAges: _unused8,
+  selectedRooms: _unused9,
+  setSelectedRooms: _unused10,
+  onRoomsCountChange: _unused11,
+  selectedAddOns: _unused12,
+  addOnQuantities: _unused13,
+  onAddOnQuantityChange: _unused14,
+  onToggleAddOn: _unused15,
   externalOpen,
   onExternalOpenChange,
 }) => {
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
+
+  // --- Internal State Management ---
+  const [checkInDate, setCheckInDate] = useState(null);
+  const [checkOutDate, setCheckOutDate] = useState(null);
+  const [guests, setGuests] = useState({ adults: 1, children: 0 });
+  const [childAges, setChildAges] = useState([]);
+  const [selectedRooms, setSelectedRooms] = useState([]);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [addOnQuantities, setAddOnQuantities] = useState({});
+
+  const onRoomsCountChange = (roomId, count) => {
+    setSelectedRooms(prev => {
+      if (count === 0) return prev.filter(r => String(r.roomId) !== String(roomId));
+      const existing = prev.find(r => String(r.roomId) === String(roomId));
+      if (existing) return prev.map(r => String(r.roomId) === String(roomId) ? { ...r, count } : r);
+      return [...prev, { roomId: String(roomId), mealPlan: "EP", count }];
+    });
+  };
+
+  const onToggleAddOn = (addon) => {
+    setSelectedAddOns(prev => {
+      const exists = prev.find(a => a.id === addon.id);
+      if (exists) return prev.filter(a => a.id !== addon.id);
+      return [...prev, addon];
+    });
+  };
+
+  const onAddOnQuantityChange = (addonId, qty) => {
+    setAddOnQuantities(prev => ({ ...prev, [addonId]: qty }));
+  };
+  // ---------------------------------
   const [show, setShow] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
@@ -613,11 +646,7 @@ const StayBookingSystem = ({
     }
   }, [onExternalOpenChange]);
 
-  useEffect(() => {
-    if (onExternalOpenChange) {
-      onExternalOpenChange(show);
-    }
-  }, [onExternalOpenChange, show]);
+  // Removed faulty useEffect that called onExternalOpenChange(show) on mount
 
   const handleAddonsScroll = () => {
     const container = document.getElementById("stay-header-addons-scroll");
@@ -3181,9 +3210,52 @@ const StayBookingSystem = ({
                                   <div style={{ width: 26, height: 26, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
                                     <Bed size={13} />
                                   </div>
-                                  <div>
-                                    <p style={{ fontSize: 13, fontWeight: 600, color: FG }}>{room.roomName || room.name}</p>
-                                    <p style={{ fontSize: 10, fontWeight: 500, color: M }}>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG, margin: 0 }}>{room.roomName || room.name}</p>
+                                      {stayRoomsCatalog.length > 1 && (
+                                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                                          <select
+                                            value={room.roomId || room.id}
+                                            onChange={(e) => {
+                                              const newRoomId = e.target.value;
+                                              setSelectedRooms(prev => prev.map(r =>
+                                                (r.roomId || r.id) === (room.roomId || room.id) ? { ...r, roomId: newRoomId } : r
+                                              ));
+                                            }}
+                                            style={{
+                                              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer'
+                                            }}
+                                          >
+                                            {stayRoomsCatalog.map(catalogRoom => {
+                                              const cId = String(catalogRoom.roomId ?? catalogRoom.id ?? catalogRoom.roomTypeId ?? catalogRoom.room_type_id);
+                                              return (
+                                                <option key={cId} value={cId}>
+                                                  {catalogRoom.roomName || catalogRoom.name || catalogRoom.bedType || "Accommodation"}
+                                                </option>
+                                              );
+                                            })}
+                                          </select>
+                                          <div style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            color: A,
+                                            background: `${A}11`,
+                                            border: `1px solid ${A}44`,
+                                            borderRadius: 6,
+                                            padding: "2px 6px",
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            pointerEvents: 'none',
+                                            boxShadow: `0 1px 2px ${B}44`,
+                                          }}>
+                                            Change <ChevronDown size={10} color={A} />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <p style={{ fontSize: 10, fontWeight: 500, color: M, margin: 0 }}>
                                       {getMealPlanDisplayLabel(
                                         room.mealPlan || "EP",
                                         room.mealPlanPricing,

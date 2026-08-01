@@ -33,6 +33,7 @@ const PriceDetails = ({
   hideHeader,
   guestDetails,
   onGuestValidationFailed,
+  hideCancellationIcon,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -153,7 +154,7 @@ const PriceDetails = ({
 
         {cancellationPolicy && (
           <div className={styles.cancellation}>
-            <Icon name="coin" size="16" />
+            {!hideCancellationIcon && <Icon name="coin" size="16" />}
             <div style={{ whiteSpace: "pre-line" }}>{cancellationPolicy}</div>
           </div>
         )}

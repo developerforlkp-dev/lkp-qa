@@ -185,18 +185,8 @@ const DetailSkeleton = () => (
 
 const StaySkeleton = () => (
   <div className={styles.staySkeleton}>
-    <div className={styles.stayHeader}>
-      <div>
-        <Shimmer className={styles.stayTitle} />
-        <Shimmer className={styles.staySubtitle} />
-      </div>
-    </div>
-    <div className={styles.stayGallery}>
-      <div />
-      <div />
-      <div />
-      <div />
-      <div />
+    <div className={styles.stayHeroGrid}>
+      <Shimmer className={styles.stayHeroSpotlight} />
     </div>
     <div className={styles.stayContentGrid}>
       <div className={styles.stayMainContent}>

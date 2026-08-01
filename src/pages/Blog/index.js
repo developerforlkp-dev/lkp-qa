@@ -44,7 +44,9 @@ export default function Blog() {
   // Compute filtered posts
   const filteredPosts = posts.filter(post => {
     // 1. Category Filter
-    const matchesCategory = selectedCategory === "All Posts" || post.category === selectedCategory;
+    const matchesCategory = selectedCategory === "All Posts" || 
+                            post.category === selectedCategory ||
+                            (selectedCategory === "Place" && post.category?.toLowerCase().includes("place"));
     
     // 2. Search Filter
     const query = searchQuery.toLowerCase().trim();

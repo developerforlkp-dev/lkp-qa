@@ -240,9 +240,23 @@ const Main = ({ hostId, onLoadingChange }) => {
           >
             <div className={styles.headStack}>
               <div className={styles.avatar}>
-                <div className={styles.avatarPlaceholder}>
-                  <Icon name="user" size="40" />
-                </div>
+                {host?.profilePhotoUrl || host?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || host?.avatar ? (
+                  <img 
+                    src={host?.profilePhotoUrl || host?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || host?.avatar}
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                    alt={hostName}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(hostName)}&backgroundColor=0097B2&color=ffffff`;
+                    }}
+                  />
+                ) : (
+                  <img 
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(hostName)}&backgroundColor=0097B2&color=ffffff`}
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                    alt={hostName}
+                  />
+                )}
                 <div className={styles.check}>
                   <Icon name="tick" size="24" />
                 </div>

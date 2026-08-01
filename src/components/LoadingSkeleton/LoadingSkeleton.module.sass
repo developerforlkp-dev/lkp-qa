@@ -406,46 +406,29 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 .staySkeleton
-    padding: 2rem 0
+    padding: 0
+    margin-bottom: 4rem
 
-.stayHeader
-    display: flex
-    justify-content: space-between
-    align-items: flex-start
+.stayHeroGrid
+    position: relative
+    height: 75vh
+    width: 100%
+    padding: 0 24px 24px 24px
     margin-bottom: 24px
-
-.stayTitle
-    height: 32px
-    width: 50%
-    border-radius: 8px
+    box-sizing: border-box
     +m
-        width: 80%
+        height: 55vh
+        padding: 0
+        margin-bottom: 16px
 
-.staySubtitle
-    height: 16px
-    width: 30%
-    border-radius: 6px
-    margin-top: 12px
-    +m
-        width: 60%
-
-.stayGallery
-    display: grid
-    grid-template-columns: 2fr 1fr 1fr
-    grid-template-rows: 200px 200px
-    gap: 8px
-    border-radius: 20px
+.stayHeroSpotlight
+    position: relative
+    border-radius: 28px
     overflow: hidden
-    margin-bottom: 36px
+    height: 100%
+    width: 100%
     +m
-        grid-template-columns: 1fr
-        grid-template-rows: 240px
-    & > div
-        +shimmer-bg
-    & > div:first-child
-        grid-row: 1 / 3
-        +m
-            grid-row: auto
+        border-radius: 0 0 24px 24px
 
 .stayContentGrid
     display: grid

@@ -12,6 +12,7 @@ import {
   normalizeOrderPaymentSession,
   sendOrderMessage,
   saveGuestDetails,
+  finalizeFreeEvent,
 } from "../../../utils/api";
 import {
   clearPendingCheckoutState,
@@ -88,6 +89,9 @@ const getOrderCreationErrorMessage = (error) => {
   }
   if (code.includes("HOLD") || /hold expired/i.test(message)) {
     return "Hold expired, recheck availability.";
+  }
+  if (/status:\s*DISABLED/i.test(message)) {
+    return "Sorry, this experience is currently disabled and cannot be booked at the moment.\n\nPlease try another experience or contact support for help.";
   }
   return message;
 };
@@ -176,6 +180,15 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorModalMsg, setErrorModalMsg] = useState("");
   const history = useHistory();
+
+  const isFreeBookingView = Number(
+    paymentData?.amount ?? 
+    (Number(
+      bookingDataProp?.finalTotal ?? 
+      bookingDataProp?.totalAmount ?? 
+      bookingDataProp?.pricing?.total ?? 0
+    ) > 0 ? 1 : 0)
+  ) <= 0;
 
   const ensureRazorpayScript = () =>
     new Promise((resolve, reject) => {
@@ -306,7 +319,10 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         }
       }
 
-      if (orderId) {
+      const activeAmount = activePayment?.amount ?? (Number(bookingData?.finalTotal ?? bookingData?.totalAmount ?? bookingData?.pricing?.total ?? 0) > 0 ? 1 : 0);
+      const isActuallyFree = Number(activeAmount) <= 0;
+
+      if (orderId && !isActuallyFree) {
         activePayment = await ensureRazorpaySession({
           orderId,
           payment: activePayment,
@@ -370,7 +386,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
     const razorpayKeyId = activePayment?.razorpayKeyId;
     const amount = activePayment?.amount;
     const currency = activePayment?.currency || "INR";
-    const isFreeBooking = Number(amount || 0) <= 0;
+    const isFreeBooking = Number(amount ?? (Number(bookingData?.finalTotal ?? bookingData?.totalAmount ?? bookingData?.pricing?.total ?? 0) > 0 ? 1 : 0)) <= 0;
 
     if (!razorpayOrderId && !isFreeBooking) {
       setErrorModalMsg("Could not initialize payment. Please try booking again.");
@@ -386,10 +402,13 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 
     if (isFreeBooking) {
       try {
+        const freeEventResponse = await finalizeFreeEvent(orderId);
+        // We use the new API, but we simulate razorpay success for the CheckoutComplete page to work out of the box
         const freePaymentSuccess = {
           razorpay_payment_id: `FREE_${orderId || Date.now()}`,
           razorpay_order_id: `FREE_ORDER_${orderId || Date.now()}`,
           razorpay_signature: "FREE_SIG",
+          finalizationMode: freeEventResponse?.finalization?.mode || "AUTO_CONFIRMED",
         };
         localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(freePaymentSuccess));
         localStorage.setItem("actualPaidAmount", JSON.stringify({
@@ -550,7 +569,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           disabled={isProcessing}
           style={{ opacity: isProcessing ? 0.7 : 1, cursor: isProcessing ? "not-allowed" : "pointer" }}
         >
-          {isProcessing ? "Processing..." : "Confirm and pay"}
+          {isProcessing ? (isFreeBookingView ? "Confirming..." : "Processing...") : (isFreeBookingView ? "Confirm Booking" : "Confirm and pay")}
         </button>
       </div>
       <Modal visible={!!errorModalMsg} onClose={() => setErrorModalMsg("")}>
@@ -562,8 +581,18 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
           </div>
-          <h3 style={{ marginBottom: "16px", fontSize: "20px", fontWeight: "600" }}>Oops!</h3>
-          <p style={{ marginBottom: "24px", fontSize: "16px", color: "#4A4A4A", wordBreak: "break-word" }}>{errorModalMsg}</p>
+          <h3 style={{ marginBottom: "16px", fontSize: "20px", fontWeight: "600" }}>
+            {typeof errorModalMsg === 'string' && errorModalMsg.toLowerCase().includes("already booked")
+              ? "Dates Unavailable"
+              : typeof errorModalMsg === 'string' && errorModalMsg.includes("currently disabled") 
+                ? "Booking Unavailable" 
+                : "Oops!"}
+          </h3>
+          <p style={{ marginBottom: "24px", fontSize: "16px", color: "#4A4A4A", wordBreak: "break-word", whiteSpace: "pre-line" }}>
+            {typeof errorModalMsg === 'string' && errorModalMsg.toLowerCase().includes("already booked")
+              ? "This property is already booked for the selected dates. Please try selecting different dates or explore other properties."
+              : errorModalMsg}
+          </p>
           <button className="button" onClick={() => setErrorModalMsg("")} style={{ width: "100%" }}>
             Okay
           </button>

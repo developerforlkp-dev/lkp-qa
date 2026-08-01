@@ -332,18 +332,15 @@ const ExperienceProduct = () => {
   const hostLeadUserId = hostData?.host?.leadUserId || hostData?.leadUserId || listing?.leadUserId || listing?.host?.leadUserId || listing?.hostId || listing?.host?.id;
   const leadIdForProfile = leadData?.leadId || leadData?.id || listing?.leadId || listing?.lead_id || listing?.host?.leadId || null;
   const displayHostName =
-    [leadData?.firstName, leadData?.lastName].filter(Boolean).join(" ").trim() ||
     [hostData?.host?.firstName, hostData?.host?.lastName].filter(Boolean).join(" ").trim() ||
     [hostData?.firstName, hostData?.lastName].filter(Boolean).join(" ").trim() ||
     hostData?.host?.displayName ||
     hostData?.displayName ||
     hostData?.host?.name ||
     hostData?.name ||
+    [leadData?.firstName, leadData?.lastName].filter(Boolean).join(" ").trim() ||
     "Host";
   const hostPhone =
-    leadData?.phoneNumber ||
-    leadData?.contactNumber ||
-    leadData?.altPhoneNumber ||
     hostData?.host?.phoneNumber ||
     hostData?.phoneNumber ||
     hostData?.host?.phone ||
@@ -354,15 +351,18 @@ const ExperienceProduct = () => {
     listing?.host?.phone ||
     listing?.host?.mobile ||
     listing?.host?.contactNumber ||
+    leadData?.phoneNumber ||
+    leadData?.contactNumber ||
+    leadData?.altPhoneNumber ||
     "";
   const hostEmail =
-    leadData?.email ||
-    leadData?.altEmail ||
     hostData?.host?.email ||
     hostData?.email ||
     hostData?.emailAddress ||
     listing?.host?.email ||
     listing?.host?.emailAddress ||
+    leadData?.email ||
+    leadData?.altEmail ||
     "";
 
   const isListingUnavailable = (payload) => {
@@ -510,11 +510,17 @@ const ExperienceProduct = () => {
               const forThisListing = resp.filter(b => String(b.listingId) === String(id));
               setEligibleBookings(forThisListing);
             }
-          }).catch(e => console.warn("Failed to fetch eligible bookings:", e));
+          }).catch(e => {
+            if (e?.response?.status !== 401) {
+              console.warn("Failed to fetch eligible bookings:", e);
+            }
+          });
 
           const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
           if (leadId) {
-            getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => console.warn(e));
+            getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => {
+              if (e?.response?.status !== 401) console.warn(e);
+            });
           }
 
         }
@@ -1497,11 +1503,11 @@ const ExperienceProduct = () => {
                         }}
                       >
                         {/* Left side: ONLY image */}
-                        <div style={{ width: "160px", height: "100%", flexShrink: 0, overflow: "hidden", background: W, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: "160px", flexShrink: 0, overflow: "hidden", background: W, position: "relative" }}>
                           {addonImage ? (
                             <img
                               src={formatImageUrl(addonImage)}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
                               alt={addon.title}
                               onError={(e) => {
                                 e.target.onerror = null;
@@ -1509,7 +1515,7 @@ const ExperienceProduct = () => {
                               }}
                             />
                           ) : (
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: AL }}>
+                            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: AL }}>
                               <Plus size={24} color={A} />
                             </div>
                           )}
@@ -1937,7 +1943,7 @@ const ExperienceProduct = () => {
                               padding: "1px"
                             }}>
                               <img
-                                src={formatImageUrl(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
+                                src={formatImageUrl(leadData?.profilePhotoUrl || leadData?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || hostData?.host?.profilePhotoUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
                                 style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                                 alt={displayHostName}
                                 onError={(e) => {
@@ -2006,48 +2012,7 @@ const ExperienceProduct = () => {
                           </div>
                         </div>
 
-                        {/* Redesigned Metrics Section - Only 2 Cards */}
-                        <div style={{
-                          display: "flex",
-                          gap: 6,
-                          alignItems: "center"
-                        }}>
-                          {/* Rating Pill */}
-                          <div style={{
-                            background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                            borderRadius: "10px",
-                            padding: "6px 10px",
-                            textAlign: "center",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: 46
-                          }}>
-                            <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", lineHeight: 1 }}>
-                              ★ {hostData?.statistics?.averageRating || "4.9"}
-                            </span>
-                            <span style={{ fontSize: "7px", color: "#B45309", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Rating</span>
-                          </div>
 
-                          {/* Events Pill */}
-                          <div style={{
-                            background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                            border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                            borderRadius: "10px",
-                            padding: "6px 10px",
-                            textAlign: "center",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: 46
-                          }}>
-                            <span style={{ fontSize: "12px", fontWeight: 800, color: A, lineHeight: 1 }}>
-                              {hostData?.statistics?.totalEvents || hostData?.listings?.length || 8}
-                            </span>
-                            <span style={{ fontSize: "7px", color: A, textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Events</span>
-                          </div>
-                        </div>
                       </div>
 
                       {/* Bottom Section: Quote-styled Bio */}

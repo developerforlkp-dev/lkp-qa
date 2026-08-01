@@ -433,7 +433,7 @@ export function mapApiBlogToComponentFormat(apiBlog) {
     image: imageUrl,
     heroImage: isHeroImageInContent ? null : imageUrl,
     galleryImages: [imageUrl, imageUrl, imageUrl],
-    category: apiBlog.category || 'Experience',
+    category: apiBlog.businessInterest || apiBlog.category || 'Experience',
     title: apiBlog.title || 'Untitled',
     description: apiBlog.summary || '',
     date: formatDate(apiBlog.publishedAt || apiBlog.createdAt),

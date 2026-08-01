@@ -13,7 +13,7 @@ import HeroSection from "./HeroSection";
 import MobileCinematicSearch from "./MobileCinematicSearch";
 import StickyHeaderController from "./StickyHeaderController";
 import MobileAppHeader from "./MobileAppHeader";
-import { Compass, Ticket, Home, Utensils, MapPin, Sparkles } from "lucide-react";
+import { Compass, Ticket, Home, Utensils, MapPin, Sparkles, Check } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
@@ -1000,6 +1000,11 @@ const FleetHome = () => {
                       <img src={filter.image} alt={filter.label} className={styles.mobileCategoryBg} />
                       <div className={styles.mobileCategoryOverlay} />
                       <div className={styles.mobileCategoryContent}>
+                        {isActive && (
+                          <div className={styles.activeCheckBadge}>
+                            <Check size={12} strokeWidth={4} color="#fff" />
+                          </div>
+                        )}
                         <div className={styles.mobileCategoryIcon}>
                           {filter.id === "experience" && <Compass size={28} />}
                           {filter.id === "events" && <Ticket size={28} />}

@@ -228,8 +228,6 @@ ListingsAPI.interceptors.request.use((config) => {
       config.headers = config.headers || {};
       config.headers["Authorization"] = `Bearer ${token}`;
       //console.log("🔑 JWT token attached to request:", config.url);
-    } else {
-      console.warn("⚠️ No JWT token found in localStorage for request:", config.url);
     }
   }
   return config;
@@ -268,14 +266,30 @@ ListingsAPI.interceptors.response.use(
       const message = error.response.data?.message || error.message;
 
       // Check if this is a non-critical endpoint that can fail silently
-      const isNonCriticalEndpoint = error.config?.url?.includes('/orders/complete-expired');
+      const url = error.config?.url || '';
+      const isCompleteExpiredEndpoint = url.includes('/orders/complete-expired');
+      const isCancelPreviewEndpoint = url.includes('/cancel-preview');
+      const isEventEndpoint = url.includes('/events/');
 
       // Suppress error logging for non-critical endpoints (500 errors)
       // These endpoints are handled gracefully by the calling code
-      if (status === 500 && isNonCriticalEndpoint) {
+      if (status === 500 && isCompleteExpiredEndpoint) {
         error.isHandled = true;
         // Don't log as error - silently handle it
         // The calling function (getCompleteExpiredOrders) will handle it gracefully
+        return Promise.reject(error);
+      }
+
+      const isEligibleBookings = url.includes('/reviews/eligible-bookings');
+      const isLeadsEndpoint = url.includes('/leads/');
+
+      // Suppress expected validation errors for specific noisy endpoints
+      if (
+        (status === 400 && isCancelPreviewEndpoint) || 
+        (status === 403 && isEventEndpoint) ||
+        (status === 401 && (isEligibleBookings || isLeadsEndpoint))
+      ) {
+        error.isHandled = true;
         return Promise.reject(error);
       }
 
@@ -565,7 +579,10 @@ export const getOrderCancelPreview = async (orderId) => {
     const response = await ListingsAPI.get(`/orders/${orderIdStr}/cancel-preview`);
     return response.data;
   } catch (error) {
-    console.error("❌ Error fetching cancel preview:", error.response?.data || error.message);
+    // Only log unexpected errors (not 400 validation errors which are handled silently by interceptor)
+    if (error.response?.status !== 400) {
+      console.error("❌ Error fetching cancel preview:", error.response?.data || error.message);
+    }
     throw error;
   }
 };
@@ -772,6 +789,35 @@ export const verifyPhoneOTP = async (phone, otp, countryCode = "+91", firstName 
     return response.data;
   } catch (error) {
     console.error("❌ Error verifying OTP:", error);
+    throw error;
+  }
+};
+
+// Send OTP to reverify phone number
+export const sendReverifyPhoneOTP = async (phone, countryCode = "+91") => {
+  try {
+    const response = await ListingsAPI.post("/customers/auth/phone/reverify/send-otp", {
+      phone,
+      countryCode,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error sending reverify OTP:", error);
+    throw error;
+  }
+};
+
+// Verify OTP for reverify phone number
+export const verifyReverifyPhoneOTP = async (phone, otp, countryCode = "+91") => {
+  try {
+    const response = await ListingsAPI.post("/customers/auth/phone/reverify/verify-otp", {
+      phone,
+      otp,
+      countryCode,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error verifying reverify OTP:", error);
     throw error;
   }
 };
@@ -1199,6 +1245,20 @@ export const initializePayment = async (orderId) => {
     throw error;
   }
 };
+
+export const finalizeFreeEvent = async (orderId) => {
+  try {
+    const response = await ListingsAPI.post(`/orders/${orderId}/finalize-free-event`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error finalizing free event:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
 //test
 export const createEventOrder = async (orderData) => {
   try {
@@ -1448,10 +1508,10 @@ export const getEventDetails = async (eventId) => {
     const eventIdNum = Number(eventId);
     const eventIdStr = (!isNaN(eventIdNum) && eventIdNum > 0) ? String(eventIdNum) : String(eventId);
 
-    // Prefer Swagger "public event details" route: GET /api/events/{id}
-    // Keep fallback to legacy public suffix route for compatibility.
-    const primaryUrl = `/events/${eventIdStr}`;
-    const fallbackUrl = `/events/${eventIdStr}/public`;
+    // Prefer the public route first to avoid 403 Forbidden console errors for non-admins
+    // Keep fallback to the base route for compatibility if needed.
+    const primaryUrl = `/events/${eventIdStr}/public`;
+    const fallbackUrl = `/events/${eventIdStr}`;
 
     let response;
     try {
@@ -1707,6 +1767,9 @@ export const getMyReviews = async () => {
 // Get eligible bookings (completed orders without reviews)
 export const getEligibleBookings = async () => {
   try {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) return [];
+
     const response = await ListingsAPI.get(`/reviews/eligible-bookings`);
     const payload = response.data;
     if (Array.isArray(payload)) return payload;
@@ -1716,7 +1779,9 @@ export const getEligibleBookings = async () => {
     }
     return [];
   } catch (error) {
-    console.error("❌ Error fetching eligible bookings:", error.response?.data || error.message);
+    if (error.response?.status !== 401) {
+      console.error("❌ Error fetching eligible bookings:", error.response?.data || error.message);
+    }
     throw error;
   }
 };
@@ -2281,6 +2346,9 @@ export const getPlaceDetails = async (placeId) => {
 // ✅ Get lead details (host details) from leads API
 export const getLeadDetails = async (leadId) => {
   try {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) return null;
+
     if (!leadId) {
       throw new Error("leadId is required");
     }
@@ -2296,7 +2364,9 @@ export const getLeadDetails = async (leadId) => {
 
     return payload;
   } catch (error) {
-    console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
+    if (error.response?.status !== 401) {
+      console.error(`❌ Error fetching lead ${leadId}:`, error.response?.data || error.message);
+    }
     throw error;
   }
 };

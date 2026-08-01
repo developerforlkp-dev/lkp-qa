@@ -1853,8 +1853,8 @@ function Artists({ event }) {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, delay: i * 0.07, ease: E }}
-                onHoverStart={() => setHov(a.id)}
-                onHoverEnd={() => setHov(null)}
+                onMouseEnter={() => setHov(a.id)}
+                onMouseLeave={() => setHov(null)}
                 onMouseMove={handleMouseMove}
                 whileHover={{ paddingLeft: 8, backgroundColor: AL }}
                 className="artist-row"
@@ -1862,7 +1862,15 @@ function Artists({ event }) {
                 <div>
                   <motion.p animate={{ color: hov === a.id ? A : B }} style={{ fontFamily: "monospace", fontSize: 10 }}>{String(i + 1).padStart(2, "0")}</motion.p>
                 </div>
-                <div onMouseEnter={() => setHov(null)} onMouseLeave={() => setHov(a.id)}>
+                <div 
+                  onMouseEnter={() => setHov(null)} 
+                  onMouseLeave={(e) => {
+                    // Only restore the image if we are not leaving the outer row entirely
+                    if (e.relatedTarget && e.currentTarget.parentNode.contains(e.relatedTarget)) {
+                      setHov(a.id);
+                    }
+                  }}
+                >
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
                     <motion.h3 animate={{ color: hov === a.id ? A : FG }} style={{ fontSize: "18px", fontWeight: 700, fontFamily: '"Inter", sans-serif', margin: "4px 0 0 0", lineHeight: 1 }}>{a.name}</motion.h3>
                   </div>
@@ -2344,9 +2352,6 @@ function Rules({ event }) {
     if (event?.dressCode && event.dressCode.trim() !== "") {
       evtItems.push({ title: "Dress Code", body: event.dressCode.trim() });
     }
-    if (event?.minimumAge != null && event.minimumAge !== "") {
-      evtItems.push({ title: "Minimum Age Requirement", body: `Minimum age for entry is ${event.minimumAge} years old.` });
-    }
     if (event?.idProofRequired) {
       evtItems.push({ title: "ID Proof Required", body: "Valid government-issued physical ID card required for verification at check-in." });
     }
@@ -2461,7 +2466,7 @@ function HostDetails({ event, hostName }) {
         <div className="mob-host-card" style={{ borderColor: B, background: isDark ? "#111" : W }}>
           <div className="mob-host-avatar" style={{ background: `linear-gradient(135deg, ${A}20, ${A}08)`, color: A, border: `2px solid ${A}40` }}>
             <img
-              src={host?.profileImageUrl || event?.host?.profileImageUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
+              src={host?.profilePhotoUrl || host?.profileImageUrl || event?.host?.profilePhotoUrl || event?.host?.profileImageUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
               alt={displayHostName}
               style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
               onError={(e) => { e.target.onerror = null; e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; }}
@@ -2571,7 +2576,7 @@ function HostDetails({ event, hostName }) {
                         padding: "1px"
                       }}>
                         <img
-                          src={formatImageUrl(hostProfile?.profileImageUrl || hostProfile?.host?.profileImageUrl || host?.profileImageUrl || host?.avatar || host?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
+                          src={formatImageUrl(hostProfile?.profilePhotoUrl || hostProfile?.profileImageUrl || hostProfile?.host?.profilePhotoUrl || hostProfile?.host?.profileImageUrl || host?.profilePhotoUrl || host?.profileImageUrl || host?.avatar || host?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
                           style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                           alt={displayHostName}
                           onError={(e) => {
@@ -2640,48 +2645,7 @@ function HostDetails({ event, hostName }) {
                     </div>
                   </div>
 
-                  {/* Redesigned Metrics Section - Only 2 Cards */}
-                  <div style={{
-                    display: "flex",
-                    gap: 6,
-                    alignItems: "center"
-                  }}>
-                    {/* Rating Pill */}
-                    <div style={{
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", lineHeight: 1 }}>
-                        ★ {hostProfile?.statistics?.averageRating || "4.9"}
-                      </span>
-                      <span style={{ fontSize: "7px", color: "#B45309", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Rating</span>
-                    </div>
 
-                    {/* Events Pill */}
-                    <div style={{
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: A, lineHeight: 1 }}>
-                        {hostProfile?.statistics?.totalEvents || hostProfile?.listings?.length || 8}
-                      </span>
-                      <span style={{ fontSize: "7px", color: A, textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Events</span>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Bottom Section: Quote-styled Bio */}
@@ -3119,7 +3083,7 @@ function EventReviews({ reviews = [] }) {
   );
 }
 
-function EventBookingPopup({ event }) {
+function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const [bookingModalOpen, setBookingModalOpen] = useState(Boolean(location.state?.openReserveModal));
@@ -3131,47 +3095,6 @@ function EventBookingPopup({ event }) {
   const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? { adults: Number(initialGuestsStr), children: 0 } : null);
-
-  const [selectedAddOns, setSelectedAddOns] = useState([]);
-
-  const handleUpdateAddonQuantity = (addon, delta) => {
-    const addonId = addon.addonId || addon.id;
-    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-
-    setSelectedAddOns((prev) => {
-      const existing = prev.find((a) => (a.addonId || a.id) === addonId);
-      if (existing) {
-        if (delta < 0) {
-          if (existing.quantity > 1) {
-            return prev.map((a) =>
-              (a.addonId || a.id) === addonId
-                ? { ...a, quantity: a.quantity - 1 }
-                : a
-            );
-          } else {
-            return prev.filter((a) => (a.addonId || a.id) !== addonId);
-          }
-        } else {
-          return prev.map((a) =>
-            (a.addonId || a.id) === addonId
-              ? { ...a, quantity: a.quantity + 1 }
-              : a
-          );
-        }
-      } else {
-        if (delta > 0) {
-          if (pricingType === "Group") {
-            const otherGroupItem = prev.find((a) => a.pricingType === "Group" && (a.addonId || a.id) !== addonId);
-            if (otherGroupItem) {
-              return [...prev.filter(a => (a.addonId || a.id) !== (otherGroupItem.addonId || otherGroupItem.id)), { ...addon, quantity: 1, pricingType }];
-            }
-          }
-          return [...prev, { ...addon, quantity: 1, pricingType }];
-        }
-      }
-      return prev;
-    });
-  };
 
   const ticketTypes = (Array.isArray(event?.ticketTypes) ? event.ticketTypes :
     Array.isArray(event?.ticketTiers) ? event.ticketTiers :
@@ -3243,7 +3166,7 @@ function EventBookingPopup({ event }) {
     host: event?.hostProfile?.host || event?.host || {}
   };
 
-  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} externalOpen={bookingModalOpen} onExternalOpenChange={setBookingModalOpen} />;
+  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={onUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} externalOpen={bookingModalOpen} onExternalOpenChange={setBookingModalOpen} />;
 }
 
 function Tickets({ event }) {
@@ -3643,9 +3566,75 @@ export default function EventDetails() {
   const isMobile = useMobileView();
   const queryParams = new URLSearchParams(location.search);
   const eventId = queryParams.get('id') || '3';
-  const { tokens: { BG, FG } } = useTheme();
+  const { tokens: { BG, FG, A, W, B, M, AL }, theme } = useTheme();
 
   const [event, setEvent] = useState(null);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+  const [currentAddonIndex, setCurrentAddonIndex] = useState(2);
+  const addonsSliderRef = useRef(null);
+
+  const scrollAddonsSlider = (direction) => {
+    if (!addonsSliderRef.current) return;
+    const container = addonsSliderRef.current;
+    const scrollAmount = direction === "left" ? -container.clientWidth : container.clientWidth;
+    container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+  };
+
+  const handleUpdateAddonQuantity = (rawAddon, delta) => {
+    const addonData = rawAddon.addon || rawAddon;
+    const addonId = addonData.addonId || addonData.id;
+    const pricingType = addonData.pricingType || (addonData.priceType === "per_booking" ? "Group" : "Individual");
+
+    setSelectedAddOns((prev) => {
+      const existing = prev.find((a) => {
+        const aData = a.addon || a;
+        return (aData.addonId || aData.id) === addonId;
+      });
+
+      if (delta > 0) {
+        if (pricingType === "Group") {
+          if (existing) return prev;
+          const otherGroupItem = prev.find(a => {
+            const aData = a.addon || a;
+            return aData.pricingType === "Group" || aData.priceType === "per_booking";
+          });
+          if (otherGroupItem) {
+            const otherData = otherGroupItem.addon || otherGroupItem;
+            return [...prev.filter(a => {
+              const aData = a.addon || a;
+              return (aData.addonId || aData.id) !== (otherData.addonId || otherData.id);
+            }), { ...rawAddon, quantity: 1, pricingType }];
+          }
+          return [...prev, { ...rawAddon, quantity: 1, pricingType }];
+        }
+        if (existing) {
+          return prev.map((a) => {
+            const aData = a.addon || a;
+            return (aData.addonId || aData.id) === addonId
+              ? { ...a, quantity: (a.quantity || 1) + delta }
+              : a;
+          });
+        }
+        return [...prev, { ...rawAddon, quantity: 1, pricingType }];
+      } else {
+        if (existing) {
+          if (existing.quantity > 1) {
+            return prev.map((a) => {
+              const aData = a.addon || a;
+              return (aData.addonId || aData.id) === addonId
+                ? { ...a, quantity: a.quantity - 1 }
+                : a;
+            });
+          }
+          return prev.filter((a) => {
+            const aData = a.addon || a;
+            return (aData.addonId || aData.id) !== addonId;
+          });
+        }
+        return prev;
+      }
+    });
+  };
   const [hostName, setHostName] = useState("");
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3726,11 +3715,268 @@ export default function EventDetails() {
         <About event={event} />
         <Gallery event={event} />
         <Artists event={event} />
+        
+        {/* ADDONS SECTION */}
+        <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
+                  Enhance Your Experience
+                </span>
+                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                  Make it Yours
+                </h3>
+                <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
+                  Curated add-ons to make your experience even more special.
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => scrollAddonsSlider("left")}
+                    style={{
+                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      color: M, transition: "0.3s", outline: "none"
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollAddonsSlider("right")}
+                    style={{
+                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      color: M, transition: "0.3s", outline: "none"
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+                <div style={{ fontSize: "12px", fontFamily: '"Inter", sans-serif', fontWeight: 600, paddingRight: 4 }}>
+                  <span style={{ color: A }}>{Math.min(currentAddonIndex, Math.max(1, (event?.addons || []).length))}</span> <span style={{ color: M }}>/ {Math.max(1, (event?.addons || []).length)}</span>
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              const addonsList = event?.addons || [];
+              const showScroll = addonsList.length > 2;
+
+              return (
+                <div
+                  ref={addonsSliderRef}
+                  className={showScroll ? "no-scrollbar" : ""}
+                  onScroll={(e) => {
+                    if (!showScroll) return;
+                    const container = e.target;
+                    const stepSize = (container.clientWidth + 20) / 2;
+                    let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
+
+                    // If we have hit the far right boundary, show the maximum number
+                    if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
+                      newIndex = addonsList.length;
+                    } else {
+                      newIndex = Math.min(addonsList.length, newIndex);
+                    }
+
+                    if (newIndex !== currentAddonIndex) {
+                      setCurrentAddonIndex(newIndex);
+                    }
+                  }}
+                  style={showScroll ? {
+                    display: "flex",
+                    gap: "20px",
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    paddingBottom: "12px",
+                    width: "100%",
+                    boxSizing: "border-box",
+                    scrollBehavior: "smooth",
+                    scrollSnapType: "x mandatory"
+                  } : {
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                    gap: "20px"
+                  }}
+                >
+                  {addonsList.length > 0 ? (addonsList.map((item, i) => {
+                    const addon = item.addon || item;
+                    const addonId = addon.addonId || addon.id;
+                    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                    const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                    const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
+
+                    return (
+                      <motion.div
+                        key={i}
+                        className="addon-item"
+                        whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          minHeight: "115px",
+                          height: "auto",
+                          width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
+                          flexShrink: 0,
+                          background: W,
+                          borderRadius: "16px",
+                          border: `1px solid ${isSelected ? A : "transparent"}`,
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                          transition: "box-shadow 0.3s, border-color 0.3s",
+                          overflow: "hidden",
+                          boxSizing: "border-box",
+                          scrollSnapAlign: "start"
+                        }}
+                      >
+                        {/* Left side: ONLY image */}
+                        <div style={{ width: "160px", flexShrink: 0, overflow: "hidden", background: W, position: "relative" }}>
+                          {addonImage ? (
+                            <img
+                              src={formatImageUrl(addonImage)}
+                              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                              alt={addon.title}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "/images/content/placeholder.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: AL }}>
+                              <Plus size={24} color={A} />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right side: Content info columns */}
+                        <div style={{ flex: 1, minWidth: 0, padding: "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", boxSizing: "border-box" }}>
+
+                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "6px", flex: 1, minWidth: 0, paddingRight: "16px" }}>
+                            <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
+                              {pricingType}
+                            </div>
+                            <h4 style={{ fontSize: 16, fontWeight: 400, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
+                              {addon.title}
+                            </h4>
+                            <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
+                              {addon.briefDescription || addon.description}
+                            </p>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", minWidth: "90px" }}>
+                            <div style={{ fontSize: "16px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', marginBottom: "12px" }}>
+                              ₹{Number(addon.price || 0).toFixed(2)}
+                            </div>
+
+                            <div className="addon-actions" style={{ flexShrink: 0 }}>
+                              {isSelected ? (
+                                pricingType === "Group" ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                    style={{
+                                      background: `${A}15`,
+                                      color: A,
+                                      border: `1px solid ${A}50`,
+                                      borderRadius: 100,
+                                      padding: "6px 16px",
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      textTransform: "uppercase",
+                                      transition: "all 0.2s",
+                                      outline: "none"
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
+                                  >
+                                    Remove
+                                  </button>
+                                ) : (
+                                  <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "4px 8px", border: `1px solid ${A}` }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                    >
+                                      <Minus size={14} />
+                                    </button>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
+                                      {selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                    >
+                                      <Plus size={14} />
+                                    </button>
+                                  </div>
+                                )
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                  style={{
+                                    background: "#007B8F",
+                                    color: "#FFFFFF",
+                                    border: "none",
+                                    borderRadius: "100px",
+                                    padding: "6px 20px",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    fontFamily: '"Inter", sans-serif',
+                                    cursor: "pointer",
+                                    outline: "none"
+                                  }}
+                                >
+                                  Add
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })) : (
+                    <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this event.</p>
+                  )}
+                </div>
+              );
+            })()}
+
+            {selectedAddOns.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{ marginTop: 24, padding: "16px 20px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
+                <div>
+                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons Summary</p>
+                  <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 600, marginBottom: 2 }}>Subtotal</p>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: A, margin: 0 }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </section>
+
         <Venue event={event} hostName={hostName} />
         <Rules event={event} />
         <HostDetails event={event} hostName={hostName} />
         <EventReviews reviews={reviews} />
-        <EventBookingPopup event={event} />
+        <EventBookingPopup event={event} selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} />
         <RelatedListingsStrip
           businessInterestId={2}
           primaryCategoryId={primaryCategoryId}

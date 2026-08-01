@@ -1965,27 +1965,27 @@ const StayProduct = () => {
       const calculatedAmount = amountPerNight * nightsCount;
       const taxRate = Array.isArray(stay?.taxes)
         ? stay.taxes.reduce((sum, t) => {
-            const payer = String(
-              t?.paidBy ??
-              t?.paid_by ??
-              t?.payer ??
-              t?.taxPayer ??
-              t?.tax_payer ??
-              t?.borneBy ??
-              t?.borne_by ??
-              t?.applicableTo ??
-              t?.applicable_to ??
-              t?.target ??
-              t?.type ??
-              t?.category ??
-              ""
-            ).toLowerCase().trim();
-            if (/host|vendor|owner|property/i.test(payer)) {
-              return sum;
-            }
-            const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
-            return sum + (Number.isFinite(rate) ? rate : 0);
-          }, 0)
+          const payer = String(
+            t?.paidBy ??
+            t?.paid_by ??
+            t?.payer ??
+            t?.taxPayer ??
+            t?.tax_payer ??
+            t?.borneBy ??
+            t?.borne_by ??
+            t?.applicableTo ??
+            t?.applicable_to ??
+            t?.target ??
+            t?.type ??
+            t?.category ??
+            ""
+          ).toLowerCase().trim();
+          if (/host|vendor|owner|property/i.test(payer)) {
+            return sum;
+          }
+          const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
+          return sum + (Number.isFinite(rate) ? rate : 0);
+        }, 0)
         : 0;
       const baseStayTotal = basePrice * nightsCount * roomsNeeded;
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount * roomsNeeded;
@@ -2065,27 +2065,27 @@ const StayProduct = () => {
       const calculatedAmountProperty = amountPerNight * nightsCount;
       const taxRate = Array.isArray(stay?.taxes)
         ? stay.taxes.reduce((sum, t) => {
-            const payer = String(
-              t?.paidBy ??
-              t?.paid_by ??
-              t?.payer ??
-              t?.taxPayer ??
-              t?.tax_payer ??
-              t?.borneBy ??
-              t?.borne_by ??
-              t?.applicableTo ??
-              t?.applicable_to ??
-              t?.target ??
-              t?.type ??
-              t?.category ??
-              ""
-            ).toLowerCase().trim();
-            if (/host|vendor|owner|property/i.test(payer)) {
-              return sum;
-            }
-            const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
-            return sum + (Number.isFinite(rate) ? rate : 0);
-          }, 0)
+          const payer = String(
+            t?.paidBy ??
+            t?.paid_by ??
+            t?.payer ??
+            t?.taxPayer ??
+            t?.tax_payer ??
+            t?.borneBy ??
+            t?.borne_by ??
+            t?.applicableTo ??
+            t?.applicable_to ??
+            t?.target ??
+            t?.type ??
+            t?.category ??
+            ""
+          ).toLowerCase().trim();
+          if (/host|vendor|owner|property/i.test(payer)) {
+            return sum;
+          }
+          const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
+          return sum + (Number.isFinite(rate) ? rate : 0);
+        }, 0)
         : 0;
       const baseStayTotal = propertyBasePrice * nightsCount;
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount;

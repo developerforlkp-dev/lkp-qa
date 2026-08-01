@@ -342,6 +342,12 @@ const Support = () => {
     if (!form.customerCountryCode.trim()) nextErrors.customerCountryCode = "Country code is required.";
     if (!form.issueCategory.trim()) nextErrors.issueCategory = "Issue category is required.";
     if (!form.subject.trim()) nextErrors.subject = "Subject is required.";
+    else if (form.subject.trim().length > 255) nextErrors.subject = "Subject cannot exceed 255 characters.";
+
+    if (form.customIssueText && form.customIssueText.trim().length > 255) {
+      nextErrors.customIssueText = "Custom issue text cannot exceed 255 characters.";
+    }
+
     if (!form.description.trim()) nextErrors.description = "Description is required.";
 
     if (!form.customerEmail.trim()) {
@@ -535,6 +541,7 @@ const Support = () => {
                   value={form.customerName}
                   onChange={(e) => setFieldValue("customerName", e.target.value)}
                   disabled={submitting}
+                  maxLength={255}
                 />
                 {errors.customerName ? <span className={styles.errorText}>{errors.customerName}</span> : null}
               </div>
@@ -547,6 +554,7 @@ const Support = () => {
                   value={form.customerEmail}
                   onChange={(e) => setFieldValue("customerEmail", e.target.value)}
                   disabled={submitting}
+                  maxLength={255}
                 />
                 {errors.customerEmail ? <span className={styles.errorText}>{errors.customerEmail}</span> : null}
               </div>
@@ -604,7 +612,9 @@ const Support = () => {
                     value={form.customIssueText}
                     onChange={(e) => setFieldValue("customIssueText", e.target.value)}
                     disabled={submitting}
+                    maxLength={255}
                   />
+                  {errors.customIssueText ? <span className={styles.errorText}>{errors.customIssueText}</span> : null}
                 </div>
               )}
 
@@ -616,6 +626,7 @@ const Support = () => {
                   value={form.subject}
                   onChange={(e) => setFieldValue("subject", e.target.value)}
                   disabled={submitting}
+                  maxLength={255}
                 />
                 {errors.subject ? <span className={styles.errorText}>{errors.subject}</span> : null}
               </div>

@@ -82,7 +82,7 @@ const StayItinerary = ({ itinerary }) => {
             const imgs = getItineraryImages(item);
 
             return (
-              <div key={index} className="stay-itinerary-item" style={{ display: "flex", alignItems: "center", marginBottom: isLast ? 0 : 80, position: "relative", flexDirection: isEven ? "row" : "row-reverse" }}>
+              <div key={index} className="stay-itinerary-item" style={{ display: "flex", alignItems: "flex-start", marginBottom: isLast ? 0 : 80, position: "relative", flexDirection: isEven ? "row" : "row-reverse" }}>
                 
                 {/* SVG Curve to next item (Desktop only) */}
                 {!isLast && (
@@ -100,7 +100,7 @@ const StayItinerary = ({ itinerary }) => {
                 )}
 
                 {/* Image Column */}
-                <div className="stay-itinerary-image-col" style={{ flex: 1, display: "flex", justifyContent: isEven ? "flex-end" : "flex-start", padding: isEven ? "0 80px 0 0" : "0 0 0 80px", zIndex: 1 }}>
+                <div className="stay-itinerary-image-col" style={{ flex: "0 0 50%", width: "50%", display: "flex", justifyContent: isEven ? "flex-end" : "flex-start", padding: isEven ? "0 80px 0 0" : "0 0 0 80px", zIndex: 1, boxSizing: "border-box" }}>
                   <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} style={{ width: "100%", maxWidth: 400, height: 240, borderRadius: 24, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.08)" }}>
                     <div 
                       className="itinerary-image-wrapper"
@@ -125,24 +125,26 @@ const StayItinerary = ({ itinerary }) => {
                 </div>
 
                 {/* Text Column */}
-                <div className="stay-itinerary-text-col" style={{ flex: 1, padding: isEven ? "0 0 0 80px" : "0 80px 0 0", display: "flex", flexDirection: "column", alignItems: isEven ? "flex-start" : "flex-end", textAlign: isEven ? "left" : "right", zIndex: 1 }}>
+                <div className="stay-itinerary-text-col" style={{ flex: "0 0 50%", width: "50%", padding: isEven ? "0 0 0 80px" : "0 80px 0 0", display: "flex", flexDirection: "column", alignItems: isEven ? "flex-start" : "flex-end", textAlign: isEven ? "left" : "right", zIndex: 1, boxSizing: "border-box" }}>
                   <motion.div initial={{ opacity: 0, x: isEven ? 20 : -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: isEven ? "flex-start" : "flex-end" }}>
                     
                     {/* Icon & Time */}
                     <div className="stay-itinerary-icon-row" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexDirection: isEven ? "row" : "row-reverse" }}>
-                      <div className="stay-itinerary-icon-circle" style={{ width: 48, height: 48, borderRadius: "50%", background: `${tokens.A}15`, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A }}>
+                      <div className="stay-itinerary-icon-circle" style={{ width: 48, height: 48, borderRadius: "50%", background: tokens.W, border: `2px solid ${tokens.A}`, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
                         {getIcon(item.title, item.time)}
                       </div>
                       <span style={{ fontSize: 14, fontWeight: 700, color: tokens.A, fontFamily: '"Inter", sans-serif' }}>{item.time}</span>
                     </div>
 
                     {/* Title & Description */}
-                    <h3 className="stay-itinerary-title" style={{ fontSize: 24, fontWeight: 700, color: tokens.FG, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', margin: "0 0 12px 0", lineHeight: 1.2 }}>
-                      {item.title}
-                    </h3>
-                    <p style={{ fontSize: 15, color: tokens.M, fontFamily: '"Inter", sans-serif', lineHeight: 1.6, margin: 0, maxWidth: 320 }}>
-                      {item.description}
-                    </p>
+                    <div style={{ padding: isEven ? "0 0 0 48px" : "0 48px 0 0" }}>
+                      <h3 className="stay-itinerary-title" style={{ fontSize: 24, fontWeight: 700, color: tokens.FG, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', margin: "0 0 12px 0", lineHeight: 1.2 }}>
+                        {item.title}
+                      </h3>
+                      <p style={{ fontSize: 15, color: tokens.M, fontFamily: '"Inter", sans-serif', lineHeight: 1.6, margin: 0, maxWidth: 320 }}>
+                        {item.description}
+                      </p>
+                    </div>
                   </motion.div>
                 </div>
 
@@ -189,13 +191,13 @@ const StayItinerary = ({ itinerary }) => {
             margin-top: 20px; 
             margin-bottom: 12px;
             justify-content: flex-start !important; 
-            width: 100%;
+            width: 100% !important;
           }
           .stay-itinerary-text-col { 
             padding: 0 !important; 
             align-items: flex-start !important; 
             text-align: left !important; 
-            width: 100%;
+            width: 100% !important;
           }
           .stay-itinerary-text-col > div {
             align-items: flex-start !important;

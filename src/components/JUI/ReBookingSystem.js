@@ -1364,11 +1364,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
   }, [onExternalOpenChange]);
 
-  useEffect(() => {
-    if (onExternalOpenChange) {
-      onExternalOpenChange(show);
-    }
-  }, [onExternalOpenChange, show]);
+  // Removed faulty useEffect that called onExternalOpenChange(show) on mount
 
   // Real State management
   const [startDate, setStartDate] = useState(() => initialDate ? moment(initialDate) : null);
@@ -2662,6 +2658,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const cutoffMoment = getSlotCutoffMoment(selectedDateKey, String(resolvedSlotStartTime), cutoffHours);
       const debugSlot = selectedSlotObj || baseSlotObj || null;
 
+
+
       if (cutoffMoment && getIndiaNow().isAfter(cutoffMoment)) {
         showErrorPopup(
           "Sorry, bookings for this slot have closed.",
@@ -3764,7 +3762,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       background: ${S};
                       border: 1.5px solid ${B};
                       overflow: hidden;
-                      min-height: 72px;
                     }
                     .addon-card-item:hover {
                       transform: translateY(-2px);
@@ -3905,8 +3902,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 data-selected={isSelected}
                               >
                                 {addonImage && (
-                                  <div className="addon-img-box" style={{ position: "relative" }}>
-                                    <img src={addonImage} alt={addon.title} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                                  <div className="addon-img-box">
+                                    <img src={addonImage} alt={addon.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                   </div>
                                 )}
                                 <div className="addon-content">

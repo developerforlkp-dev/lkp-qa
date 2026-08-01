@@ -11,6 +11,12 @@ const formatImageUrl = (url) => {
   if (!url) return null;
   const raw = String(url).trim();
   if (!raw) return null;
+  
+  // Ignore bad local URLs from QA/Test databases
+  if (raw.includes("localhost") || raw.includes("127.0.0.1")) {
+    return null;
+  }
+
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
   if (raw.startsWith("/")) return raw;
   const [pathPart, queryPart] = raw.split("?");
@@ -180,10 +186,14 @@ const ExperienceCheckoutComplete = () => {
     }
 
     // Prefer stay image fetched from API if we have stayId, else fallback to booking stored images
-    const rawImg = stayImageUrl || booking?.roomImage || booking?.listingImage;
+    let rawImg = stayImageUrl || booking?.roomImage || booking?.listingImage;
+    if (typeof rawImg === 'string' && (rawImg.includes("localhost") || rawImg.includes("127.0.0.1"))) {
+      rawImg = null;
+    }
+
     const img = rawImg && typeof rawImg === 'string' && !rawImg.startsWith('http') && !rawImg.startsWith('/')
       ? formatImageUrl(rawImg)
-      : (rawImg || "");
+      : (rawImg || "/images/content/default-experience.jpg"); // use a generic default if empty
 
     return [
       { src: img, srcSet: img },

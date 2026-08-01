@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./Main.module.sass";
-import Control from "../../../components/Control";
 import Card from "../../../components/Card";
 import { getCustomerWishlistItems, normalizePublicImageUrl } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
@@ -160,11 +159,6 @@ const Main = () => {
     <div className={cn("section", styles.section)}>
       <div className={cn("container", styles.container)}>
         <div className={styles.mobileHeaderFlex}>
-          <Control
-            className={styles.control}
-            urlHome="/"
-            breadcrumbs={[]}
-          />
           {!loading && !error && cardItems.length > 0 && (
             <h1 className={cn("h2", styles.mobileTitle)} style={{ 
               fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
