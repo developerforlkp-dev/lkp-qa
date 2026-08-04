@@ -553,16 +553,7 @@ export const CardGrid = ({ section, listings, className }) => {
   const cardItems = listings.map((listing) => transformListingToCard(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
 
-  let viewAllText = "View all";
-  const titleLower = section.sectionTitle?.toLowerCase() || "";
-
-  if (titleLower.includes("curated") || titleLower.includes("experience")) {
-    viewAllText = "View all experiences";
-  } else if (titleLower.includes("events")) {
-    viewAllText = "View all events";
-  } else if (titleLower.includes("stays")) {
-    viewAllText = "View all stays";
-  }
+  const viewAllText = "View all";
 
   return (
     <section className={cn(styles.categorySection, className)}>
@@ -612,16 +603,7 @@ export const CardDestination = ({ section, listings, className }) => {
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
 
-  let viewAllText = "View all";
-  const titleLower = section.sectionTitle?.toLowerCase() || "";
-
-  if (titleLower.includes("curated") || titleLower.includes("experience")) {
-    viewAllText = "View all experiences";
-  } else if (titleLower.includes("events")) {
-    viewAllText = "View all events";
-  } else if (titleLower.includes("stays")) {
-    viewAllText = "View all stays";
-  }
+  const viewAllText = "View all";
 
   return (
     <section className={cn(styles.categorySection, className)}>
@@ -675,16 +657,7 @@ export const CardCircle = ({ section, listings, className }) => {
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
 
-  let viewAllText = "View all";
-  const titleLower = section.sectionTitle?.toLowerCase() || "";
-
-  if (titleLower.includes("curated") || titleLower.includes("experience")) {
-    viewAllText = "View all experiences";
-  } else if (titleLower.includes("events")) {
-    viewAllText = "View all events";
-  } else if (titleLower.includes("stays")) {
-    viewAllText = "View all stays";
-  }
+  const viewAllText = "View all";
 
   return (
     <section className={cn(styles.categorySection, className)}>

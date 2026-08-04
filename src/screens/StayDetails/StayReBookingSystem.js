@@ -7,6 +7,7 @@ import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import Counter from "../../components/Counter";
+import ChildAgeSelect from "../../components/ChildAgeSelect";
 import LoginPromptModal from "../../components/LoginPromptModal";
 
 export const StayInlineCalendar = ({
@@ -3083,7 +3084,7 @@ const StayBookingSystem = ({
                                       <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>
                                         Extra Child {extraIndex + 1}
                                       </span>
-                                      <select
+                                      <ChildAgeSelect
                                         value={childAges?.[childIndex] ?? ""}
                                         onChange={(event) => {
                                           const { value } = event.target;
@@ -3094,6 +3095,13 @@ const StayBookingSystem = ({
                                           });
                                           setValidationError("");
                                         }}
+                                        options={[
+                                          { value: "", label: "Select age" },
+                                          ...selectableChildAges.map((age) => ({
+                                            value: age,
+                                            label: `${age} year${age === 1 ? "" : "s"}`
+                                          }))
+                                        ]}
                                         style={{
                                           width: "100%",
                                           padding: "10px 12px",
@@ -3103,17 +3111,8 @@ const StayBookingSystem = ({
                                           color: FG,
                                           fontSize: 12,
                                           fontWeight: 600,
-                                          outline: "none",
-                                          cursor: "pointer"
                                         }}
-                                      >
-                                        <option value="">Select age</option>
-                                        {selectableChildAges.map((age) => (
-                                          <option key={`child-age-option-${childIndex}-${age}`} value={age}>
-                                            {age} year{age === 1 ? "" : "s"}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      />
                                     </label>
                                   ))}
                                 </div>

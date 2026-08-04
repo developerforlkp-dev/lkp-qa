@@ -362,7 +362,6 @@ const Listings = () => {
         businessInterestId: resolvedBusinessInterestId,
         categoryType: filters.apiCategoryFilter.categoryType,
         categoryValues: filters.apiCategoryFilter.categoryValues,
-        sortBy,
       };
     }
 
@@ -370,12 +369,11 @@ const Listings = () => {
       return {
         ...categoryFilter,
         businessInterestId: categoryFilter.businessInterestId || resolvedBusinessInterestId,
-        sortBy,
       };
     }
 
     return null;
-  }, [categoryFilter, filters.apiCategoryFilter, resolvedBusinessInterestId, sortBy]);
+  }, [categoryFilter, filters.apiCategoryFilter, resolvedBusinessInterestId]);
 
   // Use listings hook - only re-renders when activeSearch or other filters change
   const { data: listings, loading, error, hasMore, fetchMore } = useListings({
@@ -386,6 +384,7 @@ const Listings = () => {
     limit: 8,
     businessInterest: businessInterest,
     categoryFilter: effectiveCategoryFilter,
+    sortBy: sortBy,
   });
 
   // eslint-disable-next-line no-unused-vars

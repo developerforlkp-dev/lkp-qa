@@ -9,7 +9,8 @@ import { Rev, Chars } from "./UI";
 import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import Dropdown from "../Dropdown";
-import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder } from "../../utils/api";
+import ChildAgeSelect from "../ChildAgeSelect";
+import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlots, precheckEventOrder, finalizeFreeEvent } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
@@ -1343,6 +1344,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   // Sync external open state
   const externalOpenHandledRef = useRef(false);
+  const childrenDetailsRef = useRef(null);
   useEffect(() => {
     if (externalOpen === true && !show && !externalOpenHandledRef.current) {
       externalOpenHandledRef.current = true;
@@ -2399,22 +2401,32 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const age = guests.childAges?.[i] ?? 0;
       let matchedPrice = null;
 
-      if (allowChildPricing && tiers.length > 0 && age > 0) {
-        const tier = tiers.find((item) => {
-          const min = asNumber(item?.ageFrom ?? item?.age_from);
-          const max = asNumber(item?.ageTo ?? item?.age_to);
-          if (min == null || max == null) return false;
-          return age >= min && age <= max;
-        });
-        if (tier) {
-          matchedPrice = Number(tier?.pricePerChild ?? tier?.price_per_child ?? tier?.price ?? 0);
-        } else {
-          const minAge = Math.min(...tiers.map((item) => asNumber(item?.ageFrom ?? item?.age_from) ?? 0));
-          const maxAge = Math.max(...tiers.map((item) => asNumber(item?.ageTo ?? item?.age_to) ?? 0));
-          if (age > maxAge) {
+      if (allowChildPricing && age >= 0) {
+        if (tiers.length > 0) {
+          const tier = tiers.find((item) => {
+            const min = asNumber(item?.ageFrom ?? item?.age_from);
+            const max = asNumber(item?.ageTo ?? item?.age_to);
+            if (min == null || max == null) return false;
+            return age >= min && age <= max;
+          });
+          if (tier) {
+            matchedPrice = Number(tier?.pricePerChild ?? tier?.price_per_child ?? tier?.price ?? 0);
+          } else {
+            const minAge = Math.min(...tiers.map((item) => asNumber(item?.ageFrom ?? item?.age_from) ?? 0));
+            const maxAge = Math.max(...tiers.map((item) => asNumber(item?.ageTo ?? item?.age_to) ?? 0));
+            if (age > maxAge) {
+              matchedPrice = Number(effectiveRawPrice || 0);
+              childAgeWarnings[i] = "adult";
+            } else if (age < minAge) {
+              matchedPrice = 0;
+              childAgeWarnings[i] = "free";
+            }
+          }
+        } else if (hasChildAgeRange) {
+          if (age > childAgeTo) {
             matchedPrice = Number(effectiveRawPrice || 0);
             childAgeWarnings[i] = "adult";
-          } else if (age < minAge) {
+          } else if (age < childAgeFrom) {
             matchedPrice = 0;
             childAgeWarnings[i] = "free";
           }
@@ -2434,13 +2446,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const actualHasChildPricing = hasChildPricing || eventHasExplicitChildPrice || isEventTieredChildPricing || isExperienceTieredChildPricing;
 
   const baseChildPricePerChild = actualHasChildPricing
-    ? (
-      isEventTieredChildPricing
-        ? (eventChildPriceTotal / guests.children)
-        : isExperienceTieredChildPricing
-          ? (experienceChildPriceTotal / guests.children)
-          : parseFloat(rawChildPrice || 0)
-    )
+    ? parseFloat(rawChildPrice || 0)
     : baseAdultPricePerPerson;
 
   const data = {
@@ -2453,10 +2459,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const adultSubtotal = parseFloat(extractedPrice || 0) * guests.adults;
   const childSubtotal = isEventBooking
     ? eventChildPriceTotal
-    : (isExperienceTieredChildPricing ? experienceChildPriceTotal : effectiveChildPrice * guests.children);
+    : experienceChildPriceTotal;
   const baseTotal = adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
-    ? (baseAdultPricePerPerson * guests.adults) + (isExperienceTieredChildPricing ? experienceChildPriceTotal : (baseChildPricePerChild * guests.children))
+    ? (baseAdultPricePerPerson * guests.adults) + experienceChildPriceTotal
     : ((eventGuestPricing.baseUnitPrice * guests.adults) + eventChildPriceTotal);
   const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
@@ -2704,9 +2710,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       setShowValidation(true);
-      // Scroll to the top of the modal content to see the errors
-      const modalContent = document.querySelector(".booking-modal-content");
-      if (modalContent) modalContent.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      if (errors.children && childrenDetailsRef.current) {
+        childrenDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        // Scroll to the top of the modal content to see the errors
+        const modalContent = document.querySelector(".booking-modal-content");
+        if (modalContent) modalContent.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
 
@@ -2951,11 +2962,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         clearPendingCheckoutState();
         persistPendingCheckout({ bookingData: previewBookingData });
         localStorage.removeItem("frontendPendingBookingState");
-        history.replace("/experience-checkout", {
-          bookingData: previewBookingData,
-          addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
-        });
-        return;
+        
+        if (finalTotal > 0) {
+          history.replace("/experience-checkout", {
+            bookingData: previewBookingData,
+            addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
+          });
+          return;
+        }
 
         const res = await createEventOrder(payload);
         const order = res?.order || res;
@@ -3099,10 +3113,19 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
         if (isFreeBooking) {
           // For free bookings, we can go straight to completion
+          let finalizationMode = "AUTO_CONFIRMED";
+          try {
+            const freeEventResponse = await finalizeFreeEvent(orderId);
+            finalizationMode = freeEventResponse?.finalization?.mode || "AUTO_CONFIRMED";
+          } catch(e) {
+            console.error("Failed to finalize free event:", e);
+          }
+
           const freePaymentSuccess = {
             razorpay_payment_id: "FREE_" + (orderId || Date.now()),
             razorpay_order_id: "FREE_ORDER_" + (orderId || Date.now()),
-            razorpay_signature: "FREE_SIG"
+            razorpay_signature: "FREE_SIG",
+            finalizationMode
           };
           localStorage.setItem("razorpayPaymentSuccess", JSON.stringify(freePaymentSuccess));
           localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
@@ -3182,9 +3205,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     // Adult row
     if (guests.adults > 0) {
-      const adultLineTotal = parseFloat(extractedPrice || 0) * guests.adults;
+      const adultLineTotal = baseAdultPricePerPerson * guests.adults;
       receipt.push({
-        title: `₹${Number(extractedPrice || 0).toFixed(2)} × ${guests.adults} adult${guests.adults > 1 ? 's' : ''}`,
+        title: `₹${Number(baseAdultPricePerPerson || 0).toFixed(2)} × ${guests.adults} adult${guests.adults > 1 ? 's' : ''}`,
         content: `₹${adultLineTotal.toFixed(2)}`,
         kind: "base",
         showInCheckout: true
@@ -3192,13 +3215,21 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
     // Child row (if children selected and child pricing applies)
     if (guests.children > 0) {
-      const childLineTotal = effectiveChildPrice * guests.children;
-      receipt.push({
-        title: `₹${Number(effectiveChildPrice || 0).toFixed(2)} × ${guests.children} child${guests.children > 1 ? 'ren' : ''}`,
-        content: `₹${childLineTotal.toFixed(2)}`,
-        kind: "base-child",
-        showInCheckout: true
-      });
+      const childLineTotal = actualHasChildPricing ? experienceChildPriceTotal : (baseAdultPricePerPerson * guests.children);
+      const cpp = actualHasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
+      let chargeableChildren = guests.children;
+      if (cpp > 0 && actualHasChildPricing) {
+        chargeableChildren = Math.max(0, Math.min(guests.children, Math.round(childLineTotal / cpp)));
+      }
+      
+      if (childLineTotal > 0 || actualHasChildPricing) {
+        receipt.push({
+          title: `₹${Number(cpp).toFixed(2)} × ${chargeableChildren} child${chargeableChildren > 1 ? 'ren' : ''}`,
+          content: `₹${childLineTotal.toFixed(2)}`,
+          kind: "base-child",
+          showInCheckout: true
+        });
+      }
     }
 
     selectedAddOns.forEach(item => {
@@ -4562,7 +4593,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children</span>
                                   <Counter
                                     value={guests.children}
-                                    setValue={(v) => updateGuestsWithinSeatLimit(p => ({ ...p, children: v }))}
+                                    setValue={(v) => {
+                                      const prevV = guests.children;
+                                      updateGuestsWithinSeatLimit(p => ({ ...p, children: v }));
+                                      if (v > prevV && v > 0) {
+                                        setTimeout(() => {
+                                          childrenDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }, 50);
+                                      }
+                                    }}
                                     min={0}
                                     max={childMax}
                                   />
@@ -4570,7 +4609,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               )}
 
                               {childrenAllowed && guests.children > 0 && (
-                                <div style={{ flex: "1 1 100%", padding: "12px 16px", background: "transparent", border: `1px solid ${B}55`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                                <div ref={childrenDetailsRef} style={{ flex: "1 1 100%", padding: "12px 16px", background: "transparent", border: `1px solid ${B}55`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                     <div style={{ color: A }}>
                                       <Baby size={20} color={A} />
@@ -4596,12 +4635,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                             <span style={{ fontSize: 13, fontWeight: 500, color: FG, whiteSpace: "nowrap" }}>Child {i + 1}</span>
                                           </div>
                                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                                            <span style={{ fontSize: 11, color: M, fontWeight: 500, whiteSpace: "nowrap" }}>
-                                              {(guests.childAges?.[i] ?? 0) === 1 ? 'Year' : 'Years'}
-                                            </span>
-                                            <Counter
+                                            <div style={{ display: "flex", alignItems: "center", gap: 4, background: AL, padding: "4px 8px", borderRadius: 100, border: `1px solid ${A}44` }}>
+                                              <span style={{ fontSize: 11, color: A, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: 0.5 }}>AGE</span>
+                                            </div>
+                                            <ChildAgeSelect
                                               value={guests.childAges?.[i] ?? 0}
-                                              setValue={(v) => {
+                                              onChange={(e) => {
+                                                const v = e.target.value;
                                                 updateChildAge(i, v);
                                                 setValidationErrors(prev => {
                                                   const next = { ...prev };
@@ -4609,7 +4649,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                   nextAges[i] = Number(v);
                                                   const hasMissing = Array.from({ length: guests.children }).some((_, index) => {
                                                     const age = nextAges[index];
-                                                    return !Number.isFinite(Number(age)) || Number(age) <= 0;
+                                                    return !Number.isFinite(Number(age)) || Number(age) < 0;
                                                   });
                                                   if (!hasMissing) {
                                                     delete next.children;
@@ -4617,8 +4657,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                   return next;
                                                 });
                                               }}
-                                              min={1}
-                                              max={15}
+                                              options={Array.from({ length: 18 }).map((_, age) => ({ value: age, label: age }))}
+                                              style={{
+                                                border: `1px solid ${B}44`,
+                                                borderRadius: '6px',
+                                                padding: '4px 8px',
+                                                fontSize: '13px',
+                                                fontWeight: '500',
+                                                color: FG,
+                                                backgroundColor: 'transparent',
+                                                width: '60px'
+                                              }}
                                             />
                                           </div>
                                         </div>

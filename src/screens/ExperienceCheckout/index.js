@@ -552,6 +552,7 @@ const Checkout = () => {
       const addonsTotal = pricing.addonsTotal || 0;
       const tax = pricing.tax || pricing.taxAmount || 0;
       const discount = pricing.discount || pricing.discountAmount || 0;
+      
       const taxRate = Number(pricing.taxRate || 0);
       const taxableSubtotal = Math.max(0, Number(basePrice || 0) + Number(addonsTotal || 0) - Number(discount || 0));
       const computedTaxFromSubtotal = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
@@ -590,7 +591,14 @@ const Checkout = () => {
             rows.push({ title: `Adults (${fmt(ppp)} x ${adults})`, value: fmt(ppp * adults) });
           }
           if (children > 0) {
-            rows.push({ title: `Children (${fmt(cpp)} x ${children})`, value: fmt(cpp * children) });
+            const adultsTotal = ppp * adults;
+            const remaining = Math.max(0, basePrice - adultsTotal);
+            const applicableChildren = cpp > 0 ? Math.round(remaining / cpp) : children;
+            if (applicableChildren > 0) {
+              rows.push({ title: `Children (${fmt(cpp)} x ${applicableChildren})`, value: fmt(remaining) });
+            } else {
+              rows.push({ title: `Children (${fmt(0)} x ${children})`, value: fmt(0) });
+            }
           }
         } else {
           const guests = totalG;

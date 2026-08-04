@@ -173,7 +173,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
           {item.location && (
             <div className={styles.locationRow}>
               <Icon name="location" />
-              {item.location}
+              <span className={styles.locationText}>{item.location}</span>
             </div>
           )}
         </div>

@@ -5,10 +5,15 @@ import { useHistory } from "react-router-dom";
 import TextInput from "../../../components/TextInput";
 import Icon from "../../../components/Icon";
 import Loader from "../../../components/Loader";
+import LoadingSkeleton from "../../../components/LoadingSkeleton";
+import Dropdown from "../../../components/Dropdown";
+import Modal from "../../../components/Modal";
 import {
   getCustomerProfile,
   updateCustomerProfile,
-  uploadCustomerAvatar
+  uploadCustomerAvatar,
+  sendReverifyPhoneOTP,
+  verifyReverifyPhoneOTP
 } from "../../../utils/api";
 
 const COUNTRY_CODE_OPTIONS = [
@@ -28,6 +33,14 @@ const PersonalInfo = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [success, setSuccess] = useState(false);
   const [avatarSuccess, setAvatarSuccess] = useState(false);
+  
+  // OTP Verification state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [activeInput, setActiveInput] = useState(0);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -103,6 +116,114 @@ const PersonalInfo = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  const getPhoneLength = (code) => {
+    switch (code) {
+      case "+91": return 10;
+      case "+1": return 10;
+      case "+44": return 10;
+      case "+61": return 9;
+      case "+65": return 8;
+      case "+971": return 9;
+      default: return 15;
+    }
+  };
+
+  const handlePhoneChange = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    const maxLen = getPhoneLength(profile.countryCode);
+    if (val.length > maxLen) {
+      val = val.slice(0, maxLen);
+    }
+    setProfile(prev => ({ ...prev, phone: val }));
+  };
+
+  const handleCountryCodeChange = (label) => {
+    const option = countryCodeOptions.find(o => o.label === label);
+    if (option) {
+      setProfile(prev => ({ 
+        ...prev, 
+        countryCode: option.value,
+        phone: prev.phone.slice(0, getPhoneLength(option.value)) 
+      }));
+    }
+  };
+
+  const handleSendOtp = async () => {
+    try {
+      setSendingOtp(true);
+      setOtpError("");
+      await sendReverifyPhoneOTP(profile.phone, profile.countryCode);
+      setShowOtpModal(true);
+      setOtp(["", "", "", "", "", ""]);
+      setActiveInput(0);
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || "Failed to send OTP.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    const otpValue = otp.join("");
+    if (otpValue.length !== 6) {
+      setOtpError("Please enter a 6-digit code.");
+      return;
+    }
+    
+    try {
+      setVerifyingOtp(true);
+      setOtpError("");
+      await verifyReverifyPhoneOTP(profile.phone, otpValue, profile.countryCode);
+      setProfile(prev => ({ ...prev, isPhoneVerified: true }));
+      setShowOtpModal(false);
+    } catch (err) {
+      setOtpError(err?.response?.data?.message || err?.message || "Failed to verify OTP.");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) {
+      const pasteValue = value.replace(/\D/g, "").slice(0, 6);
+      const newOtp = [...otp];
+      for (let i = 0; i < pasteValue.length; i++) {
+        if (index + i < 6) newOtp[index + i] = pasteValue[i];
+      }
+      setOtp(newOtp);
+      const nextIndex = Math.min(index + pasteValue.length, 5);
+      setActiveInput(nextIndex);
+      const nextInput = document.getElementById(`otp-reverify-${nextIndex}`);
+      if (nextInput) nextInput.focus();
+    } else {
+      const newOtp = [...otp];
+      newOtp[index] = value.replace(/\D/g, "");
+      setOtp(newOtp);
+      if (value && index < 5) {
+        setActiveInput(index + 1);
+        const nextInput = document.getElementById(`otp-reverify-${index + 1}`);
+        if (nextInput) nextInput.focus();
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      setActiveInput(index - 1);
+      const prevInput = document.getElementById(`otp-reverify-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      setActiveInput(index - 1);
+      const prevInput = document.getElementById(`otp-reverify-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      setActiveInput(index + 1);
+      const nextInput = document.getElementById(`otp-reverify-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -186,20 +307,26 @@ const PersonalInfo = () => {
 
 
   if (loading) {
-    return (
-      <div className={styles.loaderWrapper}>
-        <Loader />
-      </div>
-    );
+    return <LoadingSkeleton variant="profile" />;
   }
 
   return (
     <form className={styles.section} onSubmit={handleSubmit}>
       <div className={styles.head}>
-        <div className={cn("h2", styles.title)}>Personal info</div>
+        <div style={{ fontSize: "12px", marginBottom: "8px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#0097B2" }}>
+          ACCOUNT SETTINGS
+        </div>
+        <div className={cn("h2", styles.title)} style={{ 
+          fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+          fontSize: "48px",
+          lineHeight: "1.1",
+          marginRight: 0
+        }}>
+          Personal <span style={{ fontStyle: "italic", color: "#0097B2" }}>info</span>
+        </div>
       </div>
 
-      <div className={styles.avatarSection}>
+      <div className={cn(styles.card, styles.avatarSection)}>
         <div className={styles.avatar}>
           {previewUrl || (profile.avatarUrl && profile.avatarUrl.trim() !== "") ? (
             <img
@@ -223,7 +350,7 @@ const PersonalInfo = () => {
           )}
         </div>
         <div className={styles.avatarDetails}>
-          <div className={styles.category}>Profile picture</div>
+          <div className={styles.category} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '8px' }}>Profile picture</div>
           <div className={styles.note}>PNG, JPEG. Max 5MB.</div>
           <div className={styles.avatarAction}>
             <label className={cn("button-stroke button-small", styles.button)}>
@@ -246,7 +373,7 @@ const PersonalInfo = () => {
       </div>
 
       <div className={styles.list}>
-        <div className={styles.item}>
+        <div className={cn(styles.card, styles.item)}>
           <div className={styles.category}>Account info</div>
           <div className={styles.fieldset}>
             <div className={styles.row}>
@@ -287,33 +414,36 @@ const PersonalInfo = () => {
                   )}
                 </div>
                 <div className={styles.phoneRow}>
-                  <div className={styles.countryCodeField}>
-                    <div className={styles.selectWrap}>
-                      <select
-                        id="countryCode"
-                        name="countryCode"
-                        className={styles.select}
-                        value={profile.countryCode}
-                        onChange={handleChange}
-                        required
-                      >
-                        {countryCodeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className={styles.countryCodeField} style={{ flexShrink: 0, minWidth: '160px' }}>
+                    <Dropdown
+                      className={styles.dropdown}
+                      value={countryCodeOptions.find(o => o.value === profile.countryCode)?.label || countryCodeOptions[0].label}
+                      setValue={handleCountryCodeChange}
+                      options={countryCodeOptions.map(o => o.label)}
+                    />
                   </div>
-                  <TextInput
-                    className={cn(styles.field, styles.phoneField)}
-                    name="phone"
-                    value={profile.phone}
-                    onChange={handleChange}
-                    type="tel"
-                    placeholder="Phone number"
-                    required
-                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    <TextInput
+                      className={cn(styles.field, styles.phoneField)}
+                      name="phone"
+                      value={profile.phone}
+                      onChange={handlePhoneChange}
+                      type="tel"
+                      placeholder="Phone number"
+                      required
+                    />
+                    {!profile.isPhoneVerified && (
+                      <button 
+                        type="button" 
+                        className={cn("button", "button-small")} 
+                        onClick={handleSendOtp}
+                        disabled={sendingOtp || !profile.phone || profile.phone.length < 6}
+                        style={{ alignSelf: 'flex-start', marginTop: '8px' }}
+                      >
+                        {sendingOtp ? "Sending OTP..." : "Verify Number"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className={styles.col}>
@@ -339,7 +469,7 @@ const PersonalInfo = () => {
           </div>
         </div>
 
-        <div className={styles.item}>
+        <div className={cn(styles.card, styles.item)}>
           <div className={styles.category}>Social links</div>
           <div className={styles.fieldset}>
             <div className={styles.row}>
@@ -396,8 +526,12 @@ const PersonalInfo = () => {
 
       <div className={styles.controls}>
         <div className={styles.btns}>
-          <button className={cn("button", styles.button)} type="submit" disabled={updating}>
-            {updating ? "Updating..." : "Update profile"}
+          <button
+            type="submit"
+            className={cn("button", styles.button)}
+            disabled={updating || !profile.firstName || !profile.lastName || !profile.email}
+          >
+            {updating ? "Saving..." : "Save changes"}
           </button>
           <button className={styles.clear} type="button" onClick={fetchProfile}>
             <Icon name="close" size="16" />
@@ -411,6 +545,57 @@ const PersonalInfo = () => {
           </div>
         )}
       </div>
+      <Modal
+        visible={showOtpModal}
+        onClose={() => setShowOtpModal(false)}
+      >
+        <div className={styles.otpModal}>
+          <div className={cn("h3", styles.title)} style={{ marginBottom: "16px" }}>Enter Verification Code</div>
+          <div style={{ marginBottom: "24px", color: "var(--n4)" }}>
+            We sent a code to {profile.countryCode} {profile.phone}
+          </div>
+          <div className={styles.code} style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            {otp.map((digit, index) => (
+              <div key={index} className={styles.number} style={{ width: '48px', height: '56px' }}>
+                <input
+                  id={`otp-reverify-${index}`}
+                  type="tel"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                  onFocus={() => setActiveInput(index)}
+                  disabled={verifyingOtp}
+                  autoFocus={index === 0}
+                  required
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    textAlign: 'center',
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    border: '1px solid var(--n6)',
+                    borderRadius: '8px',
+                    background: 'transparent'
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          {otpError && <div className={styles.error} style={{ color: "#FF6161", marginTop: "16px", textAlign: 'center' }}>{otpError}</div>}
+          <div className={styles.btns} style={{ marginTop: "32px", padding: 0 }}>
+            <button
+              type="button"
+              className={cn("button")}
+              onClick={handleVerifyOtp}
+              disabled={verifyingOtp || otp.join("").length !== 6}
+              style={{ width: "100%" }}
+            >
+              {verifyingOtp ? "Verifying..." : "Verify Code"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </form>
   );
 };

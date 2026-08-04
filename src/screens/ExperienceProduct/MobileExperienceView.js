@@ -637,7 +637,7 @@ export default function MobileExperienceView({
               </div>
               <div>
                 <p className="mob-detail-label" style={{ color: A }}>Instructions</p>
-                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingInstructions}</p>
+                <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
               </div>
             </div>
           )}
@@ -688,7 +688,7 @@ export default function MobileExperienceView({
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`
           }}>
-            <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(displayCats.length * 4, 15)}s` }}>
+            <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(displayCats.length * 12, 35)}s` }}>
               {repeatedCats.map((cat, i) => (
                 <div key={i} className="mob-marquee-item">
                   <span className="mob-marquee-text" style={{ fontWeight: i % 2 === 0 ? 700 : 300, color: i % 2 === 0 ? FG : M, opacity: i % 2 === 0 ? 1 : 0.75 }}>
@@ -713,7 +713,7 @@ export default function MobileExperienceView({
           <div className="mob-host-card" style={{ borderColor: B, background: isDark ? "#111" : W }}>
             <div className="mob-host-avatar" style={{ background: `linear-gradient(135deg, ${A}20, ${A}08)`, color: A, border: `2px solid ${A}40` }}>
               <img
-                src={fmt(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
+                src={fmt(leadData?.profilePhotoUrl || leadData?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || hostData?.host?.profilePhotoUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
                 alt={displayHostName}
                 style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                 onError={(e) => { e.target.onerror = null; e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; }}
@@ -761,9 +761,13 @@ export default function MobileExperienceView({
               }
 
               if (listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) {
+                let rawPolicy = listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy;
+                if (rawPolicy && typeof rawPolicy === "string" && rawPolicy.toLowerCase().includes("no refunds are available for cancellations")) {
+                  rawPolicy = "No cancellation policy is available for this experience.";
+                }
                 cancelItems.push({
                   title: null,
-                  desc: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
+                  desc: rawPolicy
                 });
               }
 
@@ -996,6 +1000,43 @@ const ExpandableReviewText = ({ text, vendorResponse, FG, A }) => {
         <button 
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};
+
+export const ExpandableInstructionText = ({ text, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+  
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+      <div 
+        style={{ 
+          display: "grid", 
+          gridTemplateRows: expanded ? "1fr" : "0fr", 
+          transition: "grid-template-rows 0.3s ease",
+          width: "100%"
+        }}
+      >
+        <div style={{ overflow: "hidden" }}>
+          <p className="mob-detail-value" style={{ 
+            color: FG, margin: 0,
+            display: "-webkit-box", 
+            WebkitLineClamp: expanded ? "unset" : 3, 
+            WebkitBoxOrient: "vertical",
+          }}>
+            {text}
+          </p>
+        </div>
+      </div>
+      {isLong && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline", transition: "color 0.2s" }}
         >
           {expanded ? "Read Less" : "Read More"}
         </button>

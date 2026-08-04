@@ -26,6 +26,10 @@
         margin-top: 20px
         margin-bottom: 20px
 
+.backButton
+    +m
+        display: none !important
+
 .title
     margin: 0
     +body-bold-1
@@ -263,7 +267,9 @@
     margin-bottom: 0
 
 .messagesCard
-    margin-bottom: 0
+    margin-bottom: 28px
+    +m
+        margin-bottom: 24px
 
 .messagesList
     display: flex
@@ -621,15 +627,16 @@
         color: $n5
     +m
         flex: 0 0 auto
-        padding: 10px 18px
-        border-radius: 18px
-        background: $n7
-        margin-right: 8px
+        padding: 8px 16px 8px 0
+        background: none
+        margin-right: 16px
+        font-size: 16px
+        +body-bold-2
         &:after
             display: none
         +dark
-            background: $n2
-            color: $n6
+            background: none
+            color: $n5
 
 .notesTabActive
     color: $n2
@@ -638,9 +645,10 @@
     +dark
         color: $n8
     +m
-        background: $p4
-        color: $n8
-        margin-right: 8px
+        background: none
+        color: $n2
+        +dark
+            color: $n8
 
 .notesContent
     display: flex
@@ -1064,7 +1072,7 @@
     backdrop-filter: blur(12px)
     +m
         max-width: 100% !important
-        width: calc(100% - 32px) !important
+        width: calc(100% - 16px) !important
 
 .receiptModalContainer
     padding: 0 !important
@@ -1088,19 +1096,26 @@
     +dark
         border-color: $n3
     +m
-        padding: 16px
+        padding: 12px
+        gap: 8px
     
 .receiptModalTitle
     +body-bold-2
     margin: 0
     font-size: 18px
     color: $n2
+    white-space: nowrap
     +dark
         color: $n8
+    +m
+        font-size: 16px
+        white-space: normal
 
 .downloadPdfButton
     display: inline-flex
     align-items: center
+    flex-shrink: 0
+    white-space: nowrap
     gap: 8px
     background: $p4
     color: $n8
@@ -1125,6 +1140,13 @@
         transform: translateY(-1px)
         +dark
             background: black
+    +m
+        padding: 0 12px
+        height: 34px
+        gap: 6px
+        margin-right: 32px
+        span
+            font-size: 12px
 
 .receiptPrintArea
     padding: 24px
@@ -1132,7 +1154,7 @@
     border-radius: 0 0 24px 24px
     overflow-x: auto
     +m
-        padding: 16px
+        padding: 8px
 
 .receiptSheet
     background: #ffffff
@@ -1145,7 +1167,7 @@
     min-height: 1040px
     margin: 0 auto
     +m
-        padding: 14px
+        padding: 10px
         width: 100%
         min-height: auto
 
@@ -1171,7 +1193,8 @@
     +m
         grid-template-columns: 1fr
         justify-items: start
-        padding: 18px
+        padding: 16px
+        gap: 16px
 
 .receiptLogoCard
     width: 92px
@@ -1184,6 +1207,9 @@
     padding: 10px
     position: relative
     z-index: 1
+    +m
+        width: 72px
+        height: 72px
 
 .receiptLogoImage
     width: 100%
@@ -1202,6 +1228,8 @@
     font-size: 24px
     font-weight: 700
     line-height: 1.1
+    +m
+        font-size: 20px
 
 .receiptBrandMeta
     display: flex
@@ -1217,6 +1245,10 @@
         fill: #ffffff
         margin-right: 8px
         flex: 0 0 auto
+    +m
+        span
+            word-break: break-word
+            overflow-wrap: anywhere
 
 .receiptInvoicePill
     align-self: center
@@ -1241,6 +1273,8 @@
     +m
         justify-self: start
         margin-right: 0
+        padding: 10px 14px
+        font-size: 12px
 
 .receiptMetaGrid
     display: grid
@@ -1249,6 +1283,7 @@
     margin-top: 20px
     +m
         grid-template-columns: 1fr
+        gap: 12px
 
 .receiptMetaCard
     background: #ffffff
@@ -1257,6 +1292,9 @@
     padding: 18px
     min-height: 100%
     min-height: 148px
+    +m
+        padding: 14px
+        min-height: auto
 
 .receiptSectionTitle
     display: block
@@ -1279,11 +1317,17 @@
     font-weight: 700
     color: #163763
     margin-bottom: 8px
+    +m
+        word-break: break-word
+        overflow-wrap: anywhere
 
 .receiptSecondaryText
     font-size: 13px
     line-height: 1.6
     color: #49627f
+    +m
+        word-break: break-word
+        overflow-wrap: anywhere
 
 .receiptBadge
     display: inline-flex

@@ -2228,42 +2228,6 @@ function StayHostQuality({ stay, hostData, hostAvatar }) {
                     </div>
                   </div>
 
-                  {/* Metrics */}
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <div style={{
-                      background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", lineHeight: 1 }}>
-                        ★ {hostData?.statistics?.averageRating || "4.9"}
-                      </span>
-                      <span style={{ fontSize: "7px", color: "#B45309", textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Rating</span>
-                    </div>
-
-                    <div style={{
-                      background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                      borderRadius: "10px",
-                      padding: "6px 10px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      minWidth: 46
-                    }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: A, lineHeight: 1 }}>
-                        {hostData?.statistics?.totalEvents || hostData?.listings?.length || 8}
-                      </span>
-                      <span style={{ fontSize: "7px", color: A, textTransform: "uppercase", letterSpacing: "0.02em", fontWeight: 600, marginTop: 2 }}>Events</span>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Bio */}

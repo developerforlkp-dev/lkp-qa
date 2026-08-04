@@ -443,9 +443,11 @@ export const getFilteredListings = async ({
       if (payload.totalCount !== undefined) totalCount = payload.totalCount;
       else if (payload.total !== undefined) totalCount = payload.total;
       else if (payload.count !== undefined) totalCount = payload.count;
+      else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
 
       if (payload.hasMore !== undefined) hasMore = payload.hasMore;
       else if (payload.has_more !== undefined) hasMore = payload.has_more;
+      else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
     }
 
     return {
@@ -494,9 +496,11 @@ const normalizePublicFilterPayload = (payload, collectionKeys = []) => {
     if (payload.totalCount !== undefined) totalCount = payload.totalCount;
     else if (payload.total !== undefined) totalCount = payload.total;
     else if (payload.count !== undefined) totalCount = payload.count;
+    else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
 
     if (payload.hasMore !== undefined) hasMore = payload.hasMore;
     else if (payload.has_more !== undefined) hasMore = payload.has_more;
+    else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
   }
 
   return {
@@ -1886,10 +1890,10 @@ export const getHomepageSectionListings = async (sectionId, limit = 12, offset =
   }
 };
 
-export const getEventListings = async (limit = 12, offset = 0) => {
+export const getEventListings = async (limit = 12, offset = 0, sortBy = "newest") => {
   try {
     const response = await ListingsAPI.get(`/public/events`, {
-      params: { limit, offset },
+      params: { limit, offset, sortBy },
     });
     const payload = response.data;
     //console.log(`✅ Event listings fetched (raw):`, payload);
@@ -1901,10 +1905,10 @@ export const getEventListings = async (limit = 12, offset = 0) => {
   }
 };
 
-export const getStayListings = async (limit = 20, offset = 0) => {
+export const getStayListings = async (limit = 20, offset = 0, sortBy = "newest") => {
   try {
     const response = await ListingsAPI.get(`/public/stays`, {
-      params: { limit, offset },
+      params: { limit, offset, sortBy },
     });
     const payload = response.data;
     //console.log(`✅ Stay listings fetched (raw):`, payload);
@@ -2108,10 +2112,10 @@ export const cancelEventOrder = async (orderId, cancelData) => {
   }
 };
 
-export const getFoodMenus = async (limit = 20, offset = 0) => {
+export const getFoodMenus = async (limit = 20, offset = 0, sortBy = "newest") => {
   try {
     const response = await ListingsAPI.get("/public/food-menus", {
-      params: { limit, offset },
+      params: { limit, offset, sortBy },
     });
     const payload = response.data;
     //console.log(`✅ Food menus fetched (raw):`, payload);
@@ -2147,34 +2151,17 @@ export const filterFoodMenus = async (filters = {}) => {
       params: filters,
     });
     const payload = response.data;
-    //console.log(`✅ Food menus filtered (raw):`, payload);
-
-    let listings = [];
-    if (Array.isArray(payload)) {
-      listings = payload;
-    } else if (payload && typeof payload === "object") {
-      listings = payload.foodMenus || payload.food_menus || payload.listings || payload.data || [];
-      if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
-        listings = payload.data.foodMenus || payload.data.food_menus || payload.data.listings || payload.data || [];
-      }
-      if (!Array.isArray(listings) && Array.isArray(payload.items)) {
-        listings = payload.items;
-      }
-    }
-
-    const finalListings = Array.isArray(listings) ? listings : [];
-    //console.log(`✅ Food menus filter normalized:`, finalListings);
-    return { listings: finalListings };
+    return normalizePublicFilterPayload(payload, ["foodMenus", "food_menus"]);
   } catch (error) {
     console.error(`❌ Error filtering food menus:`, error.response?.data || error.message);
     throw error;
   }
 };
 
-export const getPlaces = async (limit = 20, offset = 0) => {
+export const getPlaces = async (limit = 20, offset = 0, sortBy = "newest") => {
   try {
     const response = await ListingsAPI.get("/public/places", {
-      params: { limit, offset },
+      params: { limit, offset, sortBy },
     });
     const payload = response.data;
     // console.log(`✅ Places nearby fetched (raw):`, payload);
@@ -2210,24 +2197,7 @@ export const filterPlaces = async (filters = {}) => {
       params: filters,
     });
     const payload = response.data;
-    //console.log(`✅ Places nearby filtered (raw):`, payload);
-
-    let listings = [];
-    if (Array.isArray(payload)) {
-      listings = payload;
-    } else if (payload && typeof payload === "object") {
-      listings = payload.places || payload.listings || payload.data || [];
-      if (!Array.isArray(listings) && payload.data && typeof payload.data === "object") {
-        listings = payload.data.places || payload.data.listings || payload.data || [];
-      }
-      if (!Array.isArray(listings) && Array.isArray(payload.items)) {
-        listings = payload.items;
-      }
-    }
-
-    const finalListings = Array.isArray(listings) ? listings : [];
-    //console.log(`✅ Places filter normalized:`, finalListings);
-    return { listings: finalListings };
+    return normalizePublicFilterPayload(payload, ["places"]);
   } catch (error) {
     console.error(`❌ Error filtering places:`, error.response?.data || error.message);
     throw error;

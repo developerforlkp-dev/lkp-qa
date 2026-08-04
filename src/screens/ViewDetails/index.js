@@ -1302,8 +1302,17 @@ const ViewDetails = () => {
       "14:00:00";
 
     if (checkInTimeStr && typeof checkInTimeStr === 'string' && checkInTimeStr.includes(':')) {
-      const parts = checkInTimeStr.split(':').map(Number);
-      checkInDatetime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      const match = checkInTimeStr.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const ampm = match[3] ? match[3].toUpperCase() : null;
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+        checkInDatetime.setHours(hours, minutes, 0, 0);
+      } else {
+        checkInDatetime.setHours(14, 0, 0, 0);
+      }
     } else {
       checkInDatetime.setHours(14, 0, 0, 0);
     }
@@ -1339,8 +1348,17 @@ const ViewDetails = () => {
       "11:00:00";
 
     if (checkOutTimeStr && typeof checkOutTimeStr === 'string' && checkOutTimeStr.includes(':')) {
-      const parts = checkOutTimeStr.split(':').map(Number);
-      checkOutDatetime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      const match = checkOutTimeStr.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const ampm = match[3] ? match[3].toUpperCase() : null;
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+        checkOutDatetime.setHours(hours, minutes, 0, 0);
+      } else {
+        checkOutDatetime.setHours(11, 0, 0, 0);
+      }
     } else {
       checkOutDatetime.setHours(11, 0, 0, 0);
     }
@@ -1401,26 +1419,35 @@ const ViewDetails = () => {
       let type = "experience";
 
       if (isStayOrder) {
-        const stayId = bookingToRebook?.originalData?.stayId || bookingToRebook?.stayId || bookingToRebook?.originalData?.listingId;
-        if (stayId) {
-          const res = await getStayDetails(stayId);
-          data = res?.stay || res;
-        }
         type = "stay";
+        data = bookingToRebook?.stayData;
+        if (!data) {
+          const stayId = bookingToRebook?.stayData?.id || bookingToRebook?.stayData?.stayId || bookingToRebook?.originalData?.propertyId || bookingToRebook?.originalData?.stayId || bookingToRebook?.originalData?.stayOrderRooms?.[0]?.stayId || bookingToRebook?.originalData?.stayOrderRooms?.[0]?.propertyId;
+          if (stayId) {
+            const res = await getStayDetails(stayId);
+            data = res?.stay || res;
+          }
+        }
       } else if (isEventOrder) {
-        const eventId = bookingToRebook?.originalData?.eventId || bookingToRebook?.eventId || bookingToRebook?.originalData?.listingId;
-        if (eventId) {
-          const res = await getEventDetails(eventId);
-          data = res?.event || res;
-        }
         type = "event";
-      } else {
-        const listingId = bookingToRebook?.originalData?.listingId || bookingToRebook?.listingId;
-        if (listingId) {
-          const res = await getListing(listingId);
-          data = res?.listing || res;
+        data = bookingToRebook?.eventData;
+        if (!data) {
+          const eventId = bookingToRebook?.eventData?.id || bookingToRebook?.eventData?.eventId || bookingToRebook?.originalData?.eventId;
+          if (eventId) {
+            const res = await getEventDetails(eventId);
+            data = res?.event || res;
+          }
         }
+      } else {
         type = "experience";
+        data = bookingToRebook?.listingData;
+        if (!data) {
+          const listingId = bookingToRebook?.listingData?.id || bookingToRebook?.listingData?.listingId || bookingToRebook?.originalData?.listingId;
+          if (listingId) {
+            const res = await getListing(listingId);
+            data = res?.listing || res;
+          }
+        }
       }
 
       if (data) {
@@ -1592,8 +1619,17 @@ const ViewDetails = () => {
       document.body.appendChild(script);
     });
 
-  const showValidationModal = ({ title, message, code = "", details = "" }) => {
-    setValidationModalData({ title, message, code, details });
+  const showValidationModal = (data) => {
+    setValidationModalData({
+      title: data.title || "",
+      message: data.message || "",
+      code: data.code || "",
+      details: data.details || "",
+      isSuccess: data.isSuccess || false,
+      isRebookPrompt: data.isRebookPrompt || false,
+      canContinue: data.canContinue || false,
+      bookingToRebook: data.bookingToRebook || null,
+    });
     setValidationModalVisible(true);
   };
 
@@ -1813,20 +1849,60 @@ const ViewDetails = () => {
     const date = new Date(dateStr);
     const timeStr = booking?.originalData?.bookingTime || booking?.originalData?.startTime || booking?.bookingTime || "00:00:00";
     if (timeStr && typeof timeStr === 'string' && timeStr.includes(':')) {
-      const parts = timeStr.split(':').map(Number);
-      date.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      const match = timeStr.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const ampm = match[3] ? match[3].toUpperCase() : null;
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+        date.setHours(hours, minutes, 0, 0);
+      } else {
+        const parts = timeStr.split(':').map(p => parseInt(p, 10));
+        date.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      }
     }
     return new Date() >= date;
   };
 
 
 
+  const isBookingPast = () => {
+    if (!booking) return false;
+    const resDateStr = booking.reservationDate || booking.startDate || booking.bookingDate;
+    if (!resDateStr || resDateStr === "TBD") return false;
+    
+    const date = new Date(resDateStr);
+    
+    let timeStr = booking.startTime || booking.bookingTime || "00:00";
+    if (timeStr && typeof timeStr === 'string' && timeStr.includes('-')) {
+      timeStr = timeStr.split('-')[0].trim();
+    }
+
+    if (timeStr && typeof timeStr === 'string' && timeStr.includes(':')) {
+      const match = timeStr.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const ampm = match[3] ? match[3].toUpperCase() : null;
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+        date.setHours(hours, minutes, 0, 0);
+      } else {
+        const parts = timeStr.split(':').map(p => parseInt(p, 10));
+        date.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+      }
+    }
+    
+    return new Date() >= date;
+  };
+
   const handleCheckAvailabilityAndProceed = async () => {
     if (!booking?.orderId || isCheckingAvailability || isConfirmingBooking) return;
 
     setIsCheckingAvailability(true);
 
-    const isPast = isPastStayCheckInTime() || isPastExperienceStartTime();
+    const isPast = isBookingPast();
     if (isPast) {
       showValidationModal({
         title: "Availability check failed",
@@ -2418,7 +2494,7 @@ const ViewDetails = () => {
     };
 
     loadCancelPreview();
-  }, [booking?.orderId]);
+  }, [booking?.orderId, booking?.status, booking?.statusTone]);
 
   useEffect(() => {
     const fetchReasons = async () => {
@@ -2636,7 +2712,6 @@ const ViewDetails = () => {
     return firstText ? firstText.trim() : "";
   };
 
-  const cancelPreviewRows = getCancelPreviewRows(cancelPreview);
 
   const getInitialTab = () => {
     return "host";
@@ -2823,13 +2898,7 @@ const ViewDetails = () => {
       : "";
 
     if (originalStatus === "PENDING" || status === "pending") {
-      const actions = [];
-      if (sourceTab !== "cancelled") {
-        if (!isPastStayCheckInTime()) {
-          actions.push({ label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick });
-        }
-      }
-      return actions;
+      return [];
     }
 
     if (status === "upcoming" || status === "confirmed") {
@@ -2934,8 +3003,8 @@ const ViewDetails = () => {
       <div className={cn("container", styles.container)}>
         <header className={styles.header}>
           <Link
-            to="/bookings"
-            className={cn("button-stroke", "button-small")}
+            to={sourceTab ? `/bookings/${sourceTab}` : "/bookings"}
+            className={cn("button-stroke", "button-small", styles.backButton)}
             style={{ marginBottom: "24px", display: "inline-flex", alignItems: "center", gap: "8px" }}
           >
             <Icon name="arrow-prev" size="14" />
@@ -3232,17 +3301,29 @@ const ViewDetails = () => {
               </div>
               {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && String(booking.originalData?.orderStatus || "").toUpperCase() !== "PENDING_CONFIRMATION" && (
                 <div className={styles.paymentActions}>
-                  <button
-                    type="button"
-                    className={cn("button", styles.payNowBtn)}
-                    onClick={handleCheckAvailabilityAndProceed}
-                    disabled={isCheckingAvailability || isConfirmingBooking}
-                    style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
-                  >
-                    {isCheckingAvailability
-                      ? "Checking Availability..."
-                      : (isConfirmingBooking ? "Opening Payment..." : "Check Availability & Pay Now")}
-                  </button>
+                  {isBookingPast() ? (
+                    <button
+                      type="button"
+                      className={cn("button", styles.payNowBtn)}
+                      onClick={() => handleRebook(booking)}
+                      disabled={isFetchingRebookData}
+                      style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
+                    >
+                      {isFetchingRebookData ? "Loading..." : "Rebook Now"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={cn("button", styles.payNowBtn)}
+                      onClick={handleCheckAvailabilityAndProceed}
+                      disabled={isCheckingAvailability || isConfirmingBooking}
+                      style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
+                    >
+                      {isCheckingAvailability
+                        ? "Checking Availability..."
+                        : (isConfirmingBooking ? "Opening Payment..." : "Check Availability & Pay Now")}
+                    </button>
+                  )}
                 </div>
               )}
               {refundDetails && (
@@ -3430,7 +3511,7 @@ const ViewDetails = () => {
           </div>
         )}
 
-        {(getActionButtons().length > 0 || isPastStayCheckInTime()) && (
+        {bookingStatusLower !== "pending" && (getActionButtons().length > 0 || isPastStayCheckInTime()) && (
           <div className={cn(styles.card, styles.actionCard)}>
             <h3 className={styles.actionTitle}>Actions</h3>
             {isPastStayCheckInTime() && (
@@ -3501,12 +3582,8 @@ const ViewDetails = () => {
                 style={{ marginLeft: '12px' }}
                 onClick={() => {
                   setValidationModalVisible(false);
-                  const businessInterestCode = String(booking?.originalData?.businessInterestCode || "").toUpperCase();
-                  const isStayOrder = businessInterestCode === "STAYS" || booking?.originalData?.stayId != null || Array.isArray(booking?.originalData?.stayOrderRooms);
-                  const isEvent = booking.isEventOrder || businessInterestCode === "EVENTS" || bookingType === "event";
-                  const isExperienceOrder = !isStayOrder && !isEvent;
                   const originalStatus = booking?.originalData?.orderStatus ? String(booking.originalData.orderStatus).toUpperCase().trim() : "";
-                  if (isExperienceOrder && originalStatus === "PENDING") {
+                  if (originalStatus === "PENDING" || booking?.status === "Pending") {
                     setConfirmPayModalVisible(true);
                   } else {
                     openRazorpayForBooking();
@@ -3580,21 +3657,151 @@ const ViewDetails = () => {
         }}
         outerClassName={styles.cancelModalOuter}
       >
-        <div className={styles.cancelModalContent}>
-          <div className={styles.cancelModalHeader}>
-            <h2 className={styles.cancelModalTitle} style={{ color: "#0097B2" }}>Slot Available</h2>
+        <div className={styles.cancelModalContent} style={{ maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div className={styles.cancelModalHeader} style={{ flexShrink: 0, padding: "32px 32px 16px", borderBottom: '1px solid #E6E8EC' }}>
+            <h2 className={styles.cancelModalTitle}>Continue to Payment</h2>
             <p className={styles.cancelModalDescription}>
-              Your selected experience slot is currently available.
-              You can proceed with payment to confirm your booking.
+              Please select how you would like to pay for your booking.
             </p>
           </div>
 
+          <div className={styles.cancelModalBody} style={{ flex: "1 1 auto", overflowY: "auto", padding: "16px 32px" }}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "20px",
+              textAlign: "left"
+            }}>
+              {/* Left Column: Booking Summary */}
+              <div style={{
+                background: "rgba(244, 245, 246, 0.03)",
+                borderRadius: "12px",
+                padding: "16px",
+                border: "1px solid rgba(226, 232, 240, 0.08)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px"
+              }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "600", borderBottom: "1px solid rgba(226, 232, 240, 0.08)", paddingBottom: "8px", margin: 0 }}>
+                  Booking Summary
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+                    <span style={{ color: "#777E90" }}>Experience:</span>
+                    <span style={{ fontWeight: "500", textAlign: "right" }}>{booking?.title}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#777E90" }}>Date:</span>
+                    <span style={{ fontWeight: "500" }}>{booking?.originalData?.bookingDate || booking?.originalData?.startDate}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#777E90" }}>Time Slot:</span>
+                    <span style={{ fontWeight: "500" }}>
+                      {booking?.originalData?.bookingTime || booking?.originalData?.startTime || booking?.originalData?.bookingSlot?.name || "Confirmed Slot"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#777E90" }}>Guests:</span>
+                    <span style={{ fontWeight: "500" }}>
+                      {(() => {
+                        const adults = booking?.originalData?.adultsCount > 0 ? booking.originalData.adultsCount : Math.max(0, (booking?.originalData?.guestCount || 0) - (booking?.originalData?.childrenCount || 0));
+                        const children = booking?.originalData?.childrenCount || 0;
+                        if (adults > 0 || children > 0) {
+                          return `${adults} Adult${adults > 1 ? "s" : ""}${children > 0 ? `, ${children} Child${children !== 1 ? "ren" : ""}` : ""}`;
+                        }
+                        return `${booking?.originalData?.guestCount || 0} Guest${booking?.originalData?.guestCount === 1 ? "" : "s"}`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
+              {/* Right Column: Price Details */}
+              <div style={{
+                background: "rgba(244, 245, 246, 0.03)",
+                borderRadius: "12px",
+                padding: "16px",
+                border: "1px solid rgba(226, 232, 240, 0.08)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                gap: "16px"
+              }}>
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: "600", borderBottom: "1px solid rgba(226, 232, 240, 0.08)", paddingBottom: "8px", margin: 0, marginBottom: "12px" }}>
+                    Price Details
+                  </h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px" }}>
+                    {/* Base Price */}
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#777E90" }}>Base Price:</span>
+                      <span>{formatMoney(booking?.pricing?.basePrice || booking?.originalData?.basePrice, booking?.originalData?.currency)}</span>
+                    </div>
 
-          <div className={styles.cancelModalFooter}>
+                    {/* Add-ons detailed list */}
+                    {(() => {
+                      const addons = booking?.addons || booking?.originalData?.addons || booking?.originalData?.selectedAddons || [];
+                      if (addons && addons.length > 0) {
+                        return (
+                          <>
+                            {addons.map((addon, idx) => (
+                              <div key={idx} style={{ display: "flex", justifyContent: "space-between", paddingLeft: "8px", fontSize: "12px", fontStyle: "italic" }}>
+                                <span style={{ color: "#777E90" }}>+ {addon.addonName || addon.name} (x{addon.quantity || 1})</span>
+                                <span>{formatMoney((parseFloat(addon.addonPrice || addon.price || addon.totalPrice || 0) * (addon.quantity || 1)), booking?.originalData?.currency)}</span>
+                              </div>
+                            ))}
+                            {booking?.originalData?.addonsTotal > 0 && (
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "#777E90" }}>Add-ons Total:</span>
+                                <span>{formatMoney(booking?.originalData?.addonsTotal, booking?.originalData?.currency)}</span>
+                              </div>
+                            )}
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Subtotal */}
+                    {booking?.pricing?.subtotal > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#777E90" }}>Subtotal:</span>
+                        <span>{formatMoney(booking?.pricing?.subtotal, booking?.originalData?.currency)}</span>
+                      </div>
+                    )}
+
+                    {/* Discounts */}
+                    {booking?.pricing?.discountAmount > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", color: "#FF6A55" }}>
+                        <span>Discount:</span>
+                        <span>-{formatMoney(booking?.pricing?.discountAmount, booking?.originalData?.currency)}</span>
+                      </div>
+                    )}
+
+                    {/* Taxes */}
+                    {booking?.pricing?.taxAmount > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#777E90" }}>Taxes:</span>
+                        <span>{formatMoney(booking?.pricing?.taxAmount, booking?.originalData?.currency)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Total Payable */}
+                <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(226, 232, 240, 0.08)", paddingTop: "8px", fontSize: "16px", fontWeight: "600", margin: 0 }}>
+                  <span>{booking?.originalData?.orderStatus === "PENDING" || booking?.status === "Pending" ? "Amount Payable:" : "Total Amount:"}</span>
+                  <span style={{ color: "#0097B2" }}>{formatMoney(booking?.pricing?.total || booking?.originalData?.totalPrice || booking?.originalData?.finalAmount, booking?.originalData?.currency)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.cancelModalFooter} style={{ flexShrink: 0, padding: "24px 32px", borderTop: '1px solid #E6E8EC', display: "flex", gap: "16px", justifyContent: "flex-end", margin: 0 }}>
             <button
               type="button"
-              className={cn("button-stroke", styles.cancelModalBtn)}
+              className={cn("button-stroke")}
+              style={{ flex: 1, borderRadius: "24px", padding: "12px 24px", height: "48px" }}
               onClick={() => setConfirmPayModalVisible(false)}
               disabled={isConfirmingBooking}
             >
@@ -3602,14 +3809,14 @@ const ViewDetails = () => {
             </button>
             <button
               type="button"
-              className={cn("button", styles.cancelModalBtn)}
+              className={cn("button")}
+              style={{ flex: 1, borderRadius: "24px", padding: "12px 24px", height: "48px", backgroundColor: "#0097B2", color: "white", border: "none" }}
               onClick={async () => {
                 await openRazorpayForBooking();
               }}
               disabled={isConfirmingBooking}
-              style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
             >
-              {isConfirmingBooking ? "Initializing..." : "Continue to Payment"}
+              {isConfirmingBooking ? "Initializing..." : "Pay Now"}
             </button>
           </div>
         </div>
@@ -3749,9 +3956,6 @@ const ViewDetails = () => {
         <div className={styles.confirmCancelModalContent || styles.cancelModalContent}>
           <div className={styles.cancelModalHeader}>
             <h2 className={styles.cancelModalTitle}>Confirm Cancellation</h2>
-            <p className={styles.cancelModalDescription}>
-              {booking ? `Cancel "${booking.title}" and apply the previewed cancellation policy?` : "Confirm this cancellation?"}
-            </p>
           </div>
           <div className={styles.confirmCancelSummary}>
             {cancelPreviewLoading ? (

@@ -1661,7 +1661,7 @@ const ExperienceProduct = () => {
 
               {/* LEFT: Map */}
               <Rev delay={0.1} style={{ height: "100%" }}>
-                <div style={{ height: "100%", minHeight: 320, position: "relative", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+                <div style={{ position: "sticky", top: 120, height: 400, maxHeight: "calc(100vh - 160px)", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
                   <div style={{
                     position: "absolute",
                     top: 16,
@@ -1758,9 +1758,9 @@ const ExperienceProduct = () => {
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Info size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1, minWidth: 0 }}>
                           <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingInstructions}</span>
+                          <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
                         </div>
                       </li>
                     )}
@@ -3310,10 +3310,14 @@ function ExperiencePolicies({ listing }) {
     }
 
     if (listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.cancellationPolicy) {
+      let rawPolicy = listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy;
+      if (rawPolicy && typeof rawPolicy === "string" && rawPolicy.toLowerCase().includes("no refunds are available for cancellations")) {
+        rawPolicy = "No cancellation policy is available for this experience.";
+      }
       cancelItems.push({
         id: 'cancel',
         title: null,
-        body: listing.cancellationPolicySummary || listing.cancellationPolicyText || listing.cancellationPolicy
+        body: rawPolicy
       });
     }
 
@@ -3577,3 +3581,35 @@ const ExpandableReviewText = ({ text, vendorResponse, FG, A }) => {
 
 export default ExperienceProduct;
 
+export const ExpandableInstructionText = ({ text, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+  
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
+      <motion.div 
+        animate={{ maxHeight: expanded ? "1000px" : "67px" }} 
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        style={{ overflow: "hidden", width: "100%" }}
+      >
+        <span style={{ 
+          fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
+          display: "-webkit-box",
+          WebkitLineClamp: expanded ? "unset" : 3,
+          WebkitBoxOrient: "vertical",
+          whiteSpace: "pre-wrap"
+        }}>
+          {text}
+        </span>
+      </motion.div>
+      {isLong && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 13, fontWeight: 600, padding: 0, marginTop: 6, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif', transition: "opacity 0.2s" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};

@@ -206,7 +206,7 @@ function App() {
             />
             <Route
               exact
-              path="/bookings"
+              path={["/bookings", "/bookings/:tab"]}
               component={Bookings}
             />
             <Route

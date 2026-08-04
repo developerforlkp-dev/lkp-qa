@@ -1,4 +1,5 @@
 import React from "react";
+import cn from "classnames";
 import styles from "./LoadingSkeleton.module.sass";
 
 /**
@@ -119,7 +120,41 @@ const CompletedSkeleton = ({ count = 3 }) => (
   </div>
 );
 
-// ─── Booking Detail Page Skeleton ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROFILE SETTINGS SKELETON
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const ProfileSkeleton = () => (
+  <div className={cn(styles.container, styles.profileSkeleton)}>
+    <div className={styles.profileHeader}>
+      <div className={cn(styles.shimmer, styles.profileTitle)}></div>
+    </div>
+    
+    <div className={styles.profileCard}>
+      <div className={styles.profileAvatarSection}>
+        <div className={cn(styles.shimmer, styles.profileAvatar)}></div>
+        <div className={styles.profileAvatarDetails}>
+          <div className={cn(styles.shimmer, styles.profileTextLine)}></div>
+          <div className={cn(styles.shimmer, styles.profileTextLine, styles.short)}></div>
+          <div className={cn(styles.shimmer, styles.profileButton)}></div>
+        </div>
+      </div>
+    </div>
+    
+    <div className={styles.profileCard}>
+      <div className={cn(styles.shimmer, styles.profileCategory)}></div>
+      <div className={styles.profileGrid}>
+        <div className={cn(styles.shimmer, styles.profileField)}></div>
+        <div className={cn(styles.shimmer, styles.profileField)}></div>
+        <div className={cn(styles.shimmer, styles.profileField)}></div>
+        <div className={cn(styles.shimmer, styles.profileField)}></div>
+      </div>
+    </div>
+  </div>
+);
+
+// -------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
 // Mirrors the actual ViewDetails page layout:
 // [back btn] → [title] → [rating] → [banner] → [summary card grid] → [info cards]
 
@@ -386,6 +421,8 @@ const LoadingSkeleton = ({ variant = "homepage", count, sections }) => {
         return <ExperienceSkeleton />;
       case "place":
         return <PlaceSkeleton />;
+      case "profile":
+        return <ProfileSkeleton />;
       case "food":
         return <FoodSkeleton />;
       case "event":

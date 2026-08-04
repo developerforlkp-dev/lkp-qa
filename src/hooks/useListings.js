@@ -32,6 +32,7 @@ export const useListings = ({
   offset = 0,
   businessInterest = "EXPERIENCE",
   categoryFilter = null,
+  sortBy = "newest",
 } = {}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -130,23 +131,23 @@ export const useListings = ({
           categoryFilter?.businessInterestId || mapBusinessInterestId(businessInterest);
         if (!hasServerSideFilters && mappedNearbyInterest !== "EXPERIENCE") {
           if (mappedNearbyInterest === "FOOD") {
-            const response = await getFoodMenus(limit, nextOffset);
+            const response = await getFoodMenus(limit, nextOffset, sortBy);
             listings = response.listings || [];
           } else if (mappedNearbyInterest === "PLACES") {
-            const response = await getPlaces(limit, nextOffset);
+            const response = await getPlaces(limit, nextOffset, sortBy);
             listings = response.listings || [];
           } else if (mappedNearbyInterest === "STAYS") {
-            const response = await getStayListings(limit, nextOffset);
+            const response = await getStayListings(limit, nextOffset, sortBy);
             listings = response.listings || [];
           } else if (mappedNearbyInterest === "EVENTS") {
-            const response = await getEventListings(limit, nextOffset);
+            const response = await getEventListings(limit, nextOffset, sortBy);
             listings = normalizeListingsCollection(response, ["events", "eventListings"]);
           }
         } else {
           const filterPayload = {
             limit,
             offset: nextOffset,
-            sortBy: categoryFilter?.sortBy || "newest",
+            sortBy: sortBy,
           };
 
           if (categoryFilter?.categoryType) {
@@ -215,7 +216,7 @@ export const useListings = ({
               maxPrice: effectiveMaxPrice,
               limit,
               offset: nextOffset,
-              sortBy: categoryFilter?.sortBy || "newest",
+              sortBy: sortBy,
             });
 
             listings = response.listings || [];
@@ -317,11 +318,11 @@ export const useListings = ({
     } finally {
       setLoading(false);
     }
-  }, [location, dateRange, guests, filters, limit, businessInterest, categoryFilter, mapBusinessInterestId, mapToNearbyBusinessInterest]);
+  }, [location, dateRange, guests, filters, limit, businessInterest, categoryFilter, mapBusinessInterestId, mapToNearbyBusinessInterest, sortBy]);
 
   useEffect(() => {
     fetchListings(0, true);
-  }, [location, dateRange, guests, filters, businessInterest, categoryFilter, fetchListings]);
+  }, [location, dateRange, guests, filters, businessInterest, categoryFilter, sortBy, fetchListings]);
 
   const fetchMore = useCallback(() => {
     if (!loading && hasMore) {

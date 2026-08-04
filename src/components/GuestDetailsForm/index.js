@@ -232,19 +232,6 @@ const GuestDetailsForm = ({ className, numberOfGuests, guestDetails, setGuestDet
           <div className={styles.colFieldHalf} style={{ display: 'flex', flexDirection: 'column' }}>
             <div className={styles.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Mobile Number *</span>
-              {guestDetails.mobileNumber && guestDetails.mobileNumber.length === 10 && !isPhoneVerified && (
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={isVerifying}
-                  style={{ color: '#00A4C4', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                >
-                  {isVerifying && !showOtpModal ? "Sending..." : "Verify"}
-                </button>
-              )}
-              {isPhoneVerified && guestDetails.mobileNumber === phoneToVerify && (
-                <span style={{ color: '#4CAF50', fontSize: '12px', fontWeight: '600' }}>Verified ✓</span>
-              )}
             </div>
             <div
               style={{
@@ -260,13 +247,11 @@ const GuestDetailsForm = ({ className, numberOfGuests, guestDetails, setGuestDet
               onFocus={(e) => e.currentTarget.style.borderColor = '#B1B5C3'}
               onBlur={(e) => e.currentTarget.style.borderColor = guestErrors.mobileNumber ? '#FF4848' : '#E6E8EC'}
             >
-              <input
-                name="countryCode"
-                value={guestDetails.countryCode || "+91"}
-                onChange={handlePrimaryChange}
-                placeholder="+91"
-                required
+              <div
+                className={styles.mobileInputText}
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   width: '64px',
                   height: '100%',
                   border: 'none',
@@ -275,11 +260,13 @@ const GuestDetailsForm = ({ className, numberOfGuests, guestDetails, setGuestDet
                   fontWeight: 600,
                   fontSize: '14px',
                   fontFamily: 'Poppins, sans-serif',
-                  color: '#23262F',
                   outline: 'none',
-                  borderRight: '1px solid #E6E8EC'
+                  borderRight: '1px solid #E6E8EC',
+                  boxSizing: 'border-box'
                 }}
-              />
+              >
+                {guestDetails.countryCode || "+91"}
+              </div>
               <input
                 id="guest-field-mobileNumber"
                 name="mobileNumber"
@@ -292,6 +279,7 @@ const GuestDetailsForm = ({ className, numberOfGuests, guestDetails, setGuestDet
                 }}
                 placeholder="Mobile Number"
                 required
+                className={styles.mobileInputText}
                 style={{
                   flex: 1,
                   height: '100%',
@@ -301,7 +289,6 @@ const GuestDetailsForm = ({ className, numberOfGuests, guestDetails, setGuestDet
                   fontWeight: 600,
                   fontSize: '14px',
                   fontFamily: 'Poppins, sans-serif',
-                  color: '#23262F',
                   outline: 'none'
                 }}
               />
