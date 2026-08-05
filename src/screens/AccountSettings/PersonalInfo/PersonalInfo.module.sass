@@ -311,6 +311,201 @@
         transition: border-color .2s, color .2s
         +dark
             border-color: $n3
+    display: flex
+    margin: 0 -10px
+    +m
+        display: block
+        margin: 0
+    &:not(:last-child)
+        margin-bottom: 32px
+
+.col
+    position: relative
+    flex: 0 0 calc(50% - 20px)
+    width: calc(50% - 20px)
+    margin: 0 10px
+    +m
+        width: 100%
+        margin: 0
+    &:not(:last-child)
+        +m
+            margin-bottom: 20px
+
+.labelWrapper
+    display: flex
+    justify-content: space-between
+    align-items: center
+    margin-bottom: 12px
+
+.verifiedBadge
+    display: flex
+    align-items: center
+    +caption-bold-2
+    color: #45B26B
+    svg
+        margin-right: 4px
+        fill: #45B26B
+
+.label
+    +hairline-2
+    color: $n5
+
+.phoneRow
+    display: flex
+    gap: 12px
+    align-items: flex-start
+    +m
+        flex-direction: column
+        align-items: stretch
+
+.countryCodeField
+    flex: 0 0 140px
+    +m
+        flex: 1 1 auto
+
+.phoneField
+    flex: 1 1 auto
+    margin-bottom: 0 !important
+
+.selectWrap
+    position: relative
+
+.select
+    width: 100%
+    height: 48px
+    padding: 0 40px 0 14px
+    border-radius: 12px
+    border: 2px solid $n6
+    background: none
+    +poppins
+    +caption-bold-1
+    color: $n2
+    appearance: none
+    transition: border-color .2s
+    +dark
+        border-color: $n3
+        color: $n8
+    &:focus
+        border-color: $n4
+        outline: none
+
+.selectWrap:after
+    content: ""
+    position: absolute
+    top: 50%
+    right: 16px
+    width: 8px
+    height: 8px
+    border-right: 2px solid $n4
+    border-bottom: 2px solid $n4
+    transform: translateY(-70%) rotate(45deg)
+    pointer-events: none
+
+.controls
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    margin-top: 48px
+    padding-top: 48px
+    border-top: 1px solid $n6
+    +dark
+        border-color: $n3
+
+.btns
+    display: flex
+    align-items: center
+    margin-bottom: 0
+    .button
+        margin-right: 40px
+
+.clear
+    display: flex
+    align-items: center
+    +button-1
+    color: $n4
+    transition: color .2s
+    svg
+        margin-right: 12px
+        fill: $n4
+        transition: fill .2s
+    &:hover
+        color: $p1
+        svg
+            fill: $p1
+
+.initialsAvatar
+    display: flex
+    justify-content: center
+    align-items: center
+    width: 100%
+    height: 100%
+    border-radius: 50%
+    background: $p1
+    color: $n1
+    font-size: 48px
+    font-weight: 700
+    text-transform: uppercase
+
+.successMessage
+    display: flex
+    align-items: center
+    margin-top: 24px
+    padding: 12px 16px
+    border-radius: 12px
+    background: rgba(#45B26B, .1)
+    color: #45B26B
+    +caption-bold-1
+    svg
+        margin-right: 12px
+        fill: #45B26B
+
+.otpModal
+    padding: 16px 8px
+    +m
+        padding: 8px 0
+
+.otpModalTitle
+    margin-bottom: 16px
+    font-family: 'Cormorant Garamond', 'Playfair Display', serif
+    font-size: 36px
+    line-height: 1.2
+    color: $n2
+    +dark
+        color: $n8
+    span
+        font-style: italic
+        color: #0097B2
+
+.otpModalText
+    margin-bottom: 32px
+    color: $n4
+    +dark
+        color: $n5
+
+.code
+    display: flex
+    gap: 12px
+    justify-content: center
+
+.number
+    width: 48px
+    height: 56px
+    +m
+        width: 40px
+        height: 48px
+    input
+        width: 100%
+        height: 100%
+        text-align: center
+        font-size: 24px
+        font-weight: 700
+        border: 2px solid $n6
+        border-radius: 12px
+        background: transparent
+        color: $n2
+        transition: border-color .2s, color .2s
+        +dark
+            border-color: $n3
             color: $n8
         &:focus
             border-color: #0097B2
@@ -321,3 +516,9 @@
     margin-top: 16px
     text-align: center
     font-weight: 500
+
+:global
+    button:disabled,
+    .button:disabled
+        opacity: 0.4 !important
+        pointer-events: none

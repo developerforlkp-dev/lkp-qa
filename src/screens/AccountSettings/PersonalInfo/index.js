@@ -185,7 +185,8 @@ const PersonalInfo = () => {
       setProfile(prev => ({ ...prev, isPhoneVerified: true }));
       setShowOtpModal(false);
     } catch (err) {
-      setOtpError(err?.response?.data?.message || err?.message || "Failed to verify OTP.");
+      const defaultError = err?.response?.status === 400 ? "Invalid verification code." : "Failed to verify OTP.";
+      setOtpError(err?.response?.data?.error || err?.response?.data?.message || defaultError);
     } finally {
       setVerifyingOtp(false);
     }
@@ -481,6 +482,7 @@ const PersonalInfo = () => {
                   onChange={handleChange}
                   type="email"
                   placeholder="Email"
+                  disabled={profile.isEmailVerified}
                 />
               </div>
             </div>
