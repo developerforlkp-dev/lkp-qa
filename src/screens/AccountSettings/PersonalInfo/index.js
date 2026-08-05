@@ -138,7 +138,7 @@ const PersonalInfo = () => {
     if (val.length > maxLen) {
       val = val.slice(0, maxLen);
     }
-    setProfile(prev => ({ ...prev, phone: val }));
+    setProfile(prev => ({ ...prev, phone: val, isPhoneVerified: false }));
   };
 
   const handleCountryCodeChange = (label) => {
@@ -148,7 +148,8 @@ const PersonalInfo = () => {
       setProfile(prev => ({ 
         ...prev, 
         countryCode: option.value,
-        phone: prev.phone.slice(0, getPhoneLength(option.value)) 
+        phone: prev.phone.slice(0, getPhoneLength(option.value)),
+        isPhoneVerified: false
       }));
     }
   };
@@ -232,6 +233,12 @@ const PersonalInfo = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (profile.phone && !profile.isPhoneVerified) {
+      alert("Please verify your new phone number before saving.");
+      return;
+    }
+
     try {
       setUpdating(true);
       setAvatarSuccess(false);
@@ -540,7 +547,7 @@ const PersonalInfo = () => {
           <button
             type="submit"
             className={cn("button", styles.button)}
-            disabled={updating || !profile.firstName || !profile.lastName || !profile.email}
+            disabled={updating || !profile.firstName || !profile.lastName || !profile.email || (Boolean(profile.phone) && !profile.isPhoneVerified)}
           >
             {updating ? "Saving..." : "Save changes"}
           </button>
@@ -561,13 +568,15 @@ const PersonalInfo = () => {
         onClose={() => setShowOtpModal(false)}
       >
         <div className={styles.otpModal}>
-          <div className={cn("h3", styles.title)} style={{ marginBottom: "16px" }}>Enter Verification Code</div>
-          <div style={{ marginBottom: "24px", color: "var(--n4)" }}>
+          <div className={styles.otpModalTitle}>
+            Enter Verification <span>Code</span>
+          </div>
+          <div className={styles.otpModalText}>
             We sent a code to {profile.countryCode} {profile.phone}
           </div>
-          <div className={styles.code} style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <div className={styles.code}>
             {otp.map((digit, index) => (
-              <div key={index} className={styles.number} style={{ width: '48px', height: '56px' }}>
+              <div key={index} className={styles.number}>
                 <input
                   id={`otp-reverify-${index}`}
                   type="tel"
@@ -579,21 +588,11 @@ const PersonalInfo = () => {
                   disabled={verifyingOtp}
                   autoFocus={index === 0}
                   required
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    textAlign: 'center',
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    border: '1px solid var(--n6)',
-                    borderRadius: '8px',
-                    background: 'transparent'
-                  }}
                 />
               </div>
             ))}
           </div>
-          {otpError && <div className={styles.error} style={{ color: "#FF6161", marginTop: "16px", textAlign: 'center' }}>{otpError}</div>}
+          {otpError && <div className={styles.otpError}>{otpError}</div>}
           <div className={styles.btns} style={{ marginTop: "32px", padding: 0 }}>
             <button
               type="button"
