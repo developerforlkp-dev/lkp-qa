@@ -86,6 +86,7 @@ const Login = ({ onClose }) => {
   const [step, setStep] = useState("phone"); // "phone", "otp", "profile"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [requiresProfileCompletion, setRequiresProfileCompletion] = useState(true);
   const [pendingToken, setPendingToken] = useState(null);
   const [pendingGoogleCredential, setPendingGoogleCredential] = useState("");
   const countryCode = "+91";
@@ -336,8 +337,15 @@ const Login = ({ onClose }) => {
 
     setLoading(true);
     try {
-      await sendPhoneOTP(phoneNumber.trim(), countryCode);
+      const response = await sendPhoneOTP(phoneNumber.trim(), countryCode);
       if (!isMountedRef.current) return;
+      
+      if (response && response.requiresProfileCompletion !== undefined) {
+        setRequiresProfileCompletion(response.requiresProfileCompletion);
+      } else {
+        setRequiresProfileCompletion(true);
+      }
+      
       setStep("otp");
       setError("");
       setOtp(["", "", "", "", "", ""]);
@@ -365,10 +373,12 @@ const Login = ({ onClose }) => {
       return;
     }
 
-    const dobError = getDateOfBirthValidationError(dateOfBirth);
-    if (dobError) {
-      setError(dobError);
-      return;
+    if (requiresProfileCompletion) {
+      const dobError = getDateOfBirthValidationError(dateOfBirth);
+      if (dobError) {
+        setError(dobError);
+        return;
+      }
     }
 
     setLoading(true);
@@ -560,40 +570,44 @@ const Login = ({ onClose }) => {
                 </div>
               ))}
             </div>
-            <div className={styles.nameFields}>
-              <input
-                type="text"
-                className={styles.nameInput}
-                placeholder="First Name (Optional)"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                disabled={loading}
-              />
-              <input
-                type="text"
-                className={styles.nameInput}
-                placeholder="Last Name (Optional)"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div className={styles.field}>
-              <input
-                type="date"
-                className={styles.input}
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                disabled={loading}
-                max={maxDateOfBirth}
-                required
-              />
-            </div>
+            {requiresProfileCompletion && (
+              <>
+                <div className={styles.nameFields}>
+                  <input
+                    type="text"
+                    className={styles.nameInput}
+                    placeholder="First Name (Optional)"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    disabled={loading}
+                  />
+                  <input
+                    type="text"
+                    className={styles.nameInput}
+                    placeholder="Last Name (Optional)"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <input
+                    type="date"
+                    className={styles.input}
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    disabled={loading}
+                    max={maxDateOfBirth}
+                    required
+                  />
+                </div>
+              </>
+            )}
             {error && <div className={styles.error}>{error}</div>}
             <button
               type="submit"
               className={cn("button", styles.button)}
-              disabled={loading || otp.join("").length !== 6 || !dateOfBirth}
+              disabled={loading || otp.join("").length !== 6 || (requiresProfileCompletion && !dateOfBirth)}
             >
               {loading ? "Verifying..." : "Continue"}
             </button>

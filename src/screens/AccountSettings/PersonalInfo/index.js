@@ -40,6 +40,7 @@ const PersonalInfo = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [activeInput, setActiveInput] = useState(0);
 
   const [profile, setProfile] = useState({
@@ -131,6 +132,7 @@ const PersonalInfo = () => {
   };
 
   const handlePhoneChange = (e) => {
+    setPhoneError("");
     let val = e.target.value.replace(/\D/g, "");
     const maxLen = getPhoneLength(profile.countryCode);
     if (val.length > maxLen) {
@@ -140,6 +142,7 @@ const PersonalInfo = () => {
   };
 
   const handleCountryCodeChange = (label) => {
+    setPhoneError("");
     const option = countryCodeOptions.find(o => o.label === label);
     if (option) {
       setProfile(prev => ({ 
@@ -154,12 +157,13 @@ const PersonalInfo = () => {
     try {
       setSendingOtp(true);
       setOtpError("");
+      setPhoneError("");
       await sendReverifyPhoneOTP(profile.phone, profile.countryCode);
       setShowOtpModal(true);
       setOtp(["", "", "", "", "", ""]);
       setActiveInput(0);
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || "Failed to send OTP.");
+      setPhoneError(err?.response?.data?.error || err?.response?.data?.message || err?.message || "Failed to send OTP.");
     } finally {
       setSendingOtp(false);
     }
@@ -433,15 +437,22 @@ const PersonalInfo = () => {
                       required
                     />
                     {!profile.isPhoneVerified && (
-                      <button 
-                        type="button" 
-                        className={cn("button", "button-small")} 
-                        onClick={handleSendOtp}
-                        disabled={sendingOtp || !profile.phone || profile.phone.length < 6}
-                        style={{ alignSelf: 'flex-start', marginTop: '8px' }}
-                      >
-                        {sendingOtp ? "Sending OTP..." : "Verify Number"}
-                      </button>
+                      <>
+                        <button 
+                          type="button" 
+                          className={cn("button", "button-small")} 
+                          onClick={handleSendOtp}
+                          disabled={sendingOtp || !profile.phone || profile.phone.length < 6}
+                          style={{ alignSelf: 'flex-start', marginTop: '8px' }}
+                        >
+                          {sendingOtp ? "Sending OTP..." : "Verify Number"}
+                        </button>
+                        {phoneError && (
+                          <div style={{ color: "#FF6161", fontSize: "14px", marginTop: "8px", fontWeight: "500" }}>
+                            {phoneError}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
