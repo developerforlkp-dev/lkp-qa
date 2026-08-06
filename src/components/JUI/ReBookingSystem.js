@@ -4657,7 +4657,12 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                   return next;
                                                 });
                                               }}
-                                              options={Array.from({ length: 18 }).map((_, age) => ({ value: age, label: age }))}
+                                              options={(() => {
+                                                const maxAge = isEventBooking
+                                                  ? asNumber(selectedTicket?.childAgeTo ?? selectedTicket?.child_age_to) ?? 17
+                                                  : (childAgeTo != null ? childAgeTo : 17);
+                                                return Array.from({ length: maxAge + 1 }).map((_, age) => ({ value: age, label: age }));
+                                              })()}
                                               style={{
                                                 border: `1px solid ${B}44`,
                                                 borderRadius: '6px',
