@@ -2957,11 +2957,11 @@ function PremiumMarquee({ items, isMobile, fallbackItems }) {
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: 40, marginRight: 40 }}>
               <span
                 style={{
-                  fontFamily: "Poppins, sans-serif",
-                  fontSize: isMobile ? "12px" : "14px",
-                  fontWeight: isEven ? 700 : 400,
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: isMobile ? "14px" : "18px",
+                  fontWeight: isEven ? 700 : 300,
                   color: isEven ? FG : M,
-                  letterSpacing: "0.2em",
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
                   opacity: isEven ? 1 : 0.75
                 }}

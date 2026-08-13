@@ -562,8 +562,8 @@ const CheckoutComplete = () => {
               options={options}
               items={items}
               isStay={booking?.isStay || !!(booking?.checkInDate || booking?.checkOutDate)}
-              hostName={booking?.hostName}
-              avatarUrl={booking?.hostAvatarUrl}
+              hostName={booking?.hostName || booking?.listing?.host?.displayName || booking?.listing?.host?.name}
+              avatarUrl={formatImageUrl(booking?.hostAvatarUrl || booking?.hostAvatar || booking?.listing?.host?.profilePhotoUrl || booking?.profilePhotoUrl || booking?.listing?.host?.profileImageUrl || booking?.listing?.host?.avatar)}
               rating={booking?.rating}
               reviews={booking?.reviews}
               paymentFailed={paymentFailed}

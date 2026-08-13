@@ -2171,6 +2171,29 @@ const StayProduct = () => {
 
     const currency = "INR";
     const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+    const rawHostAvatar =
+      stay?.host?.profilePhotoUrl ||
+      stay?.profilePhotoUrl ||
+      stay?.host?.profilePhoto ||
+      stay?.host?.profileImageUrl ||
+      stay?.host?.avatar ||
+      stay?.profilePhoto ||
+      stay?.profileImageUrl ||
+      stay?.avatar ||
+      null;
+    const hostAvatar = formatImageUrl(rawHostAvatar) || null;
+    const hostName =
+      stay?.contactInformation?.primaryContactName ||
+      stay?.primaryContactName ||
+      stay?.primaryContact?.name ||
+      stay?.host?.displayName ||
+      stay?.host?.name ||
+      (stay?.host?.firstName
+        ? `${stay.host.firstName} ${stay?.host?.lastName || ""}`.trim()
+        : null) ||
+      stay?.businessName ||
+      stay?.propertyName ||
+      "Host";
     const frontendReceipt = frontendBreakdown ? [
       { title: `Base Stay (${frontendBreakdown.nightsCount} night${frontendBreakdown.nightsCount !== 1 ? "s" : ""})`, content: formatMoney(frontendBreakdown.baseStayTotal) },
       { title: "Adults", content: `${guests?.adults || 0}` },
@@ -2210,6 +2233,9 @@ const StayProduct = () => {
       listingTitle: stay?.propertyName || stay?.title || stay?.name || "Stay",
       listingImage: coverImg,
       roomImage: roomImg,
+      hostName,
+      hostAvatar,
+      hostAvatarUrl: hostAvatar,
       isStay: true,
       checkInDate: checkInDate ? new Date(checkInDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,
       checkOutDate: checkOutDate ? new Date(checkOutDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,
@@ -2330,6 +2356,29 @@ const StayProduct = () => {
             : null))
         : null;
       const roomImg = formatImageUrl(rawRoomImg) || coverImg;
+      const rawHostAvatar =
+        stay?.host?.profilePhotoUrl ||
+        stay?.profilePhotoUrl ||
+        stay?.host?.profilePhoto ||
+        stay?.host?.profileImageUrl ||
+        stay?.host?.avatar ||
+        stay?.profilePhoto ||
+        stay?.profileImageUrl ||
+        stay?.avatar ||
+        null;
+      const hostAvatar = formatImageUrl(rawHostAvatar) || null;
+      const hostName =
+        stay?.contactInformation?.primaryContactName ||
+        stay?.primaryContactName ||
+        stay?.primaryContact?.name ||
+        stay?.host?.displayName ||
+        stay?.host?.name ||
+        (stay?.host?.firstName
+          ? `${stay.host.firstName} ${stay?.host?.lastName || ""}`.trim()
+          : null) ||
+        stay?.businessName ||
+        stay?.propertyName ||
+        "Host";
 
       const pricing = response?.guestPricing || response?.pricing || response?.priceBreakdown || response?.data?.guestPricing || {};
       const isPresent = (v) => v !== null && v !== undefined && v !== "";
@@ -2398,6 +2447,9 @@ const StayProduct = () => {
         listingTitle: stay?.propertyName || stay?.title || stay?.name || "Stay",
         listingImage: coverImg,
         roomImage: roomImg,
+        hostName,
+        hostAvatar,
+        hostAvatarUrl: hostAvatar,
         isStay: true,
         checkInDate: checkInDate ? new Date(checkInDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,
         checkOutDate: checkOutDate ? new Date(checkOutDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : null,

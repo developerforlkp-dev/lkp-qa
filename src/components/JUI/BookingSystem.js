@@ -2460,13 +2460,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   };
 
   // Compute totals with child pricing split
-  const adultSubtotal = parseFloat(extractedPrice || 0) * guests.adults;
-  const childSubtotal = isEventBooking
-    ? eventChildPriceTotal
-    : experienceChildPriceTotal;
+  // Private experience bookings have a flat price — not multiplied by guest/child count
+  const adultSubtotal = (privateBooking && !isEventBooking)
+    ? parseFloat(extractedPrice || 0)
+    : parseFloat(extractedPrice || 0) * guests.adults;
+  const childSubtotal = (privateBooking && !isEventBooking)
+    ? 0
+    : (isEventBooking ? eventChildPriceTotal : experienceChildPriceTotal);
   const baseTotal = adultSubtotal + childSubtotal;
   const rawBaseTotal = !isEventBooking
-    ? (baseAdultPricePerPerson * guests.adults) + experienceChildPriceTotal
+    ? (privateBooking
+        ? parseFloat(effectiveRawPrice || 0)  // flat private price
+        : (baseAdultPricePerPerson * guests.adults) + experienceChildPriceTotal)
     : ((eventGuestPricing.baseUnitPrice * guests.adults) + eventChildPriceTotal);
   const activeGuestPricing = isEventBooking ? eventGuestPricing : experienceGuestPricing;
   const appliedDiscountRate = activeGuestPricing?.discountRate ?? 0;
@@ -4930,16 +4935,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </p>
                 </div>
 
-                {errorPopup.reason && (
-                  <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 18, background: `${A}10`, border: `1px solid ${A}22` }}>
-                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: A, marginBottom: 6 }}>
-                      Why This Happened
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: FG, fontWeight: 600 }}>
-                      {errorPopup.reason}
-                    </p>
-                  </div>
-                )}
+
+
 
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginTop: 18 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: M }}>

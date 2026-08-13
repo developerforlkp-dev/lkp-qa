@@ -341,7 +341,7 @@ export default function MobileExperienceView({
           { icon: <User size={15} color={A} />, label: `Min Age: ${listing?.minimumAge || "12"}` },
           { icon: <Zap size={15} color={A} />, label: listing?.difficultyLevel || "Moderate" },
           { icon: <Baby size={15} color={A} />, label: listing?.allowsInfants || listing?.infantsAllowed ? "Infants OK" : "No Infants" },
-          { icon: <Languages size={15} color={A} />, label: (() => { const l = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 ? listing.languagesOffered : ["English"]; return l.slice(0, 2).join(", "); })() },
+          { icon: <Languages size={15} color={A} />, label: (() => { const l = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 ? listing.languagesOffered : (typeof listing?.languages === "string" ? listing.languages.split(",").map(s => s.trim()) : ["English"]); return l.join(", "); })() },
           { icon: <ShieldCheck size={15} color={A} />, label: listing?.privateOptionAvailable ? "Private Tour" : "Group Tour" },
         ].map((fact, i) => (
           <div key={i} className="mob-fact-pill" style={{ background: isDark ? "#1A1A1A" : "#F5F7FA", color: FG, border: `1px solid ${B}` }}>
@@ -824,6 +824,126 @@ export default function MobileExperienceView({
                   {renderAccordion("Guest Requirements", guestItems, <Users size={16} color={A} />)}
                   {renderAccordion("Cancellation Policy", cancelItems, <Clock size={16} color={A} />)}
                 </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ╔═══════════════════════════════════╗
+          ║         LKP INDEX SECTION         ║
+          ╚═══════════════════════════════════╝ */}
+      {listing?.lkpQualityIndex && (
+        <div className="mob-section" style={{ background: BG }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "20px 0" }}>
+            {(() => {
+              const displayScore = listing.lkpQualityIndex.score || 9.2;
+              const ratingText = listing.lkpQualityIndex.displayName || listing.lkpQualityIndex.ratingText || listing.lkpQualityIndex.status || listing.lkpQualityIndex.ratingLabel || "Exceptional";
+
+              const LaurelSVG = ({ style }) => (
+                <svg width="28" height="68" viewBox="0 0 28 68" fill="none" style={style}>
+                  <path d="M 8,64 Q 24,34 8,4" stroke={A} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                  <ellipse cx="16" cy="50" rx="3.5" ry="2" transform="rotate(-30 16 50)" fill={A} />
+                  <ellipse cx="18" cy="41" rx="3.5" ry="2" transform="rotate(-30 18 41)" fill={A} />
+                  <ellipse cx="18" cy="32" rx="3.5" ry="2" transform="rotate(-30 18 32)" fill={A} />
+                  <ellipse cx="16" cy="23" rx="3.5" ry="2" transform="rotate(-30 16 23)" fill={A} />
+                  <ellipse cx="12" cy="14" rx="3.5" ry="2" transform="rotate(-30 12 14)" fill={A} />
+                  <ellipse cx="11" cy="46" rx="3.5" ry="2" transform="rotate(30 11 46)" fill={A} />
+                  <ellipse cx="13" cy="37" rx="3.5" ry="2" transform="rotate(30 13 37)" fill={A} />
+                  <ellipse cx="13" cy="28" rx="3.5" ry="2" transform="rotate(30 13 28)" fill={A} />
+                  <ellipse cx="11" cy="19" rx="3.5" ry="2" transform="rotate(30 11 19)" fill={A} />
+                  <ellipse cx="7" cy="10" rx="3.5" ry="2" transform="rotate(30 7 10)" fill={A} />
+                  <ellipse cx="8" cy="3" rx="3.5" ry="2" transform="rotate(-60 8 3)" fill={A} />
+                </svg>
+              );
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24, width: "100%", padding: "0 16px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", flexShrink: 0, gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                      <LaurelSVG style={{ transform: "scaleX(-1)" }} />
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <span style={{ fontSize: 48, fontWeight: 700, color: FG, letterSpacing: "-0.02em", fontFamily: '"Playfair Display", serif', lineHeight: 1 }}>
+                          {displayScore.toFixed(1)}
+                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+                          LKP Index
+                        </span>
+                      </div>
+                      <LaurelSVG />
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }} />
+                        <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                      </div>
+                      <span style={{ fontSize: 16, fontStyle: "italic", fontWeight: 500, color: M, fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>
+                        {ratingText}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right: Narrative Details & Verification Checks (Mobile Stacked) */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%", textAlign: "center", alignItems: "center" }}>
+                    <div>
+                      <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
+                      <h4 style={{ fontSize: 18, fontWeight: 600, color: FG, margin: 0, fontFamily: '"Inter", sans-serif' }}>Verified Trust Score</h4>
+                    </div>
+
+                    <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
+                      {listing.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
+                    </p>
+
+                    {/* Verification Criteria Pills */}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
+                      <span style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        color: A,
+                        background: "rgba(0, 151, 178, 0.08)",
+                        border: "1px solid rgba(0, 151, 178, 0.2)",
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4
+                      }}>
+                        ✓ Verified Host
+                      </span>
+
+                      <span style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        color: "#10B981",
+                        background: "rgba(16, 185, 129, 0.08)",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4
+                      }}>
+                        ✓ Safety Check
+                      </span>
+
+                      <span style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        color: "#D97706",
+                        background: "rgba(245, 158, 11, 0.08)",
+                        border: "1px solid rgba(245, 158, 11, 0.2)",
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4
+                      }}>
+                        ✓ High Rated
+                      </span>
+                    </div>
+                  </div>
+                </div>
               );
             })()}
           </div>

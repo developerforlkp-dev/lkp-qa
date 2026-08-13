@@ -55,6 +55,27 @@ const toFiniteNumberOrNull = (...values) => {
 const hasDefinedValue = (...values) =>
   values.some((value) => value !== null && value !== undefined && value !== "");
 
+const getStableDisplayPercent = ({ preferredRate = 0, fallbackRate = 0, tolerance = 0.011 }) => {
+  const preferred = Number(preferredRate);
+  const fallback = Number(fallbackRate);
+
+  if (Number.isFinite(preferred) && preferred > 0) {
+    if (!Number.isFinite(fallback) || fallback <= 0) {
+      return preferred;
+    }
+
+    if (Math.abs(preferred - fallback) <= tolerance) {
+      return preferred;
+    }
+
+    if (preferred.toFixed(2) === fallback.toFixed(2)) {
+      return preferred;
+    }
+  }
+
+  return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+};
+
 
 const Checkout = () => {
   const location = useLocation();
@@ -659,26 +680,32 @@ const Checkout = () => {
         }
 
         if (remainingDiscount > 0) {
-          const discountRate = toPositiveNumber(
-            pricing.promoDiscountRate,
-            pricing.couponDiscountRate,
-            earlyBirdToDisplay > 0 ? 0 : pricing.discountPercentage,
-            earlyBirdToDisplay > 0 ? 0 : pricing.discountRate,
-            subtotalBeforeDiscountAndTax > 0
-              ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
-              : 0
-          );
+          const computedDiscountRate = subtotalBeforeDiscountAndTax > 0
+            ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
+            : 0;
+          const discountRate = getStableDisplayPercent({
+            preferredRate: toPositiveNumber(
+              pricing.promoDiscountRate,
+              pricing.couponDiscountRate,
+              earlyBirdToDisplay > 0 ? 0 : pricing.discountPercentage,
+              earlyBirdToDisplay > 0 ? 0 : pricing.discountRate,
+            ),
+            fallbackRate: computedDiscountRate,
+          });
           const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
           rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(remainingDiscount)}` });
         }
 
         if (earlyBirdToDisplay > 0) {
-          const ebRate = toPositiveNumber(
-            pricing.earlyBirdDiscountRate,
-            subtotalBeforeDiscountAndTax > 0
-              ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
-              : 0
-          );
+          const computedEarlyBirdRate = subtotalBeforeDiscountAndTax > 0
+            ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
+            : 0;
+          const ebRate = getStableDisplayPercent({
+            preferredRate: toPositiveNumber(
+              pricing.earlyBirdDiscountRate,
+            ),
+            fallbackRate: computedEarlyBirdRate,
+          });
           const ebRateLabel = ebRate > 0 ? ` (${ebRate.toFixed(2)}%)` : "";
           rows.push({ title: `Early Bird Discount${ebRateLabel}`, value: `- ${fmt(earlyBirdToDisplay)}` });
         }

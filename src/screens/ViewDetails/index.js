@@ -1370,8 +1370,15 @@ const ViewDetails = () => {
     if (isPastStayCheckInTime()) {
       return;
     }
+    
+    let bookingTypeName = "experience";
+    if (booking?.isEventOrder || booking?.originalData?.eventId) {
+      bookingTypeName = "event";
+    } else if (booking?.originalData?.stayId || booking?.stayData) {
+      bookingTypeName = "stay";
+    }
+
     setPendingCancellation(null);
-    setCancelModalVisible(true);
     setCancelReason("");
     setSelectedReason("");
     setCancelError(null);
@@ -1379,21 +1386,40 @@ const ViewDetails = () => {
 
     if (!booking?.orderId) {
       setCancelPreviewLoading(false);
+      setCancelModalVisible(true);
       return;
     }
 
     try {
       const preview = await getOrderCancelPreview(booking.orderId);
       setCancelPreview(preview && typeof preview === "object" ? preview : null);
-    } catch (err) {
-      // Only log unexpected errors
-      if (err?.response?.status !== 400) {
-        console.warn("⚠️ Failed to fetch cancel preview:", err?.message || err);
+      
+      if (preview && preview.canCancel === false) {
+        setValidationModalData({
+          title: "Cancellation Not Available",
+          message: `Sorry, this booking cannot be cancelled because cancellation is not available for this ${bookingTypeName}.`,
+          isSuccess: false,
+          canContinue: false
+        });
+        setValidationModalVisible(true);
+        setCancelPreviewLoading(false);
+        return;
       }
-      setCancelPreview(null);
+    } catch (err) {
+      setValidationModalData({
+        title: "Cancellation Not Available",
+        message: `Sorry, this booking cannot be cancelled because cancellation is not available for this ${bookingTypeName}.`,
+        isSuccess: false,
+        canContinue: false
+      });
+      setValidationModalVisible(true);
+      setCancelPreviewLoading(false);
+      return;
     } finally {
       setCancelPreviewLoading(false);
     }
+    
+    setCancelModalVisible(true);
   };
 
   const handleCloseCancelModal = () => {
@@ -1585,10 +1611,22 @@ const ViewDetails = () => {
   };
 
   const handlePrintReceipt = () => {
-    const element = document.getElementById("receipt-ticket-pdf");
-    if (!element) return;
+    const originalElement = document.getElementById("receipt-ticket-pdf");
+    if (!originalElement) return;
 
-    element.classList.add(styles.receiptPdfMode);
+    // Clone the element to prevent visual distortion during capture
+    const clone = originalElement.cloneNode(true);
+    clone.classList.add(styles.receiptPdfMode);
+
+    // Create an off-screen container
+    const container = document.createElement("div");
+    container.style.position = "absolute";
+    container.style.top = "-9999px";
+    container.style.left = "-9999px";
+    container.style.width = "1000px"; // Provide enough width for desktop layout rendering
+    
+    container.appendChild(clone);
+    document.body.appendChild(container);
 
     const opt = {
       margin: [8, 8, 8, 8],
@@ -1600,11 +1638,13 @@ const ViewDetails = () => {
     };
 
     html2pdf()
-      .from(element)
+      .from(clone)
       .set(opt)
       .save()
       .finally(() => {
-        element.classList.remove(styles.receiptPdfMode);
+        if (document.body.contains(container)) {
+          document.body.removeChild(container);
+        }
       });
   };
 

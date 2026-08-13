@@ -1034,38 +1034,41 @@ const ExperienceProduct = () => {
                       ? listing.languagesOffered
                       : (typeof listing?.languages === "string" ? listing.languages.split(",").map(s => s.trim()) : ["English"]);
 
-                    const displayStr = list.slice(0, 2).join(", ");
-                    const hasMore = list.length > 2;
+                    const displayLanguage = list[0];
+                    const remainingCount = list.length - 1;
+                    const hasMore = remainingCount > 0;
 
                     return (
                       <>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-start", width: "100%", marginBottom: 6 }}>
                           <span style={{ fontSize: "16px", fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {displayStr}
+                            {displayLanguage}
                           </span>
                           {hasMore && (
                             <div style={{ position: "relative", display: "inline-flex" }}>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setLangPopoverOpen(!langPopoverOpen); }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = `${A}33`; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = `${A}1A`; }}
                                 style={{
-                                  background: W,
+                                  background: `${A}1A`,
                                   color: A,
-                                  border: `1px solid ${A}`,
-                                  borderRadius: "50%",
-                                  width: "18px",
-                                  height: "18px",
+                                  border: "none",
+                                  borderRadius: "100px",
+                                  padding: "2px 8px",
                                   display: "inline-flex",
                                   alignItems: "center",
+                                  gap: "4px",
                                   justifyContent: "center",
                                   fontSize: "12px",
                                   fontWeight: 700,
                                   cursor: "pointer",
-                                  padding: 0,
                                   flexShrink: 0,
-                                  outline: "none"
+                                  outline: "none",
+                                  transition: "background 0.2s ease"
                                 }}
                               >
-                                +
+                                +{remainingCount} <ChevronDown size={14} style={{ strokeWidth: 2.5 }} />
                               </button>
                               {langPopoverOpen && (
                                 <div style={{
@@ -2105,40 +2108,59 @@ const ExperienceProduct = () => {
                             pointerEvents: "none"
                           }} />
 
-                          {/* Left: Score Circle */}
+                          {/* Left: Score Circle replacement */}
                           {(() => {
                             const displayScore = listing.lkpQualityIndex.score || 9.2;
-                            const scoreInt = Math.floor(displayScore);
-                            const scoreDec = (displayScore - scoreInt).toFixed(1).replace("0.", "");
+                            const ratingText = listing.lkpQualityIndex.displayName || listing.lkpQualityIndex.ratingText || listing.lkpQualityIndex.status || listing.lkpQualityIndex.ratingLabel || "Exceptional";
+
+                            const LaurelSVG = ({ style }) => (
+                              <svg width="28" height="68" viewBox="0 0 28 68" fill="none" style={style}>
+                                <path d="M 8,64 Q 24,34 8,4" stroke={A} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                                {/* Outer leaves */}
+                                <ellipse cx="16" cy="50" rx="3.5" ry="2" transform="rotate(-30 16 50)" fill={A} />
+                                <ellipse cx="18" cy="41" rx="3.5" ry="2" transform="rotate(-30 18 41)" fill={A} />
+                                <ellipse cx="18" cy="32" rx="3.5" ry="2" transform="rotate(-30 18 32)" fill={A} />
+                                <ellipse cx="16" cy="23" rx="3.5" ry="2" transform="rotate(-30 16 23)" fill={A} />
+                                <ellipse cx="12" cy="14" rx="3.5" ry="2" transform="rotate(-30 12 14)" fill={A} />
+                                {/* Inner leaves */}
+                                <ellipse cx="11" cy="46" rx="3.5" ry="2" transform="rotate(30 11 46)" fill={A} />
+                                <ellipse cx="13" cy="37" rx="3.5" ry="2" transform="rotate(30 13 37)" fill={A} />
+                                <ellipse cx="13" cy="28" rx="3.5" ry="2" transform="rotate(30 13 28)" fill={A} />
+                                <ellipse cx="11" cy="19" rx="3.5" ry="2" transform="rotate(30 11 19)" fill={A} />
+                                <ellipse cx="7" cy="10" rx="3.5" ry="2" transform="rotate(30 7 10)" fill={A} />
+                                {/* Top leaf */}
+                                <ellipse cx="8" cy="3" rx="3.5" ry="2" transform="rotate(-60 8 3)" fill={A} />
+                              </svg>
+                            );
 
                             return (
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                                <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)", filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.05))" }}>
-                                  <defs>
-                                    <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                      <stop offset="0%" stopColor="#8B5CF6" />
-                                      <stop offset="100%" stopColor={A} />
-                                    </linearGradient>
-                                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                      <feGaussianBlur stdDeviation="6" result="blur" />
-                                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                    </filter>
-                                  </defs>
-                                  <circle cx="65" cy="65" r="55" fill="none" stroke={`${A}12`} strokeWidth="3" />
-                                  <motion.circle
-                                    cx="65" cy="65" r="55" fill="none" stroke="url(#scoreGrad)" strokeWidth="6" strokeLinecap="round"
-                                    style={{ filter: "url(#glow)" }}
-                                    initial={{ strokeDasharray: "0 346" }}
-                                    whileInView={{ strokeDasharray: `${(displayScore / 10) * 346} 346` }}
-                                    transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-                                  />
-                                </svg>
-                                <div style={{ position: "absolute", textAlign: "center" }}>
-                                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-                                    <span style={{ fontSize: 42, fontWeight: 900, color: FG, letterSpacing: "-0.05em", fontFamily: '"Inter", sans-serif' }}>{scoreInt}</span>
-                                    <span style={{ fontSize: 16, fontWeight: 800, color: A, marginLeft: 1 }}>.{scoreDec}</span>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", width: 140, flexShrink: 0, gap: 10 }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                                  {/* Left Laurel */}
+                                  <LaurelSVG style={{ transform: "scaleX(-1)" }} />
+
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                    <span style={{ fontSize: 48, fontWeight: 700, color: FG, letterSpacing: "-0.02em", fontFamily: '"Playfair Display", serif', lineHeight: 1 }}>
+                                      {displayScore.toFixed(1)}
+                                    </span>
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+                                      LKP Index
+                                    </span>
                                   </div>
-                                  <span style={{ fontSize: 8, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.1em" }}>LKP Index</span>
+
+                                  {/* Right Laurel */}
+                                  <LaurelSVG />
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }} />
+                                    <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                                  </div>
+                                  <span style={{ fontSize: 16, fontStyle: "italic", fontWeight: 500, color: M, fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>
+                                    {ratingText}
+                                  </span>
                                 </div>
                               </div>
                             );
@@ -3294,6 +3316,31 @@ function ExperiencePolicies({ listing }) {
     const expItems = [];
     const guestItems = [];
     const cancelItems = [];
+    const experienceRuleItems = [];
+
+    // Parse experienceRules from the API
+    if (listing?.experienceRules) {
+      const rules = listing.experienceRules;
+      if (Array.isArray(rules)) {
+        rules.forEach((rule, i) => {
+          if (typeof rule === "string") {
+            experienceRuleItems.push({ id: `exp-rule-${i}`, title: null, body: rule });
+          } else if (rule && typeof rule === "object") {
+            experienceRuleItems.push({
+              id: `exp-rule-${i}`,
+              title: rule.title || rule.name || rule.label || null,
+              body: rule.description || rule.body || rule.text || rule.value || rule.rule || (typeof rule === "string" ? rule : null)
+            });
+          }
+        });
+      } else if (typeof rules === "string" && rules.trim()) {
+        // If it's a single string, split by newlines or treat as one item
+        const lines = rules.split('\n').map(l => l.trim()).filter(Boolean);
+        lines.forEach((line, i) => {
+          experienceRuleItems.push({ id: `exp-rule-${i}`, title: null, body: line });
+        });
+      }
+    }
 
     if (Array.isArray(listing?.guestRequirements)) {
       listing.guestRequirements.forEach((req, i) => {
@@ -3322,7 +3369,9 @@ function ExperiencePolicies({ listing }) {
     }
 
     const categories = [];
-    if (expItems.length > 0) {
+    if (experienceRuleItems.length > 0) {
+      categories.push({ id: 'cat-exp-rules', title: "Experience Rules", items: experienceRuleItems });
+    } else if (expItems.length > 0) {
       categories.push({ id: 'cat-exp', title: "Experience Rules", items: expItems });
     }
     if (guestItems.length > 0) {
@@ -3554,21 +3603,21 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
 const ExpandableReviewText = ({ text, vendorResponse, FG, A }) => {
   const [expanded, setExpanded] = useState(false);
   const isLong = text && text.length > 120;
-  
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-      <p style={{ 
-        fontSize: 13, color: FG, lineHeight: 1.6, margin: 0, 
-        overflow: "hidden", 
-        display: expanded ? "block" : "-webkit-box", 
-        WebkitLineClamp: expanded ? "unset" : (vendorResponse ? 3 : 4), 
-        WebkitBoxOrient: "vertical", 
-        fontWeight: 400 
+      <p style={{
+        fontSize: 13, color: FG, lineHeight: 1.6, margin: 0,
+        overflow: "hidden",
+        display: expanded ? "block" : "-webkit-box",
+        WebkitLineClamp: expanded ? "unset" : (vendorResponse ? 3 : 4),
+        WebkitBoxOrient: "vertical",
+        fontWeight: 400
       }}>
         &ldquo;{text}&rdquo;
       </p>
       {isLong && (
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline" }}
         >
@@ -3584,15 +3633,15 @@ export default ExperienceProduct;
 export const ExpandableInstructionText = ({ text, FG, A }) => {
   const [expanded, setExpanded] = useState(false);
   const isLong = text && text.length > 120;
-  
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
-      <motion.div 
-        animate={{ maxHeight: expanded ? "1000px" : "67px" }} 
+      <motion.div
+        animate={{ maxHeight: expanded ? "1000px" : "67px" }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         style={{ overflow: "hidden", width: "100%" }}
       >
-        <span style={{ 
+        <span style={{
           fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
           display: "-webkit-box",
           WebkitLineClamp: expanded ? "unset" : 3,
@@ -3603,7 +3652,7 @@ export const ExpandableInstructionText = ({ text, FG, A }) => {
         </span>
       </motion.div>
       {isLong && (
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           style={{ background: "transparent", border: "none", color: A, fontSize: 13, fontWeight: 600, padding: 0, marginTop: 6, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif', transition: "opacity 0.2s" }}
         >

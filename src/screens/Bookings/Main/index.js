@@ -1838,6 +1838,13 @@ const Main = ({
   };
 
   const handleCancelBookingClick = async (booking) => {
+    let bookingTypeName = "experience";
+    if (booking?.category === "EVENTS" || booking?.bookingData?.eventId != null || booking?.isEventOrder) {
+      bookingTypeName = "event";
+    } else if (booking?.category === "STAYS" || booking?.bookingData?.stayId != null) {
+      bookingTypeName = "stay";
+    }
+
     setBookingToCancel(booking);
     setCancelReason("");
     setSelectedReason("");
@@ -1850,16 +1857,28 @@ const Main = ({
       try {
         const preview = await getOrderCancelPreview(booking.orderId);
         setCancelPreview(preview);
-        /*console.log("🧾 Event cancel preview:", {
-          orderId: booking.orderId,
-          preview,
-          booking,
-        });*/
-      } catch (e) {
-        // Only log unexpected errors
-        if (e?.response?.status !== 400) {
-          console.warn("⚠️ Failed to fetch cancel preview:", e?.response?.data || e?.message || e);
+        
+        if (preview && preview.canCancel === false) {
+          setValidationModalData({
+            title: "Cancellation Not Available",
+            message: `Sorry, this booking cannot be cancelled because cancellation is not available for this ${bookingTypeName}.`,
+            isSuccess: false,
+            canContinue: false
+          });
+          setValidationModalVisible(true);
+          setCancelPreviewLoading(false);
+          return;
         }
+      } catch (e) {
+        setValidationModalData({
+          title: "Cancellation Not Available",
+          message: `Sorry, this booking cannot be cancelled because cancellation is not available for this ${bookingTypeName}.`,
+          isSuccess: false,
+          canContinue: false
+        });
+        setValidationModalVisible(true);
+        setCancelPreviewLoading(false);
+        return;
       } finally {
         setCancelPreviewLoading(false);
       }
@@ -2848,44 +2867,46 @@ const Main = ({
       <Modal
         visible={messageModalVisible}
         onClose={() => !isSendingMessage && setMessageModalVisible(false)}
-        outerClassName={styles.confirmCancelModalOuter}
+        outerClassName={styles.cancelModalOuter}
+        containerClassName={styles.cancelModalContainer}
       >
-        <div className={styles.confirmCancelModalContent}>
-          <div className={styles.cancelModalHeader} style={{ paddingBottom: '16px', borderBottom: '1px solid #E6E8EC' }}>
-            <h2 className={styles.cancelModalTitle} style={{ fontSize: '24px', marginBottom: '8px' }}>Message Host</h2>
-            <p className={styles.cancelModalDescription} style={{ color: '#777E90', fontSize: '14px' }}>
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>Message Host</h2>
+            <p className={styles.cancelModalDescription}>
               {bookingToMessage?.title}
             </p>
           </div>
 
-          <div className={styles.cancelModalBody} style={{ padding: '24px 32px' }}>
-            <div style={{ marginBottom: "0" }}>
-              <label className={styles.cancelModalLabel} style={{ fontWeight: '600', marginBottom: '12px', display: 'block', fontSize: '14px' }}>
+          <div className={styles.cancelModalBody}>
+            <div className={styles.cancelModalFormGroup}>
+              <label className={styles.cancelModalLabel}>
                 Your message
               </label>
               <textarea
-                className={styles.cancelModalTextarea}
+                className={cn(styles.cancelModalInput, styles.cancelModalTextarea)}
                 placeholder="Write your message here..."
                 value={hostMessageText}
                 onChange={(e) => setHostMessageText(e.target.value)}
                 disabled={isSendingMessage}
-                style={{ minHeight: '120px', resize: 'none', padding: '16px', borderRadius: '12px', border: '1px solid #E6E8EC', width: '100%', boxSizing: 'border-box' }}
+                rows={5}
+                style={{ resize: 'none' }}
               />
             </div>
           </div>
 
-          <div className={styles.cancelModalFooter} style={{ padding: '24px 32px', borderTop: '1px solid #E6E8EC', display: 'flex', gap: '16px', justifyContent: 'flex-end', background: '#F4F5F6' }}>
+          <div className={styles.cancelModalFooter}>
             <button
-              className={cn("button-stroke")}
-              style={{ flex: 1, borderRadius: '24px', height: '48px', margin: 0 }}
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
               onClick={() => setMessageModalVisible(false)}
               disabled={isSendingMessage}
             >
               Cancel
             </button>
             <button
-              className={cn("button")}
-              style={{ flex: 1, borderRadius: '24px', height: '48px', backgroundColor: '#0097B2', color: 'white', border: 'none', margin: 0 }}
+              type="button"
+              className={cn("button", styles.cancelModalBtn)}
               onClick={handleSendMessage}
               disabled={isSendingMessage || !hostMessageText.trim()}
             >

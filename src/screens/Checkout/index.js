@@ -33,6 +33,65 @@ const formatImageUrl = (url) => {
 
 const formatInr = (amount) => `INR ${Number(amount || 0).toFixed(2)}`;
 
+const getHostName = (...sources) => {
+  for (const source of sources) {
+    if (!source) continue;
+    const firstName = source?.firstName || source?.host?.firstName || "";
+    const lastName = source?.lastName || source?.host?.lastName || "";
+    const combinedName = `${firstName} ${lastName}`.trim();
+
+    const candidates = [
+      source?.displayName,
+      source?.name,
+      source?.businessName,
+      source?.primaryContactName,
+      source?.contactInformation?.primaryContactName,
+      source?.primaryContact?.name,
+      source?.host?.displayName,
+      source?.host?.name,
+      source?.host?.businessName,
+      combinedName,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+
+  return "Host";
+};
+
+const getHostAvatar = (...sources) => {
+  for (const source of sources) {
+    if (!source) continue;
+    const candidates = [
+      source?.profilePhotoUrl,
+      source?.host?.profilePhotoUrl,
+      source?.picture,
+      source?.avatar,
+      source?.profileImage,
+      source?.profileImageUrl,
+      source?.profilePhoto,
+      source?.image,
+      source?.host?.picture,
+      source?.host?.avatar,
+      source?.host?.profileImage,
+      source?.host?.profileImageUrl,
+      source?.host?.profilePhoto,
+      source?.host?.image,
+    ];
+
+    for (const candidate of candidates) {
+      const formatted = formatImageUrl(candidate);
+      if (formatted) return formatted;
+    }
+  }
+
+  return null;
+};
+
 const normalizeTaxTitle = (title, taxRate = null) => {
   if (!/^tax/i.test(String(title || ""))) return title;
   const rateLabel = taxRate && Number(taxRate) > 0 ? ` (${Number(taxRate).toFixed(2)}%)` : "";
@@ -955,12 +1014,15 @@ const Checkout = () => {
     return "/images/content/photo-checkout.jpg";
   };
   const listingImage = getListingImage();
-  const hostInfo = bookingData?.listing?.host || stayDetails?.host || stayDetails?.listing?.host;
-  const hostName = hostInfo?.displayName || 
-                   (hostInfo?.firstName ? `${hostInfo.firstName} ${hostInfo.lastName || ""}`.trim() : null) || 
-                   hostInfo?.name || 
-                   "Host";
-  const hostAvatar = hostInfo?.picture || hostInfo?.avatar || hostInfo?.profileImage || hostInfo?.image;
+  const hostSources = [
+    bookingData,
+    bookingData?.listing?.host,
+    stayDetails,
+    stayDetails?.host,
+    stayDetails?.listing?.host,
+  ];
+  const hostName = getHostName(...hostSources);
+  const hostAvatar = getHostAvatar(...hostSources);
 
   const isEventBooking = Boolean(bookingData?.eventId);
   const backUrl =
