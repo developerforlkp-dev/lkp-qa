@@ -133,9 +133,9 @@ const ScopedStyles = () => (
     
     .gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: start; height: 850px; overflow: hidden; border-radius: 40px; }
     .artist-row { display: grid; grid-template-columns: 80px 1fr 240px; gap: 12px; padding: 12px 24px 12px 0; border-bottom: 1px solid var(--B); align-items: center; cursor: default; transition: padding 0.3s, background 0.3s; }
-    .artist-image-tile { width: 240px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--S); border: 1px solid var(--B); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-    .artist-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(0.3); transition: filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
-    .artist-row:hover .artist-image-tile img { filter: grayscale(0); transform: scale(1.05); }
+    .artist-image-tile { width: 240px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--S); border: 1px solid var(--B); }
+    .artist-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(0.3); transition: filter 0.3s ease; }
+    .artist-row:hover .artist-image-tile img { filter: grayscale(0); }
     
     .hero-ring-wrapper {
       position: absolute;
@@ -1555,6 +1555,7 @@ function About({ event }) {
 
   if (isMobile) {
     return (
+      <>
       <div className="mob-section" style={{ background: isDark ? BG : W, paddingTop: 64 }}>
         <span className="mob-section-eyebrow" style={{ color: A }}>The Event</span>
         <h2 className="mob-section-title" style={{ color: FG }}>
@@ -1624,6 +1625,8 @@ function About({ event }) {
           ))}
         </div>
       </div>
+      <PremiumMarquee items={mqItems} />
+      </>
     );
   }
 
@@ -1845,8 +1848,6 @@ function Artists({ event }) {
   const { theme, tokens: { A, AL, FG, M, B, W, BG } } = useTheme();
   const isMobile = useMobileView();
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
-  const [hov, setHov] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Use actual artists from backend if available
   const eventArtists = Array.isArray(event?.artists) ? event.artists :
@@ -1861,10 +1862,6 @@ function Artists({ event }) {
     bio: a.bio || a.description || "Performing live at Solstice.",
     image: formatImageUrl(a.photoUrl || a.imageUrl || a.profileImage || a.avatar || a.photo || a.artistImage) || ""
   }));
-
-  const handleMouseMove = (e) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
 
   if (isMobile) {
     return (
@@ -1915,26 +1912,15 @@ function Artists({ event }) {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, delay: i * 0.07, ease: E }}
-                onMouseEnter={() => setHov(a.id)}
-                onMouseLeave={() => setHov(null)}
-                onMouseMove={handleMouseMove}
                 whileHover={{ paddingLeft: 8, backgroundColor: AL }}
                 className="artist-row"
               >
                 <div>
-                  <motion.p animate={{ color: hov === a.id ? A : B }} style={{ fontFamily: "monospace", fontSize: 10 }}>{String(i + 1).padStart(2, "0")}</motion.p>
+                  <p style={{ color: M, fontFamily: "monospace", fontSize: 16 }}>{String(i + 1).padStart(2, "0")}</p>
                 </div>
-                <div 
-                  onMouseEnter={() => setHov(null)} 
-                  onMouseLeave={(e) => {
-                    // Only restore the image if we are not leaving the outer row entirely
-                    if (e.relatedTarget && e.currentTarget.parentNode.contains(e.relatedTarget)) {
-                      setHov(a.id);
-                    }
-                  }}
-                >
+                <div>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
-                    <motion.h3 animate={{ color: hov === a.id ? A : FG }} style={{ fontSize: "18px", fontWeight: 700, fontFamily: '"Inter", sans-serif', margin: "4px 0 0 0", lineHeight: 1 }}>{a.name}</motion.h3>
+                    <h3 style={{ color: FG, fontSize: "18px", fontWeight: 700, fontFamily: '"Inter", sans-serif', margin: "4px 0 0 0", lineHeight: 1 }}>{a.name}</h3>
                   </div>
                   <p style={{ fontSize: "12px", color: M, lineHeight: "1.5", fontFamily: '"Inter", sans-serif', maxWidth: 480, margin: 0 }}>{a.bio}</p>
                 </div>
@@ -1951,37 +1937,6 @@ function Artists({ event }) {
             ))}
           </div>
         </div>
-
-        {/* Floating Photo Preview */}
-        <AnimatePresence>
-          {hov !== null && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              style={{
-                position: "fixed",
-                top: mousePos.y - 120,
-                left: mousePos.x + 30,
-                width: 320,
-                height: 180,
-                borderRadius: 20,
-                overflow: "hidden",
-                boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-                border: `1px solid ${B}`,
-                zIndex: 99999,
-                pointerEvents: "none"
-              }}
-            >
-              <img
-                src={ARTISTS.find(a => a.id === hov)?.image}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                alt="Artist Preview"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </section>
     </>
   );
@@ -1990,6 +1945,7 @@ function Artists({ event }) {
 function Venue({ event, hostName }) {
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const isMobile = useMobileView();
+  const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
   const tags = Array.isArray(event?.tags) ? event.tags :
@@ -2008,111 +1964,9 @@ function Venue({ event, hostName }) {
   const venueCountry = event?.country || event?.venueCountry;
   const venueInstructions = event?.checkinInstructions || event?.instructions || event?.checkInInstructions || event?.venueInstructions || event?.meetingInstructions;
 
-  if (isMobile) {
-    return (
-      <>
-        <div className="mob-section" id="venue" style={{ background: isDark ? BG : W }}>
-          <span className="mob-section-eyebrow" style={{ color: A }}>Location & Details</span>
-          <h2 className="mob-section-title" style={{ color: FG }}>Where it All Happens</h2>
-
-          {/* Map embed */}
-          {mapSrc && (
-            <div className="mob-map-container" style={{ border: `1px solid ${B}` }}>
-              <iframe
-                title="Location"
-                src={mapSrc}
-                loading="lazy"
-                allowFullScreen
-                style={{ border: 0, width: "100%", height: "100%" }}
-              />
-            </div>
-          )}
-
-          {/* Detail rows */}
-          <div className="mob-detail-rows">
-            {venueAddress && (
-              <div className="mob-detail-row" style={{ borderColor: B }}>
-                <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <MapPin size={18} color={A} />
-                </div>
-                <div>
-                  <p className="mob-detail-label" style={{ color: A }}>Address</p>
-                  <p className="mob-detail-value" style={{ color: FG }}>{venueAddress}</p>
-                </div>
-              </div>
-            )}
-            {venueLandmark && (
-              <div className="mob-detail-row" style={{ borderColor: B }}>
-                <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <MapPin size={18} color={A} />
-                </div>
-                <div>
-                  <p className="mob-detail-label" style={{ color: A }}>Landmark</p>
-                  <p className="mob-detail-value" style={{ color: FG }}>{venueLandmark}</p>
-                </div>
-              </div>
-            )}
-            {venueDistrict && (
-              <div className="mob-detail-row" style={{ borderColor: B }}>
-                <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <Building size={18} color={A} />
-                </div>
-                <div>
-                  <p className="mob-detail-label" style={{ color: A }}>District</p>
-                  <p className="mob-detail-value" style={{ color: FG }}>{venueDistrict}</p>
-                </div>
-              </div>
-            )}
-            {venueState && (
-              <div className="mob-detail-row" style={{ borderColor: B }}>
-                <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <Map size={18} color={A} />
-                </div>
-                <div>
-                  <p className="mob-detail-label" style={{ color: A }}>State</p>
-                  <p className="mob-detail-value" style={{ color: FG }}>{venueState}</p>
-                </div>
-              </div>
-            )}
-            {venueCountry && (
-              <div className="mob-detail-row" style={{ borderColor: B }}>
-                <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <Globe size={18} color={A} />
-                </div>
-                <div>
-                  <p className="mob-detail-label" style={{ color: A }}>Country</p>
-                  <p className="mob-detail-value" style={{ color: FG }}>{venueCountry}</p>
-                </div>
-              </div>
-            )}
-            {venueInstructions && (
-              <div className="mob-detail-row" style={{ borderColor: B }}>
-                <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                  <Info size={18} color={A} />
-                </div>
-                <div>
-                  <p className="mob-detail-label" style={{ color: A }}>Instructions</p>
-                  <p className="mob-detail-value" style={{ color: FG }}>{venueInstructions}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {(() => {
-          let whatsSpecialArray = Array.isArray(event?.whatsSpecial) && event?.whatsSpecial.length > 0
-            ? event.whatsSpecial
-            : typeof event?.whatsSpecial === "string" && event?.whatsSpecial.trim() !== ""
-              ? event.whatsSpecial.split(",").map(s => s.trim()).filter(Boolean)
-              : ["Experience", "Premium", "Event"];
-          return <PremiumMarquee items={whatsSpecialArray} />;
-        })()}
-      </>
-    );
-  }
-
   return (
     <>
-      <section id="venue" style={{ background: BG, padding: "32px 80px" }}>
+      <section id="venue" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px" }}>
         <div style={{ maxWidth: 1320, margin: "0 auto" }}>
           {/* Header Area */}
           <div style={{ marginBottom: 32 }}>
@@ -2128,9 +1982,9 @@ function Venue({ event, hostName }) {
             border: `1px solid ${B}`,
             padding: 16,
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 32,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gap: isMobile ? 24 : 32,
+            boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
           }} className="prep-grid">
 
             {/* LEFT: Map */}
@@ -2181,7 +2035,7 @@ function Venue({ event, hostName }) {
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
                   {venueAddress && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <MapPin size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
@@ -2192,7 +2046,7 @@ function Venue({ event, hostName }) {
                   )}
                   {venueLandmark && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: !venueAddress ? `1px solid ${B}` : "none" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <MapPin size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
@@ -2203,7 +2057,7 @@ function Venue({ event, hostName }) {
                   )}
                   {venueDistrict && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark) ? `1px solid ${B}` : "none" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Building size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
@@ -2214,7 +2068,7 @@ function Venue({ event, hostName }) {
                   )}
                   {venueState && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict) ? `1px solid ${B}` : "none" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Map size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
@@ -2225,7 +2079,7 @@ function Venue({ event, hostName }) {
                   )}
                   {venueCountry && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState) ? `1px solid ${B}` : "none" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Globe size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
@@ -2235,19 +2089,29 @@ function Venue({ event, hostName }) {
                     </li>
                   )}
                   {venueInstructions && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState && !venueCountry) ? `1px solid ${B}` : "none" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <li style={{ display: "flex", gap: 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState && !venueCountry) ? `1px solid ${B}` : "none" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
                         <Info size={20} color={A} fill="transparent" />
                       </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{venueInstructions}</span>
+                      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: 1 }}>
+                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif', marginTop: 12 }}>Instructions</span>
+                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', marginTop: 10 }}>
+                          {(!instructionsExpanded && venueInstructions.length > 80) ? venueInstructions.slice(0, 80) + "..." : venueInstructions}
+                          {venueInstructions.length > 80 && (
+                            <button
+                              onClick={() => setInstructionsExpanded(!instructionsExpanded)}
+                              style={{ background: "transparent", border: "none", color: A, fontSize: 16, fontWeight: 700, padding: 0, marginLeft: 8, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif' }}
+                            >
+                              {instructionsExpanded ? "Read Less" : "Read More"}
+                            </button>
+                          )}
+                        </span>
                       </div>
                     </li>
                   )}
                   {(!venueDistrict && !venueState && !venueCountry && !venueAddress && !venueLandmark) && (
                     <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <MapPin size={20} color={A} fill="transparent" />
                       </div>
                       <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
@@ -2473,6 +2337,25 @@ function Rules({ event }) {
     if (guestItems.length > 0) categories.push({ id: 'cat-guest', title: "Guest Requirements", items: guestItems });
     if (cancelItems.length > 0) categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
 
+    const foreignerItems = [];
+    if (event?.foreignersAllowed !== undefined && event?.foreignersAllowed !== null) {
+      foreignerItems.push({
+        id: 'foreigners-allowed',
+        title: "Foreigners Allowed",
+        body: event.foreignersAllowed ? "Yes" : "No"
+      });
+    }
+    if (event?.ticketPriceApplicableToForeigners !== undefined && event?.ticketPriceApplicableToForeigners !== null) {
+      foreignerItems.push({
+        id: 'ticket-price-foreigners',
+        title: "Ticket Pricing for Foreigners",
+        body: event.ticketPriceApplicableToForeigners ? "Applicable" : "Not Applicable"
+      });
+    }
+    if (foreignerItems.length > 0) {
+      categories.push({ id: 'cat-foreigner', title: "Foreigner Guidelines", items: foreignerItems });
+    }
+
     return categories;
   }, [event, guestRequirements, checkInInstructions, cancellationPolicy]);
 
@@ -2544,7 +2427,7 @@ function HostDetails({ event, hostName }) {
     event?.host?.leadUserId ||
     event?.hostId;
   const hostDescription = host?.bio || host?.description || host?.about || host?.summary || "";
-  const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Event host";
+  const hostSubtitle = host?.tagline || host?.businessName || host?.companyName || host?.role || "Host";
   const hostPhone = host?.phone || host?.phoneNumber || event?.host?.phone || event?.host?.phoneNumber || "";
   const hostEmail = host?.email || event?.host?.email || "";
 
@@ -2569,7 +2452,7 @@ function HostDetails({ event, hostName }) {
             />
           </div>
           <h3 className="mob-host-name" style={{ color: FG }}>{displayHostName}</h3>
-          <p className="mob-host-label" style={{ color: A }}>{hostSubtitle}</p>
+          <p className="mob-host-label" style={{ color: A }}>Host</p>
           {hostDescription ? (
             <p style={{ color: M, fontSize: 13, marginTop: 12, textAlign: "center", maxWidth: "100%" }}>
               {hostDescription.length > 150 ? hostDescription.substring(0, 150) + "..." : hostDescription}
@@ -2736,7 +2619,7 @@ function HostDetails({ event, hostName }) {
                         display: "inline-flex",
                         alignItems: "center"
                       }}>
-                        Superhost
+                        Host
                       </span>
                     </div>
                   </div>
@@ -3832,7 +3715,8 @@ export default function EventDetails() {
         <Artists event={event} />
         
         {/* ADDONS SECTION */}
-        {isMobile ? (
+        {(event?.addons && event.addons.length > 0) && (
+          isMobile ? (
           <div className="mob-section" style={{ background: BG }}>
             <span className="mob-section-eyebrow" style={{ color: A }}>Enhance Your Experience</span>
             <h2 className="mob-section-title" style={{ color: FG }}>Make it Yours</h2>
@@ -4169,7 +4053,7 @@ export default function EventDetails() {
             )}
           </div>
         </section>
-        )}
+        ))}
 
         <Venue event={event} hostName={hostName} />
         <Rules event={event} />

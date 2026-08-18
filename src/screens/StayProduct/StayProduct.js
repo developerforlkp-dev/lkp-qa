@@ -1991,7 +1991,7 @@ const StayProduct = () => {
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount * roomsNeeded;
       const extraChildTotal = extraChildren * extraChildPrice * nightsCount * roomsNeeded;
       const totalDiscountPercentage = (discountPercentage || 0) + (stay?.earlyBirdDiscounts ? (Math.max(...(stay.earlyBirdDiscounts.filter(t => t.isActive && t.daysInAdvance <= Math.max(0, moment(checkInDate).diff(moment().startOf('day'), 'days'))).map(t => t.percentage)), 0)) : 0);
-      const discountAmount = (basePrice * (totalDiscountPercentage / 100)) * nightsCount * roomsNeeded;
+      const discountAmount = (calculatedAmount * roomsNeeded) * (totalDiscountPercentage / 100);
       const preTaxTotal = (calculatedAmount * roomsNeeded) - discountAmount;
       const taxAmount = preTaxTotal * (taxRate / 100);
       const finalGuestPrice = preTaxTotal + taxAmount;
@@ -2091,7 +2091,7 @@ const StayProduct = () => {
       const extraAdultTotal = extraAdults * extraAdultPrice * nightsCount;
       const extraChildTotal = extraChildren * extraChildPrice * nightsCount;
       const totalDiscountPercentage = (discountPercentage || 0) + (stay?.earlyBirdDiscounts ? (Math.max(...(stay.earlyBirdDiscounts.filter(t => t.isActive && t.daysInAdvance <= Math.max(0, moment(checkInDate).diff(moment().startOf('day'), 'days'))).map(t => t.percentage)), 0)) : 0);
-      const discountAmount = (propertyBasePrice * (totalDiscountPercentage / 100)) * nightsCount;
+      const discountAmount = calculatedAmountProperty * (totalDiscountPercentage / 100);
       const preTaxTotal = calculatedAmountProperty - discountAmount;
       const taxAmount = preTaxTotal * (taxRate / 100);
       const finalGuestPrice = preTaxTotal + taxAmount;

@@ -1377,22 +1377,16 @@ const StayBookingSystem = ({
       });
     }
 
-    const discountableSubtotal = grossSubtotal;
+    const discountableSubtotal = grossSubtotal + addonsTotal;
     const longStayDiscountAmount = discountableSubtotal * (appliedDiscountPercent / 100);
     const billingConfigDiscountAmount = discountableSubtotal * (billingConfigDiscountRate / 100);
     const earlyBirdDiscountAmount = discountableSubtotal * (earlyBirdDiscountPercent / 100);
-    const discountedBaseSubtotal = Math.max(
-      0,
-      discountableSubtotal
-      - longStayDiscountAmount
-      - billingConfigDiscountAmount
-      - earlyBirdDiscountAmount
-    );
-    const preTaxSubtotal = discountedBaseSubtotal + addonsTotal;
     const discountAmount =
       longStayDiscountAmount
       + billingConfigDiscountAmount
       + earlyBirdDiscountAmount;
+    const preTaxSubtotal = Math.max(0, discountableSubtotal - discountAmount);
+    const discountedBaseSubtotal = Math.max(0, preTaxSubtotal - addonsTotal);
     const discountedPerNight = discountedBaseSubtotal / nights;
     const totalDiscountRate = Math.max(
       0,

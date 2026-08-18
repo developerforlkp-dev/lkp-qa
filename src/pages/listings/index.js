@@ -723,6 +723,11 @@ const Listings = () => {
       }
     }
     
+    // Prevent flashing raw numeric IDs before business interest filters are loaded
+    if (!businessInterestFilters && /^\d+(,\s*\d+)*$/.test(defaultTitle)) {
+      return null;
+    }
+    
     return defaultTitle;
   }, [filters.apiCategoryFilter, businessInterestFilters, selectedCategoryLabel]);
 

@@ -135,7 +135,7 @@ export function Hero({ posts = [], loading = false }) {
           </p>
         </div>
         
-        <h1 className="hero-text-mobile-white title text-[42px] md:text-5xl lg:text-[64px] font-extrabold leading-[1.1] mb-5">
+        <h1 className="hero-text-mobile-white title text-[42px] md:text-5xl lg:text-[64px] font-extrabold leading-[1.1]" style={{ marginBottom: "32px" }}>
           Stories that <br />
           inspire <span className="italic font-light text-cyan-400 lg:text-[#00a4c4]">journeys</span>
         </h1>

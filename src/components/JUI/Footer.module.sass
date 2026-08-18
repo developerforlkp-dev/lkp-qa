@@ -494,6 +494,9 @@
   max-height: 85vh
   overflow-y: auto
   background: #ffffff
+  +dark
+    background: #141416
+    border: 1px solid #353945
   &::-webkit-scrollbar
     display: none
   @media (max-width: 640px)
@@ -514,6 +517,8 @@
   height: 80px
   border-radius: 50%
   background: linear-gradient(135deg, #f0f7fa 0%, #e1f0f5 100%)
+  +dark
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%)
   display: flex
   align-items: center
   justify-content: center
@@ -529,12 +534,16 @@
   font-size: 1.5rem
   font-weight: 700
   color: #0f172a
+  +dark
+    color: #f8fafc
   margin-bottom: 0.5rem
   margin-top: 0
   letter-spacing: -0.02em
 
 .contactModalDesc
   color: #64748b
+  +dark
+    color: #94a3b8
   margin-bottom: 0
   font-size: 0.9rem
   line-height: 1.5
@@ -551,6 +560,9 @@
   border-radius: 16px
   overflow: hidden
   background-color: #ffffff
+  +dark
+    background-color: #23262F
+    border-color: #353945
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05)
   transition: transform 0.2s, box-shadow 0.2s
   &:hover
@@ -586,11 +598,15 @@
   font-size: 1.1rem
   font-weight: 700
   color: #0f172a
+  +dark
+    color: #f8fafc
   margin: 0 0 0.2rem 0
 
 .contactCardSubtitle
   font-size: 0.8rem
   color: #64748b
+  +dark
+    color: #94a3b8
   margin: 0
 
 .contactActionsGrid
@@ -609,6 +625,10 @@
   border-radius: 12px
   background-color: #fcfcfd
   color: #334155
+  +dark
+    background-color: #141416
+    border-color: #353945
+    color: #e2e8f0
   text-decoration: none
   font-weight: 500
   font-size: 0.85rem
@@ -616,6 +636,9 @@
   &:hover
     background-color: #f8fafc
     border-color: #e2e8f0
+    +dark
+      background-color: #1e293b
+      border-color: #475569
     box-shadow: 0 2px 5px rgba(0,0,0,0.02)
 
 .pillIconWrapper
@@ -629,6 +652,8 @@
 .helpFooterBox
   margin-top: 1.5rem
   background-color: #f4f9fc
+  +dark
+    background-color: #1e293b
   border-radius: 16px
   padding: 1.25rem 1.5rem
   display: flex
@@ -640,6 +665,8 @@
   height: 44px
   border-radius: 12px
   background-color: #e1eff5
+  +dark
+    background-color: #0f172a
   color: #0284c7
   display: flex
   align-items: center
@@ -653,11 +680,15 @@
 .helpTitle
   font-weight: 700
   color: #0f172a
+  +dark
+    color: #f8fafc
   margin: 0 0 0.2rem 0
   font-size: 1rem
 
 .helpDesc
   color: #64748b
+  +dark
+    color: #94a3b8
   margin: 0
   font-size: 0.875rem
 
@@ -668,6 +699,8 @@
   justify-content: center
   gap: 0.5rem
   color: #64748b
+  +dark
+    color: #94a3b8
   font-size: 0.875rem
   font-weight: 500
 

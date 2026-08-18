@@ -720,7 +720,7 @@ export default function MobileExperienceView({
               />
             </div>
             <h3 className="mob-host-name" style={{ color: FG }}>{displayHostName}</h3>
-            <p className="mob-host-label" style={{ color: A }}>Experience Host</p>
+            <p className="mob-host-label" style={{ color: A }}>Host</p>
 
 
 
@@ -768,6 +768,20 @@ export default function MobileExperienceView({
                 cancelItems.push({
                   title: null,
                   desc: rawPolicy
+                });
+              }
+
+              const foreignerItems = [];
+              if (listing?.foreignersAllowed !== undefined && listing?.foreignersAllowed !== null) {
+                foreignerItems.push({
+                  title: "Foreigners Allowed",
+                  desc: listing.foreignersAllowed ? "Yes" : "No"
+                });
+              }
+              if (listing?.ticketPriceApplicableToForeigners !== undefined && listing?.ticketPriceApplicableToForeigners !== null) {
+                foreignerItems.push({
+                  title: "Ticket Pricing for Foreigners",
+                  desc: listing.ticketPriceApplicableToForeigners ? "Applicable" : "Not Applicable"
                 });
               }
 
@@ -823,6 +837,7 @@ export default function MobileExperienceView({
                   {renderAccordion("Experience Rules", expItems, <ShieldCheck size={16} color={A} />)}
                   {renderAccordion("Guest Requirements", guestItems, <Users size={16} color={A} />)}
                   {renderAccordion("Cancellation Policy", cancelItems, <Clock size={16} color={A} />)}
+                  {renderAccordion("Foreigner Guidelines", foreignerItems, <Info size={16} color={A} />)}
                 </>
               );
             })()}

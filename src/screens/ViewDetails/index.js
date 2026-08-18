@@ -406,9 +406,10 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   let status = getOrderStatus(apiBooking.orderStatus);
 
-  // If the backend says Upcoming (PENDING/CONFIRMED) but the booking date and time have
+  // If the backend says Upcoming (CONFIRMED) but the booking date and time have
   // already passed, show the booking in Completed instead for consistency with Bookings list.
-  if (status === "Pending" || status === "Confirmed") {
+  // Note: "Pending" bookings remain Pending even after expiry so they don't incorrectly show as Completed.
+  if (status === "Confirmed") {
     const bookingDateStr =
       apiBooking.checkOutDate ||
       apiBooking.checkInDate ||
@@ -3336,34 +3337,22 @@ const ViewDetails = () => {
                 </div>
               )}
               <div className={cn(styles.paymentRow, styles.paymentTotal)}>
-                <span>{booking.status === "Pending" ? "Amount Payable" : "Total Paid"}</span>
+                <span>{(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") ? "Total Payable" : "Total Paid"}</span>
                 <span>{booking.pricing.total}</span>
               </div>
               {(booking.status === "Pending" || String(booking.originalData?.orderStatus || "").toUpperCase() === "PENDING") && String(booking.originalData?.orderStatus || "").toUpperCase() !== "PENDING_CONFIRMATION" && (
                 <div className={styles.paymentActions}>
-                  {isBookingPast() ? (
-                    <button
-                      type="button"
-                      className={cn("button", styles.payNowBtn)}
-                      onClick={() => handleRebook(booking)}
-                      disabled={isFetchingRebookData}
-                      style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
-                    >
-                      {isFetchingRebookData ? "Loading..." : "Rebook Now"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className={cn("button", styles.payNowBtn)}
-                      onClick={handleCheckAvailabilityAndProceed}
-                      disabled={isCheckingAvailability || isConfirmingBooking}
-                      style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
-                    >
-                      {isCheckingAvailability
-                        ? "Checking Availability..."
-                        : (isConfirmingBooking ? "Opening Payment..." : "Check Availability & Pay Now")}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className={cn("button", styles.payNowBtn)}
+                    onClick={handleCheckAvailabilityAndProceed}
+                    disabled={isCheckingAvailability || isConfirmingBooking}
+                    style={{ backgroundColor: "#0097B2", borderColor: "#0097B2" }}
+                  >
+                    {isCheckingAvailability
+                      ? "Checking Availability..."
+                      : (isConfirmingBooking ? "Opening Payment..." : "Check Availability & Pay Now")}
+                  </button>
                 </div>
               )}
               {refundDetails && (
@@ -4177,9 +4166,11 @@ const ViewDetails = () => {
       >
         <div className={styles.receiptModalContent}>
           <div className={styles.receiptModalHeader}>
-            <h2 className={styles.receiptModalTitle}>Booking Receipt</h2>
+            <h2 className={styles.receiptModalTitle}>
+              Booking <span style={{ color: "#0097B2", fontStyle: "italic" }}>Receipt</span>
+            </h2>
             <button
-              className={cn("button-small", styles.downloadPdfButton)}
+              className={cn("button-stroke", styles.downloadPdfButton)}
               onClick={handlePrintReceipt}
             >
               <Icon name="download" size="18" />

@@ -2639,26 +2639,42 @@ const Main = ({
         onClose={() => setValidationModalVisible(false)}
         outerClassName={styles.cancelModalOuter}
       >
-        <div className={styles.cancelModalContent} style={{ borderRadius: '20px', overflow: 'hidden' }}>
-          <div className={styles.cancelModalHeader} style={{ padding: '24px 32px', borderBottom: '1px solid #E6E8EC' }}>
-            <h2 className={styles.cancelModalTitle} style={{ fontSize: '24px', marginBottom: '8px' }}>
-              {validationModalData.title}
-            </h2>
-            <p className={styles.cancelModalDescription} style={{ color: '#777E90', fontSize: '15px', lineHeight: '1.5' }}>
-              {validationModalData.message}
-            </p>
-            {validationModalData.details && (
-              <p className={styles.cancelModalDescription} style={{ color: '#777E90', fontSize: '15px', lineHeight: '1.5', marginTop: '8px' }}>
+        <div className={styles.cancelModalContent}>
+          <div className={styles.cancelModalHeader}>
+            <h2 className={styles.cancelModalTitle}>{validationModalData.title}</h2>
+            <p className={styles.cancelModalDescription}>{validationModalData.message}</p>
+          </div>
+          <div className={styles.cancelModalBody}>
+            {validationModalData.details ? (
+              <p className={styles.cancelModalDescription} style={{ marginBottom: "8px" }}>
                 {validationModalData.details}
               </p>
-            )}
+            ) : null}
           </div>
-          <div className={styles.cancelModalFooter} style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: '12px', background: '#F4F5F6' }}>
+          <div className={styles.cancelModalFooter}>
+            <button
+              type="button"
+              className={cn("button-stroke", styles.cancelModalBtn)}
+              onClick={() => setValidationModalVisible(false)}
+            >
+              {validationModalData.isSuccess ? "Cancel" : "Okay"}
+            </button>
+            {validationModalData.isRebookPrompt && (
+              <button
+                type="button"
+                className={cn("button-stroke", styles.cancelModalBtn)}
+                style={{ marginLeft: '12px' }}
+                onClick={() => handleRebook(validationModalData.bookingToRebook)}
+                disabled={isFetchingRebookData}
+              >
+                {isFetchingRebookData ? "Loading..." : "Rebook Now"}
+              </button>
+            )}
             {(validationModalData.isSuccess && validationModalData.canContinue) && (
               <button
                 type="button"
-                className={cn("button")}
-                style={{ width: '100%', borderRadius: "24px", height: "48px", margin: 0, backgroundColor: "#0097B2", color: "white", border: "none" }}
+                className={cn("button", styles.cancelModalBtn)}
+                style={{ marginLeft: '12px' }}
                 onClick={() => {
                   setValidationModalVisible(false);
                   setSelectedBookingForPayment(validationModalData.bookingToRebook);
@@ -2668,25 +2684,6 @@ const Main = ({
                 Continue to Payment
               </button>
             )}
-            {validationModalData.isRebookPrompt && (
-              <button
-                type="button"
-                className={validationModalData.isSuccess ? cn("button-stroke") : cn("button")}
-                style={{ width: '100%', borderRadius: "24px", height: "48px", margin: 0, ...(validationModalData.isSuccess ? {} : { backgroundColor: "#0097B2", color: "white", border: "none" }) }}
-                onClick={() => handleRebook(validationModalData.bookingToRebook)}
-                disabled={isFetchingRebookData}
-              >
-                {isFetchingRebookData ? "Loading..." : "Rebook Now"}
-              </button>
-            )}
-            <button
-              type="button"
-              className={cn("button-stroke")}
-              style={{ width: '100%', borderRadius: "24px", height: "48px", margin: 0 }}
-              onClick={() => setValidationModalVisible(false)}
-            >
-              {validationModalData.isSuccess ? "Cancel" : "Close"}
-            </button>
           </div>
         </div>
       </Modal>

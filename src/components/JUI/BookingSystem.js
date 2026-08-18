@@ -2879,6 +2879,19 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         }
 
         const previewCurrency = listing?.currency || "INR";
+        const selectedAddOnsFormatted = selectedAddOns.map((item) => {
+          const inner = item?.addon || item || {};
+          const addonId = inner.addonId || inner.id || item.addonId || item.id;
+          if (!addonId) return null;
+          const name = inner.title || inner.name || inner.addonName || item.title || item.name || item.addonName || "Add-on";
+          const pricePerUnit = parseFloat(inner.price || inner.addonPrice || inner.pricePerUnit || item.price || item.addonPrice || item.pricePerUnit || 0);
+          const quantity = Number(item.quantity || inner.quantity || 1) || 1;
+          const totalPrice = pricePerUnit * quantity;
+          return {
+            addonId, id: addonId, name, addonName: name, title: name, quantity, price: pricePerUnit, addonPrice: pricePerUnit, pricePerUnit, totalPrice, priceValue: totalPrice, image: inner.imageUrl || inner.image || inner.coverImageUrl || item.imageUrl || item.image || item.coverImageUrl || null, addon: { addonId, id: addonId, title: name, name, addonName: name, price: pricePerUnit, addonPrice: pricePerUnit, pricePerUnit }
+          };
+        }).filter(Boolean);
+
         const previewBookingData = {
           checkoutType: "event",
           eventId: eventIdNum,
@@ -2893,7 +2906,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             guestCount: totalGuests,
           },
           guests,
-          selectedAddOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 })),
+          selectedAddOns: selectedAddOnsFormatted,
+          addOns: selectedAddOnsFormatted,
           addOnQuantities: selectedAddOns.reduce((acc, a) => {
             const id = a.addon?.addonId || a.addonId || a.id;
             if (id) acc[id] = a.quantity || 1;
@@ -2973,7 +2987,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         if (finalTotal > 0) {
           history.replace("/experience-checkout", {
             bookingData: previewBookingData,
-            addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
+            addOns: selectedAddOnsFormatted
           });
           return;
         }
@@ -3146,7 +3160,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           history.replace("/experience-checkout", {
             bookingData,
             paymentData,
-            addOns: selectedAddOns.map(item => ({ ...(item.addon || item), quantity: item.quantity || 1 }))
+            addOns: selectedAddOns.map((item) => {
+              const inner = item?.addon || item || {};
+              const addonId = inner.addonId || inner.id || item.addonId || item.id;
+              const name = inner.title || inner.name || inner.addonName || item.title || item.name || item.addonName || "Add-on";
+              const pricePerUnit = parseFloat(inner.price || inner.addonPrice || inner.pricePerUnit || item.price || item.addonPrice || item.pricePerUnit || 0);
+              const quantity = Number(item.quantity || inner.quantity || 1) || 1;
+              return { addonId, id: addonId, name, addonName: name, title: name, quantity, price: pricePerUnit, addonPrice: pricePerUnit, pricePerUnit, totalPrice: pricePerUnit * quantity };
+            })
           });
         }
       } catch (e) {
@@ -3379,11 +3400,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
 
     try {
+      const selectedAddOnsFormatted = selectedAddOns.map((item) => {
+        const inner = item?.addon || item || {};
+        const addonId = inner.addonId || inner.id || item.addonId || item.id;
+        if (!addonId) return null;
+        const name = inner.title || inner.name || inner.addonName || item.title || item.name || item.addonName || "Add-on";
+        const pricePerUnit = parseFloat(inner.price || inner.addonPrice || inner.pricePerUnit || item.price || item.addonPrice || item.pricePerUnit || 0);
+        const quantity = Number(item.quantity || inner.quantity || 1) || 1;
+        const totalPrice = pricePerUnit * quantity;
+        return {
+          addonId, id: addonId, name, addonName: name, title: name, quantity, price: pricePerUnit, addonPrice: pricePerUnit, pricePerUnit, totalPrice, priceValue: totalPrice, image: inner.imageUrl || inner.image || inner.coverImageUrl || item.imageUrl || item.image || item.coverImageUrl || null, addon: { addonId, id: addonId, title: name, name, addonName: name, price: pricePerUnit, addonPrice: pricePerUnit, pricePerUnit }
+        };
+      }).filter(Boolean);
+
       const previewBookingData = {
         ...bookingData,
         checkoutType: "experience",
         currency: "INR",
         orderRequest: orderData,
+        selectedAddOns: selectedAddOnsFormatted,
+        addOns: selectedAddOnsFormatted,
       };
 
       clearPendingCheckoutState();
@@ -3393,7 +3429,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         pathname: "/experience-checkout",
         search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}`,
         state: {
-          addOns: selectedAddOns.map(item => item.addon || item),
+          addOns: selectedAddOnsFormatted,
           bookingData: previewBookingData,
         }
       });

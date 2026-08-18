@@ -30,6 +30,70 @@ const formatImageUrl = (url) => {
   return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
+const getHostName = (...sources) => {
+  for (const source of sources) {
+    if (!source) continue;
+    const firstName = source?.firstName || source?.host?.firstName || "";
+    const lastName = source?.lastName || source?.host?.lastName || "";
+    const combinedName = `${firstName} ${lastName}`.trim();
+
+    const candidates = [
+      source?.displayName,
+      source?.name,
+      source?.businessName,
+      source?.primaryContactName,
+      source?.contactInformation?.primaryContactName,
+      source?.primaryContact?.name,
+      source?.hostName,
+      source?.host?.displayName,
+      source?.host?.name,
+      source?.host?.businessName,
+      source?.host?.hostName,
+      combinedName,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+
+  return "Host";
+};
+
+const getHostAvatar = (...sources) => {
+  for (const source of sources) {
+    if (!source) continue;
+    const candidates = [
+      source?.profilePhotoUrl,
+      source?.host?.profilePhotoUrl,
+      source?.picture,
+      source?.avatar,
+      source?.profileImage,
+      source?.profileImageUrl,
+      source?.profilePhoto,
+      source?.image,
+      source?.hostAvatar,
+      source?.host?.picture,
+      source?.host?.avatar,
+      source?.host?.profileImage,
+      source?.host?.profileImageUrl,
+      source?.host?.profilePhoto,
+      source?.host?.image,
+      source?.host?.hostAvatar,
+    ];
+
+    for (const candidate of candidates) {
+      const formatted = formatImageUrl(candidate);
+      if (formatted) return formatted;
+    }
+  }
+
+  return null;
+};
+
+
 const formatMoneyLabel = (currency, amount) => `${currency} ${Number(amount || 0).toFixed(2)}`;
 const toPositiveNumber = (...values) => {
   for (const value of values) {
@@ -113,12 +177,13 @@ const Checkout = () => {
     }
   };
 
-  // Initialize add-ons from location state
+  // Initialize add-ons from location state or bookingData
   useEffect(() => {
-    if (location.state?.addOns) {
-      setSelectedAddOns(location.state.addOns);
+    const list = location.state?.addOns || bookingData?.selectedAddOns || bookingData?.addOns;
+    if (Array.isArray(list) && list.length > 0) {
+      setSelectedAddOns(list);
     }
-  }, [location.state]);
+  }, [location.state, bookingData]);
 
   // Fallback: hydrate bookingData from localStorage if not present in state
   useEffect(() => {
@@ -359,28 +424,101 @@ const Checkout = () => {
           }
 
           // ✅ Also enrich addonDetails from the server breakdown addons
-          const serverAddons = serverPricing?.breakdown?.addons || order.addons || [];
+          const serverAddons = serverPricing?.breakdown?.addons || order.addons || orderDetails?.addons || [];
           if (serverAddons.length > 0) {
-            const listingId = order.listingId || orderDetails?.listingId;
-            if (listingId) {
-              getListingAddons(listingId).then((allAddons) => {
-                const merged = serverAddons.map((oa) => {
-                  const addonId = oa.addonId || oa.id;
-                  const full = allAddons.find(
-                    (a) => String(a.addonId || a.id) === String(addonId)
-                  );
-                  return {
-                    addonId,
-                    name: oa.addonName || full?.title || full?.name || full?.addonName || "Add-on",
-                    quantity: oa.quantity || 1,
-                    pricePerUnit: oa.pricePerUnit || oa.addonPrice || oa.price || 0,
-                    totalPrice: oa.totalPrice || (oa.pricePerUnit || oa.addonPrice || oa.price || 0) * (oa.quantity || 1),
-                    image: full?.imageUrl || full?.image || full?.coverImageUrl || null,
-                  };
-                });
-                setAddonDetails(merged);
-              }).catch(console.error);
-            }
+            const listingId = order.listingId || orderDetails?.listingId || bookingData?.listingId;
+            const eventId = order.eventId || orderDetails?.eventId || bookingData?.eventId;
+            const fetchAddons = listingId
+              ? getListingAddons(listingId)
+              : (eventId ? getEventAddons(eventId) : Promise.resolve([]));
+            const fallbackAddons = bookingData?.selectedAddOns || selectedAddOns || location.state?.addOns || [];
+
+            const parseNumericAmount = (val) => {
+              if (val === null || val === undefined) return 0;
+              if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+              const match = String(val).replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+              return match ? Number(match[0]) : 0;
+            };
+
+            const getFirstPositiveNumber = (...candidates) => {
+              for (const c of candidates) {
+                const n = parseNumericAmount(c);
+                if (n > 0) return n;
+              }
+              return 0;
+            };
+
+            const getFirstNonEmptyString = (...candidates) => {
+              for (const c of candidates) {
+                if (c && typeof c === "string" && c.trim() && c.trim().toLowerCase() !== "add-on") {
+                  return c.trim();
+                }
+              }
+              return null;
+            };
+
+            fetchAddons.then((allAddons) => {
+              const merged = serverAddons.map((oa) => {
+                const inner = oa?.addon || oa || {};
+                const addonId = inner.addonId || inner.id || oa.addonId || oa.id;
+
+                const fallbackMatch = Array.isArray(fallbackAddons)
+                  ? fallbackAddons.find((fa) => {
+                      const faInner = (fa && typeof fa === "object" && fa.addon) ? fa.addon : (fa || {});
+                      const faId = fa.addonId || fa.id || faInner.addonId || faInner.id;
+                      return String(faId) === String(addonId);
+                    })
+                  : null;
+                const fallbackInner = (fallbackMatch && typeof fallbackMatch === "object" && fallbackMatch.addon) ? fallbackMatch.addon : (fallbackMatch || {});
+
+                const full = Array.isArray(allAddons)
+                  ? allAddons.find((a) => String(a.addonId || a.id) === String(addonId))
+                  : null;
+
+                const name = getFirstNonEmptyString(
+                  oa.addonName, oa.name, oa.title,
+                  inner.addonName, inner.name, inner.title,
+                  fallbackMatch?.name, fallbackMatch?.addonName, fallbackMatch?.title,
+                  fallbackInner?.name, fallbackInner?.addonName, fallbackInner?.title,
+                  full?.title, full?.name, full?.addonName
+                ) || "Add-on";
+
+                const quantity = getFirstPositiveNumber(
+                  oa.quantity, inner.quantity, fallbackMatch?.quantity, fallbackInner?.quantity
+                ) || 1;
+
+                const pricePerUnit = getFirstPositiveNumber(
+                  oa.pricePerUnit, oa.addonPrice, oa.price, oa.pricePerItem,
+                  inner.pricePerUnit, inner.addonPrice, inner.price, inner.pricePerItem,
+                  fallbackMatch?.pricePerUnit, fallbackMatch?.addonPrice, fallbackMatch?.price, fallbackMatch?.pricePerItem,
+                  fallbackInner?.pricePerUnit, fallbackInner?.addonPrice, fallbackInner?.price, fallbackInner?.pricePerItem,
+                  full?.pricePerUnit, full?.addonPrice, full?.price, full?.pricePerItem, full?.addon?.price
+                );
+
+                const totalPriceCandidate = getFirstPositiveNumber(
+                  oa.totalPrice, oa.priceValue, oa.amount,
+                  inner.totalPrice, inner.priceValue, inner.amount,
+                  fallbackMatch?.totalPrice, fallbackMatch?.priceValue, fallbackMatch?.amount,
+                  fallbackInner?.totalPrice, fallbackInner?.priceValue, fallbackInner?.amount
+                );
+                const totalPrice = totalPriceCandidate > 0 ? totalPriceCandidate : (pricePerUnit * quantity);
+
+                const image =
+                  full?.imageUrl || full?.image || full?.coverImageUrl || full?.addon?.imageUrl || full?.addon?.image ||
+                  oa.image || oa.imageUrl || inner.image || inner.imageUrl ||
+                  fallbackMatch?.image || fallbackMatch?.imageUrl || fallbackInner?.image || fallbackInner?.imageUrl || null;
+
+                return {
+                  addonId,
+                  name,
+                  quantity,
+                  pricePerUnit,
+                  totalPrice,
+                  image,
+                };
+              });
+              setAddonDetails(merged);
+            }).catch(console.error);
           }
         }
 
@@ -418,20 +556,64 @@ const Checkout = () => {
 
     fetchAddons.then((allAddons) => {
       const merged = fallbackAddons.map((oa) => {
-        const addonId = oa.addonId || oa.id || oa; // oa might be just an ID string if read from localStorage
-        const full = allAddons.find(
-          (a) => String(a.addonId || a.id) === String(addonId)
+        const inner = oa?.addon || oa || {};
+        const addonId = inner.addonId || inner.id || oa.addonId || oa.id || (typeof oa === "string" ? oa : null);
+        const full = Array.isArray(allAddons)
+          ? allAddons.find((a) => String(a.addonId || a.id) === String(addonId))
+          : null;
+
+        const parseNumericAmount = (val) => {
+          if (val === null || val === undefined) return 0;
+          if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+          const match = String(val).replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+          return match ? Number(match[0]) : 0;
+        };
+        const getFirstPos = (...candidates) => {
+          for (const c of candidates) {
+            const n = parseNumericAmount(c);
+            if (n > 0) return n;
+          }
+          return 0;
+        };
+        const getFirstStr = (...candidates) => {
+          for (const c of candidates) {
+            if (c && typeof c === "string" && c.trim() && c.trim().toLowerCase() !== "add-on") {
+              return c.trim();
+            }
+          }
+          return null;
+        };
+
+        const name = getFirstStr(
+          oa.name, oa.addonName, oa.title,
+          inner.name, inner.addonName, inner.title,
+          full?.title, full?.name, full?.addonName
+        ) || "Add-on";
+
+        const quantity = getFirstPos(
+          oa.quantity, inner.quantity, bookingData?.addOnQuantities?.[addonId]
+        ) || 1;
+
+        const pricePerUnit = getFirstPos(
+          oa.pricePerUnit, oa.addonPrice, oa.price, oa.pricePerItem,
+          inner.pricePerUnit, inner.addonPrice, inner.price, inner.pricePerItem,
+          full?.pricePerUnit, full?.addonPrice, full?.price, full?.pricePerItem, full?.addon?.price
         );
+
+        const totalPriceCandidate = getFirstPos(
+          oa.totalPrice, oa.priceValue, oa.amount,
+          inner.totalPrice, inner.priceValue, inner.amount
+        );
+        const totalPrice = totalPriceCandidate > 0 ? totalPriceCandidate : (pricePerUnit * quantity);
+        const image = full?.imageUrl || full?.image || full?.coverImageUrl || full?.addon?.imageUrl || full?.addon?.image || oa.image || oa.imageUrl || inner.image || inner.imageUrl || null;
+
         return {
           addonId,
-          // Try all possible name fields
-          name: oa.addonName || oa.title || oa.name || full?.title || full?.name || full?.addonName || full?.addon?.title || full?.addon?.name || full?.addon?.addonName || "Add-on",
-          quantity: oa.quantity || bookingData?.addOnQuantities?.[addonId] || 1,
-          pricePerUnit: oa.pricePerUnit || oa.addonPrice || oa.price || full?.price || full?.addonPrice || full?.addon?.price || full?.addon?.addonPrice || 0,
-          totalPrice:
-            oa.totalPrice ||
-            (oa.pricePerUnit || oa.addonPrice || oa.price || full?.price || full?.addonPrice || full?.addon?.price || full?.addon?.addonPrice || 0) * (oa.quantity || bookingData?.addOnQuantities?.[addonId] || 1),
-          image: full?.imageUrl || full?.image || full?.coverImageUrl || full?.addon?.imageUrl || full?.addon?.image || oa.image || oa.imageUrl || null,
+          name,
+          quantity,
+          pricePerUnit,
+          totalPrice,
+          image,
         };
       });
       setAddonDetails(merged);
@@ -912,8 +1094,14 @@ const Checkout = () => {
     return "/images/content/photo-1.1.jpg";
   };
   const listingImage = getListingImage();
-  const hostName = bookingData?.hostName || "Host";
-  const hostAvatar = bookingData?.hostAvatar || "/images/content/avatar.jpg";
+
+  const hostSources = [
+    bookingData,
+    bookingData?.listing?.host,
+    bookingData?.host,
+  ];
+  const hostName = getHostName(...hostSources);
+  const hostAvatar = getHostAvatar(...hostSources) || "/images/content/avatar.jpg";
 
 
   return (

@@ -47,9 +47,11 @@ const getHostName = (...sources) => {
       source?.primaryContactName,
       source?.contactInformation?.primaryContactName,
       source?.primaryContact?.name,
+      source?.hostName,
       source?.host?.displayName,
       source?.host?.name,
       source?.host?.businessName,
+      source?.host?.hostName,
       combinedName,
     ];
 
@@ -75,12 +77,14 @@ const getHostAvatar = (...sources) => {
       source?.profileImageUrl,
       source?.profilePhoto,
       source?.image,
+      source?.hostAvatar,
       source?.host?.picture,
       source?.host?.avatar,
       source?.host?.profileImage,
       source?.host?.profileImageUrl,
       source?.host?.profilePhoto,
       source?.host?.image,
+      source?.host?.hostAvatar,
     ];
 
     for (const candidate of candidates) {
@@ -924,9 +928,9 @@ const Checkout = () => {
         .filter((r) => /discount/i.test(String(r.title || "")))
         .reduce((sum, r) => sum + Math.abs(parseAmount(r.value)), 0);
       const correctedFinalAmount = Math.max(0, discountableAmount - totalDiscountAmount + correctedTax);
-      const authoritativeFinalAmount = storedFinalTotal != null
-        ? storedFinalTotal
-        : correctedFinalAmount;
+      const authoritativeFinalAmount = correctedFinalAmount > 0
+        ? correctedFinalAmount
+        : (storedFinalTotal != null ? storedFinalTotal : correctedFinalAmount);
       rows.push({
         title: "Final Guest Price",
         value: formatInr(authoritativeFinalAmount),

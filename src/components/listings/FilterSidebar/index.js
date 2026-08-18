@@ -268,6 +268,11 @@ const FilterSidebar = ({
             }
           }
 
+          // Prevent flashing raw numeric IDs in the active filters chip before business interest filters load
+          if (!businessInterestFilters && label && /^\d+$/.test(label)) {
+            return;
+          }
+
           if (label) {
             chips.push({
               type: "apiCategoryFilter",

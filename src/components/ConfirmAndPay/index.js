@@ -43,6 +43,23 @@ const ConfirmAndPay = ({
     return match ? Number(match[0]) : 0;
   };
 
+  const getFirstPositiveNumber = (...candidates) => {
+    for (const c of candidates) {
+      const n = parseNumericAmount(c);
+      if (n > 0) return n;
+    }
+    return 0;
+  };
+
+  const getFirstNonEmptyString = (...candidates) => {
+    for (const c of candidates) {
+      if (c && typeof c === "string" && c.trim() && c.trim().toLowerCase() !== "add-on") {
+        return c.trim();
+      }
+    }
+    return null;
+  };
+
   const displayAddons = addonDetails && addonDetails.length > 0
     ? addonDetails
     : (addOns || []);
@@ -51,18 +68,99 @@ const ConfirmAndPay = ({
     <div className={styles.addOnsSection}>
       <div className={styles.addOnsTitle}>Selected Add-ons</div>
       <div className={styles.addOnsList}>
-        {displayAddons.map((addon, index) => {
-          const addonName = addon.name || addon.addonName || addon.title || "Add-on";
-          const addonQty = addon.quantity || 1;
-          const unitPrice = parseNumericAmount(addon.pricePerUnit ?? addon.price);
-          const subtotal = parseNumericAmount(addon.totalPrice ?? addon.priceValue) || (unitPrice * addonQty);
+        {displayAddons.map((addonItem, index) => {
+          const addonObj = (addonItem && typeof addonItem === "object" && addonItem.addon) ? addonItem.addon : (addonItem || {});
+          const addonId = addonItem.addonId || addonObj.addonId || addonItem.id || addonObj.id;
+
+          const fallbackItem = Array.isArray(addOns)
+            ? addOns.find((a) => {
+                const aObj = (a && typeof a === "object" && a.addon) ? a.addon : (a || {});
+                const aId = a.addonId || a.id || aObj.addonId || aObj.id;
+                return String(aId) === String(addonId);
+              })
+            : null;
+          const fallbackObj = (fallbackItem && typeof fallbackItem === "object" && fallbackItem.addon) ? fallbackItem.addon : (fallbackItem || {});
+
+          const addonName = getFirstNonEmptyString(
+            addonItem.name,
+            addonItem.addonName,
+            addonItem.title,
+            addonObj.name,
+            addonObj.addonName,
+            addonObj.title,
+            fallbackItem?.name,
+            fallbackItem?.addonName,
+            fallbackItem?.title,
+            fallbackObj?.name,
+            fallbackObj?.addonName,
+            fallbackObj?.title
+          ) || (typeof addonItem === "string" ? addonItem : "Add-on");
+
+          const addonQty = getFirstPositiveNumber(
+            addonItem.quantity,
+            addonObj.quantity,
+            fallbackItem?.quantity,
+            fallbackObj?.quantity
+          ) || 1;
+
+          const unitPrice = getFirstPositiveNumber(
+            addonItem.pricePerUnit,
+            addonItem.price,
+            addonItem.addonPrice,
+            addonItem.pricePerItem,
+            addonItem.unitPrice,
+            addonObj.pricePerUnit,
+            addonObj.price,
+            addonObj.addonPrice,
+            addonObj.pricePerItem,
+            addonObj.unitPrice,
+            fallbackItem?.pricePerUnit,
+            fallbackItem?.price,
+            fallbackItem?.addonPrice,
+            fallbackItem?.pricePerItem,
+            fallbackItem?.unitPrice,
+            fallbackObj?.pricePerUnit,
+            fallbackObj?.price,
+            fallbackObj?.addonPrice,
+            fallbackObj?.pricePerItem,
+            fallbackObj?.unitPrice
+          );
+
+          const subtotalCandidate = getFirstPositiveNumber(
+            addonItem.totalPrice,
+            addonItem.priceValue,
+            addonItem.amount,
+            addonObj.totalPrice,
+            addonObj.priceValue,
+            addonObj.amount,
+            fallbackItem?.totalPrice,
+            fallbackItem?.priceValue,
+            fallbackItem?.amount,
+            fallbackObj?.totalPrice,
+            fallbackObj?.priceValue,
+            fallbackObj?.amount
+          );
+
+          const subtotal = subtotalCandidate > 0 ? subtotalCandidate : (unitPrice * addonQty);
+          const addonImg =
+            addonItem.image ||
+            addonItem.imageUrl ||
+            addonObj.image ||
+            addonObj.imageUrl ||
+            addonObj.coverImageUrl ||
+            fallbackItem?.image ||
+            fallbackItem?.imageUrl ||
+            fallbackObj?.image ||
+            fallbackObj?.imageUrl ||
+            fallbackObj?.coverImageUrl ||
+            null;
 
           return (
-            <div className={styles.addOnItem} key={addon.addonId || index}>
+            <div className={styles.addOnItem} key={addonItem.addonId || addonObj.addonId || index}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                {addon.image && (
+                {addonImg && (
                   <img
-                    src={addon.image}
+                    src={addonImg}
                     alt={addonName}
                     style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, flexShrink: 0, display: "block" }}
                   />

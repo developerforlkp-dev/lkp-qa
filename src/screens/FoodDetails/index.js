@@ -1463,50 +1463,50 @@ function LocationSection({ food }) {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", height: 280, margin: 0, padding: 0 }}>
                   {(food?.meetingAddress || food?.address) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Address</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingAddress || food.address}</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingAddress || food.address}</span>
                     </li>
                   )}
 
                   {(food?.meetingLandmark || food?.nearestLandmark || food?.landmark) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Landmark</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingLandmark || food.nearestLandmark || food.landmark}</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Landmark</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingLandmark || food.nearestLandmark || food.landmark}</span>
                     </li>
                   )}
 
                   {(food?.meetingDistrict || food?.district) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>District</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingDistrict || food.district}</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingDistrict || food.district}</span>
                     </li>
                   )}
 
                   {(food?.meetingState || food?.state || food?.city) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>State</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingState || food.state || food.city}</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingState || food.state || food.city}</span>
                     </li>
                   )}
 
                   {(food?.meetingCountry || food?.country) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Country</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingCountry || food.country}</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingCountry || food.country}</span>
                     </li>
                   )}
 
                   {(food?.meetingInstructions || food?.directions) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Instructions</span>
-                      <span style={{ fontSize: 14, color: FG, fontWeight: 500, lineHeight: 1.4 }}>{food.meetingInstructions || food.directions}</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 8 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingInstructions || food.directions}</span>
                     </li>
                   )}
                   {(!food?.meetingDistrict && !food?.meetingState && !food?.meetingCountry && !food?.meetingAddress && !food?.meetingLandmark && !food?.address && !food?.nearestLandmark && !food?.landmark) && (
-                    <li style={{ display: "flex", gap: 16, alignItems: "baseline", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
-                      <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 120, flexShrink: 0, fontWeight: 600 }}>Region</span>
-                      <span style={{ fontSize: 14, color: M, fontWeight: 500 }}>Specific regional details will be provided upon booking confirmation.</span>
+                    <li style={{ display: "flex", gap: 16, alignItems: "center", borderBottom: `1px solid ${B}`, paddingBottom: 16 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
+                      <span style={{ fontSize: 16, color: M, fontWeight: 400, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
                     </li>
                   )}
                 </ul>
@@ -1536,6 +1536,8 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
   const websiteUrl = food?.website;
   const instaHandle = food?.instagramHandle || food?.instagram || food?.host?.instagram;
 
+  const realAvatar = hostData?.host?.profilePhotoUrl || food?.host?.profilePhotoUrl || hostData?.profilePhotoUrl || food?.profilePhotoUrl || hostAvatar;
+
   return (
     <section id="reservation-inquiries" className="reservation-section-wrapper" style={{ background: tokens.BG, padding: isMobile ? "32px 24px" : "32px 80px", borderTop: `1px solid ${B}` }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
@@ -1560,7 +1562,7 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                   flexShrink: 0
                 }}>
                   <img
-                    src={hostAvatar || "https://picsum.photos/seed/host/200/200"}
+                    src={realAvatar || "https://picsum.photos/seed/host/200/200"}
                     alt={chefName}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
@@ -1659,36 +1661,6 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                       }}
                     >
                       <Globe size={15} /> Website
-                    </motion.a>
-                  )}
-
-                  {instaHandle && instaHandle !== "@culinary_craft" && (
-                    <motion.a
-                      whileHover={{ scale: 1.02, backgroundColor: A, color: "#fff", borderColor: A }}
-                      whileTap={{ scale: 0.98 }}
-                      href={`https://instagram.com/${instaHandle.replace("@", "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: "12px",
-                        borderRadius: 12,
-                        border: `1.5px solid ${A}`,
-                        color: A,
-                        textDecoration: "none",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        textAlign: "center",
-                        transition: "all 0.25s ease"
-                      }}
-                    >
-                      <Instagram size={15} /> Instagram
                     </motion.a>
                   )}
                 </div>

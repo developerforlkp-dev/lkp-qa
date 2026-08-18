@@ -1385,6 +1385,7 @@ const ExperienceProduct = () => {
 
 
         {/* ADDONS SECTION */}
+        {(listing?.addons && listing.addons.length > 0) && (
         <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
@@ -1639,6 +1640,7 @@ const ExperienceProduct = () => {
             )}
           </div>
         </section>
+        )}
         {/* PREPARATION SECTION */}
         <section className="prep-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
@@ -2010,7 +2012,7 @@ const ExperienceProduct = () => {
                               display: "inline-flex",
                               alignItems: "center"
                             }}>
-                              Superhost
+                              Host
                             </span>
                           </div>
                         </div>
@@ -3379,6 +3381,25 @@ function ExperiencePolicies({ listing }) {
     }
     if (cancelItems.length > 0) {
       categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
+    }
+
+    const foreignerItems = [];
+    if (listing?.foreignersAllowed !== undefined && listing?.foreignersAllowed !== null) {
+      foreignerItems.push({
+        id: 'foreigners-allowed',
+        title: "Foreigners Allowed",
+        body: listing.foreignersAllowed ? "Yes" : "No"
+      });
+    }
+    if (listing?.ticketPriceApplicableToForeigners !== undefined && listing?.ticketPriceApplicableToForeigners !== null) {
+      foreignerItems.push({
+        id: 'ticket-price-foreigners',
+        title: "Ticket Pricing for Foreigners",
+        body: listing.ticketPriceApplicableToForeigners ? "Applicable" : "Not Applicable"
+      });
+    }
+    if (foreignerItems.length > 0) {
+      categories.push({ id: 'cat-foreigner', title: "Foreigner Guidelines", items: foreignerItems });
     }
 
     return categories;

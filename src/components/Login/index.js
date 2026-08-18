@@ -17,7 +17,14 @@ const isDateOfBirthRequiredError = (err) => {
     return true;
   }
 
-  return String(message).toLowerCase().includes("date of birth is required");
+  const msgLower = String(message).toLowerCase();
+  return (
+    msgLower.includes("date of birth") ||
+    msgLower.includes("dateofbirth") ||
+    msgLower.includes("dob") ||
+    Boolean(err?.response?.data?.requiresDateOfBirth) ||
+    Boolean(err?.response?.data?.requiresProfileCompletion)
+  );
 };
 
 const getFriendlyOtpError = (err) => {
@@ -437,6 +444,15 @@ const Login = ({ onClose }) => {
       window.location.reload();
     } catch (err) {
       if (isMountedRef.current) {
+        if (isDateOfBirthRequiredError(err)) {
+          setRequiresProfileCompletion(true);
+          setError(
+            err?.response?.data?.message ||
+            err?.response?.data?.fieldErrors?.dateOfBirth?.[0] ||
+            "Please enter your date of birth to continue."
+          );
+          return;
+        }
         setError(getFriendlyOtpError(err));
       }
     } finally {
@@ -590,10 +606,15 @@ const Login = ({ onClose }) => {
                     disabled={loading}
                   />
                 </div>
-                <div className={styles.field}>
+                <div className={styles.dobField}>
+                  <label htmlFor="otp-login-dob" className={styles.fieldLabel}>
+                    <span>Date of Birth <span className={styles.required}>*</span></span>
+                    <span className={styles.ageHint}>(Must be 18+)</span>
+                  </label>
                   <input
+                    id="otp-login-dob"
                     type="date"
-                    className={styles.input}
+                    className={styles.dateInput}
                     value={dateOfBirth}
                     onChange={(e) => setDateOfBirth(e.target.value)}
                     disabled={loading}
@@ -652,10 +673,15 @@ const Login = ({ onClose }) => {
                 />
               </div>
             )}
-            <div className={styles.field} style={{ marginBottom: "16px" }}>
+            <div className={styles.dobField} style={{ marginBottom: "16px" }}>
+              <label htmlFor="profile-login-dob" className={styles.fieldLabel}>
+                <span>Date of Birth <span className={styles.required}>*</span></span>
+                <span className={styles.ageHint}>(Must be 18+)</span>
+              </label>
               <input
+                id="profile-login-dob"
                 type="date"
-                className={styles.input}
+                className={styles.dateInput}
                 placeholder="Date of Birth"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
