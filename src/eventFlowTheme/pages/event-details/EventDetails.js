@@ -532,7 +532,7 @@ function SpinBadge({ event }) {
 
 
 
-function ImageRing({ event }) {
+function ImageRing({ event, onImageHover }) {
   const { tokens: { B } } = useTheme();
 
   // Use actual event media for the ring
@@ -557,6 +557,8 @@ function ImageRing({ event }) {
             <div
               key={i}
               style={{ position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`, zIndex: 5 }}
+              onMouseEnter={() => onImageHover && onImageHover(finalSrc)}
+              onMouseLeave={() => onImageHover && onImageHover(null)}
             >
               <div className="counter-rotating-card">
                 <motion.div
@@ -1041,6 +1043,26 @@ function Hero({ event, heroRef }) {
   const { theme, tokens: { A, W, M, FG, B, S, AL } } = useTheme();
   const history = useHistory();
   const isMobile = useMobileView();
+  const [hoveredImage, setHoveredImage] = useState(null);
+
+  const getImageUrl = (item) => {
+    const candidates = [
+      item?.coverPhotoUrl,
+      item?.coverImageUrl,
+      item?.coverPhoto,
+      item?.thumbnailUrl,
+      item?.imageUrl,
+      item?.listingMedia?.[0]?.url,
+      item?.listingMedia?.[0]?.fileUrl,
+      item?.media?.[0]?.url,
+      item?.images?.[0]?.url,
+      item?.images?.[0],
+    ];
+    const found = candidates.find((v) => v != null && String(v).trim());
+    return found || "";
+  };
+  const bgImage = formatImageUrl(getImageUrl(event));
+  const currentBgImage = hoveredImage || bgImage;
 
   if (isMobile) {
     return <MobileHero event={event} heroRef={heroRef} />;
@@ -1134,8 +1156,38 @@ function Hero({ event, heroRef }) {
       background: W,
       boxShadow: "0 10px 40px rgba(0,0,0,0.03)"
     }}>
+      {/* Dynamic Background Image Overlay */}
+      <AnimatePresence>
+        {currentBgImage && (
+          <motion.div
+            key={currentBgImage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url(${currentBgImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              zIndex: 0,
+              pointerEvents: "none"
+            }}
+          >
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: theme === "dark" 
+                ? "linear-gradient(to right, rgba(15,23,42,0.1) 0%, rgba(15,23,42,0.6) 70%, rgba(15,23,42,0.9) 100%)" 
+                : "linear-gradient(to right, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.6) 70%, rgba(255,255,255,0.9) 100%)"
+            }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background Orbs & Grid */}
-      <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+      <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}>
         <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.25, 0.4, 0.25] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-15%", left: "30%", width: 900, height: 900, borderRadius: "50%", background: `radial-gradient(circle, ${A}15 0%, transparent 60%)` }} />
         <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }} style={{ position: "absolute", bottom: "-10%", right: "10%", width: 700, height: 700, borderRadius: "50%", background: `radial-gradient(circle, ${A}10 0%, transparent 60%)` }} />
         <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}06 1px, transparent 1px), linear-gradient(90deg, ${A}06 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
@@ -1428,7 +1480,7 @@ function Hero({ event, heroRef }) {
             <div style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: `${A}10`, filter: "blur(50px)", zIndex: 0 }} />
 
             <div style={{ position: "relative", zIndex: 1 }} className="float-anim">
-              <ImageRing event={event} />
+              <ImageRing event={event} onImageHover={setHoveredImage} />
             </div>
           </div>
 
@@ -1556,76 +1608,76 @@ function About({ event }) {
   if (isMobile) {
     return (
       <>
-      <div className="mob-section" style={{ background: isDark ? BG : W, paddingTop: 64 }}>
-        <span className="mob-section-eyebrow" style={{ color: A }}>The Event</span>
-        <h2 className="mob-section-title" style={{ color: FG }}>
-          Where the ancient <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
-        </h2>
-        <div style={{ marginBottom: 16 }}>
-          <p className="mob-section-desc" style={{
-            color: M,
-            display: "-webkit-box",
-            WebkitLineClamp: isExpanded ? "unset" : 3,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            margin: 0,
-            WebkitMaskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
-            maskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)"
-          }}>{desc}</p>
-          {desc?.length > 150 && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              style={{
-                background: "none",
-                border: "none",
-                color: A,
-                fontSize: "14px",
-                fontWeight: 700,
-                padding: 0,
-                marginTop: 12,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px"
-              }}
-            >
-              {isExpanded ? "Read Less" : "Read More"} &rarr;
-            </button>
-          )}
-        </div>
+        <div className="mob-section" style={{ background: isDark ? BG : W, paddingTop: 64 }}>
+          <span className="mob-section-eyebrow" style={{ color: A }}>The Event</span>
+          <h2 className="mob-section-title" style={{ color: FG }}>
+            Where the ancient <span style={{ color: A, fontStyle: "italic" }}>meets the avant-garde.</span>
+          </h2>
+          <div style={{ marginBottom: 16 }}>
+            <p className="mob-section-desc" style={{
+              color: M,
+              display: "-webkit-box",
+              WebkitLineClamp: isExpanded ? "unset" : 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              margin: 0,
+              WebkitMaskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)",
+              maskImage: isExpanded ? "none" : "linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)"
+            }}>{desc}</p>
+            {desc?.length > 150 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: A,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  padding: 0,
+                  marginTop: 12,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px"
+                }}
+              >
+                {isExpanded ? "Read Less" : "Read More"} &rarr;
+              </button>
+            )}
+          </div>
 
-        {/* Stats Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
-          {statsList.map((s, i) => (
-            <div key={s.l} style={{ padding: 12, borderRadius: 16, border: `1px solid ${B}`, background: isDark ? "#111" : "#FAFAFA" }}>
-              <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: A, display: "block", marginBottom: 4, fontWeight: 700 }}>{s.l}</span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: FG }}>
-                {typeof s.value === 'string' && s.value.toLowerCase() === 'free' ? (
-                  <span style={{
-                    color: A,
-                    textShadow: `0 0 12px ${A}80, 0 0 24px ${A}40`,
-                    position: "relative",
-                    display: "inline-block"
-                  }}>
-                    {s.value}
+          {/* Stats Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
+            {statsList.map((s, i) => (
+              <div key={s.l} style={{ padding: 12, borderRadius: 16, border: `1px solid ${B}`, background: isDark ? "#111" : "#FAFAFA" }}>
+                <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: A, display: "block", marginBottom: 4, fontWeight: 700 }}>{s.l}</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: FG }}>
+                  {typeof s.value === 'string' && s.value.toLowerCase() === 'free' ? (
                     <span style={{
-                      position: "absolute",
-                      top: "-50%",
-                      left: "-50%",
-                      right: "-50%",
-                      bottom: "-50%",
-                      background: `radial-gradient(circle, ${A}30 0%, transparent 70%)`,
-                      zIndex: -1,
-                      pointerEvents: "none"
-                    }} />
-                  </span>
-                ) : s.value}
-              </span>
-            </div>
-          ))}
+                      color: A,
+                      textShadow: `0 0 12px ${A}80, 0 0 24px ${A}40`,
+                      position: "relative",
+                      display: "inline-block"
+                    }}>
+                      {s.value}
+                      <span style={{
+                        position: "absolute",
+                        top: "-50%",
+                        left: "-50%",
+                        right: "-50%",
+                        bottom: "-50%",
+                        background: `radial-gradient(circle, ${A}30 0%, transparent 70%)`,
+                        zIndex: -1,
+                        pointerEvents: "none"
+                      }} />
+                    </span>
+                  ) : s.value}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-      <PremiumMarquee items={mqItems} />
+        <PremiumMarquee items={mqItems} />
       </>
     );
   }
@@ -2328,7 +2380,7 @@ function Rules({ event }) {
     } else if (evtItems.length > 0) {
       categories.push({ id: 'cat-evt', title: "Event Rules", items: evtItems });
     }
-    
+
     // Fallback: If we added experienceRuleItems as 'Event Rules', but still have evtItems (check-in, dress code), put them somewhere
     if (experienceRuleItems.length > 0 && evtItems.length > 0) {
       categories.push({ id: 'cat-evt-details', title: "Event Details", items: evtItems });
@@ -2762,7 +2814,7 @@ function HostDetails({ event, hostName }) {
                             {/* Right Laurel */}
                             <LaurelSVG />
                           </div>
-                          
+
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
@@ -3649,7 +3701,7 @@ export default function EventDetails() {
       try {
         setLoading(true);
         const data = await getEventDetails(eventId);
-        console.log("Event Detail Page Data:", data);
+        //console.log("Event Detail Page Data:", data);
         let eventAddons = [];
         try {
           eventAddons = await getEventAddons(eventId);
@@ -3713,347 +3765,347 @@ export default function EventDetails() {
         <About event={event} />
         <Gallery event={event} />
         <Artists event={event} />
-        
+
         {/* ADDONS SECTION */}
         {(event?.addons && event.addons.length > 0) && (
           isMobile ? (
-          <div className="mob-section" style={{ background: BG }}>
-            <span className="mob-section-eyebrow" style={{ color: A }}>Enhance Your Experience</span>
-            <h2 className="mob-section-title" style={{ color: FG }}>Make it Yours</h2>
-            <p className="mob-section-desc" style={{ color: M, marginBottom: 20 }}>
-              Curated add-ons to make your experience even more special.
-            </p>
+            <div className="mob-section" style={{ background: BG }}>
+              <span className="mob-section-eyebrow" style={{ color: A }}>Enhance Your Experience</span>
+              <h2 className="mob-section-title" style={{ color: FG }}>Make it Yours</h2>
+              <p className="mob-section-desc" style={{ color: M, marginBottom: 20 }}>
+                Curated add-ons to make your experience even more special.
+              </p>
 
-            <div className="mob-addons-list">
-              {(event?.addons || []).map((item, i) => {
-                const addon = item.addon || item;
-                const addonId = addon.addonId || addon.id;
-                const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                const addonImg = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
-                const isSelected = selectedAddOns.find(a => (a.addonId || a.id) === addonId);
-                const price = addon.price || addon.addonPrice || addon.amount || 0;
-                const addonName = addon.title || addon.name || addon.addonName || `Add-on ${i + 1}`;
-                const isGroupAddon = pricingType === "Group";
+              <div className="mob-addons-list">
+                {(event?.addons || []).map((item, i) => {
+                  const addon = item.addon || item;
+                  const addonId = addon.addonId || addon.id;
+                  const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                  const addonImg = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                  const isSelected = selectedAddOns.find(a => (a.addonId || a.id) === addonId);
+                  const price = addon.price || addon.addonPrice || addon.amount || 0;
+                  const addonName = addon.title || addon.name || addon.addonName || `Add-on ${i + 1}`;
+                  const isGroupAddon = pricingType === "Group";
 
-                return (
-                  <div key={i} className="mob-addon-card" style={{ borderColor: isSelected ? A : B, background: theme === 'dark' ? "#111" : W }}>
-                    {addonImg && (
-                      <img
-                        className="mob-addon-img"
-                        src={formatImageUrl(addonImg)}
-                        alt={addonName}
-                        loading="lazy"
-                      />
-                    )}
-                    <div className="mob-addon-info">
-                      <p className="mob-addon-name" style={{ color: FG }}>{addonName}</p>
-                      <p className="mob-addon-price" style={{ color: A }}>
-                        ₹{Number(price).toLocaleString()}
-                        <span className="mob-addon-unit" style={{ color: M }}>
-                          /{isGroupAddon ? "group" : "person"}
-                        </span>
-                      </p>
-                    </div>
-                    {isSelected ? (
-                      isGroupAddon ? (
-                        <button className="mob-addon-btn" onClick={() => handleUpdateAddonQuantity(addon, -1)}
-                          style={{ borderColor: "#E53935", background: "transparent", color: "#E53935", minWidth: 72 }}>
-                          Remove
-                        </button>
-                      ) : (
-                        <div className="mob-addon-counter">
-                          <button onClick={() => handleUpdateAddonQuantity(addon, -1)}
-                            style={{ borderColor: A, background: "transparent", color: A }}>−</button>
-                          <span style={{ color: FG }}>{isSelected.quantity || 1}</span>
-                          <button onClick={() => handleUpdateAddonQuantity(addon, 1)}
-                            style={{ borderColor: A, background: "transparent", color: A }}>+</button>
-                        </div>
-                      )
-                    ) : (
-                      <button className="mob-addon-btn"
-                        onClick={() => handleUpdateAddonQuantity(addon, 1)}
-                        style={{ borderColor: A, background: "transparent", color: A, minWidth: 72 }}>
-                        Add
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {selectedAddOns.length > 0 && (
-              <div style={{ marginTop: 16, padding: "14px 16px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons Summary</p>
-                  <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((s, a) => s + (a.quantity || 1), 0)} items selected</p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 600, marginBottom: 2 }}>Subtotal</p>
-                  <p style={{ fontSize: 16, fontWeight: 700, color: A, margin: 0 }}>₹{selectedAddOns.reduce((s, a) => {
-                    const addonData = a.addon || a;
-                    const aPrice = addonData.price || addonData.addonPrice || addonData.amount || 0;
-                    return s + ((parseFloat(aPrice) || 0) * (a.quantity || 1));
-                  }, 0).toFixed(2)}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-        <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
-          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
-                  Enhance Your Experience
-                </span>
-                <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
-                  Make it Yours
-                </h3>
-                <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
-                  Curated add-ons to make your experience even more special.
-                </p>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => scrollAddonsSlider("left")}
-                    style={{
-                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      color: M, transition: "0.3s", outline: "none"
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollAddonsSlider("right")}
-                    style={{
-                      width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      color: M, transition: "0.3s", outline: "none"
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-                <div style={{ fontSize: "12px", fontFamily: '"Inter", sans-serif', fontWeight: 600, paddingRight: 4 }}>
-                  <span style={{ color: A }}>{Math.min(currentAddonIndex, Math.max(1, (event?.addons || []).length))}</span> <span style={{ color: M }}>/ {Math.max(1, (event?.addons || []).length)}</span>
-                </div>
-              </div>
-            </div>
-
-            {(() => {
-              const addonsList = event?.addons || [];
-              const showScroll = addonsList.length > 2;
-
-              return (
-                <div
-                  ref={addonsSliderRef}
-                  className={showScroll ? "no-scrollbar" : ""}
-                  onScroll={(e) => {
-                    if (!showScroll) return;
-                    const container = e.target;
-                    const stepSize = (container.clientWidth + 20) / 2;
-                    let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
-
-                    // If we have hit the far right boundary, show the maximum number
-                    if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
-                      newIndex = addonsList.length;
-                    } else {
-                      newIndex = Math.min(addonsList.length, newIndex);
-                    }
-
-                    if (newIndex !== currentAddonIndex) {
-                      setCurrentAddonIndex(newIndex);
-                    }
-                  }}
-                  style={showScroll ? {
-                    display: "flex",
-                    gap: "20px",
-                    overflowX: "auto",
-                    overflowY: "hidden",
-                    paddingBottom: "12px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                    scrollBehavior: "smooth",
-                    scrollSnapType: "x mandatory"
-                  } : {
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                    gap: "20px"
-                  }}
-                >
-                  {addonsList.length > 0 ? (addonsList.map((item, i) => {
-                    const addon = item.addon || item;
-                    const addonId = addon.addonId || addon.id;
-                    const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                    const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
-                    const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
-
-                    return (
-                      <motion.div
-                        key={i}
-                        className="addon-item"
-                        whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
-                        transition={{ duration: 0.2 }}
-                        style={{
-                          display: "flex",
-                          flexDirection: "row",
-                          minHeight: "115px",
-                          height: "auto",
-                          width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
-                          flexShrink: 0,
-                          background: W,
-                          borderRadius: "16px",
-                          border: `1px solid ${isSelected ? A : "transparent"}`,
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-                          transition: "box-shadow 0.3s, border-color 0.3s",
-                          overflow: "hidden",
-                          boxSizing: "border-box",
-                          scrollSnapAlign: "start"
-                        }}
-                      >
-                        {/* Left side: ONLY image */}
-                        <div style={{ width: "160px", flexShrink: 0, overflow: "hidden", background: W, position: "relative" }}>
-                          {addonImage ? (
-                            <img
-                              src={formatImageUrl(addonImage)}
-                              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-                              alt={addon.title}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/images/content/placeholder.jpg";
-                              }}
-                            />
-                          ) : (
-                            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: AL }}>
-                              <Plus size={24} color={A} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right side: Content info columns */}
-                        <div style={{ flex: 1, minWidth: 0, padding: "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", boxSizing: "border-box" }}>
-
-                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "6px", flex: 1, minWidth: 0, paddingRight: "16px" }}>
-                            <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
-                              {pricingType}
-                            </div>
-                            <h4 style={{ fontSize: 16, fontWeight: 400, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
-                              {addon.title}
-                            </h4>
-                            <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
-                              {addon.briefDescription || addon.description}
-                            </p>
+                  return (
+                    <div key={i} className="mob-addon-card" style={{ borderColor: isSelected ? A : B, background: theme === 'dark' ? "#111" : W }}>
+                      {addonImg && (
+                        <img
+                          className="mob-addon-img"
+                          src={formatImageUrl(addonImg)}
+                          alt={addonName}
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="mob-addon-info">
+                        <p className="mob-addon-name" style={{ color: FG }}>{addonName}</p>
+                        <p className="mob-addon-price" style={{ color: A }}>
+                          ₹{Number(price).toLocaleString()}
+                          <span className="mob-addon-unit" style={{ color: M }}>
+                            /{isGroupAddon ? "group" : "person"}
+                          </span>
+                        </p>
+                      </div>
+                      {isSelected ? (
+                        isGroupAddon ? (
+                          <button className="mob-addon-btn" onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                            style={{ borderColor: "#E53935", background: "transparent", color: "#E53935", minWidth: 72 }}>
+                            Remove
+                          </button>
+                        ) : (
+                          <div className="mob-addon-counter">
+                            <button onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                              style={{ borderColor: A, background: "transparent", color: A }}>−</button>
+                            <span style={{ color: FG }}>{isSelected.quantity || 1}</span>
+                            <button onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                              style={{ borderColor: A, background: "transparent", color: A }}>+</button>
                           </div>
+                        )
+                      ) : (
+                        <button className="mob-addon-btn"
+                          onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                          style={{ borderColor: A, background: "transparent", color: A, minWidth: 72 }}>
+                          Add
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
-                          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", minWidth: "90px" }}>
-                            <div style={{ fontSize: "16px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', marginBottom: "12px" }}>
-                              ₹{Number(addon.price || 0).toFixed(2)}
+              {selectedAddOns.length > 0 && (
+                <div style={{ marginTop: 16, padding: "14px 16px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons Summary</p>
+                    <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((s, a) => s + (a.quantity || 1), 0)} items selected</p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 600, marginBottom: 2 }}>Subtotal</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: A, margin: 0 }}>₹{selectedAddOns.reduce((s, a) => {
+                      const addonData = a.addon || a;
+                      const aPrice = addonData.price || addonData.addonPrice || addonData.amount || 0;
+                      return s + ((parseFloat(aPrice) || 0) * (a.quantity || 1));
+                    }, 0).toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
+              <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
+                      Enhance Your Experience
+                    </span>
+                    <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, margin: 0, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                      Make it Yours
+                    </h3>
+                    <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontFamily: '"Inter", sans-serif' }}>
+                      Curated add-ons to make your experience even more special.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => scrollAddonsSlider("left")}
+                        style={{
+                          width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                          color: M, transition: "0.3s", outline: "none"
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollAddonsSlider("right")}
+                        style={{
+                          width: 40, height: 40, borderRadius: "50%", border: `1px solid ${B}`, background: W,
+                          display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                          color: M, transition: "0.3s", outline: "none"
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                    <div style={{ fontSize: "12px", fontFamily: '"Inter", sans-serif', fontWeight: 600, paddingRight: 4 }}>
+                      <span style={{ color: A }}>{Math.min(currentAddonIndex, Math.max(1, (event?.addons || []).length))}</span> <span style={{ color: M }}>/ {Math.max(1, (event?.addons || []).length)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {(() => {
+                  const addonsList = event?.addons || [];
+                  const showScroll = addonsList.length > 2;
+
+                  return (
+                    <div
+                      ref={addonsSliderRef}
+                      className={showScroll ? "no-scrollbar" : ""}
+                      onScroll={(e) => {
+                        if (!showScroll) return;
+                        const container = e.target;
+                        const stepSize = (container.clientWidth + 20) / 2;
+                        let newIndex = Math.round(container.scrollLeft / stepSize) + 2;
+
+                        // If we have hit the far right boundary, show the maximum number
+                        if (Math.abs(container.scrollLeft + container.clientWidth - container.scrollWidth) <= 5) {
+                          newIndex = addonsList.length;
+                        } else {
+                          newIndex = Math.min(addonsList.length, newIndex);
+                        }
+
+                        if (newIndex !== currentAddonIndex) {
+                          setCurrentAddonIndex(newIndex);
+                        }
+                      }}
+                      style={showScroll ? {
+                        display: "flex",
+                        gap: "20px",
+                        overflowX: "auto",
+                        overflowY: "hidden",
+                        paddingBottom: "12px",
+                        width: "100%",
+                        boxSizing: "border-box",
+                        scrollBehavior: "smooth",
+                        scrollSnapType: "x mandatory"
+                      } : {
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                        gap: "20px"
+                      }}
+                    >
+                      {addonsList.length > 0 ? (addonsList.map((item, i) => {
+                        const addon = item.addon || item;
+                        const addonId = addon.addonId || addon.id;
+                        const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
+                        const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                        const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
+
+                        return (
+                          <motion.div
+                            key={i}
+                            className="addon-item"
+                            whileHover={{ y: -2, borderColor: A, boxShadow: "0 8px 20px rgba(0,0,0,0.03)" }}
+                            transition={{ duration: 0.2 }}
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              minHeight: "115px",
+                              height: "auto",
+                              width: showScroll ? "calc((100% - 20px) / 2)" : "100%",
+                              flexShrink: 0,
+                              background: W,
+                              borderRadius: "16px",
+                              border: `1px solid ${isSelected ? A : "transparent"}`,
+                              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                              transition: "box-shadow 0.3s, border-color 0.3s",
+                              overflow: "hidden",
+                              boxSizing: "border-box",
+                              scrollSnapAlign: "start"
+                            }}
+                          >
+                            {/* Left side: ONLY image */}
+                            <div style={{ width: "160px", flexShrink: 0, overflow: "hidden", background: W, position: "relative" }}>
+                              {addonImage ? (
+                                <img
+                                  src={formatImageUrl(addonImage)}
+                                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                                  alt={addon.title}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "/images/content/placeholder.jpg";
+                                  }}
+                                />
+                              ) : (
+                                <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: AL }}>
+                                  <Plus size={24} color={A} />
+                                </div>
+                              )}
                             </div>
 
-                            <div className="addon-actions" style={{ flexShrink: 0 }}>
-                              {isSelected ? (
-                                pricingType === "Group" ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdateAddonQuantity(addon, -1)}
-                                    style={{
-                                      background: `${A}15`,
-                                      color: A,
-                                      border: `1px solid ${A}50`,
-                                      borderRadius: 100,
-                                      padding: "6px 16px",
-                                      fontSize: 12,
-                                      fontWeight: 700,
-                                      cursor: "pointer",
-                                      textTransform: "uppercase",
-                                      transition: "all 0.2s",
-                                      outline: "none"
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
-                                  >
-                                    Remove
-                                  </button>
-                                ) : (
-                                  <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "4px 8px", border: `1px solid ${A}` }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateAddonQuantity(addon, -1)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
-                                    >
-                                      <Minus size={14} />
-                                    </button>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
-                                      {selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1}
-                                    </span>
+                            {/* Right side: Content info columns */}
+                            <div style={{ flex: 1, minWidth: 0, padding: "16px", display: "flex", flexDirection: "row", justifyContent: "space-between", boxSizing: "border-box" }}>
+
+                              <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: "6px", flex: 1, minWidth: 0, paddingRight: "16px" }}>
+                                <div style={{ border: `1px solid ${pricingType === "Group" ? "#EF4444" : "#00B4D8"}`, borderRadius: "4px", padding: "2px 6px", color: pricingType === "Group" ? "#EF4444" : "#00B4D8", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.05em" }}>
+                                  {pricingType}
+                                </div>
+                                <h4 style={{ fontSize: 16, fontWeight: 400, color: FG, margin: "4px 0 0 0", fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }}>
+                                  {addon.title}
+                                </h4>
+                                <p style={{ fontSize: "12px", color: M, margin: 0, fontFamily: '"Inter", sans-serif', display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.5" }}>
+                                  {addon.briefDescription || addon.description}
+                                </p>
+                              </div>
+
+                              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", minWidth: "90px" }}>
+                                <div style={{ fontSize: "16px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', marginBottom: "12px" }}>
+                                  ₹{Number(addon.price || 0).toFixed(2)}
+                                </div>
+
+                                <div className="addon-actions" style={{ flexShrink: 0 }}>
+                                  {isSelected ? (
+                                    pricingType === "Group" ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                        style={{
+                                          background: `${A}15`,
+                                          color: A,
+                                          border: `1px solid ${A}50`,
+                                          borderRadius: 100,
+                                          padding: "6px 16px",
+                                          fontSize: 12,
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                          textTransform: "uppercase",
+                                          transition: "all 0.2s",
+                                          outline: "none"
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = A; e.currentTarget.style.color = W; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = `${A}15`; e.currentTarget.style.color = A; }}
+                                      >
+                                        Remove
+                                      </button>
+                                    ) : (
+                                      <div className="addon-counter" style={{ display: "flex", alignItems: "center", gap: 10, background: W, borderRadius: 100, padding: "4px 8px", border: `1px solid ${A}` }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUpdateAddonQuantity(addon, -1)}
+                                          style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                        >
+                                          <Minus size={14} />
+                                        </button>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>
+                                          {selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUpdateAddonQuantity(addon, 1)}
+                                          style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                        >
+                                          <Plus size={14} />
+                                        </button>
+                                      </div>
+                                    )
+                                  ) : (
                                     <button
                                       type="button"
                                       onClick={() => handleUpdateAddonQuantity(addon, 1)}
-                                      style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 2, color: A, outline: "none" }}
+                                      style={{
+                                        background: "#007B8F",
+                                        color: "#FFFFFF",
+                                        border: "none",
+                                        borderRadius: "100px",
+                                        padding: "6px 20px",
+                                        fontSize: "12px",
+                                        fontWeight: 700,
+                                        fontFamily: '"Inter", sans-serif',
+                                        cursor: "pointer",
+                                        outline: "none"
+                                      }}
                                     >
-                                      <Plus size={14} />
+                                      Add
                                     </button>
-                                  </div>
-                                )
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateAddonQuantity(addon, 1)}
-                                  style={{
-                                    background: "#007B8F",
-                                    color: "#FFFFFF",
-                                    border: "none",
-                                    borderRadius: "100px",
-                                    padding: "6px 20px",
-                                    fontSize: "12px",
-                                    fontWeight: 700,
-                                    fontFamily: '"Inter", sans-serif',
-                                    cursor: "pointer",
-                                    outline: "none"
-                                  }}
-                                >
-                                  Add
-                                </button>
-                              )}
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })) : (
-                    <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this event.</p>
-                  )}
-                </div>
-              );
-            })()}
+                          </motion.div>
+                        );
+                      })) : (
+                        <p style={{ color: M, fontSize: 14 }}>No special add-ons included for this event.</p>
+                      )}
+                    </div>
+                  );
+                })()}
 
-            {selectedAddOns.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ marginTop: 24, padding: "16px 20px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
-              >
-                <div>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons Summary</p>
-                  <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 600, marginBottom: 2 }}>Subtotal</p>
-                  <p style={{ fontSize: 16, fontWeight: 700, color: A, margin: 0 }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </section>
-        ))}
+                {selectedAddOns.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ marginTop: 24, padding: "16px 20px", background: AL, borderRadius: 12, border: `1px solid ${A}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                  >
+                    <div>
+                      <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: A, fontWeight: 600, marginBottom: 2 }}>Add-ons Summary</p>
+                      <p style={{ fontSize: 12, color: M, fontWeight: 500, margin: 0 }}>{selectedAddOns.reduce((sum, a) => sum + (a.quantity || 1), 0)} items selected</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: M, fontWeight: 600, marginBottom: 2 }}>Subtotal</p>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: A, margin: 0 }}>₹{selectedAddOns.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0).toFixed(2)}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </section>
+          ))}
 
         <Venue event={event} hostName={hostName} />
         <Rules event={event} />

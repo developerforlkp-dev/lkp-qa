@@ -126,10 +126,10 @@ const E = [0.22, 1, 0.36, 1];
 
 const ScopedStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Italianno&family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Poppins:wght@400;500;600;700;800&display=swap');
 
       .place-details-premium {
-      font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
+      font-family: 'DM Sans', sans-serif;
       overflow-x: hidden;
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
@@ -162,8 +162,8 @@ const ScopedStyles = () => (
       100% { transform: translate3d(0, 0, 0); }
     }
     
-    .place-details-premium .font-display { font-family: 'Fraunces', var(--font-fraunces), Georgia, serif; }
-    .place-details-premium .font-cursive { font-family: 'Italianno', cursive; }
+    .place-details-premium .font-display { font-family: 'Poppins', sans-serif; }
+    .place-details-premium .font-cursive { font-family: 'Poppins', sans-serif; }
     .place-details-premium .mq-l { display: flex; white-space: nowrap; animation: marquee-l 30s linear infinite; }
     .place-details-premium .mq-r { display: flex; white-space: nowrap; animation: marquee-r 34s linear infinite; }
     
@@ -885,11 +885,9 @@ function PlaceHero({ place, galleryItems, id }) {
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: 16,
               height: "100%",
               width: "100%",
               overflowX: "auto",
-              scrollBehavior: "smooth",
               padding: "0 8px"
             }}
           >
@@ -903,22 +901,28 @@ function PlaceHero({ place, galleryItems, id }) {
                   key={uniqueKey}
                   onMouseEnter={() => setHoveredImage(uniqueKey)}
                   onMouseLeave={() => setHoveredImage(null)}
-                  onClick={() => openLightbox(i % baseItems.length)}
                   style={{
-                    position: "relative",
-                    height: "100%",
-                    width: isHovered ? 480 : 160,
-                    borderRadius: 24,
-                    overflow: "hidden",
-                    border: `1px solid ${B}`,
-                    boxShadow: isHovered
-                      ? "0 40px 80px -20px rgba(0,0,0,0.2)"
-                      : "0 20px 40px -15px rgba(0,0,0,0.05)",
-                    cursor: "pointer",
                     flexShrink: 0,
-                    transition: "width 0.5s cubic-bezier(0.25, 1, 0.5, 1)"
+                    paddingRight: 16,
+                    height: "100%",
                   }}
                 >
+                  <div
+                    onClick={() => openLightbox(i % baseItems.length)}
+                    style={{
+                      position: "relative",
+                      height: "100%",
+                      width: isHovered ? 480 : 160,
+                      borderRadius: 24,
+                      overflow: "hidden",
+                      border: `1px solid ${B}`,
+                      boxShadow: isHovered
+                        ? "0 40px 80px -20px rgba(0,0,0,0.2)"
+                        : "0 20px 40px -15px rgba(0,0,0,0.05)",
+                      cursor: "pointer",
+                      transition: "width 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s cubic-bezier(0.25, 1, 0.5, 1)"
+                    }}
+                  >
                   <motion.img
                     src={img}
                     animate={{
@@ -942,6 +946,7 @@ function PlaceHero({ place, galleryItems, id }) {
                     transition: "opacity 0.4s",
                     pointerEvents: "none"
                   }} />
+                  </div>
                 </div>
               );
             })}
@@ -1231,6 +1236,56 @@ function Logistics({ place, hostData }) {
   );
 }
 
+const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImages, setSelectedImages, setPhotoIndex, setPhotoVisible }) => {
+  const [expanded, setExpanded] = useState(false);
+  const text = s.desc || s.description || s.briefDescription || "";
+  const isLong = text.length > 120;
+  const displayText = expanded ? text : (isLong ? text.slice(0, 120) + "..." : text);
+
+  return (
+    <div style={{ flex: "0 0 calc(33.333% - 21.33px)", minWidth: 300, scrollSnapAlign: "start", height: "auto", display: "flex" }}>
+      <Soul delay={i * 0.15} y={80} r={i % 2 === 0 ? 3 : -3} style={{ width: "100%", height: "100%", display: "flex" }}>
+        <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.4 }} style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: "32px 32px 48px", width: "100%", height: "100%", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <span className="font-display" style={{ position: "absolute", top: -10, right: 10, fontSize: "clamp(5rem, 8vw, 10rem)", fontWeight: 800, color: A, opacity: 0.04, pointerEvents: "none" }}>{i + 1}</span>
+          {getItineraryImageUrl(s) && (
+            <div 
+              className="itinerary-image-wrapper"
+              style={{ margin: "-32px -32px 24px -32px", height: 200, overflow: "hidden", cursor: "pointer", position: "relative", flexShrink: 0 }}
+              onClick={() => {
+                const imgs = getItineraryImages(s);
+                setSelectedImages(imgs);
+                setPhotoIndex(0);
+                setPhotoVisible(true);
+              }}
+            >
+              <img className="itinerary-img" src={getItineraryImageUrl(s)} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease" }} />
+              <div className="gallery-pill" style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)", opacity: 0, transition: "opacity 0.3s ease" }}>
+                <Camera size={12} /> GALLERY
+              </div>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, marginTop: getItineraryImageUrl(s) ? 0 : 24, flexShrink: 0 }}>
+            <div style={{ width: 8, height: 8, background: A }} />
+            <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
+          </div>
+          <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 20, flexShrink: 0 }}>{s.title || s.name}</h3>
+          <p style={{ fontSize: 14, color: M, lineHeight: 1.85, flexGrow: 1, margin: 0, whiteSpace: "pre-line" }}>
+            {displayText}
+            {isLong && (
+              <span 
+                onClick={() => setExpanded(!expanded)} 
+                style={{ color: A, cursor: "pointer", fontWeight: 600, marginLeft: 8 }}
+              >
+                {expanded ? "Read Less" : "Read More"}
+              </span>
+            )}
+          </p>
+        </motion.div>
+      </Soul>
+    </div>
+  );
+};
+
 function Itinerary({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
   const [photoVisible, setPhotoVisible] = useState(false);
@@ -1282,36 +1337,21 @@ function Itinerary({ place }) {
             }}
           >
             {steps.map((s, i) => (
-              <div key={i} style={{ flex: "0 0 calc(33.333% - 21.33px)", minWidth: 300, scrollSnapAlign: "start" }}>
-                <Soul delay={i * 0.15} y={80} r={i % 2 === 0 ? 3 : -3}>
-                  <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.4 }} style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: "32px 32px 48px", height: "100%", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                    <span className="font-display" style={{ position: "absolute", top: -10, right: 10, fontSize: "clamp(5rem, 8vw, 10rem)", fontWeight: 800, color: A, opacity: 0.04, pointerEvents: "none" }}>{i + 1}</span>
-                    {getItineraryImageUrl(s) && (
-                      <div 
-                        className="itinerary-image-wrapper"
-                        style={{ margin: "-32px -32px 24px -32px", height: 200, overflow: "hidden", cursor: "pointer", position: "relative" }}
-                        onClick={() => {
-                          const imgs = getItineraryImages(s);
-                          setSelectedImages(imgs);
-                          setPhotoIndex(0);
-                          setPhotoVisible(true);
-                        }}
-                      >
-                        <img className="itinerary-img" src={getItineraryImageUrl(s)} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease" }} />
-                        <div className="gallery-pill" style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)", opacity: 0, transition: "opacity 0.3s ease" }}>
-                          <Camera size={12} /> GALLERY
-                        </div>
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, marginTop: getItineraryImageUrl(s) ? 0 : 24 }}>
-                      <div style={{ width: 8, height: 8, background: A }} />
-                      <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
-                    </div>
-                    <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 20 }}>{s.title || s.name}</h3>
-                    <p style={{ fontSize: 14, color: M, lineHeight: 1.85 }}>{s.desc || s.description || s.briefDescription}</p>
-                  </motion.div>
-                </Soul>
-              </div>
+              <StepCard 
+                key={i} 
+                s={s} 
+                i={i} 
+                A={A} 
+                W={W} 
+                B={B} 
+                FG={FG} 
+                M={M} 
+                getItineraryImageUrl={getItineraryImageUrl} 
+                getItineraryImages={getItineraryImages} 
+                setSelectedImages={setSelectedImages} 
+                setPhotoIndex={setPhotoIndex} 
+                setPhotoVisible={setPhotoVisible} 
+              />
             ))}
           </div>
         </div>
