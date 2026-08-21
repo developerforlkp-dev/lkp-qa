@@ -104,11 +104,13 @@ const getBillingConfigDiscountRate = (listing) => {
   const discounts =
     listing?.billingConfig?.discounts ||
     listing?.billing_config?.discounts ||
+    listing?.discounts ||
     [];
   if (!Array.isArray(discounts) || discounts.length === 0) return 0;
 
   const totalRate = discounts.reduce((sum, discount) => {
-    const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+    if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
+    const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
     return sum + (Number.isFinite(rate) ? rate : 0);
   }, 0);
 

@@ -246,31 +246,34 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
   const customerObj =
     (apiBooking && typeof apiBooking === "object" &&
-      (apiBooking.customer ||
-        apiBooking.customerDetails ||
-        apiBooking.guest ||
+      (apiBooking.primaryGuest ||
         apiBooking.guestDetails ||
-        apiBooking.user ||
+        apiBooking.guest ||
+        apiBooking.bookingGuest ||
+        apiBooking.customerDetails ||
+        apiBooking.customer ||
         apiBooking.userDetails ||
+        apiBooking.user ||
         apiBooking.contact)) ||
     null;
 
-  // Use profile data if it belongs to the same customer to ensure sync
+  // Use profile data if it belongs to the same customer to ensure sync, but only as a fallback
   const useProfileInfo = profileData &&
     (profileData.customerId === apiBooking.customerId ||
       profileData.customerId === apiBooking.customer?.customerId ||
       !apiBooking.customerId); // Fallback if customerId is missing in booking but it's the user's booking
 
   const customerName = pickText(
+    apiBooking?.primaryGuestName,
+    apiBooking?.guestName,
     [customerObj?.firstName, customerObj?.lastName].filter(Boolean).join(" "),
     customerObj?.name,
     customerObj?.fullName,
-    customerObj?.customerName,
     customerObj?.guestName,
+    customerObj?.customerName,
     [apiBooking?.firstName, apiBooking?.lastName].filter(Boolean).join(" "),
     apiBooking?.customerName,
     apiBooking?.customerFullName,
-    apiBooking?.guestName,
     apiBooking?.userName,
     apiBooking?.fullName,
     apiBooking?.name,
@@ -280,31 +283,35 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   const formattedCustomerName = formatPersonName(customerName);
 
   const customerPhone = pickText(
+    apiBooking?.primaryGuestPhone,
+    apiBooking?.guestPhone,
     customerObj?.mobileNumber,
     customerObj?.mobile,
     customerObj?.phone,
     customerObj?.phoneNumber,
     customerObj?.contactNumber,
-    apiBooking?.customerPhone,
     apiBooking?.phoneNumber,
     apiBooking?.phone,
     apiBooking?.mobile,
     apiBooking?.mobileNumber,
     apiBooking?.contactNumber,
+    apiBooking?.customerPhone,
     apiBooking?.customerMobile,
     useProfileInfo ? (profileData.phone || profileData.mobile || "") : null
   );
 
   const customerEmail = pickText(
+    apiBooking?.primaryGuestEmail,
+    apiBooking?.guestEmail,
     customerObj?.email,
     customerObj?.emailId,
     customerObj?.emailAddress,
     customerObj?.mailId,
-    apiBooking?.customerEmail,
     apiBooking?.email,
     apiBooking?.emailId,
     apiBooking?.emailAddress,
     apiBooking?.mailId,
+    apiBooking?.customerEmail,
     useProfileInfo ? (profileData.email || "") : null
   );
   // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
@@ -410,8 +417,18 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   // already passed, show the booking in Completed instead for consistency with Bookings list.
   // Note: "Pending" bookings remain Pending even after expiry so they don't incorrectly show as Completed.
   if (status === "Confirmed") {
+    const stayRooms = Array.isArray(apiBooking?.stayOrderRooms) ? apiBooking.stayOrderRooms : [];
+    const roomCheckOutDates = stayRooms
+      .map((room) => room?.checkOutDate || room?.checkoutDate || room?.check_out_date)
+      .filter(Boolean);
+    const roomCheckOutTimes = stayRooms
+      .map((room) => room?.checkOutTime || room?.checkoutTime || room?.check_out_time)
+      .filter(Boolean);
+
     const bookingDateStr =
+      roomCheckOutDates[0] ||
       apiBooking.checkOutDate ||
+      apiBooking.checkoutDate ||
       apiBooking.checkInDate ||
       apiBooking.bookingDate ||
       apiBooking.eventDate ||
@@ -420,7 +437,13 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
 
     if (bookingDateStr) {
       const deadline = new Date(bookingDateStr);
-      const endTimeStr = apiBooking.timeSlotEndTime || apiBooking.checkOutTime || apiBooking.endTime || apiBooking.bookingTime;
+      const endTimeStr = 
+        roomCheckOutTimes[0] || 
+        apiBooking.timeSlotEndTime || 
+        apiBooking.checkOutTime || 
+        apiBooking.checkoutTime || 
+        apiBooking.endTime || 
+        apiBooking.bookingTime;
 
       if (endTimeStr && typeof endTimeStr === 'string' && endTimeStr.includes(':')) {
         const parts = endTimeStr.split(':').map(Number);
@@ -1333,7 +1356,16 @@ const ViewDetails = () => {
 
     if (!isStayOrder) return true; // If not a stay, we don't restrict by stay rules
 
+    const stayRooms = Array.isArray(booking?.originalData?.stayOrderRooms) ? booking.originalData.stayOrderRooms : [];
+    const roomCheckOutDates = stayRooms
+      .map((room) => room?.checkOutDate || room?.checkoutDate || room?.check_out_date)
+      .filter(Boolean);
+    const roomCheckOutTimes = stayRooms
+      .map((room) => room?.checkOutTime || room?.checkoutTime || room?.check_out_time)
+      .filter(Boolean);
+
     const checkOutDateStr =
+      roomCheckOutDates[0] ||
       booking?.originalData?.checkOutDate ||
       booking?.originalData?.endDate ||
       booking?.stayData?.checkOutDate;
@@ -1343,6 +1375,7 @@ const ViewDetails = () => {
     const checkOutDatetime = new Date(checkOutDateStr);
 
     const checkOutTimeStr =
+      roomCheckOutTimes[0] ||
       booking?.originalData?.checkOutTime ||
       booking?.originalData?.endTime ||
       booking?.stayData?.checkOutTime ||

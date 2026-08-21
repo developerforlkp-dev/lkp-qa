@@ -874,7 +874,7 @@ const Checkout = () => {
             ),
             fallbackRate: computedDiscountRate,
           });
-          const rateLabel = discountRate > 0 ? ` (${discountRate.toFixed(2)}%)` : "";
+          const rateLabel = discountRate > 0 ? ` (${Math.round(discountRate)}%)` : "";
           rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(remainingDiscount)}` });
         }
 
@@ -888,7 +888,7 @@ const Checkout = () => {
             ),
             fallbackRate: computedEarlyBirdRate,
           });
-          const ebRateLabel = ebRate > 0 ? ` (${ebRate.toFixed(2)}%)` : "";
+          const ebRateLabel = ebRate > 0 ? ` (${Math.round(ebRate)}%)` : "";
           rows.push({ title: `Early Bird Discount${ebRateLabel}`, value: `- ${fmt(earlyBirdToDisplay)}` });
         }
       }

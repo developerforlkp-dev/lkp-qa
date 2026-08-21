@@ -230,9 +230,6 @@ const GuestPicker = ({
               </div>
             )}
           </div>
-          <button type="button" className={styles.closeButton} onClick={onClose}>
-            Close
-          </button>
         </div>
       </div>
     </OutsideClickHandler>

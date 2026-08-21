@@ -479,7 +479,7 @@
   margin-top: 0.5rem !important
 
 .customModalOuter
-  max-width: 700px !important
+  max-width: 650px !important
   
   & > div
     padding: 0 !important
@@ -489,19 +489,13 @@
 .contactModalContainer
   padding: 2.5rem
   text-align: left
-  max-width: 650px
   width: 100%
   max-height: 85vh
   overflow-y: auto
-  background: #ffffff
-  +dark
-    background: #141416
-    border: 1px solid #353945
   &::-webkit-scrollbar
     display: none
   @media (max-width: 640px)
     padding: 1.5rem
-    max-width: 100%
 
 .contactModalHeader
   display: flex
@@ -554,22 +548,21 @@
   gap: 1.25rem
 
 .contactCard
-  border: 1px solid #f1f5f9
-  border-left-width: 6px
-  padding: 1.25rem 1.5rem
-  border-radius: 16px
+  border: 1px solid rgba(0, 0, 0, 0.05)
+  padding: 1.5rem
+  border-radius: 20px
   overflow: hidden
   background-color: #ffffff
   +dark
-    background-color: #23262F
-    border-color: #353945
-  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05)
-  transition: transform 0.2s, box-shadow 0.2s
+    background-color: #1e2128
+    border-color: rgba(255, 255, 255, 0.05)
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05)
+  transition: all 0.3s ease
   &:hover
-    transform: translateY(-2px)
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08)
+    transform: translateY(-3px)
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.1)
   @media (max-width: 640px)
-    padding: 1rem
+    padding: 1.25rem
 
 .contactCardTop
   display: flex

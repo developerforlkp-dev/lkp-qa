@@ -18,6 +18,7 @@ import Favorite from "../../../components/Favorite";
 import Icon from "../../../components/Icon";
 import FullScreenImage from "../../../components/FullScreenImage";
 import PolicyCategoryItem from "../../../components/PolicyCategoryItem";
+import CuratedContent from "../../../components/CuratedContent";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -698,9 +699,9 @@ const HighlightCard = ({ children, A, B, FG, M, W, theme }) => {
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       style={{
         background: hovered
-          ? (theme === "dark" ? "rgba(255,255,255,0.06)" : "#FFFFFF")
-          : (theme === "dark" ? "linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 100%)" : "linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%)"),
-        border: `1px solid ${hovered ? A : B}`,
+          ? (theme === "dark" ? "linear-gradient(135deg, rgba(30,41,59,0.7) 0%, rgba(30,41,59,0.9) 100%)" : "#FFFFFF")
+          : (theme === "dark" ? "linear-gradient(135deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.8) 100%)" : "linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%)"),
+        border: theme === "dark" ? `1px solid ${hovered ? A : 'rgba(255,255,255,0.15)'}` : `1px solid ${hovered ? A : B}`,
         borderRadius: "24px",
         padding: "24px 28px",
         backdropFilter: "blur(20px)",
@@ -945,6 +946,16 @@ function MobileHero({ event, heroRef }) {
         </div>
       </div>
 
+      {/* Title */}
+      <div style={{ position: "relative", zIndex: 10, marginBottom: 16 }}>
+        <h1 style={{ fontSize: 38, fontWeight: 700, color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', lineHeight: 1.1, margin: 0 }}>
+          {words.join(' ')}{' '}
+          <span style={{ fontStyle: "italic", color: A, WebkitTextFillColor: A }}>
+            {lastWord}
+          </span>
+        </h1>
+      </div>
+
       {/* Early Bird Badge (Mobile) */}
       {event?.earlyBirdDiscounts?.some(d => d.isActive) && (
         <div style={{
@@ -959,7 +970,7 @@ function MobileHero({ event, heroRef }) {
           padding: "6px 14px",
           borderRadius: "100px",
           border: theme === "dark" ? "1px solid rgba(255, 255, 255, 0.2)" : `1px solid ${B}`,
-          marginBottom: 12,
+          marginBottom: 16,
           alignSelf: "flex-start",
           boxShadow: theme === "dark" ? "none" : "0 4px 12px rgba(0,0,0,0.1)"
         }}>
@@ -967,16 +978,6 @@ function MobileHero({ event, heroRef }) {
           <EarlyBirdTicker discounts={event.earlyBirdDiscounts.filter(d => d.isActive).sort((a, b) => b.percentage - a.percentage)} A={A} FG={FG} isDark={theme === "dark"} />
         </div>
       )}
-
-      {/* Title */}
-      <div style={{ position: "relative", zIndex: 10, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 38, fontWeight: 700, color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', lineHeight: 1.1, margin: 0 }}>
-          {words.join(' ')}{' '}
-          <span style={{ fontStyle: "italic", color: A, WebkitTextFillColor: A }}>
-            {lastWord}
-          </span>
-        </h1>
-      </div>
 
       {/* Floating Cards Container */}
       <div style={{
@@ -1179,8 +1180,8 @@ function Hero({ event, heroRef }) {
               position: "absolute",
               inset: 0,
               background: theme === "dark" 
-                ? "linear-gradient(to right, rgba(15,23,42,0.1) 0%, rgba(15,23,42,0.6) 70%, rgba(15,23,42,0.9) 100%)" 
-                : "linear-gradient(to right, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.6) 70%, rgba(255,255,255,0.9) 100%)"
+                ? "linear-gradient(to right, rgba(15,23,42,0.05) 0%, rgba(15,23,42,0.2) 70%, rgba(15,23,42,0.4) 100%)" 
+                : "linear-gradient(to right, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.2) 70%, rgba(255,255,255,0.4) 100%)"
             }} />
           </motion.div>
         )}
@@ -1191,7 +1192,7 @@ function Hero({ event, heroRef }) {
         <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.25, 0.4, 0.25] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-15%", left: "30%", width: 900, height: 900, borderRadius: "50%", background: `radial-gradient(circle, ${A}15 0%, transparent 60%)` }} />
         <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }} style={{ position: "absolute", bottom: "-10%", right: "10%", width: 700, height: 700, borderRadius: "50%", background: `radial-gradient(circle, ${A}10 0%, transparent 60%)` }} />
         <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}06 1px, transparent 1px), linear-gradient(90deg, ${A}06 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 30%, ${W} 100%)` }} />
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 60%, ${W}99 100%)` }} />
       </motion.div>
 
       {/* Controls: Back & Share */}
@@ -1994,6 +1995,50 @@ function Artists({ event }) {
   );
 }
 
+const ExpandableInstructionText = ({ text, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 180;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, width: "100%" }}>
+      <p style={{
+        fontSize: 16, color: FG, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif',
+        overflow: "hidden",
+        display: expanded ? "block" : "-webkit-box",
+        WebkitLineClamp: expanded ? "unset" : 3,
+        WebkitBoxOrient: "vertical",
+        fontWeight: 400,
+        wordBreak: "break-word",
+        whiteSpace: "pre-wrap"
+      }}>
+        {text}
+      </p>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{
+            background: "none",
+            border: "none",
+            padding: "8px 0 0 0",
+            color: A,
+            fontSize: "12px",
+            fontWeight: 700,
+            fontFamily: '"Inter", sans-serif',
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            outline: "none"
+          }}
+        >
+          {expanded ? "Read Less" : "Read More"} <span style={{ fontSize: "14px", marginLeft: "4px" }}>&rarr;</span>
+        </button>
+      )}
+    </div>
+  );
+};
+
 function Venue({ event, hostName }) {
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const isMobile = useMobileView();
@@ -2141,23 +2186,13 @@ function Venue({ event, hostName }) {
                     </li>
                   )}
                   {venueInstructions && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState && !venueCountry) ? `1px solid ${B}` : "none" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!venueAddress && !venueLandmark && !venueDistrict && !venueState && !venueCountry) ? `1px solid ${B}` : "none" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Info size={20} color={A} fill="transparent" />
                       </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif', marginTop: 12 }}>Instructions</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', marginTop: 10 }}>
-                          {(!instructionsExpanded && venueInstructions.length > 80) ? venueInstructions.slice(0, 80) + "..." : venueInstructions}
-                          {venueInstructions.length > 80 && (
-                            <button
-                              onClick={() => setInstructionsExpanded(!instructionsExpanded)}
-                              style={{ background: "transparent", border: "none", color: A, fontSize: 16, fontWeight: 700, padding: 0, marginLeft: 8, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif' }}
-                            >
-                              {instructionsExpanded ? "Read Less" : "Read More"}
-                            </button>
-                          )}
-                        </span>
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                        <ExpandableInstructionText text={venueInstructions} FG={FG} A={A} />
                       </div>
                     </li>
                   )}
@@ -2328,23 +2363,30 @@ function Rules({ event }) {
     // Parse experienceRules or eventRules from the API
     const rules = event?.experienceRules || event?.eventRules;
     if (rules) {
+      const questionsList = [];
       if (Array.isArray(rules)) {
-        rules.forEach((rule, i) => {
+        rules.forEach((rule) => {
           if (typeof rule === "string") {
-            experienceRuleItems.push({ id: `exp-rule-${i}`, title: null, body: rule });
+            questionsList.push({ title: rule });
           } else if (rule && typeof rule === "object") {
-            experienceRuleItems.push({
-              id: `exp-rule-${i}`,
-              title: rule.title || rule.name || rule.label || null,
-              body: rule.description || rule.body || rule.text || rule.value || rule.rule || (typeof rule === "string" ? rule : null)
-            });
+            const title = rule.title || rule.name || rule.label || null;
+            const body = rule.description || rule.body || rule.text || rule.value || rule.rule || (typeof rule === "string" ? rule : null);
+            if (title && title !== body) {
+              questionsList.push({ title, valueText: body });
+            } else {
+              questionsList.push({ title: title || body });
+            }
           }
         });
       } else if (typeof rules === "string" && rules.trim()) {
         const lines = rules.split('\n').map(l => l.trim()).filter(Boolean);
-        lines.forEach((line, i) => {
-          experienceRuleItems.push({ id: `exp-rule-${i}`, title: null, body: line });
+        lines.forEach((line) => {
+          questionsList.push({ title: line });
         });
+      }
+
+      if (questionsList.length > 0) {
+        experienceRuleItems.push({ id: 'exp-all', title: null, questions: questionsList });
       }
     }
 
@@ -2945,11 +2987,9 @@ function EventReviews({ reviews = [] }) {
   }, [reviews]);
 
   const hasReviews = normalizedReviews.length > 0;
-  const displayReviews = hasReviews ? normalizedReviews : [
-    { customerName: "Aarav Sharma", comment: "An absolutely incredible experience. The host was warm, accommodating, and the attention to detail was unmatched.", rating: 5 },
-    { customerName: "Priya Patel", comment: "Highly curated trails, breathtaking views, and wonderful local insights. Can't wait to book this again!", rating: 5 },
-    { customerName: "Vikram Malhotra", comment: "Top tier service! The scheduling was seamless and the guides were exceptionally knowledgeable.", rating: 5 }
-  ];
+  const displayReviews = normalizedReviews;
+
+  if (displayReviews.length === 0) return null;
 
   if (isMobile && displayReviews.length > 0) {
     return (
@@ -4107,6 +4147,7 @@ export default function EventDetails() {
             </section>
           ))}
 
+        <CuratedContent curatedContent={event?.curatedContent} />
         <Venue event={event} hostName={hostName} />
         <Rules event={event} />
         <HostDetails event={event} hostName={hostName} />

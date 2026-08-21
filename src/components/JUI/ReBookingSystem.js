@@ -2294,13 +2294,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       ?? baseExperiencePrice)
     : baseExperiencePrice;
 
-  // Group pricing: override rawExperiencePrice if guest count matches a tier
-  const groupPricingRules = !isEventBooking
+  // Group pricing: override rawExperiencePrice if guest count matches a tier (not applicable for private bookings)
+  const groupPricingRules = !isEventBooking && !privateBooking
     ? (selectedSlotData?.group_booking_pricing || selectedSlotData?.groupBookingPricing || [])
     : [];
-  const groupOverridePrice = getGroupPricingTierPrice(groupPricingRules, billableAdults);
+  const groupOverridePrice = !privateBooking ? getGroupPricingTierPrice(groupPricingRules, billableAdults) : null;
   // Effective raw base price: group tier wins when matched, else use slot/listing price
-  const effectiveRawPrice = (groupOverridePrice != null && groupOverridePrice > 0)
+  const effectiveRawPrice = (!privateBooking && groupOverridePrice != null && groupOverridePrice > 0)
     ? groupOverridePrice
     : rawExperiencePrice;
 
@@ -4117,16 +4117,27 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   }}
                                   style={{
                                     padding: "10px 14px",
-                                    background: BG,
+                                    background: isSingleEventSchedule ? `linear-gradient(135deg, ${BG} 0%, ${B}33 100%)` : BG,
                                     borderRadius: 16,
-                                    border: `1px solid ${validationErrors.date ? E : B}`,
+                                    border: isSingleEventSchedule ? `1px solid ${B}66` : `1px solid ${validationErrors.date ? E : B}`,
                                     cursor: isSingleEventSchedule ? "default" : "pointer",
-                                    transition: "0.2s",
-                                    opacity: isSingleEventSchedule ? 0.85 : 1,
+                                    transition: "0.3s",
+                                    boxShadow: isSingleEventSchedule ? "inset 0 2px 8px rgba(0,0,0,0.02)" : "none",
                                   }}
                                 >
-                                  <p style={{ fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Date</p>
-                                  <p style={{ fontSize: 13, fontWeight: 700, color: startDate ? FG : M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{startDate ? startDate.format("DD MMM, YYYY") : "Select"}</p>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                    <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 4 }}>
+                                      <Calendar size={12} strokeWidth={2.5} />
+                                      Date
+                                    </p>
+                                    {isSingleEventSchedule && (
+                                      <div style={{ display: "flex", alignItems: "center", gap: 3, background: `${A}11`, padding: "2px 6px", borderRadius: 100 }}>
+                                        <CheckCircle2 size={10} color={A} strokeWidth={3} />
+                                        <span style={{ fontSize: 9, fontWeight: 800, color: A, letterSpacing: "0.05em" }}>CONFIRMED</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: startDate ? FG : M, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{startDate ? startDate.format("DD MMM, YYYY") : "Select"}</p>
                                 </div>
                                 <div
                                   title={!startDate ? "Select date first" : undefined}
@@ -4650,14 +4661,28 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               )}
 
                               {childrenAllowed && guests.children > 0 && (
-                                <div ref={childrenDetailsRef} style={{ flex: "1 1 100%", padding: "12px 16px", background: "transparent", border: `1px solid ${B}55`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                                <div ref={childrenDetailsRef} style={{ flex: "1 1 100%", padding: "16px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                     <div style={{ color: A }}>
                                       <Baby size={20} color={A} />
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                      <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Children details</span>
-                                      <span style={{ fontSize: 11, fontWeight: 400, color: M }}>Please select the age for each child.</span>
+                                      <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>
+                                        {(isEventBooking && eventChildPricingTiers.length > 0) || hasChildAgeRange ? "Extra child age" : "Children details"}
+                                      </span>
+                                      <span style={{ fontSize: 11, fontWeight: 400, color: M }}>
+                                        {(() => {
+                                          if (isEventBooking && eventChildPricingTiers.length > 0) {
+                                            const minAge = Math.min(...eventChildPricingTiers.map(t => t.ageFrom ?? t.age_from ?? 0));
+                                            const maxAge = Math.max(...eventChildPricingTiers.map(t => t.ageTo ?? t.age_to ?? 100));
+                                            return `Ages ${minAge}–${maxAge} use extra child rate. Ages below ${minAge} are free.`;
+                                          }
+                                          if (hasChildAgeRange) {
+                                            return `Ages ${childAgeFrom}–${childAgeTo} use extra child rate. Ages below ${childAgeFrom} are free.`;
+                                          }
+                                          return "Please select the age for each child.";
+                                        })()}
+                                      </span>
                                     </div>
                                   </div>
 
@@ -4667,10 +4692,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                     </div>
                                   )}
 
-                                  <div className="child-age-grid">
+                                  <div className="child-age-grid" style={{ display: "grid", gridTemplateColumns: guests.children === 1 ? "1fr" : "1fr 1fr", gap: 12, marginTop: 12 }}>
                                     {Array.from({ length: guests.children }).map((_, i) => (
                                       <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", gap: 4, borderBottom: i < guests.children - 1 ? `1px solid ${B}44` : 'none' }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", gap: 4, background: `${B}22`, border: `1px solid ${B}66`, borderRadius: 12 }}>
                                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                                             <div style={{ width: 6, height: 6, borderRadius: "50%", background: A, flexShrink: 0 }}></div>
                                             <span style={{ fontSize: 13, fontWeight: 500, color: FG, whiteSpace: "nowrap" }}>Child {i + 1}</span>
@@ -4741,7 +4766,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
                             {/* Dynamic Pricing Modifier Labels */}
                             {(() => {
-                              const isGroupBookingApplied = (!isEventBooking && groupOverridePrice != null && groupOverridePrice > 0) || (isEventBooking && effectiveEventPrice?.tier);
+                              const isGroupBookingApplied = !privateBooking && ((!isEventBooking && groupOverridePrice != null && groupOverridePrice > 0) || (isEventBooking && effectiveEventPrice?.tier));
                               const isAddonsApplied = selectedAddOns && selectedAddOns.length > 0;
                               const isEarlyBirdApplied = activeGuestPricing && (activeGuestPricing.earlyBirdDiscountRate > 0 || activeGuestPricing.earlyBirdDiscountAmount > 0);
 

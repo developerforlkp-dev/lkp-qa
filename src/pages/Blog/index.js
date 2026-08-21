@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Hero, Filters, BlogGrid as Grid } from "../../components/Blog/BlogComponents";
+import { Hero, Filters, BlogGrid as Grid, BlogGridSkeleton } from "../../components/Blog/BlogComponents";
 import { getBlogs } from "../../utils/api";
 import { mapApiBlogToComponentFormat } from "../../utils/blogData";
 import { blogTailwindCss } from "../../styles/blogTailwindString";
@@ -69,9 +69,7 @@ export default function Blog() {
           setSelectedCategory={setSelectedCategory}
         />
         {loading ? (
-          <div className="py-20 flex justify-center w-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-brand)]"></div>
-          </div>
+          <BlogGridSkeleton />
         ) : (
           <Grid posts={filteredPosts} />
         )}

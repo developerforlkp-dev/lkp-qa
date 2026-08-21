@@ -612,7 +612,7 @@
 }
 
 .mob-tip-body.open {
-  max-height: 300px;
+  max-height: 2000px;
   padding: 0 16px 16px 16px;
   opacity: 1;
 }

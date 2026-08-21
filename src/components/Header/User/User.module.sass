@@ -82,23 +82,30 @@
     height: 48px
     border-radius: 24px
     +button-2
-    color: $n4
+    color: $n1
+    font-weight: 600
     transition: all .2s
     position: relative
     overflow: hidden
     z-index: 1
+    +dark
+        color: $n8
     svg
         margin-right: 12px
-        fill: $n4
+        fill: $n3
         transition: fill .2s
-    &:hover
-        color: $n2
-        svg
-            fill: $n2
         +dark
-            color: $n6
+            fill: $n5
+    &:hover
+        color: $p1
+        background: rgba(0, 151, 178, 0.08)
+        svg
+            fill: $p1
+        +dark
+            color: #00D2FF
+            background: rgba(0, 210, 255, 0.1)
             svg
-                fill: $n6
+                fill: #00D2FF
     &.active
         background: $n2
         color: $n6

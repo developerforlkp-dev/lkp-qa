@@ -595,6 +595,20 @@ const FleetHome = () => {
               }
             }
 
+            // Sort locally by newest first as a fallback since the backend might ignore the sortBy parameter
+            if (Array.isArray(listings)) {
+              listings.sort((a, b) => {
+                const dateA = new Date(a.createdAt || a.created_at || a.createdDate || 0).getTime();
+                const dateB = new Date(b.createdAt || b.created_at || b.createdDate || 0).getTime();
+                if (dateA !== dateB) return dateB - dateA;
+                
+                // Fallback to ID if dates are the same or missing
+                const idA = Number(a.id || a.listingId || a.experienceId || a.eventId || a.stayId || 0);
+                const idB = Number(b.id || b.listingId || b.experienceId || b.eventId || b.stayId || 0);
+                return idB - idA;
+              });
+            }
+
             return {
               section: sectionInfo,
               listings: listings,
@@ -945,6 +959,7 @@ const FleetHome = () => {
                       onClose={() => setShowGuestPicker(false)}
                       onGuestChange={handleGuestChange}
                       initialGuests={guests}
+                      infantsAllowed={false}
                       className={styles.guestPicker}
                     />
                   </div>

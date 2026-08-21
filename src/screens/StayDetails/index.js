@@ -19,6 +19,7 @@ import roomStyles from "./RoomCards.module.sass";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
 import StayItinerary from "./StayItinerary";
+import CuratedContent from "../../components/CuratedContent";
 import { useTheme, THEMES } from "../../components/JUI/Theme";
 import Rating from "../../components/Rating";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
@@ -3391,6 +3392,14 @@ const StayDetails = () => {
         );
       })()}
 
+      <CuratedContent 
+        curatedContent={stay?.curatedContent} 
+        headlineFontFamily='"Cormorant Garamond", "Playfair Display", serif' 
+        bodyFontFamily='"Inter", sans-serif' 
+        padding={isMobile ? "32px 24px" : "100px 0"}
+        width={isMobile ? "100%" : "calc(100% - 80px)"}
+      />
+
       <StayItinerary itinerary={stay?.itinerary} />
 
       <StayLocation stay={stay} />
@@ -3569,6 +3578,7 @@ function PropertyModal({ stay, onClose }) {
   const billingConfigDiscounts =
     stay.billingConfig?.discounts ||
     stay.billing_config?.discounts ||
+    stay.discounts ||
     [];
   const discountRate = Array.isArray(billingConfigDiscounts)
     ? Math.max(
@@ -3576,7 +3586,8 @@ function PropertyModal({ stay, onClose }) {
       Math.min(
         100,
         billingConfigDiscounts.reduce((sum, discount) => {
-          const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+          if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
+          const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
           return sum + (Number.isFinite(rate) ? rate : 0);
         }, 0)
       )
@@ -4003,6 +4014,7 @@ function PropertyStayCard({ stay }) {
   const billingConfigDiscounts =
     stay?.billingConfig?.discounts ||
     stay?.billing_config?.discounts ||
+    stay?.discounts ||
     [];
   const discountRate = Array.isArray(billingConfigDiscounts)
     ? Math.max(
@@ -4010,7 +4022,8 @@ function PropertyStayCard({ stay }) {
       Math.min(
         100,
         billingConfigDiscounts.reduce((sum, discount) => {
-          const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+          if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
+          const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
           return sum + (Number.isFinite(rate) ? rate : 0);
         }, 0)
       )
@@ -4533,6 +4546,50 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
   );
 }
 
+const ExpandableInstructionText = ({ text, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 180;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, width: "100%" }}>
+      <p style={{
+        fontSize: 16, color: FG, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif',
+        overflow: "hidden",
+        display: expanded ? "block" : "-webkit-box",
+        WebkitLineClamp: expanded ? "unset" : 3,
+        WebkitBoxOrient: "vertical",
+        fontWeight: 400,
+        wordBreak: "break-word",
+        whiteSpace: "pre-wrap"
+      }}>
+        {text}
+      </p>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{
+            background: "none",
+            border: "none",
+            padding: "8px 0 0 0",
+            color: A,
+            fontSize: "12px",
+            fontWeight: 700,
+            fontFamily: '"Inter", sans-serif',
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            outline: "none"
+          }}
+        >
+          {expanded ? "Read Less" : "Read More"} <span style={{ fontSize: "14px", marginLeft: "4px" }}>&rarr;</span>
+        </button>
+      )}
+    </div>
+  );
+};
+
 function StayLocation({ stay }) {
   const { isMobile } = useWindowSize();
   const { tokens: { A, BG, FG, M, S, B, W }, theme } = useTheme();
@@ -4676,23 +4733,13 @@ function StayLocation({ stay }) {
                 )}
 
                 {instructions && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state && !country) ? `1px solid ${B}` : "none" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state && !country) ? `1px solid ${B}` : "none" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Info size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif', marginTop: 12 }}>Instructions</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', marginTop: 10 }}>
-                        {(!instructionsExpanded && instructions.length > 80) ? instructions.slice(0, 80) + "..." : instructions}
-                        {instructions.length > 80 && (
-                          <button
-                            onClick={() => setInstructionsExpanded(!instructionsExpanded)}
-                            style={{ background: "transparent", border: "none", color: A, fontSize: 16, fontWeight: 700, padding: 0, marginLeft: 8, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif' }}
-                          >
-                            {instructionsExpanded ? "Read Less" : "Read More"}
-                          </button>
-                        )}
-                      </span>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                      <ExpandableInstructionText text={instructions} FG={FG} A={A} />
                     </div>
                   </li>
                 )}

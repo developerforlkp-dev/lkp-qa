@@ -604,7 +604,7 @@ const FilterSidebar = ({
         </div>
       )}
 
-      {!hideHeader && activeChips.length > 0 && (
+      {activeChips.length > 0 && (
         <div className={styles.activeFiltersSection}>
           <div className={styles.activeFiltersTitle}>Active Filters</div>
           <div className={styles.activeChipsList}>

@@ -1408,7 +1408,9 @@ export const getOrderDetails = async (orderId) => {
     const orderIdNum = Number(orderId);
     const orderIdStr = (!isNaN(orderIdNum) && orderIdNum > 0) ? String(orderIdNum) : String(orderId);
 
-    const response = await OrdersAPI.get(`/orders/${orderIdStr}`);
+    const response = await OrdersAPI.get(`/orders/${orderIdStr}`, {
+      params: { _t: Date.now() }
+    });
     const payload = response.data;
     // console.log("✅ Order details fetched (raw):", payload);
 
@@ -1943,7 +1945,9 @@ export const getStayDetails = async (stayId) => {
     const stayIdNum = Number(stayId);
     const stayIdStr = (!isNaN(stayIdNum) && stayIdNum > 0) ? String(stayIdNum) : String(stayId);
 
-    const response = await ListingsAPI.get(`/public/stays/${stayIdStr}`);
+    const response = await ListingsAPI.get(`/public/stays/${stayIdStr}`, {
+      params: { _t: Date.now() }
+    });
     const payload = response.data;
     //console.log("✅ Stay details fetched (raw):", payload);
 

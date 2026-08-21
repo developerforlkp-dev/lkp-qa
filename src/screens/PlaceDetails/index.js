@@ -3,7 +3,7 @@ import useDarkMode from "use-dark-mode";
 import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
-  MapPin, Clock, Ticket, Star, Calendar, ArrowDown, ExternalLink, Map, Navigation,
+  MapPin, Clock, Ticket, Star, Sparkles, Calendar, ArrowDown, ExternalLink, Map, Navigation,
   Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart, X
 } from "lucide-react";
 import cn from "classnames";
@@ -20,6 +20,7 @@ import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import Favorite from "../../components/Favorite";
 import Icon from "../../components/Icon";
 import FullScreenImage from "../../components/FullScreenImage";
+import CuratedContent from "../../components/CuratedContent";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -817,30 +818,31 @@ function PlaceHero({ place, galleryItems, id }) {
             {showArrows && (
               <motion.button
                 key="left-arrow"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                whileHover={{ scale: 1.05, backgroundColor: A, borderColor: A, color: "#FFF", boxShadow: `0 8px 24px ${A}40` }}
                 onClick={() => scrollSlider("left")}
                 style={{
                   position: "absolute",
-                  left: 16,
+                  left: 20,
                   zIndex: 20,
-                  background: "rgba(255, 255, 255, 0.75)",
-                  backdropFilter: "blur(8px)",
-                  border: `1px solid ${B}`,
-                  width: 44,
-                  height: 44,
+                  background: theme === "dark" ? "rgba(20, 20, 20, 0.6)" : "rgba(255, 255, 255, 0.85)",
+                  backdropFilter: "blur(12px)",
+                  border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)"}`,
+                  width: 52,
+                  height: 52,
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: FG,
                   cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  transition: "background-color 0.2s"
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s ease"
                 }}
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={24} />
               </motion.button>
             )}
           </AnimatePresence>
@@ -850,30 +852,31 @@ function PlaceHero({ place, galleryItems, id }) {
             {showArrows && (
               <motion.button
                 key="right-arrow"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                whileHover={{ scale: 1.05, backgroundColor: A, borderColor: A, color: "#FFF", boxShadow: `0 8px 24px ${A}40` }}
                 onClick={() => scrollSlider("right")}
                 style={{
                   position: "absolute",
-                  right: 16,
+                  right: 20,
                   zIndex: 20,
-                  background: "rgba(255, 255, 255, 0.75)",
-                  backdropFilter: "blur(8px)",
-                  border: `1px solid ${B}`,
-                  width: 44,
-                  height: 44,
+                  background: theme === "dark" ? "rgba(20, 20, 20, 0.6)" : "rgba(255, 255, 255, 0.85)",
+                  backdropFilter: "blur(12px)",
+                  border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)"}`,
+                  width: 52,
+                  height: 52,
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: FG,
                   cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  transition: "background-color 0.2s"
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s ease"
                 }}
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={24} />
               </motion.button>
             )}
           </AnimatePresence>
@@ -1236,21 +1239,35 @@ function Logistics({ place, hostData }) {
   );
 }
 
-const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImages, setSelectedImages, setPhotoIndex, setPhotoVisible }) => {
+const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImages, setSelectedImages, setPhotoIndex, setPhotoVisible, isHero }) => {
   const [expanded, setExpanded] = useState(false);
   const text = s.desc || s.description || s.briefDescription || "";
-  const isLong = text.length > 120;
-  const displayText = expanded ? text : (isLong ? text.slice(0, 120) + "..." : text);
+  const charLimit = isHero ? 200 : 100;
+  const isLong = text.length > charLimit;
+  const displayText = expanded ? text : (isLong ? text.slice(0, charLimit) + "..." : text);
+  const imgUrl = getItineraryImageUrl(s);
 
-  return (
-    <div style={{ flex: "0 0 calc(33.333% - 21.33px)", minWidth: 300, scrollSnapAlign: "start", height: "auto", display: "flex" }}>
-      <Soul delay={i * 0.15} y={80} r={i % 2 === 0 ? 3 : -3} style={{ width: "100%", height: "100%", display: "flex" }}>
-        <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.4 }} style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: "32px 32px 48px", width: "100%", height: "100%", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <span className="font-display" style={{ position: "absolute", top: -10, right: 10, fontSize: "clamp(5rem, 8vw, 10rem)", fontWeight: 800, color: A, opacity: 0.04, pointerEvents: "none" }}>{i + 1}</span>
-          {getItineraryImageUrl(s) && (
-            <div 
+  if (isHero) {
+    return (
+      <Soul delay={0.1} y={60} style={{ width: "100%" }}>
+        <motion.div
+          whileHover={{ y: -6 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            display: "flex",
+            background: W,
+            border: `1px solid ${B}`,
+            borderRadius: 28,
+            overflow: "hidden",
+            position: "relative",
+            minHeight: 340,
+          }}
+        >
+          {/* Hero image left */}
+          {imgUrl && (
+            <div
               className="itinerary-image-wrapper"
-              style={{ margin: "-32px -32px 24px -32px", height: 200, overflow: "hidden", cursor: "pointer", position: "relative", flexShrink: 0 }}
+              style={{ flex: "0 0 50%", position: "relative", cursor: "pointer", overflow: "hidden" }}
               onClick={() => {
                 const imgs = getItineraryImages(s);
                 setSelectedImages(imgs);
@@ -1258,28 +1275,92 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
                 setPhotoVisible(true);
               }}
             >
-              <img className="itinerary-img" src={getItineraryImageUrl(s)} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease" }} />
-              <div className="gallery-pill" style={{ position: "absolute", bottom: 12, right: 12, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)", opacity: 0, transition: "opacity 0.3s ease" }}>
-                <Camera size={12} /> GALLERY
+              <img className="itinerary-img" src={imgUrl} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s ease" }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 60%, rgba(0,0,0,0.03))" }} />
+              <div className="gallery-pill" style={{ position: "absolute", bottom: 16, right: 16, background: "rgba(0,0,0,0.55)", padding: "6px 12px", borderRadius: 10, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(12px)", opacity: 0, transition: "opacity 0.3s ease" }}>
+                <Camera size={13} /> GALLERY
               </div>
             </div>
           )}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, marginTop: getItineraryImageUrl(s) ? 0 : 24, flexShrink: 0 }}>
-            <div style={{ width: 8, height: 8, background: A }} />
-            <p style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Step {i + 1}</p>
+          {/* Hero content right */}
+          <div style={{ flex: 1, padding: "40px 44px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative" }}>
+            <span className="font-display" style={{ position: "absolute", top: -20, right: 16, fontSize: "10rem", fontWeight: 900, color: A, opacity: 0.04, pointerEvents: "none", lineHeight: 1 }}>1</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>1</div>
+              <span style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Start Here</span>
+            </div>
+            <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.2vw, 2rem)", fontWeight: 800, color: FG, marginBottom: 16, lineHeight: 1.2 }}>{s.title || s.name}</h3>
+            <p style={{ fontSize: 14, color: M, lineHeight: 1.85, margin: 0, whiteSpace: "pre-line" }}>
+              {displayText}
+              {isLong && (
+                <span onClick={() => setExpanded(!expanded)} style={{ color: A, cursor: "pointer", fontWeight: 600, marginLeft: 8 }}>
+                  {expanded ? "Read Less" : "Read More"}
+                </span>
+              )}
+            </p>
           </div>
-          <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 20, flexShrink: 0 }}>{s.title || s.name}</h3>
-          <p style={{ fontSize: 14, color: M, lineHeight: 1.85, flexGrow: 1, margin: 0, whiteSpace: "pre-line" }}>
-            {displayText}
-            {isLong && (
-              <span 
-                onClick={() => setExpanded(!expanded)} 
-                style={{ color: A, cursor: "pointer", fontWeight: 600, marginLeft: 8 }}
-              >
-                {expanded ? "Read Less" : "Read More"}
-              </span>
-            )}
-          </p>
+        </motion.div>
+      </Soul>
+    );
+  }
+
+  // Regular grid card
+  return (
+    <div style={{ flex: "0 0 calc(33.333% - 22px)", minWidth: 280, display: "flex" }}>
+      <Soul delay={i * 0.12} y={60} r={i % 2 === 0 ? 2 : -2} style={{ width: "100%", display: "flex" }}>
+        <motion.div
+          whileHover={{ y: -8, boxShadow: `0 20px 40px rgba(0,0,0,0.06)` }}
+          transition={{ duration: 0.35 }}
+          style={{
+            background: W,
+            border: `1px solid ${B}`,
+            borderRadius: 24,
+            width: "100%",
+            position: "relative",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Step number circle on top-left corner */}
+          <div style={{ position: "absolute", top: imgUrl ? 16 : 20, left: 20, zIndex: 3, width: 32, height: 32, borderRadius: "50%", background: imgUrl ? "rgba(255,255,255,0.92)" : `rgba(${A === "#0097B2" ? "0,151,178" : "17,17,17"}, 0.08)`, backdropFilter: imgUrl ? "blur(8px)" : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: A, boxShadow: imgUrl ? "0 2px 8px rgba(0,0,0,0.1)" : "none" }}>
+            {i + 1}
+          </div>
+          {/* Image */}
+          {imgUrl && (
+            <div
+              className="itinerary-image-wrapper"
+              style={{ height: 180, overflow: "hidden", cursor: "pointer", position: "relative", flexShrink: 0 }}
+              onClick={() => {
+                const imgs = getItineraryImages(s);
+                setSelectedImages(imgs);
+                setPhotoIndex(0);
+                setPhotoVisible(true);
+              }}
+            >
+              <img className="itinerary-img" src={imgUrl} alt={s.title || s.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s ease" }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.04))" }} />
+              <div className="gallery-pill" style={{ position: "absolute", bottom: 10, right: 10, background: "rgba(0,0,0,0.55)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, backdropFilter: "blur(10px)", opacity: 0, transition: "opacity 0.3s ease" }}>
+                <Camera size={11} /> GALLERY
+              </div>
+            </div>
+          )}
+          {/* Content */}
+          <div style={{ padding: imgUrl ? "20px 24px 28px" : "52px 24px 28px", display: "flex", flexDirection: "column", flexGrow: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }} />
+              <p style={{ fontSize: 9, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 700, margin: 0 }}>Step {i + 1}</p>
+            </div>
+            <h4 className="font-display" style={{ fontSize: "clamp(1.1rem, 1.8vw, 1.4rem)", fontWeight: 700, color: FG, marginBottom: 12, lineHeight: 1.25 }}>{s.title || s.name}</h4>
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.8, margin: 0, flexGrow: 1, whiteSpace: "pre-line" }}>
+              {displayText}
+              {isLong && (
+                <span onClick={() => setExpanded(!expanded)} style={{ color: A, cursor: "pointer", fontWeight: 600, marginLeft: 6, fontSize: 12 }}>
+                  {expanded ? "Read Less" : "Read More"}
+                </span>
+              )}
+            </p>
+          </div>
         </motion.div>
       </Soul>
     </div>
@@ -1288,73 +1369,100 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
 
 function Itinerary({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
+  const { isMobile } = useWindowSize();
   const [photoVisible, setPhotoVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [photoIndex, setPhotoIndex] = useState(0);
-  const scrollRef = useRef(null);
+  const [showAll, setShowAll] = useState(false);
 
   const steps = place?.itinerary || [];
   if (steps.length === 0) return null;
 
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -400, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 400, behavior: 'smooth' });
-    }
-  };
+  const heroStep = steps[0];
+  const restSteps = steps.slice(1);
+  const INITIAL_VISIBLE = 6;
+  const hasMore = restSteps.length > INITIAL_VISIBLE;
+  const visibleRest = showAll ? restSteps : restSteps.slice(0, INITIAL_VISIBLE);
 
   return (
-    <section style={{ background: S, padding: "48px 80px" }}>
+    <section style={{ background: S, padding: isMobile ? "40px 16px" : "64px 80px", position: "relative" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-          <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Curated Experience Plan</h3>
-          {steps.length > 3 && (
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={scrollLeft} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${B}`, background: W, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: FG }}>
-                <ChevronLeft size={20} />
-              </button>
-              <button onClick={scrollRight} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${B}`, background: W, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: FG }}>
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          )}
+        {/* Section header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+          <div style={{ width: 4, height: 32, borderRadius: 2, background: A }} />
+          <span style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Your Journey</span>
         </div>
-        <div style={{ position: "relative", margin: "0 -80px", padding: "0 80px" }}>
-          <div 
-            ref={scrollRef}
-            className="hide-scrollbar"
-            style={{ 
-              display: "flex", 
-              gap: 32, 
-              overflowX: "auto", 
-              scrollSnapType: "x mandatory",
-              scrollBehavior: "smooth"
-            }}
-          >
-            {steps.map((s, i) => (
-              <StepCard 
-                key={i} 
-                s={s} 
-                i={i} 
-                A={A} 
-                W={W} 
-                B={B} 
-                FG={FG} 
-                M={M} 
-                getItineraryImageUrl={getItineraryImageUrl} 
-                getItineraryImages={getItineraryImages} 
-                setSelectedImages={setSelectedImages} 
-                setPhotoIndex={setPhotoIndex} 
-                setPhotoVisible={setPhotoVisible} 
+        <h3 style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.4rem)", fontWeight: 800, color: FG, margin: "0 0 8px 0", fontFamily: "Poppins, sans-serif" }}>Curated Experience Plan</h3>
+        <p style={{ fontSize: 14, color: M, marginBottom: 40, maxWidth: 520 }}>{steps.length} carefully crafted steps to make the most of your visit</p>
+
+        {/* Hero first step — full width */}
+        <StepCard
+          s={heroStep} i={0} A={A} W={W} B={B} FG={FG} M={M}
+          getItineraryImageUrl={getItineraryImageUrl}
+          getItineraryImages={getItineraryImages}
+          setSelectedImages={setSelectedImages}
+          setPhotoIndex={setPhotoIndex}
+          setPhotoVisible={setPhotoVisible}
+          isHero={true}
+        />
+
+        {/* Vertical connector line */}
+        {restSteps.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}>
+            <div style={{ width: 2, height: 40, background: `linear-gradient(to bottom, ${A}, ${B})`, borderRadius: 1 }} />
+          </div>
+        )}
+
+        {/* Remaining steps in a 3-col grid */}
+        {visibleRest.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 28, justifyContent: visibleRest.length < 3 ? "center" : "flex-start" }}>
+            {visibleRest.map((s, i) => (
+              <StepCard
+                key={i + 1}
+                s={s}
+                i={i + 1}
+                A={A} W={W} B={B} FG={FG} M={M}
+                getItineraryImageUrl={getItineraryImageUrl}
+                getItineraryImages={getItineraryImages}
+                setSelectedImages={setSelectedImages}
+                setPhotoIndex={setPhotoIndex}
+                setPhotoVisible={setPhotoVisible}
+                isHero={false}
               />
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Show More / Show Less button */}
+        {hasMore && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
+            <motion.button
+              whileHover={{ scale: 1.04, boxShadow: `0 8px 24px rgba(0,0,0,0.08)` }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowAll(!showAll)}
+              style={{
+                background: showAll ? W : A,
+                color: showAll ? A : W,
+                border: `1.5px solid ${A}`,
+                borderRadius: 50,
+                padding: "12px 32px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                letterSpacing: "0.02em",
+                transition: "all 0.3s ease",
+              }}
+            >
+              {showAll ? "Show Less" : `Show All ${restSteps.length - INITIAL_VISIBLE} More Steps`}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showAll ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </motion.button>
+          </div>
+        )}
       </div>
       <AnimatePresence>
         {photoVisible && (
@@ -1375,12 +1483,22 @@ function VisitorInformation({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
   const { isMobile } = useWindowSize();
 
-  const townName = place?.nearestTowns?.[0]?.name || place?.nearestTown;
-  const formattedTown = townName ? townName.split('/')[0]?.trim() : "MUNNAR";
-  const airportName = place?.nearestAirports?.[0]?.name || place?.nearestAirport;
-  const formattedAirport = airportName ? airportName.split('(')[0].replace("International Airport", "").trim().toUpperCase() : "COCHIN";
-  const railwayName = place?.nearestRailwayStations?.[0]?.name || place?.nearestRailway;
-  const formattedRailway = railwayName ? railwayName.split('(')[0].replace("Railway Station", "").trim() : "ALUVA";
+  const formatList = (arr, singleStr, fallback, formatter) => {
+    if (Array.isArray(arr) && arr.length > 0) {
+      return arr.map(item => {
+        const name = typeof item === 'string' ? item : item?.name || "";
+        return formatter ? formatter(name) : name;
+      }).filter(Boolean).join(', ');
+    }
+    if (typeof singleStr === 'string' && singleStr.trim()) {
+      return formatter ? formatter(singleStr) : singleStr;
+    }
+    return fallback;
+  };
+
+  const formattedTowns = formatList(place?.nearestTowns, place?.nearestTown, "MUNNAR", (name) => name.split('/')[0]?.trim());
+  const formattedAirports = formatList(place?.nearestAirports, place?.nearestAirport, "COCHIN", (name) => name.split('(')[0].replace(/International Airport/i, "").trim().toUpperCase());
+  const formattedRailways = formatList(place?.nearestRailwayStations, place?.nearestRailway, "ALUVA", (name) => name.split('(')[0].replace(/Railway Station/i, "").trim());
 
   const suitabilityTags = useMemo(() => {
     const raw = place?.suitableFor;
@@ -1463,8 +1581,10 @@ function VisitorInformation({ place }) {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     </div>
                     <div>
-                      <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Pass Category</span>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>Permit & Admin</h4>
+                      <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Permit Category</span>
+                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>
+                        {place?.entryType ? `${place.entryType} Entry` : "Free Entry"}
+                      </h4>
                     </div>
                   </div>
 
@@ -1577,7 +1697,7 @@ function VisitorInformation({ place }) {
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Nearest Town</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedTown}</span>
+                        <span style={{ fontWeight: 700, color: FG, fontSize: 13, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{formattedTowns}</span>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>
@@ -1586,7 +1706,7 @@ function VisitorInformation({ place }) {
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Railway Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedRailway} Station</span>
+                        <span style={{ fontWeight: 700, color: FG, fontSize: 13, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{formattedRailways}</span>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>
@@ -1595,7 +1715,7 @@ function VisitorInformation({ place }) {
                       </div>
                       <div>
                         <span style={{ fontSize: 9, color: M, display: "block" }}>Airport Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13 }}>{formattedAirport}</span>
+                        <span style={{ fontWeight: 700, color: FG, fontSize: 13, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{formattedAirports}</span>
                       </div>
                     </div>
                   </div>
@@ -1609,7 +1729,22 @@ function VisitorInformation({ place }) {
               <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <span style={{ fontSize: 9, color: M, display: "block" }}>Vehicle Access</span>
-                  <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.accessByVehicle || "All Vehicles"}</span>
+                  {Array.isArray(place?.accessVehicleTypes) && place.accessVehicleTypes.length > 0 ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 2, maxWidth: 180 }}>
+                      {place.accessVehicleTypes.slice(0, 3).map((v, i) => (
+                        <span key={i} style={{ padding: "2px 6px", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, borderRadius: 4, fontSize: 10, fontWeight: 700, color: A, whiteSpace: "nowrap" }}>
+                          {typeof v === 'string' ? v : v.name || v}
+                        </span>
+                      ))}
+                      {place.accessVehicleTypes.length > 3 && (
+                        <span style={{ padding: "2px 6px", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, borderRadius: 4, fontSize: 10, fontWeight: 700, color: A, whiteSpace: "nowrap" }}>
+                          +{place.accessVehicleTypes.length - 3} More
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>All Vehicles</span>
+                  )}
                 </div>
 
                 {/* Stamp Clipart */}
@@ -1856,8 +1991,16 @@ function GoodToKnow({ place }) {
   const warningText = A === "#0097B2" ? "#b91c1c" : "#fca5a5";
   const warningHeader = A === "#0097B2" ? "#991b1b" : "#f87171";
 
-  const carryItems = ["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"];
-  const avoidItems = ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"];
+  const carryItems = Array.isArray(place?.whatToCarry) && place.whatToCarry.length > 0 
+    ? place.whatToCarry.map(i => typeof i === 'string' ? i : i.name || i)
+    : (typeof place?.whatToCarry === 'string' && place.whatToCarry.trim() !== '' 
+        ? place.whatToCarry.split(',').map(i => i.trim()) 
+        : ["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"]);
+  const avoidItems = Array.isArray(place?.thingsToAvoid) && place.thingsToAvoid.length > 0
+    ? place.thingsToAvoid.map(i => typeof i === 'string' ? i : i.name || i)
+    : (typeof place?.thingsToAvoid === 'string' && place.thingsToAvoid.trim() !== ''
+        ? place.thingsToAvoid.split(',').map(i => i.trim())
+        : ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"]);
 
   const feedbackBg = A === "#0097B2" ? "#f8f8f8" : S;
 
@@ -2329,7 +2472,7 @@ function MobileHero({ place, galleryItems, id }) {
             style={{
               flexShrink: 0,
               width: "calc(100vw - 64px)", // leaves space on left/right for peeking next/prev images
-              height: "70vh",
+              height: "45vh",
               borderRadius: 28,
               overflow: "hidden",
               border: `1.5px solid ${B}`,
@@ -2999,6 +3142,64 @@ function MobileCTA({ place }) {
   );
 }
 
+function VisitingNotes({ place }) {
+  const { tokens: { A, B, FG, M, W, S, AL }, theme } = useTheme();
+  const { isMobile } = useWindowSize();
+  const [expanded, setExpanded] = useState(false);
+  
+  if (!place?.visitingNotes) return null;
+  
+  const rawText = place.visitingNotes || "";
+  const isLong = rawText.length > 250;
+  const displayText = expanded ? rawText : (isLong ? rawText.substring(0, 250) + "..." : rawText);
+
+  return (
+    <section style={{ background: W, padding: isMobile ? "32px 16px" : "48px 80px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <Soul y={30}>
+          <div style={{
+            background: AL,
+            border: `1px solid ${A}33`,
+            borderRadius: 24,
+            padding: isMobile ? "24px" : "40px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            position: "relative",
+            overflow: "hidden"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+               <div style={{ background: A, padding: 8, borderRadius: 12 }}>
+                  <Info size={20} color="#FFFFFF" />
+               </div>
+               <h3 style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Visiting Notes</h3>
+            </div>
+            <p style={{
+              fontSize: 16,
+              lineHeight: 1.8,
+              color: FG,
+              margin: 0,
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 400,
+              whiteSpace: "pre-line"
+            }}>
+              {displayText}
+              {isLong && (
+                <span 
+                  onClick={() => setExpanded(!expanded)} 
+                  style={{ color: A, cursor: "pointer", fontWeight: 600, marginLeft: 8 }}
+                >
+                  {expanded ? "Read Less" : "Read More"}
+                </span>
+              )}
+            </p>
+          </div>
+        </Soul>
+      </div>
+    </section>
+  );
+}
+
 function PremiumMarquee({ items, isMobile, fallbackItems }) {
   const { theme, tokens } = useTheme();
   const { A, B, BG, FG, M } = tokens;
@@ -3034,7 +3235,7 @@ function PremiumMarquee({ items, isMobile, fallbackItems }) {
         {loopedTags.map((tag, idx) => {
           const isEven = idx % 2 === 0;
           return (
-            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 40, marginRight: 40 }}>
+            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 24, marginRight: 32, whiteSpace: "nowrap" }}>
               <span
                 style={{
                   fontFamily: '"Inter", sans-serif',
@@ -3048,7 +3249,7 @@ function PremiumMarquee({ items, isMobile, fallbackItems }) {
               >
                 {tag}
               </span>
-              <Star size={14} color={A || "#0097B2"} fill={A || "#0097B2"} style={{ opacity: 0.6 }} />
+              <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
             </div>
           );
         })}
@@ -3081,16 +3282,26 @@ function MobilePlaceDetails({
       <MobileGallery galleryItems={galleryItems} />
 
       {/* 5. Highlights & Itinerary */}
+
       <MobileItinerary place={place} />
 
       {/* Visitor Information */}
       <VisitorInformation place={place} />
+
+      <VisitingNotes place={place} />
 
       {/* 6. Good to Know */}
       <MobileGoodToKnow place={place} />
 
       {/* Location Map Section */}
       <PremiumMarquee items={place?.whatsSpecial} isMobile={true} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
+      <CuratedContent 
+        curatedContent={place?.curatedContent} 
+        headlineFontFamily="'Poppins', sans-serif" 
+        bodyFontFamily="'DM Sans', sans-serif" 
+        padding="32px 16px"
+        width="100%"
+      />
       <LocationSection place={place} />
 
       {/* Community Feedback */}
@@ -3319,13 +3530,17 @@ const PlaceDetails = () => {
       <PlaceDescription place={place} />
       <PremiumMarquee items={place?.tags} isMobile={false} fallbackItems={["Authentic Experience", "Local Heritage", "Curated Journey", "Memorable Moments"]} />
 
+
       <Itinerary place={place} />
 
       <VisitorInformation place={place} />
 
+      <VisitingNotes place={place} />
+
       <GoodToKnow place={place} />
 
       <PremiumMarquee items={place?.whatsSpecial} isMobile={false} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
+      <CuratedContent curatedContent={place?.curatedContent} headlineFontFamily="'Poppins', sans-serif" bodyFontFamily="'DM Sans', sans-serif" />
       <LocationSection place={place} />
 
       {/* <CommunityFeedback /> */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight, Tag } from "lucide-react";
+import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight, Tag, Baby } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability } from "../../utils/api";
@@ -1035,18 +1035,87 @@ const StayBookingSystem = ({
   );
 
   useEffect(() => {
-    if (!isHostelBooking(stay) || !isEntirelyBedBased || totalSelectedBeds <= 0) return;
+    if (isHostelBooking(stay) && isEntirelyBedBased && totalSelectedBeds > 0) {
+      setGuests((prev) => {
+        const nextAdults = totalSelectedBeds;
+        if (prev.adults === nextAdults && prev.children === 0) return prev;
+        return {
+          ...prev,
+          adults: nextAdults,
+          children: 0,
+        };
+      });
+      return;
+    }
+
+    if (!stay || isPropertyBasedBooking(stay) || resolvedSelectedRooms.length === 0) return;
+
+    let totalBaseAdultsLimit = 0;
+    let totalBaseChildrenLimit = 0;
+    let totalExtraAdultsLimit = 0;
+    let totalExtraChildrenLimit = 0;
+    let totalNonBedRooms = 0;
+
+    resolvedSelectedRooms.forEach((room) => {
+      if (!room.isBedConfig) {
+        totalNonBedRooms += Number(room.count || 0);
+      }
+      totalBaseAdultsLimit += (room.maxAdults || 1) * Number(room.count || 0);
+      totalBaseChildrenLimit += (room.maxChildren || 0) * Number(room.count || 0);
+      totalExtraAdultsLimit += Number(
+        room.maxExtraAdults ??
+        room.maxExtraAdultsAllowed ??
+        room.maxExtraBeds ??
+        0
+      ) * Number(room.count || 0);
+      totalExtraChildrenLimit += Number(
+        room.maxExtraChildren ??
+        room.maxExtraChildrenAllowed ??
+        0
+      ) * Number(room.count || 0);
+    });
+
+    const allowedAdults = totalBaseAdultsLimit + totalExtraAdultsLimit;
+    const allowedChildren = totalBaseChildrenLimit + totalExtraChildrenLimit;
+    const minAdults = Math.max(1, totalNonBedRooms);
 
     setGuests((prev) => {
-      const nextAdults = totalSelectedBeds;
-      if (prev.adults === nextAdults && prev.children === 0) return prev;
+      let nextAdults = prev.adults;
+      let nextChildren = prev.children;
+
+      if (nextAdults > allowedAdults) {
+        nextAdults = allowedAdults;
+      }
+      if (nextAdults < minAdults) {
+        nextAdults = minAdults;
+      }
+      if (nextChildren > allowedChildren) {
+        nextChildren = Math.max(0, allowedChildren);
+      }
+
+      if (selectedRooms.length > 0) {
+        let dist = distributeGuests(selectedRooms, stayRoomsCatalog, nextAdults, nextChildren);
+        while (!dist.success && nextAdults > minAdults) {
+          nextAdults -= 1;
+          dist = distributeGuests(selectedRooms, stayRoomsCatalog, nextAdults, nextChildren);
+        }
+        while (!dist.success && nextChildren > 0) {
+          nextChildren -= 1;
+          dist = distributeGuests(selectedRooms, stayRoomsCatalog, nextAdults, nextChildren);
+        }
+      }
+
+      if (prev.adults === nextAdults && prev.children === nextChildren) {
+        return prev;
+      }
+
       return {
         ...prev,
         adults: nextAdults,
-        children: 0,
+        children: nextChildren,
       };
     });
-  }, [stay, isEntirelyBedBased, totalSelectedBeds, setGuests]);
+  }, [stay, isEntirelyBedBased, totalSelectedBeds, resolvedSelectedRooms, selectedRooms, stayRoomsCatalog, setGuests]);
 
   useEffect(() => {
     if (typeof setChildAges !== "function") return;
@@ -1104,10 +1173,11 @@ const StayBookingSystem = ({
     }
 
     const billingConfigDiscountPercent = (() => {
-      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || [];
+      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || stay?.discounts || [];
       if (!Array.isArray(discounts) || discounts.length === 0) return 0;
       const totalRate = discounts.reduce((sum, discount) => {
-        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+        if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
+        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
         return sum + (Number.isFinite(rate) ? rate : 0);
       }, 0);
       return Math.max(0, Math.min(100, totalRate));
@@ -1343,10 +1413,11 @@ const StayBookingSystem = ({
 
     // Billing-config discounts (if provided by stay configuration)
     const billingConfigDiscountRate = (() => {
-      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || [];
+      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || stay?.discounts || [];
       if (!Array.isArray(discounts) || discounts.length === 0) return 0;
       const totalRate = discounts.reduce((sum, discount) => {
-        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? 0);
+        if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
+        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
         return sum + (Number.isFinite(rate) ? rate : 0);
       }, 0);
       return Math.max(0, Math.min(100, totalRate));
@@ -1473,6 +1544,8 @@ const StayBookingSystem = ({
       nightsCount,
       discount: discountAmount,
       discountPercent: appliedDiscountPercent,
+      billingConfigDiscountAmount,
+      billingConfigDiscountRate,
       longStayDiscountAmount,
       earlyBirdDiscountAmount,
       earlyBirdDiscountPercent,
@@ -1944,10 +2017,13 @@ const StayBookingSystem = ({
         });
       }
       if (Number(pricing.earlyBirdDiscountAmount || 0) > 0) {
-        previewReceipt.push({ title: `Early Bird Discount (${Number(pricing.earlyBirdDiscountPercent || 0).toFixed(2)}%)`, content: `- ${previewCurrency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
+        previewReceipt.push({ title: `Early Bird Discount (${Math.round(Number(pricing.earlyBirdDiscountPercent || 0))}%)`, content: `- ${previewCurrency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
       }
       if (Number(pricing.longStayDiscountAmount || 0) > 0) {
-        previewReceipt.push({ title: `Long Stay Discount (${Number(pricing.discountPercent || 0).toFixed(2)}%)`, content: `- ${previewCurrency} ${Number(pricing.longStayDiscountAmount).toFixed(2)}` });
+        previewReceipt.push({ title: `Long Stay Discount (${Math.round(Number(pricing.discountPercent || 0))}%)`, content: `- ${previewCurrency} ${Number(pricing.longStayDiscountAmount).toFixed(2)}` });
+      }
+      if (Number(pricing.billingConfigDiscountAmount || 0) > 0) {
+        previewReceipt.push({ title: `Discount (${Number(pricing.billingConfigDiscountRate || 0).toFixed(2)}%)`, content: `- ${previewCurrency} ${Number(pricing.billingConfigDiscountAmount).toFixed(2)}` });
       }
       if (previewAddOnsTotalRupees > 0) {
         previewReceipt.push({ title: "Add-ons Total", content: `+ ${previewCurrency} ${Number(previewAddOnsTotalRupees).toFixed(2)}` });
@@ -2317,14 +2393,17 @@ const StayBookingSystem = ({
       if (discountToShow > 0) {
         let remainingDiscount = discountToShow;
         if (pricing.earlyBirdDiscountAmount > 0) {
-          frontendReceipt.push({ title: `Early Bird Discount (${pricing.earlyBirdDiscountPercent}%)`, content: `- ${currency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
+          frontendReceipt.push({ title: `Early Bird Discount (${Math.round(pricing.earlyBirdDiscountPercent)}%)`, content: `- ${currency} ${Number(pricing.earlyBirdDiscountAmount).toFixed(2)}` });
           remainingDiscount -= pricing.earlyBirdDiscountAmount;
         }
         if (pricing.longStayDiscountAmount > 0 && remainingDiscount >= pricing.longStayDiscountAmount - 0.01) {
-          frontendReceipt.push({ title: `Long Stay Discount (${pricing.discountPercent}%)`, content: `- ${currency} ${Number(pricing.longStayDiscountAmount).toFixed(2)}` });
+          frontendReceipt.push({ title: `Long Stay Discount (${Math.round(pricing.discountPercent)}%)`, content: `- ${currency} ${Number(pricing.longStayDiscountAmount).toFixed(2)}` });
           remainingDiscount -= pricing.longStayDiscountAmount;
         }
-        if (remainingDiscount > 0.01) {
+        if (pricing.billingConfigDiscountAmount > 0 && remainingDiscount >= pricing.billingConfigDiscountAmount - 0.01) {
+          frontendReceipt.push({ title: `Discount (${Number(pricing.billingConfigDiscountRate).toFixed(2)}%)`, content: `- ${currency} ${Number(pricing.billingConfigDiscountAmount).toFixed(2)}` });
+          remainingDiscount -= pricing.billingConfigDiscountAmount;
+        } else if (remainingDiscount > 0.01) {
           frontendReceipt.push({ title: "Other Discounts", content: `- ${currency} ${Number(remainingDiscount).toFixed(2)}` });
         }
       }
@@ -3062,52 +3141,64 @@ const StayBookingSystem = ({
                             )}
 
                             {canUseChildAgeSelector && extraChildAgeIndexes.length > 0 && (
-                              <div style={{ marginTop: 6, padding: "12px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                                  <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Extra child age</p>
-                                  <p style={{ fontSize: 11, fontWeight: 500, color: M, margin: 0, lineHeight: 1.45 }}>
-                                    {extraChildPolicyBounds
-                                      ? `${guestAgeLabels.children} use extra child rate. Ages below ${extraChildPolicyBounds.minAge} are free.`
-                                      : "Select the age for each extra child."}
-                                  </p>
+                              <div style={{ marginTop: 6, padding: "16px", background: BG, border: `1px solid ${B}`, borderRadius: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <div style={{ color: A }}>
+                                    <Baby size={20} color={A} />
+                                  </div>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: FG }}>Extra child age</span>
+                                    <span style={{ fontSize: 11, fontWeight: 400, color: M }}>
+                                      {extraChildPolicyBounds
+                                        ? `${guestAgeLabels.children} use extra child rate. Ages below ${extraChildPolicyBounds.minAge} are free.`
+                                        : "Select the age for each extra child."}
+                                    </span>
+                                  </div>
                                 </div>
 
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: extraChildAgeIndexes.length === 1 ? "1fr" : "1fr 1fr", gap: 12, marginTop: 12 }}>
                                   {extraChildAgeIndexes.map((childIndex, extraIndex) => (
-                                    <label key={`extra-child-age-${childIndex}`} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                      <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>
-                                        Extra Child {extraIndex + 1}
-                                      </span>
-                                      <ChildAgeSelect
-                                        value={childAges?.[childIndex] ?? ""}
-                                        onChange={(event) => {
-                                          const { value } = event.target;
-                                          setChildAges((prev) => {
-                                            const next = syncChildAges(prev, guests?.children || 0);
-                                            next[childIndex] = value;
-                                            return next;
-                                          });
-                                          setValidationError("");
-                                        }}
-                                        options={[
-                                          { value: "", label: "Select age" },
-                                          ...selectableChildAges.map((age) => ({
-                                            value: age,
-                                            label: `${age} year${age === 1 ? "" : "s"}`
-                                          }))
-                                        ]}
-                                        style={{
-                                          width: "100%",
-                                          padding: "10px 12px",
-                                          borderRadius: 12,
-                                          border: `1px solid ${B}`,
-                                          background: S,
-                                          color: FG,
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                        }}
-                                      />
-                                    </label>
+                                    <div key={`extra-child-age-${childIndex}`} style={{ display: "flex", flexDirection: "column" }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", gap: 4, background: `${B}22`, border: `1px solid ${B}66`, borderRadius: 12 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: A, flexShrink: 0 }}></div>
+                                          <span style={{ fontSize: 13, fontWeight: 500, color: FG, whiteSpace: "nowrap" }}>Child {extraIndex + 1}</span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 4, background: AL, padding: "4px 8px", borderRadius: 100, border: `1px solid ${A}44` }}>
+                                            <span style={{ fontSize: 11, color: A, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: 0.5 }}>AGE</span>
+                                          </div>
+                                          <ChildAgeSelect
+                                            value={childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? childAges[childIndex] : (selectableChildAges[0] ?? 0)}
+                                            onChange={(event) => {
+                                              const { value } = event.target;
+                                              setChildAges((prev) => {
+                                                const next = syncChildAges(prev, guests?.children || 0);
+                                                next[childIndex] = value;
+                                                return next;
+                                              });
+                                              setValidationError("");
+                                            }}
+                                            options={[
+                                              ...selectableChildAges.map((age) => ({
+                                                value: age,
+                                                label: `${age}`
+                                              }))
+                                            ]}
+                                            style={{
+                                              border: `1px solid ${B}44`,
+                                              borderRadius: '6px',
+                                              padding: '4px 8px',
+                                              fontSize: '13px',
+                                              fontWeight: '500',
+                                              color: FG,
+                                              backgroundColor: 'transparent',
+                                              width: '74px'
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
                                   ))}
                                 </div>
                               </div>

@@ -423,3 +423,48 @@ export function BlogGrid({ posts = [] }) {
   );
 
 }
+
+export function BlogGridSkeleton() {
+  const breakpointColumnsObj = {
+    default: 3,
+    1100: 2,
+    700: 1
+  };
+  
+  const skeletonArray = Array(6).fill(0);
+
+  return (
+    <section className="w-full mx-auto overflow-hidden" style={{ maxWidth: '1280px', paddingBottom: '96px', paddingLeft: '24px', paddingRight: '24px' }}>
+      <Masonry
+        breakpointCols={breakpointColumnsObj}
+        className="blog-masonry-grid"
+        columnClassName="blog-masonry-grid_column"
+      >
+        {skeletonArray.map((_, index) => (
+          <div key={index} style={{ marginBottom: '56px' }} className="animate-pulse flex flex-col group cursor-pointer">
+            <div className="bg-gray-200 w-full rounded-[24px] mb-5 h-[240px]"></div>
+            
+            <div className="flex flex-col flex-1" style={{ padding: '0 12px', marginTop: '28px' }}>
+              <div className="bg-gray-200 h-3 w-16 mb-4 rounded"></div>
+              
+              <div className="bg-gray-200 h-6 w-3/4 mb-3 rounded"></div>
+              <div className="bg-gray-200 h-6 w-1/2 mb-6 rounded"></div>
+              
+              <div className="bg-gray-200 h-3 w-full mb-2 rounded"></div>
+              <div className="bg-gray-200 h-3 w-full mb-2 rounded"></div>
+              <div className="bg-gray-200 h-3 w-4/5 mb-8 rounded"></div>
+              
+              <div className="flex items-center justify-between mt-auto" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px', marginTop: '24px' }}>
+                <div className="flex gap-2 w-1/2">
+                   <div className="bg-gray-200 h-3 w-12 rounded"></div>
+                   <div className="bg-gray-200 h-3 w-12 rounded"></div>
+                </div>
+                <div className="bg-gray-200 h-8 w-8 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </Masonry>
+    </section>
+  );
+}

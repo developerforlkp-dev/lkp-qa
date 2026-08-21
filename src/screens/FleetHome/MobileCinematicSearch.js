@@ -1134,14 +1134,6 @@ function MobileInlineGuestSelector({ guests, onGuestChange, onClose }) {
       min: 0,
       max: 16,
     },
-    {
-      type: "infants",
-      label: "Infants",
-      subtitle: "Under 2",
-      value: currentGuests.infants,
-      min: 0,
-      max: currentGuests.adults, // Max is number of adults
-    },
   ];
 
   return (

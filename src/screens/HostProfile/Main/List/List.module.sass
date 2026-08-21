@@ -55,15 +55,62 @@
 
 .grid
     display: grid
-    grid-template-columns: repeat(2, 1fr)
+    grid-template-columns: repeat(3, 1fr)
     gap: 32px
     +t
+        grid-template-columns: repeat(2, 1fr)
         gap: 24px
     +m
+        grid-template-columns: repeat(1, 1fr)
         gap: 16px
-        grid-template-columns: repeat(2, 1fr)
 
 .empty
     padding: 20px 0
     +body-2
     color: $n4
+
+.card
+    margin: 0
+    transition: transform .2s ease, box-shadow .2s ease
+    border-radius: 12px !important
+    :global
+        div[class*="preview"]
+            &:before
+                padding-bottom: 55% !important
+        div[class*="title"]
+            font-size: 14px !important
+            line-height: 1.3 !important
+            white-space: nowrap
+            overflow: hidden
+            text-overflow: ellipsis
+        div[class*="line"]
+            font-size: 12px !important
+            white-space: nowrap
+            overflow: hidden
+            text-overflow: ellipsis
+        div[class*="price"]
+            font-size: 13px !important
+            white-space: nowrap
+        div[class*="body"]
+            padding: 10px 12px 12px !important
+        div[class*="foot"]
+            padding-top: 8px !important
+        div[class*="rating"]
+            flex-direction: row !important
+            align-items: center !important
+            gap: 4px !important
+    +t
+        :global
+            div[class*="preview"]
+                &:before
+                    padding-bottom: 60% !important
+    +m
+        :global
+            div[class*="preview"]
+                &:before
+                    padding-bottom: 62% !important
+    &:hover
+        transform: translateY(-4px)
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08)
+        +dark
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3)

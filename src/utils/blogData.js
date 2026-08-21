@@ -366,26 +366,35 @@ export function mapApiBlogToComponentFormat(apiBlog) {
   };
 
   let processedContent = apiBlog.content || '';
-  const contentImages = apiBlog.contentImageUrls || [];
   
-  if (Array.isArray(contentImages) && contentImages.length > 0) {
-    let sequentialIndex = 0;
+  if (Array.isArray(apiBlog.contentImageUrls) && apiBlog.contentImageUrls.length > 0) {
+    let availableImages = [...apiBlog.contentImageUrls];
+    
     processedContent = processedContent.replace(/<img[^>]+src=["']([^"']+)["']/g, (match, src) => {
-      if (src.startsWith('http')) return match;
+      if (src.startsWith('http')) {
+        // If it's already an absolute URL, check if it's in our available images
+        // and remove it so we don't duplicate it later
+        const existingIndex = availableImages.findIndex(url => url === src);
+        if (existingIndex !== -1) {
+          availableImages.splice(existingIndex, 1);
+        }
+        return match;
+      }
       
       const decodedSrc = decodeURIComponent(src).split('/').pop().trim();
-      const matchedUrl = contentImages.find(url => {
+      const matchedIndex = availableImages.findIndex(url => {
         const urlFilename = decodeURIComponent(url).split('/').pop().trim();
         return urlFilename === decodedSrc || urlFilename.includes(decodedSrc);
       });
       
-      if (matchedUrl) {
+      if (matchedIndex !== -1) {
+        const matchedUrl = availableImages[matchedIndex];
+        availableImages.splice(matchedIndex, 1);
         return match.replace(src, matchedUrl);
       }
       
-      if (sequentialIndex < contentImages.length) {
-        const fallbackUrl = contentImages[sequentialIndex];
-        sequentialIndex++;
+      if (availableImages.length > 0) {
+        const fallbackUrl = availableImages.shift();
         return match.replace(src, fallbackUrl);
       }
       

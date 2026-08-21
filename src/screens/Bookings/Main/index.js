@@ -892,7 +892,16 @@ const isPastStayCheckOutTime = (booking) => {
 
   if (!isStayOrder) return true; // Non-stays bypass stay checkout restriction
 
+  const stayRooms = Array.isArray(bookingData?.stayOrderRooms) ? bookingData.stayOrderRooms : [];
+  const roomCheckOutDates = stayRooms
+    .map((room) => room?.checkOutDate || room?.checkoutDate || room?.check_out_date)
+    .filter(Boolean);
+  const roomCheckOutTimes = stayRooms
+    .map((room) => room?.checkOutTime || room?.checkoutTime || room?.check_out_time)
+    .filter(Boolean);
+
   const checkOutDateStr =
+    roomCheckOutDates[0] ||
     bookingData?.checkOutDate ||
     bookingData?.endDate ||
     stayData?.checkOutDate;
@@ -902,6 +911,7 @@ const isPastStayCheckOutTime = (booking) => {
   const checkOutDatetime = new Date(checkOutDateStr);
 
   const checkOutTimeStr =
+    roomCheckOutTimes[0] ||
     bookingData?.checkOutTime ||
     bookingData?.endTime ||
     stayData?.checkOutTime ||
