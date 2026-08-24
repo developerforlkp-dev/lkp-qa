@@ -140,6 +140,210 @@ const getStableDisplayPercent = ({ preferredRate = 0, fallbackRate = 0, toleranc
   return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
 };
 
+const buildChildPricingBreakdown = ({
+  childrenCount,
+  childAges,
+  pricing,
+  bookingData,
+  adultPrice,
+}) => {
+  const count = Number(childrenCount || 0);
+  if (count <= 0) return [];
+
+  const rawChildAges = Array.isArray(childAges) && childAges.length > 0
+    ? childAges
+    : (Array.isArray(bookingData?.childAges) && bookingData.childAges.length > 0
+      ? bookingData.childAges
+      : (Array.isArray(bookingData?.guests?.childAges) && bookingData.guests.childAges.length > 0
+        ? bookingData.guests.childAges
+        : (Array.isArray(pricing?.childAges) ? pricing.childAges : [])));
+
+  // Extract tiers from any possible location
+  const tiersCandidates = [
+    pricing?.childPricingTiers,
+    pricing?.child_pricing_tiers,
+    bookingData?.childPricingTiers,
+    bookingData?.child_pricing_tiers,
+    bookingData?.pricing?.childPricingTiers,
+    bookingData?.pricing?.child_pricing_tiers,
+    bookingData?.selectedTicket?.childPricingTiers,
+    bookingData?.selectedTicket?.child_pricing_tiers,
+    bookingData?.selectedSlot?.childPricingTiers,
+    bookingData?.selectedSlot?.child_pricing_tiers,
+    bookingData?.listing?.childPricingTiers,
+    bookingData?.event?.childPricingTiers,
+    bookingData?.selectedTier?.childPricingTiers,
+  ];
+  let tiers = [];
+  for (const tc of tiersCandidates) {
+    if (Array.isArray(tc) && tc.length > 0) {
+      tiers = tc;
+      break;
+    }
+  }
+
+  const childAgeFrom = toFiniteNumberOrNull(
+    pricing?.childAgeFrom,
+    bookingData?.childAgeFrom,
+    bookingData?.selectedSlot?.childAgeFrom,
+    bookingData?.listing?.childAgeFrom,
+    bookingData?.selectedTicket?.childAgeFrom,
+    bookingData?.pricing?.childAgeFrom
+  );
+  const childAgeTo = toFiniteNumberOrNull(
+    pricing?.childAgeTo,
+    bookingData?.childAgeTo,
+    bookingData?.selectedSlot?.childAgeTo,
+    bookingData?.listing?.childAgeTo,
+    bookingData?.selectedTicket?.childAgeTo,
+    bookingData?.pricing?.childAgeTo
+  );
+  const hasAgeRange = childAgeFrom != null && childAgeTo != null && childAgeTo >= childAgeFrom;
+
+  const childPriceCandidates = [
+    pricing?.baseChildPricePerChild,
+    pricing?.childPricePerChild,
+    bookingData?.pricing?.baseChildPricePerChild,
+    bookingData?.pricing?.childPricePerChild,
+    bookingData?.childPricePerChild,
+    bookingData?.priceDetails?.childPricePerChild,
+    bookingData?.orderRequest?.childPricePerChild,
+    bookingData?.selectedTicket?.childPrice,
+    bookingData?.selectedTicket?.child_price,
+    bookingData?.selectedSlot?.childPricePerChild,
+    bookingData?.selectedSlot?.childPrice,
+    bookingData?.listing?.childPricePerChild,
+    bookingData?.listing?.childPrice,
+  ];
+  const hasExplicitChildPrice = hasDefinedValue(...childPriceCandidates);
+  const resolvedChildPrice = toFiniteNumberOrNull(...childPriceCandidates);
+  const flatChildPrice = hasExplicitChildPrice ? (resolvedChildPrice ?? 0) : adultPrice;
+
+  const allowChildPricing = Boolean(
+    (
+      pricing?.allowChildPricing ??
+      pricing?.childPricingAllowed ??
+      bookingData?.allowChildPricing ??
+      bookingData?.childPricingAllowed ??
+      bookingData?.selectedSlot?.allowChildPricing ??
+      bookingData?.selectedSlot?.childPricingAllowed ??
+      bookingData?.selectedTicket?.allowChildPricing ??
+      bookingData?.listing?.allowChildPricing
+    ) ||
+    hasExplicitChildPrice ||
+    tiers.length > 0
+  );
+
+  const groups = {};
+
+  for (let i = 0; i < count; i++) {
+    const rawAge = rawChildAges[i];
+    const age = rawAge != null && rawAge !== "" && !isNaN(Number(rawAge)) ? Number(rawAge) : null;
+
+    let groupKey = "";
+    let ageRange = null;
+    let unitPrice = flatChildPrice;
+    let isFree = false;
+    let sortOrder = 50;
+
+    if (tiers.length > 0) {
+      if (age !== null) {
+        const matchedTier = tiers.find((t) => {
+          const from = toFiniteNumberOrNull(t?.ageFrom, t?.age_from);
+          const to = toFiniteNumberOrNull(t?.ageTo, t?.age_to);
+          if (from == null || to == null) return false;
+          return age >= from && age <= to;
+        });
+
+        if (matchedTier) {
+          const from = toFiniteNumberOrNull(matchedTier?.ageFrom, matchedTier?.age_from) ?? 0;
+          const to = toFiniteNumberOrNull(matchedTier?.ageTo, matchedTier?.age_to) ?? 100;
+          ageRange = `${from}–${to} yrs`;
+          unitPrice = Number(matchedTier?.pricePerChild ?? matchedTier?.price_per_child ?? matchedTier?.price ?? 0);
+          isFree = unitPrice === 0;
+          groupKey = `tier_${from}_${to}_${unitPrice}`;
+          sortOrder = from;
+        } else {
+          const minAge = Math.min(...tiers.map((t) => toFiniteNumberOrNull(t?.ageFrom, t?.age_from) ?? 0));
+          const maxAge = Math.max(...tiers.map((t) => toFiniteNumberOrNull(t?.ageTo, t?.age_to) ?? 100));
+
+          if (age < minAge) {
+            ageRange = minAge === 1 ? "Under 1 yr" : (minAge > 0 ? `0–${minAge - 1} yrs` : `< ${minAge} yrs`);
+            unitPrice = 0;
+            isFree = true;
+            groupKey = `free_under_${minAge}_0`;
+            sortOrder = -1;
+          } else if (age > maxAge) {
+            ageRange = `> ${maxAge} yrs`;
+            unitPrice = adultPrice;
+            isFree = false;
+            groupKey = `above_${maxAge}_${adultPrice}`;
+            sortOrder = 900 + maxAge;
+          } else {
+            ageRange = `Age ${age}`;
+            unitPrice = flatChildPrice;
+            isFree = unitPrice === 0;
+            groupKey = `age_${age}_${unitPrice}`;
+            sortOrder = age;
+          }
+        }
+      } else {
+        unitPrice = flatChildPrice;
+        isFree = unitPrice === 0;
+        groupKey = `tier_default_${unitPrice}`;
+        sortOrder = 100;
+      }
+    } else if (allowChildPricing && hasAgeRange) {
+      if (age !== null) {
+        if (age < childAgeFrom) {
+          ageRange = childAgeFrom === 1 ? "Under 1 yr" : (childAgeFrom > 0 ? `0–${childAgeFrom - 1} yrs` : `< ${childAgeFrom} yrs`);
+          unitPrice = 0;
+          isFree = true;
+          groupKey = `free_under_${childAgeFrom}_0`;
+          sortOrder = -1;
+        } else if (age > childAgeTo) {
+          ageRange = `> ${childAgeTo} yrs`;
+          unitPrice = adultPrice;
+          isFree = false;
+          groupKey = `above_${childAgeTo}_${adultPrice}`;
+          sortOrder = 900 + childAgeTo;
+        } else {
+          ageRange = `${childAgeFrom}–${childAgeTo} yrs`;
+          unitPrice = flatChildPrice;
+          isFree = unitPrice === 0;
+          groupKey = `range_${childAgeFrom}_${childAgeTo}_${unitPrice}`;
+          sortOrder = childAgeFrom;
+        }
+      } else {
+        ageRange = `${childAgeFrom}–${childAgeTo} yrs`;
+        unitPrice = flatChildPrice;
+        isFree = unitPrice === 0;
+        groupKey = `range_${childAgeFrom}_${childAgeTo}_${unitPrice}`;
+        sortOrder = childAgeFrom;
+      }
+    } else {
+      ageRange = hasAgeRange ? `${childAgeFrom}–${childAgeTo} yrs` : null;
+      unitPrice = flatChildPrice;
+      isFree = unitPrice === 0;
+      groupKey = `flat_${ageRange || "default"}_${unitPrice}`;
+      sortOrder = 50;
+    }
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = {
+        ageRange,
+        unitPrice,
+        isFree,
+        count: 0,
+        sortOrder,
+      };
+    }
+    groups[groupKey].count += 1;
+  }
+
+  return Object.values(groups).sort((a, b) => a.sortOrder - b.sortOrder);
+};
+
 
 const Checkout = () => {
   const location = useLocation();
@@ -418,7 +622,16 @@ const Checkout = () => {
                   childPricePerChild: (Number(prevPricing.childPricePerChild || 0) > 0)
                     ? prevPricing.childPricePerChild
                     : (serverPricing.childPricePerChild || 0),
+                  childAges: prevPricing.childAges || serverPricing.childAges || prev?.childAges || prev?.guests?.childAges || [],
+                  childPricingTiers: prevPricing.childPricingTiers || serverPricing.childPricingTiers || prev?.childPricingTiers || [],
+                  childAgeFrom: prevPricing.childAgeFrom ?? serverPricing.childAgeFrom ?? prev?.childAgeFrom,
+                  childAgeTo: prevPricing.childAgeTo ?? serverPricing.childAgeTo ?? prev?.childAgeTo,
+                  childBreakdown: prevPricing.childBreakdown || serverPricing.childBreakdown || prev?.childBreakdown,
                 },
+                childAges: prev?.childAges || prev?.guests?.childAges || prevPricing.childAges || [],
+                childPricingTiers: prev?.childPricingTiers || prevPricing.childPricingTiers || [],
+                selectedTicket: prev?.selectedTicket || order?.selectedTicket || null,
+                selectedSlot: prev?.selectedSlot || order?.selectedSlot || null,
               };
             });
           }
@@ -709,7 +922,14 @@ const Checkout = () => {
         parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
       }
       if (children > 0) {
-        parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+        const rawChildAges = Array.isArray(bookingData?.childAges) && bookingData.childAges.length > 0
+          ? bookingData.childAges
+          : (Array.isArray(bookingData?.guests?.childAges) && bookingData.guests.childAges.length > 0
+            ? bookingData.guests.childAges
+            : (Array.isArray(bookingData?.pricing?.childAges) ? bookingData.pricing.childAges : []));
+        const validAges = rawChildAges.filter((a) => a !== "" && a !== null && a !== undefined);
+        const childLabel = `${children} ${children === 1 ? "Child" : "Children"}`;
+        parts.push(validAges.length > 0 ? `${childLabel} (Age${validAges.length > 1 ? "s" : ""}: ${validAges.join(", ")})` : childLabel);
       }
       guestsTitle = parts.join(", ");
     } else {
@@ -777,23 +997,55 @@ const Checkout = () => {
             pricing.pricePerPerson,
             totalG > 0 ? (basePrice / totalG) : null
           ) || 0;
-          const childPriceCandidates = [
-            pricing.baseChildPricePerChild,
-            pricing.childPricePerChild,
-            bookingData?.pricing?.baseChildPricePerChild,
-            bookingData?.pricing?.childPricePerChild,
-            bookingData?.childPricePerChild,
-            bookingData?.priceDetails?.childPricePerChild,
-            bookingData?.orderRequest?.childPricePerChild,
-          ];
-          const hasExplicitChildPrice = hasDefinedValue(...childPriceCandidates);
-          const resolvedChildPrice = toFiniteNumberOrNull(...childPriceCandidates);
-          const cpp = hasExplicitChildPrice ? (resolvedChildPrice ?? 0) : ppp;
 
           if (adults > 0) {
             rows.push({ title: `Adults (${fmt(ppp)} x ${adults})`, value: fmt(ppp * adults) });
           }
-          if (children > 0) {
+
+          const childGroups = buildChildPricingBreakdown({
+            childrenCount: children,
+            childAges: bookingData?.childAges || bookingData?.guests?.childAges || pricing?.childAges || [],
+            pricing,
+            bookingData,
+            adultPrice: ppp,
+          });
+
+          if (childGroups.length > 0) {
+            childGroups.forEach((group) => {
+              const rangePrefix = group.ageRange ? `${group.ageRange}: ` : "";
+              const priceDisplay = (group.isFree || group.unitPrice === 0) ? "Free" : fmt(group.unitPrice);
+              const countDisplay = group.count;
+
+              let title = "";
+              if (group.isFree || group.unitPrice === 0) {
+                title = countDisplay === 1
+                  ? `Child (${rangePrefix}Free)`
+                  : `Children (${rangePrefix}Free x ${countDisplay})`;
+              } else {
+                title = countDisplay === 1
+                  ? `Child (${rangePrefix}${priceDisplay} x 1)`
+                  : `Children (${rangePrefix}${priceDisplay} x ${countDisplay})`;
+              }
+
+              const groupTotal = (group.isFree || group.unitPrice === 0) ? 0 : group.unitPrice * countDisplay;
+              rows.push({
+                title,
+                value: fmt(groupTotal),
+              });
+            });
+          } else {
+            const childPriceCandidates = [
+              pricing.baseChildPricePerChild,
+              pricing.childPricePerChild,
+              bookingData?.pricing?.baseChildPricePerChild,
+              bookingData?.pricing?.childPricePerChild,
+              bookingData?.childPricePerChild,
+              bookingData?.priceDetails?.childPricePerChild,
+              bookingData?.orderRequest?.childPricePerChild,
+            ];
+            const hasExplicitChildPrice = hasDefinedValue(...childPriceCandidates);
+            const resolvedChildPrice = toFiniteNumberOrNull(...childPriceCandidates);
+            const cpp = hasExplicitChildPrice ? (resolvedChildPrice ?? 0) : ppp;
             const adultsTotal = ppp * adults;
             const remaining = Math.max(0, basePrice - adultsTotal);
             const applicableChildren = cpp > 0 ? Math.round(remaining / cpp) : children;

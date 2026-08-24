@@ -3356,7 +3356,12 @@ function Tickets({ event }) {
       desc: t.description || t.desc || t.ticketDescription || "Event Access",
       tax: taxP,
       discount: discP,
-      featured: t.featured || (eventTiers.length > 1 && i === 1) || (eventTiers.length === 1)
+      featured: t.featured || (eventTiers.length > 1 && i === 1) || (eventTiers.length === 1),
+      childPricingTiers: t.childPricingTiers || t.child_pricing_tiers || event?.childPricingTiers || [],
+      childPrice: t.childPrice ?? t.child_price ?? event?.childPrice ?? null,
+      childAgeFrom: t.childAgeFrom ?? t.child_age_from ?? event?.childAgeFrom ?? null,
+      childAgeTo: t.childAgeTo ?? t.child_age_to ?? event?.childAgeTo ?? null,
+      rawTicket: t,
     };
   }) : [
     { id: "general", name: "General", priceValue: 2500, price: "₹2,500", strikePrice: null, desc: "Full access to all stages and exhibitions.", tax: 0, discount: 0, featured: false },
@@ -3366,11 +3371,21 @@ function Tickets({ event }) {
   const handlePurchase = (tier) => {
     // Construct booking data for the checkout page
     const totalGuests = guests.adults + guests.children;
+    const childTiers = tier.childPricingTiers || event?.childPricingTiers || [];
+    const childPrice = tier.childPrice ?? event?.childPrice ?? null;
+    const childAgeFrom = tier.childAgeFrom ?? event?.childAgeFrom ?? null;
+    const childAgeTo = tier.childAgeTo ?? event?.childAgeTo ?? null;
+
     const bookingData = {
       eventId: event?.id || "1",
       listingId: event?.id || "1",
       listingTitle: event?.title || "Event Booking",
       listingImage: event?.media?.[0]?.url || "/images/content/photo-1.1.jpg",
+      childAges: guests.childAges || [],
+      childPricingTiers: childTiers,
+      childAgeFrom,
+      childAgeTo,
+      selectedTicket: tier.rawTicket || tier,
       pricing: {
         basePrice: tier.priceValue * totalGuests,
         tax: tier.tax * totalGuests,
@@ -3380,7 +3395,12 @@ function Tickets({ event }) {
         pricePerPerson: tier.priceValue,
         adultsCount: guests.adults,
         childrenCount: guests.children,
-        guestCount: totalGuests
+        guestCount: totalGuests,
+        childAges: guests.childAges || [],
+        childPricingTiers: childTiers,
+        childPricePerChild: childPrice,
+        childAgeFrom,
+        childAgeTo,
       },
       selectedDate: bookingDate,
       bookingSummary: {

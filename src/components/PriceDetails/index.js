@@ -93,7 +93,7 @@ const PriceDetails = ({
           <div className={styles.table}>
             {table.map((x, index) => {
               const renderTitle = (title) => {
-                if (typeof title === "string" && /Extra (Adult|Child) Charges/i.test(title) && title.includes("(") && title.includes(")")) {
+                if (typeof title === "string" && (/(Extra\s+)?(Adult|Child|Children|Base price|Ticket)/i.test(title)) && title.includes("(") && title.includes(")")) {
                   const parts = title.split("(");
                   if (parts.length > 1) {
                     const mainLabel = parts[0].trim();

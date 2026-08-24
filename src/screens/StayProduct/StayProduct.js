@@ -8,7 +8,7 @@ import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
-import { getStayDetails, getStayRoomAvailability, createStayOrder, getStayReviews } from "../../utils/api";
+import { getStayDetails, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, createStayOrder, getStayReviews, getStayHotelRoomAvailability, getStayHostelAvailability } from "../../utils/api";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1814,9 +1814,12 @@ const StayProduct = () => {
     const fetchAvailability = async () => {
       setAvailabilityLoading(true);
       try {
-        const result = await getStayRoomAvailability(stayId, checkInDate, checkOutDate);
+        const isHostel = String(stay?.bookingScope || "").toLowerCase().includes("hostel");
+        const result = isHostel
+          ? await getStayHostelAvailability(stayId, checkInDate, checkOutDate)
+          : await getStayHotelRoomAvailability(stayId, checkInDate, checkOutDate);
         if (cancelled) return;
-        const fetchedRooms = result?.rooms || [];
+        const fetchedRooms = result?.rooms || result?.roomAvailability?.rooms || [];
         setAvailableRooms(enrichRoomsWithCatalog(fetchedRooms));
         setAvailabilityChecked(true);
       } catch (err) {
@@ -1884,6 +1887,132 @@ const StayProduct = () => {
     if (isRoomBased && !selectedRoom) {
       alert("Please select a room before booking.");
       return;
+    }
+
+    // Verify property/room/bed availability before proceeding
+    if (stayId && checkInDate && checkOutDate) {
+      try {
+        const isPropertyStay = isPropertyBased;
+        const isHostel = String(stay?.bookingScope || "").toLowerCase().includes("hostel");
+        const isBedStay = isHostel || stay?.bookingScope === "Bed-Based" || stay?.inventoryScope === "Bed-Based" || selectedRoom?.isBedConfig;
+        const freshRaw = isPropertyStay
+          ? await getStayPropertyAvailability(stayId, checkInDate, checkOutDate)
+          : (isHostel
+              ? await getStayHostelAvailability(stayId, checkInDate, checkOutDate)
+              : await getStayHotelRoomAvailability(stayId, checkInDate, checkOutDate));
+
+        const freshAvailability = (freshRaw?.data && typeof freshRaw.data === "object" && !Array.isArray(freshRaw.data))
+          ? { ...freshRaw.data, ...freshRaw }
+          : freshRaw;
+
+        if (freshAvailability) {
+          const isOverallAvailable = freshAvailability.isAvailable !== false &&
+            freshAvailability.available !== false &&
+            freshAvailability.is_available !== false &&
+            freshAvailability.status !== "UNAVAILABLE" &&
+            freshAvailability.status !== "SOLD_OUT" &&
+            freshAvailability.status !== "BOOKED";
+
+          if (!isOverallAvailable || freshAvailability.sameDayCheckInClosed === true) {
+            alert(freshAvailability.availabilityReason || freshAvailability.reason || freshAvailability.message || (freshAvailability.sameDayCheckInClosed ? "Same-day check-in is closed for this property." : "This stay is currently unavailable for the selected dates."));
+            return;
+          }
+          if (isPropertyStay) {
+            if (Number(freshAvailability.overlappingBookings || 0) > 0 || freshAvailability.isBooked === true) {
+              alert("This property is already booked for the selected dates.");
+              return;
+            }
+          } else if (isBedStay) {
+            const availableBedsCount = Number(
+              freshAvailability.bedAvailability?.availableBeds ??
+              freshAvailability.availableBeds ??
+              freshAvailability.available_beds ??
+              freshAvailability.remainingBeds ??
+              freshAvailability.remaining_beds ??
+              freshAvailability.availableUnits ??
+              freshAvailability.units
+            );
+            if (Number.isFinite(availableBedsCount) && availableBedsCount < (guests?.adults || 1)) {
+              alert(availableBedsCount === 0 ? "No beds are available for the selected dates." : `Only ${availableBedsCount} bed(s) available for the selected dates.`);
+              return;
+            }
+          } else if (isRoomBased && selectedRoom) {
+            const availRooms = freshAvailability.rooms ||
+              freshAvailability.roomAvailability?.rooms ||
+              freshAvailability.roomAvailability ||
+              freshAvailability.data?.rooms ||
+              freshAvailability.data?.roomAvailability ||
+              (Array.isArray(freshAvailability.data) ? freshAvailability.data : []) ||
+              (Array.isArray(freshAvailability) ? freshAvailability : []);
+
+            const selKey = String(selectedRoom.roomId ?? selectedRoom.id ?? selectedRoom.roomTypeId ?? selectedRoom.room_type_id ?? selectedRoom.bedConfigId ?? "").replace(/^bed-/, "").trim().toLowerCase();
+            const selName = String(selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || "").trim().toLowerCase();
+
+            const matched = (Array.isArray(availRooms) && availRooms.length > 0)
+              ? availRooms.find((r) => {
+                  const rIds = [r.roomId, r.id, r.roomTypeId, r.room_type_id, r.bedConfigId, r.bed_config_id, r._id, r.room_id]
+                    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+                    .map((v) => String(v).replace(/^bed-/, "").trim().toLowerCase());
+                  if (selKey && rIds.includes(selKey)) return true;
+                  const rName = String(r.roomName || r.name || r.roomTypeName || "").trim().toLowerCase();
+                  return Boolean(selName && rName && selName === rName);
+                })
+              : null;
+
+            const roomLabel = matched?.roomName || matched?.name || selectedRoom.roomName || selectedRoom.name || "Selected Room";
+
+            if (matched) {
+              const isRoomAvailable = !(
+                matched.isAvailable === false ||
+                matched.is_available === false ||
+                matched.available === false ||
+                matched.status === "UNAVAILABLE" ||
+                matched.status === "BOOKED" ||
+                matched.status === "SOLD_OUT" ||
+                matched.status === "BLOCKED" ||
+                matched.isBooked === true ||
+                matched.is_booked === true
+              );
+              const availableCountCandidates = [
+                matched.availableRooms,
+                matched.available_rooms,
+                matched.availableUnits,
+                matched.available_units,
+                matched.availableCount,
+                matched.available_count,
+                matched.remainingRooms,
+                matched.remaining_rooms,
+                matched.remaining,
+                matched.units,
+                matched.totalAvailable,
+              ];
+              const availableCount = availableCountCandidates.find((val) => typeof val === "number" && !isNaN(val));
+
+              if (!isRoomAvailable || (availableCount !== undefined && availableCount < 1)) {
+                alert(`Room "${roomLabel}" is not available for the selected dates.`);
+                return;
+              }
+            } else if (Array.isArray(availRooms) && availRooms.length > 0) {
+              const hasExplicitRooms = availRooms.some((r) => r.roomId !== undefined || r.roomTypeId !== undefined || r.id !== undefined);
+              if (hasExplicitRooms) {
+                alert(`Room "${roomLabel}" is not available for the selected dates.`);
+                return;
+              }
+            }
+          }
+        }
+      } catch (availErr) {
+        console.warn("⚠️ Availability check during booking:", availErr);
+        const errMsg = availErr.response?.data?.message ||
+          availErr.response?.data?.error ||
+          availErr.response?.data?.availabilityReason ||
+          availErr.message;
+        const status = availErr.response?.status;
+        if (status === 400 || status === 409 || status === 422 || (errMsg && (errMsg.toLowerCase().includes("avail") || errMsg.toLowerCase().includes("book") || errMsg.toLowerCase().includes("room")))) {
+          alert(errMsg || "The selected rooms or dates are unavailable. Please choose different dates.");
+          return;
+        }
+      }
     }
 
     // Get customer info for the order

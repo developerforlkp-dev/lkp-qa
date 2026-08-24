@@ -2391,6 +2391,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           matchedPrice = 0;
           childAgeWarnings[i] = 'free';
         }
+      } else {
+        matchedPrice = (allowChildPricing || eventHasExplicitChildPrice)
+          ? Number(rawChildPrice || 0)
+          : Number(effectiveEventPrice?.price || 0);
       }
       eventChildPriceTotal += matchedPrice;
     }
@@ -2448,6 +2452,102 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const baseChildPricePerChild = actualHasChildPricing
     ? parseFloat(rawChildPrice || 0)
     : baseAdultPricePerPerson;
+
+  const buildChildReceiptRows = ({ currencySymbol, isEvent, adultUnitPrice, childTiers, allowCP, rawCP }) => {
+    const childRows = [];
+    if (!guests.children || guests.children <= 0) return childRows;
+
+    const tiers = isEvent
+      ? (Array.isArray(eventChildPricingTiers) ? eventChildPricingTiers : [])
+      : (Array.isArray(experienceChildPricingTiers) ? experienceChildPricingTiers : []);
+    const groups = {};
+
+    for (let i = 0; i < guests.children; i++) {
+      const age = guests.childAges?.[i] ?? 0;
+      let matchedPrice = 0;
+      let ageRange = null;
+      let isFree = false;
+      let sortOrder = 50;
+
+      if (tiers.length > 0) {
+        const tier = tiers.find(t => age >= (t.ageFrom ?? t.age_from ?? 0) && age <= (t.ageTo ?? t.age_to ?? 100));
+        if (tier) {
+          const from = tier.ageFrom ?? tier.age_from ?? 0;
+          const to = tier.ageTo ?? tier.age_to ?? 100;
+          ageRange = `${from}–${to} yrs`;
+          matchedPrice = Number(tier.pricePerChild ?? tier.price_per_child ?? tier.price ?? 0);
+          isFree = matchedPrice === 0;
+          sortOrder = from;
+        } else {
+          const minAge = Math.min(...tiers.map(t => t.ageFrom ?? t.age_from ?? 0));
+          const maxAge = Math.max(...tiers.map(t => t.ageTo ?? t.age_to ?? 100));
+          if (age < minAge) {
+            ageRange = minAge === 1 ? "Under 1 yr" : (minAge > 0 ? `0–${minAge - 1} yrs` : `< ${minAge} yrs`);
+            matchedPrice = 0;
+            isFree = true;
+            sortOrder = -1;
+          } else if (age > maxAge) {
+            ageRange = `> ${maxAge} yrs`;
+            matchedPrice = isEvent ? Number(effectiveEventPrice?.price || adultUnitPrice || 0) : adultUnitPrice;
+            isFree = false;
+            sortOrder = 900 + maxAge;
+          } else {
+            ageRange = `Age ${age}`;
+            matchedPrice = allowCP ? Number(rawCP || 0) : adultUnitPrice;
+            isFree = matchedPrice === 0;
+            sortOrder = age;
+          }
+        }
+      } else if (!isEvent && allowCP && hasChildAgeRange) {
+        if (age < childAgeFrom) {
+          ageRange = childAgeFrom === 1 ? "Under 1 yr" : (childAgeFrom > 0 ? `0–${childAgeFrom - 1} yrs` : `< ${childAgeFrom} yrs`);
+          matchedPrice = 0;
+          isFree = true;
+          sortOrder = -1;
+        } else if (age > childAgeTo) {
+          ageRange = `> ${childAgeTo} yrs`;
+          matchedPrice = adultUnitPrice;
+          isFree = false;
+          sortOrder = 900 + childAgeTo;
+        } else {
+          ageRange = `${childAgeFrom}–${childAgeTo} yrs`;
+          matchedPrice = Number(rawCP || 0);
+          isFree = matchedPrice === 0;
+          sortOrder = childAgeFrom;
+        }
+      } else {
+        ageRange = (!isEvent && hasChildAgeRange) ? `${childAgeFrom}–${childAgeTo} yrs` : null;
+        matchedPrice = allowCP ? Number(rawCP || 0) : adultUnitPrice;
+        isFree = matchedPrice === 0;
+        sortOrder = 50;
+      }
+
+      const key = `${ageRange || "default"}_${matchedPrice}`;
+      if (!groups[key]) {
+        groups[key] = { ageRange, price: matchedPrice, isFree, count: 0, sortOrder };
+      }
+      groups[key].count += 1;
+    }
+
+    Object.values(groups).sort((a, b) => a.sortOrder - b.sortOrder).forEach((group) => {
+      const rangePrefix = group.ageRange ? `${group.ageRange}: ` : "";
+      const priceLabel = (group.isFree || group.price === 0) ? "Free" : `${currencySymbol} ${group.price.toFixed(2)}`;
+      const countLabel = `${group.count} ${group.count === 1 ? "child" : "children"}`;
+      const title = (group.isFree || group.price === 0)
+        ? `${rangePrefix}Free × ${countLabel}`
+        : `${rangePrefix}${priceLabel} × ${countLabel}`;
+      const content = `${currencySymbol} ${(group.price * group.count).toFixed(2)}`;
+
+      childRows.push({
+        title,
+        content,
+        kind: "base-child",
+        showInCheckout: true,
+      });
+    });
+
+    return childRows;
+  };
 
   const data = {
     price: extractedPrice,
@@ -2923,6 +3023,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             allowChildPricing: actualHasChildPricing,
             adultsCount: guests.adults,
             childrenCount: guests.children,
+            childAges: guests.childAges || [],
+            childPricingTiers: eventChildPricingTiers,
             basePricePerPerson: eventGuestPricing.baseUnitPrice,
             adultBasePricePerPerson: eventGuestPricing.baseUnitPrice,
             childPricePerChild: actualHasChildPricing
@@ -2940,11 +3042,22 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             total: finalTotal,
             guestCount: totalGuests,
           },
+          childAges: guests.childAges || [],
+          childPricingTiers: eventChildPricingTiers,
+          selectedTicket,
           receipt: [
-            {
-              title: `${previewCurrency} ${eventGuestPricing.baseUnitPrice.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? "ticket" : "tickets"}`,
-              content: `${previewCurrency} ${eventBaseTotal.toFixed(2)}`,
-            },
+            ...(guests.adults > 0 ? [{
+              title: `${previewCurrency} ${eventGuestPricing.baseUnitPrice.toFixed(2)} × ${guests.adults} adult${guests.adults > 1 ? "s" : ""}`,
+              content: `${previewCurrency} ${(eventGuestPricing.baseUnitPrice * guests.adults).toFixed(2)}`,
+            }] : []),
+            ...buildChildReceiptRows({
+              currencySymbol: previewCurrency,
+              isEvent: true,
+              adultUnitPrice: eventGuestPricing.baseUnitPrice,
+              childTiers: eventChildPricingTiers,
+              allowCP: actualHasChildPricing,
+              rawCP: rawChildPrice,
+            }),
             ...(eventEarlyBirdDiscountTotal > 0 ? [{
               title: `Early Bird Discount (${eventGuestPricing.earlyBirdDiscountRate}%)`,
               content: `- ${previewCurrency} ${eventEarlyBirdDiscountTotal.toFixed(2)}`,
@@ -3059,6 +3172,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             allowChildPricing: actualHasChildPricing,
             adultsCount: guests.adults,
             childrenCount: guests.children,
+            childAges: guests.childAges || [],
+            childPricingTiers: eventChildPricingTiers,
             basePricePerPerson: eventGuestPricing.baseUnitPrice,
             adultBasePricePerPerson: eventGuestPricing.baseUnitPrice,
             childPricePerChild: actualHasChildPricing
@@ -3076,11 +3191,22 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             total: finalTotal,
             guestCount: totalGuests,
           },
+          childAges: guests.childAges || [],
+          childPricingTiers: eventChildPricingTiers,
+          selectedTicket,
           receipt: [
-            {
-              title: `${currency} ${eventGuestPricing.baseUnitPrice.toFixed(2)} x ${totalGuests} ${totalGuests === 1 ? "ticket" : "tickets"}`,
-              content: `${currency} ${eventBaseTotal.toFixed(2)}`,
-            },
+            ...(guests.adults > 0 ? [{
+              title: `${currency} ${eventGuestPricing.baseUnitPrice.toFixed(2)} × ${guests.adults} adult${guests.adults > 1 ? "s" : ""}`,
+              content: `${currency} ${(eventGuestPricing.baseUnitPrice * guests.adults).toFixed(2)}`,
+            }] : []),
+            ...buildChildReceiptRows({
+              currencySymbol: currency,
+              isEvent: true,
+              adultUnitPrice: eventGuestPricing.baseUnitPrice,
+              childTiers: eventChildPricingTiers,
+              allowCP: actualHasChildPricing,
+              rawCP: rawChildPrice,
+            }),
             ...(eventEarlyBirdDiscountTotal > 0 ? [{
               title: `Early Bird Discount (${eventGuestPricing.earlyBirdDiscountRate}%)`,
               content: `- ${currency} ${eventEarlyBirdDiscountTotal.toFixed(2)}`,
@@ -3239,23 +3365,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         showInCheckout: true
       });
     }
-    // Child row (if children selected and child pricing applies)
+    // Child rows (if children selected and child pricing applies)
     if (guests.children > 0) {
-      const childLineTotal = actualHasChildPricing ? experienceChildPriceTotal : (baseAdultPricePerPerson * guests.children);
-      const cpp = actualHasChildPricing ? parseFloat(rawChildPrice || 0) : baseAdultPricePerPerson;
-      let chargeableChildren = guests.children;
-      if (cpp > 0 && actualHasChildPricing) {
-        chargeableChildren = Math.max(0, Math.min(guests.children, Math.round(childLineTotal / cpp)));
-      }
-      
-      if (childLineTotal > 0 || actualHasChildPricing) {
-        receipt.push({
-          title: `₹${Number(cpp).toFixed(2)} × ${chargeableChildren} child${chargeableChildren > 1 ? 'ren' : ''}`,
-          content: `₹${childLineTotal.toFixed(2)}`,
-          kind: "base-child",
-          showInCheckout: true
-        });
-      }
+      const childReceiptRows = buildChildReceiptRows({
+        currencySymbol: "₹",
+        isEvent: false,
+        adultUnitPrice: baseAdultPricePerPerson,
+        childTiers: experienceChildPricingTiers,
+        allowCP: actualHasChildPricing,
+        rawCP: rawChildPrice,
+      });
+      childReceiptRows.forEach((r) => receipt.push(r));
     }
 
     selectedAddOns.forEach(item => {
@@ -3316,6 +3436,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       selectedTimeSlot: startTime,
       guests: guestsObj,
       childAges: guests.childAges || [],
+      childPricingTiers: experienceChildPricingTiers,
+      childAgeFrom,
+      childAgeTo,
+      selectedSlot: selectedSlotData,
       selectedAddOns: selectedAddOns.map(a => (a.addon?.addonId || a.addonId || a.id)),
       addOnQuantities: addOnQuantities,
       receipt: receipt,
@@ -3327,6 +3451,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         allowChildPricing: actualHasChildPricing,
         adultsCount: guests.adults,
         childrenCount: guests.children,
+        childAges: guests.childAges || [],
+        childPricingTiers: experienceChildPricingTiers,
+        childAgeFrom,
+        childAgeTo,
         pricePerPerson: parseFloat(extractedPrice || 0),
         basePricePerPerson: baseAdultPricePerPerson,
         adultBasePricePerPerson: baseAdultPricePerPerson,
