@@ -5,7 +5,7 @@ import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
 import CategoryCard from "../../components/CategoryCard";
-import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getBusinessInterests } from "../../utils/api";
+import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces, filterPlaces, getBusinessInterests } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -492,7 +492,7 @@ const FleetHome = () => {
           // console.log(`🔍 Section ${section.sectionId} - "${section.sectionTitle}" full data:`, section);
           // console.log(`💰 priceStartingFrom for section ${section.sectionId}:`, section.priceStartingFrom);
           try {
-            const sectionData = await getHomepageSectionListings(section.sectionId, 12, 0);
+            const sectionData = await getHomepageSectionListings(section.sectionId, 50, 0);
             //console.log(`✅ Section ${section.sectionId} data:`, sectionData);
 
 
@@ -523,6 +523,7 @@ const FleetHome = () => {
             const isEventsSection = activeFilter === "events" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("event"));
             const isStaysSection = activeFilter === "stays" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("stay"));
             const isFoodSection = activeFilter === "food" || (typeof sectionTitle === "string" && (sectionTitle.toLowerCase().includes("food") || sectionTitle.toLowerCase().includes("menu")));
+            const isPlacesSection = activeFilter === "places" || (typeof sectionTitle === "string" && sectionTitle.toLowerCase().includes("place"));
 
             if (isEventsSection && (!listings || listings.length === 0)) {
               try {
@@ -555,6 +556,37 @@ const FleetHome = () => {
                 }
               } catch (foodErr) {
                 console.warn("⚠️ Failed to fetch food listings fallback:", foodErr);
+              }
+            }
+            if (isPlacesSection) {
+              const selectedCategories = Array.isArray(sectionInfo?.selectedCategories) ? sectionInfo.selectedCategories : (Array.isArray(section?.selectedCategories) ? section.selectedCategories : []);
+              const categoryType = sectionInfo?.categoryType || section?.categoryType;
+              const normalizedCategoryType = String(categoryType || "").toUpperCase();
+              const shouldUseId = normalizedCategoryType.includes("PRIMARY") || normalizedCategoryType.includes("SUB");
+              const categoryValues = selectedCategories
+                .map((category) => (shouldUseId ? category?.id : category?.name))
+                .filter((value) => value != null && String(value).trim().length > 0);
+
+              if (categoryValues.length > 0) {
+                try {
+                  const placeResult = await filterPlaces({ categoryType: categoryType, categoryValues: categoryValues.join(","), limit: 50, sortBy: "newest" });
+                  const placeListingsArray = Array.isArray(placeResult?.places) ? placeResult.places : (Array.isArray(placeResult?.listings) ? placeResult.listings : (Array.isArray(placeResult) ? placeResult : []));
+                  if (placeListingsArray.length > 0) {
+                    listings = placeListingsArray;
+                  }
+                } catch (err) {
+                  console.warn("⚠️ Failed to filter places fallback:", err);
+                }
+              } else if (!listings || listings.length === 0) {
+                try {
+                  const placeResult = await getPlaces(50, 0);
+                  const placeListingsArray = Array.isArray(placeResult?.places) ? placeResult.places : (Array.isArray(placeResult?.listings) ? placeResult.listings : (Array.isArray(placeResult) ? placeResult : []));
+                  if (placeListingsArray.length > 0) {
+                    listings = placeListingsArray;
+                  }
+                } catch (placeErr) {
+                  console.warn("⚠️ Failed to fetch place listings fallback:", placeErr);
+                }
               }
             }
 
@@ -603,10 +635,11 @@ const FleetHome = () => {
                 if (dateA !== dateB) return dateB - dateA;
                 
                 // Fallback to ID if dates are the same or missing
-                const idA = Number(a.id || a.listingId || a.experienceId || a.eventId || a.stayId || 0);
-                const idB = Number(b.id || b.listingId || b.experienceId || b.eventId || b.stayId || 0);
+                const idA = Number(a.id || a.listingId || a.experienceId || a.eventId || a.stayId || a.placeId || a.foodMenuId || 0);
+                const idB = Number(b.id || b.listingId || b.experienceId || b.eventId || b.stayId || b.placeId || b.foodMenuId || 0);
                 return idB - idA;
               });
+              listings = listings.slice(0, 12);
             }
 
             return {

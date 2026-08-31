@@ -1320,7 +1320,9 @@ function Hero({ event, heroRef }) {
                   const lastWord = words.pop();
                   displayTitle = (
                     <>
-                      {words.join(' ')}{' '}
+                      <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>
+                        {words.join(' ')}{' '}
+                      </span>
                       <span style={{
                         fontStyle: "italic",
                         fontWeight: 500,
@@ -1335,7 +1337,7 @@ function Hero({ event, heroRef }) {
                     </>
                   );
                 } else {
-                  displayTitle = title;
+                  displayTitle = <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>{title}</span>;
                 }
 
                 return (

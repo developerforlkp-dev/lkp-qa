@@ -11,6 +11,11 @@ import GuestPicker from "../../components/GuestPicker";
 import { getOrderDetails, getStayDetails } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 import {
+  getStayGuestDiscountRate,
+  getStayGuestTaxRate,
+  getStayLongStayDiscountRate,
+} from "../../utils/stayPricing";
+import {
   getPendingOrderId,
   getPendingPayment,
   hydratePendingPaymentFromOrder,
@@ -728,51 +733,8 @@ const Checkout = () => {
         ? rawBaseFromReceipt
         : (propertyBaseFromApi > 0 ? propertyBaseFromApi : 0);
 
-      const discountTiers = Array.isArray(stayDetails?.discountTiers) ? stayDetails.discountTiers : [];
-      const activeTier = discountTiers.find((t) => {
-        const min = Number(t?.minimumDays || 0);
-        const max = Number(t?.maximumDays || 99999);
-        return nights >= min && nights <= max;
-      });
-      const tierDiscountPercent = Number(activeTier?.discountPercentage || 0);
-
-      // Also include generic pricing-level discounts from stay API payload
-      // (customer/total can coexist with tier-based discounts).
-      const getStayBillingConfigDiscountRate = (stay) => {
-        const discounts =
-          stay?.billingConfig?.discounts ||
-          stay?.billing_config?.discounts ||
-          stay?.discounts ||
-          [];
-        if (Array.isArray(discounts) && discounts.length > 0) {
-          const totalRate = discounts.reduce((sum, discount) => {
-            if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
-            const rate = Number(
-              discount?.currentRate ??
-              discount?.current_rate ??
-              discount?.appliedPercentage ??
-              discount?.rate ??
-              discount?.percentage ??
-              0
-            );
-            return sum + (Number.isFinite(rate) ? rate : 0);
-          }, 0);
-          if (totalRate > 0) {
-            return Math.max(0, Math.min(100, totalRate));
-          }
-        }
-        const pricingDiscount = stay?.pricing?.discount || {};
-        const fallbackPercent = Number(
-          pricingDiscount?.customer ??
-          pricingDiscount?.total ??
-          pricingDiscount?.guest ??
-          pricingDiscount?.lkp ??
-          0
-        ) || 0;
-        return Math.max(0, Math.min(100, fallbackPercent));
-      };
-
-      const pricingDiscountPercent = getStayBillingConfigDiscountRate(stayDetails);
+      const tierDiscountPercent = getStayLongStayDiscountRate(stayDetails, nights);
+      const pricingDiscountPercent = getStayGuestDiscountRate(stayDetails);
 
       const extraRows = rows.filter((r) => {
         const title = String(r?.title || "");
@@ -822,30 +784,7 @@ const Checkout = () => {
         ? (discountableAmount * pricingDiscountPercent) / 100
         : 0;
 
-      const taxRate = Array.isArray(stayDetails?.taxes)
-        ? stayDetails.taxes.reduce((sum, t) => {
-            const payer = String(
-              t?.paidBy ??
-              t?.paid_by ??
-              t?.payer ??
-              t?.taxPayer ??
-              t?.tax_payer ??
-              t?.borneBy ??
-              t?.borne_by ??
-              t?.applicableTo ??
-              t?.applicable_to ??
-              t?.target ??
-              t?.type ??
-              t?.category ??
-              ""
-            ).toLowerCase().trim();
-            if (/host|vendor|owner|property/i.test(payer)) {
-              return sum;
-            }
-            const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
-            return sum + (Number.isFinite(rate) ? rate : 0);
-          }, 0)
-        : 0;
+      const taxRate = getStayGuestTaxRate(stayDetails);
 
       // Keep base stay as pure room charge (no discount/tax mixed in)
       if (baseRow) {

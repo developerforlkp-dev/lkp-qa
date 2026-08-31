@@ -1482,6 +1482,18 @@ function Itinerary({ place }) {
 function VisitorInformation({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
   const { isMobile } = useWindowSize();
+  const [showAllVehicles, setShowAllVehicles] = useState(false);
+
+  useEffect(() => {
+    if (showAllVehicles) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showAllVehicles]);
 
   const formatList = (arr, singleStr, fallback, formatter) => {
     if (Array.isArray(arr) && arr.length > 0) {
@@ -1582,9 +1594,16 @@ function VisitorInformation({ place }) {
                     </div>
                     <div>
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Permit Category</span>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>
-                        {place?.entryType ? `${place.entryType} Entry` : "Free Entry"}
-                      </h4>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+                        <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>
+                          {place?.entryType ? `${place.entryType} Entry` : (place?.entryFee ? "Paid Entry" : "Free Entry")}
+                        </h4>
+                        {place?.entryFee && (!place?.entryType || place.entryType.toLowerCase() !== 'free') && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>
+                            {place.entryFee}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1737,9 +1756,10 @@ function VisitorInformation({ place }) {
                         </span>
                       ))}
                       {place.accessVehicleTypes.length > 3 && (
-                        <span style={{ padding: "2px 6px", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, borderRadius: 4, fontSize: 10, fontWeight: 700, color: A, whiteSpace: "nowrap" }}>
+                        <button onClick={() => setShowAllVehicles(true)} style={{ padding: "2px 8px", background: A, border: "none", borderRadius: 4, fontSize: 10, fontWeight: 700, color: W, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 4, boxShadow: "0 2px 4px rgba(0,0,0,0.1)", zIndex: 10, position: "relative" }} onMouseOver={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)"; }} onMouseOut={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)"; }}>
                           +{place.accessVehicleTypes.length - 3} More
-                        </span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                        </button>
                       )}
                     </div>
                   ) : (
@@ -1979,6 +1999,45 @@ function VisitorInformation({ place }) {
           </div>
         </Soul>
       </div>
+
+      {/* Vehicle Access Modal */}
+      <AnimatePresence>
+        {showAllVehicles && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAllVehicles(false)}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              style={{ background: W, borderRadius: 28, padding: 32, width: "100%", maxWidth: 480, position: "relative", zIndex: 10000, boxShadow: "0 24px 48px rgba(0,0,0,0.15)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+            >
+              <style>{".no-scrollbars::-webkit-scrollbar { display: none; } .no-scrollbars { -ms-overflow-style: none; scrollbar-width: none; }"}</style>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <h3 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: FG, letterSpacing: "-0.02em" }}>Vehicle Access</h3>
+                <button onClick={() => setShowAllVehicles(false)} style={{ background: S, border: "none", cursor: "pointer", color: FG, padding: 8, borderRadius: 50, display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = B} onMouseOut={e => e.currentTarget.style.background = S}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              </div>
+              <div className="no-scrollbars" style={{ overflowY: "auto", flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, paddingBottom: 12 }}>
+                {place?.accessVehicleTypes?.map((v, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: W, border: `1.5px solid ${B}`, borderRadius: 16, transition: "border-color 0.2s" }} onMouseOver={e => e.currentTarget.style.borderColor = A} onMouseOut={e => e.currentTarget.style.borderColor = B}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A, flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="8" rx="2" /><circle cx="7" cy="19" r="2" /><circle cx="17" cy="19" r="2" /><path d="M4 11V7a2 2 0 0 1 2-2h4l4 4h7v2" /></svg>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{typeof v === 'string' ? v : v.name || v}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

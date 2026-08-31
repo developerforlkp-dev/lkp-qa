@@ -1639,18 +1639,58 @@ const StayProduct = () => {
 
   const isPropertyBased = stay?.bookingScope === "Property-Based" || stay?.bookingScope === "Property Based";
   const isRoomBased = !isPropertyBased && (stay?.rooms?.length > 0 || stay?.roomTypes?.length > 0);
-  const roomCatalog = useMemo(() => (stay?.rooms || stay?.roomTypes || stay?.room_types || []), [stay]);
+  const roomCatalog = useMemo(() => {
+    let rooms = stay?.rooms || stay?.roomTypes || stay?.room_types || [];
+
+    if (Array.isArray(stay?.bedConfigs) && stay.bedConfigs.length > 0) {
+      const bedRooms = stay.bedConfigs.map((bed, idx) => ({
+        ...bed,
+        roomId: bed.id || bed.bedConfigId || `bed-${idx}`,
+        bedConfigId: bed.bedConfigId || bed.id || `bed-${idx}`,
+        roomName: bed.bedType || bed.name || "Bed",
+        units: bed.bedCount || stay?.bedCount,
+        totalRooms: bed.bedCount || stay?.bedCount,
+        availableRooms: bed.availableBeds ?? bed.bedCount ?? stay?.bedCount,
+        coverImageUrl: bed.coverImageUrl || bed.bedCoverImageUrl || stay?.bedCoverImageUrl,
+        media: bed.galleryMedia || bed.bedGalleryMedia || stay?.bedGalleryMedia || [],
+        price: bed.b2cPrice || bed.price || stay?.b2cPrice,
+        b2cPrice: bed.b2cPrice || bed.price || stay?.b2cPrice,
+        maxAdults: 1,
+        maxChildren: 0,
+        maxExtraAdults: 0,
+        maxExtraChildren: 0,
+        roomAmenities: bed.bedConfigAmenities || bed.amenities || [],
+        isBedConfig: true,
+      }));
+
+      if (stay?.inventorySetupType === "Bed-Based" && (!stay?.rooms || stay.rooms.length === 0)) {
+        rooms = bedRooms;
+      } else {
+        rooms = [...rooms, ...bedRooms];
+      }
+    }
+
+    return rooms;
+  }, [stay]);
 
   const enrichRoomsWithCatalog = useCallback((rooms = []) => {
     if (!Array.isArray(rooms) || rooms.length === 0) return [];
     const byId = new Map(
-      (Array.isArray(roomCatalog) ? roomCatalog : []).map((r) => [
-        String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
-        r,
-      ])
+      (Array.isArray(roomCatalog) ? roomCatalog : []).flatMap((r) => {
+        const keys = [
+          r?.roomId,
+          r?.id,
+          r?.roomTypeId,
+          r?.room_type_id,
+          r?.bedConfigId,
+        ]
+          .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+          .map((value) => [String(value), r]);
+        return keys;
+      })
     );
     return rooms.map((room) => {
-      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id);
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId);
       const base = byId.get(key);
       if (!base) return room;
       // Keep availability fields from API room, but backfill pricing/seasonal fields from master room.
@@ -1819,7 +1859,15 @@ const StayProduct = () => {
           ? await getStayHostelAvailability(stayId, checkInDate, checkOutDate)
           : await getStayHotelRoomAvailability(stayId, checkInDate, checkOutDate);
         if (cancelled) return;
-        const fetchedRooms = result?.rooms || result?.roomAvailability?.rooms || [];
+        const fetchedRooms = isHostel
+          ? (
+              result?.bedAvailability?.bedConfigs ||
+              result?.data?.bedAvailability?.bedConfigs ||
+              result?.rooms ||
+              result?.roomAvailability?.rooms ||
+              []
+            )
+          : (result?.rooms || result?.roomAvailability?.rooms || []);
         setAvailableRooms(enrichRoomsWithCatalog(fetchedRooms));
         setAvailabilityChecked(true);
       } catch (err) {
@@ -1840,12 +1888,22 @@ const StayProduct = () => {
 
     setAvailabilityLoading(true);
     try {
-      const result = await getStayRoomAvailability(stayId, checkInDate, checkOutDate);
+      const isHostel = String(stay?.bookingScope || "").toLowerCase().includes("hostel");
+      const result = isHostel
+        ? await getStayHostelAvailability(stayId, checkInDate, checkOutDate)
+        : await getStayRoomAvailability(stayId, checkInDate, checkOutDate);
       //console.log("Stay availability result:", result);
 
-      if (result?.rooms) {
-        setAvailableRooms(enrichRoomsWithCatalog(result.rooms));
-      }
+      const fetchedRooms = isHostel
+        ? (
+            result?.bedAvailability?.bedConfigs ||
+            result?.data?.bedAvailability?.bedConfigs ||
+            result?.rooms ||
+            result?.roomAvailability?.rooms ||
+            []
+          )
+        : (result?.rooms || result?.roomAvailability?.rooms || []);
+      setAvailableRooms(enrichRoomsWithCatalog(fetchedRooms));
       setAvailabilityChecked(true);
     } catch (err) {
       console.error("Availability check failed:", err);
@@ -1923,6 +1981,9 @@ const StayProduct = () => {
               return;
             }
           } else if (isBedStay) {
+            const bedConfigs = freshAvailability.bedAvailability?.bedConfigs ||
+              freshAvailability.data?.bedAvailability?.bedConfigs ||
+              [];
             const availableBedsCount = Number(
               freshAvailability.bedAvailability?.availableBeds ??
               freshAvailability.availableBeds ??
@@ -1935,6 +1996,50 @@ const StayProduct = () => {
             if (Number.isFinite(availableBedsCount) && availableBedsCount < (guests?.adults || 1)) {
               alert(availableBedsCount === 0 ? "No beds are available for the selected dates." : `Only ${availableBedsCount} bed(s) available for the selected dates.`);
               return;
+            }
+            if (selectedRoom?.isBedConfig && Array.isArray(bedConfigs) && bedConfigs.length > 0) {
+              const selKey = String(
+                selectedRoom.bedConfigId ??
+                selectedRoom.roomId ??
+                selectedRoom.id ??
+                selectedRoom.roomTypeId ??
+                selectedRoom.room_type_id ??
+                ""
+              ).replace(/^bed-/, "").trim().toLowerCase();
+              const selName = String(selectedRoom.roomName || selectedRoom.name || selectedRoom.roomTypeName || "").trim().toLowerCase();
+              const matchedBedConfig = bedConfigs.find((bed) => {
+                const bedIds = [
+                  bed.bedConfigId,
+                  bed.id,
+                  bed.roomId,
+                  bed.roomTypeId,
+                  bed.room_type_id,
+                ]
+                  .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+                  .map((value) => String(value).replace(/^bed-/, "").trim().toLowerCase());
+                if (selKey && bedIds.includes(selKey)) return true;
+                const bedName = String(bed.roomName || bed.name || bed.bedType || "").trim().toLowerCase();
+                return Boolean(selName && bedName && selName === bedName);
+              });
+              if (matchedBedConfig) {
+                const availableForConfig = Number(
+                  matchedBedConfig.availableBeds ??
+                  matchedBedConfig.available_beds ??
+                  matchedBedConfig.availableRooms ??
+                  matchedBedConfig.available_rooms ??
+                  matchedBedConfig.availableUnits ??
+                  matchedBedConfig.units
+                );
+                if (Number.isFinite(availableForConfig) && availableForConfig < roomsCount) {
+                  const bedLabel = matchedBedConfig.roomName || matchedBedConfig.name || matchedBedConfig.bedType || selectedRoom.roomName || "Selected Bed";
+                  alert(
+                    availableForConfig === 0
+                      ? `Bed "${bedLabel}" is not available for the selected dates.`
+                      : `Bed "${bedLabel}" only has ${availableForConfig} bed(s) available for the selected dates.`
+                  );
+                  return;
+                }
+              }
             }
           } else if (isRoomBased && selectedRoom) {
             const availRooms = freshAvailability.rooms ||

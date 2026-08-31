@@ -11,6 +11,11 @@ import PriceDetails from "../../components/PriceDetails";
 import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails, getEventAddons } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 import {
+  getExperienceCommissionRate,
+  getExperienceGuestDiscountRate,
+  getExperienceGuestTaxRate,
+} from "../../utils/experiencePricing";
+import {
   getPendingPayment,
   hydratePendingPaymentFromOrder,
   isExpiredHold,
@@ -452,6 +457,52 @@ const Checkout = () => {
       } catch { }
     }
   }, [bookingData]);
+
+  useEffect(() => {
+    const listingId = bookingData?.listingId;
+    if (!listingId || bookingData?.eventId || bookingData?.stayId) return;
+
+    let cancelled = false;
+    getListing(listingId)
+      .then((listing) => {
+        if (cancelled || !listing) return;
+        setBookingData((prev) => {
+          if (!prev) return prev;
+          const prevPricing = prev?.pricing || {};
+          const basePrice = Number(prevPricing.basePrice || prevPricing.baseAmount || 0);
+          const addonsTotal = Number(prevPricing.addonsTotal || 0);
+          const discountRate = getExperienceGuestDiscountRate(listing);
+          const discountAmount = (basePrice + addonsTotal) * (discountRate / 100);
+          const taxableSubtotal = Math.max(0, (basePrice + addonsTotal) - discountAmount);
+          const taxRate = getExperienceGuestTaxRate(listing);
+          const taxAmount = taxableSubtotal * (taxRate / 100);
+          const finalAmount = taxableSubtotal + taxAmount;
+
+          return {
+            ...prev,
+            pricing: {
+              ...prevPricing,
+              discount: discountAmount,
+              promoDiscount: 0,
+              earlyBirdDiscount: 0,
+              discountRate,
+              tax: taxAmount,
+              taxRate,
+              commission: getExperienceCommissionRate(listing),
+              total: finalAmount,
+              finalAmount,
+            },
+          };
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching experience pricing:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingData?.listingId, bookingData?.eventId, bookingData?.stayId]);
 
   // Check payment status when component mounts, and also load server-side pricing
   useEffect(() => {

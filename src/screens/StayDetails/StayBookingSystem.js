@@ -6,6 +6,11 @@ import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, getStayHotelRoomAvailability, getStayHostelAvailability } from "../../utils/api";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
+import {
+  getStayGuestDiscountRate,
+  getStayGuestTaxRate,
+  getStayLongStayDiscountRate,
+} from "../../utils/stayPricing";
 import Counter from "../../components/Counter";
 import ChildAgeSelect from "../../components/ChildAgeSelect";
 import LoginPromptModal from "../../components/LoginPromptModal";
@@ -824,6 +829,7 @@ const StayBookingSystem = ({
         const bedRooms = (stay?.bedConfigs || []).map((b, idx) => ({
           ...b,
           roomId: b.id || b.bedConfigId || `bed-${idx}`,
+          bedConfigId: b.bedConfigId || b.id || `bed-${idx}`,
           roomName: b.bedType || b.name || "Bed",
           units: b.bedCount || stay?.bedCount,
           maxAdults: 1,
@@ -941,6 +947,8 @@ const StayBookingSystem = ({
     if (!stay || !Array.isArray(selectedRooms)) return [];
 
     const rawRoomsSource = (
+      availabilityData?.bedAvailability?.bedConfigs ||
+      availabilityData?.data?.bedAvailability?.bedConfigs ||
       availabilityData?.roomAvailability?.rooms ||
       availabilityData?.rooms ||
       availabilityData?.roomAvailability ||
@@ -953,13 +961,21 @@ const StayBookingSystem = ({
       []
     );
     const catalogById = new Map(
-      stayRoomsCatalog.map((r) => [
-        String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id),
-        r,
-      ])
+      stayRoomsCatalog.flatMap((r) => {
+        const keys = [
+          r?.roomId,
+          r?.id,
+          r?.roomTypeId,
+          r?.room_type_id,
+          r?.bedConfigId,
+        ]
+          .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+          .map((value) => [String(value), r]);
+        return keys;
+      })
     );
     const roomsSource = rawRoomsSource.map((room) => {
-      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id);
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId);
       const base = catalogById.get(key);
       if (!base) return room;
       return {
@@ -975,9 +991,9 @@ const StayBookingSystem = ({
     const checkInStr = checkInDate ? (typeof checkInDate === 'string' ? checkInDate : checkInDate.format('YYYY-MM-DD')) : null;
 
     return selectedRooms.map(sel => {
-      let room = roomsSource.find(r => String(r.roomId || r.id) === String(sel.roomId));
+      let room = roomsSource.find(r => String(r.roomId || r.id || r.bedConfigId) === String(sel.roomId));
       if (!room) {
-        room = stayRoomsCatalog.find(r => String(r.roomId || r.id) === String(sel.roomId));
+        room = stayRoomsCatalog.find(r => String(r.roomId || r.id || r.bedConfigId) === String(sel.roomId));
       }
       if (!room) return null;
 
@@ -1168,22 +1184,8 @@ const StayBookingSystem = ({
       }
     }
 
-    let longStayDiscountPercent = 0;
-    if (nightsCount > 0 && Array.isArray(stay.discountTiers)) {
-      const tier = stay.discountTiers.find(t => nightsCount >= (t.minimumDays || 0) && nightsCount <= (t.maximumDays || 999));
-      if (tier) longStayDiscountPercent = parseFloat(tier.discountPercentage || 0);
-    }
-
-    const billingConfigDiscountPercent = (() => {
-      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || stay?.discounts || [];
-      if (!Array.isArray(discounts) || discounts.length === 0) return 0;
-      const totalRate = discounts.reduce((sum, discount) => {
-        if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
-        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
-        return sum + (Number.isFinite(rate) ? rate : 0);
-      }, 0);
-      return Math.max(0, Math.min(100, totalRate));
-    })();
+    const longStayDiscountPercent = getStayLongStayDiscountRate(stay, nightsCount);
+    const billingConfigDiscountPercent = getStayGuestDiscountRate(stay);
 
     let earlyBirdDiscountPercent = 0;
     const ebDiscounts = stay?.earlyBirdDiscounts || stay?.early_bird_discounts || [];
@@ -1407,23 +1409,8 @@ const StayBookingSystem = ({
     }
 
     // Long-stay discount tiers
-    let appliedDiscountPercent = 0;
-    if (nightsCount > 0 && Array.isArray(stay.discountTiers)) {
-      const tier = stay.discountTiers.find(t => nightsCount >= (t.minimumDays || 0) && nightsCount <= (t.maximumDays || 999));
-      if (tier) appliedDiscountPercent = parseFloat(tier.discountPercentage || 0);
-    }
-
-    // Billing-config discounts (if provided by stay configuration)
-    const billingConfigDiscountRate = (() => {
-      const discounts = stay?.billingConfig?.discounts || stay?.billing_config?.discounts || stay?.discounts || [];
-      if (!Array.isArray(discounts) || discounts.length === 0) return 0;
-      const totalRate = discounts.reduce((sum, discount) => {
-        if (discount?.isEnabled === false || discount?.is_enabled === false) return sum;
-        const rate = Number(discount?.currentRate ?? discount?.current_rate ?? discount?.appliedPercentage ?? discount?.rate ?? discount?.percentage ?? 0);
-        return sum + (Number.isFinite(rate) ? rate : 0);
-      }, 0);
-      return Math.max(0, Math.min(100, totalRate));
-    })();
+    const appliedDiscountPercent = getStayLongStayDiscountRate(stay, nightsCount);
+    const billingConfigDiscountRate = getStayGuestDiscountRate(stay);
 
     // Early Bird Discount Calculation
     let earlyBirdDiscountPercent = 0;
@@ -1496,36 +1483,9 @@ const StayBookingSystem = ({
     );
     const headerPerNight = Math.max(0, headerOriginalPerNight * (1 - (totalDiscountRate / 100)));
 
-    // Taxes from stay config; fallback to legacy 18% GST + 2% service charge
-    const configuredTaxRate = Array.isArray(stay?.taxes)
-      ? stay.taxes.reduce((sum, t) => {
-        const payer = String(
-          t?.paidBy ??
-          t?.paid_by ??
-          t?.payer ??
-          t?.taxPayer ??
-          t?.tax_payer ??
-          t?.borneBy ??
-          t?.borne_by ??
-          t?.applicableTo ??
-          t?.applicable_to ??
-          t?.target ??
-          t?.type ??
-          t?.category ??
-          ""
-        ).toLowerCase().trim();
-        if (/host|vendor|owner|property/i.test(payer)) {
-          return sum;
-        }
-        const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
-        return sum + (Number.isFinite(rate) ? rate : 0);
-      }, 0)
-      : 0;
-    const effectiveTaxRate = configuredTaxRate > 0 ? configuredTaxRate : 20;
+    const effectiveTaxRate = getStayGuestTaxRate(stay);
 
     const totalTax = preTaxSubtotal * (effectiveTaxRate / 100);
-    const gst = preTaxSubtotal * 0.18;
-    const serviceFee = preTaxSubtotal * 0.02;
     const finalTotalWithTax = preTaxSubtotal + totalTax;
 
     const extraAdultsCount = isPropertyBased
@@ -1553,8 +1513,8 @@ const StayBookingSystem = ({
       earlyBirdDiscountPercent,
       warning,
       isOver,
-      gst: configuredTaxRate > 0 ? totalTax : gst,
-      serviceFee: configuredTaxRate > 0 ? 0 : serviceFee,
+      gst: totalTax,
+      serviceFee: 0,
       taxRate: effectiveTaxRate,
       taxAmount: totalTax,
       baseAdultsLimit: totalBaseAdultsLimit,
@@ -1853,7 +1813,10 @@ const StayBookingSystem = ({
 
             if (!isOverallAvailable || freshAvailability.sameDayCheckInClosed === true) {
               setLoading(false);
-              const reason = freshAvailability.availabilityReason || freshAvailability.reason || freshAvailability.message || (freshAvailability.sameDayCheckInClosed ? "Same-day check-in is closed for this property." : "This stay is currently unavailable for the selected dates.");
+              let reason = freshAvailability.availabilityReason || freshAvailability.reason || freshAvailability.message || (freshAvailability.sameDayCheckInClosed ? "Same-day check-in is closed for this property." : "This stay is currently unavailable for the selected dates.");
+              if (reason === "SAME_DAY_BOOKING_CUTOFF_PASSED") {
+                reason = "It's too late to book a stay for today. Please select tomorrow or a later date.";
+              }
               setValidationError(reason);
               setBookingErrorPopup({
                 visible: true,
@@ -1958,6 +1921,58 @@ const StayBookingSystem = ({
                     isSameDay: false,
                   });
                   return;
+                }
+                const hostelBedConfigs = Array.isArray(bedAvail.bedConfigs) ? bedAvail.bedConfigs : [];
+                if (hostelBedConfigs.length > 0) {
+                  const selectedBedConfigs = (Array.isArray(resolvedSelectedRooms) ? resolvedSelectedRooms : [])
+                    .filter((room) => room.isBedConfig);
+                  for (const sel of selectedBedConfigs) {
+                    const selKey = String(sel.bedConfigId ?? sel.roomId ?? sel.id ?? "").replace(/^bed-/, "").trim().toLowerCase();
+                    const selName = String(sel.roomName || sel.name || sel.roomTypeName || "").trim().toLowerCase();
+                    const matchedBed = hostelBedConfigs.find((bed) => {
+                      const bedIds = [bed.bedConfigId, bed.id, bed.roomId, bed.roomTypeId, bed.room_type_id]
+                        .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+                        .map((value) => String(value).replace(/^bed-/, "").trim().toLowerCase());
+                      if (selKey && bedIds.includes(selKey)) return true;
+                      const bedName = String(bed.name || bed.roomName || bed.bedType || "").trim().toLowerCase();
+                      return Boolean(selName && bedName && selName === bedName);
+                    });
+                    if (!matchedBed) continue;
+
+                    const reqCount = Number(sel.count || 1);
+                    const bookedForConfig = Number(
+                      matchedBed.bookedBeds ??
+                      matchedBed.booked_beds ??
+                      matchedBed.bookedRooms ??
+                      matchedBed.booked_rooms ??
+                      0
+                    );
+                    const availableForConfig = Number(
+                      matchedBed.availableBeds ??
+                      matchedBed.available_beds ??
+                      ((matchedBed.bedCount ?? matchedBed.totalBeds ?? matchedBed.totalRooms ?? matchedBed.units ?? 0) - bookedForConfig) ??
+                      matchedBed.availableRooms ??
+                      matchedBed.available_rooms ??
+                      matchedBed.availableUnits ??
+                      matchedBed.units
+                    );
+                    const isConfigAvailable = matchedBed.isAvailable !== false && matchedBed.is_available !== false;
+                    if (!isConfigAvailable || (Number.isFinite(availableForConfig) && availableForConfig < reqCount)) {
+                      setLoading(false);
+                      const bedLabel = matchedBed.name || matchedBed.roomName || matchedBed.bedType || sel.roomName || sel.name || "Selected Bed";
+                      const reason = !isConfigAvailable || availableForConfig === 0
+                        ? `Bed "${bedLabel}" is not available for the selected dates.`
+                        : `Bed "${bedLabel}" only has ${availableForConfig} bed(s) available (you selected ${reqCount}).`;
+                      setValidationError(reason);
+                      setBookingErrorPopup({
+                        visible: true,
+                        title: "Beds Unavailable",
+                        message: reason,
+                        isSameDay: false,
+                      });
+                      return;
+                    }
+                  }
                 }
               }
 
@@ -2642,30 +2657,7 @@ const StayBookingSystem = ({
           content: `${currency} ${Number(extraChildrenCount * (pricing.activeExtraChildPrice || 0) * nightsFromOrder).toFixed(2)}`,
         });
       }
-      const taxRate = Array.isArray(stay?.taxes)
-        ? stay.taxes.reduce((sum, t) => {
-          const payer = String(
-            t?.paidBy ??
-            t?.paid_by ??
-            t?.payer ??
-            t?.taxPayer ??
-            t?.tax_payer ??
-            t?.borneBy ??
-            t?.borne_by ??
-            t?.applicableTo ??
-            t?.applicable_to ??
-            t?.target ??
-            t?.type ??
-            t?.category ??
-            ""
-          ).toLowerCase().trim();
-          if (/host|vendor|owner|property/i.test(payer)) {
-            return sum;
-          }
-          const rate = Number(t?.currentRate ?? t?.appliedPercentage ?? t?.rate ?? t?.percentage ?? 0);
-          return sum + (Number.isFinite(rate) ? rate : 0);
-        }, 0)
-        : 0;
+      const taxRate = getStayGuestTaxRate(stay);
 
       // Display calculation should use gross stay total = base + extra adults + extra children
       const extraAdultDisplayTotal = Number(extraAdultsCount || 0) * Number(pricing.activeExtraAdultPrice || 0) * Number(nightsFromOrder || 1);
@@ -2677,7 +2669,7 @@ const StayBookingSystem = ({
         Number(
           firstNumber(
             pricing.discountPercent,
-            stay?.discountTiers?.find(t => nightsFromOrder >= (t.minimumDays || 0) && nightsFromOrder <= (t.maximumDays || 999))?.discountPercentage,
+            getStayLongStayDiscountRate(stay, nightsFromOrder),
             0
           ) || 0
         )
@@ -3406,7 +3398,7 @@ const StayBookingSystem = ({
 
                         return (
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {(!isEntirelyBedBased) && (
+                            {(!isHostelBooking(stay) && !isEntirelyBedBased) && (
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: BG, border: `1px solid ${B}`, borderRadius: 16, transition: "0.2s" }}>
                                   <p style={{ fontSize: 13, fontWeight: 700, color: FG, margin: 0 }}>Adults</p>

@@ -1673,9 +1673,9 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
   const { tokens, theme } = useTheme();
   const { A, FG, M, W, B, S, AL } = tokens;
 
-  const chefName = hostData?.host?.firstName
+  const chefName = food?.managedBy || (hostData?.host?.firstName
     ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim()
-    : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Owner");
+    : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Owner"));
 
   const phoneNum = hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || food?.host?.phone;
 

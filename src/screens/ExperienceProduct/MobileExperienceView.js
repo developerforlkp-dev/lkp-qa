@@ -746,7 +746,7 @@ export default function MobileExperienceView({
       {/* ╔═══════════════════════════════════╗
           ║        POLICIES SECTION           ║
           ╚═══════════════════════════════════╝ */}
-      {(listing?.guestRequirements?.length > 0 || listing?.cancellationPolicySummary || listing?.cancellationPolicyText) && (
+      {(listing?.guestRequirements?.length > 0 || listing?.cancellationPolicySummary || listing?.cancellationPolicyText || listing?.experienceRules) && (
         <div className="mob-section" style={{ background: isDark ? BG : W }}>
           <span className="mob-section-eyebrow" style={{ color: A }}>Essential Guidelines</span>
           <h2 className="mob-section-title" style={{ color: FG }}>Things to Keep in Mind</h2>
@@ -756,6 +756,36 @@ export default function MobileExperienceView({
               const expItems = [];
               const guestItems = [];
               const cancelItems = [];
+              const experienceRuleItems = [];
+
+              if (listing?.experienceRules) {
+                const rules = listing.experienceRules;
+                const questionsList = [];
+                if (Array.isArray(rules)) {
+                  rules.forEach((rule) => {
+                    if (typeof rule === "string") {
+                      questionsList.push({ title: rule });
+                    } else if (rule && typeof rule === "object") {
+                      const title = rule.title || rule.name || rule.label || null;
+                      const body = rule.description || rule.body || rule.text || rule.value || rule.rule || (typeof rule === "string" ? rule : null);
+                      if (title && title !== body) {
+                        questionsList.push({ title, valueText: body });
+                      } else {
+                        questionsList.push({ title: title || body });
+                      }
+                    }
+                  });
+                } else if (typeof rules === "string" && rules.trim()) {
+                  const lines = rules.split('\n').map(l => l.trim()).filter(Boolean);
+                  lines.forEach((line) => {
+                    questionsList.push({ title: line });
+                  });
+                }
+
+                if (questionsList.length > 0) {
+                  experienceRuleItems.push({ title: null, questions: questionsList });
+                }
+              }
 
               if (Array.isArray(listing?.guestRequirements)) {
                 listing.guestRequirements.forEach((req) => {
@@ -845,7 +875,7 @@ export default function MobileExperienceView({
 
               return (
                 <>
-                  {renderAccordion("Experience Rules", expItems, <ShieldCheck size={16} color={A} />)}
+                  {renderAccordion("Experience Rules", experienceRuleItems.length > 0 ? experienceRuleItems : expItems, <ShieldCheck size={16} color={A} />)}
                   {renderAccordion("Guest Requirements", guestItems, <Users size={16} color={A} />)}
                   {renderAccordion("Cancellation Policy", cancelItems, <Clock size={16} color={A} />)}
                   {renderAccordion("Foreigner Guidelines", foreignerItems, <Info size={16} color={A} />)}

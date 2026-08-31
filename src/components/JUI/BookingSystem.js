@@ -14,6 +14,7 @@ import { createEventOrder, createOrder, getEventSlotAvailability, getListingSlot
 import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
+import { calculateExperienceGuestPricing, getExperienceCommissionRate } from "../../utils/experiencePricing";
 
 
 const asNumber = (value) => {
@@ -2309,7 +2310,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : rawExperiencePrice;
 
   const experienceGuestPricing = !isEventBooking
-    ? calculateEventGuestPricing(effectiveRawPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
+    ? calculateExperienceGuestPricing(effectiveRawPrice, listing)
     : null;
   const extractedPrice = isEventBooking
     ? eventGuestPricing.finalUnitPrice
@@ -2350,7 +2351,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     false
   );
   const childGuestPricing = childrenAllowed && rawChildPrice > 0
-    ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
+    ? (isEventBooking
+      ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
+      : calculateExperienceGuestPricing(rawChildPrice, listing))
     : null;
   // Effective per-child price (after discount + tax), fallback to adult price if no child price set
   const effectiveChildPrice = childGuestPricing
@@ -3468,6 +3471,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         discountRate: appliedDiscountRate,
         tax: totalTaxAmount,
         taxRate: appliedTaxRate,
+        commission: getExperienceCommissionRate(listing),
         addonsTotal: addOnsTotal,
         subtotal: subtotalBeforeAdjustments,
         total: finalTotal,
