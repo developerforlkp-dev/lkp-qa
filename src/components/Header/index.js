@@ -8,7 +8,7 @@ import User from "./User";
 import Icon from "../Icon";
 import Modal from "../Modal";
 import Login from "../Login";
-import useDarkMode from "use-dark-mode";
+import useDarkMode from "../../hooks/useDarkMode";
 import MobileNavDrawer from "./MobileDrawer/MobileNavDrawer";
 import { getCustomerWishlistItems } from "../../utils/api";
 import { motion, AnimatePresence } from "framer-motion";

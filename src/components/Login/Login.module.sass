@@ -344,4 +344,96 @@
     padding: 0
     font-size: inherit
     font-family: inherit
+
+/* Profile Complete Premium Redesign */
+.profileCompleteItem
+    padding: 16px 8px
+
+.premiumHeader
+    text-align: center
+    margin-bottom: 32px
+
+.iconCircle
+    width: 64px
+    height: 64px
+    border-radius: 50%
+    background: rgba(0, 151, 178, 0.1)
+    display: flex
+    align-items: center
+    justify-content: center
+    margin: 0 auto 16px
+    svg
+        fill: #0097B2
+
+.inputWrap
+    display: flex
+    flex-direction: column
+    flex: 1
+    label
+        font-size: 12px
+        font-weight: 600
+        color: $n4
+        margin-bottom: 8px
+        text-transform: uppercase
+        letter-spacing: 0.05em
+        +dark
+            color: $n5
+
+.dobDropdowns
+    display: flex
+    gap: 12px
+    width: 100%
+    margin-top: 8px
+
+.selectWrap
+    position: relative
+    flex: 1
+    display: flex
+    align-items: center
+
+.dateSelect
+    width: 100%
+    appearance: none
+    -webkit-appearance: none
+    padding: 14px 32px 14px 16px
+    border: 1px solid $n6
+    border-radius: 12px
+    background: $n8
+    +body-2
+    font-size: 14px
+    color: $n4
+    cursor: pointer
+    outline: none
+    transition: all .2s
+    +dark
+        background: $n2
+        border-color: $n4
+        color: $n5
+    &:focus
+        border-color: #0097B2
+        box-shadow: 0 2px 8px rgba(0, 151, 178, 0.1)
+    &.activeSelect
+        color: $n2
+        +dark
+            color: $n8
+
+.selectIcon
+    position: absolute
+    right: 14px
+    pointer-events: none
+    fill: $n4
+    transition: transform .2s
+
+.submitBtn
+    margin-top: 32px !important
+    width: 100%
+    height: 54px !important
+    border-radius: 12px !important
+    font-size: 16px !important
+
+.dropdown
+    width: 100%
+    border-radius: 12px
+    & > div
+        border-radius: 12px
 

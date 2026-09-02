@@ -490,6 +490,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
         modal: {
           ondismiss: function () {
             setIsProcessing(false);
+            setTimeout(() => { window.location.reload(); }, 300);
           },
         },
       };

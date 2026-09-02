@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef } from "react";
-import useDarkMode from "use-dark-mode";
+import useDarkMode from "../../hooks/useDarkMode";
 import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
@@ -568,7 +568,7 @@ function PlaceHero({ place, galleryItems, id }) {
               <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#FFF", fontWeight: 700, marginBottom: 8, opacity: 0.8 }}>
                 {toDisplayString(place?.category) || "DESTINATION"}
               </p>
-              <h1 className="font-display" style={{ fontSize: "2.2rem", fontWeight: 800, color: "#FFF", lineHeight: 1.1, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+              <h1 className="hero-title" style={{ fontSize: "clamp(2rem, 8vw, 2.5rem)", fontWeight: 700, color: "#FFF", lineHeight: 1.1, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.01em" }}>
                 {placeName}
               </h1>
            </div>
@@ -632,7 +632,8 @@ function PlaceHero({ place, galleryItems, id }) {
       }}>
 
         <div style={{
-          width: "30%",
+          width: "40%",
+          minWidth: 0,
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
@@ -656,14 +657,14 @@ function PlaceHero({ place, galleryItems, id }) {
             }}>
               {toDisplayString(place?.category) || "DESTINATION"}
             </p>
-            <h1 className="font-display" style={{
-              fontSize: "clamp(2.5rem, 4vw, 4.2rem)",
-              fontWeight: 800,
+            <h1 className="hero-title" style={{
+              fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
+              fontWeight: 700,
               color: FG,
               lineHeight: 1.1,
-              letterSpacing: "-0.03em",
+              letterSpacing: "-0.01em",
               margin: "0 0 20px 0",
-              textTransform: "uppercase"
+              overflowWrap: "break-word"
             }}>
               {placeName}
             </h1>
@@ -805,7 +806,8 @@ function PlaceHero({ place, galleryItems, id }) {
             setShowArrows(false);
           }}
           style={{
-            width: "70%",
+            width: "60%",
+            minWidth: 0,
             height: "100%",
             overflow: "hidden",
             position: "relative",
@@ -1014,10 +1016,10 @@ function PlaceDescription({ place }) {
   const description = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
 
   const facts = [
-    { label: "Timings", val: (place?.openingTime && place?.closingTime) ? `${place.openingTime} - ${place.closingTime}` : (place?.timings || place?.openingHours || "06:00 - 20:00"), icon: Clock },
-    { label: "Entry Fee", val: place?.entryFee || "Free Entry", icon: Ticket },
-    { label: "Best Time", val: place?.bestTimeToVisit || "Year Round", icon: Star },
-    { label: "Rating", val: `${place?.rating || place?.averageRating || "4.8"} Rating`, icon: Check },
+    { label: "Timings", val: (place?.openingTime && place?.closingTime) ? `${place.openingTime} - ${place.closingTime}` : (place?.timings || place?.openingHours || "Not Specified"), icon: Clock },
+    { label: "Entry Fee", val: place?.entryFee || "Not Specified", icon: Ticket },
+    { label: "Best Time", val: place?.bestTimeToVisit || "Not Specified", icon: Star },
+    { label: "Rating", val: place?.rating || place?.averageRating ? `${place?.rating || place?.averageRating} Rating` : "Not Rated", icon: Check },
   ];
 
   if (isMobile) {
@@ -1049,16 +1051,19 @@ function PlaceDescription({ place }) {
           </div>
 
           {/* Description Text */}
-          <p style={{
-            fontSize: 14,
-            lineHeight: 1.8,
-            color: FG,
-            margin: 0,
-            fontWeight: 450,
-            fontFamily: "Poppins, sans-serif"
-          }}>
-            {description}
-          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif' }}>About this place</span>
+            <p style={{
+              fontSize: 15,
+              lineHeight: 1.7,
+              color: FG,
+              margin: 0,
+              fontWeight: 400,
+              fontFamily: '"Inter", sans-serif'
+            }}>
+              {description}
+            </p>
+          </div>
         </div>
       </section>
     );
@@ -1100,20 +1105,24 @@ function PlaceDescription({ place }) {
           })}
         </div>
 
-        {/* Two-column Editorial text */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.25em", color: A, fontWeight: 800 }}>About this place</span>
-          <div style={{
-            columnCount: 2,
-            columnGap: 60,
+        {/* Editorial text */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 900, margin: "0 auto", textAlign: "center", marginTop: 24 }}>
+          <div>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>About this place</span>
+            <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em", margin: 0 }}>
+              {place?.placeName ? `Discover ${place.placeName}` : "The Experience"}
+            </h3>
+          </div>
+          <p style={{
             fontSize: 16,
-            lineHeight: 1.9,
+            lineHeight: 1.8,
             color: FG,
-            fontFamily: "Poppins, sans-serif",
-            fontWeight: 400
+            fontFamily: '"Inter", sans-serif',
+            fontWeight: 400,
+            margin: 0
           }}>
             {description}
-          </div>
+          </p>
         </div>
 
       </div>
@@ -1130,11 +1139,11 @@ function DestAbout({ place, hostData, hostAvatar }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 100 }} className="about-grid">
             <Rev>
               <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700, marginBottom: 24 }}>About the Destination</p>
-              <h2 className="font-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 32 }}>
-                {place?.placeName || "Experience the local heritage."}
+              <h2 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 32, wordBreak: "break-word", overflowWrap: "break-word", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>
+                {place?.placeName || "Not Specified"}
               </h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                {[toDisplayString(place?.category), place?.city, "Historical", "Vibrant"].filter(Boolean).map(tag => (
+                {[toDisplayString(place?.category), place?.city].filter(Boolean).map(tag => (
                   <div key={tag} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: "#f8f8f8", borderRadius: 12, border: `1px solid ${B}` }}>
                     <User size={12} color={A} />
                     <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>{tag}</span>
@@ -1144,12 +1153,12 @@ function DestAbout({ place, hostData, hostAvatar }) {
             </Rev>
             <Rev delay={0.2}>
               <p style={{ fontSize: 17, lineHeight: 1.85, color: M, marginBottom: 32 }}>
-                {place?.description || "Discover the hidden gems and vibrant culture of this unique location. From historical landmarks to modern attractions, there is something for everyone."}
+                {place?.description || "No description provided."}
               </p>
               <div style={{ marginTop: 48, borderTop: `1px solid ${B}`, paddingTop: 40, display: "flex", gap: 64 }}>
                 <div>
                   <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Location</p>
-                  <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{place?.city || "Discovery Town"}</p>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: FG }}>{place?.city || "Not Specified"}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 8 }}>Curator</p>
@@ -1157,7 +1166,7 @@ function DestAbout({ place, hostData, hostAvatar }) {
                     <img src={hostAvatar || "https://picsum.photos/seed/host/40/40"} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
                     <div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: FG, margin: 0 }}>
-                        {hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || "Lead Curator")}
+                        {hostData?.host?.firstName ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() : (hostData?.host?.displayName || hostData?.displayName || "Not Specified")}
                       </p>
                       {(hostData?.host?.bio || hostData?.bio) && (
                         <p style={{ fontSize: 12, color: M, marginTop: 4, fontStyle: "italic", margin: "4px 0 0 0" }}>{hostData?.host?.bio || hostData?.bio}</p>
@@ -1186,7 +1195,7 @@ function Logistics({ place, hostData }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 40 }}>
                 <div>
                   <h4 style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 12 }}>Address</h4>
-                  <p style={{ fontSize: 16, color: FG, fontWeight: 600, maxWidth: 350, lineHeight: 1.6 }}>{place?.address || "Explore the local maps for the exact navigation details."}</p>
+                  <p style={{ fontSize: 16, color: FG, fontWeight: 600, maxWidth: 350, lineHeight: 1.6 }}>{place?.address || "Not Specified"}</p>
                 </div>
                 <motion.a whileHover={{ scale: 1.1 }} href={`https://www.google.com/maps/search/?api=1&query=${place?.placeName}`} target="_blank" style={{ background: A, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
                   <Navigation size={22} color={W} />
@@ -1196,9 +1205,9 @@ function Logistics({ place, hostData }) {
                 <h4 style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: M, marginBottom: 24 }}>Getting There</h4>
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   {[
-                    { l: "Nearest Station", d: "3 km" },
-                    { l: "City Center", d: place?.distance || "5 km" },
-                    { l: "International Airport", d: "25 km" },
+                    { l: "Nearest Station", d: "Not Specified" },
+                    { l: "City Center", d: place?.distance || "Not Specified" },
+                    { l: "International Airport", d: "Not Specified" },
                   ].map(loc => (
                     <div key={loc.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 14, color: M }}>{loc.l}</span>
@@ -1218,10 +1227,10 @@ function Logistics({ place, hostData }) {
                 <h3 className="font-display" style={{ fontSize: 24, fontWeight: 700, color: FG, marginBottom: 32 }}>{hostData?.host?.displayName || hostData?.displayName || "Tourism Authority"}</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <a href={`tel:${hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone}`} style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
-                    <Phone size={18} color={A} /> {hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || "Contact via App"}
+                    <Phone size={18} color={A} /> {hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || "Not Provided"}
                   </a>
                   <a href="#" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", fontSize: 14, color: FG, fontWeight: 600 }}>
-                    <Globe size={18} color={A} /> {place?.website || "Official Portal"}
+                    <Globe size={18} color={A} /> {place?.website || "Not Provided"}
                   </a>
                 </div>
               </div>
@@ -1255,6 +1264,7 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
           transition={{ duration: 0.4 }}
           style={{
             display: "flex",
+            flexDirection: (typeof window !== 'undefined' && window.innerWidth <= 768) ? "column" : "row",
             background: W,
             border: `1px solid ${B}`,
             borderRadius: 28,
@@ -1263,11 +1273,11 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
             minHeight: 340,
           }}
         >
-          {/* Hero image left */}
+          {/* Hero image left/top */}
           {imgUrl && (
             <div
               className="itinerary-image-wrapper"
-              style={{ flex: "0 0 50%", position: "relative", cursor: "pointer", overflow: "hidden" }}
+              style={{ flex: (typeof window !== 'undefined' && window.innerWidth <= 768) ? "none" : "0 0 50%", height: (typeof window !== 'undefined' && window.innerWidth <= 768) ? 220 : "auto", position: "relative", cursor: "pointer", overflow: "hidden" }}
               onClick={() => {
                 const imgs = getItineraryImages(s);
                 setSelectedImages(imgs);
@@ -1282,15 +1292,14 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
               </div>
             </div>
           )}
-          {/* Hero content right */}
-          <div style={{ flex: 1, padding: "40px 44px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative" }}>
-            <span className="font-display" style={{ position: "absolute", top: -20, right: 16, fontSize: "10rem", fontWeight: 900, color: A, opacity: 0.04, pointerEvents: "none", lineHeight: 1 }}>1</span>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>1</div>
-              <span style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Start Here</span>
+          <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative" }}>
+            <span style={{ position: "absolute", top: -10, right: 16, fontSize: "6rem", fontWeight: 900, color: A, opacity: 0.04, pointerEvents: "none", lineHeight: 1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>{i + 1}</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{i + 1}</div>
+              <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 700 }}>{i === 0 ? "Start Here" : `Step ${i + 1}`}</span>
             </div>
-            <h3 className="font-display" style={{ fontSize: "clamp(1.6rem, 2.2vw, 2rem)", fontWeight: 800, color: FG, marginBottom: 16, lineHeight: 1.2 }}>{s.title || s.name}</h3>
-            <p style={{ fontSize: 14, color: M, lineHeight: 1.85, margin: 0, whiteSpace: "pre-line" }}>
+            <h3 style={{ fontSize: "clamp(1.3rem, 1.8vw, 1.6rem)", fontWeight: 700, color: FG, marginBottom: 12, lineHeight: 1.2, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.01em" }}>{s.title || s.name}</h3>
+            <p style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0, whiteSpace: "pre-line" }}>
               {displayText}
               {isLong && (
                 <span onClick={() => setExpanded(!expanded)} style={{ color: A, cursor: "pointer", fontWeight: 600, marginLeft: 8 }}>
@@ -1306,8 +1315,8 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
 
   // Regular grid card
   return (
-    <div style={{ flex: "0 0 calc(33.333% - 22px)", minWidth: 280, display: "flex" }}>
-      <Soul delay={i * 0.12} y={60} r={i % 2 === 0 ? 2 : -2} style={{ width: "100%", display: "flex" }}>
+    <div style={{ width: "100%", display: "flex", height: "100%" }}>
+      <Soul delay={i * 0.12} y={60} r={i % 2 === 0 ? 2 : -2} style={{ width: "100%", display: "flex", height: "100%" }}>
         <motion.div
           whileHover={{ y: -8, boxShadow: `0 20px 40px rgba(0,0,0,0.06)` }}
           transition={{ duration: 0.35 }}
@@ -1320,6 +1329,7 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
+            height: "100%"
           }}
         >
           {/* Step number circle on top-left corner */}
@@ -1373,96 +1383,85 @@ function Itinerary({ place }) {
   const [photoVisible, setPhotoVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [showAll, setShowAll] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const steps = place?.itinerary || [];
+  
+  const cardsToShow = isMobile ? 1 : Math.min(3, steps.length);
+  const maxIndex = Math.max(0, steps.length - cardsToShow);
+
   if (steps.length === 0) return null;
 
-  const heroStep = steps[0];
-  const restSteps = steps.slice(1);
-  const INITIAL_VISIBLE = 6;
-  const hasMore = restSteps.length > INITIAL_VISIBLE;
-  const visibleRest = showAll ? restSteps : restSteps.slice(0, INITIAL_VISIBLE);
+  const handleNext = () => setActiveIndex((prev) => Math.min(maxIndex, prev + 1));
+  const handlePrev = () => setActiveIndex((prev) => Math.max(0, prev - 1));
 
   return (
     <section style={{ background: S, padding: isMobile ? "40px 16px" : "64px 80px", position: "relative" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         {/* Section header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
-          <div style={{ width: 4, height: 32, borderRadius: 2, background: A }} />
-          <span style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Your Journey</span>
+        <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "flex-end", justifyContent: "space-between", marginBottom: 24, flexDirection: isMobile ? "column" : "row", gap: 16 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+              <div style={{ width: 4, height: 32, borderRadius: 2, background: A }} />
+              <span style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 700 }}>Your Journey</span>
+            </div>
+            <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, margin: "0 0 8px 0", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Curated Experience Plan</h3>
+            <p style={{ fontSize: 14, color: M, margin: 0, maxWidth: 520 }}>{steps.length} carefully crafted steps to make the most of your visit</p>
+          </div>
+          {/* Nav Buttons */}
+          {steps.length > cardsToShow && (
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={handlePrev} disabled={activeIndex === 0} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${B}`, background: W, display: "flex", alignItems: "center", justifyContent: "center", cursor: activeIndex === 0 ? "default" : "pointer", color: FG, opacity: activeIndex === 0 ? 0.3 : 1, transition: "all 0.3s ease" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button onClick={handleNext} disabled={activeIndex >= maxIndex} style={{ width: 44, height: 44, borderRadius: "50%", border: `1px solid ${B}`, background: W, display: "flex", alignItems: "center", justifyContent: "center", cursor: activeIndex >= maxIndex ? "default" : "pointer", color: FG, opacity: activeIndex >= maxIndex ? 0.3 : 1, transition: "all 0.3s ease" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          )}
         </div>
-        <h3 style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.4rem)", fontWeight: 800, color: FG, margin: "0 0 8px 0", fontFamily: "Poppins, sans-serif" }}>Curated Experience Plan</h3>
-        <p style={{ fontSize: 14, color: M, marginBottom: 40, maxWidth: 520 }}>{steps.length} carefully crafted steps to make the most of your visit</p>
 
-        {/* Hero first step — full width */}
-        <StepCard
-          s={heroStep} i={0} A={A} W={W} B={B} FG={FG} M={M}
-          getItineraryImageUrl={getItineraryImageUrl}
-          getItineraryImages={getItineraryImages}
-          setSelectedImages={setSelectedImages}
-          setPhotoIndex={setPhotoIndex}
-          setPhotoVisible={setPhotoVisible}
-          isHero={true}
-        />
-
-        {/* Vertical connector line */}
-        {restSteps.length > 0 && (
-          <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}>
-            <div style={{ width: 2, height: 40, background: `linear-gradient(to bottom, ${A}, ${B})`, borderRadius: 1 }} />
+        <div style={{ position: "relative", padding: "12px 4px", margin: "-12px -4px" }}>
+          <div style={{ display: "flex", gap: 24, width: "100%" }}>
+            {[...Array(cardsToShow)].map((_, idx) => {
+              const actualIdx = activeIndex + idx;
+              if (!steps[actualIdx]) return null;
+              return (
+                <div key={idx} style={{ flex: 1, minWidth: 0, display: "flex" }}>
+                  <StepCard
+                    s={steps[actualIdx]} i={actualIdx} A={A} W={W} B={B} FG={FG} M={M}
+                    getItineraryImageUrl={getItineraryImageUrl}
+                    getItineraryImages={getItineraryImages}
+                    setSelectedImages={setSelectedImages}
+                    setPhotoIndex={setPhotoIndex}
+                    setPhotoVisible={setPhotoVisible}
+                    isHero={false}
+                  />
+                </div>
+              );
+            })}
           </div>
-        )}
-
-        {/* Remaining steps in a 3-col grid */}
-        {visibleRest.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 28, justifyContent: visibleRest.length < 3 ? "center" : "flex-start" }}>
-            {visibleRest.map((s, i) => (
-              <StepCard
-                key={i + 1}
-                s={s}
-                i={i + 1}
-                A={A} W={W} B={B} FG={FG} M={M}
-                getItineraryImageUrl={getItineraryImageUrl}
-                getItineraryImages={getItineraryImages}
-                setSelectedImages={setSelectedImages}
-                setPhotoIndex={setPhotoIndex}
-                setPhotoVisible={setPhotoVisible}
-                isHero={false}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Show More / Show Less button */}
-        {hasMore && (
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: `0 8px 24px rgba(0,0,0,0.08)` }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setShowAll(!showAll)}
-              style={{
-                background: showAll ? W : A,
-                color: showAll ? A : W,
-                border: `1.5px solid ${A}`,
-                borderRadius: 50,
-                padding: "12px 32px",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                letterSpacing: "0.02em",
-                transition: "all 0.3s ease",
-              }}
-            >
-              {showAll ? "Show Less" : `Show All ${restSteps.length - INITIAL_VISIBLE} More Steps`}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showAll ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </motion.button>
-          </div>
-        )}
+          
+          {/* Dots Indicator */}
+          {steps.length > cardsToShow && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 24 }}>
+              {[...Array(maxIndex + 1)].map((_, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => setActiveIndex(idx)}
+                  style={{ 
+                    width: activeIndex === idx ? 24 : 8, 
+                    height: 8, 
+                    borderRadius: 4, 
+                    background: activeIndex === idx ? A : B,
+                    cursor: "pointer",
+                    transition: "all 0.3s ease"
+                  }} 
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <AnimatePresence>
         {photoVisible && (
@@ -1508,17 +1507,17 @@ function VisitorInformation({ place }) {
     return fallback;
   };
 
-  const formattedTowns = formatList(place?.nearestTowns, place?.nearestTown, "MUNNAR", (name) => name.split('/')[0]?.trim());
-  const formattedAirports = formatList(place?.nearestAirports, place?.nearestAirport, "COCHIN", (name) => name.split('(')[0].replace(/International Airport/i, "").trim().toUpperCase());
-  const formattedRailways = formatList(place?.nearestRailwayStations, place?.nearestRailway, "ALUVA", (name) => name.split('(')[0].replace(/Railway Station/i, "").trim());
+  const formattedTowns = formatList(place?.nearestTowns, place?.nearestTown, "Not Specified", (name) => name.split('/')[0]?.trim());
+  const formattedAirports = formatList(place?.nearestAirports, place?.nearestAirport, "Not Specified", (name) => name.split('(')[0].replace(/International Airport/i, "").trim().toUpperCase());
+  const formattedRailways = formatList(place?.nearestRailwayStations, place?.nearestRailway, "Not Specified", (name) => name.split('(')[0].replace(/Railway Station/i, "").trim());
 
   const suitabilityTags = useMemo(() => {
     const raw = place?.suitableFor;
-    if (!raw) return ["Couples", "Families", "Solo"];
+    if (!raw) return ["Not Specified"];
     if (Array.isArray(raw)) return raw.map(item => toDisplayString(item));
     if (typeof raw === "string") return raw.split(',').map(t => t.trim());
     const disp = toDisplayString(raw);
-    return disp ? disp.split(',').map(t => t.trim()) : ["Couples", "Families", "Solo"];
+    return disp ? disp.split(',').map(t => t.trim()) : ["Not Specified"];
   }, [place?.suitableFor]);
 
   // Ticket notch decoration styles helper
@@ -1540,11 +1539,13 @@ function VisitorInformation({ place }) {
     <section style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <h3 style={{
-          fontSize: isMobile ? 24 : "clamp(1.8rem, 2.5vw, 2.2rem)",
+          fontSize: isMobile ? 32 : "clamp(2.5rem, 4vw, 3.5rem)",
           fontWeight: 700,
           color: FG,
+          lineHeight: 1.1,
+          letterSpacing: "-0.02em",
           marginBottom: 32,
-          fontFamily: "Poppins, sans-serif"
+          fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
         }}>Visitor Guide</h3>
 
         <Soul y={30}>
@@ -1596,7 +1597,7 @@ function VisitorInformation({ place }) {
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Permit Category</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
                         <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>
-                          {place?.entryType ? `${place.entryType} Entry` : (place?.entryFee ? "Paid Entry" : "Free Entry")}
+                          {place?.entryType ? `${place.entryType} Entry` : (place?.entryFee ? "Paid Entry" : "Not Specified")}
                         </h4>
                         {place?.entryFee && (!place?.entryType || place.entryType.toLowerCase() !== 'free') && (
                           <span style={{ fontSize: 10, fontWeight: 700, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>
@@ -1610,12 +1611,12 @@ function VisitorInformation({ place }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     <div>
                       <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Managed By</span>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: FG, margin: 0 }}>{place?.managedBy || "Government Tourism Dept."}</p>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: FG, margin: 0 }}>{place?.managedBy || "Not Specified"}</p>
                     </div>
                     <div>
                       <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Support Hotline</span>
-                      <a href={`tel:${place?.contactInfo || place?.phone || "+914842567890"}`} style={{ fontSize: 14, fontWeight: 750, color: A, textDecoration: "none" }}>
-                        {place?.contactInfo || place?.phone || "+91 484 256 7890"}
+                      <a href={`tel:${place?.contactInfo || place?.phone || ""}`} style={{ fontSize: 14, fontWeight: 750, color: A, textDecoration: "none" }}>
+                        {place?.contactInfo || place?.phone || "Not Provided"}
                       </a>
                     </div>
                     <div>
@@ -1838,15 +1839,15 @@ function VisitorInformation({ place }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
                       <span style={{ fontSize: 12, color: M }}>Permit Category</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.entryFee || "Paid Entry"}</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.entryFee || "Not Specified"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
                       <span style={{ fontSize: 12, color: M }}>Parking Place</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.parking || "Available"}</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.parking || "Not Specified"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
                       <span style={{ fontSize: 12, color: M }}>Wheelchair</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{typeof place?.wheelchairAccess === 'boolean' ? (place?.wheelchairAccess ? 'Accessible' : 'Not Accessible') : (place?.wheelchairAccess || place?.wheelchair || "Accessible")}</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{typeof place?.wheelchairAccess === 'boolean' ? (place?.wheelchairAccess ? 'Accessible' : 'Not Accessible') : (place?.wheelchairAccess || place?.wheelchair || "Not Specified")}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}`, gap: 16 }}>
                       <span style={{ fontSize: 12, color: M, flexShrink: 0 }}>Age Restriction</span>
@@ -1855,7 +1856,7 @@ function VisitorInformation({ place }) {
                           ? (isNaN(place?.ageRestriction || place?.minAge) 
                               ? (place?.ageRestriction || place?.minAge) 
                               : `${place?.ageRestriction || place?.minAge} Years+`) 
-                          : "All Ages"}
+                          : "No Restriction"}
                       </span>
                     </div>
                   </div>
@@ -1869,7 +1870,7 @@ function VisitorInformation({ place }) {
               <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <span style={{ fontSize: 9, color: M, display: "block" }}>Best Visit Season</span>
-                  <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.bestTimeToVisit || "Year Round"}</span>
+                  <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.bestTimeToVisit || "Not Specified"}</span>
                 </div>
 
                 {/* Stamp Clipart */}
@@ -1942,15 +1943,15 @@ function VisitorInformation({ place }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: M }}>Opening Hour</span>
-                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.openingTime || "08:30 AM"}</span>
+                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.openingTime || "Not Specified"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: M }}>Closing Hour</span>
-                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.closingTime || place?.closeTime || "04:30 PM"}</span>
+                      <span style={{ fontWeight: 800, color: FG, fontSize: 14, fontFamily: "var(--font-fraunces), Georgia, serif" }}>{place?.closingTime || place?.closeTime || "Not Specified"}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: M }}>Closed On</span>
-                      <span style={{ fontWeight: 850, color: A, fontSize: 13, textTransform: "uppercase" }}>{Array.isArray(place?.closedDays) ? place?.closedDays.join(', ') : (place?.closedDays || "None")}</span>
+                      <span style={{ fontWeight: 850, color: A, fontSize: 13, textTransform: "uppercase" }}>{Array.isArray(place?.closedDays) ? place?.closedDays.join(', ') : (place?.closedDays || "Not Specified")}</span>
                     </div>
                   </div>
                 </div>
@@ -2019,7 +2020,7 @@ function VisitorInformation({ place }) {
             >
               <style>{".no-scrollbars::-webkit-scrollbar { display: none; } .no-scrollbars { -ms-overflow-style: none; scrollbar-width: none; }"}</style>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <h3 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: FG, letterSpacing: "-0.02em" }}>Vehicle Access</h3>
+                <h3 style={{ margin: 0, fontSize: "clamp(1.5rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, letterSpacing: "-0.02em", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>Vehicle Access</h3>
                 <button onClick={() => setShowAllVehicles(false)} style={{ background: S, border: "none", cursor: "pointer", color: FG, padding: 8, borderRadius: 50, display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = B} onMouseOut={e => e.currentTarget.style.background = S}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
@@ -2054,19 +2055,19 @@ function GoodToKnow({ place }) {
     ? place.whatToCarry.map(i => typeof i === 'string' ? i : i.name || i)
     : (typeof place?.whatToCarry === 'string' && place.whatToCarry.trim() !== '' 
         ? place.whatToCarry.split(',').map(i => i.trim()) 
-        : ["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"]);
+        : ["Not Specified"]);
   const avoidItems = Array.isArray(place?.thingsToAvoid) && place.thingsToAvoid.length > 0
     ? place.thingsToAvoid.map(i => typeof i === 'string' ? i : i.name || i)
     : (typeof place?.thingsToAvoid === 'string' && place.thingsToAvoid.trim() !== ''
         ? place.thingsToAvoid.split(',').map(i => i.trim())
-        : ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"]);
+        : ["Not Specified"]);
 
   const feedbackBg = A === "#0097B2" ? "#f8f8f8" : S;
 
   return (
     <section style={{ background: S, padding: "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
-        <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, fontFamily: "Poppins, sans-serif" }}>Good To Know</h3>
+        <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Good To Know</h3>
 
         {/* Row 1: Good to Know Title & Two side-by-side cards */}
         <Rev>
@@ -2102,7 +2103,7 @@ function GoodToKnow({ place }) {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
                       <span style={{ fontSize: 9, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 800 }}>Luggage Check</span>
-                      <h4 style={{ fontSize: 17, fontWeight: 800, color: FG, margin: "2px 0 0 0", fontFamily: "Poppins, sans-serif" }}>What to Carry</h4>
+                      <h4 style={{ fontSize: 18, fontWeight: 700, color: FG, margin: "2px 0 0 0", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>What to Carry</h4>
                     </div>
                     <div style={{ background: AL, padding: 8, borderRadius: 10 }}>
                       <Briefcase size={16} color={A} />
@@ -2204,7 +2205,7 @@ function GoodToKnow({ place }) {
                 <div>
                   <div style={{ marginBottom: 14 }}>
                     <span style={{ fontSize: 9, color: warningText, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 800 }}>Customs Declaration</span>
-                    <h4 style={{ fontSize: 17, fontWeight: 800, color: warningHeader, margin: "2px 0 0 0", fontFamily: "Poppins, sans-serif" }}>Things to Avoid</h4>
+                    <h4 style={{ fontSize: 18, fontWeight: 700, color: warningHeader, margin: "2px 0 0 0", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Things to Avoid</h4>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -2257,7 +2258,7 @@ function CommunityFeedback() {
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <Rev delay={0.1}>
           <div style={{ background: W, border: `1px solid ${B}`, borderRadius: 32, padding: 48 }}>
-            <h3 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: FG, marginBottom: 12 }}>Community Feedback</h3>
+            <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: 12, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Community Feedback</h3>
             <p style={{ fontSize: 12, color: M, marginBottom: 24 }}>Share your recent experience or suggest updates for this location.</p>
             <textarea
               placeholder="Share your thoughts..."
@@ -2275,7 +2276,7 @@ function CommunityFeedback() {
 }
 
 function LocationSection({ place }) {
-  const { tokens: { A, B, FG, M, W, S }, theme } = useTheme();
+  const { tokens: { A, B, FG, M, W, BG, S }, theme } = useTheme();
   const { isMobile } = useWindowSize();
   const latitude = place?.latitude;
   const longitude = place?.longitude;
@@ -2288,159 +2289,170 @@ function LocationSection({ place }) {
   const instructions = place?.instructions || place?.meetingInstructions;
 
   return (
-    <section className="location-section" style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "45fr 55fr", gap: isMobile ? 32 : 64 }} className="prep-grid">
+    <section className="location-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
+      <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+
+        <div style={{ marginBottom: 32 }}>
+          <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
+          <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
+          <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>Find your way to the location and get all the essential details for a smooth journey.</p>
+        </div>
+
+        <div style={{
+          background: theme === 'dark' ? '#0A0A0A' : '#FFFFFF',
+          borderRadius: 24,
+          border: `1px solid ${B}`,
+          padding: 16,
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gap: isMobile ? 24 : 32,
+          boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
+        }} className="prep-grid">
+
           <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it All Happens</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ background: W, border: `1px solid ${B}`, height: 280, position: "relative", overflow: "hidden", borderRadius: 16 }}>
-                  <div style={{
-                    position: "absolute",
-                    top: 16,
-                    right: 16,
-                    zIndex: 10,
-                    background: W,
-                    padding: "10px 16px",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.08)",
-                    border: `1px solid ${B}`,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    pointerEvents: "none"
-                  }}>
-                    <MapPin size={16} color={A} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG }}>{place?.placeName || "Location"}</span>
-                  </div>
-                  {latitude && longitude ? (
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      style={{ border: 0 }}
-                      src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=en&z=14&output=embed`}
-                      allowFullScreen
-                      title="Location Map"
-                    />
-                  ) : (
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      style={{ border: 0 }}
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(place?.placeName || "")}&hl=en&z=14&output=embed`}
-                      allowFullScreen
-                      title="Location Map"
-                    />
-                  )}
-                </div>
+            <div style={{ position: "sticky", top: 120, height: 400, maxHeight: "calc(100vh - 160px)", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+              <div style={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                zIndex: 10,
+                background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                padding: "8px 16px",
+                borderRadius: "12px",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+                border: `1px solid ${B}`,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                pointerEvents: "none",
+                maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
+              }}>
+                <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{place?.placeName || "Location"}</span>
               </div>
+              {latitude && longitude ? (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  style={{ border: 0 }}
+                  src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=en&z=14&output=embed`}
+                  allowFullScreen
+                  title="Location Map"
+                />
+              ) : (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  style={{ border: 0 }}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(place?.placeName || "")}&hl=en&z=14&output=embed`}
+                  allowFullScreen
+                  title="Location Map"
+                />
+              )}
             </div>
           </Rev>
+
           <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <h3 style={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, marginBottom: 32, fontFamily: "Poppins, sans-serif" }}>Where it is</h3>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
-                  {address && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{address}</span>
-                      </div>
-                    </li>
-                  )}
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
+                {address && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <MapPin size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{address}</span>
+                    </div>
+                  </li>
+                )}
 
-                  {landmark && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Navigation size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Landmark</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{landmark}</span>
-                      </div>
-                    </li>
-                  )}
+                {landmark && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Navigation size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Landmark</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{landmark}</span>
+                    </div>
+                  </li>
+                )}
 
-                  {city && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>City/Town</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{city}</span>
-                      </div>
-                    </li>
-                  )}
+                {city && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <MapPin size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>City/Town</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{city}</span>
+                    </div>
+                  </li>
+                )}
 
-                  {district && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{district}</span>
-                      </div>
-                    </li>
-                  )}
+                {district && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <MapPin size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{district}</span>
+                    </div>
+                  </li>
+                )}
 
-                  {state && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Map size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State/Region</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{state}</span>
-                      </div>
-                    </li>
-                  )}
+                {state && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Map size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State/Region</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{state}</span>
+                    </div>
+                  </li>
+                )}
 
-                  {country && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Globe size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{country}</span>
-                      </div>
-                    </li>
-                  )}
+                {country && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Globe size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{country}</span>
+                    </div>
+                  </li>
+                )}
 
-                  {instructions && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Info size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                        <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{instructions}</span>
-                      </div>
-                    </li>
-                  )}
+                {instructions && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Info size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                      <ExpandableInstructionText text={instructions} FG={FG} A={A} />
+                    </div>
+                  </li>
+                )}
 
-                  {(!address && !city && !state && !landmark && !district && !country && !instructions) && (
-                    <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <MapPin size={20} color={A} fill="transparent" />
-                      </div>
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                        <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
-                        <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details are available on the map.</span>
-                      </div>
-                    </li>
-                  )}
-                </ul>
-              </div>
+                {(!address && !city && !state && !landmark && !district && !country && !instructions) && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <MapPin size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
+                      <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details are available on the map.</span>
+                    </div>
+                  </li>
+                )}
+              </ul>
             </div>
           </Rev>
         </div>
@@ -2591,13 +2603,14 @@ function MobileHero({ place, galleryItems, id }) {
           {toDisplayString(place?.category) || "DESTINATION"}
         </p>
 
-        <h1 className="font-display" style={{
-          fontSize: 22,
+        <h1 className="hero-title" style={{
+          fontSize: 24,
           fontWeight: 700,
           color: FG,
           lineHeight: 1.3,
           letterSpacing: "-0.01em",
-          margin: "0 0 14px 0"
+          margin: "0 0 14px 0",
+          fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
         }}>
           {placeName.toUpperCase()}
         </h1>
@@ -2632,12 +2645,14 @@ function MobileAbout({ place, hostData, hostAvatar }) {
         About the Destination
       </p>
 
-      <h2 className="font-display" style={{
-        fontSize: 26,
+      <h2 style={{
+        fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
         fontWeight: 700,
         color: FG,
-        lineHeight: 1.2,
-        marginBottom: 16
+        lineHeight: 1.1,
+        margin: "0 0 16px 0",
+        fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+        letterSpacing: "-0.02em"
       }}>
         {place?.placeName || "Experience the local heritage."}
       </h2>
@@ -3231,14 +3246,14 @@ function VisitingNotes({ place }) {
                <div style={{ background: A, padding: 8, borderRadius: 12 }}>
                   <Info size={20} color="#FFFFFF" />
                </div>
-               <h3 style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Visiting Notes</h3>
+               <h3 style={{ fontSize: "clamp(2rem, 3vw, 2.5rem)", fontWeight: 700, color: FG, margin: 0, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Visiting Notes</h3>
             </div>
             <p style={{
               fontSize: 16,
               lineHeight: 1.8,
               color: FG,
               margin: 0,
-              fontFamily: "Poppins, sans-serif",
+              fontFamily: '"Inter", sans-serif',
               fontWeight: 400,
               whiteSpace: "pre-line"
             }}>
@@ -3376,7 +3391,7 @@ function MobilePlaceDetails({
           currentListingId={currentListingId}
           title="More Places To Explore"
           sectionStyle={{ padding: "40px 16px" }}
-          titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, marginBottom: "32px", fontFamily: "Poppins, sans-serif" }}
+          titleStyle={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: "32px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
         />
       </div>
 
@@ -3610,7 +3625,7 @@ const PlaceDetails = () => {
         currentListingId={currentListingId}
         title="More Places To Explore"
         sectionStyle={{ padding: "48px 80px" }}
-        titleStyle={{ fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight: 700, marginBottom: "32px", fontFamily: "Poppins, sans-serif" }}
+        titleStyle={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: "32px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
       />
 
       <Footer />
@@ -3620,3 +3635,32 @@ const PlaceDetails = () => {
 };
 
 export default PlaceDetails;
+
+export const ExpandableInstructionText = ({ text, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
+      <span style={{
+        fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
+        display: "-webkit-box",
+        WebkitLineClamp: expanded ? "unset" : 3,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+        whiteSpace: "pre-wrap"
+      }}>
+        {text}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 13, fontWeight: 600, padding: 0, marginTop: 6, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif', transition: "opacity 0.2s" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};
+

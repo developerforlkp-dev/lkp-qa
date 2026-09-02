@@ -342,6 +342,7 @@ const Support = () => {
     if (!form.customerCountryCode.trim()) nextErrors.customerCountryCode = "Country code is required.";
     if (!form.issueCategory.trim()) nextErrors.issueCategory = "Issue category is required.";
     if (!form.subject.trim()) nextErrors.subject = "Subject is required.";
+    else if (form.subject.trim().length < 11) nextErrors.subject = "Subject must contain at least 11 characters.";
     else if (form.subject.trim().length > 255) nextErrors.subject = "Subject cannot exceed 255 characters.";
 
     if (form.customIssueText && form.customIssueText.trim().length > 255) {
@@ -349,6 +350,7 @@ const Support = () => {
     }
 
     if (!form.description.trim()) nextErrors.description = "Description is required.";
+    else if (form.description.trim().length < 11) nextErrors.description = "Description must contain at least 11 characters.";
 
     if (!form.customerEmail.trim()) {
       nextErrors.customerEmail = "Customer email is required.";
@@ -361,8 +363,22 @@ const Support = () => {
     }
 
     setErrors(nextErrors);
+    const hasErrors = Object.keys(nextErrors).length > 0;
+
+    if (hasErrors) {
+      setFormError("Almost there! Just a few quick fixes needed in the highlighted fields below.");
+      setTimeout(() => {
+        const firstErrorKey = Object.keys(nextErrors)[0];
+        const errorElement = document.getElementById(firstErrorKey) || document.querySelector(`[name="${firstErrorKey}"]`);
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          errorElement.focus();
+        }
+      }, 100);
+    }
+
     return {
-      isValid: Object.keys(nextErrors).length === 0,
+      isValid: !hasErrors,
       attachmentValues: form.attachments || [],
     };
   };
@@ -422,21 +438,41 @@ const Support = () => {
       }
     } catch (error) {
       const data = error?.response?.data || {};
-      const fieldErrors = data?.fieldErrors || data?.errors || {};
-      const normalizedErrors = {};
+      
+      // Attempt to extract field errors from multiple possible Zod/Express error shapes
+      let fieldErrors = data?.fieldErrors || data?.errors || {};
+      if (Object.keys(fieldErrors).length === 0 && data?.error?.issues) {
+        fieldErrors = {};
+        data.error.issues.forEach(issue => {
+          if (issue.path && issue.path.length > 0) {
+            fieldErrors[issue.path[0]] = issue.message;
+          }
+        });
+      }
 
+      const normalizedErrors = {};
       Object.entries(fieldErrors).forEach(([key, value]) => {
         normalizedErrors[key] = Array.isArray(value) ? value.find(Boolean) : value;
       });
 
       if (Object.keys(normalizedErrors).length > 0) {
         setErrors((prev) => ({ ...prev, ...normalizedErrors }));
+        setFormError("Almost there! Just a few quick fixes needed in the highlighted fields below.");
+        
+        setTimeout(() => {
+          const firstErrorKey = Object.keys(normalizedErrors)[0];
+          const errorElement = document.getElementById(firstErrorKey) || document.querySelector(`[name="${firstErrorKey}"]`);
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            errorElement.focus();
+          }
+        }, 100);
+      } else {
+        setFormError(getErrorText(
+          data?.message || data?.error || data,
+          "We couldn't submit your ticket right now. Please review the form and try again."
+        ));
       }
-
-      setFormError(getErrorText(
-        data?.message || data?.error || data,
-        "We couldn't submit your ticket right now. Please review the form and try again."
-      ));
     } finally {
       setSubmitting(false);
     }

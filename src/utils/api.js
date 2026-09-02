@@ -863,10 +863,10 @@ export const resendHostingOtp = async (sessionId) => {
 };
 
 // Google OAuth login
-export const loginWithGoogle = async (idToken, dateOfBirth = "") => {
+export const loginWithGoogle = async (idToken, dateOfBirth = "", avatarUrl = "") => {
   try {
     const url = "/customers/auth/google";
-    const requestData = { idToken: idToken, dateOfBirth: dateOfBirth };
+    const requestData = { idToken, dateOfBirth, avatarUrl };
     const baseURL = getApiBaseURL();
     const fullURL = baseURL === "/api"
       ? `${window.location.origin}${baseURL}${url}`
@@ -1203,6 +1203,25 @@ export const getAvailability = async (listingId, startDate, endDate, slotId) => 
   }
 };
 
+// Preview price for an order
+export const previewOrderPrice = async (payload) => {
+  try {
+    console.log("📤 [preview-price API] Request payload:", JSON.stringify(payload, null, 2));
+    const response = await ListingsAPI.post("/orders/preview-price", payload);
+    console.log("✅ [preview-price API] Response data:", JSON.stringify(response.data, null, 2));
+    return response.data;
+  } catch (error) {
+    console.error("❌ [preview-price API] Error previewing price:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      requestData: payload,
+    });
+    throw error;
+  }
+};
+
 // Create an order
 export const createOrder = async (orderData) => {
   try {
@@ -1309,6 +1328,131 @@ export const precheckEventOrder = async (precheckData) => {
     });
     throw error;
   }
+};
+
+export const formatEventPrecheckErrorMessage = (precheckRes) => {
+  if (!precheckRes) return {
+    title: "Booking Unavailable",
+    message: "Unable to proceed with this booking right now.",
+    reason: "Please check availability or choose another date/slot.",
+    ctaLabel: "Change Date/Slot"
+  };
+
+  const precheckResults = Array.isArray(precheckRes?.results) ? precheckRes.results : [];
+  const firstFailure = precheckResults.find((item) => item?.canBook === false || item?.failureReason) || precheckResults[0];
+
+  if (firstFailure) {
+    const {
+      ticketTypeName,
+      maxPerBooking,
+      alreadyBookedQuantity,
+      requestedQuantity,
+      remainingAllowedQuantity,
+      failureReason,
+    } = firstFailure;
+
+    const ticketNameStr = ticketTypeName ? ` (${ticketTypeName})` : "";
+    const bookedCount = Number(alreadyBookedQuantity || 0);
+    const remainingCount = remainingAllowedQuantity !== undefined && remainingAllowedQuantity !== null
+      ? Number(remainingAllowedQuantity)
+      : null;
+    const requestedCount = Number(requestedQuantity || 0);
+    const maxLimit = Number(maxPerBooking || 0);
+
+    // Case 1: Customer limit exceeded (MAX_PER_CUSTOMER_EXCEEDED)
+    if (failureReason === "MAX_PER_CUSTOMER_EXCEEDED") {
+      if (remainingCount !== null && remainingCount > 0) {
+        return {
+          title: "Booking Limit Reached",
+          message: `You have already booked ${bookedCount} ${bookedCount === 1 ? "seat" : "seats"}${ticketNameStr}. Only ${remainingCount} more ${remainingCount === 1 ? "seat is" : "seats are"} available for you${maxLimit > 0 ? ` (max ${maxLimit} allowed per customer)` : ""}.`,
+          reason: "Please reduce your seat quantity or choose another date/slot.",
+          ctaLabel: "Change Date/Slot"
+        };
+      }
+      return {
+        title: "Booking Limit Reached",
+        message: `You have already booked ${bookedCount} ${bookedCount === 1 ? "seat" : "seats"}${ticketNameStr}${maxLimit > 0 ? ` (maximum limit of ${maxLimit} reached)` : ""}. No more seats are available for you on this slot.`,
+        reason: "Please change the date or slot to book additional seats.",
+        ctaLabel: "Change Date"
+      };
+    }
+
+    // Case 2: Insufficient availability / Capacity exceeded for the event
+    if (
+      failureReason === "INSUFFICIENT_AVAILABILITY" ||
+      failureReason === "CAPACITY_EXCEEDED" ||
+      failureReason === "INSUFFICIENT_QUANTITY" ||
+      failureReason === "INSUFFICIENT_SEATS" ||
+      failureReason === "NOT_ENOUGH_SEATS"
+    ) {
+      const requestedText = requestedCount > 0 ? ` for the requested ${requestedCount} ${requestedCount === 1 ? "ticket" : "tickets"}` : "";
+      return {
+        title: "Insufficient Tickets Available",
+        message: `There are not enough tickets available for this event${ticketNameStr}${requestedText}.`,
+        reason: "Please reduce the number of tickets or choose another date/slot.",
+        ctaLabel: "Change Date/Slot"
+      };
+    }
+
+    // Case 3: Sold out or remaining = 0
+    if (failureReason === "SOLD_OUT" || remainingCount === 0) {
+      return {
+        title: "Slot Full",
+        message: `This slot is already fully booked${ticketNameStr}.`,
+        reason: "No seats are currently available. Please change the date or slot.",
+        ctaLabel: "Change Date"
+      };
+    }
+
+    // Case 4: Max per booking exceeded
+    if (failureReason === "MAX_PER_BOOKING_EXCEEDED") {
+      return {
+        title: "Maximum Limit Exceeded",
+        message: `The maximum allowed is ${maxLimit || 5} ${maxLimit === 1 ? "seat" : "seats"} per booking${ticketNameStr}.`,
+        reason: "Please reduce your guest count or select another slot.",
+        ctaLabel: "Adjust Quantity"
+      };
+    }
+
+    // Fallback if remainingAllowedQuantity is provided and less than requested
+    if (remainingCount !== null && remainingCount < requestedCount) {
+      if (remainingCount === 0) {
+        return {
+          title: "Seats Unavailable",
+          message: `No seats are available for this slot${ticketNameStr}.`,
+          reason: "Please change the date or slot.",
+          ctaLabel: "Change Date"
+        };
+      }
+      return {
+        title: "Limited Seats Available",
+        message: `Only ${remainingCount} ${remainingCount === 1 ? "seat is" : "seats are"} available${ticketNameStr} for this slot.`,
+        reason: "Please reduce your guest count or change the date/slot.",
+        ctaLabel: "Change Date/Slot"
+      };
+    }
+
+    // If failureReason is already a human readable message
+    if (failureReason && typeof failureReason === "string" && !/^[A-Z0-9_]+$/.test(failureReason)) {
+      return {
+        title: "Booking Notice",
+        message: failureReason,
+        reason: "Please update your selection or change the date.",
+        ctaLabel: "Change Date"
+      };
+    }
+  }
+
+  const genericMsg = precheckRes?.message && typeof precheckRes.message === "string" && !/^[A-Z0-9_]+$/.test(precheckRes.message)
+    ? precheckRes.message
+    : "Unable to proceed with this booking right now. Please change the date or slot.";
+
+  return {
+    title: "Booking Notice",
+    message: genericMsg,
+    reason: "Please update your selection or choose another date/slot.",
+    ctaLabel: "Change Date"
+  };
 };
 
 export const getEventSlotAvailability = async (eventId) => {

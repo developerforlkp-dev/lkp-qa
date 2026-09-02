@@ -1492,7 +1492,7 @@ const ExperienceProduct = () => {
                       const addon = item.addon || item;
                       const addonId = addon.addonId || addon.id;
                       const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                      const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                      const addonImage = addon.imageUrl || (Array.isArray(addon.imageUrls) && addon.imageUrls[0]) || addon.image || item.imageUrl || (Array.isArray(item.imageUrls) && item.imageUrls[0]) || item.image || addon.coverImageUrl || addon.coverPhotoUrl;
                       const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
 
                       return (
@@ -1527,7 +1527,7 @@ const ExperienceProduct = () => {
                                 alt={addon.title}
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = "/images/content/placeholder.jpg";
+                                  e.target.style.display = 'none';
                                 }}
                               />
                             ) : (
@@ -1686,7 +1686,7 @@ const ExperienceProduct = () => {
                   <div style={{
                     position: "absolute",
                     top: 16,
-                    right: 16,
+                    left: 16,
                     zIndex: 10,
                     background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
                     padding: "8px 16px",
@@ -1696,10 +1696,11 @@ const ExperienceProduct = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
-                    pointerEvents: "none"
+                    pointerEvents: "none",
+                    maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
                   }}>
-                    <MapPin size={16} color={A} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif' }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
+                    <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{listing?.meetingLocationName || "The Grand Atrium"}</span>
                   </div>
                   {listing?.meetingLatitude && listing?.meetingLongitude ? (
                     <iframe
@@ -3679,21 +3680,16 @@ export const ExpandableInstructionText = ({ text, FG, A }) => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
-      <motion.div
-        animate={{ maxHeight: expanded ? "1000px" : "67px" }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        style={{ overflow: "hidden", width: "100%" }}
-      >
-        <span style={{
-          fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
-          display: "-webkit-box",
-          WebkitLineClamp: expanded ? "unset" : 3,
-          WebkitBoxOrient: "vertical",
-          whiteSpace: "pre-wrap"
-        }}>
-          {text}
-        </span>
-      </motion.div>
+      <span style={{
+        fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
+        display: "-webkit-box",
+        WebkitLineClamp: expanded ? "unset" : 3,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+        whiteSpace: "pre-wrap"
+      }}>
+        {text}
+      </span>
       {isLong && (
         <button
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}

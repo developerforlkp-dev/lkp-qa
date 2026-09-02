@@ -1457,6 +1457,7 @@ const Main = ({
         modal: {
           ondismiss: () => {
             setIsConfirmingBooking(false);
+            setTimeout(() => { window.location.reload(); }, 300);
           },
         },
         prefill: {
@@ -2672,8 +2673,8 @@ const Main = ({
             {validationModalData.isRebookPrompt && (
               <button
                 type="button"
-                className={cn("button-stroke", styles.cancelModalBtn)}
-                style={{ marginLeft: '12px' }}
+                className={cn("button", styles.cancelModalBtn)}
+                style={{ backgroundColor: "#0097B2", borderColor: "#0097B2", color: "white" }}
                 onClick={() => handleRebook(validationModalData.bookingToRebook)}
                 disabled={isFetchingRebookData}
               >
@@ -2684,7 +2685,7 @@ const Main = ({
               <button
                 type="button"
                 className={cn("button", styles.cancelModalBtn)}
-                style={{ marginLeft: '12px' }}
+                style={{ backgroundColor: "#0097B2", borderColor: "#0097B2", color: "white" }}
                 onClick={() => {
                   setValidationModalVisible(false);
                   setSelectedBookingForPayment(validationModalData.bookingToRebook);

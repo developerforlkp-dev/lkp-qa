@@ -436,6 +436,7 @@ const ScopedStyles = () => (
       .highlight-item:not(:last-child) { border-right: none !important; }
       .highlights-banner { display: none !important; }
       .editorial-narrative-block { display: none !important; }
+      .amenities-section-container { margin-top: 4px !important; }
       .highlight-item { justify-content: flex-start !important; padding-bottom: 12px !important; border-bottom: 1px solid var(--B) !important; }
       .highlight-item:last-child { border-bottom: none !important; padding-bottom: 0 !important; }
 
@@ -1523,7 +1524,7 @@ function StayAmenities({ stay }) {
   }, [stay]);
 
   return (
-    <section style={{ background: "transparent", padding: isMobile ? "16px 24px" : "0px 80px", boxSizing: "border-box", overflow: "hidden" }}>
+    <section style={{ background: "transparent", padding: isMobile ? "0px 24px 16px" : "0px 80px", boxSizing: "border-box", overflow: "hidden" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
         <Soul y={isMobile ? 30 : 60} s={0.03}>
@@ -1766,6 +1767,9 @@ function PolicyCategoryItem({ category }) {
     }
     if (lowerTitle.includes("guest") || lowerTitle.includes("requirements")) {
       return <Users size={20} color={A} />;
+    }
+    if (lowerTitle.includes("foreigner")) {
+      return <Globe size={20} color={A} />;
     }
     return <ShieldCheck size={20} color={A} />;
   };
@@ -2011,6 +2015,32 @@ function StayPolicies({ stay }) {
     }
     if (cancelItems.length > 0) {
       categories.push({ id: 'cat-cancel', title: "Cancellation Policy", items: cancelItems });
+    }
+
+    // Foreigner Guidelines
+    const foreignerItems = [];
+    const foreignersAllowed = stay?.foreignersAllowed !== undefined ? stay?.foreignersAllowed : (stay?.listing?.foreignersAllowed !== undefined ? stay?.listing?.foreignersAllowed : (stay?.stay?.foreignersAllowed !== undefined ? stay?.stay?.foreignersAllowed : stay?.privacyAndPolicy?.foreignersAllowed));
+    if (foreignersAllowed !== undefined && foreignersAllowed !== null && foreignersAllowed !== "") {
+      const isAllowed = foreignersAllowed === true || foreignersAllowed === 'true' || foreignersAllowed === 'Yes' || foreignersAllowed === 'yes' || foreignersAllowed === 1;
+      foreignerItems.push({
+        id: 'foreigners-allowed',
+        title: "Foreigners Allowed",
+        body: isAllowed ? "Yes" : "No"
+      });
+    }
+
+    const ticketPriceForeigners = stay?.ticketPriceApplicableToForeigners !== undefined ? stay?.ticketPriceApplicableToForeigners : (stay?.listing?.ticketPriceApplicableToForeigners !== undefined ? stay?.listing?.ticketPriceApplicableToForeigners : (stay?.stay?.ticketPriceApplicableToForeigners !== undefined ? stay?.stay?.ticketPriceApplicableToForeigners : stay?.privacyAndPolicy?.ticketPriceApplicableToForeigners));
+    if (ticketPriceForeigners !== undefined && ticketPriceForeigners !== null && ticketPriceForeigners !== "") {
+      const isApplicable = ticketPriceForeigners === true || ticketPriceForeigners === 'true' || ticketPriceForeigners === 'Applicable' || ticketPriceForeigners === 'yes' || ticketPriceForeigners === 1;
+      foreignerItems.push({
+        id: 'ticket-price-foreigners',
+        title: "Ticket Pricing for Foreigners",
+        body: isApplicable ? "Applicable" : "Not Applicable"
+      });
+    }
+
+    if (foreignerItems.length > 0) {
+      categories.push({ id: 'cat-foreigner', title: "Foreigner Guidelines", items: foreignerItems });
     }
 
     return categories;
@@ -2722,6 +2752,7 @@ const StayDetails = () => {
   const handleRoomSelect = useCallback((roomId, mealPlan, action = "toggle") => {
     const rid = String(roomId);
     setSelectedRooms(prev => {
+      let updated;
       const exists = prev.find(r => r.roomId === rid);
       if (exists) {
         if (action === "update") {
@@ -2738,20 +2769,46 @@ const StayDetails = () => {
           if (stayRoomsCatalog.length > 0) {
             const firstRoom = stayRoomsCatalog[0];
             const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
-            return [{ roomId: firstRoomId, mealPlan: "EP", count: 1 }];
+            const defaultPlan = firstRoom?.mealPlanPricing && Object.keys(firstRoom.mealPlanPricing).length > 0 ? Object.keys(firstRoom.mealPlanPricing)[0] : firstRoom?.epPrice ? "EP" : firstRoom?.bbPrice ? "BB" : firstRoom?.cpPrice ? "CP" : firstRoom?.mapPrice ? "MAP" : firstRoom?.apPrice ? "AP" : "EP";
+            updated = [{ roomId: firstRoomId, mealPlan: defaultPlan, count: 1 }];
+          } else {
+            updated = filtered;
           }
+        } else {
+          updated = filtered;
         }
-        return filtered;
+      } else {
+        const addedRoom = (stay?.rooms || stay?.roomTypes || stay?.room_types || []).find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === rid);
+        const defaultPlan = addedRoom?.mealPlanPricing && Object.keys(addedRoom.mealPlanPricing).length > 0 ? Object.keys(addedRoom.mealPlanPricing)[0] : addedRoom?.epPrice ? "EP" : addedRoom?.bbPrice ? "BB" : addedRoom?.cpPrice ? "CP" : addedRoom?.mapPrice ? "MAP" : addedRoom?.apPrice ? "AP" : "EP";
+        updated = [...prev, { roomId: rid, mealPlan: mealPlan || defaultPlan, count: 1 }];
       }
-      return [...prev, { roomId: rid, mealPlan: mealPlan || "EP", count: 1 }];
+      const totalRooms = updated.reduce((sum, r) => sum + Number(r.count || 0), 0);
+      setGuests(g => {
+        if ((g?.adults || 1) < totalRooms) {
+          return { ...g, adults: totalRooms };
+        }
+        return g;
+      });
+      return updated;
     });
   }, [stay]);
 
   const handleRoomCountChange = useCallback((roomId, count) => {
     const rid = String(roomId);
-    setSelectedRooms(prev => prev.map(r =>
-      r.roomId === rid ? { ...r, count: Math.max(1, count) } : r
-    ));
+    const newCount = Math.max(1, count);
+    setSelectedRooms(prev => {
+      const updated = prev.map(r =>
+        r.roomId === rid ? { ...r, count: newCount } : r
+      );
+      const totalRooms = updated.reduce((sum, r) => sum + Number(r.count || 0), 0);
+      setGuests(g => {
+        if ((g?.adults || 1) < totalRooms) {
+          return { ...g, adults: totalRooms };
+        }
+        return g;
+      });
+      return updated;
+    });
   }, []);
 
   // Rehydrate booking selection state if returning from successful authentication redirect
@@ -4548,47 +4605,32 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
 
 const ExpandableInstructionText = ({ text, FG, A }) => {
   const [expanded, setExpanded] = useState(false);
-  const isLong = text && text.length > 180;
+  const isLong = text && text.length > 120;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, width: "100%" }}>
-      <p style={{
-        fontSize: 16, color: FG, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif',
-        overflow: "hidden",
-        display: expanded ? "block" : "-webkit-box",
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
+      <span style={{
+        fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
+        display: "-webkit-box",
         WebkitLineClamp: expanded ? "unset" : 3,
         WebkitBoxOrient: "vertical",
-        fontWeight: 400,
-        wordBreak: "break-word",
+        overflow: "hidden",
         whiteSpace: "pre-wrap"
       }}>
         {text}
-      </p>
+      </span>
       {isLong && (
         <button
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-          style={{
-            background: "none",
-            border: "none",
-            padding: "8px 0 0 0",
-            color: A,
-            fontSize: "12px",
-            fontWeight: 700,
-            fontFamily: '"Inter", sans-serif',
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            outline: "none"
-          }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 13, fontWeight: 600, padding: 0, marginTop: 6, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif', transition: "opacity 0.2s" }}
         >
-          {expanded ? "Read Less" : "Read More"} <span style={{ fontSize: "14px", marginLeft: "4px" }}>&rarr;</span>
+          {expanded ? "Read Less" : "Read More"}
         </button>
       )}
     </div>
   );
 };
+
 
 function StayLocation({ stay }) {
   const { isMobile } = useWindowSize();
@@ -4650,10 +4692,11 @@ function StayLocation({ stay }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                pointerEvents: "none"
+                pointerEvents: "none",
+                maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
               }}>
-                <MapPin size={16} color={A} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif' }}>{locationName}</span>
+                <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{locationName}</span>
               </div>
               <iframe
                 width="100%"

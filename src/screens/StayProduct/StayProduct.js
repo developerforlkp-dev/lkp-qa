@@ -8,7 +8,7 @@ import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import Loader from "../../components/Loader";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
-import { getStayDetails, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, createStayOrder, getStayReviews, getStayHotelRoomAvailability, getStayHostelAvailability } from "../../utils/api";
+import { getStayDetails, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, createStayOrder, getStayReviews, getStayHotelRoomAvailability, getStayHostelAvailability, previewOrderPrice } from "../../utils/api";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -2461,6 +2461,73 @@ const StayProduct = () => {
       frontendReceipt.push({ title: "Final Guest Price", content: formatMoney(frontendBreakdown.finalGuestPrice) });
     }
 
+    const nameParts = (customerName || userInfo?.name || "Guest User").trim().split(" ");
+    const firstName = userInfo?.firstName || nameParts[0] || "Guest";
+    const lastName = userInfo?.lastName || nameParts.slice(1).join(" ") || firstName;
+    const guestDetailsObj = {
+      title: userInfo?.title || "Mr",
+      firstName,
+      lastName,
+      email: customerEmail || "guest@example.com",
+      mobileNumber: String(customerPhone || userInfo?.mobileNumber || "7934656599").replace(/\D/g, "") || "7934656599",
+      countryCode: userInfo?.countryCode || "+91",
+      additionalGuests: [],
+    };
+
+    let stayBookingObj = {
+      stayId: Number(stayId),
+      checkInDate: moment(checkInDate).format("YYYY-MM-DD"),
+      checkOutDate: moment(checkOutDate).format("YYYY-MM-DD"),
+      numberOfGuests: (Number(guests?.adults) || 1) + (Number(guests?.children) || 0),
+      paymentMethod: "razorpay",
+      addons: [],
+      guestDetails: guestDetailsObj,
+    };
+
+    if (isPropertyBased) {
+      stayBookingObj = {
+        ...stayBookingObj,
+        adults: Number(guests?.adults || 1),
+        children: Number(guests?.children || 0),
+        childAges: Array.isArray(guests?.childAges) ? guests.childAges.map(Number) : [],
+        extraAdults: Number(frontendBreakdown?.extraAdults || 0),
+        extraChildren: Number(frontendBreakdown?.extraChildren || 0),
+      };
+    } else {
+      stayBookingObj = {
+        ...stayBookingObj,
+        rooms: [
+          {
+            roomId: Number(selectedRoom?.roomId || selectedRoom?.id || 1),
+            roomsBooked: Number(bookingInfo?.roomsNeeded || 1),
+            adults: Number(guests?.adults || 1),
+            children: Number(guests?.children || 0),
+            childAges: Array.isArray(guests?.childAges) ? guests.childAges.map(Number) : [],
+            mealPlanCode: mealCode || "CP",
+            extraBeds: 0,
+            extraAdults: Number(frontendBreakdown?.extraAdults || 0),
+            extraChildren: Number(frontendBreakdown?.extraChildren || 0),
+          },
+        ],
+      };
+    }
+
+    const previewPricePayload = {
+      businessInterest: "STAY",
+      booking: stayBookingObj,
+    };
+
+    let previewPriceRes = null;
+    try {
+      previewPriceRes = await previewOrderPrice(previewPricePayload);
+    } catch (previewErr) {
+      console.warn("previewOrderPrice failed for stay in StayProduct:", previewErr);
+    }
+
+    const apiData = Array.isArray(previewPriceRes?.data) ? previewPriceRes.data : null;
+    const amountToBePaidFromData = apiData?.find(d => /amount\s*to\s*be\s*paid/i.test(d?.title || "") || d?.code === "amount_to_be_paid")?.amount;
+    const resolvedTotal = amountToBePaidFromData != null ? Number(amountToBePaidFromData) : (frontendBreakdown?.finalGuestPrice || 0);
+
     const stayBookingData = {
       checkoutType: "stay",
       stayId: Number(stayId),
@@ -2481,8 +2548,11 @@ const StayProduct = () => {
         guestCount: (guests?.adults || 0) + (guests?.children || 0),
       },
       receipt: frontendReceipt,
-      totalAmount: frontendBreakdown?.finalGuestPrice || 0,
-      finalTotal: frontendBreakdown?.finalGuestPrice || 0,
+      totalAmount: resolvedTotal,
+      finalTotal: resolvedTotal,
+      previewPrice: previewPriceRes,
+      priceBreakdownData: apiData,
+      data: apiData,
       currency,
       orderRequest: bookingPayload,
       timestamp: new Date().toISOString(),

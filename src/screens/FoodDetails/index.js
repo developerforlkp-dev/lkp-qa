@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef } from "react";
-import useDarkMode from "use-dark-mode";
+import useDarkMode from "../../hooks/useDarkMode";
 import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
@@ -1283,6 +1283,13 @@ function CulinaryNarrative({ food, hostData, hostAvatar }) {
   const { A, FG, M, BG, S, B, AL } = tokens;
   const [isChefStoryExpanded, setIsChefStoryExpanded] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [fontLoaded, setFontLoaded] = useState(false);
+
+  useEffect(() => {
+    document.fonts.ready.then(() => {
+      setFontLoaded(true);
+    });
+  }, []);
 
   const chefName = hostData?.host?.firstName 
     ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() 
@@ -1299,7 +1306,15 @@ function CulinaryNarrative({ food, hostData, hostAvatar }) {
         {/* Short Description as Heading */}
         <div style={{ textAlign: "center", maxWidth: 900, margin: "0 auto 60px auto" }}>
           <span style={{ fontSize: 9, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, display: "block", marginBottom: 16 }}>The Philosophy</span>
-          <h2 className="font-cursive" style={{ fontSize: isMobile ? "36px" : "54px", color: FG, lineHeight: 1.2, margin: 0, fontStyle: "italic" }}>
+          <h2 className="font-cursive" style={{ 
+            fontSize: isMobile ? "36px" : "54px", 
+            color: FG, 
+            lineHeight: 1.2, 
+            margin: 0, 
+            fontStyle: "italic",
+            opacity: fontLoaded ? 1 : 0,
+            transition: "opacity 0.3s ease"
+          }}>
             "{food?.shortDescription || "A curated preview of the palate notes."}"
           </h2>
           <div style={{ width: 60, height: 2, background: A, margin: "24px auto 0 auto" }} />
@@ -1485,6 +1500,35 @@ function SignatureDishesSection({ food }) {
   );
 }
 
+const ExpandableInstructionText = ({ text, FG, A }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text && text.length > 120;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
+      <span style={{
+        fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
+        display: "-webkit-box",
+        WebkitLineClamp: expanded ? "unset" : 3,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+        whiteSpace: "pre-wrap"
+      }}>
+        {text}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 13, fontWeight: 600, padding: 0, marginTop: 6, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif', transition: "opacity 0.2s" }}
+        >
+          {expanded ? "Read Less" : "Read More"}
+        </button>
+      )}
+    </div>
+  );
+};
+
+
 
 function LocationSection({ food }) {
   const { isMobile } = useWindowSize();
@@ -1516,8 +1560,8 @@ function LocationSection({ food }) {
         }} className="prep-grid">
 
           {/* LEFT: Map */}
-          <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ position: "sticky", top: 120, height: 400, maxHeight: "calc(100vh - 160px)", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+          <Rev delay={0.1} style={{ height: "100%", minWidth: 0 }}>
+            <div style={{ position: "sticky", top: 120, height: 400, maxHeight: "calc(100vh - 160px)", width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
               <div style={{
                 position: "absolute",
                 top: 16,
@@ -1531,10 +1575,11 @@ function LocationSection({ food }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                pointerEvents: "none"
+                pointerEvents: "none",
+                maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
               }}>
-                <MapPin size={16} color={A} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif' }}>{food?.meetingLocationName || "Location"}</span>
+                <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{food?.meetingLocationName || "Location"}</span>
               </div>
               {(() => {
                 const lat = food?.meetingLatitude || food?.latitude;
@@ -1570,8 +1615,8 @@ function LocationSection({ food }) {
           </Rev>
 
           {/* RIGHT: Details List */}
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
+          <Rev delay={0.2} style={{ height: "100%", minWidth: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0", width: "100%", boxSizing: "border-box" }}>
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
                 {(food?.meetingAddress || food?.address) && (
                   <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
@@ -1640,7 +1685,7 @@ function LocationSection({ food }) {
                     </div>
                     <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                       <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{food.meetingInstructions || food.directions}</span>
+                      <ExpandableInstructionText text={food.meetingInstructions || food.directions} FG={FG} A={A} />
                     </div>
                   </li>
                 )}
@@ -1677,9 +1722,9 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
     ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim()
     : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Owner"));
 
-  const phoneNum = hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || food?.host?.phone;
+  const phoneNum = food?.contactPhone || food?.phone || hostData?.host?.phone || hostData?.host?.phoneNumber || hostData?.phone || food?.host?.phone;
 
-  const websiteUrl = food?.website;
+  const websiteUrl = food?.websiteUrl || food?.website || food?.socialLink || food?.socialUrl || food?.link || food?.url || food?.contactWebsite || food?.websiteLink || food?.socialMediaLink || food?.socialLinkUrl || food?.websiteOrSocialLink || food?.contactInfo?.website || hostData?.website || hostData?.host?.website;
   const instaHandle = food?.instagramHandle || food?.instagram || food?.host?.instagram;
 
   const realAvatar = hostData?.host?.profilePhotoUrl || food?.host?.profilePhotoUrl || hostData?.profilePhotoUrl || food?.profilePhotoUrl || hostAvatar;
@@ -1725,20 +1770,6 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                       <span style={{ color: M, fontWeight: 600 }}>Manager:</span>
                       <span>{chefName}</span>
                     </div>
-                    {phoneNum && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                        <Phone size={14} color={A} />
-                        <span style={{ color: M, fontWeight: 600 }}>Phone:</span>
-                        <span>{phoneNum}</span>
-                      </div>
-                    )}
-                    {websiteUrl && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: FG }}>
-                        <Globe size={14} color={A} />
-                        <span style={{ color: M, fontWeight: 600 }}>Website:</span>
-                        <a href={websiteUrl} target="_blank" rel="noreferrer" style={{ color: A, textDecoration: "none" }}>{websiteUrl}</a>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1773,7 +1804,7 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                   >
                     <Phone size={18} color={A} />
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                      <span style={{ fontSize: 9, letterSpacing: "0.05em", textTransform: "uppercase", color: M, fontWeight: 700, lineHeight: 1 }}>Call Host</span>
+                      <span style={{ fontSize: 9, letterSpacing: "0.05em", textTransform: "uppercase", color: M, fontWeight: 700, lineHeight: 1 }}>Call {chefName}</span>
                       <span style={{ marginTop: 2 }}>{phoneNum}</span>
                     </div>
                   </motion.a>
@@ -1784,7 +1815,7 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                     <motion.a
                       whileHover={{ scale: 1.02, backgroundColor: A, color: "#fff", borderColor: A }}
                       whileTap={{ scale: 0.98 }}
-                      href={websiteUrl}
+                      href={websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
                       target="_blank"
                       rel="noreferrer"
                       style={{
@@ -1807,6 +1838,35 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
                       }}
                     >
                       <Globe size={15} /> Website
+                    </motion.a>
+                  )}
+                  {instaHandle && (
+                    <motion.a
+                      whileHover={{ scale: 1.02, backgroundColor: A, color: "#fff", borderColor: A }}
+                      whileTap={{ scale: 0.98 }}
+                      href={`https://instagram.com/${instaHandle.replace('@', '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "12px",
+                        borderRadius: 12,
+                        border: `1.5px solid ${A}`,
+                        color: A,
+                        textDecoration: "none",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        textAlign: "center",
+                        transition: "all 0.25s ease"
+                      }}
+                    >
+                      <Instagram size={15} /> Instagram
                     </motion.a>
                   )}
                 </div>
@@ -1904,15 +1964,16 @@ function FoodMetadataCard({ food }) {
                 borderRadius: "14px",
                 border: `1px solid ${tokens.B}`,
                 background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                minWidth: 0
               }}
             >
               <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
                 <ChefHat size={18} />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Category</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{category}</span>
+                <span style={{ display: "block", fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2, wordBreak: "break-word" }}>{category}</span>
               </div>
             </motion.div>
 
@@ -1927,15 +1988,16 @@ function FoodMetadataCard({ food }) {
                 borderRadius: "14px",
                 border: `1px solid ${tokens.B}`,
                 background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                minWidth: 0
               }}
             >
               <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
                 <Utensils size={18} />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Cuisine</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{cuisine}</span>
+                <span style={{ display: "block", fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2, wordBreak: "break-word" }}>{cuisine}</span>
               </div>
             </motion.div>
 
@@ -1950,15 +2012,16 @@ function FoodMetadataCard({ food }) {
                 borderRadius: "14px",
                 border: `1px solid ${tokens.B}`,
                 background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                minWidth: 0
               }}
             >
               <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
                 <Leaf size={18} />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Dietary Options</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{dietary}</span>
+                <span style={{ display: "block", fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2, wordBreak: "break-word" }}>{dietary}</span>
               </div>
             </motion.div>
 
@@ -1973,15 +2036,16 @@ function FoodMetadataCard({ food }) {
                 borderRadius: "14px",
                 border: `1px solid ${tokens.B}`,
                 background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                minWidth: 0
               }}
             >
               <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
                 <Zap size={18} />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Service Mode</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{serveMode}</span>
+                <span style={{ display: "block", fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2, wordBreak: "break-word" }}>{serveMode}</span>
               </div>
             </motion.div>
 
@@ -1996,15 +2060,16 @@ function FoodMetadataCard({ food }) {
                 borderRadius: "14px",
                 border: `1px solid ${tokens.B}`,
                 background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                minWidth: 0
               }}
             >
               <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
                 <GlassWater size={18} />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Alcohol Served</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{food?.alcoholServed || food?.isAlcoholServed ? "Alcohol Served" : "No Alcohol"}</span>
+                <span style={{ display: "block", fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2, wordBreak: "break-word" }}>{food?.alcoholServed || food?.isAlcoholServed ? "Alcohol Served" : "No Alcohol"}</span>
               </div>
             </motion.div>
 
@@ -2019,15 +2084,16 @@ function FoodMetadataCard({ food }) {
                 borderRadius: "14px",
                 border: `1px solid ${tokens.B}`,
                 background: theme === "dark" ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.005)",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                minWidth: 0
               }}
             >
               <div style={{ width: 38, height: 38, borderRadius: "10px", background: tokens.AL, display: "flex", alignItems: "center", justifyContent: "center", color: tokens.A, flexShrink: 0 }}>
                 <MapPin size={18} />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Parking Slot</span>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2 }}>{food?.isParkingAvailable || food?.parkingAvailable ? "Parking Available" : "Street Parking"}</span>
+                <span style={{ display: "block", fontWeight: 700, fontSize: "14px", color: tokens.FG, lineHeight: 1.2, wordBreak: "break-word" }}>{food?.isParkingAvailable || food?.parkingAvailable ? "Parking Available" : "Street Parking"}</span>
               </div>
             </motion.div>
 

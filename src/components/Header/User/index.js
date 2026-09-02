@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import cn from "classnames";
 import OutsideClickHandler from "react-outside-click-handler";
@@ -7,6 +7,25 @@ import Icon from "../../Icon";
 
 const User = ({ className, items }) => {
   const [visible, setVisible] = useState(false);
+  const [avatar, setAvatar] = useState("");
+
+  const loadAvatar = () => {
+    try {
+      const userInfoStr = localStorage.getItem("userInfo");
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo.avatar) {
+          setAvatar(userInfo.avatar);
+        }
+      }
+    } catch(e) {}
+  };
+
+  useEffect(() => {
+    loadAvatar();
+    window.addEventListener("user-info-changed", loadAvatar);
+    return () => window.removeEventListener("user-info-changed", loadAvatar);
+  }, []);
 
   // Logout function that clears all user data and redirects to landing page
   const handleLogout = (e) => {
@@ -30,7 +49,11 @@ const User = ({ className, items }) => {
     <OutsideClickHandler onOutsideClick={() => setVisible(false)}>
       <div className={cn(styles.user, className, { [styles.active]: visible })}>
         <button className={styles.head} onClick={() => setVisible(!visible)}>
-          <Icon name="user" size="24" />
+          {avatar ? (
+            <img src={avatar} alt="User Avatar" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', aspectRatio: '1/1' }} />
+          ) : (
+            <Icon name="user" size="24" />
+          )}
         </button>
         <div className={styles.body}>
           <div className={styles.group}>

@@ -691,7 +691,7 @@ const Checkout = () => {
   }, [bookingData]);
 
 
-  // Build price table from receipt if provided
+  // Build price table from receipt or API data if provided
   const { table, computedFinalAmount } = useMemo(() => {
     const parseAmount = (val) => {
       if (val === null || val === undefined) return 0;
@@ -702,6 +702,68 @@ const Checkout = () => {
 
     const isStay = !!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate);
     const storedFinalTotal = getBookingStoredFinalTotal(bookingData);
+
+    const apiDataArray =
+      (Array.isArray(bookingData?.previewPrice?.data) && bookingData.previewPrice.data.length > 0)
+        ? bookingData.previewPrice.data
+        : (Array.isArray(bookingData?.priceBreakdownData) && bookingData.priceBreakdownData.length > 0)
+          ? bookingData.priceBreakdownData
+          : (Array.isArray(bookingData?.data) && bookingData.data.length > 0)
+            ? bookingData.data
+            : null;
+
+    if (apiDataArray) {
+      const rows = [];
+      let totalAmountToPay = null;
+      const cur = bookingData?.currency || "INR";
+
+      apiDataArray.forEach((item) => {
+        if (!item) return;
+        const title = item?.title || "";
+        const amountNum = Number(item?.amount ?? 0);
+
+        if (/amount\s*to\s*be\s*paid/i.test(title) || item?.code === "amount_to_be_paid") {
+          totalAmountToPay = amountNum;
+          return;
+        }
+
+        const isDiscount =
+          item?.code === "discount" ||
+          item?.code === "earlybird" ||
+          item?.code === "longstay" ||
+          item?.code === "promo" ||
+          item?.code === "seasonal" ||
+          (typeof item?.code === "string" && (item.code.includes("discount") || item.code.includes("stay") || item.code.includes("bird") || item.code.includes("promo") || item.code.includes("season"))) ||
+          /discount/i.test(title) ||
+          /early\s*bird/i.test(title) ||
+          /long\s*stay/i.test(title) ||
+          /seasonal/i.test(title);
+        const isTax = item?.code === "tax" || /tax/i.test(title);
+        const isFee = item?.code === "fee" || /fee/i.test(title);
+
+        let valueFormatted = `${cur} ${amountNum.toFixed(2)}`;
+        if (isDiscount && amountNum > 0) {
+          valueFormatted = `- ${cur} ${amountNum.toFixed(2)}`;
+        }
+
+        rows.push({
+          title: item.title,
+          subtitle: isDiscount ? null : item.subtitle,
+          titleColor: item.titleColor,
+          subtitleColor: item.subtitleColor,
+          percentage: item.percentage,
+          code: item.code,
+          isDiscount,
+          amount: amountNum,
+          value: valueFormatted,
+        });
+      });
+
+      return {
+        table: rows,
+        computedFinalAmount: totalAmountToPay != null ? totalAmountToPay : (storedFinalTotal || 0),
+      };
+    }
 
     if (isStay && bookingData?.receipt && Array.isArray(bookingData.receipt) && stayDetails) {
       const rows = bookingData.receipt.map((r) => ({ title: r.title, value: r.content }));
@@ -879,7 +941,7 @@ const Checkout = () => {
         const subtotalForTax = discountableAmount - currentDiscountAmount;
         correctedTax = Math.max(0, subtotalForTax * (taxRate / 100));
         const taxRow = {
-          title: normalizeTaxTitle("Tax", taxRate),
+          title: `Tax (${Number(taxRate.toFixed(2))}%)`,
           value: formatInr(correctedTax),
         };
 
@@ -908,7 +970,7 @@ const Checkout = () => {
           return { ...row, title: "Add-ons Total", value: formatInr(parseAmount(row.value)) };
         }
         if (/^tax/i.test(title)) {
-          return { ...row, title: normalizeTaxTitle(title, taxRate), value: formatInr(parseAmount(row.value)) };
+          return { ...row, title: "Tax", value: formatInr(parseAmount(row.value)) };
         }
         return row;
       });

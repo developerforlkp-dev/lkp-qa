@@ -1,5 +1,5 @@
 import React from "react";
-import useDarkMode from "use-dark-mode";
+import useDarkMode from "../hooks/useDarkMode";
 
 const Image = ({ className, src, srcDark, srcSet, srcSetDark, alt }) => {
   const darkMode = useDarkMode(false);

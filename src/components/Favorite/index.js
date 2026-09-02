@@ -116,7 +116,7 @@ const Favorite = ({
           },
           className
         )}
-        style={style}
+        style={{ WebkitTransform: "translateZ(0)", transform: "translateZ(0)", ...style }}
         onClick={handleClick}
         type="button"
         aria-pressed={saved}

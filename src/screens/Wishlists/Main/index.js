@@ -29,6 +29,8 @@ const isAuthenticated = () => {
 const getWishlistItemUrl = (itemType, itemId, title) => {
   if (itemType === "event") return `/event?id=${itemId}`;
   if (itemType === "stay") return `/stay-details?id=${itemId}`;
+  if (itemType === "food") return `/food-details?id=${itemId}`;
+  if (itemType === "place") return `/place-details?id=${itemId}`;
   return buildExperienceUrl(title || "experience", itemId);
 };
 

@@ -92,27 +92,78 @@ const PriceDetails = ({
         {table && table.length > 0 && (
           <div className={styles.table}>
             {table.map((x, index) => {
-              const renderTitle = (title) => {
-                if (typeof title === "string" && (/(Extra\s+)?(Adult|Child|Children|Base price|Ticket)/i.test(title)) && title.includes("(") && title.includes(")")) {
-                  const parts = title.split("(");
+              const title = x?.title || "";
+              const value = x?.value || "";
+
+              const resolveColor = (colorStr, defaultColor) => {
+                if (!colorStr || typeof colorStr !== "string") return defaultColor;
+                const trimmed = colorStr.trim();
+                if (trimmed.startsWith("#") || trimmed.startsWith("rgb") || trimmed.startsWith("hsl")) {
+                  return trimmed;
+                }
+                const lower = trimmed.toLowerCase();
+                if (lower === "grey" || lower === "gray") return "#B0B4BD";
+                if (lower === "black") return undefined;
+                return lower;
+              };
+
+              const renderTitle = (t, item) => {
+                const isDiscountItem =
+                  item?.isDiscount ||
+                  item?.code === "discount" ||
+                  item?.code === "earlybird" ||
+                  item?.code === "longstay" ||
+                  item?.code === "promo" ||
+                  item?.code === "seasonal" ||
+                  (typeof item?.code === "string" && (item.code.includes("discount") || item.code.includes("stay") || item.code.includes("bird") || item.code.includes("promo") || item.code.includes("season"))) ||
+                  /discount/i.test(item?.title || t || "") ||
+                  /early\s*bird/i.test(item?.title || t || "") ||
+                  /long\s*stay/i.test(item?.title || t || "");
+
+                const titleColor = resolveColor(item?.titleColor);
+                const titleStyle = titleColor ? { color: titleColor } : undefined;
+
+                if (isDiscountItem) {
+                  return <span className={styles.mainLabel} style={titleStyle}>{item?.title || t}</span>;
+                }
+
+                if (item?.subtitle) {
+                  const subtitleColor = resolveColor(item?.subtitleColor, "#B0B4BD");
+                  const subtitleStyle = subtitleColor ? { color: subtitleColor } : undefined;
+
+                  return (
+                    <div className={styles.priceDetailsStack}>
+                      <span className={styles.mainLabel} style={titleStyle}>{item.title}</span>
+                      <span className={styles.calculationLabel} style={subtitleStyle}>{item.subtitle}</span>
+                    </div>
+                  );
+                }
+                if (typeof t === "string" && t.includes("(") && t.includes(")")) {
+                  const parts = t.split("(");
                   if (parts.length > 1) {
                     const mainLabel = parts[0].trim();
-                    const calculation = "(" + parts.slice(1).join("(").trim();
+                    const detail = "(" + parts.slice(1).join("(").trim();
                     return (
                       <div className={styles.priceDetailsStack}>
-                        <span className={styles.mainLabel}>{mainLabel}</span>
-                        <span className={styles.calculationLabel}>{calculation}</span>
+                        <span className={styles.mainLabel} style={titleStyle}>{mainLabel}</span>
+                        <span className={styles.calculationLabel} style={{ color: "#B0B4BD" }}>{detail}</span>
                       </div>
                     );
                   }
                 }
-                return title;
+                if (titleColor) {
+                  return <span style={{ color: titleColor }}>{t}</span>;
+                }
+                return t;
               };
+
+              const valueColor = resolveColor(x?.valueColor);
+              const valueStyle = valueColor ? { color: valueColor } : undefined;
 
               return (
                 <div className={styles.row} key={index}>
-                  <div className={styles.cell}>{renderTitle(x.title)}</div>
-                  <div className={styles.cell}>{x.value}</div>
+                  <div className={styles.cell}>{renderTitle(title, x)}</div>
+                  <div className={styles.cell} style={valueStyle}>{value}</div>
                 </div>
               );
             })}

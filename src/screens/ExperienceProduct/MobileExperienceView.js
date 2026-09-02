@@ -585,12 +585,13 @@ export default function MobileExperienceView({
 
         {/* Map embed */}
         {(listing?.meetingLatitude && listing?.meetingLongitude) && (
-          <div className="mob-map-container" style={{ border: `1px solid ${B}` }}>
+          <div className="mob-map-container" style={{ border: `1px solid ${B}`, width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 12 }}>
             <iframe
               title="Location"
               src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&z=14&output=embed`}
               loading="lazy"
               allowFullScreen
+              style={{ width: "100%", height: "250px", border: 0 }}
             />
           </div>
         )}
@@ -1067,9 +1068,6 @@ export default function MobileExperienceView({
           ║      RELATED EXPERIENCES          ║
           ╚═══════════════════════════════════╝ */}
       <div className="mob-related" style={{ background: isDark ? BG : W }}>
-        <div className="mob-related-header" style={{ paddingBottom: 8 }}>
-          <span className="mob-section-eyebrow" style={{ color: A }}>Discover More</span>
-        </div>
         <RelatedListingsStrip
           businessInterestId={1}
           primaryCategoryId={primaryCategoryId}

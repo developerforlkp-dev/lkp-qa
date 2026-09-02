@@ -463,26 +463,21 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
         {description && (
           <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
-            <AnimatePresence initial={false}>
-              {showDesc && (
-                <motion.p 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 0.8 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  style={{ fontSize: "14px", color: M, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif' }}
-                >
-                  {description}
-                </motion.p>
-              )}
-            </AnimatePresence>
-            <button 
-              onClick={() => setShowDesc(!showDesc)}
-              style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 700, color: A, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: '"Inter", sans-serif' }}
+            <motion.p 
+              layout="position"
+              style={{ fontSize: "14px", color: M, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif', opacity: 0.8 }}
             >
-              {showDesc ? "Less details" : "More details"}
-              <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showDesc ? "rotate(180deg)" : "none" }} />
-            </button>
+              {(!showDesc && description.length > 150) ? `${description.slice(0, 150)}...` : description}
+            </motion.p>
+            {description.length > 150 && (
+              <button 
+                onClick={() => setShowDesc(!showDesc)}
+                style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 700, color: A, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: '"Inter", sans-serif' }}
+              >
+                {showDesc ? "Less details" : "More details"}
+                <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showDesc ? "rotate(180deg)" : "none" }} />
+              </button>
+            )}
           </div>
         )}
       </div>

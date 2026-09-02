@@ -72,9 +72,20 @@
     opacity: 0
     transform: translateY(3px)
     transition: all .2s
+    max-height: 240px
+    overflow-y: auto
+    &::-webkit-scrollbar
+        width: 6px
+    &::-webkit-scrollbar-track
+        background: transparent
+    &::-webkit-scrollbar-thumb
+        background: $n6
+        border-radius: 3px
     +dark
         background: $n1
         box-shadow: inset 0 0 0 2px $n3, 0 4px 12px rgba($n1, .1)
+        &::-webkit-scrollbar-thumb
+            background: $n4
 
 .option
     padding: 8px 16px

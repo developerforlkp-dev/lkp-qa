@@ -69,6 +69,18 @@ const PersonalInfo = () => {
     fetchProfile();
   }, []);
 
+  const updateLocalUserInfo = (newAvatarUrl) => {
+    try {
+      const userInfoStr = localStorage.getItem("userInfo");
+      const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {};
+      if (userInfo.avatar !== newAvatarUrl) {
+        userInfo.avatar = newAvatarUrl;
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        window.dispatchEvent(new Event("user-info-changed"));
+      }
+    } catch (e) {}
+  };
+
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -91,12 +103,17 @@ const PersonalInfo = () => {
         } = data.customer;
 
         //console.log("✅ Profile loaded:", data.customer);
+        let localUserInfo = null;
+        try {
+          localUserInfo = localStorage.getItem("userInfo") ? JSON.parse(localStorage.getItem("userInfo")) : null;
+        } catch(e) {}
+        
         setProfile({
           firstName: firstName || "",
           lastName: lastName || "",
           email: email || "",
           phone: phone || "",
-          avatarUrl: avatarUrl || "",
+          avatarUrl: avatarUrl || localUserInfo?.avatar || "",
           countryCode: countryCode || "+91",
           isEmailVerified: !!isEmailVerified,
           isPhoneVerified: !!isPhoneVerified,
@@ -106,6 +123,10 @@ const PersonalInfo = () => {
           linkedin: linkedin || "",
           twitter: twitter || ""
         });
+        
+        if (avatarUrl) {
+          updateLocalUserInfo(avatarUrl);
+        }
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -301,6 +322,7 @@ const PersonalInfo = () => {
       if (result && (result.avatarUrl || result.url)) {
         const newUrl = result.avatarUrl || result.url;
         setProfile(prev => ({ ...prev, avatarUrl: newUrl }));
+        updateLocalUserInfo(newUrl);
         setPreviewUrl(null); // Clear preview once we have the real URL
         setAvatarSuccess(true);
         setTimeout(() => setAvatarSuccess(false), 3000);
@@ -344,6 +366,7 @@ const PersonalInfo = () => {
             <img
               src={previewUrl || profile.avatarUrl}
               alt="Avatar"
+              referrerPolicy="no-referrer"
               onLoad={() => {
                 if (previewUrl || profile.avatarUrl) {
                   //console.log("🖼️ Avatar image rendered:", previewUrl || profile.avatarUrl);

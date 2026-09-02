@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, Users, Clock, Sparkles, ChevronDown } from "lucide-react";
+import { ShieldCheck, Users, Clock, Sparkles, ChevronDown, Globe } from "lucide-react";
 import { useTheme } from "../JUI/Theme";
 
 function PolicyCategoryItem({ category }) {
@@ -14,6 +14,9 @@ function PolicyCategoryItem({ category }) {
     }
     if (lowerTitle.includes("guest") || lowerTitle.includes("requirements")) {
       return <Users size={20} color={A} />;
+    }
+    if (lowerTitle.includes("foreigner")) {
+      return <Globe size={20} color={A} />;
     }
     if (lowerTitle.includes("rule") || lowerTitle.includes("property") || lowerTitle.includes("experience") || lowerTitle.includes("event") || lowerTitle.includes("stay")) {
       return <ShieldCheck size={20} color={A} />;

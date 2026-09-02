@@ -121,7 +121,7 @@ const GuestPicker = ({
       label: "Infants",
       subtitle: infantsSubtitle,
       value: guests.infants,
-      show: infantsAllowed,
+      show: false,
     },
     {
       type: "pets",

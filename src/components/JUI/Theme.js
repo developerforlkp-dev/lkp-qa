@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import useDarkMode from "use-dark-mode";
+import useDarkMode from "../../hooks/useDarkMode";
 
 /* ─── TOKENS (Light mode + Premium Teal) ─────────── */
 export const THEMES = {

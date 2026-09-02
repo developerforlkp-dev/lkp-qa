@@ -170,11 +170,6 @@ const ConfirmAndPay = ({
                     {addonName}
                     <span style={{ opacity: 0.6, marginLeft: 4 }}>×{addonQty}</span>
                   </div>
-                  {unitPrice > 0 && (
-                    <div style={{ fontSize: 12, color: "#9A9FA5", marginTop: 2 }}>
-                      {currency} {Number(unitPrice).toFixed(2)} / item
-                    </div>
-                  )}
                 </div>
               </div>
               <div className={styles.addOnItemPrice} style={{ flexShrink: 0 }}>

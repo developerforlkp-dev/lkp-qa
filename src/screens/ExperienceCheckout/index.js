@@ -8,13 +8,8 @@ import GuestPicker from "../../components/GuestPicker";
 import HeadOptions from "../../components/PriceDetails/HeadOptions";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
-import { getOrderDetails, getStayDetails, getListingAddons, getListing, getBillingConfiguration, getListingReviews, getEventDetails, getEventAddons } from "../../utils/api";
+import { getOrderDetails, getStayDetails, getListingAddons, getEventAddons } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
-import {
-  getExperienceCommissionRate,
-  getExperienceGuestDiscountRate,
-  getExperienceGuestTaxRate,
-} from "../../utils/experiencePricing";
 import {
   getPendingPayment,
   hydratePendingPaymentFromOrder,
@@ -459,52 +454,19 @@ const Checkout = () => {
   }, [bookingData]);
 
   useEffect(() => {
-    const listingId = bookingData?.listingId;
-    if (!listingId || bookingData?.eventId || bookingData?.stayId) return;
+    if (bookingData) {
+      console.log("💳 [ExperienceCheckout Page] Loaded bookingData:", bookingData);
+      if (bookingData?.previewPrice) {
+        console.log("💳 [ExperienceCheckout Page] preview-price response:", bookingData.previewPrice);
+        console.log("💳 [ExperienceCheckout Page] pricing object:", bookingData.pricing);
+      }
+      if (paymentData) {
+        console.log("💳 [ExperienceCheckout Page] paymentData:", paymentData);
+      }
+    }
+  }, [bookingData, paymentData]);
 
-    let cancelled = false;
-    getListing(listingId)
-      .then((listing) => {
-        if (cancelled || !listing) return;
-        setBookingData((prev) => {
-          if (!prev) return prev;
-          const prevPricing = prev?.pricing || {};
-          const basePrice = Number(prevPricing.basePrice || prevPricing.baseAmount || 0);
-          const addonsTotal = Number(prevPricing.addonsTotal || 0);
-          const discountRate = getExperienceGuestDiscountRate(listing);
-          const discountAmount = (basePrice + addonsTotal) * (discountRate / 100);
-          const taxableSubtotal = Math.max(0, (basePrice + addonsTotal) - discountAmount);
-          const taxRate = getExperienceGuestTaxRate(listing);
-          const taxAmount = taxableSubtotal * (taxRate / 100);
-          const finalAmount = taxableSubtotal + taxAmount;
-
-          return {
-            ...prev,
-            pricing: {
-              ...prevPricing,
-              discount: discountAmount,
-              promoDiscount: 0,
-              earlyBirdDiscount: 0,
-              discountRate,
-              tax: taxAmount,
-              taxRate,
-              commission: getExperienceCommissionRate(listing),
-              total: finalAmount,
-              finalAmount,
-            },
-          };
-        });
-      })
-      .catch((error) => {
-        console.error("Error fetching experience pricing:", error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bookingData?.listingId, bookingData?.eventId, bookingData?.stayId]);
-
-  // Check payment status when component mounts, and also load server-side pricing
+  // Check payment status when component mounts (redirect if completed / failed)
   useEffect(() => {
     const checkPaymentAndLoadPricing = async () => {
       if (!location.state?.bookingData && !bookingData) {
@@ -518,8 +480,6 @@ const Checkout = () => {
           return;
         }
 
-        // Always fetch order details — needed for server pricing (commission, tax, etc.)
-        // regardless of whether payment already succeeded
         const orderDetails = await getOrderDetails(pendingOrderId);
         const order = orderDetails?.order || orderDetails;
 
@@ -579,216 +539,10 @@ const Checkout = () => {
               holdExpired: true,
             }));
           }
-
-          // ✅ Always merge server-side pricing so commission/tax/discount always show
-          // The order creation response has `.pricing`, but `getOrderDetails` might only have flat fields on `order`.
-          const serverPricing = orderDetails?.pricing || order?.pricing || {
-            basePrice: order?.basePrice,
-            addonsTotal: order?.addonsTotal,
-            commission: order?.platformFee || order?.commission,
-            commissionRate: order?.commissionRate,
-            tax: order?.taxAmount || order?.tax,
-            discount: order?.discountAmount || order?.discount,
-            earlyBirdDiscount: order?.earlyBirdDiscountAmount || order?.earlyBirdDiscount || orderDetails?.earlyBirdDiscount || order?.pricing?.earlyBirdDiscount || orderDetails?.pricing?.earlyBirdDiscount,
-            promoDiscount: order?.promoDiscountAmount || order?.promoDiscount || orderDetails?.promoDiscount || order?.pricing?.promoDiscount || orderDetails?.pricing?.promoDiscount,
-            couponDiscount: order?.couponDiscountAmount || order?.couponDiscount || orderDetails?.couponDiscount || order?.pricing?.couponDiscount || orderDetails?.pricing?.couponDiscount,
-            total: order?.totalPrice || order?.finalAmount || order?.total,
-            guestCount: order?.numberOfGuests,
-            pricePerPerson: order?.pricePerPerson,
-          };
-
-          if (serverPricing) {
-            setBookingData((prev) => {
-              const prevPricing = prev?.pricing || {};
-
-              // Get local discount calculate from Experience Details pg
-              const localDiscount = prevPricing.discountAmount || prevPricing.discount || 0;
-
-              // Prefer server discount unless it's falsely 0 while local had one
-              let finalDiscount = serverPricing.discount || serverPricing.discountAmount || 0;
-              if (Number(finalDiscount) === 0 && Number(localDiscount) > 0) {
-                finalDiscount = localDiscount;
-              }
-
-              return {
-                ...(prev || {}),
-                hostName: order?.hostName || orderDetails?.hostName || prev?.hostName,
-                hostAvatar:
-                  order?.hostAvatar ||
-                  orderDetails?.hostAvatar ||
-                  order?.hostProfilePhotoUrl ||
-                  orderDetails?.hostProfilePhotoUrl ||
-                  prev?.hostAvatar ||
-                  null,
-                cancellationAllowed: order?.cancellationAllowed ?? orderDetails?.cancellationAllowed ?? order?.listing?.cancellationAllowed ?? orderDetails?.listing?.cancellationAllowed ?? order?.event?.cancellationAllowed ?? orderDetails?.event?.cancellationAllowed ?? prev?.cancellationAllowed,
-                cancellationPolicySummary: order?.cancellationPolicySummary || order?.listing?.cancellationPolicySummary || orderDetails?.cancellationPolicySummary || orderDetails?.listing?.cancellationPolicySummary || order?.event?.cancellationPolicySummary || orderDetails?.event?.cancellationPolicySummary || prev?.cancellationPolicySummary,
-                pricing: {
-                  ...prevPricing,
-                  ...serverPricing,
-                  basePrice: (Number(prevPricing.basePrice || 0) > 0)
-                    ? prevPricing.basePrice
-                    : (serverPricing.basePrice || serverPricing.baseAmount || 0),
-                  basePricePerPerson: (Number(prevPricing.basePricePerPerson || prevPricing.adultBasePricePerPerson || 0) > 0)
-                    ? (prevPricing.basePricePerPerson || prevPricing.adultBasePricePerPerson)
-                    : (serverPricing.basePricePerPerson || serverPricing.adultBasePricePerPerson || 0),
-                  adultBasePricePerPerson: (Number(prevPricing.adultBasePricePerPerson || prevPricing.basePricePerPerson || 0) > 0)
-                    ? (prevPricing.adultBasePricePerPerson || prevPricing.basePricePerPerson)
-                    : (serverPricing.adultBasePricePerPerson || serverPricing.basePricePerPerson || 0),
-                  baseChildPricePerChild: (Number(prevPricing.baseChildPricePerChild || 0) > 0)
-                    ? prevPricing.baseChildPricePerChild
-                    : (serverPricing.baseChildPricePerChild || 0),
-                  discount: finalDiscount,
-                  discountAmount: finalDiscount,
-                  earlyBirdDiscount: prevPricing.earlyBirdDiscount || serverPricing.earlyBirdDiscount || 0,
-                  promoDiscount: prevPricing.promoDiscount || serverPricing.promoDiscount || 0,
-                  couponDiscount: prevPricing.couponDiscount || serverPricing.couponDiscount || 0,
-                  addonsTotal: (Number(prevPricing.addonsTotal || 0) > 0)
-                    ? prevPricing.addonsTotal
-                    : (serverPricing.addonsTotal || 0),
-                  // Prioritize local calculation (prevPricing) to ensure consistency with details page
-                  // only fall back to server if local is missing.
-                  tax: (Number(prevPricing.tax || 0) > 0)
-                    ? prevPricing.tax
-                    : (serverPricing.tax || serverPricing.taxAmount || 0),
-                  taxRate: (Number(prevPricing.taxRate || 0) > 0)
-                    ? prevPricing.taxRate
-                    : (serverPricing.taxRate || 0),
-                  commission: (Number(prevPricing.commission || 0) > 0)
-                    ? prevPricing.commission
-                    : (serverPricing.commission || serverPricing.platformFee || 0),
-                  commissionRate: (Number(prevPricing.commissionRate || 0) > 0)
-                    ? prevPricing.commissionRate
-                    : (serverPricing.commissionRate || 0),
-                  // If we use local components, we should also use local total for consistency in the breakdown table
-                  total: (Number(prevPricing.total || 0) > 0)
-                    ? prevPricing.total
-                    : (serverPricing.total || serverPricing.totalPrice || serverPricing.finalAmount || 0),
-                  // Always preserve child-pricing fields from local — server never returns these
-                  pricePerPerson: (Number(prevPricing.pricePerPerson || 0) > 0)
-                    ? prevPricing.pricePerPerson
-                    : (serverPricing.pricePerPerson || 0),
-                  allowChildPricing: prevPricing.allowChildPricing ?? serverPricing.allowChildPricing ?? false,
-                  adultsCount: prevPricing.adultsCount ?? serverPricing.adultsCount,
-                  childrenCount: prevPricing.childrenCount ?? serverPricing.childrenCount,
-                  childPricePerChild: (Number(prevPricing.childPricePerChild || 0) > 0)
-                    ? prevPricing.childPricePerChild
-                    : (serverPricing.childPricePerChild || 0),
-                  childAges: prevPricing.childAges || serverPricing.childAges || prev?.childAges || prev?.guests?.childAges || [],
-                  childPricingTiers: prevPricing.childPricingTiers || serverPricing.childPricingTiers || prev?.childPricingTiers || [],
-                  childAgeFrom: prevPricing.childAgeFrom ?? serverPricing.childAgeFrom ?? prev?.childAgeFrom,
-                  childAgeTo: prevPricing.childAgeTo ?? serverPricing.childAgeTo ?? prev?.childAgeTo,
-                  childBreakdown: prevPricing.childBreakdown || serverPricing.childBreakdown || prev?.childBreakdown,
-                },
-                childAges: prev?.childAges || prev?.guests?.childAges || prevPricing.childAges || [],
-                childPricingTiers: prev?.childPricingTiers || prevPricing.childPricingTiers || [],
-                selectedTicket: prev?.selectedTicket || order?.selectedTicket || null,
-                selectedSlot: prev?.selectedSlot || order?.selectedSlot || null,
-              };
-            });
-          }
-
-          // ✅ Also enrich addonDetails from the server breakdown addons
-          const serverAddons = serverPricing?.breakdown?.addons || order.addons || orderDetails?.addons || [];
-          if (serverAddons.length > 0) {
-            const listingId = order.listingId || orderDetails?.listingId || bookingData?.listingId;
-            const eventId = order.eventId || orderDetails?.eventId || bookingData?.eventId;
-            const fetchAddons = listingId
-              ? getListingAddons(listingId)
-              : (eventId ? getEventAddons(eventId) : Promise.resolve([]));
-            const fallbackAddons = bookingData?.selectedAddOns || selectedAddOns || location.state?.addOns || [];
-
-            const parseNumericAmount = (val) => {
-              if (val === null || val === undefined) return 0;
-              if (typeof val === "number") return Number.isFinite(val) ? val : 0;
-              const match = String(val).replace(/,/g, "").match(/-?\d+(\.\d+)?/);
-              return match ? Number(match[0]) : 0;
-            };
-
-            const getFirstPositiveNumber = (...candidates) => {
-              for (const c of candidates) {
-                const n = parseNumericAmount(c);
-                if (n > 0) return n;
-              }
-              return 0;
-            };
-
-            const getFirstNonEmptyString = (...candidates) => {
-              for (const c of candidates) {
-                if (c && typeof c === "string" && c.trim() && c.trim().toLowerCase() !== "add-on") {
-                  return c.trim();
-                }
-              }
-              return null;
-            };
-
-            fetchAddons.then((allAddons) => {
-              const merged = serverAddons.map((oa) => {
-                const inner = oa?.addon || oa || {};
-                const addonId = inner.addonId || inner.id || oa.addonId || oa.id;
-
-                const fallbackMatch = Array.isArray(fallbackAddons)
-                  ? fallbackAddons.find((fa) => {
-                      const faInner = (fa && typeof fa === "object" && fa.addon) ? fa.addon : (fa || {});
-                      const faId = fa.addonId || fa.id || faInner.addonId || faInner.id;
-                      return String(faId) === String(addonId);
-                    })
-                  : null;
-                const fallbackInner = (fallbackMatch && typeof fallbackMatch === "object" && fallbackMatch.addon) ? fallbackMatch.addon : (fallbackMatch || {});
-
-                const full = Array.isArray(allAddons)
-                  ? allAddons.find((a) => String(a.addonId || a.id) === String(addonId))
-                  : null;
-
-                const name = getFirstNonEmptyString(
-                  oa.addonName, oa.name, oa.title,
-                  inner.addonName, inner.name, inner.title,
-                  fallbackMatch?.name, fallbackMatch?.addonName, fallbackMatch?.title,
-                  fallbackInner?.name, fallbackInner?.addonName, fallbackInner?.title,
-                  full?.title, full?.name, full?.addonName
-                ) || "Add-on";
-
-                const quantity = getFirstPositiveNumber(
-                  oa.quantity, inner.quantity, fallbackMatch?.quantity, fallbackInner?.quantity
-                ) || 1;
-
-                const pricePerUnit = getFirstPositiveNumber(
-                  oa.pricePerUnit, oa.addonPrice, oa.price, oa.pricePerItem,
-                  inner.pricePerUnit, inner.addonPrice, inner.price, inner.pricePerItem,
-                  fallbackMatch?.pricePerUnit, fallbackMatch?.addonPrice, fallbackMatch?.price, fallbackMatch?.pricePerItem,
-                  fallbackInner?.pricePerUnit, fallbackInner?.addonPrice, fallbackInner?.price, fallbackInner?.pricePerItem,
-                  full?.pricePerUnit, full?.addonPrice, full?.price, full?.pricePerItem, full?.addon?.price
-                );
-
-                const totalPriceCandidate = getFirstPositiveNumber(
-                  oa.totalPrice, oa.priceValue, oa.amount,
-                  inner.totalPrice, inner.priceValue, inner.amount,
-                  fallbackMatch?.totalPrice, fallbackMatch?.priceValue, fallbackMatch?.amount,
-                  fallbackInner?.totalPrice, fallbackInner?.priceValue, fallbackInner?.amount
-                );
-                const totalPrice = totalPriceCandidate > 0 ? totalPriceCandidate : (pricePerUnit * quantity);
-
-                const image =
-                  full?.imageUrl || full?.image || full?.coverImageUrl || full?.addon?.imageUrl || full?.addon?.image ||
-                  oa.image || oa.imageUrl || inner.image || inner.imageUrl ||
-                  fallbackMatch?.image || fallbackMatch?.imageUrl || fallbackInner?.image || fallbackInner?.imageUrl || null;
-
-                return {
-                  addonId,
-                  name,
-                  quantity,
-                  pricePerUnit,
-                  totalPrice,
-                  image,
-                };
-              });
-              setAddonDetails(merged);
-            }).catch(console.error);
-          }
         }
-
-        setCheckingPayment(false);
       } catch (error) {
         console.error("Error checking payment status:", error);
+      } finally {
         setCheckingPayment(false);
       }
     };
@@ -1012,12 +766,220 @@ const Checkout = () => {
     ];
   }, [bookingData]);
 
-  // Build price breakdown table from bookingData.pricing
+  // Build price breakdown table from bookingData.pricing or previewPrice.data
   // eslint-disable-next-line no-unused-vars
   const { addOnsTotal, finalTotal, table } = useMemo(() => {
+    const isEvent = Boolean(bookingData?.eventId) || bookingData?.checkoutType === "event" || bookingData?.businessInterest === "EVENT";
     const pricing = bookingData?.pricing;
     const cur = pricing?.currency || paymentData?.currency || "INR";
     const fmt = (n) => formatMoneyLabel(cur, n);
+
+    const apiDataArray =
+      (Array.isArray(bookingData?.previewPrice?.data) && bookingData.previewPrice.data.length > 0)
+        ? bookingData.previewPrice.data
+        : (Array.isArray(bookingData?.priceBreakdownData) && bookingData.priceBreakdownData.length > 0)
+          ? bookingData.priceBreakdownData
+          : (Array.isArray(bookingData?.data) && bookingData.data.length > 0)
+            ? bookingData.data
+            : null;
+
+    // Strict direct data rendering from POST /api/orders/preview-price response
+    if (apiDataArray) {
+      const rows = [];
+      let totalAmountToPay = null;
+      let calculatedAddonsTotal = 0;
+
+      apiDataArray.forEach((item) => {
+        if (!item) return;
+        const title = item?.title || "";
+        const amountNum = Number(item?.amount ?? 0);
+
+        // Capture Amount to be paid for the highlight box
+        if (/amount\s*to\s*be\s*paid/i.test(title) || item?.code === "amount_to_be_paid") {
+          totalAmountToPay = amountNum;
+          return;
+        }
+
+        if (/add-?ons?\s*total/i.test(title) || item?.code === "addons_total") {
+          calculatedAddonsTotal = amountNum;
+        }
+
+        const isDiscount =
+          item?.code === "discount" ||
+          item?.code === "earlybird" ||
+          item?.code === "longstay" ||
+          item?.code === "promo" ||
+          item?.code === "seasonal" ||
+          (typeof item?.code === "string" && (item.code.includes("discount") || item.code.includes("stay") || item.code.includes("bird") || item.code.includes("promo") || item.code.includes("season"))) ||
+          /discount/i.test(title) ||
+          /early\s*bird/i.test(title) ||
+          /long\s*stay/i.test(title) ||
+          /seasonal/i.test(title);
+        const isTax = item?.code === "tax" || /tax/i.test(title);
+        const isFee = item?.code === "fee" || /fee/i.test(title);
+
+        let valueFormatted = fmt(amountNum);
+        if (isDiscount && amountNum > 0) {
+          valueFormatted = `- ${fmt(amountNum)}`;
+        }
+
+        rows.push({
+          title: item.title,
+          subtitle: isDiscount ? null : item.subtitle,
+          titleColor: item.titleColor,
+          subtitleColor: item.subtitleColor,
+          percentage: item.percentage,
+          code: item.code,
+          isDiscount,
+          amount: amountNum,
+          value: valueFormatted,
+        });
+      });
+
+      return {
+        addOnsTotal: calculatedAddonsTotal,
+        finalTotal: totalAmountToPay != null ? totalAmountToPay : (pricing?.totalPrice ?? pricing?.total ?? 0),
+        table: rows,
+      };
+    }
+
+    // Strict Event Pricing Breakdown from POST /api/orders/preview-price API response
+    if (isEvent && pricing) {
+      const rows = [];
+      const breakdown = pricing.breakdown || {};
+
+      // 1. Tickets breakdown
+      if (Array.isArray(breakdown.tickets) && breakdown.tickets.length > 0) {
+        breakdown.tickets.forEach((t) => {
+          const typeName = t.ticketTypeName || t.name || t.ticketName || "Ticket";
+          const qty = Number(t.quantity || 0);
+          const price = Number(t.pricePerTicket ?? t.price ?? 0);
+          const totalTicketPrice = Number(t.totalTicketPrice ?? (qty * price));
+          const adultQty = Number(t.adultQuantity ?? 0);
+          const childQty = Number(t.childQuantity ?? 0);
+          const childPrice = t.childPricePerTicket != null ? Number(t.childPricePerTicket) : null;
+
+          if (adultQty > 0 && childQty > 0 && childPrice != null && childPrice !== price) {
+            rows.push({
+              title: `${typeName} - Adults (${adultQty} × ${fmt(price)})`,
+              value: fmt(adultQty * price),
+            });
+            rows.push({
+              title: `${typeName} - Children (${childQty} × ${fmt(childPrice)})`,
+              value: fmt(childQty * childPrice),
+            });
+          } else if (qty > 0 && price > 0) {
+            rows.push({
+              title: `${typeName} (${qty} × ${fmt(price)})`,
+              value: fmt(totalTicketPrice),
+            });
+          } else if (qty > 0) {
+            rows.push({
+              title: `${typeName} (${qty} ${qty === 1 ? "ticket" : "tickets"})`,
+              value: fmt(totalTicketPrice),
+            });
+          } else if (totalTicketPrice > 0) {
+            rows.push({
+              title: typeName,
+              value: fmt(totalTicketPrice),
+            });
+          }
+        });
+      } else if (Number(pricing.basePrice || 0) > 0) {
+        const guests = Number(pricing.numberOfGuests || pricing.adultCount || bookingData?.bookingSummary?.guestCount || 1);
+        const ppp = guests > 0 ? (pricing.basePrice / guests) : pricing.basePrice;
+        rows.push({
+          title: `Base price (${guests} ${guests !== 1 ? "tickets" : "ticket"} × ${fmt(ppp)})`,
+          value: fmt(pricing.basePrice),
+        });
+      }
+
+      // 2. Add-ons breakdown
+      if (Array.isArray(breakdown.addons) && breakdown.addons.length > 0) {
+        breakdown.addons.forEach((a) => {
+          const aName = a.addonName || a.name || a.title || "Add-on";
+          const qty = Number(a.quantity || 1);
+          const price = Number(a.addonPrice ?? a.price ?? 0);
+          const totalAddonPrice = Number(a.totalPrice ?? (qty * price));
+          rows.push({
+            title: `${aName} (${qty} × ${fmt(price)})`,
+            value: fmt(totalAddonPrice),
+          });
+        });
+      } else if (Number(pricing.addonsTotal || 0) > 0) {
+        rows.push({
+          title: "Add-ons Total",
+          value: fmt(pricing.addonsTotal),
+        });
+      }
+
+      // 3. Subtotal
+      const hasDiscounts = Number(pricing.discountAmount || 0) > 0 || (Array.isArray(breakdown.discounts) && breakdown.discounts.length > 0);
+      const hasTaxes = Number(pricing.taxAmount || 0) > 0 || (Array.isArray(breakdown.taxes) && breakdown.taxes.length > 0);
+      const hasAddons = Number(pricing.addonsTotal || 0) > 0 || (Array.isArray(breakdown.addons) && breakdown.addons.length > 0);
+      const hasPlatformFee = Number(pricing.platformFee || 0) > 0;
+
+      if (pricing.subtotal != null && (hasDiscounts || hasTaxes || hasAddons || hasPlatformFee)) {
+        rows.push({
+          title: "Subtotal",
+          value: fmt(pricing.subtotal),
+        });
+      }
+
+      // 4. Discounts
+      if (Array.isArray(breakdown.discounts) && breakdown.discounts.length > 0) {
+        breakdown.discounts.forEach((d) => {
+          const dName = d.discountName || d.name || d.title || "Discount";
+          const dAmt = Number(d.discountAmount ?? d.amount ?? 0);
+          if (dAmt > 0) {
+            rows.push({
+              title: dName,
+              value: `- ${fmt(dAmt)}`,
+            });
+          }
+        });
+      } else if (Number(pricing.discountAmount || 0) > 0) {
+        rows.push({
+          title: "Discount",
+          value: `- ${fmt(pricing.discountAmount)}`,
+        });
+      }
+
+      // 5. Platform Fee
+      if (Number(pricing.platformFee || 0) > 0) {
+        rows.push({
+          title: "Platform fee",
+          value: `+ ${fmt(pricing.platformFee)}`,
+        });
+      }
+
+      // 6. Taxes
+      if (Array.isArray(breakdown.taxes) && breakdown.taxes.length > 0) {
+        breakdown.taxes.forEach((tx) => {
+          const txName = tx.taxName || tx.name || tx.title || "Taxes & Fees";
+          const txAmt = Number(tx.taxAmount ?? tx.amount ?? 0);
+          if (txAmt > 0) {
+            rows.push({
+              title: txName,
+              value: fmt(txAmt),
+            });
+          }
+        });
+      } else if (Number(pricing.taxAmount || 0) > 0) {
+        rows.push({
+          title: "Taxes & Fees",
+          value: fmt(pricing.taxAmount),
+        });
+      }
+
+      const totalVal = Number(pricing.totalPrice ?? pricing.total ?? 0);
+
+      return {
+        addOnsTotal: Number(pricing.addonsTotal || 0),
+        finalTotal: totalVal,
+        table: rows,
+      };
+    }
 
     if (pricing) {
       const rows = [];
@@ -1050,7 +1012,10 @@ const Checkout = () => {
           ) || 0;
 
           if (adults > 0) {
-            rows.push({ title: `Adults (${fmt(ppp)} x ${adults})`, value: fmt(ppp * adults) });
+            rows.push({
+              title: `Adults (${adults} × ${fmt(ppp)})`,
+              value: fmt(ppp * adults),
+            });
           }
 
           const childGroups = buildChildPricingBreakdown({
@@ -1066,18 +1031,9 @@ const Checkout = () => {
               const rangePrefix = group.ageRange ? `${group.ageRange}: ` : "";
               const priceDisplay = (group.isFree || group.unitPrice === 0) ? "Free" : fmt(group.unitPrice);
               const countDisplay = group.count;
-
-              let title = "";
-              if (group.isFree || group.unitPrice === 0) {
-                title = countDisplay === 1
-                  ? `Child (${rangePrefix}Free)`
-                  : `Children (${rangePrefix}Free x ${countDisplay})`;
-              } else {
-                title = countDisplay === 1
-                  ? `Child (${rangePrefix}${priceDisplay} x 1)`
-                  : `Children (${rangePrefix}${priceDisplay} x ${countDisplay})`;
-              }
-
+              const title = countDisplay === 1
+                ? `Child (${rangePrefix}${priceDisplay})`
+                : `Children (${rangePrefix}${priceDisplay} × ${countDisplay})`;
               const groupTotal = (group.isFree || group.unitPrice === 0) ? 0 : group.unitPrice * countDisplay;
               rows.push({
                 title,
@@ -1101,16 +1057,22 @@ const Checkout = () => {
             const remaining = Math.max(0, basePrice - adultsTotal);
             const applicableChildren = cpp > 0 ? Math.round(remaining / cpp) : children;
             if (applicableChildren > 0) {
-              rows.push({ title: `Children (${fmt(cpp)} x ${applicableChildren})`, value: fmt(remaining) });
+              rows.push({
+                title: `Children (${applicableChildren} × ${fmt(cpp)})`,
+                value: fmt(remaining),
+              });
             } else {
-              rows.push({ title: `Children (${fmt(0)} x ${children})`, value: fmt(0) });
+              rows.push({
+                title: `Children (${children} × ${fmt(0)})`,
+                value: fmt(0),
+              });
             }
           }
         } else {
           const guests = totalG;
           const ppp = pricing.basePricePerPerson || pricing.adultBasePricePerPerson || pricing.pricePerPerson;
           const basePpp = ppp || (basePrice / guests);
-          const label = `Base price (${fmt(basePpp)} x ${guests} guest${guests !== 1 ? "s" : ""})`;
+          const label = `Base price (${guests} ${guests !== 1 ? "guests" : "guest"} × ${fmt(basePpp)})`;
           rows.push({ title: label, value: fmt(basePrice) });
         }
       }
@@ -1119,86 +1081,129 @@ const Checkout = () => {
         rows.push({ title: "Add-ons Total", value: fmt(addonsTotal) });
       }
 
-      if (subtotalBeforeDiscountAndTax > 0) {
-        rows.push({ title: "Total", value: fmt(subtotalBeforeDiscountAndTax) });
+      if (subtotalBeforeDiscountAndTax > 0 && (discount > 0 || displayTax > 0 || addonsTotal > 0)) {
+        rows.push({ title: "Subtotal", value: fmt(subtotalBeforeDiscountAndTax) });
       }
 
-      const earlyBirdDiscount = pricing.earlyBirdDiscount || 0;
-      const promoDiscount = pricing.promoDiscount || 0;
-      const couponDiscount = pricing.couponDiscount || 0;
-      const totalSpecificDiscount = earlyBirdDiscount + promoDiscount + couponDiscount;
       const rawPayableAmount = Number(
         paymentData?.amount ??
         pricing.total ??
         pricing.finalAmount ??
         0
       );
-      const lineItemsGross = Number(basePrice || 0) + Number(addonsTotal || 0) + Number(displayTax || 0);
-      // Some flows provide payable in paise. Normalize to rupees when amount is clearly out of range.
+      const isAmountInPaise = paymentData?.paymentMethod === "razorpay";
       const payableAmount =
-        rawPayableAmount > 0 &&
-        lineItemsGross > 0 &&
-        rawPayableAmount > lineItemsGross * 5
+        rawPayableAmount > 0 && isAmountInPaise && rawPayableAmount > 100 && (subtotalBeforeDiscountAndTax > 0 && rawPayableAmount > subtotalBeforeDiscountAndTax * 5)
           ? rawPayableAmount / 100
           : rawPayableAmount;
-      const computedDiscountFromPayable = Math.max(
-        0,
-        Number(basePrice || 0) +
-        Number(addonsTotal || 0) +
-        Number(displayTax || 0) -
-        Number(payableAmount || 0)
-      );
-      const totalDiscount = payableAmount > 0
-        ? computedDiscountFromPayable
-        : Math.max(Number(discount || 0), Number(totalSpecificDiscount || 0));
 
-      if (totalDiscount > 0) {
-        let remainingDiscount = totalDiscount;
-        let earlyBirdToDisplay = 0;
+      const formatPercent = (rate) => {
+        if (!rate || rate <= 0) return "";
+        const rounded = Number(rate.toFixed(2));
+        return Number.isInteger(rounded) ? `${rounded}%` : `${rate.toFixed(2)}%`;
+      };
 
-        if (earlyBirdDiscount > 0 && remainingDiscount >= earlyBirdDiscount) {
-          earlyBirdToDisplay = earlyBirdDiscount;
-          remainingDiscount -= earlyBirdDiscount;
-        } else if (earlyBirdDiscount > 0 && remainingDiscount > 0) {
-          earlyBirdToDisplay = remainingDiscount;
-          remainingDiscount = 0;
+      // ── DISCOUNTS ──
+      // Separate Early Bird discount and combine all other discounts together
+      let earlyBirdAmount = 0;
+      let earlyBirdRate = 0;
+      let otherDiscountsAmount = 0;
+
+      if (Array.isArray(pricing.breakdown?.discounts) && pricing.breakdown.discounts.length > 0) {
+        pricing.breakdown.discounts.forEach((discItem) => {
+          const name = String(
+            discItem?.discountName ||
+            discItem?.name ||
+            discItem?.type ||
+            discItem?.title ||
+            discItem?.label ||
+            discItem?.description ||
+            discItem?.discountType ||
+            ""
+          ).toLowerCase();
+          const amt = Number(discItem?.discountAmount ?? discItem?.amount ?? discItem?.value ?? discItem?.discount ?? 0);
+          const rate = Number(discItem?.appliedPercentage ?? discItem?.percentage ?? discItem?.rate ?? discItem?.discountRate ?? 0);
+
+          if (/early\s*bird/i.test(name)) {
+            earlyBirdAmount += amt;
+            if (rate > 0) earlyBirdRate = rate;
+          } else {
+            otherDiscountsAmount += amt;
+          }
+        });
+      }
+
+      // If breakdown was not available, use top-level pricing fields
+      if (earlyBirdAmount === 0 && otherDiscountsAmount === 0) {
+        earlyBirdAmount = Number(pricing.earlyBirdDiscount || pricing.earlyBirdDiscountAmount || 0);
+        earlyBirdRate = Number(pricing.earlyBirdDiscountRate || pricing.earlyBirdDiscountPercentage || 0);
+
+        const promo = Number(pricing.promoDiscount || pricing.promoDiscountAmount || 0);
+        const coupon = Number(pricing.couponDiscount || pricing.couponDiscountAmount || 0);
+        const generalDiscount = Number(pricing.discount || pricing.discountAmount || 0);
+
+        otherDiscountsAmount = (promo + coupon) > 0 ? (promo + coupon) : Math.max(0, generalDiscount - earlyBirdAmount);
+      }
+
+      // If totalDiscount from payable exceeds current sum, top up otherDiscountsAmount
+      const knownDiscountsSum = earlyBirdAmount + otherDiscountsAmount;
+      if (knownDiscountsSum === 0 && Number(discount || 0) > 0) {
+        otherDiscountsAmount = Number(discount);
+      }
+
+      let otherDiscountsRate = 0;
+      if (subtotalBeforeDiscountAndTax > 0) {
+        if (otherDiscountsAmount > 0) {
+          otherDiscountsRate = (otherDiscountsAmount / subtotalBeforeDiscountAndTax) * 100;
         }
-
-        if (remainingDiscount > 0) {
-          const computedDiscountRate = subtotalBeforeDiscountAndTax > 0
-            ? (Number(remainingDiscount || 0) / subtotalBeforeDiscountAndTax) * 100
-            : 0;
-          const discountRate = getStableDisplayPercent({
-            preferredRate: toPositiveNumber(
-              pricing.promoDiscountRate,
-              pricing.couponDiscountRate,
-              earlyBirdToDisplay > 0 ? 0 : pricing.discountPercentage,
-              earlyBirdToDisplay > 0 ? 0 : pricing.discountRate,
-            ),
-            fallbackRate: computedDiscountRate,
-          });
-          const rateLabel = discountRate > 0 ? ` (${Math.round(discountRate)}%)` : "";
-          rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(remainingDiscount)}` });
-        }
-
-        if (earlyBirdToDisplay > 0) {
-          const computedEarlyBirdRate = subtotalBeforeDiscountAndTax > 0
-            ? (Number(earlyBirdToDisplay || 0) / subtotalBeforeDiscountAndTax) * 100
-            : 0;
-          const ebRate = getStableDisplayPercent({
-            preferredRate: toPositiveNumber(
-              pricing.earlyBirdDiscountRate,
-            ),
-            fallbackRate: computedEarlyBirdRate,
-          });
-          const ebRateLabel = ebRate > 0 ? ` (${Math.round(ebRate)}%)` : "";
-          rows.push({ title: `Early Bird Discount${ebRateLabel}`, value: `- ${fmt(earlyBirdToDisplay)}` });
+        if (earlyBirdAmount > 0 && earlyBirdRate <= 0) {
+          earlyBirdRate = (earlyBirdAmount / subtotalBeforeDiscountAndTax) * 100;
         }
       }
 
-      if (displayTax > 0) {
-        const rate = taxRate > 0 ? ` (${taxRate.toFixed(2)}%)` : "";
-        rows.push({ title: `Taxes${rate}`, value: fmt(displayTax) });
+      if (otherDiscountsAmount > 0) {
+        const rateLabel = otherDiscountsRate > 0 ? ` (${formatPercent(otherDiscountsRate)})` : "";
+        rows.push({ title: `Discount${rateLabel}`, value: `- ${fmt(otherDiscountsAmount)}` });
+      }
+
+      if (earlyBirdAmount > 0) {
+        const ebLabel = earlyBirdRate > 0 ? ` (${formatPercent(earlyBirdRate)})` : "";
+        rows.push({ title: `Early Bird Discount${ebLabel}`, value: `- ${fmt(earlyBirdAmount)}` });
+      }
+
+      // ── TAXES ──
+      let resolvedTaxAmount = 0;
+      let resolvedTaxRate = Number(pricing.taxRate ?? pricing.taxPercentage ?? pricing.tax_rate ?? 0);
+
+      if (Array.isArray(pricing.breakdown?.taxes) && pricing.breakdown.taxes.length > 0) {
+        pricing.breakdown.taxes.forEach((taxItem) => {
+          const amt = Number(taxItem?.amount ?? taxItem?.value ?? taxItem?.tax ?? taxItem?.taxAmount ?? 0);
+          resolvedTaxAmount += amt;
+          const rate = Number(taxItem?.rate ?? taxItem?.percentage ?? taxItem?.taxRate ?? 0);
+          if (rate > 0 && resolvedTaxRate === 0) resolvedTaxRate = rate;
+        });
+      }
+
+      if (resolvedTaxAmount <= 0) {
+        resolvedTaxAmount = Number(pricing.tax || pricing.taxAmount || pricing.tax_amount || displayTax || 0);
+      }
+
+      // If still 0, derive from total: payableAmount - (subtotal - discounts)
+      if (resolvedTaxAmount <= 0 && payableAmount > 0) {
+        const totalDisc = earlyBirdAmount + otherDiscountsAmount;
+        const discountedSubtotal = Math.max(0, subtotalBeforeDiscountAndTax - totalDisc);
+        if (payableAmount > discountedSubtotal) {
+          resolvedTaxAmount = Number((payableAmount - discountedSubtotal).toFixed(2));
+        }
+      }
+
+      if (resolvedTaxAmount > 0) {
+        const effectiveSubtotal = Math.max(0, subtotalBeforeDiscountAndTax - (earlyBirdAmount + otherDiscountsAmount));
+        if (resolvedTaxRate <= 0 && effectiveSubtotal > 0) {
+          resolvedTaxRate = (resolvedTaxAmount / effectiveSubtotal) * 100;
+        }
+        const rateLabel = resolvedTaxRate > 0 ? ` (${formatPercent(resolvedTaxRate)})` : "";
+        rows.push({ title: `Tax${rateLabel}`, value: `+ ${fmt(resolvedTaxAmount)}` });
       }
 
       return {
@@ -1231,110 +1236,14 @@ const Checkout = () => {
 
   const [cancellationPolicy, setCancellationPolicy] = useState(null);
 
-  // Sync cancellation policy from bookingData (order priority) or fetch fallback
+  // Sync cancellation policy from bookingData
   useEffect(() => {
-    // Priority: If bookingData has an explicit allowed flag, use it
-    if (bookingData?.cancellationAllowed === true && bookingData?.cancellationPolicySummary) {
+    if (bookingData?.cancellationPolicySummary) {
       setCancellationPolicy(bookingData.cancellationPolicySummary);
     } else if (bookingData?.cancellationAllowed === false) {
       setCancellationPolicy(null);
-    } else {
-      // Fallback: Fetch listing configuration if order doesn't have it
-      const listingId = bookingData?.listingId;
-      const eventId = bookingData?.eventId;
-
-      if (eventId) {
-        getEventDetails(eventId).then((data) => {
-          if (data?.cancellationAllowed === true) {
-            const policy = data?.cancellationPolicySummary || data?.cancellationPolicy || data?.cancellationPolicyText;
-            if (policy) setCancellationPolicy(policy);
-          } else if (data?.cancellationAllowed === false) {
-            setCancellationPolicy(null);
-          }
-        }).catch((err) => console.error("Error fetching event policy:", err));
-      } else if (listingId) {
-        getListing(listingId)
-          .then((data) => {
-            let isAllowed = data?.cancellationAllowed;
-            if (isAllowed === undefined && data?.billingConfiguration) {
-              isAllowed = data.billingConfiguration.cancellationAllowed;
-            }
-
-            if (isAllowed === true) {
-              const policy =
-                data?.cancellationPolicySummary ||
-                data?.cancellationPolicy ||
-                data?.cancellationPolicyText ||
-                data?.billingConfiguration?.cancellationPolicySummary;
-              if (policy) setCancellationPolicy(policy);
-            } else if (isAllowed === false) {
-              setCancellationPolicy(null);
-            } else {
-              getBillingConfiguration(listingId).then((config) => {
-                if (config?.cancellationAllowed === true) {
-                  const configPolicy = config?.cancellationPolicySummary || config?.cancellationPolicy || config?.cancellationPolicyText;
-                  if (configPolicy) setCancellationPolicy(configPolicy);
-                } else if (config?.cancellationAllowed === false) {
-                  setCancellationPolicy(null);
-                }
-              }).catch(() => { });
-            }
-          })
-          .catch((err) => console.error("Error fetching policy:", err));
-      }
     }
-  }, [bookingData?.listingId, bookingData?.eventId, bookingData?.cancellationAllowed, bookingData?.cancellationPolicySummary]);
-  useEffect(() => {
-    const listingId = bookingData?.listingId;
-    if (listingId) {
-      // Fetch reviews
-      getListingReviews(listingId)
-        .then((res) => {
-          const data = res?.data || res;
-          if (data) {
-            const parseNum = (value) => {
-              const n = Number(value);
-              return Number.isFinite(n) ? n : null;
-            };
-            const reviewsArray = Array.isArray(data.reviews)
-              ? data.reviews
-              : (Array.isArray(data.data?.reviews) ? data.data.reviews : []);
-            const derivedAverageFromReviews = (() => {
-              if (!reviewsArray.length) return null;
-              const ratings = reviewsArray
-                .map((r) => parseNum(r?.rating ?? r?.reviewRating ?? r?.stars))
-                .filter((v) => v != null);
-              if (!ratings.length) return null;
-              const sum = ratings.reduce((a, b) => a + b, 0);
-              return sum / ratings.length;
-            })();
-            const resolvedAverageRating =
-              parseNum(data.averageRating) ??
-              parseNum(data.average_rating) ??
-              parseNum(data.avgRating) ??
-              parseNum(data.avg_rating) ??
-              parseNum(data.rating) ??
-              parseNum(data.summary?.averageRating) ??
-              parseNum(data.summary?.average_rating) ??
-              parseNum(data.statistics?.averageRating) ??
-              parseNum(data.statistics?.average_rating) ??
-              derivedAverageFromReviews;
-            const resolvedReviewCount =
-              Number(data.totalReviews) ||
-              Number(data.total_reviews) ||
-              Number(data.reviewCount) ||
-              Number(data.review_count) ||
-              reviewsArray.length ||
-              0;
-            setReviewsData({
-              rating: resolvedAverageRating,
-              count: resolvedReviewCount,
-            });
-          }
-        })
-        .catch((err) => console.error("Error fetching reviews:", err));
-    }
-  }, [bookingData?.listingId]);
+  }, [bookingData?.cancellationAllowed, bookingData?.cancellationPolicySummary]);
 
   // Show loading state while checking payment status
   if (checkingPayment) {
@@ -1350,11 +1259,36 @@ const Checkout = () => {
   }
 
   const listingTitle = bookingData?.listingTitle || "Your trip";
-  const isEventBooking = Boolean(bookingData?.eventId);
+  const isEventBooking = Boolean(bookingData?.eventId) || bookingData?.checkoutType === "event" || bookingData?.businessInterest === "EVENT";
   const isStayBooking = Boolean(bookingData?.stayId);
   const isAmountInPaise = paymentData?.paymentMethod === "razorpay";
-  const resolvedCurrency = paymentData?.currency || bookingData?.currency || bookingData?.pricing?.currency || "INR";
-  const resolvedAmountToPay = paymentData?.amount ?? finalTotal ?? bookingData?.finalTotal ?? bookingData?.totalAmount ?? null;
+  const resolvedCurrency = bookingData?.pricing?.currency || bookingData?.previewPrice?.pricing?.currency || paymentData?.currency || "INR";
+  
+  const apiAmountToBePaid = (() => {
+    const arr = Array.isArray(bookingData?.previewPrice?.data)
+      ? bookingData.previewPrice.data
+      : (Array.isArray(bookingData?.priceBreakdownData)
+        ? bookingData.priceBreakdownData
+        : (Array.isArray(bookingData?.data) ? bookingData.data : null));
+    if (!arr) return null;
+    const match = arr.find((item) => /amount\s*to\s*be\s*paid/i.test(item?.title || "") || item?.code === "amount_to_be_paid");
+    return match?.amount != null ? Number(match.amount) : null;
+  })();
+
+  // Authoritative price comes strictly from POST /api/orders/preview-price
+  const resolvedAmountToPay =
+    (apiAmountToBePaid != null
+      ? (isAmountInPaise ? Math.round(apiAmountToBePaid * 100) : apiAmountToBePaid)
+      : null)
+    ?? bookingData?.previewPrice?.payment?.amount
+    ?? (bookingData?.previewPrice?.pricing?.totalPrice != null ? (isAmountInPaise ? Math.round(bookingData.previewPrice.pricing.totalPrice * 100) : bookingData.previewPrice.pricing.totalPrice) : null)
+    ?? (bookingData?.previewPrice?.pricing?.total != null ? (isAmountInPaise ? Math.round(bookingData.previewPrice.pricing.total * 100) : bookingData.previewPrice.pricing.total) : null)
+    ?? (bookingData?.pricing?.totalPrice != null ? (isAmountInPaise ? Math.round(bookingData.pricing.totalPrice * 100) : bookingData.pricing.totalPrice) : null)
+    ?? (bookingData?.pricing?.total != null ? (isAmountInPaise ? Math.round(bookingData.pricing.total * 100) : bookingData.pricing.total) : null)
+    ?? paymentData?.amount
+    ?? finalTotal
+    ?? bookingData?.finalTotal
+    ?? null;
   const backUrl =
     bookingData?.returnTo ||
     (isEventBooking ? `/event?id=${bookingData.eventId}` : null) ||
