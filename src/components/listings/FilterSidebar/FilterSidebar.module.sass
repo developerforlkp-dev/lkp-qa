@@ -2,18 +2,15 @@
 
 // ─── Desktop Sidebar Card ──────────────────────────────────────────────────────
 .sidebar
-    width: 350px
+    width: 340px
     background: $n8
-    border-radius: 16px
-    border: 1px solid #0097B2
+    border-radius: 20px
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04)
-    overflow: hidden
+    padding: 24px
     display: flex
     flex-direction: column
-    max-height: calc(100vh - 120px)
     +dark
         background: $n1
-        border-color: #0097B2
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2)
     // On tablet/mobile: rendered inside bottom sheet, strip card styling
     +t
@@ -22,6 +19,7 @@
         border: none
         border-radius: 0
         box-shadow: none
+        padding: 0
         overflow: visible
         +dark
             background: transparent
@@ -32,21 +30,16 @@
     display: flex
     justify-content: space-between
     align-items: center
-    padding: 16px 20px
-    border-bottom: 1px solid rgba($n6, 0.6)
-    +dark
-        border-color: rgba($n3, 0.4)
+    padding: 0 0 24px
     +t
         padding: 0 0 16px
-        border-bottom: none
 
 .title
     margin: 0
-    font-size: 17px
+    font-size: 20px
     line-height: 1.2
     font-weight: 700
     color: $n1
-    letter-spacing: -0.01em
     +dark
         color: $n8
 
@@ -67,43 +60,13 @@
     display: flex
     flex-direction: column
     flex: 1
-    overflow-y: auto
-    overflow-x: hidden
-    scroll-behavior: smooth
-    -webkit-overflow-scrolling: touch
-    padding-right: 8px
-    // Thin modern scrollbar - minimal appearance, fade/hidden until hover
-    scrollbar-width: thin
-    scrollbar-color: transparent transparent
-    transition: scrollbar-color 0.3s
-    &::-webkit-scrollbar
-        width: 6px
-    &::-webkit-scrollbar-track
-        background: transparent
-    &::-webkit-scrollbar-thumb
-        background-color: transparent
-        border-radius: 10px
-        transition: background-color 0.3s
-    &:hover
-        scrollbar-color: rgba($n5, 0.3) transparent
-        &::-webkit-scrollbar-thumb
-            background-color: rgba($n5, 0.3)
-            &:hover
-                background-color: rgba($n5, 0.5)
     +t
         max-height: none
-        overflow-y: visible
-        overflow-x: visible
-        padding-right: 0
         gap: 0
 
 // ─── Accordion Section ────────────────────────────────────────────────────────
 .accordionSection
-    border-bottom: 1px solid rgba($n6, 0.6)
-    &:last-child
-        border-bottom: none
-    +dark
-        border-color: rgba($n3, 0.4)
+    margin-bottom: 8px
     // On mobile: each section becomes its own card
     +t
         border-bottom: none
@@ -123,28 +86,23 @@
     justify-content: space-between
     align-items: center
     width: 100%
-    padding: 12px 20px
+    padding: 12px 0
     background: none
     border: none
     cursor: pointer
     text-align: left
-    transition: background .15s ease
-    &:hover
-        background: $n7
-        +dark
-            background: rgba(255, 255, 255, 0.04)
     +t
         padding: 16px
 
 // ─── Accordion Label ──────────────────────────────────────────────────────────
 .accordionLabel
-    font-size: 11px
+    font-size: 14px
     font-weight: 700
     text-transform: uppercase
-    letter-spacing: 0.09em
-    color: $n4
+    letter-spacing: 0.05em
+    color: $n2
     +dark
-        color: $n5
+        color: $n6
 
 // ─── Chevron Icon ─────────────────────────────────────────────────────────────
 .chevron
@@ -159,7 +117,7 @@
 
 // ─── Accordion Body ───────────────────────────────────────────────────────────
 .accordionBody
-    padding: 2px 20px 14px
+    padding: 4px 0 16px
     +t
         padding: 4px 16px 16px
 
@@ -232,11 +190,11 @@
     border: 1.5px solid $n6
     background: transparent
     +caption-bold-1
-    color: $n2
+    color: $n4
     transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     +dark
         border-color: rgba($n3, 0.6)
-        color: $n7
+        color: $n5
     svg
         fill: $s3
         flex-shrink: 0
@@ -274,12 +232,12 @@
     border: 1.5px solid $n6
     background: transparent
     +caption-bold-2
-    color: $n2
+    color: $n4
     text-align: center
     transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     +dark
         border-color: rgba($n3, 0.6)
-        color: $n7
+        color: $n5
     &:hover
         border-color: $p1
         background: rgba(0, 151, 178, 0.06)
@@ -341,12 +299,12 @@
     border: 1.5px solid $n6
     background: transparent
     +caption-bold-2
-    color: $n2
+    color: $n4
     white-space: nowrap
     transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     +dark
         border-color: rgba($n3, 0.6)
-        color: $n7
+        color: $n5
     &:hover
         border-color: $p1
         background: rgba(0, 151, 178, 0.06)

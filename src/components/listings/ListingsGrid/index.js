@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./ListingsGrid.module.sass";
@@ -135,6 +135,33 @@ const SkeletonCard = () => {
 };
 
 const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMessage = "No listings found. Try adjusting your filters.", listView = false }) => {
+  const sentinelRef = useRef(null);
+
+  // Infinite scroll: observe a sentinel element at the bottom of the grid
+  const handleObserver = useCallback(
+    (entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasMore && !loading) {
+        onLoadMore();
+      }
+    },
+    [hasMore, loading, onLoadMore]
+  );
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: "300px", // trigger 300px before the sentinel is visible
+      threshold: 0,
+    });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [handleObserver]);
+
   if (error) {
     return (
       <div className={styles.error}>
@@ -183,6 +210,7 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
         })}
       </div>
 
+      {/* Loading indicator while fetching more */}
       {loading && listings.length > 0 && (
         <div className={styles.loadingMore}>
           <Loader />
@@ -190,16 +218,12 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
         </div>
       )}
 
+      {/* Invisible sentinel for infinite scroll trigger */}
       {hasMore && !loading && (
-        <div className={styles.loadMore}>
-          <button className={cn("button-stroke", styles.loadMoreButton)} onClick={onLoadMore}>
-            <span>Explore More</span>
-          </button>
-        </div>
+        <div ref={sentinelRef} className={styles.scrollSentinel} />
       )}
     </>
   );
 };
 
 export default ListingsGrid;
-

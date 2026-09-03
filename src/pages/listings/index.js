@@ -9,11 +9,13 @@ import FilterSidebar from "../../components/listings/FilterSidebar";
 import ListingsGrid from "../../components/listings/ListingsGrid";
 import MobileFilterModal from "../../components/listings/MobileFilterModal";
 import Icon from "../../components/Icon";
+import Dropdown from "../../components/Dropdown";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import { getBusinessInterestFilters } from "../../utils/api";
 import { Compass, Ticket, Home, Utensils, MapPin } from "lucide-react";
 import Loader from "../../components/Loader";
+import TravelJourneyIllustration from "../../components/TravelJourneyIllustration";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -376,7 +378,7 @@ const Listings = () => {
   }, [categoryFilter, filters.apiCategoryFilter, resolvedBusinessInterestId]);
 
   // Use listings hook - only re-renders when activeSearch or other filters change
-  const { data: listings, loading, error, hasMore, fetchMore } = useListings({
+  const { data: listings, loading, error, hasMore, fetchMore, totalCount: apiTotalCount } = useListings({
     location: isCategoryDerivedSearch ? "" : activeSearch,
     dateRange,
     guests,
@@ -387,8 +389,7 @@ const Listings = () => {
     sortBy: sortBy,
   });
 
-  // eslint-disable-next-line no-unused-vars
-  const totalCount = listings.length;
+  const totalCount = apiTotalCount !== null ? apiTotalCount : listings.length;
 
   // Handle filter changes
   const handleFilterChange = (filterType, value) => {
@@ -759,6 +760,9 @@ const Listings = () => {
       </div>
 
       <div className={cn("container", styles.container)}>
+        {/* Background Decorative Travel Line Art */}
+        <TravelJourneyIllustration />
+        
         {/* Category Navigation Header inside Portal */}
         {(portalTarget && isDesktop) ? ReactDOM.createPortal(
           <div className={styles.categoryNav}>
@@ -1000,10 +1004,20 @@ const Listings = () => {
                 <span className={styles.resultCount}>
                   {loading && listings.length === 0
                     ? "Loading..."
-                    : `${listings.length} ${getListingTerm(businessInterest, listings.length)} found`
+                    : `${totalCount} ${getListingTerm(businessInterest, totalCount)} found`
                   }
                 </span>
-                <div className={styles.viewToggle}>
+                <div className={styles.viewToggleWrapper}>
+                  <div className={styles.sortWrapper}>
+                    <span className={styles.sortLabel}>Sort by</span>
+                    <Dropdown
+                      className={styles.sortDropdown}
+                      value={sortBy === "newest" ? "Newest" : "Rating"}
+                      setValue={(val) => setSortBy(val === "Newest" ? "newest" : "rating")}
+                      options={["Newest", "Rating"]}
+                    />
+                  </div>
+                  <div className={styles.viewToggle}>
                   <button
                     className={cn(styles.viewToggleBtn, { [styles.viewToggleBtnActive]: viewMode === "grid" })}
                     onClick={() => setViewMode("grid")}
@@ -1029,6 +1043,7 @@ const Listings = () => {
                       <rect x="1" y="12" width="14" height="2" rx="1" />
                     </svg>
                   </button>
+                  </div>
                 </div>
               </div>
 

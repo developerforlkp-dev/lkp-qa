@@ -126,17 +126,25 @@ const ChildAgeSelect = ({ value, onChange, options, style, disabled }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: portalStyle.bottom ? 4 : -4 }}
                 transition={{ duration: 0.15 }}
+                className="child-age-select-scroll"
                 style={{
                   ...portalStyle,
                   backgroundColor: BG,
                   border: `1px solid ${B}`,
                   borderRadius: "12px",
                   boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                  maxHeight: "180px",
+                  maxHeight: "152px",
                   overflowY: "auto",
                   padding: "6px",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none"
                 }}
               >
+                <style>{`
+                  .child-age-select-scroll::-webkit-scrollbar {
+                    display: none;
+                  }
+                `}</style>
                 {options.map((opt) => {
                   const isSelected = String(opt.value) === String(value);
                   return (

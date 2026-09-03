@@ -152,13 +152,33 @@ const resolveCoverImage = (room) => {
   return null;
 };
 
+const extractPlanPrice = (mp) => {
+  if (!mp) return null;
+  const p = mp.b2cPrice ?? mp.price ?? null;
+  return (p != null && p !== "" && p !== 0) ? p : null;
+};
+
 const getPriceForPlan = (room, code) => {
-  if (room.mealPlanPricing && room.mealPlanPricing[code]) {
-    const mp = room.mealPlanPricing[code];
-    return mp.b2cPrice || mp.price || null;
+  // 1. Try the requested plan in mealPlanPricing
+  if (room.mealPlanPricing?.[code]) {
+    const planPrice = extractPlanPrice(room.mealPlanPricing[code]);
+    if (planPrice != null) return planPrice;
   }
+
+  // 2. Try flat price fields (epPrice, bbPrice, etc.)
   const flat = { BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice", EP: "epPrice" };
-  return flat[code] ? room[flat[code]] : room.b2cPrice || room.price || null;
+  if (flat[code] && room[flat[code]]) return room[flat[code]];
+
+  // 3. Try any other plan that has a price
+  if (room.mealPlanPricing) {
+    for (const key of Object.keys(room.mealPlanPricing)) {
+      const fallbackPrice = extractPlanPrice(room.mealPlanPricing[key]);
+      if (fallbackPrice != null) return fallbackPrice;
+    }
+  }
+
+  // 4. Fall back to room base price
+  return room.b2cPrice || room.price || null;
 };
 
 /* Extract feature tags from room data */
@@ -283,10 +303,26 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
     return plans;
   }, [room.mealPlanPricing, room.epPrice, room.bbPrice, room.cpPrice, room.mapPrice, room.apPrice]);
 
-  const [plan, setPlan] = useState(selectedMealPlan || allPlans[0] || null);
+  // Prefer selectedMealPlan if it exists in this room, otherwise pick the first plan that has a price
+  const effectiveMealPlan = React.useMemo(() => {
+    if (selectedMealPlan && allPlans.includes(selectedMealPlan)) return selectedMealPlan;
+    // Try to find a plan that actually has a price
+    const planWithPrice = allPlans.find(code => {
+      const mp = room.mealPlanPricing?.[code];
+      if (mp) {
+        const p = mp.b2cPrice ?? mp.price ?? null;
+        return p != null && p !== "" && p !== 0;
+      }
+      const flat = { BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice", EP: "epPrice" };
+      return flat[code] && room[flat[code]];
+    });
+    return planWithPrice || allPlans[0] || null;
+  }, [selectedMealPlan, allPlans, room]);
+
+  const [plan, setPlan] = useState(effectiveMealPlan);
   useEffect(() => {
-    setPlan(selectedMealPlan || allPlans[0] || null);
-  }, [selectedMealPlan, allPlans]);
+    setPlan(effectiveMealPlan);
+  }, [effectiveMealPlan]);
   
   const rawPrice = plan ? getPriceForPlan(room, plan) : room.b2cPrice || room.price;
   const discountRate = getBillingConfigDiscountRate(listing);

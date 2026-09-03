@@ -528,7 +528,7 @@ const FleetHome = () => {
             if (isEventsSection && (!listings || listings.length === 0)) {
               try {
                 const eventResult = await getEventListings(12, 0);
-                const eventListingsArray = Array.isArray(eventResult?.events) ? eventResult.events : (Array.isArray(eventResult) ? eventResult : []);
+                const eventListingsArray = Array.isArray(eventResult?.listings) ? eventResult.listings : (Array.isArray(eventResult?.events) ? eventResult.events : (Array.isArray(eventResult) ? eventResult : []));
                 if (eventListingsArray.length > 0) {
                   listings = eventListingsArray;
                 }

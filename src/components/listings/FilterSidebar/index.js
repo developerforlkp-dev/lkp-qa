@@ -593,11 +593,20 @@ const FilterSidebar = ({
     onFilterChange("apiCategoryFilter", nextFilter);
   };
 
+  const getRefineTitle = () => {
+    if (isStayInterest) return "Refine your stay";
+    if (normalizedInterest.includes("EVENT")) return "Refine your event";
+    if (normalizedInterest.includes("FOOD")) return "Refine your food";
+    if (normalizedInterest.includes("PLACE")) return "Refine your place";
+    if (normalizedInterest.includes("EXPERIENCE")) return "Refine your experience";
+    return "Refine your search";
+  };
+
   return (
     <div className={styles.sidebar}>
       {!hideHeader && (
         <div className={styles.header}>
-          <h3 className={styles.title}>Filters</h3>
+          <h3 className={styles.title}>{getRefineTitle()}</h3>
           <button className={styles.clearAllButton} onClick={onReset}>
             Clear all
           </button>
@@ -624,18 +633,6 @@ const FilterSidebar = ({
       )}
 
       <div className={styles.content}>
-        {/* Sort By */}
-        {sortingOptions && sortingOptions.length > 0 && (
-          <AccordionSection label="Sort by">
-            <Dropdown
-              className={styles.sortDropdown}
-              value={displaySortingValue}
-              setValue={handleSortingChange}
-              options={displaySortingOptions}
-            />
-          </AccordionSection>
-        )}
-
         {/* Date Range — Experience / Events only */}
         {/* Rating */}
         <AccordionSection label="Rating">
@@ -661,6 +658,7 @@ const FilterSidebar = ({
           options={primaryCategoryOptions}
           activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
           onSelect={handleApiFilterChange}
+          defaultOpen={false}
         />
 
         {/* Sub Category */}
@@ -669,6 +667,7 @@ const FilterSidebar = ({
           options={secondaryCategoryOptions}
           activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
           onSelect={handleApiFilterChange}
+          defaultOpen={false}
         />
 
         {/* Tags */}
@@ -677,6 +676,7 @@ const FilterSidebar = ({
           options={tagOptions}
           activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
           onSelect={handleApiFilterChange}
+          defaultOpen={false}
         />
 
         {/* Special Labels */}
@@ -685,11 +685,12 @@ const FilterSidebar = ({
           options={specialLabelOptions}
           activeKeys={filters.apiCategoryFilter?.activeKeys || (filters.apiCategoryFilter?.activeKey ? [filters.apiCategoryFilter.activeKey] : [])}
           onSelect={handleApiFilterChange}
+          defaultOpen={false}
         />
 
         {/* Amenities — Stays only */}
         {isStayInterest && (
-          <AccordionSection label="Amenities">
+          <AccordionSection label="Amenities" defaultOpen={false}>
             <div className={styles.amenitiesGrid}>
               {amenities.map((amenity) => (
                 <button
@@ -708,7 +709,7 @@ const FilterSidebar = ({
 
         {/* Property Type — Stays only */}
         {isStayInterest && (
-          <AccordionSection label="Property type">
+          <AccordionSection label="Property type" defaultOpen={false}>
             <div className={styles.checkboxList}>
               {propertyTypes.map((type) => (
                 <Checkbox
@@ -725,7 +726,7 @@ const FilterSidebar = ({
 
         {/* Meal Plan — Stays only */}
         {isStayInterest && (
-          <AccordionSection label="Meal plan">
+          <AccordionSection label="Meal plan" defaultOpen={false}>
             <div className={styles.checkboxList}>
               {mealPlans.map((plan) => (
                 <Checkbox

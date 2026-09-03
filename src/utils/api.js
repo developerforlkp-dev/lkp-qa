@@ -2044,7 +2044,30 @@ export const getEventListings = async (limit = 12, offset = 0, sortBy = "newest"
     const payload = response.data;
     //console.log(`✅ Event listings fetched (raw):`, payload);
 
-    return payload; // Return the full response object with event listings
+    let listings = [];
+    let totalCount = null;
+    let hasMore = null;
+
+    if (Array.isArray(payload)) {
+      listings = payload;
+    } else if (payload && typeof payload === "object") {
+      if (Array.isArray(payload.events)) listings = payload.events;
+      else if (Array.isArray(payload.eventListings)) listings = payload.eventListings;
+      else if (Array.isArray(payload.data)) listings = payload.data;
+      else if (Array.isArray(payload.items)) listings = payload.items;
+      else if (Array.isArray(payload.listings)) listings = payload.listings;
+
+      if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total !== undefined) totalCount = payload.total;
+      else if (payload.count !== undefined) totalCount = payload.count;
+      else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
+
+      if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+      else if (payload.has_more !== undefined) hasMore = payload.has_more;
+      else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
+    }
+
+    return { listings, totalCount, hasMore, raw: payload };
   } catch (error) {
     console.error(`❌ Error fetching event listings:`, error.response?.data || error.message);
     throw error;
@@ -2063,6 +2086,9 @@ export const getStayListings = async (limit = 20, offset = 0, sortBy = "newest")
     const section = payload?.section || null;
 
     let listings = [];
+    let totalCount = null;
+    let hasMore = null;
+
     if (Array.isArray(payload)) {
       listings = payload;
     } else if (payload && typeof payload === "object") {
@@ -2071,9 +2097,18 @@ export const getStayListings = async (limit = 20, offset = 0, sortBy = "newest")
       else if (Array.isArray(payload.data)) listings = payload.data;
       else if (Array.isArray(payload.items)) listings = payload.items;
       else if (Array.isArray(payload.listings)) listings = payload.listings;
+
+      if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total !== undefined) totalCount = payload.total;
+      else if (payload.count !== undefined) totalCount = payload.count;
+      else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
+
+      if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+      else if (payload.has_more !== undefined) hasMore = payload.has_more;
+      else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
     }
 
-    return { section, listings };
+    return { section, listings, totalCount, hasMore };
   } catch (error) {
     console.error(`❌ Error fetching stay listings:`, error.response?.data || error.message);
     throw error;
@@ -2334,6 +2369,9 @@ export const getFoodMenus = async (limit = 20, offset = 0, sortBy = "newest") =>
     const section = payload?.section || null;
 
     let listings = [];
+    let totalCount = null;
+    let hasMore = null;
+
     if (Array.isArray(payload)) {
       listings = payload;
     } else if (payload && typeof payload === "object") {
@@ -2344,11 +2382,20 @@ export const getFoodMenus = async (limit = 20, offset = 0, sortBy = "newest") =>
       if (!Array.isArray(listings) && Array.isArray(payload.items)) {
         listings = payload.items;
       }
+
+      if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total !== undefined) totalCount = payload.total;
+      else if (payload.count !== undefined) totalCount = payload.count;
+      else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
+
+      if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+      else if (payload.has_more !== undefined) hasMore = payload.has_more;
+      else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
     //console.log(`✅ Food menus normalized:`, finalListings);
-    return { section, listings: finalListings };
+    return { section, listings: finalListings, totalCount, hasMore };
   } catch (error) {
     console.error(`❌ Error fetching food menus:`, error.response?.data || error.message);
     throw error;
@@ -2380,6 +2427,9 @@ export const getPlaces = async (limit = 20, offset = 0, sortBy = "newest") => {
     const section = payload?.section || null;
 
     let listings = [];
+    let totalCount = null;
+    let hasMore = null;
+
     if (Array.isArray(payload)) {
       listings = payload;
     } else if (payload && typeof payload === "object") {
@@ -2390,11 +2440,20 @@ export const getPlaces = async (limit = 20, offset = 0, sortBy = "newest") => {
       if (!Array.isArray(listings) && Array.isArray(payload.items)) {
         listings = payload.items;
       }
+
+      if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total !== undefined) totalCount = payload.total;
+      else if (payload.count !== undefined) totalCount = payload.count;
+      else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
+
+      if (payload.hasMore !== undefined) hasMore = payload.hasMore;
+      else if (payload.has_more !== undefined) hasMore = payload.has_more;
+      else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
     }
 
     const finalListings = Array.isArray(listings) ? listings : [];
     //console.log(`✅ Places nearby normalized:`, finalListings);
-    return { section, listings: finalListings };
+    return { section, listings: finalListings, totalCount, hasMore };
   } catch (error) {
     console.error(`❌ Error fetching places:`, error.response?.data || error.message);
     throw error;

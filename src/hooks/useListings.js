@@ -38,6 +38,7 @@ export const useListings = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCountState, setTotalCountState] = useState(null);
 
   const mapToNearbyBusinessInterest = useCallback((value) => {
     const normalized = String(value || "").toUpperCase();
@@ -133,15 +134,23 @@ export const useListings = ({
           if (mappedNearbyInterest === "FOOD") {
             const response = await getFoodMenus(limit, nextOffset, sortBy);
             listings = response.listings || [];
+            totalCount = response.totalCount ?? null;
+            hasMoreFromAPI = response.hasMore ?? null;
           } else if (mappedNearbyInterest === "PLACES") {
             const response = await getPlaces(limit, nextOffset, sortBy);
             listings = response.listings || [];
+            totalCount = response.totalCount ?? null;
+            hasMoreFromAPI = response.hasMore ?? null;
           } else if (mappedNearbyInterest === "STAYS") {
             const response = await getStayListings(limit, nextOffset, sortBy);
             listings = response.listings || [];
+            totalCount = response.totalCount ?? null;
+            hasMoreFromAPI = response.hasMore ?? null;
           } else if (mappedNearbyInterest === "EVENTS") {
             const response = await getEventListings(limit, nextOffset, sortBy);
-            listings = normalizeListingsCollection(response, ["events", "eventListings"]);
+            listings = response.listings || [];
+            totalCount = response.totalCount ?? null;
+            hasMoreFromAPI = response.hasMore ?? null;
           }
         } else {
           const filterPayload = {
@@ -269,6 +278,11 @@ export const useListings = ({
       }
 
       setHasMore(shouldHaveMore);
+      if (totalCount !== null) {
+        setTotalCountState(totalCount);
+      } else if (reset) {
+        setTotalCountState(null);
+      }
 
       // Log pagination info for debugging
       /*console.log("📄 Pagination info:", {
@@ -336,8 +350,9 @@ export const useListings = ({
     loading,
     error,
     hasMore,
+    totalCount: totalCountState,
     fetchMore,
-    refetch: () => fetchListings(true),
+    refetch: () => fetchListings(0, true),
   };
 };
 

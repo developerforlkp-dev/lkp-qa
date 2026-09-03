@@ -24,6 +24,8 @@
     gap: 12px
     margin: 4px auto 0
     max-width: 1000px
+    position: relative
+    z-index: 1
     overflow-x: auto
     -webkit-overflow-scrolling: touch
     scrollbar-width: none
@@ -129,8 +131,10 @@
         +dark
             background: darken(#0097B2, 5%)
 
-// ─── Desktop Search Bar ──────────────────────────────────────────
+// ─── Desktop Search Bar Section ────────────────────────────────────────────────────────
 .searchBar
+    position: relative
+    z-index: 1
     display: flex
     align-items: center
     gap: 0
@@ -387,13 +391,25 @@
 // ─── Body / Layout ────────────────────────────────────────────────────────────
 .body
     margin-top: 0
+    background: transparent
+    padding: 16px 0
+    +dark
+        background: transparent
     +m
         margin-top: 0
+        padding: 0
+        background: transparent
+
+.container
+    max-width: 100%
+    padding: 0 32px
+    +m
+        padding: 0 16px
 
 .layout
     display: grid
-    grid-template-columns: 350px minmax(0, 1fr)
-    gap: 32px
+    grid-template-columns: 340px minmax(0, 1fr)
+    gap: 12px
     +t
         grid-template-columns: minmax(0, 1fr)
         gap: 24px
@@ -402,7 +418,7 @@
         gap: 0
         width: 100%
     &.withMap
-        grid-template-columns: 350px minmax(0, 1fr) 400px
+        grid-template-columns: 340px minmax(0, 1fr) 400px
         +t
             grid-template-columns: minmax(0, 1fr)
             gap: 24px
@@ -411,8 +427,6 @@
             gap: 0
 
 .sidebar
-    position: sticky
-    top: calc(72px + 24px) // 72px (sticky header height) + 24px (gap spacing)
     align-self: start
     display: block
     z-index: 10
@@ -425,10 +439,19 @@
     display: flex
     flex-direction: column
     gap: 24px
+    background: transparent
+    box-shadow: none
+    border-radius: 20px
+    padding: 24px
+    +dark
+        background: transparent
+        box-shadow: none
     +m
         gap: 16px
         padding: 0
         width: 100%
+        background: transparent
+        box-shadow: none
 
 .categoryFilterTitle
     margin-bottom: 8px
@@ -672,22 +695,88 @@
     +dark
         border-color: $n1
 
+// ─── Breadcrumbs ──────────────────────────────────────────────────────────────
+.breadcrumbs
+    display: flex
+    align-items: center
+    gap: 8px
+    font-size: 12px
+    color: $n4
+    margin-bottom: 8px
+    +dark
+        color: $n5
+
+.breadcrumbItem
+    color: $n4
+    text-transform: capitalize
+    +dark
+        color: $n5
+
+.breadcrumbItemActive
+    color: $n2
+    font-weight: 500
+    text-transform: capitalize
+    +dark
+        color: $n7
+
+.breadcrumbSeparator
+    color: $n4
+    font-size: 14px
+    +dark
+        color: $n5
+
 // ─── Results Toolbar ──────────────────────────────────────────────────────────
 .resultsToolbar
     display: flex
     align-items: center
     justify-content: space-between
-    margin-bottom: 16px
+    margin-bottom: 24px
     +m
         display: none
 
 .resultCount
+    font-size: 20px
+    font-weight: 700
+    color: $n2
+    letter-spacing: -0.01em
+    +dark
+        color: $n7
+
+.viewToggleWrapper
+    display: flex
+    align-items: center
+    gap: 16px
+
+.sortWrapper
+    display: flex
+    align-items: center
+    gap: 8px
+
+.sortLabel
     font-size: 13px
     font-weight: 600
     color: $n4
-    letter-spacing: 0.02em
     +dark
         color: $n5
+
+.sortDropdown
+    min-width: 160px
+    :global(.head)
+        height: 38px
+        line-height: 38px
+        font-size: 13px
+        padding: 0 40px 0 12px
+        border-radius: 10px
+        background: $n7
+        border: 1px solid $n6
+        +dark
+            background: $n2
+            border-color: $n3
+    :global(.arrow)
+        width: 26px
+        height: 26px
+    :global(.body)
+        z-index: 9999
 
 // ─── Grid / List View Toggle ──────────────────────────────────────────────────
 .viewToggle
