@@ -1,3 +1,5 @@
+import moment from "moment";
+
 const toRate = (value) => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : 0;
@@ -21,19 +23,55 @@ export const getExperienceGuestDiscountRate = (listing) =>
     listing?.pricing?.discount
   );
 
+export const getExperienceEarlyBirdDiscountRate = (listing, bookingDate = null) => {
+  if (!bookingDate) return 0;
+  const earlyBirdDiscounts =
+    listing?.earlyBirdDiscounts ||
+    listing?.early_bird_discounts ||
+    listing?.pricing?.earlyBirdDiscounts ||
+    listing?.pricing?.early_bird_discounts;
+
+  if (!Array.isArray(earlyBirdDiscounts) || earlyBirdDiscounts.length === 0) return 0;
+
+  const today = moment().startOf("day");
+  const bDate = moment(bookingDate).startOf("day");
+  if (!bDate.isValid()) return 0;
+
+  const daysInAdvance = bDate.diff(today, "days");
+  if (daysInAdvance < 0) return 0;
+
+  const applicableDiscounts = earlyBirdDiscounts.filter((d) =>
+    (d.isActive !== false && d.is_active !== false) &&
+    daysInAdvance >= (toRate(d.daysInAdvance ?? d.days_in_advance))
+  );
+
+  if (applicableDiscounts.length === 0) return 0;
+
+  const bestDiscount = applicableDiscounts.reduce((prev, current) =>
+    (toRate(current.percentage) > toRate(prev.percentage)) ? current : prev
+  );
+
+  return toRate(bestDiscount.percentage);
+};
+
 export const getExperienceCommissionRate = (listing) =>
   toRate(
     listing?.pricing?.commission ??
     listing?.pricing?.commissionRate
   );
 
-export const calculateExperienceGuestPricing = (unitPrice, listing) => {
+export const calculateExperienceGuestPricing = (unitPrice, listing, bookingDate = null) => {
   const baseUnitPrice = toRate(unitPrice);
-  const discountRate = getExperienceGuestDiscountRate(listing);
+  const promoDiscountRate = getExperienceGuestDiscountRate(listing);
+  const earlyBirdDiscountRate = getExperienceEarlyBirdDiscountRate(listing, bookingDate);
+  const discountRate = promoDiscountRate + earlyBirdDiscountRate;
   const customerTaxRate = getExperienceGuestTaxRate(listing);
   const commissionRate = getExperienceCommissionRate(listing);
 
   const discountAmount = baseUnitPrice * (discountRate / 100);
+  const promoDiscountAmount = baseUnitPrice * (promoDiscountRate / 100);
+  const earlyBirdDiscountAmount = baseUnitPrice * (earlyBirdDiscountRate / 100);
+
   const priceAfterDiscount = Math.max(0, baseUnitPrice - discountAmount);
   const taxAmount = priceAfterDiscount * (customerTaxRate / 100);
   const finalUnitPrice = priceAfterDiscount + taxAmount;
@@ -42,10 +80,10 @@ export const calculateExperienceGuestPricing = (unitPrice, listing) => {
     baseUnitPrice,
     discountRate,
     discountAmount,
-    promoDiscountRate: 0,
-    promoDiscountAmount: 0,
-    earlyBirdDiscountRate: 0,
-    earlyBirdDiscountAmount: 0,
+    promoDiscountRate,
+    promoDiscountAmount,
+    earlyBirdDiscountRate,
+    earlyBirdDiscountAmount,
     priceAfterDiscount,
     customerTaxRate,
     taxAmount,

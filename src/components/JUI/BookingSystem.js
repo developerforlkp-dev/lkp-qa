@@ -2314,7 +2314,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     : rawExperiencePrice;
 
   const experienceGuestPricing = !isEventBooking
-    ? calculateExperienceGuestPricing(effectiveRawPrice, listing)
+    ? calculateExperienceGuestPricing(effectiveRawPrice, listing, startDate)
     : null;
   const extractedPrice = isEventBooking
     ? eventGuestPricing.finalUnitPrice
@@ -2357,7 +2357,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const childGuestPricing = childrenAllowed && rawChildPrice > 0
     ? (isEventBooking
       ? calculateEventGuestPricing(rawChildPrice, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
-      : calculateExperienceGuestPricing(rawChildPrice, listing))
+      : calculateExperienceGuestPricing(rawChildPrice, listing, startDate))
     : null;
   // Effective per-child price (after discount + tax), fallback to adult price if no child price set
   const effectiveChildPrice = childGuestPricing
