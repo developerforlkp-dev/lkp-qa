@@ -1028,7 +1028,35 @@ const StayBookingSystem = ({
       }
       if (!room) return null;
 
-      const mealPlan = sel.mealPlan || "EP";
+      let mealPlan = sel.mealPlan || "EP";
+
+      // Helper to check if a plan has a price
+      const hasPrice = (planCode) => {
+        if (room.mealPlanPricing && room.mealPlanPricing[planCode]) {
+          const mp = room.mealPlanPricing[planCode];
+          if (parseFloat(mp.b2cPrice || mp.price || 0) > 0) return true;
+        }
+        const flatKey = { EP: "epPrice", BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice" }[planCode];
+        if (flatKey && parseFloat(room[flatKey] || 0) > 0) return true;
+        if (Array.isArray(room.b2cMealPlanPricing)) {
+          const mp = room.b2cMealPlanPricing.find(p => String(p.mealPlan).toUpperCase() === String(planCode).toUpperCase());
+          if (mp && parseFloat(mp.b2cPrice || mp.price || 0) > 0) return true;
+        }
+        return false;
+      };
+
+      // If the selected plan has no price, fall back to one that does
+      if (!hasPrice(mealPlan)) {
+        const possiblePlans = ["EP", "BB", "CP", "MAP", "AP"];
+        if (room.mealPlanPricing) {
+          const validKey = Object.keys(room.mealPlanPricing).find(hasPrice);
+          if (validKey) mealPlan = validKey;
+        }
+        if (!hasPrice(mealPlan)) {
+          const validKey = possiblePlans.find(hasPrice);
+          if (validKey) mealPlan = validKey;
+        }
+      }
 
       // Find season that matches check-in date
       const activeSeasonObj = checkInStr ? (
