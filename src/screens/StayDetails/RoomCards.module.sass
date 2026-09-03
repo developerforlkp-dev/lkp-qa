@@ -14,11 +14,11 @@
   flex-direction: row
   align-items: center
   background: var(--W)
-  border: 1px solid var(--B)
+  border: 1.5px solid var(--B)
   border-radius: 12px
   padding: 0 24px 0 0
   position: relative
-  transition: all .25s ease
+  transition: border-color .3s cubic-bezier(0.22,1,0.36,1), box-shadow .3s cubic-bezier(0.22,1,0.36,1), background .3s cubic-bezier(0.22,1,0.36,1)
   gap: 32px
   min-height: 180px
   &:hover
@@ -33,9 +33,15 @@
     min-height: auto
 
 .cardSelected
-  background: rgba(0, 151, 178, 0.01) !important
-  border-color: var(--A) !important
-  box-shadow: 0 0 0 1px var(--A) !important
+  border-color: var(--A)
+  box-shadow: 0 0 0 1px var(--A), 0 4px 16px rgba(0, 151, 178, 0.08)
+
+// Respect reduced motion preference
+@media (prefers-reduced-motion: reduce)
+  .card
+    transition: none
+  .cardSelected
+    transition: none
 
 // ─── Mosaic Image Collage Wrap ──────────────────────────────────────────────
 .collageWrap
