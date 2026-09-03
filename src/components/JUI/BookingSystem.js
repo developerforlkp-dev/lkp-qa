@@ -4809,17 +4809,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                     </div>
                                   )}
 
-                                  <div className="child-age-grid" style={{ display: "grid", gridTemplateColumns: guests.children === 1 ? "1fr" : "1fr 1fr", gap: 12, marginTop: 12 }}>
+                                  <div className="child-age-grid" style={{ display: "grid", gridTemplateColumns: guests.children === 1 ? "1fr" : "1fr 1fr", gap: 8, marginTop: 12 }}>
                                     {Array.from({ length: guests.children }).map((_, i) => (
-                                      <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", gap: 4, background: `${B}22`, border: `1px solid ${B}66`, borderRadius: 12 }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                      <div key={i} style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 8px", gap: 4, background: `${B}22`, border: `1px solid ${B}66`, borderRadius: 12 }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flexShrink: 1 }}>
                                             <div style={{ width: 6, height: 6, borderRadius: "50%", background: A, flexShrink: 0 }}></div>
-                                            <span style={{ fontSize: 13, fontWeight: 500, color: FG, whiteSpace: "nowrap" }}>Child {i + 1}</span>
+                                            <span style={{ fontSize: 12, fontWeight: 500, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Child {i + 1}</span>
                                           </div>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: 4, background: AL, padding: "4px 8px", borderRadius: 100, border: `1px solid ${A}44` }}>
-                                              <span style={{ fontSize: 11, color: A, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: 0.5 }}>AGE</span>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 2, background: AL, padding: "3px 6px", borderRadius: 100, border: `1px solid ${A}44` }}>
+                                              <span style={{ fontSize: 10, color: A, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: 0.5 }}>AGE</span>
                                             </div>
                                             <ChildAgeSelect
                                               value={guests.childAges?.[i] ?? 0}
@@ -4849,12 +4849,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                               style={{
                                                 border: `1px solid ${B}44`,
                                                 borderRadius: '6px',
-                                                padding: '4px 8px',
+                                                padding: '4px 6px',
                                                 fontSize: '13px',
                                                 fontWeight: '500',
                                                 color: FG,
                                                 backgroundColor: 'transparent',
-                                                width: '60px'
+                                                width: '50px',
+                                                minWidth: '40px'
                                               }}
                                             />
                                           </div>

@@ -6,6 +6,8 @@
     align-items: center
     gap: 12px
     width: auto
+    @media (max-width: 480px)
+        gap: 6px
 
 .button
     flex-shrink: 0
@@ -21,6 +23,9 @@
     transition: all .2s cubic-bezier(0.4, 0, 0.2, 1)
     padding: 0
     color: $p1
+    @media (max-width: 480px)
+        width: 28px
+        height: 28px
     +dark
         border-color: rgba(0, 210, 255, 0.2)
         background: rgba(0, 210, 255, 0.05)
@@ -57,5 +62,9 @@
     font-size: 16px
     color: $n1
     font-family: 'Inter', sans-serif
+    @media (max-width: 480px)
+        min-width: 18px
+        padding: 0 2px
+        font-size: 14px
     +dark
         color: $n8 

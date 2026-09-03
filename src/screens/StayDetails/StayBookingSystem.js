@@ -3582,17 +3582,17 @@ const StayBookingSystem = ({
                                   </div>
                                 </div>
 
-                                <div style={{ display: "grid", gridTemplateColumns: extraChildAgeIndexes.length === 1 ? "1fr" : "1fr 1fr", gap: 12, marginTop: 12 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: extraChildAgeIndexes.length === 1 ? "1fr" : "1fr 1fr", gap: 8, marginTop: 12 }}>
                                   {extraChildAgeIndexes.map((childIndex, extraIndex) => (
-                                    <div key={`extra-child-age-${childIndex}`} style={{ display: "flex", flexDirection: "column" }}>
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", gap: 4, background: `${B}22`, border: `1px solid ${B}66`, borderRadius: 12 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                    <div key={`extra-child-age-${childIndex}`} style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 8px", gap: 4, background: `${B}22`, border: `1px solid ${B}66`, borderRadius: 12 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flexShrink: 1 }}>
                                           <div style={{ width: 6, height: 6, borderRadius: "50%", background: A, flexShrink: 0 }}></div>
-                                          <span style={{ fontSize: 13, fontWeight: 500, color: FG, whiteSpace: "nowrap" }}>Child {extraIndex + 1}</span>
+                                          <span style={{ fontSize: 12, fontWeight: 500, color: FG, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Child {extraIndex + 1}</span>
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 4, background: AL, padding: "4px 8px", borderRadius: 100, border: `1px solid ${A}44` }}>
-                                            <span style={{ fontSize: 11, color: A, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: 0.5 }}>AGE</span>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                          <div style={{ display: "flex", alignItems: "center", gap: 2, background: AL, padding: "3px 6px", borderRadius: 100, border: `1px solid ${A}44` }}>
+                                            <span style={{ fontSize: 10, color: A, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: 0.5 }}>AGE</span>
                                           </div>
                                           <ChildAgeSelect
                                             value={childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? childAges[childIndex] : (selectableChildAges[0] ?? 0)}
@@ -3619,7 +3619,8 @@ const StayBookingSystem = ({
                                               fontWeight: '500',
                                               color: FG,
                                               backgroundColor: 'transparent',
-                                              width: '60px'
+                                              width: '50px',
+                                              minWidth: '40px'
                                             }}
                                           />
                                         </div>

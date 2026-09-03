@@ -37,10 +37,22 @@ const ChildAgeSelect = ({ value, onChange, options, style, disabled }) => {
       // If we don't have enough space below, and we have more space above, open upwards
       const shouldOpenUpwards = spaceBelow < 220 && spaceAbove > spaceBelow;
 
+      const viewportWidth = window.innerWidth;
+      const edgePadding = 8;
+      const dropdownWidth = Math.min(Math.max(120, rect.width), viewportWidth - edgePadding * 2);
+      // Clamp left so the dropdown stays within the viewport
+      let clampedLeft = rect.left;
+      if (clampedLeft + dropdownWidth > viewportWidth - edgePadding) {
+        clampedLeft = viewportWidth - edgePadding - dropdownWidth;
+      }
+      if (clampedLeft < edgePadding) {
+        clampedLeft = edgePadding;
+      }
+
       setPortalStyle({
         position: 'fixed',
-        left: rect.left,
-        width: Math.max(120, rect.width),
+        left: clampedLeft,
+        width: dropdownWidth,
         ...(shouldOpenUpwards 
           ? { bottom: window.innerHeight - rect.top + 6 } 
           : { top: rect.bottom + 6 }),

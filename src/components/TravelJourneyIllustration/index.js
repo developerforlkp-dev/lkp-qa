@@ -1,6 +1,10 @@
 import React from 'react';
+import useDarkMode from '../../hooks/useDarkMode';
 
 const TravelJourneyIllustration = () => {
+  const darkMode = useDarkMode();
+  const isDark = darkMode.value;
+
   return (
     <div style={{
       position: 'fixed',
@@ -14,7 +18,7 @@ const TravelJourneyIllustration = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      opacity: 0.5
+      opacity: isDark ? 0.15 : 0.4
     }}>
       <svg 
         viewBox="0 0 1440 1024" 
@@ -23,6 +27,7 @@ const TravelJourneyIllustration = () => {
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
+        <g fill="none">
         {/* Continuous sprawling route lines */}
         <path 
           d="M -50 140 Q 150 50, 300 200 T 700 150 T 1100 250 T 1500 100" 
@@ -170,6 +175,7 @@ const TravelJourneyIllustration = () => {
         <g transform="translate(1350, 850)">
           <path d="M 15 30 C 15 30, 30 18, 30 9 C 30 3, 24 -3, 15 -3 C 6 -3, 0 3, 0 9 C 0 18, 15 30, 15 30 Z" stroke="#0097B2" strokeWidth="1.5"/>
           <circle cx="15" cy="9" r="4" stroke="#0097B2" strokeWidth="1.5"/>
+        </g>
         </g>
       </svg>
     </div>
