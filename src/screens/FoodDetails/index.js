@@ -1300,24 +1300,25 @@ function CulinaryNarrative({ food, hostData, hostAvatar }) {
   const detailedDescription = food?.detailedDescription || food?.description || "Experience the perfect harmony of seasonal ingredients, local spices, and refined culinary design.";
 
   return (
-    <section className="narrative-section" style={{ background: BG, padding: isMobile ? "32px 24px" : "32px 80px", borderTop: `1px solid ${B}` }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <section className="narrative-section" style={{ background: BG, padding: isMobile ? "32px 0" : "32px 0", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
         
         {/* Short Description as Heading */}
         <div style={{ textAlign: "center", maxWidth: 900, margin: "0 auto 60px auto" }}>
           <span style={{ fontSize: 9, letterSpacing: "0.3em", textTransform: "uppercase", color: A, fontWeight: 800, display: "block", marginBottom: 16 }}>The Philosophy</span>
-          <h2 className="font-cursive" style={{ 
-            fontSize: isMobile ? "36px" : "54px", 
+          <h2 style={{ 
+            fontSize: isMobile ? "28px" : "44px", 
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
             color: FG, 
-            lineHeight: 1.2, 
+            lineHeight: 1.3, 
             margin: 0, 
-            fontStyle: "italic",
-            opacity: fontLoaded ? 1 : 0,
-            transition: "opacity 0.3s ease"
+            fontFamily: "'Cormorant Garamond', 'Playfair Display', serif",
+            fontStyle: "italic"
           }}>
             "{food?.shortDescription || "A curated preview of the palate notes."}"
           </h2>
-          <div style={{ width: 60, height: 2, background: A, margin: "24px auto 0 auto" }} />
+          <div style={{ width: 40, height: 3, background: A, margin: "32px auto 0 auto", borderRadius: 1.5 }} />
         </div>
 
         {/* 2-Column Grid: Detailed Description & Chef's Story */}
@@ -1442,8 +1443,8 @@ function SignatureDishesSection({ food }) {
   if (!dishes || !Array.isArray(dishes) || dishes.length === 0) return null;
 
   return (
-    <section style={{ background: W, padding: isMobile ? "48px 24px" : "80px 80px", borderTop: `1px solid ${B}` }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <section style={{ background: W, padding: isMobile ? "48px 0" : "80px 0" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
         <Rev>
           <div style={{ textAlign: "left", marginBottom: 64 }}>
             <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Chef's Recommendations</span>
@@ -1535,8 +1536,8 @@ function LocationSection({ food }) {
   const { tokens: { A, FG, M, B, W }, theme } = useTheme();
 
   return (
-    <section className="prep-section" style={{ background: W, padding: isMobile ? "32px 24px" : "32px 80px" }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <section className="prep-section" style={{ background: W, padding: isMobile ? "32px 0" : "32px 0" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
         
         {/* Title Group outside the card */}
         <div style={{ marginBottom: 40 }}>
@@ -1561,7 +1562,7 @@ function LocationSection({ food }) {
 
           {/* LEFT: Map */}
           <Rev delay={0.1} style={{ height: "100%", minWidth: 0 }}>
-            <div style={{ position: "sticky", top: 120, height: 400, maxHeight: "calc(100vh - 160px)", width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+            <div style={{ position: "relative", height: isMobile ? 300 : "100%", minHeight: isMobile ? 300 : 250, width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
               <div style={{
                 position: "absolute",
                 top: 16,
@@ -1730,8 +1731,8 @@ function ReservationNoir({ food, hostData, hostAvatar }) {
   const realAvatar = hostData?.host?.profilePhotoUrl || food?.host?.profilePhotoUrl || hostData?.profilePhotoUrl || food?.profilePhotoUrl || hostAvatar;
 
   return (
-    <section id="reservation-inquiries" className="reservation-section-wrapper" style={{ background: tokens.BG, padding: isMobile ? "32px 24px" : "32px 80px", borderTop: `1px solid ${B}` }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <section id="reservation-inquiries" className="reservation-section-wrapper" style={{ background: tokens.BG, padding: isMobile ? "32px 0" : "32px 0", borderTop: `1px solid ${B}` }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
         <Soul y={80}>
           <div style={{
             background: S,
@@ -1926,7 +1927,7 @@ function FoodMetadataCard({ food }) {
   const priceTierLabel = tier === 1 ? "Budget Friendly" : tier === 3 ? "Premium Dining" : "Gourmet Standard";
 
   return (
-    <div style={{ maxWidth: 1320, margin: isMobile ? "24px auto 16px" : "36px auto 20px", padding: isMobile ? "0 24px" : "0 80px" }}>
+    <div style={{ maxWidth: 1320, margin: isMobile ? "24px auto 16px" : "36px auto 20px", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -2431,15 +2432,15 @@ const FoodDetails = () => {
         const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
         return (
-          <div style={{
-            margin: isMobile ? "0 -24px" : "0 -80px",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: "var(--BG)",
-            borderTop: `1px solid var(--B)`,
-            borderBottom: `1px solid var(--B)`,
-          }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
+            <div style={{
+              overflow: "hidden",
+              position: "relative",
+              padding: "20px 0",
+              background: "var(--BG)",
+              borderTop: `1px solid var(--B)`,
+              borderBottom: `1px solid var(--B)`,
+            }}>
             {/* Left & Right Edge Fades */}
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
             <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
@@ -2480,6 +2481,7 @@ const FoodDetails = () => {
                 );
               })}
             </motion.div>
+            </div>
           </div>
         );
       })()}
@@ -2500,15 +2502,14 @@ const FoodDetails = () => {
         const dishesDuration = dishesDistance / 60;
 
         return (
-          <div style={{
-            margin: isMobile ? "0 -24px" : "0 -80px",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: "var(--BG)",
-            borderTop: `1px solid var(--B)`,
-            borderBottom: `1px solid var(--B)`,
-          }}>
+          <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
+            <div style={{
+              overflow: "hidden",
+              position: "relative",
+              padding: "20px 0",
+              background: "var(--BG)",
+              borderTop: `1px solid var(--B)`,
+            }}>
             {/* Left & Right Edge Fades */}
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
             <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, var(--BG) 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
@@ -2548,6 +2549,7 @@ const FoodDetails = () => {
                 );
               })}
             </motion.div>
+            </div>
           </div>
         );
       })()}
@@ -2556,9 +2558,9 @@ const FoodDetails = () => {
       <SignatureDishesSection food={food} />
       <CuratedContent 
         curatedContent={food?.curatedContent} 
-        maxWidth="1000px" 
-        padding={isMobile ? "32px 24px" : "100px 0"}
-        width={isMobile ? "100%" : "calc(100% - 80px)"}
+        maxWidth="1280px" 
+        padding={isMobile ? "32px 20px" : "0px 20px 100px 20px"}
+        width="100%"
       />
       <LocationSection food={food} />
 
@@ -2569,7 +2571,7 @@ const FoodDetails = () => {
         primaryCategoryId={primaryCategoryId}
         currentListingId={currentListingId}
         title="More Food Experiences"
-        sectionStyle={isMobile ? { padding: "32px 24px" } : { padding: "32px 80px" }}
+        sectionStyle={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "32px 20px" : "32px 20px", boxSizing: "border-box", width: "100%" }}
         titleStyle={{ fontSize: isMobile ? "clamp(1.8rem, 6vw, 2.2rem)" : "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: 32, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
       />
 

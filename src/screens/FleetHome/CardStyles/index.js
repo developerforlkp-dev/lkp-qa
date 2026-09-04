@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import Card from "../../../components/Card";
@@ -550,8 +550,13 @@ export const CardCarousel = ({ section, listings, className }) => {
 
 export const CardGrid = ({ section, listings, className }) => {
   const scrollRef = useRef(null);
+  const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: true });
   const cardItems = listings.map((listing) => transformListingToCard(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
+
+  const handleScrollStateChange = useCallback((state) => {
+    setScrollState(state);
+  }, []);
 
   const viewAllText = "View all";
 
@@ -575,17 +580,37 @@ export const CardGrid = ({ section, listings, className }) => {
             {viewAllText}
           </Link>
           <div className={styles.sliderArrows}>
-            <button onClick={() => scrollRef.current?.scrollLeft()} className={styles.sliderArrow} aria-label="Previous">
+            <button 
+              onClick={() => scrollRef.current?.scrollLeft()} 
+              className={styles.sliderArrow} 
+              aria-label="Previous"
+              style={{ 
+                opacity: scrollState.canScrollLeft ? 1 : 0.4, 
+                pointerEvents: scrollState.canScrollLeft ? 'auto' : 'none',
+                borderColor: scrollState.canScrollLeft ? '#0097B2' : undefined,
+                transition: 'all 0.3s ease'
+              }}
+            >
               <Icon name="arrow-prev" size="14" />
             </button>
-            <button onClick={() => scrollRef.current?.scrollRight()} className={styles.sliderArrow} aria-label="Next">
+            <button 
+              onClick={() => scrollRef.current?.scrollRight()} 
+              className={styles.sliderArrow} 
+              aria-label="Next"
+              style={{ 
+                opacity: scrollState.canScrollRight ? 1 : 0.4, 
+                pointerEvents: scrollState.canScrollRight ? 'auto' : 'none',
+                borderColor: scrollState.canScrollRight ? '#0097B2' : undefined,
+                transition: 'all 0.3s ease'
+              }}
+            >
               <Icon name="arrow-next" size="14" />
             </button>
           </div>
         </div>
       </div>
       <div className={styles.horizontalScrollWrapper}>
-        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} className={styles.horizontalScroll} gap={24}>
+        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} onScrollStateChange={handleScrollStateChange} className={styles.horizontalScroll} gap={24}>
           {cardItems.map((item) => (
             <Card className={styles.gridCardHorizontal} item={item} key={item.id} />
           ))}
@@ -600,8 +625,13 @@ export const CardGrid = ({ section, listings, className }) => {
  */
 export const CardDestination = ({ section, listings, className }) => {
   const scrollRef = useRef(null);
+  const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: true });
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
+
+  const handleScrollStateChange = useCallback((state) => {
+    setScrollState(state);
+  }, []);
 
   const viewAllText = "View all";
 
@@ -625,17 +655,37 @@ export const CardDestination = ({ section, listings, className }) => {
             {viewAllText}
           </Link>
           <div className={styles.sliderArrows}>
-            <button onClick={() => scrollRef.current?.scrollLeft()} className={styles.sliderArrow} aria-label="Previous">
+            <button 
+              onClick={() => scrollRef.current?.scrollLeft()} 
+              className={styles.sliderArrow} 
+              aria-label="Previous"
+              style={{ 
+                opacity: scrollState.canScrollLeft ? 1 : 0.4, 
+                pointerEvents: scrollState.canScrollLeft ? 'auto' : 'none',
+                borderColor: scrollState.canScrollLeft ? '#0097B2' : undefined,
+                transition: 'all 0.3s ease'
+              }}
+            >
               <Icon name="arrow-prev" size="14" />
             </button>
-            <button onClick={() => scrollRef.current?.scrollRight()} className={styles.sliderArrow} aria-label="Next">
+            <button 
+              onClick={() => scrollRef.current?.scrollRight()} 
+              className={styles.sliderArrow} 
+              aria-label="Next"
+              style={{ 
+                opacity: scrollState.canScrollRight ? 1 : 0.4, 
+                pointerEvents: scrollState.canScrollRight ? 'auto' : 'none',
+                borderColor: scrollState.canScrollRight ? '#0097B2' : undefined,
+                transition: 'all 0.3s ease'
+              }}
+            >
               <Icon name="arrow-next" size="14" />
             </button>
           </div>
         </div>
       </div>
       <div className={styles.horizontalScrollWrapper}>
-        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} className={styles.horizontalScroll} gap={24}>
+        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} onScrollStateChange={handleScrollStateChange} className={styles.horizontalScroll} gap={24}>
           {destinationItems.map((item) => (
             <DestinationCard
               className={styles.destinationCard}
@@ -654,8 +704,13 @@ export const CardDestination = ({ section, listings, className }) => {
  */
 export const CardCircle = ({ section, listings, className }) => {
   const scrollRef = useRef(null);
+  const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: true });
   const destinationItems = listings.map((listing) => transformListingToDestination(listing, section));
   const sectionListingsUrl = getSectionListingsUrl(section);
+
+  const handleScrollStateChange = useCallback((state) => {
+    setScrollState(state);
+  }, []);
 
   const viewAllText = "View all";
 
@@ -679,17 +734,37 @@ export const CardCircle = ({ section, listings, className }) => {
             {viewAllText}
           </Link>
           <div className={styles.sliderArrows}>
-            <button onClick={() => scrollRef.current?.scrollLeft()} className={styles.sliderArrow} aria-label="Previous">
+            <button 
+              onClick={() => scrollRef.current?.scrollLeft()} 
+              className={styles.sliderArrow} 
+              aria-label="Previous"
+              style={{ 
+                opacity: scrollState.canScrollLeft ? 1 : 0.4, 
+                pointerEvents: scrollState.canScrollLeft ? 'auto' : 'none',
+                borderColor: scrollState.canScrollLeft ? '#0097B2' : undefined,
+                transition: 'all 0.3s ease'
+              }}
+            >
               <Icon name="arrow-prev" size="14" />
             </button>
-            <button onClick={() => scrollRef.current?.scrollRight()} className={styles.sliderArrow} aria-label="Next">
+            <button 
+              onClick={() => scrollRef.current?.scrollRight()} 
+              className={styles.sliderArrow} 
+              aria-label="Next"
+              style={{ 
+                opacity: scrollState.canScrollRight ? 1 : 0.4, 
+                pointerEvents: scrollState.canScrollRight ? 'auto' : 'none',
+                borderColor: scrollState.canScrollRight ? '#0097B2' : undefined,
+                transition: 'all 0.3s ease'
+              }}
+            >
               <Icon name="arrow-next" size="14" />
             </button>
           </div>
         </div>
       </div>
       <div className={styles.horizontalScrollWrapper}>
-        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} className={styles.horizontalScroll} gap={24}>
+        <HorizontalScroll ref={scrollRef} hideDefaultArrows={true} onScrollStateChange={handleScrollStateChange} className={styles.horizontalScroll} gap={24}>
           {destinationItems.map((item) => (
             <CircleCard
               className={styles.destinationCard}

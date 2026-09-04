@@ -35,11 +35,12 @@ const cards = [
 ];
 
 const getStoredBookingData = (fallback = null) => {
+  if (fallback) return fallback;
   try {
-    const raw = localStorage.getItem("pendingBooking");
-    return raw ? JSON.parse(raw) : fallback;
+    const raw = sessionStorage.getItem("pendingBooking") || localStorage.getItem("pendingBooking");
+    return raw ? JSON.parse(raw) : null;
   } catch (error) {
-    return fallback;
+    return null;
   }
 };
 
@@ -269,25 +270,35 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
     }
     
     setIsProcessing(true);
-    let payment = null;
-    try {
-      const raw = localStorage.getItem("pendingPayment");
-      payment = raw ? JSON.parse(raw) : paymentData;
-    } catch (error) {
-      payment = paymentData;
+
+    if (!bookingData) {
+      setErrorModalMsg("Could not find your pending booking. Please book again.");
+      setIsProcessing(false);
+      return;
     }
 
-    if (!payment || payment.paymentMethod !== "razorpay") {
-      if (!bookingData) {
-        setErrorModalMsg("Could not find your pending booking. Please book again.");
-        setIsProcessing(false);
-        return;
+    // Determine the expected orderId for THIS specific booking
+    const bookingOrderId = bookingData?.orderId || bookingData?.order?.orderId || bookingData?.order?.id || null;
+
+    // Only accept paymentData if it matches this specific booking
+    let activePayment = null;
+    if (paymentData) {
+      const isMatchingOrderId = bookingOrderId && String(paymentData.orderId) === String(bookingOrderId);
+      const isMatchingItem =
+        (paymentData.listingId && bookingData.listingId && String(paymentData.listingId) === String(bookingData.listingId)) ||
+        (paymentData.eventId && bookingData.eventId && String(paymentData.eventId) === String(bookingData.eventId)) ||
+        (paymentData.stayId && bookingData.stayId && String(paymentData.stayId) === String(bookingData.stayId));
+
+      if (isMatchingOrderId || (isMatchingItem && (!paymentData.orderId || isMatchingOrderId)) || (!paymentData.orderId && !bookingOrderId)) {
+        activePayment = paymentData;
+      } else if (isMatchingItem && paymentData.orderId) {
+        activePayment = paymentData;
       }
     }
 
-    let activePayment = payment;
-    let orderId = payment?.orderId || getPendingOrderId();
-    let holdExpiresAt = payment?.holdExpiresAt || null;
+    let orderId = bookingOrderId || activePayment?.orderId || null;
+    let holdExpiresAt = activePayment?.holdExpiresAt || null;
+
     try {
       if (!orderId) {
         const createdOrderResponse = await createOrderFromBooking(bookingData);
@@ -310,6 +321,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
             razorpayOrderId: createdSession.payment.razorpayOrderId,
             razorpayKeyId: createdSession.payment.razorpayKeyId,
             holdExpiresAt: createdSession.holdExpiresAt,
+            listingId: bookingData?.listingId || null,
+            eventId: bookingData?.eventId || null,
+            stayId: bookingData?.stayId || null,
           },
           saveCheckoutBooking: true,
         });

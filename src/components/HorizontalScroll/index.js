@@ -12,7 +12,8 @@ const HorizontalScroll = forwardRef(({
   className, 
   gap = 24,
   itemWidth = null,
-  hideDefaultArrows = false
+  hideDefaultArrows = false,
+  onScrollStateChange
 }, ref) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -36,8 +37,15 @@ const HorizontalScroll = forwardRef(({
     const checkScrollPosition = () => {
       const { scrollLeft: currentScrollLeft, scrollWidth, clientWidth } = container;
       const hasScrollableContent = scrollWidth > clientWidth;
-      setShowLeftArrow(hasScrollableContent && currentScrollLeft > 10);
-      setShowRightArrow(hasScrollableContent && currentScrollLeft < scrollWidth - clientWidth - 10);
+      const newLeft = hasScrollableContent && currentScrollLeft > 10;
+      const newRight = hasScrollableContent && currentScrollLeft < scrollWidth - clientWidth - 10;
+      
+      setShowLeftArrow(newLeft);
+      setShowRightArrow(newRight);
+      
+      if (onScrollStateChange) {
+        onScrollStateChange({ canScrollLeft: newLeft, canScrollRight: newRight });
+      }
     };
 
     // Initial check

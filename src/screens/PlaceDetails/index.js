@@ -2289,8 +2289,8 @@ function LocationSection({ place }) {
   const instructions = place?.instructions || place?.meetingInstructions;
 
   return (
-    <section className="location-section" style={{ background: theme === 'dark' ? BG : W, padding: "64px 0" }}>
-      <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+    <section className="location-section" style={{ background: theme === 'dark' ? BG : W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", boxSizing: "border-box", width: "100%" }}>
 
         <div style={{ marginBottom: 32 }}>
           <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
@@ -2309,8 +2309,8 @@ function LocationSection({ place }) {
           boxShadow: theme === 'dark' ? "none" : "0 8px 32px rgba(0,0,0,0.04)"
         }} className="prep-grid">
 
-          <Rev delay={0.1} style={{ height: "100%" }}>
-            <div style={{ position: "sticky", top: 120, height: 400, maxHeight: "calc(100vh - 160px)", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
+          <Rev delay={0.1} style={{ height: "100%", minWidth: 0 }}>
+            <div style={{ position: "relative", height: isMobile ? 300 : "100%", minHeight: isMobile ? 300 : 250, width: "100%", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}`, boxSizing: "border-box" }}>
               <div style={{
                 position: "absolute",
                 top: 16,
@@ -3289,45 +3289,49 @@ function PremiumMarquee({ items, isMobile, fallbackItems }) {
   const tagsDuration = Math.max(tagsDistance / 60, 10);
 
   return (
-    <div style={{
-      margin: "0",
-      overflow: "hidden",
-      position: "relative",
-      padding: "20px 0",
-      background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-      borderTop: `1px solid ${B}`,
-      borderBottom: `1px solid ${B}`,
-    }}>
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+    <div style={{ padding: isMobile ? "0 24px" : "0 80px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", boxSizing: "border-box", width: "100%" }}>
+        <div style={{
+          margin: "0",
+          overflow: "hidden",
+          position: "relative",
+          padding: "20px 0",
+          background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+          borderTop: `1px solid ${B}`,
+          borderBottom: `1px solid ${B}`,
+        }}>
+          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
-      <motion.div
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-        style={{ display: "flex", alignItems: "center", width: "max-content" }}
-      >
-        {loopedTags.map((tag, idx) => {
-          const isEven = idx % 2 === 0;
-          return (
-            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 24, marginRight: 32, whiteSpace: "nowrap" }}>
-              <span
-                style={{
-                  fontFamily: '"Inter", sans-serif',
-                  fontSize: isMobile ? "14px" : "18px",
-                  fontWeight: isEven ? 700 : 300,
-                  color: isEven ? FG : M,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  opacity: isEven ? 1 : 0.75
-                }}
-              >
-                {tag}
-              </span>
-              <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-            </div>
-          );
-        })}
-      </motion.div>
+          <motion.div
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+            style={{ display: "flex", alignItems: "center", width: "max-content" }}
+          >
+            {loopedTags.map((tag, idx) => {
+              const isEven = idx % 2 === 0;
+              return (
+                <div key={idx} style={{ display: "flex", alignItems: "center", gap: 24, marginRight: 32, whiteSpace: "nowrap" }}>
+                  <span
+                    style={{
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: isMobile ? "14px" : "18px",
+                      fontWeight: isEven ? 700 : 300,
+                      color: isEven ? FG : M,
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      opacity: isEven ? 1 : 0.75
+                    }}
+                  >
+                    {tag}
+                  </span>
+                  <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
+                </div>
+              );
+            })}
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -3371,8 +3375,7 @@ function MobilePlaceDetails({
       <PremiumMarquee items={place?.whatsSpecial} isMobile={true} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
       <CuratedContent 
         curatedContent={place?.curatedContent} 
-        headlineFontFamily="'Poppins', sans-serif" 
-        bodyFontFamily="'DM Sans', sans-serif" 
+        maxWidth="1320px"
         padding="32px 16px"
         width="100%"
       />
@@ -3390,7 +3393,7 @@ function MobilePlaceDetails({
           primaryCategoryId={primaryCategoryId}
           currentListingId={currentListingId}
           title="More Places To Explore"
-          sectionStyle={{ padding: "40px 16px" }}
+          sectionStyle={{ maxWidth: 1320, margin: "0 auto", padding: "40px 16px", boxSizing: "border-box", width: "100%" }}
           titleStyle={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: "32px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
         />
       </div>
@@ -3614,7 +3617,12 @@ const PlaceDetails = () => {
       <GoodToKnow place={place} />
 
       <PremiumMarquee items={place?.whatsSpecial} isMobile={false} fallbackItems={["Signature Offerings", "Exclusive Moments", "Bespoke Journey"]} />
-      <CuratedContent curatedContent={place?.curatedContent} headlineFontFamily="'Poppins', sans-serif" bodyFontFamily="'DM Sans', sans-serif" />
+      <CuratedContent 
+        curatedContent={place?.curatedContent} 
+        maxWidth="1320px" 
+        padding="0px 80px 80px 80px"
+        width="100%"
+      />
       <LocationSection place={place} />
 
       {/* <CommunityFeedback /> */}
@@ -3624,7 +3632,7 @@ const PlaceDetails = () => {
         primaryCategoryId={primaryCategoryId}
         currentListingId={currentListingId}
         title="More Places To Explore"
-        sectionStyle={{ padding: "48px 80px" }}
+        sectionStyle={{ maxWidth: 1320, margin: "0 auto", padding: "48px 80px", boxSizing: "border-box", width: "100%" }}
         titleStyle={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: "32px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
       />
 

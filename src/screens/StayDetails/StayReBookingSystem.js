@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, Info, AlertCircle, Sparkles, ChevronLeft, ChevronRight, Tag, Baby } from "lucide-react";
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
-import { createStayOrder, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, getStayHotelRoomAvailability, getStayHostelAvailability, previewOrderPrice } from "../../utils/api";
+import { createStayOrder, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, getStayHotelRoomAvailability, getStayHostelAvailability, previewOrderPrice, calculateStayTotal } from "../../utils/api";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import {
   getStayGuestDiscountRate,
@@ -629,6 +629,8 @@ const StayBookingSystem = ({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
+  const [apiPayableAmount, setApiPayableAmount] = useState(null);
+  const [apiPayableLoading, setApiPayableLoading] = useState(false);
   const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
   const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
   const externalOpenHandledRef = useRef(false);
@@ -724,6 +726,61 @@ const StayBookingSystem = ({
     }
 
     setValidationError("No additional rooms are available for the selected room type.");
+  };
+
+  const handleReduceRoomCount = (newAdults) => {
+    if (isPropertyBasedBooking(stay) || selectedRooms.length === 0) return;
+
+    let currentSel = selectedRooms.map(r => ({ ...r }));
+
+    const getNonBedCount = (roomsList) => {
+      return roomsList.reduce((sum, sel) => {
+        const cat = stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId));
+        return sum + (cat?.isBedConfig ? 0 : Number(sel.count || 0));
+      }, 0);
+    };
+
+    let totalNonBed = getNonBedCount(currentSel);
+    if (totalNonBed <= 1) return;
+
+    let changed = false;
+    while (totalNonBed > 1) {
+      let candidateIndex = -1;
+      for (let i = currentSel.length - 1; i >= 0; i--) {
+        const cat = stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(currentSel[i].roomId));
+        if (!cat?.isBedConfig && currentSel[i].count > 0) {
+          candidateIndex = i;
+          break;
+        }
+      }
+
+      if (candidateIndex === -1) break;
+
+      const nextSel = currentSel.map((item, idx) => {
+        if (idx === candidateIndex) {
+          return { ...item, count: item.count - 1 };
+        }
+        return { ...item };
+      }).filter(item => item.count > 0);
+
+      const nextNonBedCount = getNonBedCount(nextSel);
+      if (nextNonBedCount < 1) break;
+
+      const dist = distributeGuests(nextSel, stayRoomsCatalog, newAdults, guests.children || 0);
+      if (dist.success && newAdults >= nextNonBedCount) {
+        currentSel = nextSel;
+        totalNonBed = nextNonBedCount;
+        changed = true;
+      } else {
+        break;
+      }
+    }
+
+    if (changed) {
+      if (typeof setSelectedRooms === "function") {
+        setSelectedRooms(currentSel);
+      }
+    }
   };
 
   // Automatically reopen the modal if state was hydrated after auth redirect
@@ -1593,6 +1650,165 @@ const StayBookingSystem = ({
     };
   }, [stay, resolvedSelectedRooms, checkInDate, guests, childAges, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities]);
 
+  // Dynamic Stay Pricing API total fetch
+  useEffect(() => {
+    if (!show) {
+      setApiPayableAmount(null);
+      return;
+    }
+
+    const stayId = Number(stay?.stayId || stay?.id);
+    if (!stayId || !checkInDate || !checkOutDate) {
+      setApiPayableAmount(null);
+      return;
+    }
+
+    const isPropertyBased = isPropertyBasedBooking(stay);
+    if (!isPropertyBased && resolvedSelectedRooms.length === 0) {
+      setApiPayableAmount(null);
+      return;
+    }
+
+    const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
+    const normalizedChildAges = syncChildAges(childAges, guests.children || 0).filter((age) => age !== "" && age !== null && age !== undefined).map(Number);
+    const roomChildAges = mapChildAgesToRoomAllocations(distribution.allocations, normalizedChildAges);
+    const grouped = {};
+    if (distribution.success) {
+      distribution.allocations.forEach(alloc => {
+        if (!grouped[alloc.roomId]) {
+          grouped[alloc.roomId] = {
+            roomId: alloc.roomId,
+            roomsBooked: 0,
+            adults: 0,
+            children: 0,
+            extraAdults: 0,
+            extraChildren: 0
+          };
+        }
+        const g = grouped[alloc.roomId];
+        g.roomsBooked += 1;
+        g.adults += alloc.adults;
+        g.children += alloc.children;
+        g.extraAdults += alloc.extraAdults;
+        g.extraChildren += alloc.extraChildren;
+      });
+    }
+
+    const roomsPayload = [];
+    const bedConfigsPayload = [];
+
+    if (isPropertyBased) {
+      roomsPayload.push({
+        roomId: 1,
+        roomsBooked: 1,
+        adults: Number(guests.adults || 1),
+        children: Number(guests.children || 0),
+        childAges: normalizedChildAges,
+        extraBeds: 0,
+      });
+    } else {
+      resolvedSelectedRooms.forEach(r => {
+        const grp = grouped[r.roomId || r.id] || {
+          roomsBooked: r.count,
+          adults: r.count * (r.maxAdults || 1),
+          children: 0,
+          extraAdults: 0,
+          extraChildren: 0
+        };
+
+        const isBed = r.isBedConfig;
+        const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
+        const validId = rawId > 0 ? rawId : 1;
+
+        if (isBed) {
+          bedConfigsPayload.push({
+            name: r.roomName || r.name || "Bed",
+            bedsBooked: Number(r.count || 1),
+            mealPlanCode: r.mealPlan || "ROOM_ONLY",
+            extraAdults: 0,
+            extraChildren: 0,
+          });
+        } else {
+          roomsPayload.push({
+            roomId: validId,
+            roomsBooked: Number(r.count || 1),
+            adults: Number(grp.adults || 1),
+            children: Number(grp.children || 0),
+            childAges: roomChildAges[String(r.roomId || r.id)] || [],
+            extraBeds: Number(r.extraBeds || 0),
+          });
+        }
+      });
+    }
+
+    const formattedAddons = selectedAddOns.map(id => {
+      const addonData = Array.isArray(stay?.addons) ? stay.addons.find(a => (a.addonId || a.assignmentId || a.id) === id) : null;
+      if (!addonData) return null;
+      const isIndividual = addonData.pricingType === "Individual";
+      const quantity = isIndividual ? (addOnQuantities[id] || 1) : 1;
+      return {
+        addonId: Number(addonData.addonId || addonData.assignmentId || addonData.id),
+        quantity: Number(quantity || 1)
+      };
+    }).filter(Boolean);
+
+    const bookingObj = {
+      stayId,
+      checkInDate: checkInDate.format("YYYY-MM-DD"),
+      checkOutDate: checkOutDate.format("YYYY-MM-DD"),
+      numberOfGuests: Number(guests.adults || 1) + Number(guests.children || 0),
+    };
+
+    if (roomsPayload.length > 0) {
+      bookingObj.rooms = roomsPayload;
+    }
+    if (bedConfigsPayload.length > 0) {
+      bookingObj.bedConfigs = bedConfigsPayload;
+    }
+    if (formattedAddons.length > 0 || (roomsPayload.length > 0 && bedConfigsPayload.length === 0)) {
+      bookingObj.addons = formattedAddons;
+    }
+
+    const payload = {
+      booking: bookingObj
+    };
+
+    let cancelled = false;
+    setApiPayableLoading(true);
+
+    calculateStayTotal(payload)
+      .then((res) => {
+        if (cancelled) return;
+        const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
+        if (amount != null && Number.isFinite(Number(amount))) {
+          setApiPayableAmount(Number(amount));
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn("calculateStayTotal error:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setApiPayableLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    show,
+    stay?.stayId,
+    stay?.id,
+    checkInDate,
+    checkOutDate,
+    guests,
+    childAges,
+    resolvedSelectedRooms,
+    selectedRooms,
+    selectedAddOns,
+    addOnQuantities,
+  ]);
+
   const extraChildAgeIndexes = useMemo(() => {
     const startIndex = Math.max(0, Number(pricing.baseChildrenLimit || 0));
     const count = Math.max(0, Number(pricing.extraChildrenCount || 0));
@@ -2343,7 +2559,7 @@ const StayBookingSystem = ({
 
           return {
             ...payloadBase,
-            rooms: roomsPayload,
+            ...(roomsPayload.length > 0 ? { rooms: roomsPayload } : {}),
             ...(bedConfigsPayload.length > 0 ? { bedConfigs: bedConfigsPayload } : {})
           };
         })();
@@ -2467,32 +2683,37 @@ const StayBookingSystem = ({
           extraAdults: Number(extraAdultsCount || 0),
           extraChildren: Number(extraChildrenCount || 0),
         };
-      } else if (Array.isArray(payload.bedConfigs) && payload.bedConfigs.length > 0) {
-        stayBookingObj = {
-          ...stayBookingObj,
-          bedConfigs: payload.bedConfigs.map((b) => ({
-            name: b.name || "Dorm Bed",
-            bedsBooked: Number(b.bedsBooked || 1),
-            mealPlanCode: b.mealPlanCode || "EP",
-            extraAdults: Number(b.extraAdults || 0),
-            extraChildren: Number(b.extraChildren || 0),
-          })),
-        };
       } else {
-        stayBookingObj = {
-          ...stayBookingObj,
-          rooms: Array.isArray(payload.rooms) ? payload.rooms.map((r) => ({
+        const hasRooms = Array.isArray(payload.rooms) && payload.rooms.length > 0;
+        const hasBeds = Array.isArray(payload.bedConfigs) && payload.bedConfigs.length > 0;
+
+        if (hasRooms) {
+          stayBookingObj.rooms = payload.rooms.map((r) => ({
             roomId: Number(r.roomId),
             roomsBooked: Number(r.roomsBooked || 1),
             adults: Number(r.adults || 1),
             children: Number(r.children || 0),
             childAges: Array.isArray(r.childAges) ? r.childAges.map(Number) : [],
-            mealPlanCode: r.mealPlanCode || "CP",
+            mealPlanCode: r.mealPlanCode || "EP",
             extraBeds: Number(r.extraBeds || 0),
             extraAdults: Number(r.extraAdults || 0),
             extraChildren: Number(r.extraChildren || 0),
-          })) : [],
-        };
+          }));
+        }
+
+        if (hasBeds) {
+          stayBookingObj.bedConfigs = payload.bedConfigs.map((b) => ({
+            name: b.name || "Dorm Bed",
+            bedsBooked: Number(b.bedsBooked || 1),
+            mealPlanCode: b.mealPlanCode || "EP",
+            extraAdults: Number(b.extraAdults || 0),
+            extraChildren: Number(b.extraChildren || 0),
+          }));
+        }
+
+        if (!hasRooms && !hasBeds) {
+          stayBookingObj.rooms = [];
+        }
       }
 
       const previewPricePayload = {
@@ -2509,7 +2730,9 @@ const StayBookingSystem = ({
 
       const apiData = Array.isArray(previewPriceRes?.data) ? previewPriceRes.data : null;
       const amountToBePaidFromData = apiData?.find(d => /amount\s*to\s*be\s*paid/i.test(d?.title || "") || d?.code === "amount_to_be_paid")?.amount;
-      const resolvedTotal = amountToBePaidFromData != null ? Number(amountToBePaidFromData) : (pricing.finalTotal || 0);
+      const resolvedTotal = amountToBePaidFromData != null
+        ? Number(amountToBePaidFromData)
+        : ((apiPayableAmount != null && Number.isFinite(apiPayableAmount)) ? apiPayableAmount : (pricing.finalTotal || 0));
 
       const previewBookingData = {
         checkoutType: "stay",
@@ -3552,12 +3775,18 @@ const StayBookingSystem = ({
                                   <Counter
                                     value={guests.adults}
                                     setValue={(v) => {
-                                      if (!isPropertyBased && v > allowedAdults) {
-                                        handleAddAnotherRoom();
+                                      if (!isPropertyBased) {
+                                        if (v > guests.adults) {
+                                          if (v > allowedAdults) {
+                                            handleAddAnotherRoom();
+                                          }
+                                        } else if (v < guests.adults) {
+                                          handleReduceRoomCount(v);
+                                        }
                                       }
                                       setGuests(prev => ({ ...prev, adults: v }));
                                     }}
-                                    min={!isPropertyBased ? Math.max(1, resolvedSelectedRooms.filter(r => !r.isBedConfig).reduce((sum, r) => sum + Number(r.count || 0), 0)) : 1}
+                                    min={1}
                                     max={absoluteMaxAdults}
                                   />
                                 </div>
@@ -3567,13 +3796,10 @@ const StayBookingSystem = ({
                                   <Counter
                                     value={guests.children}
                                     setValue={(v) => {
-                                      if (!isPropertyBased && v > allowedChildren) {
-                                        handleAddAnotherRoom();
-                                      }
                                       setGuests(prev => ({ ...prev, children: v }));
                                     }}
                                     min={0}
-                                    max={absoluteMaxChildren}
+                                    max={!isPropertyBased ? Math.max(0, allowedChildren) : absoluteMaxChildren}
                                   />
                                 </div>
                               </div>
@@ -3885,7 +4111,7 @@ const StayBookingSystem = ({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(pricing.finalTotal)}</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise((apiPayableAmount != null && Number.isFinite(apiPayableAmount)) ? apiPayableAmount : pricing.finalTotal)}</span>
                     <span style={{ marginTop: 1, fontSize: 10, color: M, fontWeight: 600 }}>Inc. all taxes</span>
                   </div>
                   {(() => {

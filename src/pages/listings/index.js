@@ -709,7 +709,8 @@ const Listings = () => {
         ...(businessInterestFilters.primaryCategories || []),
         ...(businessInterestFilters.secondaryCategories || []),
         ...(businessInterestFilters.tags || []),
-        ...(businessInterestFilters.specialLabels || [])
+        ...(businessInterestFilters.specialLabels || []),
+        ...(businessInterestFilters.propertyTypes || []),
       ];
       
       if (options.length > 0) {

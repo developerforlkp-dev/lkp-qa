@@ -76,6 +76,8 @@ const ScopedStyles = () => (
       transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
     }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes marquee-l { from{transform:translateX(0)} to{transform:translateX(-50%)} }
     @keyframes marquee-r { from{transform:translateX(-50%)} to{transform:translateX(0)} }
     @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-16px) rotate(1deg)} }
@@ -1505,54 +1507,56 @@ function PremiumMarquee({ items }) {
   const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
   return (
-    <div style={{
-      overflow: "hidden",
-      position: "relative",
-      padding: "20px 0",
-      background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-      borderTop: `1px solid ${B}`,
-      borderBottom: `1px solid ${B}`,
-    }}>
-      {/* Left & Right Edge Fades */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+    <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+      <div style={{
+        overflow: "hidden",
+        position: "relative",
+        padding: "20px 0",
+        background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+        borderTop: `1px solid ${B}`,
+        borderBottom: `1px solid ${B}`,
+      }}>
+        {/* Left & Right Edge Fades */}
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
-      <motion.div
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-        style={{ display: "flex", alignItems: "center", width: "max-content" }}
-      >
-        {loopedTags.map((tag, idx) => {
-          const isEven = idx % 2 === 0;
-          return (
-            <div
-              key={idx}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "24px",
-                whiteSpace: "nowrap",
-                marginRight: "32px"
-              }}
-            >
-              <span
+        <motion.div
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+          style={{ display: "flex", alignItems: "center", width: "max-content" }}
+        >
+          {loopedTags.map((tag, idx) => {
+            const isEven = idx % 2 === 0;
+            return (
+              <div
+                key={idx}
                 style={{
-                  fontSize: "18px",
-                  fontWeight: isEven ? 700 : 300,
-                  color: isEven ? FG : M,
-                  fontFamily: "Poppins, sans-serif",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  opacity: isEven ? 1 : 0.75
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "24px",
+                  whiteSpace: "nowrap",
+                  marginRight: "32px"
                 }}
               >
-                {tag}
-              </span>
-              <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-            </div>
-          );
-        })}
-      </motion.div>
+                <span
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: isEven ? 700 : 300,
+                    color: isEven ? FG : M,
+                    fontFamily: "Poppins, sans-serif",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    opacity: isEven ? 1 : 0.75
+                  }}
+                >
+                  {tag}
+                </span>
+                <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
+              </div>
+            );
+          })}
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -3776,6 +3780,23 @@ export default function EventDetails() {
     const scrollAmount = direction === "left" ? -container.clientWidth : container.clientWidth;
     container.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const addonsCount = (event?.addons || []).length;
+    if (window.innerWidth >= 1024 && addonsCount > 2) {
+      const interval = setInterval(() => {
+        if (addonsSliderRef.current) {
+          const container = addonsSliderRef.current;
+          if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+            container.scrollTo({ left: 0, behavior: "smooth" });
+          } else {
+            scrollAddonsSlider("right");
+          }
+        }
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [event?.addons]);
 
   const handleUpdateAddonQuantity = (rawAddon, delta) => {
     const addonData = rawAddon.addon || rawAddon;

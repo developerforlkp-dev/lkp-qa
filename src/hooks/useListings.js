@@ -118,6 +118,7 @@ export const useListings = ({
         Array.isArray(categoryFilter?.categoryValues) &&
         categoryFilter.categoryValues.length > 0;
       const hasMealPlanFilter = Array.isArray(filters.mealPlan) && filters.mealPlan.length > 0;
+      const hasPropertyTypeFilter = Array.isArray(filters.propertyTypes) && filters.propertyTypes.length > 0;
       const hasTagFilter = Array.isArray(filters.tags) && filters.tags.length > 0;
       const hasServerSideFilters =
         hasCategoryFilter ||
@@ -125,12 +126,13 @@ export const useListings = ({
         effectiveMinPrice !== undefined ||
         effectiveMaxPrice !== undefined ||
         hasMealPlanFilter ||
+        hasPropertyTypeFilter ||
         hasTagFilter;
 
       if (!hasLocationSearch) {
         const mappedBusinessInterestId =
           categoryFilter?.businessInterestId || mapBusinessInterestId(businessInterest);
-        if (!hasServerSideFilters && mappedNearbyInterest !== "EXPERIENCE") {
+        if (!hasServerSideFilters && mappedNearbyInterest !== "EXPERIENCE" && mappedNearbyInterest !== "STAYS") {
           if (mappedNearbyInterest === "FOOD") {
             const response = await getFoodMenus(limit, nextOffset, sortBy);
             listings = response.listings || [];
@@ -138,11 +140,6 @@ export const useListings = ({
             hasMoreFromAPI = response.hasMore ?? null;
           } else if (mappedNearbyInterest === "PLACES") {
             const response = await getPlaces(limit, nextOffset, sortBy);
-            listings = response.listings || [];
-            totalCount = response.totalCount ?? null;
-            hasMoreFromAPI = response.hasMore ?? null;
-          } else if (mappedNearbyInterest === "STAYS") {
-            const response = await getStayListings(limit, nextOffset, sortBy);
             listings = response.listings || [];
             totalCount = response.totalCount ?? null;
             hasMoreFromAPI = response.hasMore ?? null;
@@ -166,7 +163,10 @@ export const useListings = ({
             filterPayload.categoryValues = categoryFilter.categoryValues.join(",");
           }
           if (hasRatingFilter) {
-            filterPayload.ratingFilter = Math.max(...filters.ratings);
+            const maxRatingVal = Math.max(...filters.ratings);
+            filterPayload.ratingFilter = maxRatingVal;
+            filterPayload.rating = maxRatingVal;
+            filterPayload.minRating = maxRatingVal;
           }
           if (effectiveMinPrice !== undefined) {
             filterPayload.minPrice = effectiveMinPrice;
@@ -176,6 +176,13 @@ export const useListings = ({
           }
           if (hasMealPlanFilter) {
             filterPayload.mealPlan = filters.mealPlan.join(",");
+          }
+          if (hasPropertyTypeFilter) {
+            if (filters.propertyTypes.length === 1) {
+              filterPayload.propertyType = filters.propertyTypes[0];
+            } else if (filters.propertyTypes.length > 1) {
+              filterPayload.propertyTypes = filters.propertyTypes.join(",");
+            }
           }
 
           if (mappedNearbyInterest === "FOOD" || mappedNearbyInterest === "PLACES") {

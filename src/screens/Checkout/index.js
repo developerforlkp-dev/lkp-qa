@@ -482,21 +482,35 @@ const Checkout = () => {
     }
   }, [bookingData]);
 
-  // Read payment data from localStorage
+  // Read payment data from route state or matching pending payment
   useEffect(() => {
     try {
+      if (location.state?.paymentData) {
+        setPaymentData(location.state.paymentData);
+        return;
+      }
+
       const payment = getPendingPayment();
-      if (payment) {
-        setPaymentData(payment);
+      if (payment && bookingData) {
+        const bookingOrderId = bookingData?.orderId || bookingData?.order?.orderId || bookingData?.order?.id;
+        const isMatch =
+          (bookingOrderId && String(payment.orderId) === String(bookingOrderId)) ||
+          (payment.stayId && bookingData.stayId && String(payment.stayId) === String(bookingData.stayId)) ||
+          (payment.listingId && bookingData.listingId && String(payment.listingId) === String(bookingData.listingId));
+
+        if (isMatch) {
+          setPaymentData(payment);
+        }
       }
     } catch (e) {
       console.error("Error reading payment data:", e);
     }
-  }, []);
+  }, [location.state, bookingData]);
 
   useEffect(() => {
     const restorePendingCheckout = async () => {
-      const pendingOrderId = getPendingOrderId();
+      const bookingOrderId = bookingData?.orderId || bookingData?.order?.orderId || bookingData?.order?.id;
+      const pendingOrderId = bookingOrderId || (!location.state?.bookingData ? getPendingOrderId() : null);
       if (!pendingOrderId) return;
 
       setCheckingPayment(true);
@@ -542,7 +556,7 @@ const Checkout = () => {
     };
 
     restorePendingCheckout();
-  }, [history]);
+  }, [history, bookingData, location.state]);
 
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
   useEffect(() => {

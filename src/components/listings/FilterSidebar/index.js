@@ -181,6 +181,27 @@ const FilterSidebar = ({
   businessInterestFilters,
   hideHeader = false,
 }) => {
+  const propertyTypeOptions = useMemo(() => {
+    const dynamicPropertyTypes = Array.isArray(businessInterestFilters?.propertyTypes)
+      ? businessInterestFilters.propertyTypes
+        .map((type, idx) => {
+          if (typeof type === "string" || typeof type === "number") {
+            const strVal = String(type).trim();
+            return strVal ? { id: strVal, label: strVal } : null;
+          }
+          if (type && typeof type === "object") {
+            const id = type.id ?? type.value ?? type.propertyTypeId ?? type.name ?? type.label ?? `pt-${idx}`;
+            const label = type.name ?? type.label ?? type.title ?? String(id);
+            return { id: String(id), label: String(label) };
+          }
+          return null;
+        })
+        .filter(Boolean)
+      : [];
+
+    return dynamicPropertyTypes.length > 0 ? dynamicPropertyTypes : propertyTypes;
+  }, [businessInterestFilters]);
+
   const activeChips = useMemo(() => {
     const chips = [];
 
@@ -202,14 +223,14 @@ const FilterSidebar = ({
     // Property Types
     if (Array.isArray(filters?.propertyTypes)) {
       filters.propertyTypes.forEach((pId) => {
-        const found = propertyTypes.find((p) => p.id === pId);
-        if (found) {
-          chips.push({
-            type: "propertyTypes",
-            value: pId,
-            label: found.label,
-          });
-        }
+        const found = propertyTypeOptions.find(
+          (p) => String(p.id).toLowerCase() === String(pId).toLowerCase() || String(p.label).toLowerCase() === String(pId).toLowerCase()
+        );
+        chips.push({
+          type: "propertyTypes",
+          value: pId,
+          label: found?.label || String(pId),
+        });
       });
     }
 
@@ -301,7 +322,7 @@ const FilterSidebar = ({
     }
 
     return chips;
-  }, [filters, businessInterestFilters]);
+  }, [filters, businessInterestFilters, propertyTypeOptions]);
 
   const handleRemoveChip = (chip) => {
     if (chip.type === "ratings") {
@@ -357,6 +378,8 @@ const FilterSidebar = ({
     "Under 5000": 5000,
     "Under 1000": 1000,
   };
+
+
 
   const primaryCategoryOptions = useMemo(() => {
     const primary = Array.isArray(businessInterestFilters?.primaryCategories)
@@ -708,10 +731,10 @@ const FilterSidebar = ({
         )}
 
         {/* Property Type — Stays only */}
-        {isStayInterest && (
+        {isStayInterest && propertyTypeOptions.length > 0 && (
           <AccordionSection label="Property type" defaultOpen={false}>
             <div className={styles.checkboxList}>
-              {propertyTypes.map((type) => (
+              {propertyTypeOptions.map((type) => (
                 <Checkbox
                   key={type.id}
                   className={styles.checkbox}

@@ -121,7 +121,7 @@ const fixImageUrl = (url) => {
   if (!url) return "";
   const u = typeof url === 'string' ? url : (url.url || url.src || url.mediaUrl || url.coverImageUrl || url.coverPhotoUrl || "");
   if (typeof u !== 'string' || !u) return "";
-  
+
   try {
     const urlStr = u.trim();
     if (urlStr.startsWith("http")) {
@@ -184,15 +184,15 @@ const getPriceForPlan = (room, code) => {
 /* Extract feature tags from room data */
 const getRoomFeatures = (room, listing) => {
   const features = [];
-  
+
   // 1. Prioritize roomAmenities (Enriched objects from backend)
   if (Array.isArray(room.roomAmenities) && room.roomAmenities.length > 0) {
     room.roomAmenities.forEach(ra => {
       const label = ra.displayName || ra.code || ra.name || ra.amenityName || ra.amenity;
       if (label) features.push(label);
     });
-  } 
-  
+  }
+
   if (Array.isArray(room.bedConfigAmenities)) {
     room.bedConfigAmenities.forEach(bca => {
       const label = bca.displayName || bca.code || bca.name || bca.amenityName || bca.amenity;
@@ -202,8 +202,8 @@ const getRoomFeatures = (room, listing) => {
   // 2. Fallback to legacy amenityIds if roomAmenities is missing
   else if (Array.isArray(room.amenityIds) && Array.isArray(listing?.amenities)) {
     room.amenityIds.forEach(id => {
-      const matched = listing.amenities.find(a => 
-        String(a.id) === String(id) || 
+      const matched = listing.amenities.find(a =>
+        String(a.id) === String(id) ||
         String(a.amenityId) === String(id) ||
         String(a.selectionId) === String(id)
       );
@@ -323,7 +323,9 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   useEffect(() => {
     setPlan(effectiveMealPlan);
   }, [effectiveMealPlan]);
-  
+
+  //new build
+
   const rawPrice = plan ? getPriceForPlan(room, plan) : room.b2cPrice || room.price;
   const discountRate = getBillingConfigDiscountRate(listing);
   const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
@@ -361,7 +363,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   };
 
   return (
-    <motion.div 
+    <motion.div
       whileHover={isSelected ? {} : { y: -1 }}
       transition={{ duration: 0.3 }}
       className={cn(styles.card, { [styles.cardSelected]: isSelected })}
@@ -414,7 +416,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
       </AnimatePresence>
 
       {/* Left: Image Mosaic */}
-      <div 
+      <div
         onMouseEnter={() => setIsImgHovered(true)}
         onMouseLeave={() => setIsImgHovered(false)}
         onClick={() => setShowModal(true)}
@@ -479,12 +481,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
       {/* Middle: Content details */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: isMobile ? "16px" : "24px 32px", minWidth: 0, justifyContent: "space-between" }}>
-        
+
         <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "10px" : "12px" }}>
           <h4 style={{ fontSize: isMobile ? "24px" : "28px", fontWeight: 800, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, lineHeight: 1.2 }}>
             {name}
           </h4>
-          
+
           <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "4px" }}>
             {/* Guest Count prominent display */}
             {capacity != null && !isBedBased && (
@@ -493,7 +495,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                 <span>Up to {capacity} Guests</span>
               </div>
             )}
-            
+
             {/* Amenities Row */}
             <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {(() => {
@@ -501,10 +503,10 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                 if (room.bedType) chips.push({ type: 'bed', val: room.bedType });
                 if (room.roomSize) chips.push({ type: 'size', val: room.roomSize });
                 features.forEach(f => chips.push({ type: 'feature', val: f }));
-                
+
                 const visibleChips = showAllAmenities ? chips : chips.slice(0, 5);
                 const hiddenCount = chips.length - 5;
-                
+
                 return (
                   <>
                     {visibleChips.map((chip, i) => (
@@ -513,8 +515,8 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
                       </span>
                     ))}
                     {!showAllAmenities && hiddenCount > 0 && (
-                      <span 
-                        onClick={() => setShowAllAmenities(true)} 
+                      <span
+                        onClick={() => setShowAllAmenities(true)}
                         style={{ cursor: "pointer", flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}
                       >
                         +{hiddenCount} more
@@ -529,14 +531,14 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
         {description && (
           <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
-            <motion.p 
+            <motion.p
               layout="position"
               style={{ fontSize: "14px", color: M, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif', opacity: 0.8 }}
             >
               {(!showDesc && description.length > 150) ? `${description.slice(0, 150)}...` : description}
             </motion.p>
             {description.length > 150 && (
-              <button 
+              <button
                 onClick={() => setShowDesc(!showDesc)}
                 style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 700, color: A, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: '"Inter", sans-serif' }}
               >
@@ -562,7 +564,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
         gap: isMobile ? "12px" : "20px",
         transition: "background 0.3s cubic-bezier(0.22,1,0.36,1)"
       }}>
-        
+
         {allPlans.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ marginBottom: "8px", fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: A }}>
@@ -608,7 +610,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
         {/* Action area — always same height, counter visibility animated */}
         <div style={{ width: "100%", marginTop: isMobile ? "0" : "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-          
+
           {/* Room/Bed counter — always rendered, visibility animated */}
           <div style={{
             display: "flex",
@@ -675,7 +677,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
           </div>
 
           {/* Select / Selected button */}
-          <button 
+          <button
             onClick={handleSelect}
             style={{
               width: "100%",
@@ -750,7 +752,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
       roomAmenities: b.bedConfigAmenities || b.amenities || [],
       isBedConfig: true
     }));
-    
+
     // Append beds to existing rooms
     if (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0)) {
       rooms = bedRooms;

@@ -90,7 +90,6 @@ export const serializePendingPayment = (session, extras = {}) => {
   const amount = Number(normalized?.payment?.amount);
 
   return {
-    ...(readJson(PENDING_PAYMENT_KEY) || {}),
     ...extras,
     orderId: normalized?.orderId || extras?.orderId || null,
     paymentMethod: extras?.paymentMethod || "razorpay",
@@ -102,6 +101,9 @@ export const serializePendingPayment = (session, extras = {}) => {
     seatHoldExpiresAt: normalized?.seatHoldExpiresAt || extras?.seatHoldExpiresAt || normalized?.holdExpiresAt || null,
     paymentStatus: normalized?.paymentStatus || extras?.paymentStatus || null,
     orderStatus: normalized?.orderStatus || extras?.orderStatus || null,
+    listingId: extras?.listingId || session?.listingId || session?.booking?.listingId || null,
+    eventId: extras?.eventId || session?.eventId || session?.booking?.eventId || null,
+    stayId: extras?.stayId || session?.stayId || session?.booking?.stayId || null,
   };
 };
 

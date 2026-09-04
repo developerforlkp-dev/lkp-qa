@@ -407,42 +407,48 @@ const Checkout = () => {
     }
   }, [bookingData]);
 
-  // Read payment data from order response
+  // Read payment data from route state or matching pending payment
   useEffect(() => {
     try {
-      const payment = getPendingPayment();
-      if (payment) {
-        setPaymentData(payment);
-
-        // Calculate and save the actual paid amount (after discount)
-        // This will be used in the checkout complete page
-        let actualPaidAmount = payment.amount; // Default to amount
-
-        // If there's a discount, calculate paid amount = amount - discount
-        if (payment.discount !== undefined && payment.discount > 0) {
-          actualPaidAmount = payment.amount - payment.discount;
-        } else if (payment.paidAmount !== undefined && payment.paidAmount > 0) {
-          actualPaidAmount = payment.paidAmount;
-        } else if (payment.finalAmount !== undefined && payment.finalAmount > 0) {
-          actualPaidAmount = payment.finalAmount;
-        }
-
-        // Save the actual paid amount to localStorage for checkout complete page
-        try {
-          localStorage.setItem("actualPaidAmount", JSON.stringify({
-            amount: actualPaidAmount,
-            currency: payment.currency || "INR"
-          }));
-        } catch (e) {
-          console.error("Error saving actual paid amount:", e);
-        }
-      } else if (location.state?.paymentData) {
+      if (location.state?.paymentData) {
         setPaymentData(location.state.paymentData);
+        return;
+      }
+
+      const payment = getPendingPayment();
+      if (payment && bookingData) {
+        const bookingOrderId = bookingData?.orderId || bookingData?.order?.orderId || bookingData?.order?.id;
+        const isMatch =
+          (bookingOrderId && String(payment.orderId) === String(bookingOrderId)) ||
+          (payment.listingId && bookingData.listingId && String(payment.listingId) === String(bookingData.listingId)) ||
+          (payment.eventId && bookingData.eventId && String(payment.eventId) === String(bookingData.eventId));
+
+        if (isMatch) {
+          setPaymentData(payment);
+
+          let actualPaidAmount = payment.amount;
+          if (payment.discount !== undefined && payment.discount > 0) {
+            actualPaidAmount = payment.amount - payment.discount;
+          } else if (payment.paidAmount !== undefined && payment.paidAmount > 0) {
+            actualPaidAmount = payment.paidAmount;
+          } else if (payment.finalAmount !== undefined && payment.finalAmount > 0) {
+            actualPaidAmount = payment.finalAmount;
+          }
+
+          try {
+            localStorage.setItem("actualPaidAmount", JSON.stringify({
+              amount: actualPaidAmount,
+              currency: payment.currency || "INR"
+            }));
+          } catch (e) {
+            console.error("Error saving actual paid amount:", e);
+          }
+        }
       }
     } catch (e) {
       console.error("Error reading payment data:", e);
     }
-  }, [location.state]);
+  }, [location.state, bookingData]);
 
   // Persist snapshot for completion screen
   useEffect(() => {

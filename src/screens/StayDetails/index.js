@@ -3032,55 +3032,57 @@ const StayDetails = () => {
         const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
         return (
-          <div style={{
-            margin: "0",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
-          }}>
-            {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "-64px auto" }}>
+            <div style={{
+              margin: "0",
+              overflow: "hidden",
+              position: "relative",
+              padding: "20px 0",
+              background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+              borderTop: `1px solid ${B}`,
+              borderBottom: `1px solid ${B}`,
+            }}>
+              {/* Left & Right Edge Fades */}
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-              style={{ display: "flex", alignItems: "center", width: "max-content" }}
-            >
-              {loopedTags.map((tag, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap",
-                      marginRight: "32px"
-                    }}
-                  >
-                    <span
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+                style={{ display: "flex", alignItems: "center", width: "max-content" }}
+              >
+                {loopedTags.map((tag, idx) => {
+                  const isEven = idx % 2 === 0;
+                  return (
+                    <div
+                      key={idx}
                       style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "24px",
+                        whiteSpace: "nowrap",
+                        marginRight: "32px"
                       }}
                     >
-                      {tag}
-                    </span>
-                    <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
+                      <span
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: isEven ? 700 : 300,
+                          color: isEven ? FG : M,
+                          fontFamily: "Poppins, sans-serif",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          opacity: isEven ? 1 : 0.75
+                        }}
+                      >
+                        {tag}
+                      </span>
+                      <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
+                    </div>
+                  );
+                })}
+              </motion.div>
+            </div>
           </div>
         );
       })()}
@@ -3396,55 +3398,57 @@ const StayDetails = () => {
         const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
         return (
-          <div style={{
-            margin: "24px 0 48px",
-            overflow: "hidden",
-            position: "relative",
-            padding: "20px 0",
-            background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-            borderTop: `1px solid ${B}`,
-            borderBottom: `1px solid ${B}`,
-          }}>
-            {/* Left & Right Edge Fades */}
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "-64px auto" }}>
+            <div style={{
+              margin: "0",
+              overflow: "hidden",
+              position: "relative",
+              padding: "20px 0",
+              background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+              borderTop: `1px solid ${B}`,
+              borderBottom: `1px solid ${B}`,
+            }}>
+              {/* Left & Right Edge Fades */}
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-              style={{ display: "flex", alignItems: "center", width: "max-content" }}
-            >
-              {loopedTags.map((tag, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap",
-                      marginRight: "32px"
-                    }}
-                  >
-                    <span
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
+                style={{ display: "flex", alignItems: "center", width: "max-content" }}
+              >
+                {loopedTags.map((tag, idx) => {
+                  const isEven = idx % 2 === 0;
+                  return (
+                    <div
+                      key={idx}
                       style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? FG : M,
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "24px",
+                        whiteSpace: "nowrap",
+                        marginRight: "32px"
                       }}
                     >
-                      {tag}
-                    </span>
-                    <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
+                      <span
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: isEven ? 700 : 300,
+                          color: isEven ? FG : M,
+                          fontFamily: "Poppins, sans-serif",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          opacity: isEven ? 1 : 0.75
+                        }}
+                      >
+                        {tag}
+                      </span>
+                      <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
+                    </div>
+                  );
+                })}
+              </motion.div>
+            </div>
           </div>
         );
       })()}

@@ -10,7 +10,7 @@ import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import Dropdown from "../Dropdown";
 import ChildAgeSelect from "../ChildAgeSelect";
-import { createEventOrder, createOrder, previewOrderPrice, getEventSlotAvailability, getListingSlots, precheckEventOrder, formatEventPrecheckErrorMessage, finalizeFreeEvent } from "../../utils/api";
+import { createEventOrder, createOrder, previewOrderPrice, getEventSlotAvailability, getListingSlots, precheckEventOrder, formatEventPrecheckErrorMessage, finalizeFreeEvent, calculateExperienceTotal, calculateEventTotal } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
@@ -1402,6 +1402,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [showValidation, setShowValidation] = useState(false);
   const [showDateWarning, setShowDateWarning] = useState(false);
   const [errorPopup, setErrorPopup] = useState({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" });
+  const [apiPayableAmount, setApiPayableAmount] = useState(null);
+  const [apiPayableLoading, setApiPayableLoading] = useState(false);
   const pendingRestoreRef = useRef(null);
   const pendingEventTicketRestoreRef = useRef(null);
 
@@ -2653,6 +2655,162 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     totalTaxAmount,
     finalTotal,
   ]);
+
+  // Dynamic Experience & Event Pricing API total fetch
+  useEffect(() => {
+    if (!show) {
+      setApiPayableAmount(null);
+      return;
+    }
+
+    const adultCount = Number(guests?.adults || 0);
+    if (adultCount <= 0) {
+      setApiPayableAmount(null);
+      return;
+    }
+
+    const formattedAddons = selectedAddOns.map(item => {
+      const addon = item.addon || item;
+      const addonId = Number(addon.addonId || addon.id || item.addonId || item.id);
+      const quantity = Number(item.quantity || addon.quantity || 1) || 1;
+      return { addonId, quantity };
+    }).filter(a => Boolean(a.addonId));
+
+    if (isEventBooking) {
+      const eventId = Number(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId);
+      if (!eventId) return;
+
+      const resolvedSlotId = Number(selectedEventSlot?.eventSlotId ?? selectedEventSlot?.id ?? selectedEventSlot?.slotId ?? selectedEventSlotId) || null;
+      const bookingDate = startDate ? moment(startDate).format("YYYY-MM-DD") : (selectedDateKey || "");
+      const bookingTime = selectedEventSlot?.startTime || selectedEventSlot?.slotName || startTime || "";
+      const numberOfGuests = Number(guests?.adults || 0) + Number(guests?.children || 0);
+      const childCount = Number(guests?.children || 0);
+      const childAges = Array.isArray(guests?.childAges) ? guests.childAges.map(Number).filter(a => Number.isFinite(a)) : [];
+
+      const ticketTypeId = Number(selectedTicket?.id ?? selectedTicket?.ticketTypeId ?? selectedTicket?.typeId ?? selectedTicketTypeId) || 1;
+      const ticketTypeName = selectedTicket?.ticketName || selectedTicket?.name || selectedTicket?.typeName || "General Entry";
+      const quantity = Number(guests?.adults || 1);
+      const childQuantity = Number(guests?.children || 0);
+      const pricePerTicket = Number(effectiveEventPrice?.price ?? eventPrice ?? selectedTicket?.price ?? listing?.price ?? 0);
+
+      const tickets = selectedTicket ? [
+        {
+          ticketTypeId,
+          ticketTypeName,
+          quantity,
+          childQuantity,
+          pricePerTicket,
+        }
+      ] : [];
+
+      const payload = {
+        booking: {
+          eventId,
+          eventSlotId: resolvedSlotId,
+          bookingDate,
+          bookingTime,
+          numberOfGuests,
+          adultCount,
+          childCount,
+          childAges,
+          tickets,
+          addons: formattedAddons,
+        }
+      };
+
+      let cancelled = false;
+      setApiPayableLoading(true);
+
+      calculateEventTotal(payload)
+        .then((res) => {
+          if (cancelled) return;
+          const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
+          if (amount != null && Number.isFinite(Number(amount))) {
+            setApiPayableAmount(Number(amount));
+          }
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          console.warn("calculateEventTotal error:", err);
+        })
+        .finally(() => {
+          if (!cancelled) setApiPayableLoading(false);
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    } else {
+      const listingId = Number(listing?.listingId || listing?.id || listing?.experienceId);
+      if (!listingId) return;
+
+      const bookingDate = startDate ? moment(startDate).format("YYYY-MM-DD") : (selectedDateKey || null);
+      const bookingTime = selectedSlotData?.startTime || selectedSlotData?.start_time || startTime || null;
+      const bookingSlotId = Number(selectedSlotData?.slotId ?? selectedSlotData?.id ?? selectedSlotData?.slot_id) || null;
+      const childCount = Number(guests?.children || 0);
+      const childAges = Array.isArray(guests?.childAges) ? guests.childAges.map(Number).filter(a => Number.isFinite(a)) : [];
+      const isPrivate = Boolean(privateBooking);
+
+      const payload = {
+        booking: {
+          listingId,
+          bookingDate,
+          bookingTime,
+          bookingSlotId,
+          guestCount: adultCount,
+          childCount,
+          childAges,
+          isPrivateBooking: isPrivate,
+          addons: formattedAddons,
+        }
+      };
+
+      let cancelled = false;
+      setApiPayableLoading(true);
+
+      calculateExperienceTotal(payload)
+        .then((res) => {
+          if (cancelled) return;
+          const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
+          if (amount != null && Number.isFinite(Number(amount))) {
+            setApiPayableAmount(Number(amount));
+          }
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          console.warn("calculateExperienceTotal error:", err);
+        })
+        .finally(() => {
+          if (!cancelled) setApiPayableLoading(false);
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [
+    isEventBooking,
+    show,
+    listing?.listingId,
+    listing?.id,
+    listing?.experienceId,
+    listing?.eventId,
+    listing?.event_id,
+    startDate,
+    selectedDateKey,
+    startTime,
+    selectedSlotData,
+    selectedEventSlot,
+    selectedEventSlotId,
+    selectedTicket,
+    selectedTicketTypeId,
+    effectiveEventPrice,
+    eventPrice,
+    guests,
+    privateBooking,
+    selectedAddOns,
+  ]);
+
   const eventBaseTotal = rawBaseTotal;
   const eventDiscountTotal = totalDiscountAmount;
   const eventPromoDiscountTotal = totalPromoDiscountAmount;
@@ -3120,7 +3278,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         const previewPayment = previewPriceRes?.payment;
         const resolvedTotal = amountToBePaidFromData != null
           ? Number(amountToBePaidFromData)
-          : (previewPricing?.totalPrice ?? previewPricing?.total ?? finalTotal);
+          : ((apiPayableAmount != null && Number.isFinite(apiPayableAmount))
+            ? apiPayableAmount
+            : (previewPricing?.totalPrice ?? previewPricing?.total ?? finalTotal));
 
         const previewBookingData = {
           checkoutType: "event",
@@ -3322,9 +3482,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       });
     }
 
+    const effectiveExperienceFinalTotal = (!isEventBooking && apiPayableAmount != null && Number.isFinite(apiPayableAmount))
+      ? apiPayableAmount
+      : finalTotal;
+
     receipt.push({
       title: "Total",
-      content: `₹${finalTotal.toFixed(2)}`,
+      content: `₹${effectiveExperienceFinalTotal.toFixed(2)}`,
       kind: "total",
       showInCheckout: true
     });
@@ -3346,7 +3510,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       selectedAddOns: selectedAddOns.map(a => (a.addon?.addonId || a.addonId || a.id)),
       addOnQuantities: addOnQuantities,
       receipt: receipt,
-      finalTotal: finalTotal,
+      finalTotal: effectiveExperienceFinalTotal,
       pricing: {
         currency: "INR",
         basePrice: rawBaseTotal,
@@ -3372,7 +3536,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         commission: getExperienceCommissionRate(listing),
         addonsTotal: addOnsTotal,
         subtotal: subtotalBeforeAdjustments,
-        total: finalTotal,
+        total: effectiveExperienceFinalTotal,
         guestCount: totalGuests,
       },
       bookingSummary: {
@@ -4988,11 +5152,14 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
                         const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
                         const isFreeEvent = Number(discountedDisplayPrice || 0) === 0;
+                        const currentBottomTotal = (apiPayableAmount != null && Number.isFinite(apiPayableAmount))
+                          ? apiPayableAmount
+                          : finalTotal;
                         return isFreeEvent ? (
                           <span style={{ fontSize: 22, fontWeight: 800, color: A }}>Free Event</span>
                         ) : (
                           <>
-                            <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal || 0).toFixed(2)}</span>
+                            <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(currentBottomTotal || 0).toFixed(2)}</span>
                             <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
                           </>
                         );

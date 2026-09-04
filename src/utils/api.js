@@ -624,6 +624,39 @@ export const createStayOrder = async (orderData) => {
   }
 };
 
+// ✅ Calculate experience total pricing
+export const calculateExperienceTotal = async (bookingData) => {
+  try {
+    const response = await ListingsAPI.post("/pricing/experience/calculate-total", bookingData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error calculating experience total:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// ✅ Calculate event total pricing
+export const calculateEventTotal = async (bookingData) => {
+  try {
+    const response = await ListingsAPI.post("/pricing/event/calculate-total", bookingData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error calculating event total:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// ✅ Calculate stay total pricing
+export const calculateStayTotal = async (bookingData) => {
+  try {
+    const response = await ListingsAPI.post("/pricing/stay/calculate-total", bookingData);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error calculating stay total:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const saveGuestDetails = async (orderId, data) => {
   try {
     if (!orderId) throw new Error("orderId is required");

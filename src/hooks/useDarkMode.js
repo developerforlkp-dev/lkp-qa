@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
 
 const DARK_MODE_EVENT = 'lkp:darkmode-change';
 
@@ -67,7 +68,7 @@ const useDarkMode = (initialState = false) => {
     };
   }, []);
 
-  const toggle = useCallback((event) => {
+  const toggle = useCallback((toggleElement) => {
     const isDark = value;
     const nextValue = !isDark;
 
@@ -81,51 +82,85 @@ const useDarkMode = (initialState = false) => {
       return;
     }
 
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 2;
-
-    if (event && typeof event.clientX === 'number' && typeof event.clientY === 'number' && (event.clientX !== 0 || event.clientY !== 0)) {
-      x = event.clientX;
-      y = event.clientY;
-    } else if (event && event.currentTarget) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      x = rect.left + rect.width / 2;
-      y = rect.top + rect.height / 2;
+    if (!toggleElement || !toggleElement.getBoundingClientRect) {
+      performToggle();
+      return;
     }
 
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
+    const rect = toggleElement.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    // The user explicitly wants Light -> Dark to shrink (revert), and Dark -> Light to expand.
+    // 'value' is true if currently dark.
+    // So if 'value' is false (currently light), we want the reversed (shrinking) animation.
+    const isReversed = !value;
+
+    const distances = [
+      Math.hypot(x, y),
+      Math.hypot(window.innerWidth - x, y),
+      Math.hypot(x, window.innerHeight - y),
+      Math.hypot(window.innerWidth - x, window.innerHeight - y)
+    ];
+    // Add 15% padding so the corners never slow down visibly as it settles
+    const endRadius = Math.max(...distances) * 1.15;
+
+    const xPercent = (x / window.innerWidth) * 100;
+    const yPercent = (y / window.innerHeight) * 100;
+
+    let styleEl = document.getElementById('theme-transition-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'theme-transition-styles';
+      document.head.appendChild(styleEl);
+    }
+
+    styleEl.textContent = `
+      ::view-transition-group(root) {
+        animation: none;
+      }
+      ::view-transition-new(root), ::view-transition-old(root) {
+        mix-blend-mode: normal;
+      }
+      ${isReversed ? `
+        ::view-transition-old(root) {
+          z-index: 9999;
+          animation: theme-shrink 800ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+        ::view-transition-new(root) {
+          z-index: 1;
+          animation: none;
+        }
+        @keyframes theme-shrink {
+          0% { clip-path: circle(${endRadius}px at ${xPercent}% ${yPercent}%); }
+          100% { clip-path: circle(0px at ${xPercent}% ${yPercent}%); }
+        }
+      ` : `
+        ::view-transition-old(root) {
+          z-index: 1;
+          animation: none;
+        }
+        ::view-transition-new(root) {
+          z-index: 9999;
+          animation: theme-expand 800ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+        @keyframes theme-expand {
+          0% { clip-path: circle(0px at ${xPercent}% ${yPercent}%); }
+          100% { clip-path: circle(${endRadius}px at ${xPercent}% ${yPercent}%); }
+        }
+      `}
+    `;
 
     const transition = document.startViewTransition(() => {
       document.documentElement.classList.add('theme-transitioning');
-      performToggle();
+      flushSync(() => {
+        performToggle();
+      });
     });
 
-    transition.ready.then(() => {
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`
-      ];
-
-      document.documentElement.animate(
-        {
-          clipPath,
-        },
-        {
-          duration: 500,
-          easing: 'ease-in-out',
-          pseudoElement: '::view-transition-new(root)',
-        }
-      ).onfinish = () => {
-        document.documentElement.classList.remove('theme-transitioning');
-      };
-    });
-    
-    // Fallback cleanup in case the animation doesn't run or errors out
     transition.finished.finally(() => {
       document.documentElement.classList.remove('theme-transitioning');
+      if (styleEl) styleEl.textContent = '';
     });
   }, [value]);
 

@@ -2493,6 +2493,17 @@ const StayProduct = () => {
         extraAdults: Number(frontendBreakdown?.extraAdults || 0),
         extraChildren: Number(frontendBreakdown?.extraChildren || 0),
       };
+    } else if (selectedRoom?.isBedConfig) {
+      stayBookingObj = {
+        ...stayBookingObj,
+        bedConfigs: [
+          {
+            name: selectedRoom?.roomName || selectedRoom?.name || "Dorm Bed",
+            bedsBooked: Number(bookingInfo?.roomsNeeded || 1),
+            mealPlanCode: mealCode || "EP",
+          },
+        ],
+      };
     } else {
       stayBookingObj = {
         ...stayBookingObj,
@@ -2503,7 +2514,7 @@ const StayProduct = () => {
             adults: Number(guests?.adults || 1),
             children: Number(guests?.children || 0),
             childAges: Array.isArray(guests?.childAges) ? guests.childAges.map(Number) : [],
-            mealPlanCode: mealCode || "CP",
+            mealPlanCode: mealCode || "EP",
             extraBeds: 0,
             extraAdults: Number(frontendBreakdown?.extraAdults || 0),
             extraChildren: Number(frontendBreakdown?.extraChildren || 0),

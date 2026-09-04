@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cn from "classnames";
 import styles from "./Header.module.sass";
 import { Link, NavLink, useHistory } from "react-router-dom";
@@ -34,6 +34,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
   const [visible, setVisible] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const darkMode = useDarkMode(false);
+  const themeToggleRef = useRef(null);
 
   const useMobileHeader = isBlogPage || isDetailPage || isFilterPage;
 
@@ -168,9 +169,10 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
 
           <div className={cn(styles.rightMenu, { [styles.glassmorphic]: isHomepage && !hasScrolled, [styles.blogRightMenu]: useMobileHeader })}>
             <button
+              ref={themeToggleRef}
               type="button"
               className={styles.themeToggle}
-              onClick={darkMode.toggle}
+              onClick={() => darkMode.toggle(themeToggleRef.current)}
               aria-label={darkMode.value ? "Switch to light mode" : "Switch to dark mode"}
               title={darkMode.value ? "Light mode" : "Dark mode"}
             >
