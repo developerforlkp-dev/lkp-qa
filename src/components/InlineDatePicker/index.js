@@ -72,7 +72,11 @@ const InlineDatePicker = ({
         const now = new Date();
 
         const availableDates = availabilityData
-          .filter((av) => av.is_available && (av.available_seats === undefined || av.available_seats > 0))
+          .filter((av) => {
+            const seats = av.availableSeats !== undefined ? av.availableSeats : av.available_seats;
+            const isAvail = av.isAvailable !== undefined ? av.isAvailable : (av.is_available !== undefined ? av.is_available : (seats !== undefined ? seats > 0 : true));
+            return isAvail && (seats === undefined || Number(seats) > 0);
+          })
           .map((av) => {
             const d = new Date(av.date);
             d.setHours(0, 0, 0, 0);
@@ -173,13 +177,15 @@ const InlineDatePicker = ({
 
       // Enable if AT LEAST ONE slot for this date is available AND (if today) its time hasn't passed
       const hasAvailableSlot = allSlotsForDate.some(av => {
-        const isAvail = av.is_available === true &&
-          (av.available_seats === undefined || av.available_seats > 0);
+        const seats = av.availableSeats !== undefined ? av.availableSeats : av.available_seats;
+        const isAvail = av.isAvailable !== undefined ? av.isAvailable : (av.is_available !== undefined ? av.is_available : (seats !== undefined ? seats > 0 : true));
+        const hasSeats = seats === undefined || Number(seats) > 0;
 
-        if (!isAvail) return false;
+        if (!isAvail || !hasSeats) return false;
 
-        if (isToday && av.start_time) {
-          const [h, m] = av.start_time.split(':').map(Number);
+        const startTime = av.startTime || av.start_time;
+        if (isToday && startTime) {
+          const [h, m] = startTime.split(':').map(Number);
           const slotMinutes = h * 60 + m;
           if (slotMinutes <= currentMinutes) {
             return false;
@@ -338,15 +344,18 @@ const InlineDatePicker = ({
                 return avDateStr === dateStr;
               }) : [];
 
-            const isAvailable = allAvailabilityForDate.some(av =>
-              av.available_seats > 0 &&
-              av.is_available === true) &&
-              !isPast && !isDisabled;
+            const isAvailable = allAvailabilityForDate.some(av => {
+              const seats = av.availableSeats !== undefined ? av.availableSeats : av.available_seats;
+              const isAvail = av.isAvailable !== undefined ? av.isAvailable : (av.is_available !== undefined ? av.is_available : (seats !== undefined ? seats > 0 : true));
+              return (seats === undefined || Number(seats) > 0) && isAvail;
+            }) && !isPast && !isDisabled;
 
             const isFullyBooked = allAvailabilityForDate.length > 0 &&
-              allAvailabilityForDate.every(av =>
-                (av.available_seats <= 0 || av.is_available === false)) &&
-              !isPast;
+              allAvailabilityForDate.every(av => {
+                const seats = av.availableSeats !== undefined ? av.availableSeats : av.available_seats;
+                const isAvail = av.isAvailable !== undefined ? av.isAvailable : (av.is_available !== undefined ? av.is_available : (seats !== undefined ? seats > 0 : true));
+                return (seats !== undefined && Number(seats) <= 0) || isAvail === false;
+              }) && !isPast;
 
             return (
               <button

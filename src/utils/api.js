@@ -1221,28 +1221,24 @@ export const getBillingConfiguration = async (listingId) => {
 };
 
 // Get availability for a listing slot
-export const getAvailability = async (listingId, startDate, endDate, slotId) => {
+export const getAvailability = async (listingId, startDate, endDate, slotId = null) => {
   try {
-    // Ensure slotId is a number or string
-    const slotIdParam = slotId ? String(slotId) : null;
+    if (!listingId || !startDate || !endDate) {
+      throw new Error(`Missing required parameters: listingId=${listingId}, startDate=${startDate}, endDate=${endDate}`);
+    }
 
-    if (!listingId || !startDate || !endDate || !slotIdParam) {
-      throw new Error(`Missing required parameters: listingId=${listingId}, startDate=${startDate}, endDate=${endDate}, slotId=${slotIdParam}`);
+    const params = {
+      startDate,
+      endDate,
+    };
+
+    if (slotId != null && slotId !== "") {
+      params.slotId = String(slotId);
     }
 
     const response = await ListingsAPI.get(`/public/listings/${listingId}/availability`, {
-      params: {
-        startDate: startDate, // Format: YYYY-MM-DD
-        endDate: endDate,     // Format: YYYY-MM-DD
-        slotId: slotIdParam,  // Number as string
-      },
+      params,
     });
-
-    // console.log("✅ Availability API Response:", {
-    //   url: `/public/listings/${listingId}/availability`,
-    //   params: { startDate, endDate, slotId: slotIdParam },
-    //   data: response.data
-    // });
 
     return response.data;
   } catch (error) {

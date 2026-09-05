@@ -1045,6 +1045,15 @@ const unwrapSlotsPayload = (payload) => {
 
 const getSlotAvailabilityForDate = (slot, dateKey) => {
   const records = Array.isArray(slot?.availability) ? slot.availability : [];
+  const targetSlotId = slot?.slotId ?? slot?.slot_id ?? slot?.id ?? slot?.eventSlotId;
+  if (targetSlotId != null) {
+    const matched = records.find(
+      (item) =>
+        getDateKey(item?.date || item?.bookingDate || item?.booking_date) === dateKey &&
+        (item?.slotId != null ? String(item.slotId) === String(targetSlotId) : true)
+    );
+    if (matched) return matched;
+  }
   return records.find((item) => getDateKey(item?.date || item?.bookingDate || item?.booking_date) === dateKey) || null;
 };
 
@@ -1077,12 +1086,13 @@ const normalizeExperienceSlots = (slots = [], dateKey = "") => (
       const availability = getSlotAvailabilityForDate(slot, dateKey);
       const id = getSlotId(slot);
       const slotName = getSlotLabel(slot, index);
-      const isAvailable = availability?.is_available ?? availability?.isAvailable ?? slot.is_available ?? slot.isAvailable;
+      const availableSeats = availability?.availableSeats ?? availability?.available_seats ?? slot.availableSeats ?? slot.available_seats;
+      const isAvailable = availability?.isAvailable ?? availability?.is_available ?? (availableSeats != null ? availableSeats > 0 : undefined) ?? slot.is_available ?? slot.isAvailable;
       const privateBookingEnabled = availability?.privateBookingEnabled ?? availability?.private_booking_enabled ?? slot.privateBookingEnabled ?? slot.private_booking_enabled ?? false;
       const hasPrivateBooking = availability?.hasPrivateBooking ?? availability?.has_private_booking ?? slot.hasPrivateBooking ?? slot.has_private_booking ?? false;
       const explicitPrivateBookingAvailable = availability?.privateBookingAvailable ?? availability?.private_booking_available ?? slot.privateBookingAvailable ?? slot.private_booking_available;
 
-      const bookedSeatsForDate = availability?.booked_seats ?? availability?.bookedSeats ?? 0;
+      const bookedSeatsForDate = availability?.bookedSeats ?? availability?.booked_seats ?? 0;
       const basePrivateAvailable = explicitPrivateBookingAvailable ?? Boolean(privateBookingEnabled && !hasPrivateBooking && isAvailable !== false);
       const privateBookingAvailable = bookedSeatsForDate > 0 ? false : basePrivateAvailable;
 
@@ -1091,16 +1101,16 @@ const normalizeExperienceSlots = (slots = [], dateKey = "") => (
         id: id ?? slot.id ?? slot.slotId ?? slot.slot_id ?? `slot-${index}`,
         slotId: id ?? slot.slotId ?? slot.slot_id,
         slot_id: id ?? slot.slot_id ?? slot.slotId,
-        slotName,
-        slot_name: slot.slot_name ?? slotName,
+        slotName: availability?.slotName ?? availability?.slot_name ?? slotName,
+        slot_name: availability?.slotName ?? availability?.slot_name ?? slot.slot_name ?? slotName,
         startTime: slot.startTime || slot.start_time || schedule.startTime || schedule.start_time || "",
         endTime: slot.endTime || slot.end_time || schedule.endTime || schedule.end_time || "",
         startDate: slot.startDate || slot.start_date || schedule.startDate || schedule.start_date,
         endDate: slot.endDate || slot.end_date || schedule.endDate || schedule.end_date,
         selected_days: slot.selected_days || schedule.selected_days,
-        maxSeats: slot.maxSeats ?? slot.max_seats ?? capacity.maxSeats ?? capacity.max_seats,
-        availableSeats: availability?.available_seats ?? availability?.availableSeats ?? slot.availableSeats ?? slot.available_seats,
-        pricePerPerson: pricing.price_per_person ?? pricing.pricePerPerson ?? slot.pricePerPerson ?? slot.price_per_person ?? slot.price,
+        maxSeats: availability?.maxSeats ?? availability?.max_seats ?? slot.maxSeats ?? slot.max_seats ?? capacity.maxSeats ?? capacity.max_seats,
+        availableSeats,
+        pricePerPerson: availability?.pricePerPerson ?? availability?.price_per_person ?? pricing.price_per_person ?? pricing.pricePerPerson ?? slot.pricePerPerson ?? slot.price_per_person ?? slot.price,
         childPricePerChild:
           pricing.child_price_per_child
           ?? pricing.childPricePerChild
@@ -5174,14 +5184,44 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
                         const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
                         const isFreeEvent = Number(discountedDisplayPrice || 0) === 0;
-                        const currentBottomTotal = (!isEventBooking && apiPayableAmount != null && Number.isFinite(apiPayableAmount))
-                          ? apiPayableAmount
-                          : finalTotal;
-                        return isFreeEvent ? (
-                          <span style={{ fontSize: 22, fontWeight: 800, color: A }}>Free Event</span>
-                        ) : (
+                        if (isFreeEvent) {
+                          return <span style={{ fontSize: 22, fontWeight: 800, color: A }}>Free Event</span>;
+                        }
+
+                        if (apiPayableLoading) {
+                          return (
+                            <>
+                              <span style={{ fontSize: 16, fontWeight: 700, color: M, marginTop: 2 }}>Calculating...</span>
+                              <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
+                            </>
+                          );
+                        }
+
+                        if (apiPayableAmount != null && Number.isFinite(apiPayableAmount)) {
+                          return (
+                            <>
+                              <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(apiPayableAmount).toFixed(2)}</span>
+                              <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
+                            </>
+                          );
+                        }
+
+                        const currentTotalGuests = Number(guests?.adults || 0) + Number(guests?.children || 0);
+                        const emptyMsg = (() => {
+                          if (isEventBooking) {
+                            if (!selectedTicketTypeId && !selectedEventSlotId) return "Select a ticket";
+                            if (currentTotalGuests === 0) return "Select guests";
+                            return "Select details";
+                          }
+                          if (!startDate && !selectedDateKey) return "Select a date";
+                          if (!startTime && !selectedSlotData) return "Select a slot";
+                          if (currentTotalGuests === 0) return "Select guests";
+                          return "Select details";
+                        })();
+
+                        return (
                           <>
-                            <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(currentBottomTotal || 0).toFixed(2)}</span>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: M, marginTop: 2 }}>{emptyMsg}</span>
                             <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
                           </>
                         );

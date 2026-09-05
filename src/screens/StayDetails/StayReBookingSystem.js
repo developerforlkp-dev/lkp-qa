@@ -2777,7 +2777,7 @@ const StayBookingSystem = ({
       const amountToBePaidFromData = apiData?.find(d => /amount\s*to\s*be\s*paid/i.test(d?.title || "") || d?.code === "amount_to_be_paid")?.amount;
       const resolvedTotal = amountToBePaidFromData != null
         ? Number(amountToBePaidFromData)
-        : ((apiPayableAmount != null && Number.isFinite(apiPayableAmount)) ? apiPayableAmount : (pricing.finalTotal || 0));
+        : ((apiPayableAmount != null && Number.isFinite(apiPayableAmount)) ? apiPayableAmount : 0);
 
       const previewBookingData = {
         checkoutType: "stay",
@@ -4156,7 +4156,24 @@ const StayBookingSystem = ({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise((apiPayableAmount != null && Number.isFinite(apiPayableAmount)) ? apiPayableAmount : pricing.finalTotal)}</span>
+                    {(() => {
+                      if (apiPayableLoading) {
+                        return <span style={{ fontSize: 16, fontWeight: 700, color: M, marginTop: 2 }}>Calculating...</span>;
+                      }
+                      if (apiPayableAmount != null && Number.isFinite(apiPayableAmount)) {
+                        return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(apiPayableAmount)}</span>;
+                      }
+                      const emptyMsg = (() => {
+                        if (!checkInDate || !checkOutDate) return "Select dates";
+                        const isProperty = isPropertyBasedBooking(stay);
+                        if (!isProperty && resolvedSelectedRooms.length === 0) return "Select a room";
+                        const totalGuests = Number(guests?.adults || 0) + Number(guests?.children || 0);
+                        if (totalGuests === 0) return "Select guests";
+                        return "Select details";
+                      })();
+
+                      return <span style={{ fontSize: 15, fontWeight: 700, color: M, marginTop: 2 }}>{emptyMsg}</span>;
+                    })()}
                     <span style={{ marginTop: 1, fontSize: 10, color: M, fontWeight: 600 }}>Inc. all taxes</span>
                   </div>
                   {(() => {
