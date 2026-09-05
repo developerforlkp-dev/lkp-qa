@@ -1396,7 +1396,7 @@ const Checkout = () => {
             currency={resolvedCurrency}
             hostName={hostName}
             hostAvatar={hostAvatar}
-            cancellationPolicy={isEventBooking ? null : cancellationPolicy}
+            cancellationPolicy={cancellationPolicy}
             rating={reviewsData.rating}
             reviewsCount={reviewsData.count}
             buttonUrl="/experience-checkout-complete"

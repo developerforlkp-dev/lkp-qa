@@ -2080,7 +2080,7 @@ function Venue({ event, hostName }) {
                 <div style={{
                   position: "absolute",
                   top: 16,
-                  left: 16,
+                  right: 16,
                   zIndex: 10,
                   background: W,
                   padding: "8px 16px",

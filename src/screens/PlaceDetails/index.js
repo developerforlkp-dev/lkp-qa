@@ -4,7 +4,7 @@ import { useLocation, Link, useHistory } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Sparkles, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart, X
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart, X, Building
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -2287,6 +2287,7 @@ function LocationSection({ place }) {
   const state = place?.state || place?.region || place?.meetingState;
   const country = place?.country || place?.meetingCountry;
   const instructions = place?.instructions || place?.meetingInstructions;
+  const fullAddress = place?.fullAddress;
 
   return (
     <section className="location-section" style={{ background: theme === 'dark' ? BG : W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
@@ -2314,7 +2315,7 @@ function LocationSection({ place }) {
               <div style={{
                 position: "absolute",
                 top: 16,
-                left: 16,
+                right: 16,
                 zIndex: 10,
                 background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
                 padding: "8px 16px",
@@ -2393,10 +2394,22 @@ function LocationSection({ place }) {
                   </li>
                 )}
 
-                {district && (
+                {fullAddress && (
                   <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <MapPin size={20} color={A} fill="transparent" />
+                    </div>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Full Address</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{fullAddress}</span>
+                    </div>
+                  </li>
+                )}
+
+                {district && (
+                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Building size={20} color={A} fill="transparent" />
                     </div>
                     <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
                       <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>

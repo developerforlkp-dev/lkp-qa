@@ -242,15 +242,21 @@ const DEFAULT_MEAL_PLAN_LABELS = {
 };
 
 const getMealPlanDisplayLabel = (code, ...pricingSources) => {
+  if (!code) return "";
+  const upperCode = String(code).toUpperCase();
   for (const source of pricingSources) {
+    if (!source) continue;
+    const target = source[code] || source[upperCode];
     const customLabel =
-      source?.[code]?.displayName ||
-      source?.[code]?.display_name ||
-      source?.[code]?.name;
+      target?.displayName ||
+      target?.display_name ||
+      target?.name ||
+      target?.mealPlanName ||
+      target?.meal_plan_name;
     if (customLabel) return customLabel;
   }
 
-  return DEFAULT_MEAL_PLAN_LABELS[code] || code;
+  return DEFAULT_MEAL_PLAN_LABELS[upperCode] || code;
 };
 
 const syncChildAges = (ages, childrenCount) => {
@@ -1164,7 +1170,10 @@ const StayBookingSystem = ({
     [resolvedSelectedRooms]
   );
   const totalSelectedBeds = useMemo(
-    () => resolvedSelectedRooms.reduce((sum, room) => sum + Number(room.count || 0), 0),
+    () =>
+      resolvedSelectedRooms
+        .filter((room) => room.isBedConfig || String(room.roomId || room.id || "").startsWith("bed-"))
+        .reduce((sum, room) => sum + Number(room.count || 0), 0),
     [resolvedSelectedRooms]
   );
 
@@ -1698,13 +1707,22 @@ const StayBookingSystem = ({
     const bedConfigsPayload = [];
 
     if (isPropertyBased) {
+      const propMealPlanCode = stay?.mealPlanCode || stay?.mealPlan || stay?.selectedMealPlan || "EP";
+      const propMealPlanDisplayName = getMealPlanDisplayLabel(
+        propMealPlanCode,
+        stay?.mealPlanPricing
+      );
+      const propRoomId = Number(stay?.roomId || stay?.roomTypeId || stay?.id || stay?.stayId || 1);
       roomsPayload.push({
-        roomId: 1,
+        roomId: propRoomId > 0 ? propRoomId : 1,
         roomsBooked: 1,
         adults: Number(guests.adults || 1),
         children: Number(guests.children || 0),
+        extraChildren: Number(pricing?.extraChildrenCount || 0),
         childAges: normalizedChildAges,
         extraBeds: 0,
+        mealPlanCode: propMealPlanCode,
+        mealPlanDisplayName: propMealPlanDisplayName,
       });
     } else {
       resolvedSelectedRooms.forEach(r => {
@@ -1720,11 +1738,19 @@ const StayBookingSystem = ({
         const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
         const validId = rawId > 0 ? rawId : 1;
 
+        const mealCode = r.mealPlan || r.mealPlanCode || "EP";
+        const mealDisplayName = getMealPlanDisplayLabel(
+          mealCode,
+          r.mealPlanPricing,
+          stay?.mealPlanPricing
+        );
+
         if (isBed) {
           bedConfigsPayload.push({
             name: r.roomName || r.name || "Bed",
             bedsBooked: Number(r.count || 1),
-            mealPlanCode: r.mealPlan || "ROOM_ONLY",
+            mealPlanCode: mealCode,
+            mealPlanDisplayName: mealDisplayName,
             extraAdults: 0,
             extraChildren: 0,
           });
@@ -1734,8 +1760,11 @@ const StayBookingSystem = ({
             roomsBooked: Number(r.count || 1),
             adults: Number(grp.adults || 1),
             children: Number(grp.children || 0),
+            extraChildren: Number(grp.extraChildren || 0),
             childAges: roomChildAges[String(r.roomId || r.id)] || [],
             extraBeds: Number(r.extraBeds || 0),
+            mealPlanCode: mealCode,
+            mealPlanDisplayName: mealDisplayName,
           });
         }
       });
@@ -1799,6 +1828,12 @@ const StayBookingSystem = ({
     show,
     stay?.stayId,
     stay?.id,
+    stay?.roomId,
+    stay?.roomTypeId,
+    stay?.mealPlanCode,
+    stay?.mealPlan,
+    stay?.selectedMealPlan,
+    stay?.mealPlanPricing,
     checkInDate,
     checkOutDate,
     guests,
@@ -1807,6 +1842,7 @@ const StayBookingSystem = ({
     selectedRooms,
     selectedAddOns,
     addOnQuantities,
+    pricing?.extraChildrenCount,
   ]);
 
   const extraChildAgeIndexes = useMemo(() => {
@@ -2149,11 +2185,13 @@ const StayBookingSystem = ({
               }
             } else if (isHostel) {
               // Hostel validation for beds and rooms
-              const isBedSelected = stay?.bookingScope === "Bed-Based" ||
-                stay?.inventoryScope === "Bed-Based" ||
-                (Array.isArray(selectedRooms) && selectedRooms.some((r) => r.isBedConfig || String(r.roomId || "").startsWith("bed-")));
-              const hasBedSelection = totalSelectedBeds > 0 || isBedSelected;
-              const nonBedRoomsSelected = Array.isArray(selectedRooms) ? selectedRooms.filter(r => !r.isBedConfig && !String(r.roomId || "").startsWith("bed-")) : [];
+              const bedRoomsSelected = Array.isArray(selectedRooms)
+                ? selectedRooms.filter((r) => r.isBedConfig || String(r.roomId || "").startsWith("bed-"))
+                : [];
+              const hasBedSelection = totalSelectedBeds > 0 || bedRoomsSelected.length > 0;
+              const nonBedRoomsSelected = Array.isArray(selectedRooms)
+                ? selectedRooms.filter((r) => !r.isBedConfig && !String(r.roomId || "").startsWith("bed-"))
+                : [];
               const hasRoomSelection = nonBedRoomsSelected.length > 0;
 
               if (hasBedSelection && freshAvailability.canBookBedOnly === false && !hasRoomSelection) {
@@ -2168,6 +2206,13 @@ const StayBookingSystem = ({
                 const reason = "Private room booking is currently unavailable for this hostel.";
                 setValidationError(reason);
                 setBookingErrorPopup({ visible: true, title: "Rooms Unavailable", message: reason, isSameDay: false });
+                return;
+              }
+              if (hasBedSelection && hasRoomSelection && freshAvailability.canBookRoomAndBed === false) {
+                setLoading(false);
+                const reason = "Simultaneous private room and bed booking is currently unavailable for this hostel.";
+                setValidationError(reason);
+                setBookingErrorPopup({ visible: true, title: "Booking Unavailable", message: reason, isSameDay: false });
                 return;
               }
 

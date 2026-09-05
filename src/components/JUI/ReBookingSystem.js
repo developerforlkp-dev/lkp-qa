@@ -2677,40 +2677,72 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (!eventId) return;
 
       const resolvedSlotId = Number(selectedEventSlot?.eventSlotId ?? selectedEventSlot?.id ?? selectedEventSlot?.slotId ?? selectedEventSlotId) || null;
-      const bookingDate = startDate ? moment(startDate).format("YYYY-MM-DD") : (selectedDateKey || "");
+      const rawDate = startDate || selectedDateKey;
+      const bookingDate = rawDate ? moment(rawDate).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD");
       const bookingTime = selectedEventSlot?.startTime || selectedEventSlot?.slotName || startTime || "";
-      const numberOfGuests = Number(guests?.adults || 0) + Number(guests?.children || 0);
+      const adultCount = Number(guests?.adults || 0);
       const childCount = Number(guests?.children || 0);
-      const childAges = Array.isArray(guests?.childAges) ? guests.childAges.map(Number).filter(a => Number.isFinite(a)) : [];
+      const numberOfGuests = adultCount + childCount;
+
+      let childAges = Array.isArray(guests?.childAges) ? guests.childAges.map(Number).filter(a => Number.isFinite(a)) : [];
+      if (childCount > 0) {
+        if (childAges.length > childCount) {
+          childAges = childAges.slice(0, childCount);
+        } else {
+          while (childAges.length < childCount) {
+            childAges.push(5);
+          }
+        }
+      } else {
+        childAges = [];
+      }
 
       const ticketTypeId = Number(selectedTicket?.id ?? selectedTicket?.ticketTypeId ?? selectedTicket?.typeId ?? selectedTicketTypeId) || 1;
-      const ticketTypeName = selectedTicket?.ticketName || selectedTicket?.name || selectedTicket?.typeName || "General Entry";
-      const quantity = Number(guests?.adults || 1);
-      const childQuantity = Number(guests?.children || 0);
+      const ticketTypeName = selectedTicket?.ticketName || selectedTicket?.name || selectedTicket?.typeName || "General Admission";
+      const quantity = numberOfGuests;
+      const childQuantity = childCount;
       const pricePerTicket = Number(effectiveEventPrice?.price ?? eventPrice ?? selectedTicket?.price ?? listing?.price ?? 0);
+      const originalPricePerTicket = Number(selectedTicket?.originalPrice ?? selectedTicket?.price ?? listing?.originalPrice ?? listing?.price ?? pricePerTicket);
+      const groupDiscountApplied = Boolean(totalEarlyBirdDiscountAmount > 0 || totalDiscountAmount > 0);
+      const groupDiscountAmount = Number(totalEarlyBirdDiscountAmount || totalDiscountAmount || 0);
 
-      const tickets = selectedTicket ? [
+      const tickets = [
         {
           ticketTypeId,
           ticketTypeName,
           quantity,
           childQuantity,
           pricePerTicket,
+          originalPricePerTicket,
+          groupDiscountApplied,
+          groupDiscountAmount,
         }
-      ] : [];
+      ];
+
+      const formattedEventAddons = selectedAddOns.map((item) => {
+        const addon = item.addon || item;
+        const addonId = Number(addon.addonId || addon.id || item.addonId || item.id);
+        if (!addonId) return null;
+        return {
+          addonId,
+          addonName: addon.title || addon.name || addon.addonName || "Add-on",
+          addonPrice: parseFloat(addon.price || addon.addonPrice || addon.pricePerUnit || 0),
+          quantity: Number(item.quantity || addon.quantity || 1) || 1,
+        };
+      }).filter(Boolean);
 
       const payload = {
         booking: {
           eventId,
-          eventSlotId: resolvedSlotId,
+          ...(resolvedSlotId ? { eventSlotId: resolvedSlotId } : {}),
           bookingDate,
-          bookingTime,
+          ...(bookingTime ? { bookingTime } : {}),
           numberOfGuests,
           adultCount,
           childCount,
           childAges,
           tickets,
-          addons: formattedAddons,
+          addons: formattedEventAddons,
         }
       };
 

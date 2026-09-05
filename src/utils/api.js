@@ -863,9 +863,16 @@ export const verifyReverifyPhoneOTP = async (phone, otp, countryCode = "+91") =>
 export const requestHostingOtp = async (hostingData) => {
   try {
     const response = await ListingsAPI.post("/public/hosting/request-otp", hostingData);
-    // console.log("✅ Hosting OTP requested successfully:", response.data);
     return response.data;
   } catch (error) {
+    if (error.response?.status === 404) {
+      try {
+        const fallback = await ListingsAPI.post("/public/otp/request", hostingData);
+        return fallback.data;
+      } catch (fbErr) {
+        throw fbErr;
+      }
+    }
     console.error("❌ Error requesting Hosting OTP:", error);
     throw error;
   }
@@ -875,9 +882,16 @@ export const requestHostingOtp = async (hostingData) => {
 export const verifyHostingOtp = async (sessionId, otp) => {
   try {
     const response = await ListingsAPI.post("/public/hosting/verify-otp", { sessionId, otp });
-    //console.log("✅ Hosting OTP verified successfully:", response.data);
     return response.data;
   } catch (error) {
+    if (error.response?.status === 404) {
+      try {
+        const fallback = await ListingsAPI.post("/public/otp/verify", { sessionId, otp });
+        return fallback.data;
+      } catch (fbErr) {
+        throw fbErr;
+      }
+    }
     console.error("❌ Error verifying Hosting OTP:", error);
     throw error;
   }
@@ -887,9 +901,16 @@ export const verifyHostingOtp = async (sessionId, otp) => {
 export const resendHostingOtp = async (sessionId) => {
   try {
     const response = await ListingsAPI.post("/public/hosting/resend-otp", { sessionId });
-    //console.log("✅ Hosting OTP resent successfully:", response.data);
     return response.data;
   } catch (error) {
+    if (error.response?.status === 404) {
+      try {
+        const fallback = await ListingsAPI.post("/public/otp/resend", { sessionId });
+        return fallback.data;
+      } catch (fbErr) {
+        throw fbErr;
+      }
+    }
     console.error("❌ Error resending Hosting OTP:", error);
     throw error;
   }

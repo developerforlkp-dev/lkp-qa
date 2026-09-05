@@ -3032,7 +3032,7 @@ const StayDetails = () => {
         const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
         return (
-          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "-64px auto" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{
               margin: "0",
               overflow: "hidden",
@@ -3042,10 +3042,7 @@ const StayDetails = () => {
               borderTop: `1px solid ${B}`,
               borderBottom: `1px solid ${B}`,
             }}>
-              {/* Left & Right Edge Fades */}
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
+              {/* Left & Right Edge Fades removed as per request */}
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
                 transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
@@ -3398,7 +3395,7 @@ const StayDetails = () => {
         const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
         return (
-          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "-64px auto" }}>
+          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{
               margin: "0",
               overflow: "hidden",
@@ -3408,10 +3405,7 @@ const StayDetails = () => {
               borderTop: `1px solid ${B}`,
               borderBottom: `1px solid ${B}`,
             }}>
-              {/* Left & Right Edge Fades */}
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
+              {/* Left & Right Edge Fades removed as per request */}
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
                 transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}

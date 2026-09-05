@@ -59,6 +59,7 @@ const HostingApplicationForm = ({ visible, onClose }) => {
     email: "",
     altEmail: "",
     address: "",
+    manualAddress: "",
     pincode: "",
     location: "",
     country: "India",
@@ -191,6 +192,7 @@ const HostingApplicationForm = ({ visible, onClose }) => {
         email: "",
         altEmail: "",
         address: "",
+        manualAddress: "",
         pincode: "",
         location: "",
         country: "India",
@@ -286,14 +288,44 @@ const HostingApplicationForm = ({ visible, onClose }) => {
     const phoneRegex = /^\+91[0-9]{10}$/;
     if (!phoneRegex.test(formData.phoneNumber.trim())) return setError("Phone number must be +91 followed by 10 digits");
 
-    if (!formData.address.trim()) return setError("Address is required");
+    if (!formData.address.trim() && !formData.manualAddress.trim()) return setError("Address or Manual Address is required");
     if (formData.interestIds.length === 0) return setError("Please select at least one Business Interest");
 
     setLoading(true);
     try {
-      const response = await requestHostingOtp(formData);
-      setSuccess(`OTP requested successfully. Sent to ${response.maskedPhone} and ${response.maskedEmail}`);
-      setSessionId(response.sessionId);
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim() || formData.firstName.trim();
+      const rawPhone = formData.phoneNumber.replace(/^\+91/, "").replace(/\D/g, "");
+
+      const selectedBusinessInterests = businessInterests
+        .filter((item) => formData.interestIds.includes(item.interestId))
+        .map((item) => item.displayName || item.name || item.code || String(item.interestId));
+
+      const payload = {
+        fullName,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        accountType: formData.accountType,
+        companyName: formData.accountType === "Company" ? formData.companyName : undefined,
+        phoneNumber: rawPhone,
+        email: formData.email.trim(),
+        altEmail: formData.altEmail?.trim() || undefined,
+        altPhoneNumber: formData.altPhoneNumber?.trim() || undefined,
+        address: formData.address.trim() || formData.manualAddress.trim(),
+        manualAddress: formData.manualAddress.trim() || formData.address.trim(),
+        pincode: formData.pincode?.trim() || "",
+        location: formData.location?.trim() || undefined,
+        state: formData.state,
+        district: formData.district,
+        country: formData.country || "India",
+        latitude: formData.latitude ? String(formData.latitude) : "",
+        longitude: formData.longitude ? String(formData.longitude) : "",
+        selectedBusinessInterests,
+        interestIds: formData.interestIds,
+      };
+
+      const response = await requestHostingOtp(payload);
+      setSuccess(`OTP requested successfully. Sent to ${response.maskedPhone || response.phone || "your phone"} and ${response.maskedEmail || response.email || "your email"}`);
+      setSessionId(response.sessionId || response.id);
     } catch (err) {
       setError(getFriendlyError(err));
     } finally {
@@ -361,7 +393,10 @@ const HostingApplicationForm = ({ visible, onClose }) => {
               <p><strong>Email:</strong> {applicationData.email}</p>
               {applicationData.altEmail && <p><strong>Alt Email:</strong> {applicationData.altEmail}</p>}
               <p><strong>Phone:</strong> {applicationData.phoneNumber}</p>
-              <p><strong>Address:</strong> {applicationData.address}</p>
+              <p><strong>Address:</strong> {applicationData.address || applicationData.manualAddress}</p>
+              {applicationData.manualAddress && applicationData.manualAddress !== applicationData.address && (
+                <p><strong>Manual Address:</strong> {applicationData.manualAddress}</p>
+              )}
               {applicationData.location && <p><strong>Location:</strong> {applicationData.location}</p>}
               <p><strong>District:</strong> {applicationData.district}</p>
               <p><strong>State:</strong> {applicationData.state}</p>
@@ -441,7 +476,7 @@ const HostingApplicationForm = ({ visible, onClose }) => {
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>Address *</label>
+              <label className={styles.label}>Address (Search on Google Maps)</label>
               <input 
                 ref={addressInputRef}
                 type="text" 
@@ -449,9 +484,24 @@ const HostingApplicationForm = ({ visible, onClose }) => {
                 name="address" 
                 value={formData.address} 
                 onChange={handleChange} 
-                placeholder="Search your address..." 
+                placeholder="Search your address or area on Google Maps..." 
                 disabled={loading} 
-                required 
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>
+                Manual Address / Landmark {formData.address.trim() ? "(Optional)" : "*"}
+              </label>
+              <input 
+                type="text" 
+                className={styles.input} 
+                name="manualAddress" 
+                value={formData.manualAddress} 
+                onChange={handleChange} 
+                placeholder="Enter building, house no, street or landmark if not on map..." 
+                disabled={loading} 
+                required={!formData.address.trim()}
               />
             </div>
 

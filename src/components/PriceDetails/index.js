@@ -124,17 +124,14 @@ const PriceDetails = ({
                 const titleStyle = titleColor ? { color: titleColor } : undefined;
 
                 if (isDiscountItem) {
-                  return <span className={styles.mainLabel} style={titleStyle}>{item?.title || t}</span>;
+                  return <span className={styles.mainLabel}>{item?.title || t}</span>;
                 }
 
                 if (item?.subtitle) {
-                  const subtitleColor = resolveColor(item?.subtitleColor, "#B0B4BD");
-                  const subtitleStyle = subtitleColor ? { color: subtitleColor } : undefined;
-
                   return (
                     <div className={styles.priceDetailsStack}>
-                      <span className={styles.mainLabel} style={titleStyle}>{item.title}</span>
-                      <span className={styles.calculationLabel} style={subtitleStyle}>{item.subtitle}</span>
+                      <span className={styles.mainLabel}>{item.title}</span>
+                      <span className={styles.calculationLabel}>{item.subtitle}</span>
                     </div>
                   );
                 }
@@ -145,25 +142,27 @@ const PriceDetails = ({
                     const detail = "(" + parts.slice(1).join("(").trim();
                     return (
                       <div className={styles.priceDetailsStack}>
-                        <span className={styles.mainLabel} style={titleStyle}>{mainLabel}</span>
-                        <span className={styles.calculationLabel} style={{ color: "#B0B4BD" }}>{detail}</span>
+                        <span className={styles.mainLabel}>{mainLabel}</span>
+                        <span className={styles.calculationLabel}>{detail}</span>
                       </div>
                     );
                   }
                 }
                 if (titleColor) {
-                  return <span style={{ color: titleColor }}>{t}</span>;
+                  // Fallback for simple titles with color, wrapping in mainLabel to enforce dark mode adaptation
+                  return <span className={styles.mainLabel}>{t}</span>;
                 }
-                return t;
+                return <span className={styles.mainLabel}>{t}</span>;
               };
 
-              const valueColor = resolveColor(x?.valueColor);
-              const valueStyle = valueColor ? { color: valueColor } : undefined;
+              // Ignore valueColor if it breaks dark mode, relying on CSS instead
+              // const valueColor = resolveColor(x?.valueColor);
+              // const valueStyle = valueColor ? { color: valueColor } : undefined;
 
               return (
                 <div className={styles.row} key={index}>
                   <div className={styles.cell}>{renderTitle(title, x)}</div>
-                  <div className={styles.cell} style={valueStyle}>{value}</div>
+                  <div className={styles.cell}>{value}</div>
                 </div>
               );
             })}
@@ -206,7 +205,14 @@ const PriceDetails = ({
         {cancellationPolicy && (
           <div className={styles.cancellation}>
             {!hideCancellationIcon && <Icon name="coin" size="16" />}
-            <div style={{ whiteSpace: "pre-line" }}>{cancellationPolicy}</div>
+            <div className={styles.cancellationList}>
+              {cancellationPolicy.split('.').map(p => p.trim()).filter(Boolean).map((policy, idx) => (
+                <div key={idx} className={styles.cancellationItem}>
+                  <span className={styles.bullet}>•</span>
+                  <span>{policy}.</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

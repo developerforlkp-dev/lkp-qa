@@ -182,14 +182,20 @@
     flex-direction: column
     &:first-child
         margin-right: auto
-        color: $n4
+        color: $n2
+        +dark
+            color: $n8
         flex: 1
         min-width: 0
     &:nth-child(2)
         flex-shrink: 0
         margin-left: 20px
         text-align: right
-        font-weight: 500
+        font-weight: 600
+        font-size: 16px
+        color: $n2
+        +dark
+            color: $n8
         padding-top: 2px
 
 .addOnsSection
@@ -324,21 +330,37 @@
         margin-right: 8px
         fill: $p1
 
+.cancellationList
+    display: flex
+    flex-direction: column
+    gap: 6px
+
+.cancellationItem
+    display: flex
+    align-items: flex-start
+
+.bullet
+    margin-right: 6px
+    flex-shrink: 0
+    font-size: 16px
+    line-height: 1
+    margin-top: 1px
+
 .priceDetailsStack
     display: flex
     flex-direction: column
     gap: 2px
 
 .mainLabel
-    font-size: 14px
+    font-size: 16px
     font-weight: 500
+    color: $n2
+    +dark
+        color: $n8
+
+.calculationLabel
+    font-size: 14px
+    font-weight: 400
     color: $n4
     +dark
         color: $n5
-
-.calculationLabel
-    font-size: 12px
-    font-weight: 400
-    color: $n5
-    +dark
-        color: $n4
