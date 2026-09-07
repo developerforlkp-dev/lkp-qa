@@ -209,6 +209,13 @@ const CuratedContent = ({
           box-shadow: 0 20px 50px ${tokens.A}65 !important;
         }
 
+        .collage-image-wrapper {
+          -webkit-mask-image: -webkit-radial-gradient(white, black);
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+        }
         .collage-image-wrapper:hover .collage-img {
           transform: scale(1.05) !important;
         }

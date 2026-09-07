@@ -8,7 +8,7 @@ import GuestPicker from "../../components/GuestPicker";
 import HeadOptions from "../../components/PriceDetails/HeadOptions";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
-import { getOrderDetails, getStayDetails, getListingAddons, getEventAddons } from "../../utils/api";
+import { getOrderDetails, getStayDetails, getListingAddons, getEventAddons, getEventDetails, getHostContent } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 import {
   getPendingPayment,
@@ -355,6 +355,7 @@ const Checkout = () => {
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [addonDetails, setAddonDetails] = useState([]);
   const [reviewsData, setReviewsData] = useState({ rating: null, count: 0 });
+  const [fetchedLead, setFetchedLead] = useState(null);
   const [messageText, setMessageText] = useState("");
   const [guestDetails, setGuestDetails] = useState({
     title: "Mr",
@@ -380,6 +381,30 @@ const Checkout = () => {
       }, 100);
     }
   };
+
+  useEffect(() => {
+    const fetchLeadData = async () => {
+      try {
+        let leadIdToFetch = bookingData?.leadUserId || bookingData?.event?.leadUserId || bookingData?.listing?.leadUserId || bookingData?.hostId;
+        
+        if (!leadIdToFetch && bookingData?.eventId) {
+          const eventData = await getEventDetails(bookingData.eventId);
+          leadIdToFetch = eventData?.leadUserId || eventData?.hostId;
+        }
+
+        if (leadIdToFetch) {
+          const leadData = await getHostContent(leadIdToFetch);
+          setFetchedLead(leadData);
+        }
+      } catch (err) {
+        console.error("Error fetching lead data for checkout:", err);
+      }
+    };
+
+    if (bookingData) {
+      fetchLeadData();
+    }
+  }, [bookingData?.leadUserId, bookingData?.event?.leadUserId, bookingData?.listing?.leadUserId, bookingData?.eventId, bookingData?.hostId]);
 
   // Initialize add-ons from location state or bookingData
   useEffect(() => {
@@ -1339,6 +1364,7 @@ const Checkout = () => {
   const listingImage = getListingImage();
 
   const hostSources = [
+    fetchedLead,
     bookingData,
     bookingData?.listing?.host,
     bookingData?.host,

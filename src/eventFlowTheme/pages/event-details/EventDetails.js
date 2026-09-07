@@ -1495,7 +1495,7 @@ function Hero({ event, heroRef }) {
   );
 }
 
-function PremiumMarquee({ items }) {
+function PremiumMarquee({ items, isMobile }) {
   const { theme, tokens: { B, BG, FG, M } } = useTheme();
 
   const rawTags = items && items.length > 0 ? items : ["Experience", "Premium", "Event", "Curated", "Editorial"];
@@ -1507,18 +1507,16 @@ function PremiumMarquee({ items }) {
   const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
 
   return (
-    <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{
-        overflow: "hidden",
-        position: "relative",
-        padding: "20px 0",
-        background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+    <div style={{ padding: isMobile ? "0 20px" : "0 80px", width: "100%", boxSizing: "border-box" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+        <div style={{
+          overflow: "hidden",
+          position: "relative",
+          padding: "20px 0",
+          background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
         borderTop: `1px solid ${B}`,
         borderBottom: `1px solid ${B}`,
       }}>
-        {/* Left & Right Edge Fades */}
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
 
         <motion.div
           animate={{ x: ["0%", "-50%"] }}
@@ -1558,6 +1556,7 @@ function PremiumMarquee({ items }) {
         </motion.div>
       </div>
     </div>
+  </div>
   );
 }
 
@@ -1683,7 +1682,7 @@ function About({ event }) {
             ))}
           </div>
         </div>
-        <PremiumMarquee items={mqItems} />
+        <PremiumMarquee items={mqItems} isMobile={isMobile} />
       </>
     );
   }
@@ -1779,7 +1778,7 @@ function About({ event }) {
           </div>
         </div>
       </section>
-      <PremiumMarquee items={mqItems} />
+      <PremiumMarquee items={mqItems} isMobile={isMobile} />
     </>
   );
 }
@@ -2209,7 +2208,7 @@ function Venue({ event, hostName }) {
           : typeof event?.whatsSpecial === "string" && event?.whatsSpecial.trim() !== ""
             ? event.whatsSpecial.split(",").map(s => s.trim()).filter(Boolean)
             : ["Experience", "Premium", "Event"];
-        return <PremiumMarquee items={whatsSpecialArray} />;
+        return <PremiumMarquee items={whatsSpecialArray} isMobile={isMobile} />;
       })()}
     </>
   );
@@ -4019,8 +4018,8 @@ export default function EventDetails() {
               )}
             </div>
           ) : (
-            <section className="addons-section" style={{ background: BG, padding: "64px 0" }}>
-              <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <section className="addons-section" style={{ background: BG, padding: "64px 80px" }}>
+              <div style={{ maxWidth: 1320, margin: "0 auto" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                     <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>

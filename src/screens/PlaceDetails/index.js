@@ -1378,7 +1378,7 @@ const StepCard = ({ s, i, A, W, B, FG, M, getItineraryImageUrl, getItineraryImag
 };
 
 function Itinerary({ place }) {
-  const { tokens: { A, B, FG, M, W, S } } = useTheme();
+  const { tokens: { A, B, BG, FG, M, W, S } } = useTheme();
   const { isMobile } = useWindowSize();
   const [photoVisible, setPhotoVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -1396,7 +1396,7 @@ function Itinerary({ place }) {
   const handlePrev = () => setActiveIndex((prev) => Math.max(0, prev - 1));
 
   return (
-    <section style={{ background: S, padding: isMobile ? "40px 16px" : "64px 80px", position: "relative" }}>
+    <section style={{ background: BG, padding: isMobile ? "40px 16px" : "64px 80px", position: "relative" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         {/* Section header */}
         <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "flex-end", justifyContent: "space-between", marginBottom: 24, flexDirection: isMobile ? "column" : "row", gap: 16 }}>
@@ -2044,7 +2044,7 @@ function VisitorInformation({ place }) {
 }
 
 function GoodToKnow({ place }) {
-  const { tokens: { A, B, FG, M, W, S, AL } } = useTheme();
+  const { tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
 
   const warningBg = A === "#0097B2" ? "#fff5f5" : "rgba(239, 68, 68, 0.05)";
   const warningBorder = A === "#0097B2" ? "#fee2e2" : "rgba(239, 68, 68, 0.2)";
@@ -2065,7 +2065,7 @@ function GoodToKnow({ place }) {
   const feedbackBg = A === "#0097B2" ? "#f8f8f8" : S;
 
   return (
-    <section style={{ background: S, padding: "48px 80px" }}>
+    <section style={{ background: W, padding: "48px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
         <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Good To Know</h3>
 
@@ -2899,7 +2899,7 @@ function MobileItinerary({ place }) {
 }
 
 function MobileGoodToKnow({ place }) {
-  const { tokens: { A, B, FG, M, W, S, AL } } = useTheme();
+  const { tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
 
   const warningBg = A === "#0097B2" ? "#fff5f5" : "rgba(239, 68, 68, 0.05)";
   const warningBorder = A === "#0097B2" ? "#fee2e2" : "rgba(239, 68, 68, 0.2)";
@@ -2910,7 +2910,7 @@ function MobileGoodToKnow({ place }) {
   const avoidItems = ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"];
 
   return (
-    <section style={{ background: S, padding: "40px 16px", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
+    <section style={{ background: W, padding: "40px 16px", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
       <p style={{ fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: A, fontWeight: 800, marginBottom: 6 }}>
         SAFETY & GUIDANCE
       </p>
@@ -3313,8 +3313,7 @@ function PremiumMarquee({ items, isMobile, fallbackItems }) {
           borderTop: `1px solid ${B}`,
           borderBottom: `1px solid ${B}`,
         }}>
-          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-          <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: isMobile ? "60px" : "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
+
 
           <motion.div
             animate={{ x: ["0%", "-50%"] }}
@@ -3406,7 +3405,7 @@ function MobilePlaceDetails({
           primaryCategoryId={primaryCategoryId}
           currentListingId={currentListingId}
           title="More Places To Explore"
-          sectionStyle={{ maxWidth: 1320, margin: "0 auto", padding: "40px 16px", boxSizing: "border-box", width: "100%" }}
+          sectionStyle={{ padding: "40px 16px", boxSizing: "border-box", width: "100%" }}
           titleStyle={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: "32px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
         />
       </div>
@@ -3645,7 +3644,7 @@ const PlaceDetails = () => {
         primaryCategoryId={primaryCategoryId}
         currentListingId={currentListingId}
         title="More Places To Explore"
-        sectionStyle={{ maxWidth: 1320, margin: "0 auto", padding: "48px 80px", boxSizing: "border-box", width: "100%" }}
+        sectionStyle={{ padding: "48px 80px", boxSizing: "border-box", width: "100%" }}
         titleStyle={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, lineHeight: 1.1, marginBottom: "32px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}
       />
 
