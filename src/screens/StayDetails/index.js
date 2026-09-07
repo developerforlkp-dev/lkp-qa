@@ -7,7 +7,7 @@ import {
   Phone, Clock, FileText, MapPin, ChevronDown, CheckCircle, Info, Building,
   ArrowRight, ShieldCheck, Mail, Globe, Map, Navigation, ArrowDown, Car, AirVent,
   Users, DoorOpen, Bed, Bath, Maximize, Calendar, Star, Share2, Heart, ArrowLeft,
-  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus, Check, Camera, Home
+  Tv, Coffee, ChevronLeft, ChevronRight, Plus, Minus, Check, Camera, Home, SearchX
 } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -15,6 +15,7 @@ import Page from "../../components/Page";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
+import StayNotFound from "./StayNotFound";
 import roomStyles from "./RoomCards.module.sass";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
@@ -2934,19 +2935,60 @@ const StayDetails = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+          style={{ position: "fixed", inset: 0, zIndex: 10000, background: BG, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
         >
           <motion.div
-            initial={{ y: 16, scale: 0.98, opacity: 0 }}
+            initial={{ y: 20, scale: 0.95, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 8, scale: 0.98, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            style={{ width: "100%", maxWidth: 420, background: S, color: FG, border: `1px solid ${B}`, borderRadius: 16, boxShadow: "0 24px 64px rgba(0,0,0,0.28)", padding: 20 }}
+            exit={{ y: 10, scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ width: "100%", maxWidth: 460, background: S, color: FG, border: `1px solid ${B}`, borderRadius: 24, boxShadow: "0 32px 64px rgba(0,0,0,0.08)", padding: 40, textAlign: "center", fontFamily: 'Inter, sans-serif' }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: FG }}>Stay Unavailable</div>
-            <div style={{ fontSize: 14, lineHeight: 1.6, color: M }}>Stay no longer available.</div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
-              <button type="button" onClick={handleUnavailablePopupClose} style={{ border: "none", background: "#0097B2", color: W, borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 15, stiffness: 200, delay: 0.1 }}
+              style={{
+                width: 88,
+                height: 88,
+                background: AL,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 28px auto'
+              }}
+            >
+              <SearchX size={44} color="#0097B2" />
+            </motion.div>
+            
+            <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: FG }}>Stay Unavailable</div>
+            <div style={{ fontSize: 15, lineHeight: 1.6, color: M, marginBottom: 32 }}>
+              This stay is no longer available or might have been removed by the host. 
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
+              <button 
+                type="button" 
+                onClick={() => {
+                  setUnavailablePopupOpen(false);
+                  history.goBack();
+                }} 
+                style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", color: FG, border: `1px solid ${B}`, borderRadius: 12, padding: "12px 24px", fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }}
+                onMouseOver={(e) => e.currentTarget.style.background = AL}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <ArrowLeft size={16} />
+                Go Back
+              </button>
+              <button 
+                type="button" 
+                onClick={handleUnavailablePopupClose} 
+                style={{ display: "flex", alignItems: "center", gap: 8, background: "#0097B2", color: "#fff", border: "none", borderRadius: 12, padding: "12px 24px", fontWeight: 600, fontSize: 14, cursor: "pointer", boxShadow: "0 4px 12px rgba(0,151,178,0.3)", transition: "all 0.2s" }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <Home size={16} />
                 Go to Home
               </button>
             </div>
@@ -2993,6 +3035,10 @@ const StayDetails = () => {
         <LoadingSkeleton variant="stay" />
       </div>
     );
+  }
+
+  if (!loading && !stay && !unavailablePopupOpen) {
+    return <StayNotFound />;
   }
 
   if (unavailablePopupOpen) {

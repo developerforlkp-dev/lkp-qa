@@ -367,35 +367,72 @@ const getChildAgeTierForAge = (stay, age) => {
   ) || null;
 };
 
+const getComplimentaryChildAgeStart = (stay) => {
+  const targetStay = stay?.stay || stay;
+  const compStart = Number(
+    targetStay?.complimentaryChildAgeStart ??
+    targetStay?.complimentary_child_age_start ??
+    targetStay?.complimentaryChildAgeFrom ??
+    targetStay?.complimentary_child_age_from ??
+    targetStay?.complimentaryAgeStart ??
+    targetStay?.complimentary_age_start ??
+    targetStay?.complimentaryAgeFrom ??
+    targetStay?.complimentary_age_from ??
+    targetStay?.childAgeComplimentaryStart ??
+    targetStay?.child_age_complimentary_start ??
+    targetStay?.childAgeComplimentaryFrom ??
+    targetStay?.child_age_complimentary_from
+  );
+  if (Number.isFinite(compStart)) {
+    return compStart;
+  }
+  return 0;
+};
+
+const getComplimentaryChildAgeEnd = (stay) => {
+  const targetStay = stay?.stay || stay;
+  const compEnd = Number(
+    targetStay?.complimentaryChildAgeEnd ??
+    targetStay?.complimentary_child_age_end ??
+    targetStay?.complimentaryChildAgeTo ??
+    targetStay?.complimentary_child_age_to ??
+    targetStay?.complimentaryAgeEnd ??
+    targetStay?.complimentary_age_end ??
+    targetStay?.complimentaryAgeTo ??
+    targetStay?.complimentary_age_to ??
+    targetStay?.childAgeComplimentaryEnd ??
+    targetStay?.child_age_complimentary_end ??
+    targetStay?.childAgeComplimentaryTo ??
+    targetStay?.child_age_complimentary_to
+  );
+  if (Number.isFinite(compEnd)) {
+    return compEnd;
+  }
+  return 5;
+};
+
 const getChildAgePolicyBounds = (stay) => {
-  const tiers = getChildAgePolicyTiers(stay);
-  const compFrom = Number(stay?.complimentaryChildAgeFrom ?? stay?.complimentary_child_age_from);
-  const compTo = Number(stay?.complimentaryChildAgeTo ?? stay?.complimentary_child_age_to);
+  const targetStay = stay?.stay || stay;
+  const tiers = getChildAgePolicyTiers(targetStay);
+  const compFrom = getComplimentaryChildAgeStart(targetStay);
+  const compTo = getComplimentaryChildAgeEnd(targetStay);
   const rateFrom = Number(
-    stay?.childAgeRateFrom ??
-    stay?.child_age_rate_from ??
-    stay?.childRateAgeFrom ??
-    stay?.child_rate_age_from
+    targetStay?.childAgeRateFrom ??
+    targetStay?.child_age_rate_from ??
+    targetStay?.childRateAgeFrom ??
+    targetStay?.child_rate_age_from
   );
   const rateTo = Number(
-    stay?.childAgeRateTo ??
-    stay?.child_age_rate_to ??
-    stay?.childRateAgeTo ??
-    stay?.child_rate_age_to ??
-    stay?.childRateTo ??
-    stay?.child_rate_to
+    targetStay?.childAgeRateTo ??
+    targetStay?.child_age_rate_to ??
+    targetStay?.childRateAgeTo ??
+    targetStay?.child_rate_age_to ??
+    targetStay?.childRateTo ??
+    targetStay?.child_rate_to
   );
 
-  let minAge = 0;
+  let minAge = compFrom;
   let maxAge = 12;
-
-  if (Number.isFinite(compFrom)) {
-    minAge = compFrom;
-  } else if (Number.isFinite(rateFrom)) {
-    minAge = rateFrom;
-  } else if (tiers.length > 0) {
-    minAge = Math.min(...tiers.map(t => t.fromAge));
-  }
 
   if (Number.isFinite(rateTo)) {
     maxAge = rateTo;
@@ -406,26 +443,28 @@ const getChildAgePolicyBounds = (stay) => {
   }
 
   return {
-    minAge: Math.min(Number.isFinite(compFrom) ? compFrom : 0, Number.isFinite(rateFrom) ? rateFrom : 0),
+    minAge: Math.min(compFrom, Number.isFinite(rateFrom) ? rateFrom : compFrom),
     maxAge: Math.max(minAge, maxAge),
-    complimentaryFrom: Number.isFinite(compFrom) ? compFrom : 0,
-    complimentaryTo: Number.isFinite(compTo) ? compTo : 5,
+    complimentaryFrom: compFrom,
+    complimentaryTo: compTo,
     childRateFrom: Number.isFinite(rateFrom) ? rateFrom : minAge,
     childRateTo: Number.isFinite(rateTo) ? rateTo : maxAge,
   };
 };
 
 const getSelectableChildAges = (stay) => {
+  const targetStay = stay?.stay || stay;
+  const defaultAge = getComplimentaryChildAgeStart(targetStay);
   const topLevelChildRateTo = Number(
-    stay?.childAgeRateTo ??
-    stay?.child_age_rate_to ??
-    stay?.childRateAgeTo ??
-    stay?.child_rate_age_to ??
-    stay?.childRateTo ??
-    stay?.child_rate_to
+    targetStay?.childAgeRateTo ??
+    targetStay?.child_age_rate_to ??
+    targetStay?.childRateAgeTo ??
+    targetStay?.child_rate_age_to ??
+    targetStay?.childRateTo ??
+    targetStay?.child_rate_to
   );
-  const bounds = getChildAgePolicyBounds(stay);
-  const min = Math.max(0, bounds ? bounds.minAge : 0);
+  const bounds = getChildAgePolicyBounds(targetStay);
+  const min = 0;
   let max;
   if (Number.isFinite(topLevelChildRateTo) && topLevelChildRateTo >= min) {
     max = topLevelChildRateTo;
@@ -435,6 +474,9 @@ const getSelectableChildAges = (stay) => {
     max = bounds.maxAge;
   } else {
     max = 12;
+  }
+  if (max < defaultAge) {
+    max = defaultAge;
   }
   return Array.from({ length: Math.max(1, max - min + 1) }, (_, i) => min + i);
 };
@@ -703,6 +745,7 @@ const StayBookingSystem = ({
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const [internalChildAges, setInternalChildAges] = useState([]);
+  const defaultChildAge = useMemo(() => getComplimentaryChildAgeStart(stay), [stay]);
   const childAges = useMemo(() => {
     if (Array.isArray(externalChildAges) && externalChildAges.length > 0) return externalChildAges;
     return internalChildAges;
@@ -900,7 +943,7 @@ const StayBookingSystem = ({
           const restoredGuests = getStoredStayGuests(stored.guests);
           if (restoredGuests) setGuests(restoredGuests);
           if (Array.isArray(stored.childAges)) {
-            setChildAges(syncChildAges(stored.childAges, stored?.guests?.children || 0));
+            setChildAges(syncChildAges(stored.childAges, stored?.guests?.children || 0, defaultChildAge));
           }
           const restoredRooms = getStoredStayRooms(stored.selectedRooms, stay);
           if (restoredRooms.length > 0) setSelectedRooms(restoredRooms);
@@ -1353,8 +1396,29 @@ const StayBookingSystem = ({
 
   useEffect(() => {
     if (typeof setChildAges !== "function") return;
-    setChildAges((prev) => syncChildAges(prev, guests?.children || 0));
-  }, [guests?.children, setChildAges]);
+    setChildAges((prev) => syncChildAges(prev, guests?.children || 0, defaultChildAge));
+  }, [guests?.children, setChildAges, defaultChildAge]);
+
+  useEffect(() => {
+    if (show && guests?.children > 0 && typeof setChildAges === "function") {
+      setChildAges((prev) => {
+        const safeCount = Math.max(0, Number(guests?.children || 0));
+        const arr = Array.isArray(prev) ? [...prev] : [];
+        let changed = false;
+        while (arr.length < safeCount) {
+          arr.push(defaultChildAge);
+          changed = true;
+        }
+        for (let i = 0; i < safeCount; i++) {
+          if (arr[i] === "" || arr[i] === null || arr[i] === undefined) {
+            arr[i] = defaultChildAge;
+            changed = true;
+          }
+        }
+        return changed ? arr : prev;
+      });
+    }
+  }, [show, guests?.children, defaultChildAge, setChildAges]);
 
   const nightsCount = useMemo(() => {
     if (!checkInDate || !checkOutDate) return 0;
@@ -1739,7 +1803,7 @@ const StayBookingSystem = ({
       extraChildrenLimit: totalExtraChildrenLimit,
       activeExtraAdultPrice: finalExtraAP,
       activeExtraChildPrice: finalExtraCP,
-      childAges: syncChildAges(childAges, guests?.children || 0),
+      childAges: syncChildAges(childAges, guests?.children || 0, defaultChildAge),
       childAgePricing,
       childAgeChargePerNight: computedChildChargePerNight,
       extraAdultsCount,
@@ -1748,7 +1812,7 @@ const StayBookingSystem = ({
       normalChildrenCount,
       addonsTotal
     };
-  }, [stay, resolvedSelectedRooms, checkInDate, guests, childAges, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities]);
+  }, [stay, resolvedSelectedRooms, checkInDate, guests, childAges, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities, defaultChildAge]);
 
   // Dynamic Stay Pricing API total fetch
   useEffect(() => {
@@ -1770,11 +1834,11 @@ const StayBookingSystem = ({
     }
 
     const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
-    const normalizedChildAges = syncChildAges(childAges, guests.children || 0, 0).map((age) => {
+    const normalizedChildAges = syncChildAges(childAges, guests.children || 0, defaultChildAge).map((age) => {
       if (age !== "" && age !== null && age !== undefined && !Number.isNaN(Number(age))) {
         return Number(age);
       }
-      return 0;
+      return defaultChildAge;
     });
     const roomChildAges = mapChildAgesToRoomAllocations(distribution.allocations, normalizedChildAges);
     const grouped = {};
@@ -1838,7 +1902,7 @@ const StayBookingSystem = ({
         if (ageVal !== "" && ageVal !== null && ageVal !== undefined && !Number.isNaN(Number(ageVal))) {
           return Number(ageVal);
         }
-        return Number(selectableChildAges?.[0] ?? 0);
+        return Number(defaultChildAge);
       });
 
       roomsPayload.push({
@@ -2682,8 +2746,8 @@ const StayBookingSystem = ({
           };
         }).filter(Boolean)
         : [];
-      const normalizedChildAges = syncChildAges(childAges, guests.children || 0, 0)
-        .map((age) => (age !== "" && age !== null && age !== undefined && !Number.isNaN(Number(age))) ? Number(age) : 0);
+      const normalizedChildAges = syncChildAges(childAges, guests.children || 0, defaultChildAge)
+        .map((age) => (age !== "" && age !== null && age !== undefined && !Number.isNaN(Number(age))) ? Number(age) : defaultChildAge);
 
       const payloadBase = {
         stayId: Number(stay.stayId || stay.id),
@@ -4062,8 +4126,8 @@ const StayBookingSystem = ({
                             {/* Child Age Selector: show when extra children exist (property-based or room-based) */}
                             {extraChildAgeIndexes.length > 0 && (() => {
                               const _extraIndexes = extraChildAgeIndexes;
-                              const compFrom = extraChildPolicyBounds?.complimentaryFrom ?? Number(stay?.complimentaryChildAgeFrom ?? stay?.complimentary_child_age_from ?? 0);
-                              const compTo = extraChildPolicyBounds?.complimentaryTo ?? Number(stay?.complimentaryChildAgeTo ?? stay?.complimentary_child_age_to ?? 5);
+                              const compFrom = extraChildPolicyBounds?.complimentaryFrom ?? getComplimentaryChildAgeStart(stay);
+                              const compTo = extraChildPolicyBounds?.complimentaryTo ?? getComplimentaryChildAgeEnd(stay);
                               const rateFrom = extraChildPolicyBounds?.childRateFrom ?? Number(stay?.childAgeRateFrom ?? stay?.child_age_rate_from ?? stay?.childRateAgeFrom ?? stay?.child_rate_age_from ?? 6);
                               const rateTo = extraChildPolicyBounds?.childRateTo ?? Number(stay?.childAgeRateTo ?? stay?.child_age_rate_to ?? stay?.childRateAgeTo ?? stay?.child_rate_age_to ?? stay?.childRateTo ?? stay?.child_rate_to ?? 12);
                               const extraChildPrice = pricing?.activeExtraChildPrice || Number(stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
@@ -4085,7 +4149,7 @@ const StayBookingSystem = ({
 
                                   <div style={{ display: "grid", gridTemplateColumns: _extraIndexes.length === 1 ? "1fr" : "1fr 1fr", gap: 8, marginTop: 4 }}>
                                     {_extraIndexes.map((childIndex) => {
-                                      const currentAge = childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? Number(childAges[childIndex]) : (selectableChildAges[0] ?? 0);
+                                      const currentAge = childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? Number(childAges[childIndex]) : defaultChildAge;
                                       const isComp = currentAge >= compFrom && currentAge <= compTo;
                                       const isRate = currentAge >= rateFrom && currentAge <= rateTo;
                                       return (
@@ -4116,11 +4180,11 @@ const StayBookingSystem = ({
                                                 </span>
                                               </div>
                                             <ChildAgeSelect
-                                              value={childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? childAges[childIndex] : (selectableChildAges[0] ?? 0)}
+                                              value={childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? childAges[childIndex] : defaultChildAge}
                                               onChange={(event) => {
                                                 const { value } = event.target;
                                                 setChildAges((prev) => {
-                                                  const next = syncChildAges(Array.isArray(prev) ? prev : [], guests?.children || 0, 0);
+                                                  const next = syncChildAges(Array.isArray(prev) ? prev : [], guests?.children || 0, defaultChildAge);
                                                   next[childIndex] = Number(value);
                                                   return next;
                                                 });
