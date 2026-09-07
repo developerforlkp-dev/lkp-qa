@@ -91,8 +91,20 @@ const getChildAgePolicyTiers = (stay) => {
       .filter((tier) => Number.isFinite(tier.fromAge) && Number.isFinite(tier.toAge));
   }
 
-  const childRateFrom = Number(stay?.childRateAgeFrom ?? stay?.child_rate_age_from);
-  const childRateTo = Number(stay?.childRateAgeTo ?? stay?.child_rate_age_to);
+  const childRateFrom = Number(
+    stay?.childAgeRateFrom ??
+    stay?.child_age_rate_from ??
+    stay?.childRateAgeFrom ??
+    stay?.child_rate_age_from
+  );
+  const childRateTo = Number(
+    stay?.childAgeRateTo ??
+    stay?.child_age_rate_to ??
+    stay?.childRateAgeTo ??
+    stay?.child_rate_age_to ??
+    stay?.childRateTo ??
+    stay?.child_rate_to
+  );
   if (Number.isFinite(childRateFrom) && Number.isFinite(childRateTo)) {
     const extraChildPrice = Number(
       stay?.fullPropertyExtraChildPrice ?? stay?.extraChildPrice ?? stay?.occupancyPricing?.extraChildPrice ?? 0
@@ -127,11 +139,23 @@ const getChildAgePolicyBounds = (stay) => {
   const tiers = getChildAgePolicyTiers(stay);
   const compFrom = Number(stay?.complimentaryChildAgeFrom ?? stay?.complimentary_child_age_from);
   const compTo = Number(stay?.complimentaryChildAgeTo ?? stay?.complimentary_child_age_to);
-  const rateFrom = Number(stay?.childRateAgeFrom ?? stay?.child_rate_age_from);
-  const rateTo = Number(stay?.childRateAgeTo ?? stay?.child_rate_age_to);
+  const rateFrom = Number(
+    stay?.childAgeRateFrom ??
+    stay?.child_age_rate_from ??
+    stay?.childRateAgeFrom ??
+    stay?.child_rate_age_from
+  );
+  const rateTo = Number(
+    stay?.childAgeRateTo ??
+    stay?.child_age_rate_to ??
+    stay?.childRateAgeTo ??
+    stay?.child_rate_age_to ??
+    stay?.childRateTo ??
+    stay?.child_rate_to
+  );
 
   let minAge = 0;
-  let maxAge = 17;
+  let maxAge = 12;
 
   if (Number.isFinite(compFrom)) {
     minAge = compFrom;
@@ -143,10 +167,10 @@ const getChildAgePolicyBounds = (stay) => {
 
   if (Number.isFinite(rateTo)) {
     maxAge = rateTo;
-  } else if (Number.isFinite(compTo)) {
-    maxAge = Math.max(maxAge, compTo);
   } else if (tiers.length > 0) {
     maxAge = Math.max(...tiers.map((t) => t.toAge));
+  } else if (Number.isFinite(compTo)) {
+    maxAge = Math.max(minAge, compTo);
   }
 
   return {
@@ -160,10 +184,27 @@ const getChildAgePolicyBounds = (stay) => {
 };
 
 const getSelectableChildAges = (stay) => {
+  const topLevelChildRateTo = Number(
+    stay?.childAgeRateTo ??
+    stay?.child_age_rate_to ??
+    stay?.childRateAgeTo ??
+    stay?.child_rate_age_to ??
+    stay?.childRateTo ??
+    stay?.child_rate_to
+  );
   const bounds = getChildAgePolicyBounds(stay);
   const min = Math.max(0, bounds ? bounds.minAge : 0);
-  const max = Math.max(12, bounds ? bounds.maxAge : 17);
-  return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  let max;
+  if (Number.isFinite(topLevelChildRateTo) && topLevelChildRateTo >= min) {
+    max = topLevelChildRateTo;
+  } else if (bounds && Number.isFinite(bounds.childRateTo) && bounds.childRateTo >= min) {
+    max = bounds.childRateTo;
+  } else if (bounds && Number.isFinite(bounds.maxAge) && bounds.maxAge >= min) {
+    max = bounds.maxAge;
+  } else {
+    max = 12;
+  }
+  return Array.from({ length: Math.max(1, max - min + 1) }, (_, i) => min + i);
 };
 
 const buildStayHeaderLocation = (stay) => {
@@ -1087,8 +1128,8 @@ const BookingSidebar = ({
                   const bounds = getChildAgePolicyBounds(stay);
                   const compFrom = bounds?.complimentaryFrom ?? Number(stay?.complimentaryChildAgeFrom ?? stay?.complimentary_child_age_from ?? 0);
                   const compTo = bounds?.complimentaryTo ?? Number(stay?.complimentaryChildAgeTo ?? stay?.complimentary_child_age_to ?? 5);
-                  const rateFrom = bounds?.childRateFrom ?? Number(stay?.childRateAgeFrom ?? stay?.child_rate_age_from ?? 6);
-                  const rateTo = bounds?.childRateTo ?? Number(stay?.childRateAgeTo ?? stay?.child_rate_age_to ?? 12);
+                  const rateFrom = bounds?.childRateFrom ?? Number(stay?.childAgeRateFrom ?? stay?.child_age_rate_from ?? stay?.childRateAgeFrom ?? stay?.child_rate_age_from ?? 6);
+                  const rateTo = bounds?.childRateTo ?? Number(stay?.childAgeRateTo ?? stay?.child_age_rate_to ?? stay?.childRateAgeTo ?? stay?.child_rate_age_to ?? stay?.childRateTo ?? stay?.child_rate_to ?? 12);
                   const extraChildPrice = Number(stay?.fullPropertyExtraChildPrice || stay?.extraChildPrice || 0);
                   return (
                     <div style={{ marginTop: 10, padding: 12, background: "rgba(0,0,0,0.03)", border: `1px solid ${B}`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 8 }}>
