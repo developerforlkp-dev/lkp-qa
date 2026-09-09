@@ -592,7 +592,7 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
   let remainingAdults = adults;
   let remainingChildren = children;
 
-  // Allocate 1 adult per room first if adults are available
+  // 1. Allocate 1 adult per room first if adults are available
   roomInstances.forEach(inst => {
     if (remainingAdults > 0) {
       inst.allocatedAdults += 1;
@@ -600,7 +600,7 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
     }
   });
 
-  // Fill standard adults up to maxAdults
+  // 2. Fill standard adults up to maxAdults
   for (let inst of roomInstances) {
     const standardAdultSpace = Math.max(0, inst.maxAdults - inst.allocatedAdults);
     const toAllocate = Math.min(remainingAdults, standardAdultSpace);
@@ -610,23 +610,7 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
     }
   }
 
-  // Fill extra adults up to maxExtraAdults per room type
-  const extraAdultsAllocatedByRoomId = {};
-  for (let inst of roomInstances) {
-    const rId = String(inst.roomId);
-    const alreadyAllocated = extraAdultsAllocatedByRoomId[rId] || 0;
-    const roomTypeExtraLimit = inst.maxExtraAdults;
-    const availableExtraSpace = Math.max(0, roomTypeExtraLimit - alreadyAllocated);
-    const toAllocate = Math.min(remainingAdults, availableExtraSpace);
-    if (toAllocate > 0) {
-      inst.allocatedAdults += toAllocate;
-      inst.allocatedExtraAdults += toAllocate;
-      remainingAdults -= toAllocate;
-      extraAdultsAllocatedByRoomId[rId] = alreadyAllocated + toAllocate;
-    }
-  }
-
-  // Fill standard children up to maxChildren and within standard room capacity (maxGuests)
+  // 3. Fill standard children up to maxChildren (and within standard room capacity maxGuests)
   for (let inst of roomInstances) {
     const remainingStandardRoomCapacity = Math.max(0, inst.maxGuests - inst.allocatedAdults - inst.allocatedChildren);
     const standardChildSpace = Math.min(Math.max(0, inst.maxChildren - inst.allocatedChildren), remainingStandardRoomCapacity);
@@ -637,9 +621,20 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
     }
   }
 
-  // Fill extra children up to maxExtraChildren per room instance
+  // 4. Fill extra adults up to maxExtraAdults per room instance
   for (let inst of roomInstances) {
-    const extraChildSpace = inst.maxExtraChildren;
+    const extraAdultSpace = Math.max(0, inst.maxExtraAdults - inst.allocatedExtraAdults);
+    const toAllocate = Math.min(remainingAdults, extraAdultSpace);
+    if (toAllocate > 0) {
+      inst.allocatedAdults += toAllocate;
+      inst.allocatedExtraAdults += toAllocate;
+      remainingAdults -= toAllocate;
+    }
+  }
+
+  // 5. Fill extra children up to maxExtraChildren per room instance
+  for (let inst of roomInstances) {
+    const extraChildSpace = Math.max(0, inst.maxExtraChildren - inst.allocatedExtraChildren);
     const toAllocate = Math.min(remainingChildren, extraChildSpace);
     if (toAllocate > 0) {
       inst.allocatedChildren += toAllocate;
@@ -1404,7 +1399,7 @@ const StayBookingSystem = ({
           room.maxExtraAdultsAllowed ??
           room.maxExtraBeds ??
           0
-        );
+        ) * Number(room.count || 0);
         totalExtraChildrenLimit += Number(
           room.maxExtraChildren ??
           room.maxExtraChildrenAllowed ??
@@ -1637,7 +1632,7 @@ const StayBookingSystem = ({
             room.maxExtraAdultsAllowed ??
             room.maxExtraBeds ??
             0
-          );
+          ) * room.count;
           totalExtraChildrenLimit += Number(
             room.maxExtraChildren ??
             room.maxExtraChildrenAllowed ??
@@ -2206,7 +2201,7 @@ const StayBookingSystem = ({
             room.maxExtraAdultsAllowed ??
             room.maxExtraBeds ??
             0
-          );
+          ) * room.count;
           totalExtraChildrenLimit += Number(
             room.maxExtraChildren ??
             room.maxExtraChildrenAllowed ??
