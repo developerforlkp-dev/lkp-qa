@@ -55,8 +55,12 @@ export default function DirectUpiSection({
       }
     } catch (e) {}
     if (typeof window !== "undefined") {
-      const match = window.location.pathname.match(/\/direct-book(?:ing)?\/([^/?#]+)/i);
-      if (match && match[1] && !["experience-checkout", "complete", "checkout"].includes(match[1])) {
+      const doubleMatch = window.location.pathname.match(/\/(?:direct|direct-book|direct-booking)\/[^/]+\/([^/?#]+)/i);
+      if (doubleMatch && doubleMatch[1] && !["experience-checkout", "complete", "checkout"].includes(doubleMatch[1])) {
+        return doubleMatch[1];
+      }
+      const match = window.location.pathname.match(/\/(?:direct-book|direct-booking|direct)\/([^/?#]+)/i);
+      if (match && match[1] && !["experience-checkout", "complete", "checkout", "experience"].includes(match[1])) {
         return match[1];
       }
       const paramToken = new URLSearchParams(window.location.search).get("token");

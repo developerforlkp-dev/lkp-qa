@@ -1217,7 +1217,9 @@ const BookingSidebar = ({
                                   onChange={(e) => {
                                     const val = Number(e.target.value);
                                     setGuests(g => {
-                                      const nextAges = syncChildAges(g.childAges || [], g.children || 0, defaultChildAge);
+                                      const safeCount = Math.max(childIndex + 1, Number(g?.children || 0));
+                                      const base = syncChildAges(g.childAges || [], safeCount, defaultChildAge);
+                                      const nextAges = [...base];
                                       nextAges[childIndex] = val;
                                       return { ...g, childAges: nextAges };
                                     });

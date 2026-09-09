@@ -245,12 +245,24 @@ const ExperienceProduct = () => {
   const location = useLocation();
   const history = useHistory();
   const routeParams = useParams();
-  const { slugAndId } = routeParams;
-  const directToken = routeParams?.token || (
-    location.pathname.startsWith("/direct-book/")
-      ? location.pathname.replace("/direct-book/", "").split("/")[0].split("?")[0]
-      : null
-  );
+  const { slugAndId, slug, token: paramToken } = routeParams;
+  const directToken =
+    paramToken ||
+    routeParams?.token ||
+    (() => {
+      const pathname = location.pathname || "";
+      const doubleMatch = pathname.match(/^\/(?:direct|direct-book|direct-booking)\/[^/]+\/([^/?#]+)/i);
+      if (doubleMatch && doubleMatch[1] && !["experience-checkout", "complete", "checkout"].includes(doubleMatch[1])) {
+        return doubleMatch[1];
+      }
+      const singleMatch = pathname.match(/^\/(?:direct-book|direct-booking|direct)\/([^/?#]+)/i);
+      if (singleMatch && singleMatch[1] && !["experience-checkout", "complete", "checkout", "experience"].includes(singleMatch[1])) {
+        return singleMatch[1];
+      }
+      const qToken = new URLSearchParams(location.search).get("token") || new URLSearchParams(location.search).get("directToken");
+      if (qToken) return qToken;
+      return null;
+    })();
   const [directBookingInfo, setDirectBookingInfo] = useState(null);
   const params = new URLSearchParams(location.search);
   const idFromPath = extractExperienceIdFromSlugAndId(slugAndId);

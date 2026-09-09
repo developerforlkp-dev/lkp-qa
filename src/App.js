@@ -167,7 +167,11 @@ function App() {
             <Route
               exact
               path={[
+                "/direct/:slug/:token",
+                "/direct-book/:slug/:token",
+                "/direct-booking/:slug/:token",
                 "/direct-book/:token",
+                "/direct/:token",
                 "/experience/:slugAndId",
                 "/direct-booking/experience/:slugAndId",
                 "/direct-booking/:slugAndId",

@@ -288,7 +288,7 @@ const syncChildAges = (ages, childrenCount, defaultAge = 0) => {
   const safeCount = Math.max(0, Number(childrenCount || 0));
   const current = Array.isArray(ages) ? ages : [];
   if (current.length === safeCount && current.every(a => a !== "" && a !== null && a !== undefined)) {
-    return current;
+    return [...current];
   }
   const next = current.slice(0, safeCount);
   while (next.length < safeCount) {
@@ -298,9 +298,6 @@ const syncChildAges = (ages, childrenCount, defaultAge = 0) => {
     if (next[i] === "" || next[i] === null || next[i] === undefined) {
       next[i] = defaultAge;
     }
-  }
-  if (current.length === next.length && current.every((v, i) => v === next[i])) {
-    return current;
   }
   return next;
 };
@@ -761,11 +758,31 @@ const StayBookingSystem = ({
     return internalChildAges;
   }, [externalChildAges, internalChildAges]);
 
-  const setChildAges = useCallback((updater) => {
-    if (typeof externalSetChildAges === "function") {
-      externalSetChildAges(updater);
+  useEffect(() => {
+    if (Array.isArray(externalChildAges) && externalChildAges.length > 0) {
+      setInternalChildAges(externalChildAges);
     }
-    setInternalChildAges(updater);
+  }, [externalChildAges]);
+
+  const setChildAges = useCallback((updater) => {
+    if (typeof updater === "function") {
+      if (typeof externalSetChildAges === "function") {
+        externalSetChildAges((prev) => {
+          const res = updater(prev);
+          return Array.isArray(res) ? [...res] : res;
+        });
+      }
+      setInternalChildAges((prev) => {
+        const res = updater(prev);
+        return Array.isArray(res) ? [...res] : res;
+      });
+    } else {
+      const nextVal = Array.isArray(updater) ? [...updater] : updater;
+      if (typeof externalSetChildAges === "function") {
+        externalSetChildAges(nextVal);
+      }
+      setInternalChildAges(nextVal);
+    }
   }, [externalSetChildAges]);
 
   const [show, setShow] = useState(false);
@@ -1945,7 +1962,7 @@ const StayBookingSystem = ({
       requiredExtraAdultCount = Math.max(0, Number(guests.adults || 1) - propBaseAdults);
       requiredExtraChildCount = Math.max(0, Number(guests.children || 0) - propBaseChild);
       propChildAges = Array.from({ length: requiredExtraChildCount }, (_, i) => {
-        const ageVal = childAges?.[propBaseChild + i];
+        const ageVal = normalizedChildAges?.[propBaseChild + i];
         if (ageVal !== "" && ageVal !== null && ageVal !== undefined && !Number.isNaN(Number(ageVal))) {
           return Number(ageVal);
         }
@@ -2039,16 +2056,17 @@ const StayBookingSystem = ({
       bookingObj.extraAdults = requiredExtraAdultCount;
       bookingObj.extraChildren = requiredExtraChildCount;
       bookingObj.childAges = propChildAges;
-    }
-
-    if (roomsPayload.length > 0) {
-      bookingObj.rooms = roomsPayload;
-    }
-    if (bedConfigsPayload.length > 0) {
-      bookingObj.bedConfigs = bedConfigsPayload;
-    }
-    if (formattedAddons.length > 0 || (roomsPayload.length > 0 && bedConfigsPayload.length === 0)) {
-      bookingObj.addons = formattedAddons;
+      bookingObj.addons = formattedAddons || [];
+    } else {
+      if (roomsPayload.length > 0) {
+        bookingObj.rooms = roomsPayload;
+      }
+      if (bedConfigsPayload.length > 0) {
+        bookingObj.bedConfigs = bedConfigsPayload;
+      }
+      if (formattedAddons.length > 0 || (roomsPayload.length > 0 && bedConfigsPayload.length === 0)) {
+        bookingObj.addons = formattedAddons;
+      }
     }
 
     const payload = {
@@ -2082,7 +2100,7 @@ const StayBookingSystem = ({
         .finally(() => {
           setApiPayableLoading(false);
         });
-    }, 250);
+    }, 150);
   }, [
     show,
     stay?.stayId,
@@ -3755,6 +3773,8 @@ const StayBookingSystem = ({
                       background: ${S};
                       border: 1.5px solid ${B};
                       overflow: hidden;
+                      min-height: 72px;
+                      position: relative;
                     }
                     .stay-modal-addon-item:hover { 
                       transform: translateY(-2px); 
@@ -3766,10 +3786,17 @@ const StayBookingSystem = ({
                     }
                     .stay-modal-addon-image {
                       width: 50px;
+                      min-height: 72px;
                       flex-shrink: 0;
                       border-right: 1px solid ${B}55;
+                      position: relative;
+                      align-self: stretch;
+                      overflow: hidden;
                     }
                     .stay-modal-addon-image img {
+                      position: absolute;
+                      top: 0;
+                      left: 0;
                       width: 100%;
                       height: 100%;
                       object-fit: cover;
@@ -3791,6 +3818,7 @@ const StayBookingSystem = ({
                       overflow: hidden;
                       text-overflow: ellipsis;
                       transition: color 0.2s;
+                      margin: 0;
                     }
                     .stay-modal-addon-item[data-selected="true"] .stay-modal-addon-title {
                       color: ${A};
@@ -3799,7 +3827,7 @@ const StayBookingSystem = ({
                       font-size: 11px;
                       font-weight: 700;
                       color: ${M};
-                      margin-top: 4px;
+                      margin: 4px 0 0 0;
                       display: flex;
                       align-items: center;
                       gap: 4px;
@@ -3824,16 +3852,49 @@ const StayBookingSystem = ({
                       flex-shrink: 0;
                       padding-right: 10px;
                     }
-                    .stay-modal-action-btn {
+                    .stay-modal-action-btn-circle {
+                      border: 1.5px solid ${B};
+                      border-radius: 50%;
                       width: 28px;
                       height: 28px;
-                      border-radius: 50%;
                       display: flex;
                       align-items: center;
                       justify-content: center;
-                      border: none;
                       cursor: pointer;
-                      transition: 0.2s;
+                      transition: all 0.2s ease;
+                      background: ${BG};
+                      color: ${FG};
+                      font-size: 14px;
+                      font-weight: 700;
+                    }
+                    .stay-modal-action-btn-circle:hover {
+                      transform: scale(1.08);
+                      border-color: ${A};
+                      color: ${A};
+                    }
+                    .stay-modal-qty-ctrl-panel {
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                      background: ${BG};
+                      border-radius: 100px;
+                      padding: 4px;
+                      border: 1px solid ${B};
+                    }
+                    .stay-modal-qty-panel-btn {
+                      background: ${S};
+                      color: ${FG};
+                      border: none;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      width: 24px;
+                      height: 24px;
+                      border-radius: 50%;
+                      cursor: pointer;
+                      transition: background 0.2s;
+                      font-size: 14px;
+                      font-weight: 700;
                     }
                     .stay-addon-scroll-btn {
                       position: absolute;
@@ -3845,17 +3906,19 @@ const StayBookingSystem = ({
                       background: ${BG};
                       border: 1px solid ${B};
                       color: ${FG};
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      cursor: pointer;
+                      display: flex !important;
+                      align-items: center !important;
+                      justify-content: center !important;
+                      cursor: pointer !important;
                       z-index: 10;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                      transition: all 0.2s;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                      transition: all 0.2s ease !important;
                     }
                     .stay-addon-scroll-btn:hover {
-                      background: ${S};
-                      transform: translateY(-50%) scale(1.05);
+                      transform: translateY(-50%) scale(1.1) !important;
+                      background: ${S} !important;
+                      border-color: ${A} !important;
+                      color: ${A} !important;
                     }
                   `}</style>
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -3863,8 +3926,9 @@ const StayBookingSystem = ({
                       <button
                         className="stay-addon-scroll-btn"
                         onClick={() => {
+                          handleUserInteraction();
                           const container = document.getElementById("stay-header-addons-scroll");
-                          if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                          if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
                         }}
                         style={{ left: -18 }}
                       >
@@ -3885,7 +3949,7 @@ const StayBookingSystem = ({
                       display: "flex",
                       overflowX: "auto",
                       gap: 16,
-                      padding: "4px 0",
+                      padding: "8px 0",
                       scrollbarWidth: "none",
                       msOverflowStyle: "none",
                       width: "100%",
@@ -3897,8 +3961,8 @@ const StayBookingSystem = ({
                         const isSelected = selectedAddOns.some(a => String(a.addonId || a.id || a) === String(addonId));
                         const quantity = addOnQuantities[addonId] || 1;
                         const rawAddonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image || addon.coverImageUrl || addon.coverPhotoUrl;
-                            const fallbackImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(addon.title || addon.name || 'A')}&background=random&color=fff&size=200&bold=true`;
-                            const addonImage = rawAddonImage ? rawAddonImage.replace(/^http:\/\//i, 'https://') : fallbackImage;
+                        const fallbackImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(addon.title || addon.name || 'A')}&background=random&color=fff&size=200&bold=true`;
+                        const addonImage = rawAddonImage ? rawAddonImage.replace(/^http:\/\//i, 'https://') : fallbackImage;
 
                         const handleCardClick = () => {
                           if (!onAddOnQuantityChange) return;
@@ -3920,10 +3984,10 @@ const StayBookingSystem = ({
                             data-selected={isSelected}
                           >
                             {addonImage && (
-                              <div className="stay-modal-addon-image">
+                              <div className="stay-modal-addon-image" style={{ position: "relative", width: 50, minHeight: 72, flexShrink: 0, alignSelf: "stretch", overflow: "hidden" }}>
                                 <img 
                                       src={addonImage} 
-                                      alt={addon.title} 
+                                      alt={addon.title || addon.name} 
                                       style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} 
                                       onError={(e) => { 
                                         if (e.target.src !== fallbackImage && !e.target.src.includes('ui-avatars.com')) {
@@ -3937,11 +4001,11 @@ const StayBookingSystem = ({
                             )}
                             <div className="stay-modal-addon-content">
                               <p className="stay-modal-addon-title">
-                                {addon.title}
+                                {addon.title || addon.name}
                               </p>
-                              <p className="stay-modal-addon-price-row">
+                              <p className="stay-modal-addon-price-row" style={{ fontSize: 11, fontWeight: 700, color: isSelected ? A : M, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
                                 <span>{priceLabel}</span>
-                                <span className="stay-modal-addon-type">
+                                <span className="stay-modal-addon-type" style={{ fontSize: 9, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
                                   • {typeLabel}
                                 </span>
                               </p>
@@ -3952,25 +4016,23 @@ const StayBookingSystem = ({
                                 pricingType === "Group" ? (
                                   <button
                                     onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, 0, addon)}
-                                    className="stay-modal-action-btn"
-                                    style={{ background: A, color: "#fff" }}
+                                    className="stay-modal-action-btn-circle"
+                                    style={{ background: A, color: "#fff", border: "none" }}
                                   >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                   </button>
                                 ) : (
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: BG, padding: "4px", borderRadius: 100, border: `1px solid ${B}` }}>
+                                  <div className="stay-modal-qty-ctrl-panel">
                                     <button
                                       onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, quantity - 1, addon)}
-                                      className="stay-modal-action-btn"
-                                      style={{ width: 24, height: 24, background: S, color: FG }}
+                                      className="stay-modal-qty-panel-btn"
                                     >
                                       -
                                     </button>
-                                    <span style={{ fontSize: 12, fontWeight: 800, color: FG, minWidth: 16, textAlign: "center" }}>{quantity}</span>
+                                    <span style={{ fontSize: 12, fontWeight: 800, minWidth: 16, textAlign: "center", color: FG }}>{quantity}</span>
                                     <button
                                       onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, quantity + 1, addon)}
-                                      className="stay-modal-action-btn"
-                                      style={{ width: 24, height: 24, background: S, color: FG }}
+                                      className="stay-modal-qty-panel-btn"
                                     >
                                       +
                                     </button>
@@ -3978,9 +4040,8 @@ const StayBookingSystem = ({
                                 )
                               ) : (
                                 <button
-                                  onClick={handleCardClick}
-                                  className="stay-modal-action-btn"
-                                  style={{ background: BG, border: `1px solid ${B}`, color: A }}
+                                  onClick={() => onAddOnQuantityChange && onAddOnQuantityChange(addonId, 1, addon)}
+                                  className="stay-modal-action-btn-circle"
                                 >
                                   +
                                 </button>
@@ -3994,8 +4055,9 @@ const StayBookingSystem = ({
                       <button
                         className="stay-addon-scroll-btn"
                         onClick={() => {
+                          handleUserInteraction();
                           const container = document.getElementById("stay-header-addons-scroll");
-                          if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                          if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
                         }}
                         style={{ right: -18 }}
                       >
@@ -4264,9 +4326,12 @@ const StayBookingSystem = ({
                                               value={childAges?.[childIndex] !== "" && childAges?.[childIndex] != null ? childAges[childIndex] : defaultChildAge}
                                               onChange={(event) => {
                                                 const { value } = event.target;
+                                                const numVal = Number(value);
                                                 setChildAges((prev) => {
-                                                  const next = syncChildAges(Array.isArray(prev) ? prev : [], guests?.children || 0, defaultChildAge);
-                                                  next[childIndex] = Number(value);
+                                                  const safeCount = Math.max(childIndex + 1, Number(guests?.children || 0));
+                                                  const base = syncChildAges(Array.isArray(prev) ? prev : [], safeCount, defaultChildAge);
+                                                  const next = [...base];
+                                                  next[childIndex] = numVal;
                                                   return next;
                                                 });
                                                 setValidationError("");
