@@ -1201,17 +1201,6 @@ const BookingSidebar = ({
                                 <span style={{ fontSize: 11, fontWeight: 600, color: FG }}>Child {childIndex + 1}</span>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                <span style={{
-                                  fontSize: 9,
-                                  fontWeight: 700,
-                                  color: isComp ? "#16a34a" : A,
-                                  background: isComp ? "rgba(34, 197, 94, 0.12)" : AL,
-                                  padding: "2px 4px",
-                                  borderRadius: 4,
-                                  border: `1px solid ${isComp ? "rgba(34, 197, 94, 0.25)" : `${A}33`}`
-                                }}>
-                                  {isComp ? "FREE (₹0)" : (isRate && extraChildPrice > 0 ? `₹${extraChildPrice}` : "AGE")}
-                                </span>
                                 <ChildAgeSelect
                                   value={guests?.childAges?.[childIndex] !== "" && guests?.childAges?.[childIndex] != null ? guests.childAges[childIndex] : defaultChildAge}
                                   onChange={(e) => {
