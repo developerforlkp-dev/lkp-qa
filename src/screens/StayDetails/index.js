@@ -17,7 +17,7 @@ import Icon from "../../components/Icon";
 import RoomCards from "./RoomCards";
 import StayNotFound from "./StayNotFound";
 import roomStyles from "./RoomCards.module.sass";
-import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview } from "../../utils/api";
+import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview, getReviewErrorMessage } from "../../utils/api";
 import StayBookingSystem from "./StayBookingSystem";
 import StayItinerary from "./StayItinerary";
 import CuratedContent from "../../components/CuratedContent";
@@ -2535,7 +2535,7 @@ function StayAddons({ stay, selectedAddOns, onToggleAddOn, addOnQuantities, onAd
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 32 }}>
               {activeAddons.map(addon => {
                 const addonId = addon.addonId || addon.assignmentId || addon.id;
-                const isSelected = selectedAddOns.includes(addonId);
+                const isSelected = selectedAddOns.some(id => String(id) === String(addonId));
                 const isIndividual = addon.pricingType === "Individual";
                 const qty = isIndividual ? (addOnQuantities[addonId] || 1) : 1;
                 const price = parseFloat(addon.price || 0);
@@ -2699,12 +2699,13 @@ const StayDetails = () => {
   const [currentAddonIndex, setCurrentAddonIndex] = useState(2);
 
   const handleToggleAddOn = useCallback((addOnId, pricingType) => {
+    const aid = String(addOnId);
     setSelectedAddOns((prev) => {
-      if (prev.includes(addOnId)) {
-        return prev.filter((id) => id !== addOnId);
+      if (prev.some(id => String(id) === aid)) {
+        return prev.filter((id) => String(id) !== aid);
       } else {
         if (pricingType === "Individual") {
-          setAddOnQuantities((qPrev) => ({ ...qPrev, [addOnId]: qPrev[addOnId] || 1 }));
+          setAddOnQuantities((qPrev) => ({ ...qPrev, [addOnId]: qPrev[addOnId] || 1, [aid]: qPrev[aid] || 1 }));
         }
         return [...prev, addOnId];
       }
@@ -2712,11 +2713,12 @@ const StayDetails = () => {
   }, []);
 
   const handleAddOnQuantityChange = useCallback((addOnId, value) => {
+    const aid = String(addOnId);
     if (value <= 0) {
-      setSelectedAddOns((prev) => prev.filter((id) => id !== addOnId));
+      setSelectedAddOns((prev) => prev.filter((id) => String(id) !== aid));
     } else {
-      setAddOnQuantities((prev) => ({ ...prev, [addOnId]: value }));
-      setSelectedAddOns((prev) => prev.includes(addOnId) ? prev : [...prev, addOnId]);
+      setAddOnQuantities((prev) => ({ ...prev, [addOnId]: value, [aid]: value }));
+      setSelectedAddOns((prev) => prev.some(id => String(id) === aid) ? prev : [...prev, addOnId]);
     }
   }, []);
 
@@ -4398,7 +4400,7 @@ function StayReviews({ reviews = [], stayId, eligibleBookings = [], onReviewSubm
       setShowForm(false);
       if (onReviewSubmitted) onReviewSubmitted();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to submit review");
+      setError(getReviewErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -4702,10 +4704,19 @@ function StayLocation({ stay }) {
       <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
 
         {/* Header Area */}
-        <div style={{ marginBottom: 32 }}>
-          <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
-          <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Where it All Happens</h3>
-          <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: 0, fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600, display: isMobile ? "none" : "block" }}>Find your way to the property and get all the essential details for a smooth arrival.</p>
+        <div style={{ marginBottom: isMobile ? 24 : 32 }}>
+          {isMobile ? (
+            <>
+              <span className="mob-section-eyebrow" style={{ color: A }}>Location & Details</span>
+              <h2 className="mob-section-title" style={{ color: FG }}>Where it All Happens</h2>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", display: "block", marginBottom: "16px", fontFamily: '"Inter", sans-serif' }}>Location & Details</span>
+              <h3 style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)", fontWeight: 700, color: FG, lineHeight: 1.1, marginBottom: "24px", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em", margin: 0 }}>Where it All Happens</h3>
+              <p style={{ color: M, fontSize: "16px", lineHeight: "1.7", margin: "16px 0 0 0", fontWeight: 400, fontFamily: '"Inter", sans-serif', maxWidth: 600 }}>Find your way to the property and get all the essential details for a smooth arrival.</p>
+            </>
+          )}
         </div>
 
         {/* Main Card Container */}
@@ -4713,7 +4724,7 @@ function StayLocation({ stay }) {
           background: isMobile ? "transparent" : (theme === 'dark' ? '#0A0A0A' : '#FFFFFF'),
           borderRadius: isMobile ? 0 : 24,
           border: isMobile ? "none" : `1px solid ${B}`,
-          padding: isMobile ? "16px 0 0 0" : 16,
+          padding: isMobile ? 0 : 16,
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: isMobile ? 24 : 32,
@@ -4733,7 +4744,7 @@ function StayLocation({ stay }) {
                 borderRadius: "12px",
                 boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
                 border: `1px solid ${B}`,
-                display: "flex",
+                display: isMobile ? "none" : "flex",
                 alignItems: "center",
                 gap: 8,
                 pointerEvents: "none",
@@ -4760,85 +4771,85 @@ function StayLocation({ stay }) {
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: isMobile ? "0" : "16px 16px 16px 0" }}>
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
                 {address && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: isMobile ? "none" : `1px solid ${B}`  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <MapPin size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{address}</span>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{address}</span>
                     </div>
                   </li>
                 )}
 
                 {landmark && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: !address ? `1px solid ${B}` : "none" }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: !address ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Building size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Landmark</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{landmark}</span>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Landmark</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{landmark}</span>
                     </div>
                   </li>
                 )}
 
                 {(district || city) && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark) ? `1px solid ${B}` : "none" }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark) ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Map size={20} color={A} fill="transparent" />
+                      <Building size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{district || city}</span>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{district || city}</span>
                     </div>
                   </li>
                 )}
 
                 {state && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city) ? `1px solid ${B}` : "none" }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city) ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Map size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{state}</span>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{state}</span>
                     </div>
                   </li>
                 )}
 
                 {country && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state) ? `1px solid ${B}` : "none" }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state) ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Globe size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
-                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{country}</span>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                      <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{country}</span>
                     </div>
                   </li>
                 )}
 
                 {instructions && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state && !country) ? `1px solid ${B}` : "none" }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state && !country) ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Info size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                      <ExpandableInstructionText text={instructions} FG={FG} A={A} />
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                      <div style={{ flex: 1, minWidth: 0, width: "100%", overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}><ExpandableInstructionText text={instructions} FG={FG} A={A} /></div>
                     </div>
                   </li>
                 )}
 
                 {(!district && !city && !state && !country && !address && !landmark) && (
-                  <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: isMobile ? "none" : `1px solid ${B}`  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <MapPin size={20} color={A} fill="transparent" />
                     </div>
-                    <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
-                      <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
+                    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 4 : 16, alignItems: isMobile ? "flex-start" : "center", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
+                      <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>Specific regional details will be provided upon booking confirmation.</span>
                     </div>
                   </li>
                 )}

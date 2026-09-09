@@ -22,6 +22,7 @@ import {
   isExpiredHold,
   persistPendingCheckout,
 } from "../../../utils/paymentSession";
+import { isDirectBookingPathOrState } from "../../../utils/directBooking";
 
 const cards = [
   {
@@ -176,11 +177,13 @@ const ensureRazorpaySession = async ({ orderId, payment, bookingData }) => {
   return initialized?.persistedPayment || payment;
 };
 
-const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null, messageText = "", bookingData: bookingDataProp = null, guestDetails = null, onGuestValidationFailed }) => {
+const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentData = null, messageText = "", bookingData: bookingDataProp = null, guestDetails = null, onGuestValidationFailed, isDirectBooking = false }) => {
   const [save, setSave] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorModalMsg, setErrorModalMsg] = useState("");
   const history = useHistory();
+
+  const isDirect = isDirectBooking || isDirectBookingPathOrState(history.location) || Boolean(bookingDataProp?.isDirectBooking);
 
   const isFreeBookingView = Number(
     paymentData?.amount ?? 
@@ -414,6 +417,43 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       return;
     }
 
+    if (isDirect) {
+      try {
+        const directPaymentSuccess = {
+          payment_method: "upi",
+          payment_id: `UPI_${orderId || Date.now()}`,
+          order_id: orderId || `DIR_${Date.now()}`,
+          status: "pending_upi",
+        };
+        localStorage.setItem("directPaymentSuccess", JSON.stringify(directPaymentSuccess));
+        localStorage.setItem("isDirectBooking", "true");
+        localStorage.setItem("actualPaidAmount", JSON.stringify({
+          amount: amount || bookingData?.finalTotal || 0,
+          currency: currency || "INR",
+        }));
+        if (bookingData) {
+          bookingData.isDirectBooking = true;
+          if (guestDetails) {
+            bookingData.guestDetails = guestDetails;
+            bookingData.customerName = `${guestDetails.firstName || ""} ${guestDetails.lastName || ""}`.trim() || guestDetails.name || bookingData.customerName;
+            bookingData.customerPhone = guestDetails.mobileNumber || guestDetails.phone || bookingData.customerPhone;
+          }
+          localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
+        }
+        clearPendingCheckoutState({ keepCheckoutBooking: true, keepActualPaidAmount: true, keepRazorpayPaymentSuccess: true });
+        history.replace(buttonUrl || "/experience-checkout-complete", {
+          isDirectBooking: true,
+          bookingData,
+        });
+      } catch (err) {
+        console.error("Direct booking error:", err);
+        setErrorModalMsg("Error proceeding with direct booking. Please try again.");
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
     if (isFreeBooking) {
       try {
         const freeEventResponse = await finalizeFreeEvent(orderId);
@@ -584,7 +624,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           disabled={isProcessing}
           style={{ opacity: isProcessing ? 0.7 : 1, cursor: isProcessing ? "not-allowed" : "pointer" }}
         >
-          {isProcessing ? (isFreeBookingView ? "Confirming..." : "Processing...") : (isFreeBookingView ? "Confirm Booking" : "Confirm and pay")}
+          {isProcessing ? (isFreeBookingView ? "Confirming..." : "Processing...") : (isDirect ? "Confirm & Pay via UPI" : (isFreeBookingView ? "Confirm Booking" : "Confirm and pay"))}
         </button>
       </div>
       <Modal visible={!!errorModalMsg} onClose={() => setErrorModalMsg("")}>

@@ -5,7 +5,7 @@ import styles from "./Main.module.sass";
 import Icon from "../../../components/Icon";
 import Modal from "../../../components/Modal";
 import { emptyStateCopy } from "../../../mocks/bookings";
-import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, getCancellationReasons, sendOrderMessage } from "../../../utils/api";
+import { cancelOrder, cancelEventOrder, getEventDetails, getListing, getCompletedOrders, getOrderCancelPreview, submitOrderReview, getReviewErrorMessage, getEligibleBookings, getStayDetails, getListingReviews, getEventReviews, getStayReviews, validateExperienceOrEventOrder, getOrderDetails, getCancellationReasons, sendOrderMessage } from "../../../utils/api";
 import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../../utils/paymentSession";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import Rating from "../../../components/Rating";
@@ -2112,8 +2112,8 @@ const Main = ({
       handleCloseReviewModal();
     } catch (err) {
       const status = err.response?.status;
-      const message = err.response?.data?.message || err.message;
-      if (status === 409) {
+      const code = err.response?.data?.code;
+      if (status === 409 || code === "ALREADY_REVIEWED") {
         setReviewError("You've already reviewed this order.");
         setOrderIdsEligibleForReview((prev) => {
           const next = new Set(prev);
@@ -2121,7 +2121,7 @@ const Main = ({
           return next;
         });
       } else {
-        setReviewError(message || "Failed to submit review. Please try again.");
+        setReviewError(getReviewErrorMessage(err));
       }
     } finally {
       setIsSubmittingReview(false);
@@ -2602,27 +2602,28 @@ const Main = ({
               />
             </div>
             <div className={styles.cancelModalFormGroup}>
-              <label htmlFor="reviewComment" className={styles.cancelModalLabel}>
-                Comment (optional)
-              </label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <label htmlFor="reviewComment" className={styles.cancelModalLabel} style={{ marginBottom: 0 }}>
+                  Comment (optional)
+                </label>
+                <span style={{ fontSize: "12px", color: reviewComment.length > 450 ? "#E65100" : "#777E90" }}>
+                  {reviewComment.length} / 500
+                </span>
+              </div>
               <textarea
                 id="reviewComment"
                 className={cn(styles.cancelModalInput, styles.cancelModalTextarea)}
                 value={reviewComment}
                 onChange={(e) => {
-                  setReviewComment(e.target.value);
+                  setReviewComment(e.target.value.slice(0, 500));
                   setReviewError(null);
                 }}
+                maxLength={500}
                 placeholder="Share your thoughts..."
                 rows={3}
                 disabled={isSubmittingReview}
               />
             </div>
-            {reviewError && (
-              <div className={styles.cancelModalError}>
-                {reviewError}
-              </div>
-            )}
           </form>
           <div className={styles.cancelModalFooter}>
             <button

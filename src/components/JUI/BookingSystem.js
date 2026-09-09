@@ -15,6 +15,7 @@ import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
 import { calculateExperienceGuestPricing, getExperienceCommissionRate } from "../../utils/experiencePricing";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 
 
 const asNumber = (value) => {
@@ -1325,8 +1326,10 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   );
 }
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests }) {
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests, isFreeEvent = false, isDirectBooking = false }) {
   const history = useHistory();
+  const location = useLocation();
+  const isDirect = isDirectBooking || isDirectBookingPathOrState(location);
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
   const hasHandledUnavailableRef = useRef(false);
@@ -1335,6 +1338,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [bookingLoading, setBookingLoading] = useState(false);
   const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
   const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
+  const [isHoveringAddons, setIsHoveringAddons] = useState(false);
+  const addonsScrollIntervalRef = useRef(null);
+  const lastInteractionTimeRef = useRef(0);
+
+  const handleUserInteraction = useCallback(() => {
+    lastInteractionTimeRef.current = Date.now();
+  }, []);
 
   const handleAddonsScroll = useCallback(() => {
     const container = document.getElementById("header-addons-scroll");
@@ -1353,8 +1363,33 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return () => window.removeEventListener("resize", handleAddonsScroll);
   }, [show, listing?.addons, handleAddonsScroll]);
 
+  useEffect(() => {
+    if (show && Array.isArray(listing?.addons) && listing.addons.length > 0 && !isHoveringAddons) {
+      addonsScrollIntervalRef.current = setInterval(() => {
+        // Pause auto-scrolling for 10 seconds after user interaction
+        if (Date.now() - lastInteractionTimeRef.current < 10000) return;
+
+        const container = document.getElementById("header-addons-scroll");
+        if (container) {
+          const scrollAmount = 260; // Approximate card width + gap
+          if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+            container.scrollTo({ left: 0, behavior: 'smooth' });
+          } else {
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+          }
+        }
+      }, 3000);
+    }
+    
+    return () => {
+      if (addonsScrollIntervalRef.current) clearInterval(addonsScrollIntervalRef.current);
+    };
+  }, [show, listing?.addons, isHoveringAddons]);
+
   // Sync external open state
   const externalOpenHandledRef = useRef(false);
+  const lastCalculatedPayloadRef = useRef("");
+  const calculateDebounceTimerRef = useRef(null);
   const childrenDetailsRef = useRef(null);
   useEffect(() => {
     if (externalOpen === true && !show && !externalOpenHandledRef.current) {
@@ -2668,14 +2703,28 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   // Dynamic Experience & Event Pricing API total fetch
   useEffect(() => {
+    return () => {
+      if (calculateDebounceTimerRef.current) {
+        clearTimeout(calculateDebounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!show) {
+      if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
+      lastCalculatedPayloadRef.current = "";
       setApiPayableAmount(null);
+      setApiPayableLoading(false);
       return;
     }
 
     const adultCount = Number(guests?.adults || 0);
     if (adultCount <= 0) {
+      if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
+      lastCalculatedPayloadRef.current = "";
       setApiPayableAmount(null);
+      setApiPayableLoading(false);
       return;
     }
 
@@ -2686,9 +2735,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       return { addonId, quantity };
     }).filter(a => Boolean(a.addonId));
 
+    let payload = null;
+    let calculationFn = null;
+
     if (isEventBooking) {
       const eventId = Number(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId);
-      if (!eventId) return;
+      if (!eventId) {
+        if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
+        lastCalculatedPayloadRef.current = "";
+        setApiPayableAmount(null);
+        setApiPayableLoading(false);
+        return;
+      }
 
       const resolvedSlotId = Number(selectedEventSlot?.eventSlotId ?? selectedEventSlot?.id ?? selectedEventSlot?.slotId ?? selectedEventSlotId) || null;
       const rawDate = startDate || selectedDateKey;
@@ -2745,7 +2803,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         };
       }).filter(Boolean);
 
-      const payload = {
+      payload = {
         booking: {
           eventId,
           ...(resolvedSlotId ? { eventSlotId: resolvedSlotId } : {}),
@@ -2759,32 +2817,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           addons: formattedEventAddons,
         }
       };
-
-      let cancelled = false;
-      setApiPayableLoading(true);
-
-      calculateEventTotal(payload)
-        .then((res) => {
-          if (cancelled) return;
-          const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
-          if (amount != null && Number.isFinite(Number(amount))) {
-            setApiPayableAmount(Number(amount));
-          }
-        })
-        .catch((err) => {
-          if (cancelled) return;
-          console.warn("calculateEventTotal error:", err);
-        })
-        .finally(() => {
-          if (!cancelled) setApiPayableLoading(false);
-        });
-
-      return () => {
-        cancelled = true;
-      };
+      calculationFn = calculateEventTotal;
     } else {
       const listingId = Number(listing?.listingId || listing?.id || listing?.experienceId);
-      if (!listingId) return;
+      if (!listingId) {
+        if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
+        lastCalculatedPayloadRef.current = "";
+        setApiPayableAmount(null);
+        setApiPayableLoading(false);
+        return;
+      }
 
       const bookingDate = startDate ? moment(startDate).format("YYYY-MM-DD") : (selectedDateKey || null);
       const bookingTime = selectedSlotData?.startTime || selectedSlotData?.start_time || startTime || null;
@@ -2793,7 +2835,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const childAges = Array.isArray(guests?.childAges) ? guests.childAges.map(Number).filter(a => Number.isFinite(a)) : [];
       const isPrivate = Boolean(privateBooking);
 
-      const payload = {
+      payload = {
         booking: {
           listingId,
           bookingDate,
@@ -2806,30 +2848,43 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           addons: formattedAddons,
         }
       };
+      calculationFn = calculateExperienceTotal;
+    }
 
-      let cancelled = false;
+    if (!payload || !calculationFn) return;
+
+    const payloadKey = JSON.stringify(payload);
+    if (lastCalculatedPayloadRef.current === payloadKey) {
+      return;
+    }
+
+    // Immediately cache the payloadKey so subsequent re-renders during the debounce delay do not loop
+    lastCalculatedPayloadRef.current = payloadKey;
+
+    if (calculateDebounceTimerRef.current) {
+      clearTimeout(calculateDebounceTimerRef.current);
+    }
+
+    calculateDebounceTimerRef.current = setTimeout(() => {
+      if (!isMountedRef.current) return;
       setApiPayableLoading(true);
 
-      calculateExperienceTotal(payload)
+      calculationFn(payload)
         .then((res) => {
-          if (cancelled) return;
+          if (!isMountedRef.current) return;
           const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
           if (amount != null && Number.isFinite(Number(amount))) {
             setApiPayableAmount(Number(amount));
           }
         })
         .catch((err) => {
-          if (cancelled) return;
-          console.warn("calculateExperienceTotal error:", err);
+          if (!isMountedRef.current) return;
+          console.warn("calculateTotal error:", err);
         })
         .finally(() => {
-          if (!cancelled) setApiPayableLoading(false);
+          if (isMountedRef.current) setApiPayableLoading(false);
         });
-
-      return () => {
-        cancelled = true;
-      };
-    }
+    }, 250);
   }, [
     isEventBooking,
     show,
@@ -2946,7 +3001,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     // Check if user is logged in
     const token = localStorage.getItem("jwtToken");
     const isLoggedIn = !!token && token !== "undefined" && token !== "null";
-    if (!isLoggedIn) {
+    if (!isLoggedIn && !isDirect) {
       const listingIdToSave = listing?.listingId || listing?.id || listing?.eventId || listing?.stayId;
       if (listingIdToSave) {
         const stateToStore = {
@@ -3386,16 +3441,32 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           paymentMethod: "razorpay",
         };
 
+        if (isDirect) {
+          previewBookingData.isDirectBooking = true;
+          try {
+            const rawStored = localStorage.getItem("directBookingData");
+            if (rawStored) {
+              const parsed = JSON.parse(rawStored);
+              previewBookingData.directBooking = parsed;
+              previewBookingData.directBookingToken = parsed.token || localStorage.getItem("directBookingToken");
+              if (parsed.upiId) previewBookingData.upiId = parsed.upiId;
+              if (parsed.leadName) previewBookingData.leadName = parsed.leadName;
+            }
+          } catch (e) {}
+          localStorage.setItem("isDirectBooking", "true");
+        }
+
         clearPendingCheckoutState();
         persistPendingCheckout({ bookingData: previewBookingData, session: paymentData, saveCheckoutBooking: true });
         localStorage.removeItem("frontendPendingBookingState");
 
         history.push({
-          pathname: "/experience-checkout",
+          pathname: isDirect ? "/direct-booking/experience-checkout" : "/experience-checkout",
           state: {
             bookingData: previewBookingData,
             paymentData,
             addOns: selectedAddOnsFormatted,
+            isDirectBooking: isDirect,
           },
         });
         return;
@@ -3735,16 +3806,32 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         paymentData,
       });
 
+      if (isDirect) {
+        previewBookingData.isDirectBooking = true;
+        try {
+          const rawStored = localStorage.getItem("directBookingData");
+          if (rawStored) {
+            const parsed = JSON.parse(rawStored);
+            previewBookingData.directBooking = parsed;
+            previewBookingData.directBookingToken = parsed.token || localStorage.getItem("directBookingToken");
+            if (parsed.upiId) previewBookingData.upiId = parsed.upiId;
+            if (parsed.leadName) previewBookingData.leadName = parsed.leadName;
+          }
+        } catch (e) {}
+        localStorage.setItem("isDirectBooking", "true");
+      }
+
       clearPendingCheckoutState();
       persistPendingCheckout({ bookingData: previewBookingData, session: paymentData, saveCheckoutBooking: true });
       localStorage.removeItem("frontendPendingBookingState");
       history.push({
-        pathname: "/experience-checkout",
-        search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}`,
+        pathname: isDirect ? "/direct-booking/experience-checkout" : "/experience-checkout",
+        search: `?listingId=${listingId}&startDate=${dateStr}&guests=${totalGuests}${startTime ? `&startTime=${encodeURIComponent(startTime)}` : ""}${isDirect ? "&direct=true" : ""}`,
         state: {
           addOns: selectedAddOnsFormatted,
           bookingData: previewBookingData,
           paymentData,
+          isDirectBooking: isDirect,
         }
       });
       return;
@@ -3874,7 +3961,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const canReserve = isEventBooking
     ? Boolean(ticketSaleWindow.isOpen && startDate && selectedTicket && selectedEventSlots.length > 0 && getSlotId(selectedEventSlots[0]) != null && totalGuests >= 1 && (selectedTicketMaxPerBooking === undefined || totalGuests <= selectedTicketMaxPerBooking) && (selectedTicketRemainingTickets === undefined || totalGuests <= selectedTicketRemainingTickets) && !selectedTicketSoldOut && !eventAvailabilityLoading && !bookingLoading)
     : Boolean(startDate && selectedSlotData && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && (!privateBooking || selectedSlotPrivateBookingAvailable) && !selectedSlotHasPrivateBooking && !bookingLoading);
-  const triggerDisabled = isEventBooking && !ticketSaleWindow.isOpen;
+  const triggerDisabled = (isEventBooking && !ticketSaleWindow.isOpen) || isFreeEvent;
 
   const handleOpenBooking = useCallback(() => {
     if (triggerDisabled) return;
@@ -3949,7 +4036,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           }}
           whileTap={triggerDisabled ? undefined : { scale: 0.96 }}
           disabled={triggerDisabled}
-          title={triggerDisabled ? ticketSaleWindow.message : undefined}
+          title={isFreeEvent ? "Free Event" : (triggerDisabled ? ticketSaleWindow.message : undefined)}
           className="booking-trigger"
           style={{
             position: "fixed",
@@ -3965,21 +4052,21 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             gap: 12,
             boxShadow: `0 12px 24px -6px rgba(0,0,0,0.12), 0 20px 40px -8px ${A}3b, 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.25)`,
             border: "none",
-            cursor: triggerDisabled ? "not-allowed" : "pointer",
+            cursor: isFreeEvent ? "default" : (triggerDisabled ? "not-allowed" : "pointer"),
             zIndex: 1000,
             fontWeight: 800,
             fontSize: 17,
             letterSpacing: "0.05em",
             textTransform: "uppercase",
-            opacity: triggerDisabled ? 0.76 : 1,
+            opacity: triggerDisabled && !isFreeEvent ? 0.76 : 1,
             transition: "background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)"
           }}
         >
           <IconComp size={22} />
-          {triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : triggerLabel}
+          {isFreeEvent ? "Free Event" : (triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : triggerLabel)}
         </motion.button>
       )}
-      {!hideTrigger && triggerDisabled && (
+      {!hideTrigger && triggerDisabled && !isFreeEvent && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
@@ -4245,6 +4332,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           <button
                             className="addon-scroll-btn"
                             onClick={() => {
+                              handleUserInteraction();
                               const container = document.getElementById("header-addons-scroll");
                               if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
                             }}
@@ -4254,17 +4342,23 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           </button>
                         )}
 
-                        <div id="header-addons-scroll" onScroll={handleAddonsScroll} style={{
+                        <div id="header-addons-scroll" onScroll={handleAddonsScroll} 
+                          onMouseEnter={() => setIsHoveringAddons(true)}
+                          onMouseLeave={() => setIsHoveringAddons(false)}
+                          onTouchStart={() => {
+                            setIsHoveringAddons(true);
+                            handleUserInteraction();
+                          }}
+                          onTouchEnd={() => { setTimeout(() => setIsHoveringAddons(false), 2000); }}
+                          onWheel={() => handleUserInteraction()}
+                          style={{
                           display: "flex",
                           overflowX: "auto",
                           gap: 16,
                           padding: "8px 0",
-                          WebkitOverflowScrolling: "touch",
                           scrollbarWidth: "none",
                           msOverflowStyle: "none",
                           width: "100%",
-                          maskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)",
-                          WebkitMaskImage: "linear-gradient(to right, black, black calc(100% - 16px), transparent)"
                         }}>
                           {listing.addons.map((item, i) => {
                             const addon = item.addon || item;
@@ -4272,7 +4366,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
                             const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
                             const quantity = selectedAddOns.find(a => (a.addonId || a.id) === addonId)?.quantity || 1;
-                            const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                            const rawAddonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image || addon.coverImageUrl || addon.coverPhotoUrl;
+                            const fallbackImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(addon.title || addon.name || 'A')}&background=random&color=fff&size=200&bold=true`;
+                            const addonImage = rawAddonImage ? rawAddonImage.replace(/^http:\/\//i, 'https://') : fallbackImage;
 
                             const handleCardClick = () => {
                               if (!onUpdateAddonQuantity) return;
@@ -4298,7 +4394,18 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                               >
                                 {addonImage && (
                                   <div className="addon-img-box" style={{ position: "relative" }}>
-                                    <img src={addonImage} alt={addon.title} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                                    <img 
+                                      src={addonImage} 
+                                      alt={addon.title} 
+                                      style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }} 
+                                      onError={(e) => { 
+                                        if (e.target.src !== fallbackImage && !e.target.src.includes('ui-avatars.com')) {
+                                          e.target.src = fallbackImage;
+                                        } else {
+                                          e.target.style.display = 'none'; 
+                                        }
+                                      }}
+                                    />
                                   </div>
                                 )}
                                 <div className="addon-content">
@@ -4360,6 +4467,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           <button
                             className="addon-scroll-btn"
                             onClick={() => {
+                              handleUserInteraction();
                               const container = document.getElementById("header-addons-scroll");
                               if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
                             }}
@@ -4372,7 +4480,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     </div>
                   )}
 
-                  <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch" }}>
+                  <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", }}>
 
 
                     {/* Closed state — all dates have passed */}
@@ -4394,8 +4502,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       </div>
                     ) : (
                       <div className="booking-modal-content" style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-                        <div className="booking-grid" style={{ display: "flex", flexDirection: "column", gap: 1, background: B }}>
-                          <div className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16 }}>
+                        <div className="booking-grid" style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                          <div className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16 }}>
                             <div>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                                 <div style={{ fontSize: 11, color: A, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", lineHeight: "1.2" }}>
@@ -4906,7 +5014,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             </AnimatePresence>
                           </div>
 
-                          <div id="booking-guests-section-exp" className="booking-modal-column" style={{ padding: "20px 28px", background: S, display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: "24px" }}>
+                          <div id="booking-guests-section-exp" className="booking-modal-column" style={{ padding: "20px 28px", background: BG, display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: "24px" }}>
                             <div style={{ fontSize: 11, color: validationErrors.adults ? E : A, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8, lineHeight: "1.2" }}>
                               02. Guests
                               {validationErrors.adults && <span style={{ fontSize: 10, fontWeight: 700, background: EL, color: E, padding: "2px 8px", borderRadius: 100, border: `1px solid ${E}22` }}>Min 1 Adult Required</span>}

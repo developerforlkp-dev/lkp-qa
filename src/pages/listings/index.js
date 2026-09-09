@@ -226,6 +226,21 @@ const Listings = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState("grid");
+
+  // Sync viewMode with localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedMode = localStorage.getItem("lkp-listing-viewMode");
+      if (savedMode) setViewMode(savedMode);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lkp-listing-viewMode", viewMode);
+    }
+  }, [viewMode]);
+
   const [businessInterestFilters, setBusinessInterestFilters] = useState(null);
   const [isCategoryDerivedSearch, setIsCategoryDerivedSearch] = useState(
     Boolean(!hasExplicitSearchText && derivedCategorySearchText)

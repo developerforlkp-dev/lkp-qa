@@ -43,6 +43,7 @@ import FAQ from "./screens/FAQ";
 import About from "./screens/About";
 import CancellationPolicy from "./screens/CancellationPolicy";
 import Support from "./screens/Support";
+import { isDirectBookingPathOrState } from "./utils/directBooking";
 
 function App() {
   const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(false);
@@ -119,34 +120,62 @@ function App() {
             />
             <Route
               exact
-              path="/experience/:slugAndId"
+              path={[
+                "/experience-checkout",
+                "/direct-booking/experience-checkout",
+                "/direct-booking/checkout",
+                "/direct-checkout",
+              ]}
+              render={(props) => {
+                const isDirect = isDirectBookingPathOrState(props.location);
+                return (
+                  <Page separatorHeader hideHeader={isDirect} fooferHide={isDirect}>
+                    <ExperienceCheckout isDirectBooking={isDirect} />
+                  </Page>
+                );
+              }}
+            />
+            <Route
+              exact
+              path={[
+                "/experience-checkout-complete",
+                "/direct-booking/experience-checkout-complete",
+                "/direct-booking/complete",
+                "/direct-booking-complete",
+                "/direct-checkout-complete",
+              ]}
+              render={(props) => {
+                const isDirect = isDirectBookingPathOrState(props.location);
+                return (
+                  <Page separatorHeader hideHeader={isDirect} fooferHide={isDirect}>
+                    <ExperienceCheckoutComplete isDirectBooking={isDirect} />
+                  </Page>
+                );
+              }}
+            />
+            <Route
+              exact
+              path={[
+                "/experience-product",
+                "/direct-booking/experience-product",
+                "/direct-experience",
+              ]}
               render={() => (
                 <ExperienceProduct />
               )}
             />
             <Route
               exact
-              path="/experience-product"
+              path={[
+                "/direct-book/:token",
+                "/experience/:slugAndId",
+                "/direct-booking/experience/:slugAndId",
+                "/direct-booking/:slugAndId",
+                "/direct/:slugAndId",
+                "/experience/direct/:slugAndId",
+              ]}
               render={() => (
                 <ExperienceProduct />
-              )}
-            />
-            <Route
-              exact
-              path="/experience-checkout"
-              render={() => (
-                <Page separatorHeader>
-                  <ExperienceCheckout />
-                </Page>
-              )}
-            />
-            <Route
-              exact
-              path="/experience-checkout-complete"
-              render={() => (
-                <Page separatorHeader>
-                  <ExperienceCheckoutComplete />
-                </Page>
               )}
             />
             <Route

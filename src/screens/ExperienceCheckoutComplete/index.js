@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ExperienceCheckoutComplete.module.sass";
 import Control from "../../components/Control";
@@ -6,6 +7,7 @@ import CheckoutSlider from "./CheckoutSlider";
 import CheckoutComplete from "../../components/CheckoutComplete";
 import { getStayDetails } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -43,13 +45,24 @@ const getStoredBookingTotal = (booking) => {
   return null;
 };
 
-const ExperienceCheckoutComplete = () => {
+const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = false }) => {
+  const location = useLocation();
   const [booking, setBooking] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(null);
   const [paymentData, setPaymentData] = useState(null);
   const [paymentFailed, setPaymentFailed] = useState(false);
   const [stayImageUrl, setStayImageUrl] = useState(null);
   const [allStayImages, setAllStayImages] = useState([]);
+
+  const isDirectBooking = useMemo(() => {
+    return (
+      isDirectBookingProp ||
+      isDirectBookingPathOrState(location) ||
+      Boolean(booking?.isDirectBooking) ||
+      Boolean(location.state?.isDirectBooking) ||
+      (typeof window !== "undefined" && localStorage.getItem("isDirectBooking") === "true")
+    );
+  }, [isDirectBookingProp, location, booking]);
 
   const breadcrumbs = useMemo(() => {
     let bookingDetailsUrl = "/experience-product";
@@ -96,7 +109,7 @@ const ExperienceCheckoutComplete = () => {
       console.error("Error loading booking data:", e);
     }
     try {
-      const p = localStorage.getItem("razorpayPaymentSuccess");
+      const p = localStorage.getItem("razorpayPaymentSuccess") || localStorage.getItem("directPaymentSuccess");
       if (p) setPaymentSuccess(JSON.parse(p));
     } catch { }
     try {
@@ -431,11 +444,10 @@ const ExperienceCheckoutComplete = () => {
 
     return [
       {
-        title: "Payment ID:",
-        content:
-          paymentSuccess?.razorpay_payment_id ||
-          paymentSuccess?.payment_id ||
-          (paymentFailed ? "Payment Failed" : "—"),
+        title: isDirectBooking ? "Order Reference:" : "Payment ID:",
+        content: isDirectBooking
+          ? (booking?.orderId || booking?.id || paymentSuccess?.order_id || paymentSuccess?.payment_id || `DIR-${Date.now().toString().slice(-6)}`)
+          : (paymentSuccess?.razorpay_payment_id || paymentSuccess?.payment_id || (paymentFailed ? "Payment Failed" : "—")),
         icon: "hand-cart",
       },
       {
@@ -447,17 +459,21 @@ const ExperienceCheckoutComplete = () => {
         icon: "calendar",
       },
       {
-        title: paymentFailed ? "Amount to pay:" : "Amount paid:",
+        title: (paymentFailed || isDirectBooking) ? "Amount to pay:" : "Amount paid:",
         content: paymentFailed ? (amountPaid !== "—" ? amountPaid : "—") : amountPaid,
         icon: "receipt",
       },
       {
         title: "Payment method:",
-        content: paymentFailed ? "Payment Failed" : (isFree ? "Free Reservation" : "Razorpay"),
+        content: paymentFailed
+          ? "Payment Failed"
+          : (isDirectBooking
+              ? "UPI / QR Code (Direct)"
+              : (isFree ? "Free Reservation" : "Razorpay")),
         icon: paymentFailed ? "alert-circle" : "wallet",
       },
     ];
-  }, [booking, paymentSuccess, paymentData, paymentFailed]);
+  }, [booking, paymentSuccess, paymentData, paymentFailed, isDirectBooking]);
 
   const items = useMemo(() => {
     // Format time slot with start and end time if available
@@ -535,12 +551,14 @@ const ExperienceCheckoutComplete = () => {
   return (
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
-        <Control
-          className={styles.control}
-          urlHome="/"
-          breadcrumbs={breadcrumbs}
-          backUrl="/"
-        />
+        {!isDirectBooking && (
+          <Control
+            className={styles.control}
+            urlHome="/"
+            breadcrumbs={breadcrumbs}
+            backUrl="/"
+          />
+        )}
         <div className={styles.row}>
           <div className={styles.col}>
             <CheckoutSlider className={styles.slider} gallery={gallery} />
@@ -553,9 +571,10 @@ const ExperienceCheckoutComplete = () => {
               items={items}
               paymentFailed={paymentFailed}
               isEvent={isEventBooking}
+              isDirectBooking={isDirectBooking}
               onRetryPayment={() => {
                 // Redirect back to checkout to retry payment
-                window.location.href = "/experience-checkout";
+                window.location.href = isDirectBooking ? "/direct-booking/experience-checkout" : "/experience-checkout";
               }}
             />
           </div>

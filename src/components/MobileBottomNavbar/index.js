@@ -4,6 +4,7 @@ import cn from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
 import { Compass, Ticket, Home, Utensils, MapPin } from "lucide-react";
 import { getBusinessInterests } from "../../utils/api";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 import styles from "./MobileBottomNavbar.module.sass";
 
 const filterOptions = [
@@ -59,6 +60,10 @@ const getActiveFilterFromPath = (pathname, search) => {
 const shouldShowNavbar = (pathname, search) => {
   const path = pathname.toLowerCase().replace(/\/$/, "");
   
+  if (path.startsWith("/direct") || path.includes("/direct-booking") || path.includes("/direct/")) {
+    return false;
+  }
+
   if (path === "/event" || path === "/event-details" || path === "/event-product") {
     return false;
   }
@@ -276,7 +281,7 @@ export default function MobileBottomNavbar() {
     };
   }, [location.pathname]);
 
-  if (!shouldShowNavbar(location.pathname, location.search)) {
+  if (!shouldShowNavbar(location.pathname, location.search) || isDirectBookingPathOrState(location)) {
     return null;
   }
 

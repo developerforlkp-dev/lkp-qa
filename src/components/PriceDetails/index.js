@@ -34,6 +34,7 @@ const PriceDetails = ({
   guestDetails,
   onGuestValidationFailed,
   hideCancellationIcon,
+  isDirectBooking = false,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -177,17 +178,20 @@ const PriceDetails = ({
         )}
 
         {/* ── Checkout Button ── */}
-        <div className={styles.checkoutAction}>
-          <CreditCard 
-            buttonUrl={buttonUrl} 
-            hidePaymentFields 
-            paymentData={paymentData} 
-            messageText={messageText} 
-            bookingData={bookingData}
-            guestDetails={guestDetails}
-            onGuestValidationFailed={onGuestValidationFailed}
-          />
-        </div>
+        {!isDirectBooking && (
+          <div className={styles.checkoutAction}>
+            <CreditCard 
+              buttonUrl={buttonUrl} 
+              hidePaymentFields 
+              paymentData={paymentData} 
+              messageText={messageText} 
+              bookingData={bookingData}
+              guestDetails={guestDetails}
+              onGuestValidationFailed={onGuestValidationFailed}
+              isDirectBooking={isDirectBooking}
+            />
+          </div>
+        )}
 
         {discoundCode && (
           <Form

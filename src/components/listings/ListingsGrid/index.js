@@ -136,8 +136,14 @@ const SkeletonCard = () => {
 
 const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMessage = "No listings found. Try adjusting your filters.", listView = false }) => {
   const sentinelRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
 
-  // Infinite scroll: observe a sentinel element at the bottom of the grid
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const handleObserver = useCallback(
     (entries) => {
       const [entry] = entries;
@@ -201,7 +207,13 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
         {cardItems.map((item, index) => {
           const originalListing = listings[index];
           return listView ? (
-            <Link to={item.url} key={item.id} className={styles.listCardLink}>
+            <Link 
+              to={item.url} 
+              key={item.id} 
+              className={styles.listCardLink}
+              target={isMobile ? "_self" : "_blank"}
+              rel="noopener noreferrer"
+            >
               <ListCard item={item} listing={originalListing} />
             </Link>
           ) : (

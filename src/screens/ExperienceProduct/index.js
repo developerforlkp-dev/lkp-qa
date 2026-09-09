@@ -20,6 +20,8 @@ import {
   getListingReviews,
   getEligibleBookings,
   submitOrderReview,
+  getReviewErrorMessage,
+  getPublicDirectBooking,
 } from "../../utils/api";
 import Rating from "../../components/Rating";
 import { buildExperienceUrl, extractExperienceIdFromSlugAndId } from "../../utils/experienceUrl";
@@ -34,6 +36,7 @@ import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import useIsMobile from "../../hooks/useIsMobile";
 import MobileExperienceView from "./MobileExperienceView";
 import CuratedContent from "../../components/CuratedContent";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -241,11 +244,18 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
 const ExperienceProduct = () => {
   const location = useLocation();
   const history = useHistory();
-  const { slugAndId } = useParams();
+  const routeParams = useParams();
+  const { slugAndId } = routeParams;
+  const directToken = routeParams?.token || (
+    location.pathname.startsWith("/direct-book/")
+      ? location.pathname.replace("/direct-book/", "").split("/")[0].split("?")[0]
+      : null
+  );
+  const [directBookingInfo, setDirectBookingInfo] = useState(null);
   const params = new URLSearchParams(location.search);
   const idFromPath = extractExperienceIdFromSlugAndId(slugAndId);
   const idParam = params.get("id");
-  const id = idFromPath || idParam || "1";
+  const id = (directBookingInfo?.listingId ? String(directBookingInfo.listingId) : null) || idFromPath || idParam || (directToken ? null : "1");
 
   const initialDateStr = params.get("date");
   const initialGuestsStr = params.get("guests");
@@ -271,6 +281,16 @@ const ExperienceProduct = () => {
     }
   }, [id]);
   const isEventDetailPage = routeType === "event" || persistedPendingBookingType === "event";
+
+  const isDirectBooking = useMemo(() => {
+    return Boolean(directToken) || isDirectBookingPathOrState(location);
+  }, [location, directToken]);
+
+  useEffect(() => {
+    if (isDirectBooking) {
+      localStorage.setItem("isDirectBooking", "true");
+    }
+  }, [isDirectBooking]);
 
   const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const [listing, setListing] = useState(null);
@@ -472,7 +492,84 @@ const ExperienceProduct = () => {
 
     const load = async () => {
       try {
-        const data = isEventDetailPage ? await getEventDetails(id) : await getListing(id);
+        let activeListingId = id;
+        let directData = null;
+
+        if (directToken) {
+          try {
+            directData = await getPublicDirectBooking(directToken);
+            if (directData && mounted) {
+              const enrichedDirectData = { ...directData, token: directData.token || directToken };
+              setDirectBookingInfo(enrichedDirectData);
+              localStorage.setItem("directBookingData", JSON.stringify(enrichedDirectData));
+              localStorage.setItem("directBookingToken", directToken);
+              localStorage.setItem("isDirectBooking", "true");
+              if (directData.listingId) {
+                activeListingId = String(directData.listingId);
+              }
+              const directHost = {
+                displayName: directData.leadName,
+                name: directData.leadName,
+                firstName: directData.leadName,
+                phone: directData.leadPhoneNumber,
+                phoneNumber: directData.leadPhoneNumber,
+                upiId: directData.upiId,
+                qrCodeUrl: directData.qrCodeUrl,
+                leadName: directData.leadName,
+                leadPhoneNumber: directData.leadPhoneNumber,
+                host: {
+                  displayName: directData.leadName,
+                  name: directData.leadName,
+                  firstName: directData.leadName,
+                  phone: directData.leadPhoneNumber,
+                  phoneNumber: directData.leadPhoneNumber,
+                  upiId: directData.upiId,
+                  qrCodeUrl: directData.qrCodeUrl,
+                },
+              };
+              setHostData(directHost);
+            }
+          } catch (tokenErr) {
+            console.error("Failed to load direct booking by token:", tokenErr);
+          }
+        } else if (isDirectBooking) {
+          try {
+            const rawStored = localStorage.getItem("directBookingData");
+            if (rawStored) {
+              directData = JSON.parse(rawStored);
+              if (directData && mounted) {
+                setDirectBookingInfo(directData);
+                if (directData.listingId && !activeListingId) {
+                  activeListingId = String(directData.listingId);
+                }
+                setHostData((prev) => ({
+                  ...prev,
+                  displayName: directData.leadName || prev?.displayName,
+                  name: directData.leadName || prev?.name,
+                  phone: directData.leadPhoneNumber || prev?.phone,
+                  phoneNumber: directData.leadPhoneNumber || prev?.phoneNumber,
+                  upiId: directData.upiId || prev?.upiId,
+                  qrCodeUrl: directData.qrCodeUrl || prev?.qrCodeUrl,
+                  leadName: directData.leadName,
+                  leadPhoneNumber: directData.leadPhoneNumber,
+                  host: {
+                    ...(prev?.host || {}),
+                    displayName: directData.leadName || prev?.host?.displayName,
+                    phone: directData.leadPhoneNumber || prev?.host?.phone,
+                    upiId: directData.upiId || prev?.host?.upiId,
+                    qrCodeUrl: directData.qrCodeUrl || prev?.host?.qrCodeUrl,
+                  },
+                }));
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (!activeListingId) {
+          activeListingId = "1";
+        }
+
+        const data = isEventDetailPage ? await getEventDetails(activeListingId) : await getListing(activeListingId);
         if (!mounted) return;
 
         if (isListingUnavailable(data)) {
@@ -481,6 +578,14 @@ const ExperienceProduct = () => {
         }
 
         if (data) {
+          if (!data.coverPhotoUrl && directData?.coverPhotoUrl) {
+            data.coverPhotoUrl = directData.coverPhotoUrl;
+          }
+          if (directData) {
+            data.directBooking = directData;
+            if (directData.leadName) data.leadName = directData.leadName;
+            if (directData.upiId) data.upiId = directData.upiId;
+          }
           setListing(data);
           const galleryImages = [];
           if (data.coverPhotoUrl) {
@@ -495,22 +600,46 @@ const ExperienceProduct = () => {
           }
           setGalleryItems(galleryImages);
 
-          const canonicalUrl = buildExperienceUrl(data.title || "experience", data.listingId || data.id || id);
-          if (location.pathname !== canonicalUrl) history.replace(canonicalUrl);
+          const canonicalUrl = buildExperienceUrl(data.title || "experience", data.listingId || data.id || activeListingId);
+          if (!isDirectBooking && !directToken && location.pathname !== canonicalUrl) {
+            history.replace(canonicalUrl);
+          }
 
           const hostId = data.hostId || data.host?.id || data.host?.hostId || data.leadUserId || data.host?.leadUserId;
           if (hostId) {
             getHostContent(hostId).then(resp => {
               if (mounted) {
-                setHostData(resp.host || resp);
+                const fetchedHost = resp.host || resp || {};
+                if (directData) {
+                  setHostData((prev) => ({
+                    ...fetchedHost,
+                    ...prev,
+                    displayName: directData.leadName || fetchedHost.displayName,
+                    name: directData.leadName || fetchedHost.name,
+                    phone: directData.leadPhoneNumber || fetchedHost.phone,
+                    phoneNumber: directData.leadPhoneNumber || fetchedHost.phoneNumber,
+                    upiId: directData.upiId || fetchedHost.upiId,
+                    qrCodeUrl: directData.qrCodeUrl || fetchedHost.qrCodeUrl,
+                    host: {
+                      ...(fetchedHost?.host || {}),
+                      ...(prev?.host || {}),
+                      displayName: directData.leadName || fetchedHost?.host?.displayName,
+                      phone: directData.leadPhoneNumber || fetchedHost?.host?.phone,
+                      upiId: directData.upiId || fetchedHost?.host?.upiId,
+                      qrCodeUrl: directData.qrCodeUrl || fetchedHost?.host?.qrCodeUrl,
+                    },
+                  }));
+                } else {
+                  setHostData(fetchedHost);
+                }
               }
             }).catch(e => console.warn(e));
           }
 
           // Fetch dynamic reviews for the listing
-          getListingReviews(id).then(resp => {
+          getListingReviews(activeListingId).then(resp => {
             if (mounted && resp) {
-              //console.log(`💬 Fetched reviews for ${id}:`, resp);
+              //console.log(`💬 Fetched reviews for ${activeListingId}:`, resp);
               if (resp.reviews) setReviews(resp.reviews);
               else if (Array.isArray(resp)) setReviews(resp);
 
@@ -525,7 +654,7 @@ const ExperienceProduct = () => {
           // Fetch eligible bookings for review
           getEligibleBookings().then(resp => {
             if (mounted && Array.isArray(resp)) {
-              const forThisListing = resp.filter(b => String(b.listingId) === String(id));
+              const forThisListing = resp.filter(b => String(b.listingId) === String(activeListingId));
               setEligibleBookings(forThisListing);
             }
           }).catch(e => {
@@ -535,7 +664,7 @@ const ExperienceProduct = () => {
           });
 
           const leadId = data.leadId || data.lead_id || data.host?.leadId || data.leadUserId;
-          if (leadId) {
+          if (leadId && !directData) {
             getLeadDetails(leadId).then(resp => mounted && setLeadData(resp)).catch(e => {
               if (e?.response?.status !== 401) console.warn(e);
             });
@@ -569,7 +698,7 @@ const ExperienceProduct = () => {
     };
     load();
     return () => { mounted = false; };
-  }, [history, id, isEventDetailPage, location.pathname]);
+  }, [history, id, isEventDetailPage, location.pathname, directToken, isDirectBooking]);
 
   const handleUnavailablePopupClose = () => {
     setUnavailablePopupOpen(false);
@@ -643,7 +772,7 @@ const ExperienceProduct = () => {
   /* ── Mobile View ── */
   if (isMobile) {
     return (
-      <Page hideBookings>
+      <Page hideBookings hideHeader={isDirectBooking} fooferHide={isDirectBooking}>
         <MobileExperienceView
           listing={listing}
           hostData={hostData}
@@ -670,14 +799,15 @@ const ExperienceProduct = () => {
           displayTags={displayTags}
           navigateToHostProfile={navigateToHostProfile}
           normalizedReviews={normalizedReviews}
+          isDirectBooking={isDirectBooking}
         />
       </Page>
     );
   }
 
   return (
-    <Page hideBookings>
-      <DetailPageNavPortal heroRef={heroRef} activeCategory="experience" />
+    <Page hideBookings hideHeader={isDirectBooking} fooferHide={isDirectBooking}>
+      {!isDirectBooking && <DetailPageNavPortal heroRef={heroRef} activeCategory="experience" />}
       <main style={{ background: BG }}>
         {/* HERO SECTION */}
         <section ref={heroRef} className="hero-section" style={{
@@ -687,6 +817,7 @@ const ExperienceProduct = () => {
           width: "calc(100% - 80px)",
           maxWidth: "1600px",
           margin: "0 auto",
+          marginTop: isDirectBooking ? "24px" : "0",
           borderRadius: "32px",
           overflow: "hidden",
           display: "flex",
@@ -1747,73 +1878,73 @@ const ExperienceProduct = () => {
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: "16px 16px 16px 0" }}>
                   <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
                     {listing?.meetingAddress && (
-                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}`  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <MapPin size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingAddress}</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", alignItems: "center", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, minWidth: 90, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: "1 1 150px", minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingAddress}</span>
                         </div>
                       </li>
                     )}
 
                     {listing?.meetingDistrict && (
-                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0"  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Building size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingDistrict}</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", alignItems: "center", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, minWidth: 90, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: "1 1 150px", minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingDistrict}</span>
                         </div>
                       </li>
                     )}
 
                     {listing?.meetingState && (
-                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0"  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Map size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingState}</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", alignItems: "center", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, minWidth: 90, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: "1 1 150px", minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingState}</span>
                         </div>
                       </li>
                     )}
 
                     {listing?.meetingCountry && (
-                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0"  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Globe size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
-                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>{listing.meetingCountry}</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", alignItems: "center", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, minWidth: 90, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                          <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: "1 1 150px", minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingCountry}</span>
                         </div>
                       </li>
                     )}
 
                     {listing?.meetingInstructions && (
-                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0" }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0"  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Info size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                          <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", alignItems: "center", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, minWidth: 90, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                          <div style={{ flex: "1 1 150px", minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}><ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} /></div>
                         </div>
                       </li>
                     )}
 
                     {(!listing?.meetingDistrict && !listing?.meetingState && !listing?.meetingCountry && !listing?.meetingAddress) && (
-                      <li style={{ display: "flex", gap: 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}` }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: `1px solid ${B}`  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Info size={20} color={A} fill="transparent" />
                         </div>
-                        <div style={{ display: "flex", gap: 16, alignItems: "center", flex: 1 }}>
-                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
-                          <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif' }}>Specific regional details will be provided upon booking confirmation.</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", alignItems: "center", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, minWidth: 90, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Region</span>
+                          <span style={{ fontSize: 16, color: M, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: "1 1 150px", minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>Specific regional details will be provided upon booking confirmation.</span>
                         </div>
                       </li>
                     )}
@@ -2482,30 +2613,33 @@ const ExperienceProduct = () => {
           onExternalOpenChange={setBookingModalOpen}
           hostName={displayHostName}
           hostAvatar={formatImageUrl(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar)}
+          isDirectBooking={isDirectBooking}
         />
 
-        <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>
-          <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
-            <RelatedListingsStrip
-              businessInterestId={1}
-              primaryCategoryId={primaryCategoryId}
-              currentListingId={currentListingId}
-              fallbackLocationValues={fallbackLocationValues}
-              fallbackTagValues={fallbackTagValues}
-              fallbackSpecialLabelValues={fallbackSpecialLabelValues}
-              title="More Experiences You May Like"
-              sectionStyle={{ padding: "0px", background: "transparent" }}
-              titleStyle={{
-                fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
-                fontWeight: 700,
-                lineHeight: 1.1,
-                fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
-                letterSpacing: "-0.02em",
-                color: FG
-              }}
-            />
+        {!isDirectBooking && (
+          <div className="related-listings-wrapper" style={{ padding: "64px 0", background: theme === 'dark' ? BG : W }}>
+            <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+              <RelatedListingsStrip
+                businessInterestId={1}
+                primaryCategoryId={primaryCategoryId}
+                currentListingId={currentListingId}
+                fallbackLocationValues={fallbackLocationValues}
+                fallbackTagValues={fallbackTagValues}
+                fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+                title="More Experiences You May Like"
+                sectionStyle={{ padding: "0px", background: "transparent" }}
+                titleStyle={{
+                  fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                  fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+                  letterSpacing: "-0.02em",
+                  color: FG
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </main>
       <AnimatePresence>
         {unavailablePopupOpen && (
@@ -3522,7 +3656,7 @@ function ReviewsSection({ reviews = [], summary, listingId, eligibleBookings = [
       setShowForm(false);
       if (onReviewSubmitted) onReviewSubmitted();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to submit review");
+      setError(getReviewErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

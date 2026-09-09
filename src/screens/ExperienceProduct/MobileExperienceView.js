@@ -116,7 +116,8 @@ export default function MobileExperienceView({
   fallbackLocationValues, fallbackTagValues, fallbackSpecialLabelValues,
   displayHostName, hostPhone, hostEmail,
   displayTags, navigateToHostProfile,
-  normalizedReviews, displayMaxGuests
+  normalizedReviews, displayMaxGuests,
+  isDirectBooking = false
 }) {
   const { tokens: { A, FG, M, B, W, BG, S, AL, AH }, theme } = useTheme();
   const isDark = theme === "dark";
@@ -603,9 +604,9 @@ export default function MobileExperienceView({
               <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
                 <MapPin size={18} color={A} />
               </div>
-              <div>
-                <p className="mob-detail-label" style={{ color: A }}>Address</p>
-                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingAddress}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingAddress}</span>
               </div>
             </div>
           )}
@@ -614,9 +615,9 @@ export default function MobileExperienceView({
               <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
                 <Building size={18} color={A} />
               </div>
-              <div>
-                <p className="mob-detail-label" style={{ color: A }}>District</p>
-                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingDistrict}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingDistrict}</span>
               </div>
             </div>
           )}
@@ -625,9 +626,9 @@ export default function MobileExperienceView({
               <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
                 <Map size={18} color={A} />
               </div>
-              <div>
-                <p className="mob-detail-label" style={{ color: A }}>State</p>
-                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingState}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingState}</span>
               </div>
             </div>
           )}
@@ -636,9 +637,9 @@ export default function MobileExperienceView({
               <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
                 <Globe size={18} color={A} />
               </div>
-              <div>
-                <p className="mob-detail-label" style={{ color: A }}>Country</p>
-                <p className="mob-detail-value" style={{ color: FG }}>{listing.meetingCountry}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingCountry}</span>
               </div>
             </div>
           )}
@@ -647,9 +648,11 @@ export default function MobileExperienceView({
               <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
                 <Info size={18} color={A} />
               </div>
-              <div>
-                <p className="mob-detail-label" style={{ color: A }}>Instructions</p>
-                <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                <div style={{ minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>
+                  <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
+                </div>
               </div>
             </div>
           )}
@@ -1067,19 +1070,21 @@ export default function MobileExperienceView({
       {/* ╔═══════════════════════════════════╗
           ║      RELATED EXPERIENCES          ║
           ╚═══════════════════════════════════╝ */}
-      <div className="mob-related" style={{ background: isDark ? BG : W }}>
-        <RelatedListingsStrip
-          businessInterestId={1}
-          primaryCategoryId={primaryCategoryId}
-          currentListingId={currentListingId}
-          fallbackLocationValues={fallbackLocationValues}
-          fallbackTagValues={fallbackTagValues}
-          fallbackSpecialLabelValues={fallbackSpecialLabelValues}
-          title="You May Also Like"
-          sectionStyle={{ padding: "0 0 0 20px", background: "transparent" }}
-          titleStyle={{ fontSize: "clamp(1.6rem, 7vw, 2.2rem)", fontWeight: 700, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, letterSpacing: "-0.02em" }}
-        />
-      </div>
+      {!isDirectBooking && (
+        <div className="mob-related" style={{ background: isDark ? BG : W }}>
+          <RelatedListingsStrip
+            businessInterestId={1}
+            primaryCategoryId={primaryCategoryId}
+            currentListingId={currentListingId}
+            fallbackLocationValues={fallbackLocationValues}
+            fallbackTagValues={fallbackTagValues}
+            fallbackSpecialLabelValues={fallbackSpecialLabelValues}
+            title="You May Also Like"
+            sectionStyle={{ padding: "0 0 0 20px", background: "transparent" }}
+            titleStyle={{ fontSize: "clamp(1.6rem, 7vw, 2.2rem)", fontWeight: 700, fontFamily: '"Cormorant Garamond", "Playfair Display", serif', color: FG, margin: 0, letterSpacing: "-0.02em" }}
+          />
+        </div>
+      )}
 
       {/* ╔═══════════════════════════════════╗
           ║        BOOKING SYSTEM             ║
@@ -1095,6 +1100,7 @@ export default function MobileExperienceView({
         initialGuests={initialGuests}
         hostName={displayHostName}
         hostAvatar={parentFmt(leadData?.profileImageUrl || hostData?.profileImageUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar)}
+        isDirectBooking={isDirectBooking}
       />
 
       {/* Spacer for sticky CTA */}
@@ -1187,30 +1193,23 @@ export const ExpandableInstructionText = ({ text, FG, A }) => {
   const isLong = text && text.length > 120;
   
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-      <div 
-        style={{ 
-          display: "grid", 
-          gridTemplateRows: expanded ? "1fr" : "0fr", 
-          transition: "grid-template-rows 0.3s ease",
-          width: "100%"
-        }}
-      >
-        <div style={{ overflow: "hidden" }}>
-          <p className="mob-detail-value" style={{ 
-            color: FG, margin: 0,
-            display: "-webkit-box", 
-            WebkitLineClamp: expanded ? "unset" : 3, 
-            WebkitBoxOrient: "vertical",
-          }}>
-            {text}
-          </p>
-        </div>
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 0, width: "100%" }}>
+      <span style={{ 
+        fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif',
+        display: "-webkit-box", 
+        WebkitLineClamp: expanded ? "unset" : 3, 
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+        whiteSpace: "pre-wrap",
+        wordBreak: "normal",
+        overflowWrap: "anywhere"
+      }}>
+        {text}
+      </span>
       {isLong && (
         <button 
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-          style={{ background: "transparent", border: "none", color: A, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 4, cursor: "pointer", outline: "none", textDecoration: "underline", transition: "color 0.2s" }}
+          style={{ background: "transparent", border: "none", color: A, fontSize: 13, fontWeight: 600, padding: 0, marginTop: 6, cursor: "pointer", outline: "none", textDecoration: "underline", fontFamily: '"Inter", sans-serif', transition: "opacity 0.2s" }}
         >
           {expanded ? "Read Less" : "Read More"}
         </button>

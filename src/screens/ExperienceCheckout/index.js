@@ -8,6 +8,7 @@ import GuestPicker from "../../components/GuestPicker";
 import HeadOptions from "../../components/PriceDetails/HeadOptions";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
+import DirectUpiSection from "../../components/DirectUpiSection";
 import { getOrderDetails, getStayDetails, getListingAddons, getEventAddons, getEventDetails, getHostContent } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 import {
@@ -17,6 +18,7 @@ import {
   isPendingCheckoutComplete,
   isFailedPaymentStatus,
 } from "../../utils/paymentSession";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -345,9 +347,12 @@ const buildChildPricingBreakdown = ({
 };
 
 
-const Checkout = () => {
+const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
   const location = useLocation();
   const history = useHistory();
+  const isDirectBooking = useMemo(() => {
+    return isDirectBookingProp || isDirectBookingPathOrState(location) || Boolean(location.state?.isDirectBooking);
+  }, [isDirectBookingProp, location]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(location.state?.paymentData || null);
@@ -1377,12 +1382,16 @@ const Checkout = () => {
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
         <div className={styles.headerRow}>
-          <Control
-            className={styles.backControl}
-            urlHome="/"
-            backUrl={backUrl}
-          />
-          <h2 className={styles.pageTitle}>{isEventBooking ? "Your event" : "Your trip"}</h2>
+          {!isDirectBooking && (
+            <Control
+              className={styles.backControl}
+              urlHome="/"
+              backUrl={backUrl}
+            />
+          )}
+          <h2 className={styles.pageTitle}>
+            {isDirectBooking ? "Direct Booking" : (isEventBooking ? "Your event" : "Your trip")}
+          </h2>
         </div>
         <div className={styles.wrapper}>
           <ConfirmAndPay
@@ -1407,31 +1416,56 @@ const Checkout = () => {
               hostAvatar={hostAvatar}
             />
           </ConfirmAndPay>
-          <PriceDetails
-            className={styles.price}
-            hideHeader={true}
-            more
-            image={listingImage}
-            title={listingTitle}
-            items={items}
-            table={table}
-            addonDetails={addonDetails}
-            addOns={selectedAddOns}
-            amountToPay={resolvedAmountToPay}
-            amountInPaise={isAmountInPaise}
-            currency={resolvedCurrency}
-            hostName={hostName}
-            hostAvatar={hostAvatar}
-            cancellationPolicy={cancellationPolicy}
-            rating={reviewsData.rating}
-            reviewsCount={reviewsData.count}
-            buttonUrl="/experience-checkout-complete"
-            paymentData={paymentData}
-            messageText={messageText}
-            bookingData={bookingData}
-            guestDetails={guestDetails}
-            onGuestValidationFailed={handleGuestValidationFailed}
-          />
+          <div className={styles.priceColumn}>
+            <PriceDetails
+              className={styles.price}
+              hideHeader={true}
+              more
+              image={listingImage}
+              title={listingTitle}
+              items={items}
+              table={table}
+              addonDetails={addonDetails}
+              addOns={selectedAddOns}
+              amountToPay={resolvedAmountToPay}
+              amountInPaise={isAmountInPaise}
+              currency={resolvedCurrency}
+              hostName={hostName}
+              hostAvatar={hostAvatar}
+              cancellationPolicy={cancellationPolicy}
+              rating={reviewsData.rating}
+              reviewsCount={reviewsData.count}
+              buttonUrl={isDirectBooking ? "/direct-booking/complete" : "/experience-checkout-complete"}
+              paymentData={paymentData}
+              messageText={messageText}
+              bookingData={bookingData}
+              guestDetails={guestDetails}
+              onGuestValidationFailed={handleGuestValidationFailed}
+              isDirectBooking={isDirectBooking}
+            />
+            {isDirectBooking && (
+              <DirectUpiSection
+                bookingData={bookingData}
+                hostData={fetchedLead || bookingData?.host}
+                paymentData={paymentData}
+                guestDetails={guestDetails}
+                amount={resolvedAmountToPay ? (isAmountInPaise ? resolvedAmountToPay / 100 : resolvedAmountToPay) : undefined}
+                onSuccess={() => {
+                  history.push(
+                    isDirectBooking ? "/direct-booking/complete" : "/experience-checkout-complete",
+                    {
+                      isDirectBooking: true,
+                      bookingData: {
+                        ...bookingData,
+                        isDirectBooking: true,
+                        guestDetails,
+                      },
+                    }
+                  );
+                }}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import styles from "./CheckoutComplete.module.sass";
 import Icon from "../Icon";
 
-const CheckoutComplete = ({ className, title, parameters, options, items, paymentFailed = false, onRetryPayment, isStay, isEvent, hostName, avatarUrl, rating, reviews }) => {
+const CheckoutComplete = ({ className, title, parameters, options, items, paymentFailed = false, onRetryPayment, isStay, isEvent, hostName, avatarUrl, rating, reviews, isDirectBooking = false }) => {
   const bookedMessage = isStay
     ? "Your stay has been booked!"
     : isEvent
@@ -115,9 +115,19 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
           </>
         ) : (
           <>
-            <Link className={cn("button-stroke", styles.button)} to="/bookings">
-              Your bookings
-            </Link>
+            {!isDirectBooking ? (
+              <Link className={cn("button-stroke", styles.button)} to="/bookings">
+                Your bookings
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className={cn("button-stroke", styles.button)}
+                onClick={() => window.print()}
+              >
+                Print Receipt
+              </button>
+            )}
           </>
         )}
       </div>

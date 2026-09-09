@@ -4,7 +4,7 @@ import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
-import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons, getOrderMessages } from "../../utils/api";
+import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getReviewErrorMessage, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons, getOrderMessages } from "../../utils/api";
 import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../utils/paymentSession";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
@@ -2863,11 +2863,7 @@ const ViewDetails = () => {
       //console.log("✅ Review submitted successfully");
     } catch (err) {
       console.error("❌ Error submitting review:", err);
-      const errorMessage = err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to submit review. Please try again.";
-      setReviewError(errorMessage);
+      setReviewError(getReviewErrorMessage(err));
     } finally {
       setIsSubmittingReview(false);
     }
@@ -4168,8 +4164,8 @@ const ViewDetails = () => {
                   setReviewModalComment("");
                 } catch (err) {
                   const status = err.response?.status;
-                  const message = err.response?.data?.message || err.message;
-                  if (status === 409) {
+                  const code = err.response?.data?.code;
+                  if (status === 409 || code === "ALREADY_REVIEWED") {
                     setReviewModalError("You've already reviewed this order.");
                     setOrderIdsEligibleForReview((prev) => {
                       const next = new Set(prev);
@@ -4177,7 +4173,7 @@ const ViewDetails = () => {
                       return next;
                     });
                   } else {
-                    setReviewModalError(message || "Failed to submit review. Please try again.");
+                    setReviewModalError(getReviewErrorMessage(err));
                   }
                 } finally {
                   setIsSubmittingReviewModal(false);
