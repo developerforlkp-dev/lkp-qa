@@ -608,13 +608,18 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
     }
   }
 
-  // Fill extra adults up to maxExtraAdults
+  // Fill extra adults up to maxExtraAdults per room type
+  const extraAdultsAllocatedByRoomId = {};
   for (let inst of roomInstances) {
-    const extraAdultSpace = inst.maxExtraAdults;
-    const toAllocate = Math.min(remainingAdults, extraAdultSpace);
+    const rId = String(inst.roomId);
+    const alreadyAllocated = extraAdultsAllocatedByRoomId[rId] || 0;
+    const roomTypeExtraLimit = inst.maxExtraAdults;
+    const availableExtraSpace = Math.max(0, roomTypeExtraLimit - alreadyAllocated);
+    const toAllocate = Math.min(remainingAdults, availableExtraSpace);
     if (toAllocate > 0) {
       inst.allocatedAdults += toAllocate;
       remainingAdults -= toAllocate;
+      extraAdultsAllocatedByRoomId[rId] = alreadyAllocated + toAllocate;
     }
   }
 
@@ -628,13 +633,18 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
     }
   }
 
-  // Fill extra children up to maxExtraChildren
+  // Fill extra children up to maxExtraChildren per room type
+  const extraChildrenAllocatedByRoomId = {};
   for (let inst of roomInstances) {
-    const extraChildSpace = inst.maxExtraChildren;
-    const toAllocate = Math.min(remainingChildren, extraChildSpace);
+    const rId = String(inst.roomId);
+    const alreadyAllocated = extraChildrenAllocatedByRoomId[rId] || 0;
+    const roomTypeExtraLimit = inst.maxExtraChildren;
+    const availableExtraSpace = Math.max(0, roomTypeExtraLimit - alreadyAllocated);
+    const toAllocate = Math.min(remainingChildren, availableExtraSpace);
     if (toAllocate > 0) {
       inst.allocatedChildren += toAllocate;
       remainingChildren -= toAllocate;
+      extraChildrenAllocatedByRoomId[rId] = alreadyAllocated + toAllocate;
     }
   }
 
@@ -1388,17 +1398,19 @@ const StayBookingSystem = ({
       }
       totalBaseAdultsLimit += (room.maxAdults || 1) * Number(room.count || 0);
       totalBaseChildrenLimit += (room.maxChildren || 0) * Number(room.count || 0);
-      totalExtraAdultsLimit += Number(
-        room.maxExtraAdults ??
-        room.maxExtraAdultsAllowed ??
-        room.maxExtraBeds ??
-        0
-      ) * Number(room.count || 0);
-      totalExtraChildrenLimit += Number(
-        room.maxExtraChildren ??
-        room.maxExtraChildrenAllowed ??
-        0
-      ) * Number(room.count || 0);
+      if (Number(room.count || 0) > 0) {
+        totalExtraAdultsLimit += Number(
+          room.maxExtraAdults ??
+          room.maxExtraAdultsAllowed ??
+          room.maxExtraBeds ??
+          0
+        );
+        totalExtraChildrenLimit += Number(
+          room.maxExtraChildren ??
+          room.maxExtraChildrenAllowed ??
+          0
+        );
+      }
     });
 
     const allowedAdults = totalBaseAdultsLimit + totalExtraAdultsLimit;
@@ -1619,17 +1631,19 @@ const StayBookingSystem = ({
         totalOriginalPerNight += roomBasePrice * room.count;
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
         totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
-        totalExtraAdultsLimit += Number(
-          room.maxExtraAdults ??
-          room.maxExtraAdultsAllowed ??
-          room.maxExtraBeds ??
-          0
-        ) * room.count;
-        totalExtraChildrenLimit += Number(
-          room.maxExtraChildren ??
-          room.maxExtraChildrenAllowed ??
-          0
-        ) * room.count;
+        if (Number(room.count || 0) > 0) {
+          totalExtraAdultsLimit += Number(
+            room.maxExtraAdults ??
+            room.maxExtraAdultsAllowed ??
+            room.maxExtraBeds ??
+            0
+          );
+          totalExtraChildrenLimit += Number(
+            room.maxExtraChildren ??
+            room.maxExtraChildrenAllowed ??
+            0
+          );
+        }
 
         // Store per-room rates for extra guest calc below
         room._resolvedExtraAP = roomExtraAP;
@@ -2181,17 +2195,19 @@ const StayBookingSystem = ({
       resolvedSelectedRooms.forEach(room => {
         totalBaseAdultsLimit += (room.maxAdults || 1) * room.count;
         totalBaseChildrenLimit += (room.maxChildren || 0) * room.count;
-        totalExtraAdultsLimit += Number(
-          room.maxExtraAdults ??
-          room.maxExtraAdultsAllowed ??
-          room.maxExtraBeds ??
-          0
-        ) * room.count;
-        totalExtraChildrenLimit += Number(
-          room.maxExtraChildren ??
-          room.maxExtraChildrenAllowed ??
-          0
-        ) * room.count;
+        if (Number(room.count || 0) > 0) {
+          totalExtraAdultsLimit += Number(
+            room.maxExtraAdults ??
+            room.maxExtraAdultsAllowed ??
+            room.maxExtraBeds ??
+            0
+          );
+          totalExtraChildrenLimit += Number(
+            room.maxExtraChildren ??
+            room.maxExtraChildrenAllowed ??
+            0
+          );
+        }
       });
     }
 
