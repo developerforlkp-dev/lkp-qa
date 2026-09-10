@@ -120,6 +120,10 @@ export const useListings = ({
       const hasMealPlanFilter = Array.isArray(filters.mealPlan) && filters.mealPlan.length > 0;
       const hasPropertyTypeFilter = Array.isArray(filters.propertyTypes) && filters.propertyTypes.length > 0;
       const hasTagFilter = Array.isArray(filters.tags) && filters.tags.length > 0;
+      const totalGuests =
+        (Number(guests?.adults || 0) + Number(guests?.children || 0)) ||
+        Number(guests?.guestCount || guests?.guests || filters?.guestCount || filters?.guests || 0);
+      const hasGuestFilter = totalGuests > 0;
       const hasServerSideFilters =
         hasCategoryFilter ||
         hasRatingFilter ||
@@ -127,7 +131,8 @@ export const useListings = ({
         effectiveMaxPrice !== undefined ||
         hasMealPlanFilter ||
         hasPropertyTypeFilter ||
-        hasTagFilter;
+        hasTagFilter ||
+        (mappedNearbyInterest === "STAYS" && hasGuestFilter);
 
       if (!hasLocationSearch) {
         const mappedBusinessInterestId =
@@ -218,6 +223,9 @@ export const useListings = ({
             totalCount = response.totalCount ?? null;
             hasMoreFromAPI = response.hasMore ?? null;
           } else if (mappedNearbyInterest === "STAYS") {
+            if (totalGuests > 0) {
+              filterPayload.guestCount = totalGuests;
+            }
             const response = await filterStayListings(filterPayload);
             listings = response.listings || [];
             totalCount = response.totalCount ?? null;

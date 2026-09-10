@@ -791,6 +791,7 @@ const StayBookingSystem = ({
   }, [externalSetChildAges]);
 
   const [show, setShow] = useState(false);
+  const [showNoRoomTip, setShowNoRoomTip] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -1150,22 +1151,8 @@ const StayBookingSystem = ({
   }, [stay]);
 
 
-  useEffect(() => {
-    if (!stay || !setSelectedRooms) return;
-    const isPropertyBased = isPropertyBasedBooking(stay);
-    if (isPropertyBased) return;
+  // Room selection is intentional — no auto-selection when selectedRooms is empty
 
-    if (stayRoomsCatalog.length === 0) return;
-
-    if (selectedRooms.length === 0) {
-      const firstRoom = stayRoomsCatalog[0];
-      const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
-      const defaultPlan = firstRoom?.mealPlanPricing && Object.keys(firstRoom.mealPlanPricing).length > 0 
-        ? Object.keys(firstRoom.mealPlanPricing)[0] 
-        : firstRoom?.epPrice ? "EP" : firstRoom?.bbPrice ? "BB" : firstRoom?.cpPrice ? "CP" : firstRoom?.mapPrice ? "MAP" : firstRoom?.apPrice ? "AP" : "EP";
-      setSelectedRooms([{ roomId: firstRoomId, mealPlan: defaultPlan, count: 1 }]);
-    }
-  }, [selectedRooms, stay, stayRoomsCatalog, setSelectedRooms]);
 
   // Fetch real-time availability and pricing when modal opens or dates change
   useEffect(() => {
@@ -1510,11 +1497,11 @@ const StayBookingSystem = ({
       }
     } else {
       const selectedRoomBasePrices = resolvedSelectedRooms
-        .map((room) => Number(room.calculatedPrice || 0))
+        .map((room) => Number(room.calculatedPrice || 0) * Number(room.count || 1))
         .filter((price) => Number.isFinite(price) && price > 0);
 
       if (selectedRoomBasePrices.length > 0) {
-        originalPerNight = Math.min(...selectedRoomBasePrices);
+        originalPerNight = selectedRoomBasePrices.reduce((a, b) => a + b, 0);
       } else {
         originalPerNight = parseFloat(stay.startingPrice || stay.pricePerNight || stay.b2cPrice || stay.price || 0);
       }
@@ -3669,11 +3656,15 @@ const StayBookingSystem = ({
           }
           .booking-modal-footer button { width: 100% !important; }
           
-          .stay-booking-trigger {
+          .stay-booking-trigger-wrapper {
             bottom: 24px !important;
-            right: 20px !important;
-            left: 20px !important;
+            right: 0 !important;
+            left: 0 !important;
             width: calc(100% - 40px) !important;
+            margin: 0 auto !important;
+          }
+          .stay-booking-trigger {
+            width: 100% !important;
             justify-content: center !important;
             padding: 16px 32px !important;
             font-size: 16px !important;
@@ -3685,9 +3676,11 @@ const StayBookingSystem = ({
         }
 
         @media (min-width: 768px) and (max-width: 1024px) {
-          .stay-booking-trigger {
+          .stay-booking-trigger-wrapper {
             bottom: 30px !important;
             right: 30px !important;
+          }
+          .stay-booking-trigger {
             padding: 16px 36px !important;
             font-size: 16px !important;
           }
@@ -3695,43 +3688,136 @@ const StayBookingSystem = ({
       `}</style>
 
       {/* Floating Trigger */}
-      <motion.button
-        onClick={() => setShow(true)}
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
-        whileHover={{
-          scale: 1.04,
-          background: AH || A,
-          boxShadow: `0 20px 35px -8px rgba(0,0,0,0.15), 0 30px 60px -10px ${A}55, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)`
-        }}
-        whileTap={{ scale: 0.96 }}
-        className="stay-booking-trigger"
-        style={{
-          position: "fixed",
-          bottom: 40,
-          right: 40,
-          background: A,
-          color: "#FFF",
-          padding: "18px 42px",
-          borderRadius: 100,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          boxShadow: `0 12px 24px -6px rgba(0,0,0,0.12), 0 20px 40px -8px ${A}3b, 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.25)`,
-          border: "none",
-          cursor: "pointer",
-          zIndex: 1000,
-          fontWeight: 800,
-          fontSize: 17,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          transition: "background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)"
-        }}
-      >
-        <Bed size={22} />
-        Reserve Now
-      </motion.button>
+      {(() => {
+        const isPropertyBased = isPropertyBasedBooking(stay);
+        const hasRoomSelected = isPropertyBased || selectedRooms.length > 0;
+
+        const scrollToAccommodations = () => {
+          const el = document.getElementById("accommodations-section");
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            // Pulse the section briefly to draw attention
+            setTimeout(() => {
+              el.style.transition = "box-shadow 0.3s ease";
+              el.style.boxShadow = `0 0 0 3px ${A}55, 0 0 30px ${A}22`;
+              setTimeout(() => { el.style.boxShadow = "none"; }, 1800);
+            }, 600);
+          }
+        };
+
+        const handleFloatingClick = () => {
+          if (!hasRoomSelected) {
+            scrollToAccommodations();
+            return;
+          }
+          setShow(true);
+        };
+
+        return (
+          <div
+            style={{ position: "fixed", bottom: 40, right: 40, zIndex: 1000 }}
+            className="stay-booking-trigger-wrapper"
+            onMouseEnter={() => !hasRoomSelected && setShowNoRoomTip(true)}
+            onMouseLeave={() => setShowNoRoomTip(false)}
+          >
+            {/* Tooltip for no-room state — desktop hover */}
+            <AnimatePresence>
+              {showNoRoomTip && !hasRoomSelected && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    position: "absolute",
+                    bottom: "calc(100% + 14px)",
+                    right: 0,
+                    background: BG,
+                    color: FG,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: "11px 16px",
+                    borderRadius: 12,
+                    maxWidth: 260,
+                    whiteSpace: "normal",
+                    lineHeight: 1.5,
+                    boxShadow: `0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px ${B}`,
+                    border: `1.5px solid ${A}44`,
+                    pointerEvents: "none",
+                    fontFamily: '"Inter", sans-serif',
+                    letterSpacing: 0,
+                    zIndex: 10,
+                  }}
+                >
+                  Please select at least one room to continue
+                  {/* Tooltip arrow — points down, right-aligned */}
+                  <div style={{
+                    position: "absolute",
+                    top: "100%",
+                    right: 20,
+                    width: 0,
+                    height: 0,
+                    borderLeft: "7px solid transparent",
+                    borderRight: "7px solid transparent",
+                    borderTop: `7px solid ${B}`,
+                  }} />
+                  <div style={{
+                    position: "absolute",
+                    top: "calc(100% - 1.5px)",
+                    right: 21,
+                    width: 0,
+                    height: 0,
+                    borderLeft: "6px solid transparent",
+                    borderRight: "6px solid transparent",
+                    borderTop: `6px solid ${BG}`,
+                  }} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.button
+              onClick={handleFloatingClick}
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
+              whileHover={hasRoomSelected ? {
+                scale: 1.04,
+                background: AH || A,
+                boxShadow: `0 20px 35px -8px rgba(0,0,0,0.15), 0 30px 60px -10px ${A}55, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)`
+              } : { scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              className="stay-booking-trigger"
+              style={{
+                position: "relative",
+                bottom: "auto",
+                right: "auto",
+                background: hasRoomSelected ? A : `${A}88`,
+                color: "#FFF",
+                padding: "18px 42px",
+                borderRadius: 100,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                boxShadow: hasRoomSelected
+                  ? `0 12px 24px -6px rgba(0,0,0,0.12), 0 20px 40px -8px ${A}3b, 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.25)`
+                  : `0 4px 12px rgba(0,0,0,0.08)`,
+                border: "none",
+                cursor: hasRoomSelected ? "pointer" : "not-allowed",
+                fontWeight: 800,
+                fontSize: 17,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                transition: "background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease",
+                opacity: hasRoomSelected ? 1 : 0.65,
+              }}
+            >
+              <Bed size={22} />
+              Reserve Now
+            </motion.button>
+          </div>
+        );
+      })()}
+
 
       <AnimatePresence>
         {show && (
@@ -4588,27 +4674,53 @@ const StayBookingSystem = ({
                     const isPropertyBased = isPropertyBasedBooking(stay);
                     const hasSelection = isPropertyBased || resolvedSelectedRooms.length > 0;
                     const isCapacityExceeded = pricing.isOver && !loading;
-                    const isDisabled = loading;
-                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Add Another Room" : (hasSelection ? "Reserve Now" : "Select Room"));
+                    const noRoomSelected = !isPropertyBased && resolvedSelectedRooms.length === 0;
+                    const isDisabled = loading || noRoomSelected;
+                    const buttonText = loading ? "Processing..." : (pricing.isOver ? "Add Another Room" : (hasSelection ? "Reserve Now" : "Select a Room"));
+
+                    const handleModalReserveClick = () => {
+                      if (noRoomSelected) {
+                        // Show validation error message
+                        setValidationError("Please select at least one room to continue.");
+                        // Close modal and scroll to rooms section
+                        setTimeout(() => {
+                          setShow(false);
+                          setTimeout(() => {
+                            const el = document.getElementById("accommodations-section");
+                            if (el) {
+                              el.scrollIntoView({ behavior: "smooth", block: "start" });
+                              setTimeout(() => {
+                                el.style.transition = "box-shadow 0.3s ease";
+                                el.style.boxShadow = `0 0 0 3px ${A}55, 0 0 30px ${A}22`;
+                                setTimeout(() => { el.style.boxShadow = "none"; }, 1800);
+                              }, 400);
+                            }
+                          }, 200);
+                        }, 100);
+                        return;
+                      }
+                      handleReserve();
+                    };
 
                     return (
                       <motion.button
                         whileHover={{ scale: isDisabled ? 1 : 1.02 }}
                         whileTap={{ scale: isDisabled ? 1 : 0.98 }}
-                        onClick={handleReserve}
-                        disabled={isDisabled}
+                        onClick={handleModalReserveClick}
+                        disabled={loading}
+                        title={noRoomSelected ? "Please select at least one room to continue" : undefined}
                         style={{
                           padding: "12px 32px",
-                          background: loading ? B : A,
+                          background: loading ? B : (noRoomSelected ? `${A}66` : A),
                           color: "#FFF",
                           borderRadius: 16,
                           border: "none",
                           fontSize: 15,
                           fontWeight: 800,
                           cursor: isDisabled ? "not-allowed" : "pointer",
-                          boxShadow: isDisabled ? "none" : `0 10px 20px ${A}33`,
+                          boxShadow: (isDisabled) ? "none" : `0 10px 20px ${A}33`,
                           transition: "0.3s",
-                          opacity: isCapacityExceeded ? 0.6 : (loading ? 0.7 : 1)
+                          opacity: isCapacityExceeded ? 0.6 : (loading ? 0.7 : (noRoomSelected ? 0.6 : 1))
                         }}
                       >
                         {buttonText}

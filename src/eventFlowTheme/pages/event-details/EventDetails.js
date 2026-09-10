@@ -3790,6 +3790,7 @@ export default function EventDetails() {
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [currentAddonIndex, setCurrentAddonIndex] = useState(2);
   const addonsSliderRef = useRef(null);
+  const isAddonsInteracting = useRef(false);
 
   const scrollAddonsSlider = (direction) => {
     if (!addonsSliderRef.current) return;
@@ -3802,7 +3803,7 @@ export default function EventDetails() {
     const addonsCount = (event?.addons || []).length;
     if (window.innerWidth >= 1024 && addonsCount > 2) {
       const interval = setInterval(() => {
-        if (addonsSliderRef.current) {
+        if (!isAddonsInteracting.current && addonsSliderRef.current) {
           const container = addonsSliderRef.current;
           if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
             container.scrollTo({ left: 0, behavior: "smooth" });
@@ -4060,8 +4061,10 @@ export default function EventDetails() {
                           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                           color: M, transition: "0.3s", outline: "none"
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; isAddonsInteracting.current = true; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; isAddonsInteracting.current = false; }}
+                        onTouchStart={() => { isAddonsInteracting.current = true; }}
+                        onTouchEnd={() => { isAddonsInteracting.current = false; }}
                       >
                         <ChevronLeft size={18} />
                       </button>
@@ -4073,8 +4076,10 @@ export default function EventDetails() {
                           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                           color: M, transition: "0.3s", outline: "none"
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; isAddonsInteracting.current = true; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; isAddonsInteracting.current = false; }}
+                        onTouchStart={() => { isAddonsInteracting.current = true; }}
+                        onTouchEnd={() => { isAddonsInteracting.current = false; }}
                       >
                         <ChevronRight size={18} />
                       </button>
@@ -4093,6 +4098,10 @@ export default function EventDetails() {
                     <div
                       ref={addonsSliderRef}
                       className={showScroll ? "no-scrollbar" : ""}
+                      onMouseEnter={() => { isAddonsInteracting.current = true; }}
+                      onMouseLeave={() => { isAddonsInteracting.current = false; }}
+                      onTouchStart={() => { isAddonsInteracting.current = true; }}
+                      onTouchEnd={() => { isAddonsInteracting.current = false; }}
                       onScroll={(e) => {
                         if (!showScroll) return;
                         const container = e.target;
@@ -4115,8 +4124,9 @@ export default function EventDetails() {
                         gap: "20px",
                         overflowX: "auto",
                         overflowY: "hidden",
-                        paddingBottom: "12px",
-                        width: "100%",
+                        padding: "16px 12px 24px 12px",
+                        margin: "-16px -12px -12px -12px",
+                        width: "calc(100% + 24px)",
                         boxSizing: "border-box",
                         scrollBehavior: "smooth",
                         scrollSnapType: "x mandatory"

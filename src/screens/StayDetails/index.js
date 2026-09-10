@@ -2767,19 +2767,8 @@ const StayDetails = () => {
         }
 
         const filtered = prev.filter(r => r.roomId !== rid);
-        if (filtered.length === 0) {
-          const stayRoomsCatalog = stay?.rooms || stay?.roomTypes || stay?.room_types || [];
-          if (stayRoomsCatalog.length > 0) {
-            const firstRoom = stayRoomsCatalog[0];
-            const firstRoomId = String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId ?? firstRoom.room_type_id);
-            const defaultPlan = firstRoom?.mealPlanPricing && Object.keys(firstRoom.mealPlanPricing).length > 0 ? Object.keys(firstRoom.mealPlanPricing)[0] : firstRoom?.epPrice ? "EP" : firstRoom?.bbPrice ? "BB" : firstRoom?.cpPrice ? "CP" : firstRoom?.mapPrice ? "MAP" : firstRoom?.apPrice ? "AP" : "EP";
-            updated = [{ roomId: firstRoomId, mealPlan: defaultPlan, count: 1 }];
-          } else {
-            updated = filtered;
-          }
-        } else {
-          updated = filtered;
-        }
+        // Allow empty — user must intentionally select a room
+        updated = filtered;
       } else {
         const addedRoom = (stay?.rooms || stay?.roomTypes || stay?.room_types || []).find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === rid);
         const defaultPlan = addedRoom?.mealPlanPricing && Object.keys(addedRoom.mealPlanPricing).length > 0 ? Object.keys(addedRoom.mealPlanPricing)[0] : addedRoom?.epPrice ? "EP" : addedRoom?.bbPrice ? "BB" : addedRoom?.cpPrice ? "CP" : addedRoom?.mapPrice ? "MAP" : addedRoom?.apPrice ? "AP" : "EP";
@@ -3011,12 +3000,31 @@ const StayDetails = () => {
   }, [stay]);
 
   const addonsSliderRef = useRef(null);
+  const isAddonsInteracting = useRef(false);
+
   const scrollAddonsSlider = (direction) => {
     if (!addonsSliderRef.current) return;
     const container = addonsSliderRef.current;
     const scrollAmount = window.innerWidth < 768 ? 300 : 400;
     container.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const addonsCount = (stay?.addons || []).length;
+    if (window.innerWidth >= 1024 && addonsCount > 2) {
+      const interval = setInterval(() => {
+        if (!isAddonsInteracting.current && addonsSliderRef.current) {
+          const container = addonsSliderRef.current;
+          if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+            container.scrollTo({ left: 0, behavior: "smooth" });
+          } else {
+            scrollAddonsSlider("right");
+          }
+        }
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [stay?.addons]);
 
   const isPropertyBasedStay = useMemo(() => {
     const scope = String(
@@ -3165,8 +3173,10 @@ const StayDetails = () => {
                           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                           color: M, transition: "0.3s", outline: "none"
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; isAddonsInteracting.current = true; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; isAddonsInteracting.current = false; }}
+                        onTouchStart={() => { isAddonsInteracting.current = true; }}
+                        onTouchEnd={() => { isAddonsInteracting.current = false; }}
                       >
                         <ChevronLeft size={18} />
                       </button>
@@ -3178,8 +3188,10 @@ const StayDetails = () => {
                           display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                           color: M, transition: "0.3s", outline: "none"
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.color = A; isAddonsInteracting.current = true; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.color = M; isAddonsInteracting.current = false; }}
+                        onTouchStart={() => { isAddonsInteracting.current = true; }}
+                        onTouchEnd={() => { isAddonsInteracting.current = false; }}
                       >
                         <ChevronRight size={18} />
                       </button>
@@ -3199,6 +3211,10 @@ const StayDetails = () => {
                   <div
                     ref={addonsSliderRef}
                     className={showScroll ? "no-scrollbar" : ""}
+                    onMouseEnter={() => { isAddonsInteracting.current = true; }}
+                    onMouseLeave={() => { isAddonsInteracting.current = false; }}
+                    onTouchStart={() => { isAddonsInteracting.current = true; }}
+                    onTouchEnd={() => { isAddonsInteracting.current = false; }}
                     onScroll={(e) => {
                       if (!showScroll) return;
                       const container = e.target;
@@ -3220,8 +3236,9 @@ const StayDetails = () => {
                       gap: "20px",
                       overflowX: "auto",
                       overflowY: "hidden",
-                      paddingBottom: "12px",
-                      width: "100%",
+                      padding: "16px 12px 24px 12px",
+                      margin: "-16px -12px -12px -12px",
+                      width: "calc(100% + 24px)",
                       boxSizing: "border-box",
                       scrollBehavior: "smooth",
                       scrollSnapType: "x mandatory"
@@ -3401,7 +3418,7 @@ const StayDetails = () => {
       })()}
 
 
-      <div style={{ background: W, padding: isMobile ? "32px 24px" : "64px 0" }}>
+      <div id="accommodations-section" style={{ background: W, padding: isMobile ? "32px 24px" : "64px 0" }}>
         <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: "40px" }}>

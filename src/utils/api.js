@@ -527,8 +527,23 @@ export const filterEventListings = async (filters = {}) => {
 
 export const filterStayListings = async (filters = {}) => {
   try {
+    const params = { ...filters };
+    if (params.guestCount === undefined || params.guestCount === null) {
+      if (params.guests !== undefined && params.guests !== null) {
+        if (typeof params.guests === "object") {
+          const total = (Number(params.guests?.adults || 0) + Number(params.guests?.children || 0)) || Number(params.guests?.guestCount || 0);
+          if (total > 0) params.guestCount = total;
+        } else if (Number(params.guests) > 0) {
+          params.guestCount = Number(params.guests);
+        }
+      } else if (params.adults !== undefined || params.children !== undefined) {
+        const total = Number(params.adults || 0) + Number(params.children || 0);
+        if (total > 0) params.guestCount = total;
+      }
+    }
+
     const response = await ListingsAPI.get("/public/stays/filter", {
-      params: filters,
+      params,
     });
     const payload = response.data;
     //console.log("✅ Stay listings filtered (raw):", payload);
