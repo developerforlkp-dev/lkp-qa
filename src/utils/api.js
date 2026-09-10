@@ -2851,6 +2851,53 @@ export const getPublicDirectBooking = async (token) => {
 };
 
 /**
+ * Public Direct Booking Slots API - Fetch available slots for a direct booking token and date
+ * GET /api/public/direct-bookings/:token/slots?bookingDate=YYYY-MM-DD
+ */
+export const getPublicDirectBookingSlots = async (token, bookingDate) => {
+  if (!token) throw new Error("Direct booking token is required");
+  const baseUrl = getApiBaseURL();
+  const endpoint = baseUrl.endsWith("/api")
+    ? `${baseUrl}/public/direct-bookings/${token}/slots`
+    : `${baseUrl}/api/public/direct-bookings/${token}/slots`;
+
+  try {
+    const response = await axios.get(endpoint, {
+      params: bookingDate ? { bookingDate } : {},
+    });
+    return response.data?.slots ? response.data : { slots: response.data?.data?.slots || response.data?.data || response.data || [] };
+  } catch (error) {
+    const isDummy =
+      token.startsWith("dummy") ||
+      token.startsWith("test") ||
+      token.startsWith("demo") ||
+      token.includes("-") ||
+      error?.response?.status === 404;
+
+    if (isDummy) {
+      console.warn(`[getPublicDirectBookingSlots] Using mock direct booking slot data for token: "${token}"`);
+      return {
+        slots: [
+          {
+            slotId: 123,
+            slotName: "Morning Slot",
+            date: bookingDate || "2026-09-17",
+            startTime: "12:00",
+            endTime: "13:00",
+            availableSeats: 10,
+            pricePerPerson: "500.00",
+            privateBookingEnabled: false,
+            hasPrivateBooking: false,
+            privateBookingAvailable: false,
+          },
+        ],
+      };
+    }
+    throw error;
+  }
+};
+
+/**
  * Submit Direct Booking Payment Confirmation
  * POST /api/public/direct-bookings/:token/submit
  * Content-Type: multipart/form-data

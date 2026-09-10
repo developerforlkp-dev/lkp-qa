@@ -4443,17 +4443,17 @@ const StayBookingSystem = ({
                                                   label: `${age}`
                                                 }))
                                               ]}
-                                              style={{
-                                                border: `1px solid ${B}44`,
-                                                borderRadius: '6px',
-                                                padding: '4px 6px',
-                                                fontSize: '13px',
-                                                fontWeight: '500',
-                                                color: FG,
-                                                backgroundColor: 'transparent',
-                                                width: '50px',
-                                                minWidth: '40px'
-                                              }}
+                                                style={{
+                                                  border: `1px solid ${B}44`,
+                                                  borderRadius: '6px',
+                                                  padding: '4px 6px',
+                                                  fontSize: '13px',
+                                                  fontWeight: '500',
+                                                  color: FG,
+                                                  backgroundColor: 'transparent',
+                                                  width: '65px',
+                                                  minWidth: '50px'
+                                                }}
                                             />
                                           </div>
                                         </div>

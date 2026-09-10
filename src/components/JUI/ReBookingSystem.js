@@ -5087,7 +5087,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                   return next;
                                                 });
                                               }}
-                                              options={(() => {
+                                                options={(() => {
                                                 const maxAge = isEventBooking
                                                   ? asNumber(selectedTicket?.childAgeTo ?? selectedTicket?.child_age_to) ?? 17
                                                   : (childAgeTo != null ? childAgeTo : 17);
@@ -5101,7 +5101,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                 fontWeight: '500',
                                                 color: FG,
                                                 backgroundColor: 'transparent',
-                                                width: '60px'
+                                                width: '65px',
+                                                minWidth: '50px'
                                               }}
                                             />
                                           </div>

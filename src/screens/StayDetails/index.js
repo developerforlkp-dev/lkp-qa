@@ -4848,7 +4848,7 @@ function StayLocation({ stay }) {
                 )}
 
                 {instructions && (
-                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state && !country) ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
+                  <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: (!address && !landmark && !district && !city && !state && !country) ? (isMobile ? "none" : `1px solid ${B}`) : "none"  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Info size={20} color={A} fill="transparent" />
                     </div>

@@ -517,27 +517,68 @@ const ExperienceProduct = () => {
               localStorage.setItem("directBookingData", JSON.stringify(enrichedDirectData));
               localStorage.setItem("directBookingToken", directToken);
               localStorage.setItem("isDirectBooking", "true");
-              if (directData.listingId) {
-                activeListingId = String(directData.listingId);
+
+              const resolvedListingId =
+                directData.listingId ||
+                directData.listing_id ||
+                directData.experienceId ||
+                directData.listing?.listingId ||
+                directData.listing?.id ||
+                directData.data?.listingId ||
+                directData.id;
+
+              if (resolvedListingId) {
+                activeListingId = String(resolvedListingId);
               }
+
+              const resolvedLeadName =
+                directData.leadName ||
+                directData.lead?.name ||
+                directData.lead?.displayName ||
+                directData.hostName ||
+                directData.name ||
+                "Host";
+
+              const resolvedPhone =
+                directData.leadPhoneNumber ||
+                directData.leadPhone ||
+                directData.phoneNumber ||
+                directData.phone ||
+                directData.lead?.phoneNumber ||
+                directData.lead?.phone ||
+                "";
+
+              const resolvedUpiId =
+                directData.upiId ||
+                directData.leadUpiId ||
+                directData.lead?.upiId ||
+                directData.data?.upiId ||
+                "";
+
+              const resolvedQrCodeUrl =
+                directData.qrCodeUrl ||
+                directData.qrCode ||
+                directData.qr_code_url ||
+                "";
+
               const directHost = {
-                displayName: directData.leadName,
-                name: directData.leadName,
-                firstName: directData.leadName,
-                phone: directData.leadPhoneNumber,
-                phoneNumber: directData.leadPhoneNumber,
-                upiId: directData.upiId,
-                qrCodeUrl: directData.qrCodeUrl,
-                leadName: directData.leadName,
-                leadPhoneNumber: directData.leadPhoneNumber,
+                displayName: resolvedLeadName,
+                name: resolvedLeadName,
+                firstName: resolvedLeadName,
+                phone: resolvedPhone,
+                phoneNumber: resolvedPhone,
+                upiId: resolvedUpiId,
+                qrCodeUrl: resolvedQrCodeUrl,
+                leadName: resolvedLeadName,
+                leadPhoneNumber: resolvedPhone,
                 host: {
-                  displayName: directData.leadName,
-                  name: directData.leadName,
-                  firstName: directData.leadName,
-                  phone: directData.leadPhoneNumber,
-                  phoneNumber: directData.leadPhoneNumber,
-                  upiId: directData.upiId,
-                  qrCodeUrl: directData.qrCodeUrl,
+                  displayName: resolvedLeadName,
+                  name: resolvedLeadName,
+                  firstName: resolvedLeadName,
+                  phone: resolvedPhone,
+                  phoneNumber: resolvedPhone,
+                  upiId: resolvedUpiId,
+                  qrCodeUrl: resolvedQrCodeUrl,
                 },
               };
               setHostData(directHost);
@@ -552,25 +593,38 @@ const ExperienceProduct = () => {
               directData = JSON.parse(rawStored);
               if (directData && mounted) {
                 setDirectBookingInfo(directData);
-                if (directData.listingId && !activeListingId) {
-                  activeListingId = String(directData.listingId);
+                const resolvedListingId =
+                  directData.listingId ||
+                  directData.listing_id ||
+                  directData.experienceId ||
+                  directData.listing?.listingId ||
+                  directData.listing?.id ||
+                  directData.id;
+
+                if (resolvedListingId && !activeListingId) {
+                  activeListingId = String(resolvedListingId);
                 }
+                const leadName = directData.leadName || directData.lead?.name || directData.hostName;
+                const leadPhone = directData.leadPhoneNumber || directData.leadPhone || directData.phone;
+                const upiId = directData.upiId || directData.leadUpiId || directData.lead?.upiId;
+                const qrCodeUrl = directData.qrCodeUrl || directData.qrCode;
+
                 setHostData((prev) => ({
                   ...prev,
-                  displayName: directData.leadName || prev?.displayName,
-                  name: directData.leadName || prev?.name,
-                  phone: directData.leadPhoneNumber || prev?.phone,
-                  phoneNumber: directData.leadPhoneNumber || prev?.phoneNumber,
-                  upiId: directData.upiId || prev?.upiId,
-                  qrCodeUrl: directData.qrCodeUrl || prev?.qrCodeUrl,
-                  leadName: directData.leadName,
-                  leadPhoneNumber: directData.leadPhoneNumber,
+                  displayName: leadName || prev?.displayName,
+                  name: leadName || prev?.name,
+                  phone: leadPhone || prev?.phone,
+                  phoneNumber: leadPhone || prev?.phoneNumber,
+                  upiId: upiId || prev?.upiId,
+                  qrCodeUrl: qrCodeUrl || prev?.qrCodeUrl,
+                  leadName: leadName,
+                  leadPhoneNumber: leadPhone,
                   host: {
                     ...(prev?.host || {}),
-                    displayName: directData.leadName || prev?.host?.displayName,
-                    phone: directData.leadPhoneNumber || prev?.host?.phone,
-                    upiId: directData.upiId || prev?.host?.upiId,
-                    qrCodeUrl: directData.qrCodeUrl || prev?.host?.qrCodeUrl,
+                    displayName: leadName || prev?.host?.displayName,
+                    phone: leadPhone || prev?.host?.phone,
+                    upiId: upiId || prev?.host?.upiId,
+                    qrCodeUrl: qrCodeUrl || prev?.host?.qrCodeUrl,
                   },
                 }));
               }
@@ -1948,7 +2002,7 @@ const ExperienceProduct = () => {
                     )}
 
                     {listing?.meetingInstructions && (
-                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0"  }}>
+                      <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0"  }}>
                         <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <Info size={20} color={A} fill="transparent" />
                         </div>

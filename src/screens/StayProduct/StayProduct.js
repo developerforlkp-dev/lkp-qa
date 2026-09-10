@@ -1214,7 +1214,7 @@ const BookingSidebar = ({
                                     });
                                   }}
                                   options={selectableChildAges.map(age => ({ value: age, label: `${age}` }))}
-                                  style={{ width: 48, minWidth: 40, padding: "2px 4px", fontSize: 12, borderRadius: 6, border: `1px solid ${B}`, backgroundColor: "transparent", color: FG }}
+                                  style={{ width: 65, minWidth: 50, padding: "2px 4px", fontSize: 12, borderRadius: 6, border: `1px solid ${B}`, backgroundColor: "transparent", color: FG }}
                                 />
                               </div>
                             </div>

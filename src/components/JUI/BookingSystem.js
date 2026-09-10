@@ -10,7 +10,7 @@ import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import Dropdown from "../Dropdown";
 import ChildAgeSelect from "../ChildAgeSelect";
-import { createEventOrder, createOrder, previewOrderPrice, getEventSlotAvailability, getListingSlots, precheckEventOrder, formatEventPrecheckErrorMessage, finalizeFreeEvent, calculateExperienceTotal, calculateEventTotal } from "../../utils/api";
+import { createEventOrder, createOrder, previewOrderPrice, getEventSlotAvailability, getListingSlots, getPublicDirectBookingSlots, precheckEventOrder, formatEventPrecheckErrorMessage, finalizeFreeEvent, calculateExperienceTotal, calculateEventTotal } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
@@ -1330,6 +1330,35 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const history = useHistory();
   const location = useLocation();
   const isDirect = isDirectBooking || isDirectBookingPathOrState(location);
+
+  const directToken = useMemo(() => {
+    if (listing?.directBooking?.token) return listing.directBooking.token;
+    if (listing?.directBookingToken) return listing.directBookingToken;
+    try {
+      const stored = localStorage.getItem("directBookingToken");
+      if (stored) return stored;
+      const rawData = localStorage.getItem("directBookingData");
+      if (rawData) {
+        const parsed = JSON.parse(rawData);
+        if (parsed?.token) return parsed.token;
+      }
+    } catch (e) {}
+    if (typeof window !== "undefined") {
+      const pathname = location?.pathname || window.location.pathname || "";
+      const doubleMatch = pathname.match(/\/(?:direct|direct-book|direct-booking)\/[^/]+\/([^/?#]+)/i);
+      if (doubleMatch && doubleMatch[1] && !["experience-checkout", "complete", "checkout"].includes(doubleMatch[1])) {
+        return doubleMatch[1];
+      }
+      const match = pathname.match(/\/(?:direct-book|direct-booking|direct)\/([^/?#]+)/i);
+      if (match && match[1] && !["experience-checkout", "complete", "checkout", "experience"].includes(match[1])) {
+        return match[1];
+      }
+      const search = location?.search || window.location.search || "";
+      const qToken = new URLSearchParams(search).get("token") || new URLSearchParams(search).get("directToken");
+      if (qToken) return qToken;
+    }
+    return null;
+  }, [listing?.directBooking?.token, listing?.directBookingToken, location?.pathname, location?.search]);
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
   const hasHandledUnavailableRef = useRef(false);
@@ -1870,6 +1899,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const experienceAvailableDateKeys = useMemo(() => {
     if (isEventBooking) return new Set();
     const keys = new Set();
+    if (isDirect) {
+      const today = moment();
+      for (let i = 0; i < 180; i++) {
+        keys.add(today.clone().add(i, "days").format("YYYY-MM-DD"));
+      }
+      return keys;
+    }
     const schedules = [
       ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
       ...(Array.isArray(dateFilteredSlots) ? dateFilteredSlots : []),
@@ -2127,7 +2163,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setSlotsError("");
     setDateFilteredSlotsLoaded(false);
 
-    getListingSlots(listingId, selectedDateKey, slotsLookupEndDate)
+    const fetchSlotsPromise = isDirect && directToken
+      ? getPublicDirectBookingSlots(directToken, selectedDateKey)
+      : getListingSlots(listingId, selectedDateKey, slotsLookupEndDate);
+
+    fetchSlotsPromise
       .then((payload) => {
         if (cancelled || !isMountedRef.current) return;
         const normalized = normalizeExperienceSlots(unwrapSlotsPayload(payload), selectedDateKey);
@@ -2188,7 +2228,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return () => {
       cancelled = true;
     };
-  }, [isEventBooking, listingId, selectedDateKey, show, slotsLookupEndDate]);
+  }, [directToken, isDirect, isEventBooking, listingId, selectedDateKey, show, slotsLookupEndDate]);
 
   useEffect(() => {
     if (!isEventBooking) return;
@@ -3967,7 +4007,23 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     if (triggerDisabled) return;
     setShow(true);
 
-    if (isEventBooking || !listingId || !slotsLookupEndDate) return;
+    if (isEventBooking || (!listingId && !directToken) || !slotsLookupEndDate) return;
+
+    if (isDirect && directToken) {
+      getPublicDirectBookingSlots(directToken, getIndiaDateKey())
+        .then((payload) => {
+          const slots = unwrapSlotsPayload(payload);
+          setAllFetchedSlots(slots);
+          const hasPrivate = slots.some((slot) => {
+            if (asOptionalBoolean(slot?.privateBookingEnabled) === true || asOptionalBoolean(slot?.private_booking_enabled) === true) return true;
+            const avail = slot.availability || slot.availabilities || [];
+            return avail.some((a) => a.private_booking_available === true || a.privateBookingAvailable === true);
+          });
+          if (hasPrivate) setHasAnyPrivateBookingAvailable(true);
+        })
+        .catch((e) => console.error("[BookingSystem] Error fetching direct slots for private booking check", e));
+      return;
+    }
 
     getListingSlots(listingId, getIndiaDateKey(), slotsLookupEndDate)
       .then((payload) => {
@@ -5168,8 +5224,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                 fontWeight: '500',
                                                 color: FG,
                                                 backgroundColor: 'transparent',
-                                                width: '50px',
-                                                minWidth: '40px'
+                                                width: '65px',
+                                                minWidth: '50px'
                                               }}
                                             />
                                           </div>
