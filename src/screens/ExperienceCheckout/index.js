@@ -419,11 +419,15 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
     }
   }, [location.state, bookingData]);
 
-  // Fallback: hydrate bookingData from localStorage if not present in state
+  // Fallback: hydrate bookingData from localStorage/sessionStorage if not present in state
   useEffect(() => {
     if (!bookingData) {
       try {
-        const saved = localStorage.getItem("pendingBooking");
+        const saved =
+          sessionStorage.getItem("pendingBooking") ||
+          localStorage.getItem("pendingBooking") ||
+          sessionStorage.getItem("checkoutBooking") ||
+          localStorage.getItem("checkoutBooking");
         if (saved) {
           const parsed = JSON.parse(saved);
           setBookingData(parsed);
@@ -1325,14 +1329,48 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
     ?? finalTotal
     ?? bookingData?.finalTotal
     ?? null;
+  const directToken =
+    bookingData?.directBookingToken ||
+    bookingData?.directBooking?.token ||
+    (() => {
+      try {
+        const stored = localStorage.getItem("directBookingToken");
+        if (stored) return stored;
+        const rawData = localStorage.getItem("directBookingData");
+        if (rawData) {
+          const parsed = JSON.parse(rawData);
+          if (parsed?.token) return parsed.token;
+        }
+      } catch (e) {}
+      if (typeof window !== "undefined") {
+        const paramToken = new URLSearchParams(window.location.search).get("token");
+        if (paramToken) return paramToken;
+      }
+      return null;
+    })();
+
+  const directSlug =
+    bookingData?.directBooking?.slug ||
+    bookingData?.slug ||
+    (bookingData?.listingTitle ? String(bookingData.listingTitle).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") : null) ||
+    "experience";
+
+  const directBookingDetailUrl =
+    bookingData?.returnTo ||
+    (directToken ? (directSlug ? `/direct/${directSlug}/${directToken}` : `/direct/${directToken}`) : "/experience-product");
+
   const backUrl =
     bookingData?.returnTo ||
+    (isDirectBooking ? directBookingDetailUrl : null) ||
     (isEventBooking ? `/event?id=${bookingData.eventId}` : null) ||
-    (isStayBooking ? `/stay-details?id=${bookingData.stayId}` : null);
+    (isStayBooking ? `/stay-details?id=${bookingData.stayId}` : null) ||
+    (bookingData?.listingId ? buildExperienceUrl(bookingData?.listingTitle || "experience", bookingData.listingId) : "/");
 
   let bookingDetailsUrl = "/experience-product";
   if (bookingData?.returnTo) {
     bookingDetailsUrl = bookingData.returnTo;
+  } else if (isDirectBooking) {
+    bookingDetailsUrl = directBookingDetailUrl;
   } else if (isEventBooking && bookingData?.eventId) {
     bookingDetailsUrl = `/event?id=${bookingData.eventId}`;
   } else if (isStayBooking && bookingData?.stayId) {
@@ -1382,13 +1420,11 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
     <div className={cn("section-mb80", styles.section)}>
       <div className={cn("container", styles.container)}>
         <div className={styles.headerRow}>
-          {!isDirectBooking && (
-            <Control
-              className={styles.backControl}
-              urlHome="/"
-              backUrl={backUrl}
-            />
-          )}
+          <Control
+            className={styles.backControl}
+            urlHome={isDirectBooking ? directBookingDetailUrl : "/"}
+            backUrl={backUrl}
+          />
           <h2 className={styles.pageTitle}>
             {isDirectBooking ? "Direct Booking" : (isEventBooking ? "Your event" : "Your trip")}
           </h2>

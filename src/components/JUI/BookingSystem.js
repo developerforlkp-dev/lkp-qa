@@ -3493,10 +3493,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               if (parsed.leadName) previewBookingData.leadName = parsed.leadName;
             }
           } catch (e) {}
+          if (typeof window !== "undefined") {
+            previewBookingData.returnTo = (location?.pathname || window.location.pathname) + (location?.search || window.location.search);
+          }
           localStorage.setItem("isDirectBooking", "true");
+        } else {
+          localStorage.removeItem("isDirectBooking");
+          localStorage.removeItem("directBookingToken");
+          localStorage.removeItem("directBookingData");
         }
 
-        clearPendingCheckoutState();
+        clearPendingCheckoutState({ keepDirectBooking: isDirect });
         persistPendingCheckout({ bookingData: previewBookingData, session: paymentData, saveCheckoutBooking: true });
         localStorage.removeItem("frontendPendingBookingState");
 
@@ -3858,10 +3865,17 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             if (parsed.leadName) previewBookingData.leadName = parsed.leadName;
           }
         } catch (e) {}
+        if (typeof window !== "undefined") {
+          previewBookingData.returnTo = (location?.pathname || window.location.pathname) + (location?.search || window.location.search);
+        }
         localStorage.setItem("isDirectBooking", "true");
+      } else {
+        localStorage.removeItem("isDirectBooking");
+        localStorage.removeItem("directBookingToken");
+        localStorage.removeItem("directBookingData");
       }
 
-      clearPendingCheckoutState();
+      clearPendingCheckoutState({ keepDirectBooking: isDirect });
       persistPendingCheckout({ bookingData: previewBookingData, session: paymentData, saveCheckoutBooking: true });
       localStorage.removeItem("frontendPendingBookingState");
       history.push({

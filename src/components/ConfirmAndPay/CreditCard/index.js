@@ -38,7 +38,11 @@ const cards = [
 const getStoredBookingData = (fallback = null) => {
   if (fallback) return fallback;
   try {
-    const raw = sessionStorage.getItem("pendingBooking") || localStorage.getItem("pendingBooking");
+    const raw =
+      sessionStorage.getItem("pendingBooking") ||
+      localStorage.getItem("pendingBooking") ||
+      sessionStorage.getItem("checkoutBooking") ||
+      localStorage.getItem("checkoutBooking");
     return raw ? JSON.parse(raw) : null;
   } catch (error) {
     return null;
@@ -98,22 +102,143 @@ const getOrderCreationErrorMessage = (error) => {
   return message;
 };
 
-const createOrderFromBooking = async (bookingData) => {
-  const bookingType = bookingData?.checkoutType || bookingData?.bookingType;
-  const orderPayload = bookingData?.orderRequest;
+const resolveBookingType = (bookingData) => {
+  const type = String(
+    bookingData?.checkoutType ||
+    bookingData?.bookingType ||
+    bookingData?.type ||
+    ""
+  ).toLowerCase();
 
-  if (!orderPayload || !bookingType) {
+  if (type.includes("stay") || Boolean(bookingData?.stayId) || Boolean(bookingData?.isStay)) {
+    return "stay";
+  }
+  if (type.includes("event") || Boolean(bookingData?.eventId) || Boolean(bookingData?.isEvent) || Boolean(bookingData?.ticketTypeId)) {
+    return "event";
+  }
+  if (type.includes("experience") || Boolean(bookingData?.listingId) || Boolean(bookingData?.bookingSlotId) || Boolean(bookingData?.experienceId)) {
+    return "experience";
+  }
+  return null;
+};
+
+const resolveOrderPayload = (bookingData, guestDetails, messageText) => {
+  let payload =
+    bookingData?.orderRequest ||
+    bookingData?.orderPayload ||
+    bookingData?.bookingPayload ||
+    bookingData?.payload ||
+    bookingData?.orderData ||
+    null;
+
+  const bookingType = resolveBookingType(bookingData);
+
+  if (!payload && bookingData) {
+    const userInfo = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("userInfo") || "{}");
+      } catch {
+        return {};
+      }
+    })();
+
+    const customerName = guestDetails?.firstName
+      ? `${guestDetails.firstName} ${guestDetails.lastName || ""}`.trim()
+      : (userInfo?.name || (userInfo?.firstName ? `${userInfo.firstName} ${userInfo.lastName || ""}`.trim() : "") || "Guest User");
+    const customerEmail = guestDetails?.email || userInfo?.email || userInfo?.customerEmail || "guest@example.com";
+    const customerPhone = guestDetails?.mobileNumber || guestDetails?.phone || userInfo?.phoneNumber || userInfo?.customerPhone || userInfo?.phone || "";
+
+    if (bookingType === "experience" && (bookingData?.listingId || bookingData?.id)) {
+      payload = {
+        listingId: Number(bookingData?.listingId || bookingData?.id),
+        bookingDate: bookingData?.bookingDate || bookingData?.startDate || bookingData?.selectedDate || bookingData?.bookingSummary?.date,
+        bookingTime: bookingData?.bookingTime || bookingData?.startTime || bookingData?.bookingSummary?.time,
+        bookingSlotId: Number(bookingData?.bookingSlotId || bookingData?.slotId || bookingData?.selectedSlot?.id || 0),
+        guestCount: Number(bookingData?.guestCount || bookingData?.totalGuests || (bookingData?.guests?.adults || 0) + (bookingData?.guests?.children || 0) || 1),
+        childCount: Number(bookingData?.childCount || bookingData?.guests?.children || 0),
+        childPricePerChild: Number(bookingData?.childPricePerChild || bookingData?.pricing?.childPricePerChild || 0),
+        childAges: bookingData?.childAges || bookingData?.guests?.childAges || [],
+        customer: {
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+        },
+        specialRequests: messageText || bookingData?.specialRequests || "",
+        paymentMethod: "razorpay",
+        addons: (bookingData?.selectedAddOns || bookingData?.addOns || bookingData?.addons || []).map(a => ({
+          addonId: Number(a?.addonId || a?.id || a?.addon?.addonId || a?.addon?.id),
+          quantity: Number(a?.quantity || 1),
+        })).filter(a => Boolean(a.addonId)),
+        guestAnswers: bookingData?.guestAnswers || [],
+        privateBooking: Boolean(bookingData?.privateBooking || bookingData?.isPrivateBooking),
+      };
+    } else if (bookingType === "event" && (bookingData?.eventId || bookingData?.id)) {
+      payload = {
+        eventId: Number(bookingData?.eventId || bookingData?.id),
+        eventSlotId: Number(bookingData?.eventSlotId || bookingData?.selectedEventSlot?.id || bookingData?.slotId || 0),
+        eventSlotIds: bookingData?.eventSlotIds || (bookingData?.eventSlotId ? [Number(bookingData.eventSlotId)] : []),
+        ticketTypeId: bookingData?.ticketTypeId || bookingData?.selectedTicketTypeId || bookingData?.selectedTicket?.id,
+        bookingDate: bookingData?.bookingDate || bookingData?.startDate || bookingData?.bookingSummary?.date,
+        bookingTime: bookingData?.bookingTime || bookingData?.startTime || bookingData?.bookingSummary?.time,
+        guestCount: Number(bookingData?.guestCount || bookingData?.totalGuests || 1),
+        childCount: Number(bookingData?.childCount || bookingData?.guests?.children || 0),
+        childPricePerChild: Number(bookingData?.childPricePerChild || bookingData?.pricing?.childPricePerChild || 0),
+        childAges: bookingData?.childAges || bookingData?.guests?.childAges || [],
+        customer: {
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+        },
+        specialRequests: messageText || bookingData?.specialRequests || "",
+        paymentMethod: "razorpay",
+        addons: (bookingData?.selectedAddOns || bookingData?.addOns || bookingData?.addons || []).map(a => ({
+          addonId: Number(a?.addonId || a?.id || a?.addon?.addonId || a?.addon?.id),
+          quantity: Number(a?.quantity || 1),
+        })).filter(a => Boolean(a.addonId)),
+        guestAnswers: bookingData?.guestAnswers || [],
+      };
+    }
+  }
+
+  // If payload exists and guestDetails were provided, enrich payload.customer
+  if (payload && typeof payload === "object" && guestDetails) {
+    const updatedCustomer = {
+      ...(payload.customer || {}),
+    };
+    if (guestDetails.firstName || guestDetails.lastName) {
+      updatedCustomer.name = `${guestDetails.firstName || ""} ${guestDetails.lastName || ""}`.trim();
+    }
+    if (guestDetails.email) {
+      updatedCustomer.email = guestDetails.email;
+    }
+    if (guestDetails.mobileNumber) {
+      updatedCustomer.phone = guestDetails.mobileNumber;
+    }
+    payload = {
+      ...payload,
+      customer: updatedCustomer,
+      specialRequests: messageText || payload.specialRequests || "",
+    };
+  }
+
+  return { bookingType, payload };
+};
+
+const createOrderFromBooking = async (bookingData, guestDetails, messageText) => {
+  const { bookingType, payload } = resolveOrderPayload(bookingData, guestDetails, messageText);
+
+  if (!payload || !bookingType) {
     throw new Error("Missing booking details. Please start the booking again.");
   }
 
   if (bookingType === "stay") {
-    return createStayOrder(orderPayload);
+    return createStayOrder(payload);
   }
   if (bookingType === "event") {
-    return createEventOrder(orderPayload);
+    return createEventOrder(payload);
   }
   if (bookingType === "experience") {
-    return createOrder(orderPayload);
+    return createOrder(payload);
   }
 
   throw new Error("Unsupported booking type. Please start the booking again.");
@@ -304,7 +429,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
 
     try {
       if (!orderId) {
-        const createdOrderResponse = await createOrderFromBooking(bookingData);
+        const createdOrderResponse = await createOrderFromBooking(bookingData, guestDetails, messageText);
         const createdSession = normalizeSuccessfulOrder(createdOrderResponse, bookingData);
         orderId = createdSession.orderId;
         holdExpiresAt = createdSession.holdExpiresAt;
@@ -440,7 +565,7 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
           }
           localStorage.setItem("checkoutBooking", JSON.stringify(bookingData));
         }
-        clearPendingCheckoutState({ keepCheckoutBooking: true, keepActualPaidAmount: true, keepRazorpayPaymentSuccess: true });
+        clearPendingCheckoutState({ keepCheckoutBooking: true, keepActualPaidAmount: true, keepRazorpayPaymentSuccess: true, keepDirectBooking: true });
         history.replace(buttonUrl || "/experience-checkout-complete", {
           isDirectBooking: true,
           bookingData,

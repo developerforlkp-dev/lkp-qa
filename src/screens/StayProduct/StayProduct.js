@@ -2862,6 +2862,7 @@ const StayProduct = () => {
       listingTitle: stay?.propertyName || stay?.title || stay?.name || "Stay",
       listingImage: coverImg,
       roomImage: roomImg,
+      checkoutType: "stay",
       hostName,
       hostAvatar,
       hostAvatarUrl: hostAvatar,
@@ -2888,7 +2889,7 @@ const StayProduct = () => {
 
     clearPendingCheckoutState();
     persistPendingCheckout({ bookingData: stayBookingData });
-    history.push("/checkout");
+    history.push("/checkout", { bookingData: stayBookingData });
     return;
 
     setAvailabilityLoading(true);

@@ -301,6 +301,10 @@ const ExperienceProduct = () => {
   useEffect(() => {
     if (isDirectBooking) {
       localStorage.setItem("isDirectBooking", "true");
+    } else {
+      localStorage.removeItem("isDirectBooking");
+      localStorage.removeItem("directBookingToken");
+      localStorage.removeItem("directBookingData");
     }
   }, [isDirectBooking]);
 

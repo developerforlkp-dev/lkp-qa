@@ -129,7 +129,7 @@ function App() {
               render={(props) => {
                 const isDirect = isDirectBookingPathOrState(props.location);
                 return (
-                  <Page separatorHeader hideHeader={isDirect} fooferHide={isDirect}>
+                  <Page separatorHeader hideHeader={false} fooferHide={isDirect}>
                     <ExperienceCheckout isDirectBooking={isDirect} />
                   </Page>
                 );

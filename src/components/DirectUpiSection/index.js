@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   QrCode,
   Copy,
@@ -106,7 +106,9 @@ export default function DirectUpiSection({
     };
   }, [token]);
 
-  const config = getDirectBookingConfig(bookingData, hostData, paymentData);
+  const config = useMemo(() => {
+    return getDirectBookingConfig(bookingData, hostData, paymentData);
+  }, [bookingData, hostData, paymentData]);
 
   const activeUpiId =
     directApiData?.upiId ||
@@ -138,17 +140,20 @@ export default function DirectUpiSection({
       ? Number(explicitAmount)
       : config.amount;
 
-  const activeUpiUri = generateUpiUri({
-    upiId: activeUpiId,
-    payeeName: activePayeeName,
-    amount: activeAmount,
-    transactionNote: config.transactionNote,
-  });
+  const activeUpiUri = useMemo(() => {
+    return generateUpiUri({
+      upiId: activeUpiId,
+      payeeName: activePayeeName,
+      amount: activeAmount,
+      transactionNote: config.transactionNote,
+    });
+  }, [activeUpiId, activePayeeName, activeAmount, config.transactionNote]);
 
-  const activeQrCodeUrl =
-    (directApiData?.qrCodeUrl && !activeAmount)
+  const activeQrCodeUrl = useMemo(() => {
+    return directApiData?.qrCodeUrl && !activeAmount
       ? directApiData.qrCodeUrl
       : getUpiQrCodeUrl(activeUpiUri, 260);
+  }, [directApiData?.qrCodeUrl, activeAmount, activeUpiUri]);
 
   const initialCustomerName =
     bookingData?.customerName ||

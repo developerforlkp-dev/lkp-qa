@@ -464,11 +464,15 @@ const Checkout = () => {
     }
   }, [location.state]);
 
-  // Fallback: hydrate bookingData from localStorage if not present in state
+  // Fallback: hydrate bookingData from localStorage/sessionStorage if not present in state
   useEffect(() => {
     if (!bookingData) {
       try {
-        const saved = localStorage.getItem("pendingBooking");
+        const saved =
+          sessionStorage.getItem("pendingBooking") ||
+          localStorage.getItem("pendingBooking") ||
+          sessionStorage.getItem("checkoutBooking") ||
+          localStorage.getItem("checkoutBooking");
         if (saved) {
           const parsed = JSON.parse(saved);
           setBookingData(parsed);

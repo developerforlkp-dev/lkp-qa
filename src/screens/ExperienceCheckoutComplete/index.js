@@ -59,8 +59,7 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
       isDirectBookingProp ||
       isDirectBookingPathOrState(location) ||
       Boolean(booking?.isDirectBooking) ||
-      Boolean(location.state?.isDirectBooking) ||
-      (typeof window !== "undefined" && localStorage.getItem("isDirectBooking") === "true")
+      Boolean(location.state?.isDirectBooking)
     );
   }, [isDirectBookingProp, location, booking]);
 

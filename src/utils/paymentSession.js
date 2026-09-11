@@ -140,7 +140,12 @@ export const clearPendingPaymentSession = () => {
   safeStorage.remove(PENDING_PAYMENT_KEY);
 };
 
-export const clearPendingCheckoutState = ({ keepCheckoutBooking = false, keepActualPaidAmount = false, keepRazorpayPaymentSuccess = false } = {}) => {
+export const clearPendingCheckoutState = ({
+  keepCheckoutBooking = false,
+  keepActualPaidAmount = false,
+  keepRazorpayPaymentSuccess = false,
+  keepDirectBooking = false,
+} = {}) => {
   safeStorage.remove(PENDING_PAYMENT_KEY);
   safeStorage.remove(PENDING_ORDER_ID_KEY);
   if (!keepRazorpayPaymentSuccess) {
@@ -154,6 +159,18 @@ export const clearPendingCheckoutState = ({ keepCheckoutBooking = false, keepAct
 
   if (!keepCheckoutBooking) {
     safeStorage.remove(CHECKOUT_BOOKING_KEY);
+  }
+
+  if (!keepDirectBooking) {
+    safeStorage.remove("isDirectBooking");
+    safeStorage.remove("directBookingToken");
+    safeStorage.remove("directBookingData");
+    safeStorage.remove("directPaymentSuccess");
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("directBookingSessionOrderId");
+      } catch (e) {}
+    }
   }
 };
 

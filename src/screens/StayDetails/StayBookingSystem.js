@@ -3150,7 +3150,7 @@ const StayBookingSystem = ({
       clearPendingCheckoutState();
       persistPendingCheckout({ bookingData: previewBookingData });
       localStorage.removeItem("frontendPendingBookingState");
-      history.push("/checkout");
+      history.push("/checkout", { bookingData: previewBookingData });
       return;
 
       const response = await createStayOrder(payload);
@@ -3489,6 +3489,7 @@ const StayBookingSystem = ({
       const checkoutExtraAdults = isHostelBooking(stay) ? 0 : extraAdultsCount;
 
       const bookingData = {
+        checkoutType: "stay",
         stayId: payload.stayId,
         leadUserId: stay?.leadUserId,
         listingTitle: stay.propertyName || stay.title || "Stay",
@@ -3502,7 +3503,9 @@ const StayBookingSystem = ({
         extraChildren: extraChildrenCount,
         receipt: finalReceipt,
         totalAmount: frontendFinalGuestPrice,
+        finalTotal: frontendFinalGuestPrice,
         selectedAddOns: selectedAddOnsData,
+        orderRequest: payload,
       };
       persistPendingCheckout({
         bookingData,
@@ -3515,7 +3518,7 @@ const StayBookingSystem = ({
       });
       localStorage.removeItem("frontendPendingBookingState");
 
-      history.push("/checkout");
+      history.push("/checkout", { bookingData });
     } catch (err) {
       console.error(err);
       const backendPayload = err?.response?.data || {};
