@@ -152,24 +152,129 @@ const resolveCoverImage = (room) => {
   return null;
 };
 
-const extractPlanPrice = (mp) => {
-  if (!mp) return null;
-  const p = mp.b2cPrice ?? mp.price ?? null;
-  return (p != null && p !== "" && p !== 0) ? p : null;
+const getSeasonIdCandidates = (season) => (
+  [
+    season?.tempId,
+    season?.seasonalPeriodId,
+    season?.seasonId,
+    season?.id,
+  ]
+    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+    .map((v) => String(v))
+);
+
+const resolveSeasonalNode = (source, season) => {
+  if (!source || !season) return null;
+  const keys = getSeasonIdCandidates(season);
+  if (keys.length === 0) return null;
+
+  if (Array.isArray(source)) {
+    return source.find((item) =>
+      getSeasonIdCandidates(item).some((id) => keys.includes(id))
+    ) || null;
+  }
+
+  if (typeof source === "object") {
+    for (const key of keys) {
+      if (source[key] != null) return source[key];
+      if (source[String(key)] != null) return source[String(key)];
+    }
+  }
+
+  return null;
 };
 
-const getPriceForPlan = (room, code) => {
-  // 1. Try the requested plan in mealPlanPricing
-  if (room.mealPlanPricing?.[code]) {
+const isInSeasonRange = (dateValue, season) => {
+  if (!season) return false;
+  const target = dateValue ? moment(dateValue).startOf("day") : moment().startOf("day");
+  const start = moment(season?.startDate || season?.start_date).startOf("day");
+  const end = moment(season?.endDate || season?.end_date).startOf("day");
+  if (!target.isValid() || !start.isValid() || !end.isValid()) return false;
+  return target.isSameOrAfter(start, "day") && target.isSameOrBefore(end, "day");
+};
+
+const getActiveSeason = (room, listing, checkInDate) => {
+  const targetDate = checkInDate || moment().startOf("day");
+  
+  const periods = [
+    ...(Array.isArray(room?.seasonalPeriods) ? room.seasonalPeriods : []),
+    ...(Array.isArray(listing?.seasonalPeriods) ? listing.seasonalPeriods : []),
+    ...(Array.isArray(room?.seasonalPricing) ? room.seasonalPricing : []),
+    ...(Array.isArray(listing?.seasonalPricing) ? listing.seasonalPricing : []),
+    ...(Array.isArray(room?.seasonalPricings) ? room.seasonalPricings : []),
+    ...(Array.isArray(listing?.seasonalPricings) ? listing.seasonalPricings : []),
+  ];
+
+  return periods.find((p) => isInSeasonRange(targetDate, p)) || null;
+};
+
+const extractPlanPrice = (mp) => {
+  if (!mp) return null;
+  if (typeof mp === "number" || typeof mp === "string") {
+    const n = parseFloat(mp);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  const p = mp.b2cPrice ?? mp.b2cprice ?? mp.price ?? null;
+  if (p != null && p !== "") {
+    const n = parseFloat(p);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  return null;
+};
+
+const getPriceForPlan = (room, code, listing, checkInDate) => {
+  const activeSeason = getActiveSeason(room, listing, checkInDate);
+
+  // 1. Seasonal Pricing (if active season matches)
+  if (activeSeason) {
+    if (code) {
+      // 1a. Room or listing mealPlanSeasonalPricing
+      const seasonalPlanMap = room?.mealPlanSeasonalPricing?.[code] || listing?.mealPlanSeasonalPricing?.[code];
+      const mealSeasonData = resolveSeasonalNode(seasonalPlanMap, activeSeason);
+      const seasonalPrice = extractPlanPrice(mealSeasonData);
+      if (seasonalPrice != null) return seasonalPrice;
+    }
+
+    // 1b. Check bed/property seasonal pricing
+    const propSeasonData = resolveSeasonalNode(
+      room?.propertySeasonalPricing || listing?.propertySeasonalPricing || room?.seasonalPricing || listing?.seasonalPricing,
+      activeSeason
+    );
+    const propSeasonalPrice = extractPlanPrice(propSeasonData);
+    if (propSeasonalPrice != null && (room.isBedConfig || (!room.mealPlanPricing && !room.epPrice && !room.bbPrice && !room.cpPrice && !room.mapPrice && !room.apPrice))) {
+      return propSeasonalPrice;
+    }
+
+    // 1c. Direct seasonal period price
+    const directSeasonPrice = extractPlanPrice(activeSeason);
+    if (directSeasonPrice != null && (room.isBedConfig || (!room.mealPlanPricing && !room.epPrice && !room.bbPrice && !room.cpPrice && !room.mapPrice && !room.apPrice))) {
+      return directSeasonPrice;
+    }
+  }
+
+  // 2. Regular meal plan pricing
+  if (code && room.mealPlanPricing?.[code]) {
     const planPrice = extractPlanPrice(room.mealPlanPricing[code]);
     if (planPrice != null) return planPrice;
   }
 
-  // 2. Try flat price fields (epPrice, bbPrice, etc.)
+  // 3. Flat price fields (epPrice, bbPrice, etc.)
   const flat = { BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice", EP: "epPrice" };
-  if (flat[code] && room[flat[code]]) return room[flat[code]];
+  if (code && flat[code] && room[flat[code]]) {
+    const p = extractPlanPrice(room[flat[code]]);
+    if (p != null) return p;
+  }
 
-  // 3. Try any other plan that has a price
+  // 4. Try any other plan that has a price (checking seasonal first, then regular)
+  if (activeSeason && (room.mealPlanSeasonalPricing || listing?.mealPlanSeasonalPricing)) {
+    const allSeasonalPlans = { ...(listing?.mealPlanSeasonalPricing || {}), ...(room.mealPlanSeasonalPricing || {}) };
+    for (const key of Object.keys(allSeasonalPlans)) {
+      const mealSeasonData = resolveSeasonalNode(allSeasonalPlans[key], activeSeason);
+      const seasonalPrice = extractPlanPrice(mealSeasonData);
+      if (seasonalPrice != null) return seasonalPrice;
+    }
+  }
+
   if (room.mealPlanPricing) {
     for (const key of Object.keys(room.mealPlanPricing)) {
       const fallbackPrice = extractPlanPrice(room.mealPlanPricing[key]);
@@ -177,8 +282,8 @@ const getPriceForPlan = (room, code) => {
     }
   }
 
-  // 4. Fall back to room base price
-  return room.b2cPrice || room.price || null;
+  // 5. Fall back to room base price
+  return room.b2cPrice || room.price || listing?.b2cPrice || null;
 };
 
 /* Extract feature tags from room data */
@@ -280,7 +385,7 @@ const ModalPortal = ({ children }) => {
 
 
 
-const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan }) => {
+const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan, checkInDate }) => {
   const { tokens: { FG, B, A, AL, S, W, M, BG } } = useTheme();
   const { isMobile } = useWindowSize();
   const [showModal, setShowModal] = useState(false);
@@ -292,41 +397,46 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
   const isBedBased = room.isBedConfig || (listing?.inventorySetupType === "Bed-Based" && (!listing?.rooms || listing.rooms.length === 0));
 
   const allPlans = React.useMemo(() => {
-    const plans = room.mealPlanPricing ? Object.keys(room.mealPlanPricing) : [];
-    if (!plans.length) {
-      if (room.epPrice) plans.push("EP");
-      if (room.bbPrice) plans.push("BB");
-      if (room.cpPrice) plans.push("CP");
-      if (room.mapPrice) plans.push("MAP");
-      if (room.apPrice) plans.push("AP");
+    const plans = new Set();
+    if (room.mealPlanPricing) {
+      Object.keys(room.mealPlanPricing).forEach(k => plans.add(k));
     }
-    return plans;
-  }, [room.mealPlanPricing, room.epPrice, room.bbPrice, room.cpPrice, room.mapPrice, room.apPrice]);
+    if (room.mealPlanSeasonalPricing) {
+      Object.keys(room.mealPlanSeasonalPricing).forEach(k => plans.add(k));
+    }
+    if (listing?.mealPlanPricing) {
+      Object.keys(listing.mealPlanPricing).forEach(k => plans.add(k));
+    }
+    if (listing?.mealPlanSeasonalPricing) {
+      Object.keys(listing.mealPlanSeasonalPricing).forEach(k => plans.add(k));
+    }
+    if (!plans.size) {
+      if (room.epPrice) plans.add("EP");
+      if (room.bbPrice) plans.add("BB");
+      if (room.cpPrice) plans.add("CP");
+      if (room.mapPrice) plans.add("MAP");
+      if (room.apPrice) plans.add("AP");
+    }
+    return Array.from(plans);
+  }, [room.mealPlanPricing, room.mealPlanSeasonalPricing, listing?.mealPlanPricing, listing?.mealPlanSeasonalPricing, room.epPrice, room.bbPrice, room.cpPrice, room.mapPrice, room.apPrice]);
 
   // Prefer selectedMealPlan if it exists in this room, otherwise pick the first plan that has a price
   const effectiveMealPlan = React.useMemo(() => {
     if (selectedMealPlan && allPlans.includes(selectedMealPlan)) return selectedMealPlan;
-    // Try to find a plan that actually has a price
+    // Try to find a plan that actually has a price (checking seasonal or regular)
     const planWithPrice = allPlans.find(code => {
-      const mp = room.mealPlanPricing?.[code];
-      if (mp) {
-        const p = mp.b2cPrice ?? mp.price ?? null;
-        return p != null && p !== "" && p !== 0;
-      }
-      const flat = { BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice", EP: "epPrice" };
-      return flat[code] && room[flat[code]];
+      const p = getPriceForPlan(room, code, listing, checkInDate);
+      return p != null;
     });
     return planWithPrice || allPlans[0] || null;
-  }, [selectedMealPlan, allPlans, room]);
+  }, [selectedMealPlan, allPlans, room, listing, checkInDate]);
 
   const [plan, setPlan] = useState(effectiveMealPlan);
   useEffect(() => {
     setPlan(effectiveMealPlan);
   }, [effectiveMealPlan]);
 
-  //new build
-
-  const rawPrice = plan ? getPriceForPlan(room, plan) : room.b2cPrice || room.price;
+  const rawPrice = plan ? getPriceForPlan(room, plan, listing, checkInDate) : getPriceForPlan(room, null, listing, checkInDate);
   const discountRate = getBillingConfigDiscountRate(listing);
   const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
   const hasDiscount =
@@ -733,7 +843,7 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 };
 
 /* ---------- RoomCards section ---------------------------------------- */
-const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onRoomsCountChange }) => {
+const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onRoomsCountChange, checkInDate }) => {
   let rooms = listing?.rooms || listing?.roomTypes || listing?.room_types || listing?.stay?.rooms || [];
 
   if (listing?.bedConfigs?.length > 0) {
@@ -750,6 +860,9 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
       maxExtraAdults: 0,
       description: b.description || b.bedDescription,
       roomAmenities: b.bedConfigAmenities || b.amenities || [],
+      seasonalPeriods: b.seasonalPeriods || listing?.seasonalPeriods || listing?.seasonalPricing || [],
+      mealPlanSeasonalPricing: b.mealPlanSeasonalPricing || listing?.mealPlanSeasonalPricing || {},
+      propertySeasonalPricing: b.propertySeasonalPricing || listing?.propertySeasonalPricing || {},
       isBedConfig: true
     }));
 
@@ -778,6 +891,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
             selectedMealPlan={selection?.mealPlan}
             roomsCount={selection?.count || 1}
             onRoomsCountChange={(count) => onRoomsCountChange(roomId, count)}
+            checkInDate={checkInDate}
           />
         );
       })}

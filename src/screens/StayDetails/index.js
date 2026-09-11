@@ -3440,6 +3440,7 @@ const StayDetails = () => {
             onRoomSelect={handleRoomSelect}
             selectedRooms={selectedRooms}
             onRoomsCountChange={handleRoomCountChange}
+            checkInDate={checkInDate}
             noContainer
           />
         </div>
@@ -3677,10 +3678,10 @@ function PropertyModal({ stay, onClose }) {
     toAmount(stay.pricePerNight) ??
     toAmount(stay.startingPrice) ??
     toAmount(stay.price);
-  const seasonalPeriods = Array.isArray(stay.seasonalPricing)
+  const seasonalPeriods = Array.isArray(stay?.seasonalPricing)
     ? stay.seasonalPricing
-    : (Array.isArray(stay.seasonalPricings) ? stay.seasonalPricings : []);
-  const today = moment().startOf("day");
+    : (Array.isArray(stay?.seasonalPricings) ? stay.seasonalPricings : (Array.isArray(stay?.seasonalPeriods) ? stay.seasonalPeriods : []));
+  const today = checkInDate ? moment(checkInDate).startOf("day") : moment().startOf("day");
   const activeSeason = seasonalPeriods.find((period) => {
     const start = toDateOnly(period?.startDate || period?.start_date);
     const end = toDateOnly(period?.endDate || period?.end_date);
@@ -3692,6 +3693,7 @@ function PropertyModal({ stay, onClose }) {
     activeSeason?.b2cprice ??
     activeSeason?.pricePerNight ??
     activeSeason?.price ??
+    (activeSeason ? (stay?.propertySeasonalPricing?.[activeSeason?.tempId]?.b2cPrice || stay?.propertySeasonalPricing?.[activeSeason?.seasonId]?.b2cPrice || stay?.propertySeasonalPricing?.[activeSeason?.id]?.b2cPrice) : null) ??
     null;
   const priceValue = seasonalB2CPrice ?? basePrice;
 
@@ -4116,7 +4118,7 @@ function PropertyStayCard({ stay }) {
     toAmount(stay?.price);
   const seasonalPeriods = Array.isArray(stay?.seasonalPricing)
     ? stay.seasonalPricing
-    : (Array.isArray(stay?.seasonalPricings) ? stay.seasonalPricings : []);
+    : (Array.isArray(stay?.seasonalPricings) ? stay.seasonalPricings : (Array.isArray(stay?.seasonalPeriods) ? stay.seasonalPeriods : []));
   const today = moment().startOf("day");
   const activeSeason = seasonalPeriods.find((period) => {
     const start = toDateOnly(period?.startDate || period?.start_date);
@@ -4129,6 +4131,7 @@ function PropertyStayCard({ stay }) {
     activeSeason?.b2cprice ??
     activeSeason?.pricePerNight ??
     activeSeason?.price ??
+    (activeSeason ? (stay?.propertySeasonalPricing?.[activeSeason?.tempId]?.b2cPrice || stay?.propertySeasonalPricing?.[activeSeason?.seasonId]?.b2cPrice || stay?.propertySeasonalPricing?.[activeSeason?.id]?.b2cPrice) : null) ??
     null;
   const priceValue = seasonalB2CPrice ?? basePrice;
   const billingConfigDiscounts =
