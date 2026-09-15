@@ -255,6 +255,27 @@ OrdersAPI.interceptors.request.use((config) => {
   return config;
 });
 
+OrdersAPI.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const status = error.response.status;
+      const message = error.response.data?.message || error.message;
+      if (status === 401) {
+        console.warn(`⚠️ Orders API 401 Unauthorized: ${message}`);
+      } else {
+        console.error(`❌ Orders API Error ${status}: ${message}`, {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.response.data,
+        });
+      }
+    }
+    error.isHandled = true;
+    return Promise.reject(error);
+  }
+);
+
 // ✅ Handle response errors gracefully - prevent unhandled promise rejections
 ListingsAPI.interceptors.response.use(
   (response) => response,
@@ -707,7 +728,11 @@ export const getListing = async (id) => {
 export const getPolicyDocuments = async () => {
   try {
     const response = await ListingsAPI.get(`/public/policy-documents`);
-    return response.data;
+    const payload = response.data;
+    if (payload && typeof payload === "object" && payload.data !== undefined) {
+      return payload.data;
+    }
+    return payload;
   } catch (error) {
     console.error("❌ Error fetching policy documents:", error.response?.data || error.message);
     throw error;
@@ -1961,6 +1986,12 @@ export const submitOrderReview = async (orderId, reviewData, requestConfig = {})
  */
 export const getReviewErrorMessage = (err, defaultMsg = "Failed to submit review. Please try again.") => {
   if (!err) return defaultMsg;
+  const rawErrorMsg = typeof err === "string" ? err : (err?.response?.data?.message || err?.response?.data?.error || err?.message || "");
+  const isExpired = /invalid\s*(or)?\s*expired\s*token|token\s*(has\s*)?expired|expired\s*token|invalid\s*token|jwt\s*expired|jwt\s*malformed|unauthorized|session\s*expired/i.test(rawErrorMsg);
+
+  if (isExpired || err?.response?.status === 401) {
+    return "Your session has expired. Please log in again to continue.";
+  }
   if (typeof err === "string") return err;
 
   const data = err.response?.data;
@@ -2007,9 +2038,6 @@ export const getReviewErrorMessage = (err, defaultMsg = "Failed to submit review
   const status = err.response?.status;
   if (status === 409) {
     return "You've already reviewed this order.";
-  }
-  if (status === 401) {
-    return "Please log in to submit a review.";
   }
   if (status === 403) {
     return "You are not authorized to submit a review for this booking.";
@@ -2851,21 +2879,30 @@ export const getPublicDirectBooking = async (token) => {
 };
 
 /**
- * Public Direct Booking Slots API - Fetch available slots for a direct booking token and date
- * GET /api/public/direct-bookings/:token/slots?bookingDate=YYYY-MM-DD
+ * Public Direct Booking Offline Reservation Slots API - Fetch offline reservation slots for a direct booking token
+ * GET /api/public/direct-bookings/:token/offline-reservation-slots
+ * 
+ * Response shape:
+ * {
+ *   "listingId": 123,
+ *   "basePricePerGuest": 500,
+ *   "availableSlots": 20,
+ *   "priorityFee": 0,
+ *   "timeSlots": [
+ *     { "id": "slot-1", "startTime": "09:00", "endTime": "11:00" }
+ *   ]
+ * }
  */
-export const getPublicDirectBookingSlots = async (token, bookingDate) => {
+export const getPublicDirectBookingOfflineReservationSlots = async (token) => {
   if (!token) throw new Error("Direct booking token is required");
   const baseUrl = getApiBaseURL();
   const endpoint = baseUrl.endsWith("/api")
-    ? `${baseUrl}/public/direct-bookings/${token}/slots`
-    : `${baseUrl}/api/public/direct-bookings/${token}/slots`;
+    ? `${baseUrl}/public/direct-bookings/${token}/offline-reservation-slots`
+    : `${baseUrl}/api/public/direct-bookings/${token}/offline-reservation-slots`;
 
   try {
-    const response = await axios.get(endpoint, {
-      params: bookingDate ? { bookingDate } : {},
-    });
-    return response.data?.slots ? response.data : { slots: response.data?.data?.slots || response.data?.data || response.data || [] };
+    const response = await axios.get(endpoint);
+    return response.data?.data || response.data;
   } catch (error) {
     const isDummy =
       token.startsWith("dummy") ||
@@ -2875,27 +2912,133 @@ export const getPublicDirectBookingSlots = async (token, bookingDate) => {
       error?.response?.status === 404;
 
     if (isDummy) {
-      console.warn(`[getPublicDirectBookingSlots] Using mock direct booking slot data for token: "${token}"`);
+      console.warn(`[getPublicDirectBookingOfflineReservationSlots] Using mock direct booking slot data for token: "${token}"`);
       return {
-        slots: [
-          {
-            slotId: 123,
-            slotName: "Morning Slot",
-            date: bookingDate || "2026-09-17",
-            startTime: "12:00",
-            endTime: "13:00",
-            availableSeats: 10,
-            pricePerPerson: "500.00",
-            privateBookingEnabled: false,
-            hasPrivateBooking: false,
-            privateBookingAvailable: false,
-          },
+        listingId: 123,
+        basePricePerGuest: 500,
+        availableSlots: 20,
+        priorityFee: 0,
+        timeSlots: [
+          { id: "slot-1", startTime: "09:00", endTime: "11:00" }
         ],
       };
     }
     throw error;
   }
 };
+
+export const getPublicDirectBookingOfflineSlots = getPublicDirectBookingOfflineReservationSlots;
+
+/**
+ * Public Direct Booking Slots API - Fetch available slots for a direct booking token and date
+ * GET /api/public/direct-bookings/:token/offline-reservation-slots
+ */
+export const getPublicDirectBookingSlots = async (token, bookingDate) => {
+  return getPublicDirectBookingOfflineReservationSlots(token);
+};
+
+/**
+ * Public Direct Booking Preview Price API - Calculate/preview price for direct booking
+ * POST /api/public/direct-bookings/:token/preview-price
+ * Content-Type: application/json
+ * 
+ * Payload:
+ * {
+ *   "bookingSlotId": 123,
+ *   "bookingDate": "2026-09-20",
+ *   "guestCount": 2,
+ *   "includePriority": true
+ * }
+ */
+export const parseNumericSlotId = (val) => {
+  if (val == null || val === "") return null;
+  return val;
+};
+
+export const previewPublicDirectBookingPrice = async (token, {
+  bookingSlotId,
+  bookingDate,
+  guestCount = 1,
+  includePriority = true,
+} = {}) => {
+  if (!token) throw new Error("Direct booking token is required");
+  const baseUrl = getApiBaseURL();
+  const endpoint = baseUrl.endsWith("/api")
+    ? `${baseUrl}/public/direct-bookings/${token}/preview-price`
+    : `${baseUrl}/api/public/direct-bookings/${token}/preview-price`;
+
+  const cleanDate = (() => {
+    if (!bookingDate) return undefined;
+    if (typeof bookingDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(bookingDate)) return bookingDate;
+    try {
+      const dt = new Date(bookingDate);
+      if (!isNaN(dt.getTime())) {
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+      }
+    } catch {}
+    return String(bookingDate);
+  })();
+
+  const cleanSlotId = (() => {
+    if (bookingSlotId == null || bookingSlotId === "" || Number.isNaN(bookingSlotId)) return undefined;
+    if (typeof bookingSlotId === "string") return bookingSlotId.trim();
+    if (typeof bookingSlotId === "number" && Number.isFinite(bookingSlotId)) {
+      return String(bookingSlotId).length > 6 ? `slot-${bookingSlotId}` : bookingSlotId;
+    }
+    return String(bookingSlotId);
+  })();
+
+  const payload = {
+    ...(cleanSlotId != null ? { bookingSlotId: cleanSlotId } : {}),
+    ...(cleanDate ? { bookingDate: cleanDate } : {}),
+    guestCount: Math.max(1, Number(guestCount) || 1),
+    includePriority: Boolean(includePriority),
+  };
+
+  try {
+    const response = await axios.post(endpoint, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data?.data || response.data;
+  } catch (error) {
+    // Fallback attempt to offline-reservation-price if preview-price 404s
+    if (error?.response?.status === 404) {
+      try {
+        const altEndpoint = baseUrl.endsWith("/api")
+          ? `${baseUrl}/public/direct-bookings/${token}/offline-reservation-price`
+          : `${baseUrl}/api/public/direct-bookings/${token}/offline-reservation-price`;
+        const altResponse = await axios.post(altEndpoint, payload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        return altResponse.data?.data || altResponse.data;
+      } catch (altErr) {
+        // continue to mock/error handling
+      }
+    }
+
+    const isDummy =
+      token.startsWith("dummy") ||
+      token.startsWith("test") ||
+      token.startsWith("demo") ||
+      token.includes("-") ||
+      error?.response?.status === 404;
+
+    if (isDummy) {
+      console.warn(`[previewPublicDirectBookingPrice] Using mock direct booking price data for token: "${token}"`);
+      return {
+        totalAmount: includePriority ? 1298 : 1100,
+        finalPayableAmount: includePriority ? 1298 : 1100,
+        pricing: {
+          totalPrice: includePriority ? 1298 : 1100,
+          priorityFee: includePriority ? 198 : 0,
+        }
+      };
+    }
+    throw error;
+  }
+};
+
+export const calculatePublicDirectBookingOfflinePrice = previewPublicDirectBookingPrice;
 
 /**
  * Submit Direct Booking Payment Confirmation

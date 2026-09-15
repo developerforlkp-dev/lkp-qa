@@ -5,7 +5,7 @@ import { Calendar, Users, Bed, X, Star, ShieldCheck, ChevronDown, Plus, Minus, I
 import moment from "moment";
 import { useTheme } from "../../components/JUI/Theme";
 import { createStayOrder, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, getStayHotelRoomAvailability, getStayHostelAvailability, previewOrderPrice, calculateStayTotal } from "../../utils/api";
-import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
+import { clearPendingCheckoutState, persistPendingCheckout, isAuthOrTokenError } from "../../utils/paymentSession";
 import {
   getStayGuestDiscountRate,
   getStayGuestTaxRate,
@@ -3523,11 +3523,7 @@ const StayBookingSystem = ({
       console.error(err);
       const backendPayload = err?.response?.data || {};
 
-      if (
-        err?.response?.status === 401 ||
-        backendPayload?.message === "Invalid or expired token" ||
-        backendPayload?.error === "Invalid or expired token"
-      ) {
+      if (isAuthOrTokenError(err)) {
         const listingIdToSave = stay?.stayId || stay?.id;
         if (listingIdToSave) {
           const stateToStore = {
@@ -3564,7 +3560,10 @@ const StayBookingSystem = ({
       let finalMessage = String(detailMessage);
       let isSameDay = false;
 
-      if (
+      if (isAuthOrTokenError(finalTitle) || isAuthOrTokenError(finalMessage)) {
+        finalTitle = "Session Expired";
+        finalMessage = "Your session has expired. Please log in again to continue.";
+      } else if (
         finalTitle.toLowerCase().includes("same-day") ||
         finalMessage.toLowerCase().includes("same-day")
       ) {

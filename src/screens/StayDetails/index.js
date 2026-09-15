@@ -3681,7 +3681,7 @@ function PropertyModal({ stay, onClose }) {
   const seasonalPeriods = Array.isArray(stay?.seasonalPricing)
     ? stay.seasonalPricing
     : (Array.isArray(stay?.seasonalPricings) ? stay.seasonalPricings : (Array.isArray(stay?.seasonalPeriods) ? stay.seasonalPeriods : []));
-  const today = checkInDate ? moment(checkInDate).startOf("day") : moment().startOf("day");
+  const today = moment().startOf("day");
   const activeSeason = seasonalPeriods.find((period) => {
     const start = toDateOnly(period?.startDate || period?.start_date);
     const end = toDateOnly(period?.endDate || period?.end_date);

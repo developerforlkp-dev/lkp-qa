@@ -26,7 +26,7 @@ import {
 export const useListings = ({
   location = "",
   dateRange = null,
-  guests = { adults: 1, children: 0, infants: 0, pets: 0 },
+  guests = { adults: 0, children: 0, infants: 0, pets: 0 },
   filters = {},
   limit = 20,
   offset = 0,

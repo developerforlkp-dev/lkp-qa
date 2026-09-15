@@ -26,10 +26,30 @@ const TermsOfService = () => {
     const fetchPolicy = async () => {
       try {
         const data = await getPolicyDocuments();
-        if (data && data.termsAndConditions) {
-          setDocumentHtml(data.termsAndConditions.contentHtml || "");
-          if (data.termsAndConditions.title) {
-            setTitle(data.termsAndConditions.title);
+        let termsDoc = null;
+        if (data) {
+          if (Array.isArray(data)) {
+            termsDoc = data.find((d) =>
+              ["terms-and-conditions", "termsAndConditions", "terms_and_conditions", "terms-of-service", "terms"].includes(
+                d?.documentKey || d?.key || d?.slug
+              )
+            );
+          } else if (typeof data === "object") {
+            termsDoc =
+              data.termsAndConditions ||
+              data["terms-and-conditions"] ||
+              data.terms_and_conditions ||
+              data.termsOfService ||
+              data["terms-of-service"] ||
+              data.terms;
+          }
+        }
+        if (termsDoc) {
+          if (termsDoc.contentHtml) {
+            setDocumentHtml(termsDoc.contentHtml);
+          }
+          if (termsDoc.title) {
+            setTitle(termsDoc.title);
           }
         }
       } catch (error) {

@@ -103,7 +103,7 @@ const FleetHome = () => {
   // Search state
   const [selectedDate, setSelectedDate] = useState(null);
   const [guests, setGuests] = useState({
-    adults: 1,
+    adults: 0,
     children: 0,
     infants: 0,
     pets: 0,
@@ -592,59 +592,9 @@ const FleetHome = () => {
 
 
 
-            //console.log(`✅ Section ${section.sectionId} has ${listings.length} listings`);
-
-            // Filter out expired experience listings: if an experience has an end
-            // date and that date is before today, remove it from homepage display.
-            if (activeFilter === "experience" && Array.isArray(listings) && listings.length > 0) {
-              const now = moment();
-              const dateFields = [
-                'endDate', 'end_date', 'eventEndDate', 'event_end_date',
-                'availableUntil', 'availabilityEnd', 'availability_end',
-                'bookingEndDate', 'booking_end_date', 'endsAt', 'endAt',
-                'eventDate', 'event_date'
-              ];
-
-              const beforeCount = listings.length;
-              listings = listings.filter((listing) => {
-                if (!listing || typeof listing !== 'object') return true;
-                for (const f of dateFields) {
-                  const raw = listing[f];
-                  if (!raw) continue;
-                  const m = moment(String(raw));
-                  if (!m.isValid()) continue;
-                  // exclude if end date is strictly before today
-                  if (m.isBefore(now, 'day')) return false;
-                  // if valid and not before today, keep it
-                  return true;
-                }
-                // no date field found — keep listing
-                return true;
-              });
-              const afterCount = listings.length;
-              if (beforeCount !== afterCount) {
-                //console.log(`ℹ️ Filtered ${beforeCount - afterCount} expired experience listing(s) from section ${section.sectionId}`);
-              }
-            }
-
-            // Sort locally by newest first as a fallback since the backend might ignore the sortBy parameter
-            if (Array.isArray(listings)) {
-              listings.sort((a, b) => {
-                const dateA = new Date(a.createdAt || a.created_at || a.createdDate || 0).getTime();
-                const dateB = new Date(b.createdAt || b.created_at || b.createdDate || 0).getTime();
-                if (dateA !== dateB) return dateB - dateA;
-                
-                // Fallback to ID if dates are the same or missing
-                const idA = Number(a.id || a.listingId || a.experienceId || a.eventId || a.stayId || a.placeId || a.foodMenuId || 0);
-                const idB = Number(b.id || b.listingId || b.experienceId || b.eventId || b.stayId || b.placeId || b.foodMenuId || 0);
-                return idB - idA;
-              });
-              listings = listings.slice(0, 12);
-            }
-
             return {
               section: sectionInfo,
-              listings: listings,
+              listings: Array.isArray(listings) ? listings : [],
             };
           } catch (err) {
             console.warn(`⚠️ Failed to fetch listings for section ${section.sectionId}:`, err);

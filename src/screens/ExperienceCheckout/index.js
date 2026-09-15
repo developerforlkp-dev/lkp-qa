@@ -9,7 +9,7 @@ import HeadOptions from "../../components/PriceDetails/HeadOptions";
 import ConfirmAndPay from "../../components/ConfirmAndPay";
 import PriceDetails from "../../components/PriceDetails";
 import DirectUpiSection from "../../components/DirectUpiSection";
-import { getOrderDetails, getStayDetails, getListingAddons, getEventAddons, getEventDetails, getHostContent } from "../../utils/api";
+import { getOrderDetails, getStayDetails, getListingAddons, getEventAddons, getEventDetails, getHostContent, previewPublicDirectBookingPrice, getPublicDirectBookingOfflineReservationSlots } from "../../utils/api";
 import { buildExperienceUrl } from "../../utils/experienceUrl";
 import {
   getPendingPayment,
@@ -419,7 +419,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
     }
   }, [location.state, bookingData]);
 
-  // Fallback: hydrate bookingData from localStorage/sessionStorage if not present in state
+  // Fallback: hydrate bookingData from localStorage/sessionStorage or URL query params if missing
   useEffect(() => {
     if (!bookingData) {
       try {
@@ -434,12 +434,228 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
           if (Array.isArray(parsed.selectedAddOns)) {
             setSelectedAddOns(parsed.selectedAddOns);
           }
+          return;
         }
       } catch (e) {
         // ignore
       }
+
+      if (isDirectBooking && typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const listingId = urlParams.get("listingId");
+        const startDate = urlParams.get("startDate");
+        const guests = Number(urlParams.get("guests")) || 1;
+        const startTime = urlParams.get("startTime");
+        const token = urlParams.get("token") || urlParams.get("ref") || localStorage.getItem("directBookingToken");
+
+        if (listingId || token) {
+          setBookingData({
+            listingId: listingId ? Number(listingId) || listingId : null,
+            selectedDate: startDate || null,
+            startDate: startDate || null,
+            selectedTimeSlot: startTime || null,
+            directBookingToken: token || null,
+            guests: { adults: guests, children: 0, infants: 0 },
+            guestCount: guests,
+            isDirectBooking: true,
+          });
+        }
+      }
     }
-  }, [bookingData]);
+  }, [bookingData, isDirectBooking]);
+
+  // For Direct Booking: fetch/refresh preview-price from POST /api/public/direct-bookings/:token/preview-price
+  useEffect(() => {
+    if (!isDirectBooking) return;
+
+    const token =
+      bookingData?.directBookingToken ||
+      bookingData?.directBooking?.token ||
+      bookingData?.token ||
+      localStorage.getItem("directBookingToken") ||
+      (() => {
+        try {
+          const stored = localStorage.getItem("directBookingData");
+          if (stored) return JSON.parse(stored)?.token;
+        } catch {}
+        return null;
+      })() ||
+      (() => {
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          const pToken = urlParams.get("token") || urlParams.get("ref");
+          if (pToken) return pToken;
+          const match = window.location.pathname.match(/\/(?:direct-book|direct-booking|direct)\/([^/?#]+)/i);
+          if (match && match[1] && !["experience-checkout", "complete", "checkout", "experience"].includes(match[1])) {
+            return match[1];
+          }
+          const listingId = urlParams.get("listingId");
+          if (listingId) return String(listingId);
+        }
+        return null;
+      })();
+
+    if (!token) return;
+
+    const parseNumericSlotId = (val) => {
+      if (val == null) return null;
+      if (typeof val === "number" && Number.isFinite(val) && !isNaN(val)) return Math.floor(val);
+      const num = Number(val);
+      if (Number.isFinite(num) && !isNaN(num)) return Math.floor(num);
+      if (typeof val === "string") {
+        const digits = val.replace(/[^\d]/g, "");
+        if (digits && Number.isFinite(Number(digits))) return Number(digits);
+      }
+      return null;
+    };
+
+    let active = true;
+
+    const executePreviewPrice = async () => {
+      let rawSlotId =
+        bookingData?.selectedSlotId ??
+        bookingData?.bookingSlotId ??
+        bookingData?.slotId ??
+        bookingData?.selectedSlot?.id ??
+        bookingData?.selectedSlot?.slotId ??
+        bookingData?.selectedSlot?.slot_id ??
+        bookingData?.orderRequest?.bookingSlotId ??
+        bookingData?.orderRequest?.slotId ??
+        (typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("slotId") || new URLSearchParams(window.location.search).get("bookingSlotId")) : null);
+
+      let slotId = (rawSlotId != null && rawSlotId !== "" && !Number.isNaN(rawSlotId)) ? String(rawSlotId).trim() : null;
+
+      if (token) {
+        try {
+          const slotsData = await getPublicDirectBookingOfflineReservationSlots(token);
+          const slotsList = Array.isArray(slotsData?.timeSlots)
+            ? slotsData.timeSlots
+            : (Array.isArray(slotsData?.slots) ? slotsData.slots : (Array.isArray(slotsData?.data?.timeSlots) ? slotsData.data.timeSlots : []));
+          if (slotsList.length > 0) {
+            const timeParam = bookingData?.selectedTimeSlot || bookingData?.orderRequest?.bookingTime || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("startTime") : null);
+            const matched = timeParam
+              ? slotsList.find(s => s.startTime === timeParam || s.slotName === timeParam || (s.id && String(s.id).includes(timeParam))) || slotsList[0]
+              : slotsList[0];
+            const fetchedSlotId = matched?.id ?? matched?.slotId ?? matched?.slot_id;
+            if (fetchedSlotId != null && (!slotId || slotId === "1" || !slotsList.some(s => String(s.id ?? s.slotId) === String(slotId)))) {
+              slotId = String(fetchedSlotId);
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to fetch slots for direct booking slot id resolution:", e);
+        }
+      }
+
+      const dateStr = (() => {
+        const urlDate = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("startDate") : null;
+        const rawDate = bookingData?.selectedDate || bookingData?.bookingDate || bookingData?.startDate || urlDate;
+        if (!rawDate) return undefined;
+        if (typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return rawDate;
+        try {
+          const dt = new Date(rawDate);
+          if (!isNaN(dt.getTime())) {
+            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+          }
+        } catch {}
+        return String(rawDate);
+      })();
+
+      const urlGuests = typeof window !== "undefined" ? Number(new URLSearchParams(window.location.search).get("guests")) : 0;
+      const guestCount =
+        (Number(bookingData?.guests?.adults || 0) + Number(bookingData?.guests?.children || 0)) ||
+        Number(bookingData?.guestCount) ||
+        (Number.isFinite(urlGuests) && urlGuests > 0 ? urlGuests : 1);
+
+      const includePriority = Boolean(
+        bookingData?.includePriority ??
+        bookingData?.includePriorityFee ??
+        (bookingData?.priorityFee && Number(bookingData.priorityFee) > 0)
+      );
+
+      console.log("📤 [ExperienceCheckout Direct Booking] Calling preview-price with:", { token, slotId, dateStr, guestCount, includePriority });
+
+      try {
+        const res = await previewPublicDirectBookingPrice(token, {
+          bookingSlotId: slotId,
+          bookingDate: dateStr,
+          guestCount,
+          includePriority,
+        });
+
+        if (!active || !res) return;
+        console.log("💳 [ExperienceCheckout Direct Booking] preview-price response:", res);
+        const unwrapped = res?.data && typeof res.data === "object" && !Array.isArray(res.data) ? res.data : res;
+        const apiData = Array.isArray(unwrapped?.data)
+          ? unwrapped.data
+          : (Array.isArray(res?.data)
+            ? res.data
+            : (Array.isArray(unwrapped?.breakdown) ? unwrapped.breakdown : null));
+
+        const total =
+          res?.pricing?.total ??
+          res?.pricing?.totalPrice ??
+          res?.total ??
+          res?.totalAmount ??
+          res?.finalPayableAmount ??
+          unwrapped?.pricing?.total ??
+          unwrapped?.pricing?.totalPrice ??
+          unwrapped?.totalAmount ??
+          unwrapped?.finalPayableAmount ??
+          unwrapped?.total;
+
+        setBookingData((prev) => {
+          const base = prev || {};
+          const mergedPricing = {
+            ...(base.pricing || {}),
+            ...(res?.pricing || unwrapped?.pricing || {}),
+            ...(total != null && Number.isFinite(Number(total)) ? { total: Number(total), totalPrice: Number(total) } : {}),
+          };
+          return {
+            ...base,
+            previewPrice: res,
+            ...(res?.upiId || unwrapped?.upiId ? { upiId: res?.upiId || unwrapped?.upiId } : {}),
+            ...(slotId != null ? { selectedSlotId: slotId, bookingSlotId: slotId, slotId: slotId } : {}),
+            ...(apiData ? { priceBreakdownData: apiData, data: apiData } : {}),
+            ...(total != null && Number.isFinite(Number(total)) ? { finalTotal: Number(total) } : {}),
+            pricing: mergedPricing,
+          };
+        });
+
+        if (total != null && Number.isFinite(Number(total))) {
+          const totalInRupees = Number(total);
+          setPaymentData((prev) => ({
+            ...(prev || {}),
+            amount: totalInRupees,
+            finalAmount: totalInRupees,
+            currency: res?.pricing?.currency || unwrapped?.pricing?.currency || "INR",
+            paymentMethod: "upi",
+          }));
+        }
+      } catch (err) {
+        console.warn("💳 [ExperienceCheckout Direct Booking] preview-price error:", err);
+      }
+    };
+
+    executePreviewPrice();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    isDirectBooking,
+    bookingData?.selectedDate,
+    bookingData?.bookingDate,
+    bookingData?.startDate,
+    bookingData?.selectedSlot,
+    bookingData?.selectedSlotId,
+    bookingData?.bookingSlotId,
+    bookingData?.guests?.adults,
+    bookingData?.guests?.children,
+    bookingData?.guestCount,
+    bookingData?.includePriority,
+    bookingData?.includePriorityFee,
+    bookingData?.priorityFee,
+  ]);
 
   // Read payment data from route state or matching pending payment
   useEffect(() => {
@@ -878,7 +1094,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
 
       return {
         addOnsTotal: calculatedAddonsTotal,
-        finalTotal: totalAmountToPay != null ? totalAmountToPay : (pricing?.totalPrice ?? pricing?.total ?? 0),
+        finalTotal: totalAmountToPay != null ? totalAmountToPay : (pricing?.total ?? pricing?.totalPrice ?? bookingData?.previewPrice?.pricing?.total ?? bookingData?.previewPrice?.pricing?.totalPrice ?? bookingData?.finalTotal ?? 0),
         table: rows,
       };
     }
@@ -1246,6 +1462,19 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
         rows.push({ title: `Tax${rateLabel}`, value: `+ ${fmt(resolvedTaxAmount)}` });
       }
 
+      // ── PRIORITY FEE ──
+      const priorityFee = Number(
+        pricing.priorityFee ??
+        pricing.priority_fee ??
+        bookingData?.priorityFee ??
+        bookingData?.directBooking?.priorityFee ??
+        bookingData?.directBookingData?.priorityFee ??
+        0
+      );
+      if (priorityFee > 0) {
+        rows.push({ title: "Priority Fee", value: `+ ${fmt(priorityFee)}` });
+      }
+
       return {
         addOnsTotal: addonsTotal,
         finalTotal: pricing.total || pricing.finalAmount || 0,
@@ -1256,7 +1485,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
     // Fallback: receipt-based rows
     if (bookingData?.receipt && Array.isArray(bookingData.receipt)) {
       const rows = bookingData.receipt
-        .filter((r) => r?.kind === "tax")
+        .filter((r) => r?.kind === "tax" || r?.kind === "priority-fee")
         .map((r) => ({ title: r.title, value: r.content }));
       return { addOnsTotal: 0, finalTotal: 0, table: rows };
     }

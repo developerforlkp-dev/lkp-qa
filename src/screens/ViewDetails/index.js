@@ -5,7 +5,7 @@ import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
 import { getBookingDetails } from "../../mocks/bookings";
 import { getListing, getOrderDetails, getEventOrderDetails, getEventDetails, submitOrderReview, getReviewErrorMessage, getStayDetails, cancelOrder, cancelEventOrder, getEligibleBookings, getListingReviews, getEventReviews, getStayReviews, getOrderRefundDetails, getOrderCancelPreview, validateExperienceOrEventOrder, validateStayOrder, getCustomerProfile, getCancellationReasons, getOrderMessages } from "../../utils/api";
-import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isExpiredHold } from "../../utils/paymentSession";
+import { getInitializePaymentErrorMessage, initializePendingOrderPayment, isAuthOrTokenError, isExpiredHold } from "../../utils/paymentSession";
 import Rating from "../../components/Rating";
 import Modal from "../../components/Modal";
 import html2pdf from "html2pdf.js";
@@ -751,7 +751,9 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
   const result = {
     id: `bk-${apiBooking.orderId}`,
     orderId: apiBooking.orderId,
-    bookingId: `LKP-${apiBooking.orderId}`,
+    bookingId: String(apiBooking.orderId || "").startsWith("LKP-")
+      ? String(apiBooking.orderId)
+      : `LKP-${apiBooking.orderId}`,
     title: title,
     status: status,
     startDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || apiBooking.bookingDate),
@@ -2084,26 +2086,23 @@ const ViewDetails = () => {
       //console.log("🔍 Loading booking with bookingId:", bookingId);
 
       try {
-        // Extract orderId from bookingId (e.g., "bk-57" -> 57)
-        // Try multiple formats: "bk-57", "57", etc.
+        // Extract orderId from bookingId (e.g., "bk-57" -> 57, "bk-LKP-20260911-13" -> "LKP-20260911-13", "57" -> 57)
         let orderId = null;
 
-        // Format 1: "bk-57"
-        const orderIdMatch = bookingId.match(/bk-(\d+)/);
-        if (orderIdMatch) {
-          orderId = parseInt(orderIdMatch[1], 10);
-        } else {
-          // Format 2: Direct number "57"
-          const directMatch = bookingId.match(/^(\d+)$/);
-          if (directMatch) {
-            orderId = parseInt(directMatch[1], 10);
-          }
+        if (typeof bookingId === "string" && bookingId.startsWith("bk-")) {
+          const stripped = bookingId.replace(/^bk-/, "").trim();
+          const asNum = parseInt(stripped, 10);
+          orderId = (!isNaN(asNum) && String(asNum) === stripped) ? asNum : stripped;
+        } else if (typeof bookingId === "number") {
+          orderId = bookingId;
+        } else if (typeof bookingId === "string" && bookingId.trim().length > 0) {
+          const trimmed = bookingId.trim();
+          const asNum = parseInt(trimmed, 10);
+          orderId = (!isNaN(asNum) && String(asNum) === trimmed) ? asNum : trimmed;
         }
 
-        //console.log("🔍 Extracted orderId:", orderId);
-
-        if (!orderId || isNaN(orderId)) {
-          const errorMsg = `Invalid booking ID format: "${bookingId}". Expected format: "bk-57" or "57"`;
+        if (!orderId) {
+          const errorMsg = `Invalid booking ID format: "${bookingId}".`;
           console.error("❌", errorMsg);
           setError(errorMsg);
           setLoading(false);
@@ -2170,10 +2169,10 @@ const ViewDetails = () => {
             errorMessage = apiErr.message;
           }
 
-          if (apiErr.response?.status === 404) {
+          if (isAuthOrTokenError(apiErr) || isAuthOrTokenError(errorMessage)) {
+            errorMessage = "Your session has expired. Please log in again to continue.";
+          } else if (apiErr.response?.status === 404) {
             errorMessage = `Order not found (ID: ${orderId})`;
-          } else if (apiErr.response?.status === 401 || apiErr.response?.status === 403) {
-            errorMessage = "Unauthorized. Please log in again.";
           } else if (apiErr.response?.status === 500) {
             errorMessage = "Server error. Please try again later.";
           }

@@ -89,14 +89,16 @@ export const getDirectBookingConfig = (bookingData = {}, hostData = null, paymen
     if (raw) storedDirectData = JSON.parse(raw);
   } catch (e) {}
 
-  // Prioritize API response leadName, upiId, and qrCodeUrl from /api/public/direct-bookings/:token
+  // Prioritize API response upiId from preview-price / direct-bookings
   const hostUpi =
+    bookingData?.previewPrice?.upiId ||
+    bookingData?.previewPrice?.data?.upiId ||
+    bookingData?.upiId ||
     storedDirectData?.upiId ||
     storedDirectData?.leadUpiId ||
     storedDirectData?.lead?.upiId ||
     storedDirectData?.data?.upiId ||
     bookingData?.directBooking?.upiId ||
-    bookingData?.upiId ||
     hostData?.upiId ||
     hostData?.paymentUpi ||
     hostData?.host?.upiId ||

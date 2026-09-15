@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
-import { ChevronDown, ArrowUp, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronDown, ArrowUp } from "lucide-react";
 import Page from "../../components/Page";
+import { getPolicyDocuments } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
 
 const accordionData = [
@@ -237,6 +238,9 @@ const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
 
 const PrivacyPolicy = () => {
   const { tokens } = useTheme();
+  const [documentHtml, setDocumentHtml] = useState("");
+  const [title, setTitle] = useState("Privacy Policy");
+  const [loading, setLoading] = useState(true);
   const [openIndices, setOpenIndices] = useState([0]);
   const [showTopBtn, setShowTopBtn] = useState(false);
   const { scrollYProgress } = useScroll();
@@ -248,6 +252,44 @@ const PrivacyPolicy = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const fetchPolicy = async () => {
+      try {
+        const data = await getPolicyDocuments();
+        let privacyDoc = null;
+        if (data) {
+          if (Array.isArray(data)) {
+            privacyDoc = data.find((d) =>
+              ["privacy-policy", "privacyPolicy", "privacy_policy", "privacyAndPolicies", "privacy"].includes(
+                d?.documentKey || d?.key || d?.slug
+              )
+            );
+          } else if (typeof data === "object") {
+            privacyDoc =
+              data.privacyPolicy ||
+              data["privacy-policy"] ||
+              data.privacy_policy ||
+              data.privacyAndPolicies ||
+              data.privacy;
+          }
+        }
+        if (privacyDoc) {
+          if (privacyDoc.contentHtml) {
+            setDocumentHtml(privacyDoc.contentHtml);
+          }
+          if (privacyDoc.title) {
+            setTitle(privacyDoc.title);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load Privacy Policy", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPolicy();
+
     const handleScroll = () => {
       if (window.scrollY > 400) {
         setShowTopBtn(true);
@@ -274,19 +316,11 @@ const PrivacyPolicy = () => {
     }
   };
 
-  const expandAll = () => {
-    setOpenIndices(accordionData.map((_, i) => i));
-  };
-
-  const collapseAll = () => {
-    setOpenIndices([]);
-  };
-
   return (
     <Page>
       <Helmet>
-        <title>Privacy Policy | Little Known Planet</title>
-        <meta name="description" content="Review the Privacy Policy for using Little Known Planet services." />
+        <title>{title} | Little Known Planet</title>
+        <meta name="description" content={`Review the ${title} for using Little Known Planet services.`} />
       </Helmet>
       
       {/* Top Progress Bar */}
@@ -321,26 +355,44 @@ const PrivacyPolicy = () => {
               marginBottom: "16px",
               fontFamily: "Georgia, serif"
             }}>
-              Privacy Policy
+              {title}
             </h1>
             <p style={{ fontSize: "1.1rem", color: tokens.M, maxWidth: "600px", margin: "0 auto", lineHeight: 1.6 }}>
-              How we collect, use, and protect your information.<br />
-              Last updated: May 2026.
+              How we collect, use, and protect your information.
             </p>
-            
           </motion.div>
 
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {accordionData.map((item, index) => (
-              <AccordionItem
-                key={index}
-                item={item}
-                isOpen={openIndices.includes(index)}
-                onClick={() => toggleAccordion(index)}
-                themeTokens={tokens}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+              <p style={{ color: tokens.M, fontSize: "16px" }}>Loading...</p>
+            </div>
+          ) : documentHtml ? (
+            <div 
+              style={{ 
+                background: tokens.BG, 
+                padding: "40px", 
+                borderRadius: "12px", 
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)", 
+                border: `1px solid ${tokens.B}`,
+                color: tokens.FG, 
+                fontSize: "16px", 
+                lineHeight: 1.9,
+              }}
+              dangerouslySetInnerHTML={{ __html: documentHtml }} 
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {accordionData.map((item, index) => (
+                <AccordionItem
+                  key={index}
+                  item={item}
+                  isOpen={openIndices.includes(index)}
+                  onClick={() => toggleAccordion(index)}
+                  themeTokens={tokens}
+                />
+              ))}
+            </div>
+          )}
 
         </div>
       </div>

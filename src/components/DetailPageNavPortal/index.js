@@ -28,7 +28,7 @@ const DetailPageNavPortal = ({ heroRef, activeCategory = "experience" }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [guests, setGuests] = useState({ adults: 1, children: 0, infants: 0, pets: 0 });
+  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0, pets: 0 });
   
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);

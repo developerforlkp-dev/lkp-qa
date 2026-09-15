@@ -10,7 +10,7 @@ const GuestPicker = ({
   onClose,
   onGuestChange,
   initialGuests = {
-    adults: 1,
+    adults: 0,
     children: 0,
     infants: 0,
     pets: 0,

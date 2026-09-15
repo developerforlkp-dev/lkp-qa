@@ -193,7 +193,29 @@ export const initializePendingOrderPayment = async (orderId, extras = {}) => {
   return { ...normalized, persistedPayment: persisted };
 };
 
+export const isAuthOrTokenError = (error) => {
+  if (!error) return false;
+  if (typeof error === "string") {
+    return /invalid\s*(or)?\s*expired\s*token|token\s*(has\s*)?expired|expired\s*token|invalid\s*token|jwt\s*expired|jwt\s*malformed|unauthorized|not\s*authenticated|authentication\s*failed|session\s*expired/i.test(error);
+  }
+  const status = error?.response?.status || error?.status;
+  if (status === 401) return true;
+
+  const rawMsg = [
+    error?.response?.data?.message,
+    error?.response?.data?.error,
+    error?.response?.data?.details,
+    error?.response?.data?.errorMessage,
+    error?.message,
+  ].filter(Boolean).join(" ");
+
+  return /invalid\s*(or)?\s*expired\s*token|token\s*(has\s*)?expired|expired\s*token|invalid\s*token|jwt\s*expired|jwt\s*malformed|unauthorized|not\s*authenticated|authentication\s*failed|session\s*expired/i.test(rawMsg);
+};
+
 export const getInitializePaymentErrorMessage = (error) => {
+  if (isAuthOrTokenError(error)) {
+    return "Your session has expired. Please log in again to continue.";
+  }
   const code = String(
     error?.response?.data?.code ||
     error?.response?.data?.errorCode ||
@@ -211,5 +233,9 @@ export const getInitializePaymentErrorMessage = (error) => {
   if (code.includes("HOLD") || /hold expired/i.test(message)) {
     return "Hold expired, recheck availability.";
   }
+  if (isAuthOrTokenError(message)) {
+    return "Your session has expired. Please log in again to continue.";
+  }
   return message;
 };
+

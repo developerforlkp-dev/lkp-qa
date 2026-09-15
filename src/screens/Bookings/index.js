@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Page from "../../components/Page";
 import Main from "./Main";
 import { getCustomerOrders, getCompletedOrders } from "../../utils/api";
+import { isAuthOrTokenError } from "../../utils/paymentSession";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const Bookings = ({ bookingData = null }) => {
@@ -57,8 +58,8 @@ const Bookings = ({ bookingData = null }) => {
         //console.log("✅ Fetched orders:", fetchedOrders);
       } else {
         const errorReason = ordersResult.reason;
-        // Check if it's an authentication error (401/403)
-        const isAuthError = errorReason?.response?.status === 401 || errorReason?.response?.status === 403;
+        // Check if it's an authentication error (401/403 or token expired)
+        const isAuthError = isAuthOrTokenError(errorReason);
 
         if (isAuthError) {
           // For auth errors, clear token and show empty state
@@ -85,7 +86,7 @@ const Bookings = ({ bookingData = null }) => {
       } else {
         const errorReason = completedOrdersResult.reason;
         // Check if it's an authentication error
-        const isAuthError = errorReason?.response?.status === 401 || errorReason?.response?.status === 403;
+        const isAuthError = isAuthOrTokenError(errorReason);
 
         if (!isAuthError) {
           console.warn("⚠️ Failed to fetch completed orders:", errorReason);

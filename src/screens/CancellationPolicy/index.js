@@ -26,10 +26,28 @@ const CancellationPolicy = () => {
     const fetchPolicy = async () => {
       try {
         const data = await getPolicyDocuments();
-        if (data && data.cancellationPolicy) {
-          setDocumentHtml(data.cancellationPolicy.contentHtml || "");
-          if (data.cancellationPolicy.title) {
-            setTitle(data.cancellationPolicy.title);
+        let cancelDoc = null;
+        if (data) {
+          if (Array.isArray(data)) {
+            cancelDoc = data.find((d) =>
+              ["cancellation-policy", "cancellationPolicy", "cancellation_policy", "cancellation"].includes(
+                d?.documentKey || d?.key || d?.slug
+              )
+            );
+          } else if (typeof data === "object") {
+            cancelDoc =
+              data.cancellationPolicy ||
+              data["cancellation-policy"] ||
+              data.cancellation_policy ||
+              data.cancellation;
+          }
+        }
+        if (cancelDoc) {
+          if (cancelDoc.contentHtml) {
+            setDocumentHtml(cancelDoc.contentHtml);
+          }
+          if (cancelDoc.title) {
+            setTitle(cancelDoc.title);
           }
         }
       } catch (error) {

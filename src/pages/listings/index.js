@@ -98,8 +98,8 @@ const Listings = () => {
   const initialGuests = initialAdultsStr || initialChildrenStr
     ? { adults: parseInt(initialAdultsStr) || 0, children: parseInt(initialChildrenStr) || 0, infants: 0, pets: 0 }
     : (initialGuestsStr
-      ? { adults: parseInt(initialGuestsStr), children: 0, infants: 0, pets: 0 }
-      : (locationState.guests || { adults: 1, children: 0, infants: 0, pets: 0 }));
+      ? { adults: parseInt(initialGuestsStr) || 0, children: 0, infants: 0, pets: 0 }
+      : (locationState.guests || { adults: 0, children: 0, infants: 0, pets: 0 }));
 
   const [guests, setGuests] = useState(initialGuests);
 
