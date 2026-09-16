@@ -2999,7 +2999,7 @@ export const previewPublicDirectBookingPrice = async (token, {
     const response = await axios.post(endpoint, payload, {
       headers: { "Content-Type": "application/json" },
     });
-    return response.data?.data || response.data;
+    return response.data;
   } catch (error) {
     // Fallback attempt to offline-reservation-price if preview-price 404s
     if (error?.response?.status === 404) {
@@ -3010,7 +3010,7 @@ export const previewPublicDirectBookingPrice = async (token, {
         const altResponse = await axios.post(altEndpoint, payload, {
           headers: { "Content-Type": "application/json" },
         });
-        return altResponse.data?.data || altResponse.data;
+        return altResponse.data;
       } catch (altErr) {
         // continue to mock/error handling
       }

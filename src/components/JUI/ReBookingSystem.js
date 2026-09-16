@@ -558,9 +558,34 @@ const getTicketSlotRestrictions = (ticket) => {
 const getDateKey = (value) => {
   if (!value) return "";
   if (typeof value?.format === "function") return value.format("YYYY-MM-DD");
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return [
+      value.getFullYear(),
+      String(value.getMonth() + 1).padStart(2, "0"),
+      String(value.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
   if (typeof value === "string") {
-    const match = value.match(/\d{4}-\d{2}-\d{2}/);
-    if (match) return match[0];
+    const trimmed = value.trim();
+    const ymdMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (ymdMatch) {
+      return `${ymdMatch[1]}-${ymdMatch[2].padStart(2, "0")}-${ymdMatch[3].padStart(2, "0")}`;
+    }
+    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (slashMatch) {
+      const p1 = Number(slashMatch[1]);
+      const p2 = Number(slashMatch[2]);
+      const year = slashMatch[3];
+      let day, month;
+      if (p2 > 12) {
+        month = p1;
+        day = p2;
+      } else {
+        day = p1;
+        month = p2;
+      }
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -1841,6 +1866,37 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       const availableSeats = asNumber(slot?.availableSeats ?? slot?.available_seats);
       const isUnavailable = asOptionalBoolean(slot?.isAvailable ?? slot?.is_available) === false;
       const isFullBySeats = availableSeats != null && availableSeats <= 0;
+
+      if (selectedDateKey) {
+        const slotEnd = getDateKey(
+          slot.endDate ||
+          slot.end_date ||
+          slot.slotEndDate ||
+          slot.slot_end_date ||
+          slot.availableTo ||
+          slot.available_to ||
+          slot.bookingEndDate ||
+          slot.booking_end_date ||
+          slot.schedule?.endDate ||
+          slot.schedule?.end_date
+        );
+        if (slotEnd && selectedDateKey > slotEnd) return false;
+
+        const slotStart = getDateKey(
+          slot.startDate ||
+          slot.start_date ||
+          slot.slotStartDate ||
+          slot.slot_start_date ||
+          slot.availableFrom ||
+          slot.available_from ||
+          slot.bookingStartDate ||
+          slot.booking_start_date ||
+          slot.schedule?.startDate ||
+          slot.schedule?.start_date
+        );
+        if (slotStart && selectedDateKey < slotStart) return false;
+      }
+
       return !isPrivatelyBooked && !isFullyBookedByConfig && !isUnavailable && !isFullBySeats;
     });
   }, [baseTimeSlots, dateFilteredSlots, dateFilteredSlotsLoaded, fullyBookedSlotIdsForDate, isEventBooking, privateBookedSlotIds, selectedDateKey]);
@@ -4684,6 +4740,35 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                               }
 
                                               const validSlotsForDate = eventSlots.filter((slot) => {
+                                                const slotEnd = getDateKey(
+                                                  slot.slotEndDate ||
+                                                  slot.endDate ||
+                                                  slot.end_date ||
+                                                  slot.availableTo ||
+                                                  slot.available_to ||
+                                                  slot.bookingEndDate ||
+                                                  slot.booking_end_date ||
+                                                  slot.schedule?.endDate ||
+                                                  slot.schedule?.end_date
+                                                );
+                                                if (slotEnd && selectedDateKey > slotEnd) return false;
+
+                                                const slotStart = getDateKey(
+                                                  slot.slotStartDate ||
+                                                  slot.slotDate ||
+                                                  slot.date ||
+                                                  slot.eventDate ||
+                                                  slot.startDate ||
+                                                  slot.start_date ||
+                                                  slot.availableFrom ||
+                                                  slot.available_from ||
+                                                  slot.bookingStartDate ||
+                                                  slot.booking_start_date ||
+                                                  slot.schedule?.startDate ||
+                                                  slot.schedule?.start_date
+                                                );
+                                                if (slotStart && selectedDateKey < slotStart) return false;
+
                                                 const slotKeys = new Set();
                                                 addDateRangeKeys(slotKeys, slot.slotStartDate || slot.slotDate || slot.date || slot.eventDate || slot.startDate, slot.slotEndDate || slot.endDate || slot.end_date);
                                                 // All slots are shown — no ticket-based filtering here.

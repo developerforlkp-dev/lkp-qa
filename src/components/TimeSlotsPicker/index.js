@@ -60,6 +60,90 @@ const isSlotAvailableOnDay = (slot, dayIndex) => {
   return true;
 };
 
+// Helper to normalize any date representation into YYYY-MM-DD
+const normalizeDateKey = (val) => {
+  if (!val) return null;
+  if (typeof val?.format === "function") return val.format("YYYY-MM-DD");
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return [
+      val.getFullYear(),
+      String(val.getMonth() + 1).padStart(2, "0"),
+      String(val.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    const ymdMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (ymdMatch) {
+      return `${ymdMatch[1]}-${ymdMatch[2].padStart(2, "0")}-${ymdMatch[3].padStart(2, "0")}`;
+    }
+    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (slashMatch) {
+      const p1 = Number(slashMatch[1]);
+      const p2 = Number(slashMatch[2]);
+      const year = slashMatch[3];
+      let day, month;
+      if (p2 > 12) {
+        month = p1;
+        day = p2;
+      } else {
+        day = p1;
+        month = p2;
+      }
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+    const d = new Date(trimmed);
+    if (!isNaN(d.getTime())) {
+      return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+      ].join("-");
+    }
+  }
+  return null;
+};
+
+const getSlotEndDate = (slot) => {
+  if (!slot || typeof slot !== "object") return null;
+  const schedule = slot.schedule && typeof slot.schedule === "object" ? slot.schedule : {};
+  return (
+    slot.endDate ||
+    slot.end_date ||
+    slot.slotEndDate ||
+    slot.slot_end_date ||
+    slot.availableTo ||
+    slot.available_to ||
+    slot.bookingEndDate ||
+    slot.booking_end_date ||
+    schedule.endDate ||
+    schedule.end_date ||
+    schedule.slotEndDate ||
+    schedule.slot_end_date ||
+    null
+  );
+};
+
+const getSlotStartDate = (slot) => {
+  if (!slot || typeof slot !== "object") return null;
+  const schedule = slot.schedule && typeof slot.schedule === "object" ? slot.schedule : {};
+  return (
+    slot.startDate ||
+    slot.start_date ||
+    slot.slotStartDate ||
+    slot.slot_start_date ||
+    slot.availableFrom ||
+    slot.available_from ||
+    slot.bookingStartDate ||
+    slot.booking_start_date ||
+    schedule.startDate ||
+    schedule.start_date ||
+    schedule.slotStartDate ||
+    schedule.slot_start_date ||
+    null
+  );
+};
+
 const TimeSlotsPicker = ({
   visible,
   onClose,
@@ -85,7 +169,7 @@ const TimeSlotsPicker = ({
     }
   }, [selectedDate]);
 
-  // Use timeSlots if provided, otherwise fall back to times array, then filter by selected day
+  // Use timeSlots if provided, otherwise fall back to times array, then filter by selected day and date
   const slots = useMemo(() => {
     let rawSlots;
     if (timeSlots && timeSlots.length > 0) {
@@ -100,7 +184,7 @@ const TimeSlotsPicker = ({
           slotName: slot.slotName,
           startTime: slot.startTime,
           endTime: slot.endTime,
-          slot: slot, // Keep full slot object for day-check
+          slot: slot, // Keep full slot object for day-check & date-range check
           selected_days: slot.selected_days,
         };
       });
@@ -123,6 +207,25 @@ const TimeSlotsPicker = ({
       rawSlots = rawSlots.filter((s) =>
         isSlotAvailableOnDay(s.slot || s, selectedDayIndex)
       );
+    }
+
+    // Filter by slot date range (do not show slot if selected date is after slot end date or before slot start date)
+    if (selectedDate) {
+      const selectedDateKey = normalizeDateKey(selectedDate);
+      if (selectedDateKey) {
+        rawSlots = rawSlots.filter((s) => {
+          const slotData = s.slot || s;
+          const endKey = normalizeDateKey(getSlotEndDate(slotData));
+          if (endKey && selectedDateKey > endKey) {
+            return false;
+          }
+          const startKey = normalizeDateKey(getSlotStartDate(slotData));
+          if (startKey && selectedDateKey < startKey) {
+            return false;
+          }
+          return true;
+        });
+      }
     }
 
     // Filter by is_active status (respect persistent toggle from admin panel)
