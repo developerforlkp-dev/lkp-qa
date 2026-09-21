@@ -13,6 +13,7 @@ import {
   Users, Bed, Maximize, Check, ChevronDown, Minus
 } from "lucide-react";
 import moment from "moment";
+import { getStayHotelRoomPrices, getStayHostelRoomPrices } from "../../utils/api";
 
 /* ---------- HOOKS ----------------------------------------------------- */
 function useWindowSize() {
@@ -233,36 +234,41 @@ const getPriceForPlan = (room, code, listing, checkInDate) => {
       const mealSeasonData = resolveSeasonalNode(seasonalPlanMap, activeSeason);
       const seasonalPrice = extractPlanPrice(mealSeasonData);
       if (seasonalPrice != null) return seasonalPrice;
-    }
+    } else {
+      // 1b. Check bed/property seasonal pricing
+      const propSeasonData = resolveSeasonalNode(
+        room?.propertySeasonalPricing || listing?.propertySeasonalPricing || room?.seasonalPricing || listing?.seasonalPricing,
+        activeSeason
+      );
+      const propSeasonalPrice = extractPlanPrice(propSeasonData);
+      if (propSeasonalPrice != null && (room.isBedConfig || (!room.mealPlanPricing && !room.epPrice && !room.bbPrice && !room.cpPrice && !room.mapPrice && !room.apPrice))) {
+        return propSeasonalPrice;
+      }
 
-    // 1b. Check bed/property seasonal pricing
-    const propSeasonData = resolveSeasonalNode(
-      room?.propertySeasonalPricing || listing?.propertySeasonalPricing || room?.seasonalPricing || listing?.seasonalPricing,
-      activeSeason
-    );
-    const propSeasonalPrice = extractPlanPrice(propSeasonData);
-    if (propSeasonalPrice != null && (room.isBedConfig || (!room.mealPlanPricing && !room.epPrice && !room.bbPrice && !room.cpPrice && !room.mapPrice && !room.apPrice))) {
-      return propSeasonalPrice;
-    }
-
-    // 1c. Direct seasonal period price
-    const directSeasonPrice = extractPlanPrice(activeSeason);
-    if (directSeasonPrice != null && (room.isBedConfig || (!room.mealPlanPricing && !room.epPrice && !room.bbPrice && !room.cpPrice && !room.mapPrice && !room.apPrice))) {
-      return directSeasonPrice;
+      // 1c. Direct seasonal period price
+      const directSeasonPrice = extractPlanPrice(activeSeason);
+      if (directSeasonPrice != null && (room.isBedConfig || (!room.mealPlanPricing && !room.epPrice && !room.bbPrice && !room.cpPrice && !room.mapPrice && !room.apPrice))) {
+        return directSeasonPrice;
+      }
     }
   }
 
   // 2. Regular meal plan pricing
-  if (code && room.mealPlanPricing?.[code]) {
+  if (code && room?.mealPlanPricing?.[code]) {
     const planPrice = extractPlanPrice(room.mealPlanPricing[code]);
     if (planPrice != null) return planPrice;
   }
 
   // 3. Flat price fields (epPrice, bbPrice, etc.)
   const flat = { BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice", EP: "epPrice" };
-  if (code && flat[code] && room[flat[code]]) {
+  if (code && flat[code] && room?.[flat[code]]) {
     const p = extractPlanPrice(room[flat[code]]);
     if (p != null) return p;
+  }
+
+  // If a specific meal plan code was requested but not found on this room, do not fall back to generic base price
+  if (code) {
+    return null;
   }
 
   // 4. Try any other plan that has a price (checking seasonal first, then regular)
@@ -385,7 +391,7 @@ const ModalPortal = ({ children }) => {
 
 
 
-const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan, checkInDate }) => {
+const RoomCard = ({ room, roomIndex, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan, checkInDate }) => {
   const { tokens: { FG, B, A, AL, S, W, M, BG } } = useTheme();
   const { isMobile } = useWindowSize();
   const [showModal, setShowModal] = useState(false);
@@ -398,32 +404,42 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
 
   const allPlans = React.useMemo(() => {
     const plans = new Set();
-    if (room.mealPlanPricing) {
-      Object.keys(room.mealPlanPricing).forEach(k => plans.add(k));
+    if (room.mealPlanPricing && typeof room.mealPlanPricing === "object") {
+      Object.keys(room.mealPlanPricing).forEach(k => {
+        if (room.mealPlanPricing[k]) plans.add(k);
+      });
     }
-    if (room.mealPlanSeasonalPricing) {
-      Object.keys(room.mealPlanSeasonalPricing).forEach(k => plans.add(k));
+    if (room.mealPlanSeasonalPricing && typeof room.mealPlanSeasonalPricing === "object") {
+      Object.keys(room.mealPlanSeasonalPricing).forEach(k => {
+        if (room.mealPlanSeasonalPricing[k]) plans.add(k);
+      });
     }
-    if (listing?.mealPlanPricing) {
-      Object.keys(listing.mealPlanPricing).forEach(k => plans.add(k));
-    }
-    if (listing?.mealPlanSeasonalPricing) {
-      Object.keys(listing.mealPlanSeasonalPricing).forEach(k => plans.add(k));
-    }
+    if (room.epPrice) plans.add("EP");
+    if (room.bbPrice) plans.add("BB");
+    if (room.cpPrice) plans.add("CP");
+    if (room.mapPrice) plans.add("MAP");
+    if (room.apPrice) plans.add("AP");
+
     if (!plans.size) {
-      if (room.epPrice) plans.add("EP");
-      if (room.bbPrice) plans.add("BB");
-      if (room.cpPrice) plans.add("CP");
-      if (room.mapPrice) plans.add("MAP");
-      if (room.apPrice) plans.add("AP");
+      if (listing?.mealPlanPricing && typeof listing.mealPlanPricing === "object") {
+        Object.keys(listing.mealPlanPricing).forEach(k => {
+          if (listing.mealPlanPricing[k]) plans.add(k);
+        });
+      }
+      if (listing?.mealPlanSeasonalPricing && typeof listing.mealPlanSeasonalPricing === "object") {
+        Object.keys(listing.mealPlanSeasonalPricing).forEach(k => {
+          if (listing.mealPlanSeasonalPricing[k]) plans.add(k);
+        });
+      }
     }
     return Array.from(plans);
   }, [room.mealPlanPricing, room.mealPlanSeasonalPricing, listing?.mealPlanPricing, listing?.mealPlanSeasonalPricing, room.epPrice, room.bbPrice, room.cpPrice, room.mapPrice, room.apPrice]);
 
-  // Prefer selectedMealPlan if it exists in this room, otherwise pick the first plan that has a price
+  // Prefer selectedMealPlan if it exists in this room, otherwise pick the room's default or the first plan that has a price
   const effectiveMealPlan = React.useMemo(() => {
     if (selectedMealPlan && allPlans.includes(selectedMealPlan)) return selectedMealPlan;
-    // Try to find a plan that actually has a price (checking seasonal or regular)
+    const roomCode = room?.selectedMealPlan || room?.mealPlanCode || room?.mealPlan;
+    if (roomCode && allPlans.includes(roomCode)) return roomCode;
     const planWithPrice = allPlans.find(code => {
       const p = getPriceForPlan(room, code, listing, checkInDate);
       return p != null;
@@ -436,16 +452,92 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
     setPlan(effectiveMealPlan);
   }, [effectiveMealPlan]);
 
-  const rawPrice = plan ? getPriceForPlan(room, plan, listing, checkInDate) : getPriceForPlan(room, null, listing, checkInDate);
+  const [apiPrice, setApiPrice] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const stayId = listing?.stayId || listing?.id || listing?._id || room?.stayId;
+    if (!stayId) return;
+
+    const isHostel = String(listing?.bookingScope || listing?.inventoryScope || listing?.propertyType || listing?.stayType || "").toLowerCase().includes("hostel") || Boolean(listing?.isHostel);
+    const currentDate = moment().format("YYYY-MM-DD");
+
+    const fetchPrice = async () => {
+      try {
+        const fetchFn = isHostel ? getStayHostelRoomPrices : getStayHotelRoomPrices;
+        const res = await fetchFn(stayId, { date: currentDate, ...(plan ? { mealPlanCode: plan } : {}) });
+        
+        let extracted = null;
+        const targetRoomId = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? "");
+        const priceList = Array.isArray(res?.price) ? res.price : (Array.isArray(res?.data?.price) ? res.data.price : null);
+
+        if (Array.isArray(priceList) && priceList.length > 0) {
+          if (targetRoomId) {
+            const matched = priceList.find(p => {
+              if (!p || typeof p !== "object") return false;
+              const pId = String(p.roomId ?? p.id ?? p.roomTypeId ?? p.room_id ?? p.bedConfigId ?? "");
+              return pId && pId === targetRoomId;
+            });
+            if (matched) {
+              const val = matched.price ?? matched.b2cPrice ?? matched.amount;
+              const num = Number(val);
+              if (Number.isFinite(num)) extracted = num;
+            }
+          }
+          if (extracted == null && roomIndex !== undefined && priceList[roomIndex] !== undefined) {
+            const item = priceList[roomIndex];
+            const val = typeof item === "object" ? (item?.price ?? item?.b2cPrice ?? item?.amount) : item;
+            const num = Number(val);
+            if (Number.isFinite(num)) extracted = num;
+          }
+          if (extracted == null) {
+            const item = priceList[0];
+            const val = typeof item === "object" ? (item?.price ?? item?.b2cPrice ?? item?.amount) : item;
+            const num = Number(val);
+            if (Number.isFinite(num)) extracted = num;
+          }
+        } else if (typeof res?.price === "number") {
+          extracted = res.price;
+        } else if (res?.price && Number.isFinite(Number(res.price))) {
+          extracted = Number(res.price);
+        } else if (typeof res?.data?.price === "number") {
+          extracted = res.data.price;
+        }
+
+        if (isMounted && extracted != null) {
+          setApiPrice(extracted);
+        }
+      } catch (err) {
+        console.warn("Could not fetch room price from API:", err);
+      }
+    };
+
+    fetchPrice();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [listing?.stayId, listing?.id, listing?._id, listing?.bookingScope, listing?.inventoryScope, listing?.propertyType, listing?.stayType, listing?.isHostel, room?.stayId, room?.roomId, room?.id, roomIndex, plan]);
+
   const discountRate = getBillingConfigDiscountRate(listing);
-  const discountedRawPrice = rawPrice != null ? Math.max(0, Number(rawPrice) * (1 - discountRate / 100)) : null;
-  const hasDiscount =
-    discountRate > 0 &&
-    rawPrice != null &&
-    discountedRawPrice != null &&
-    discountedRawPrice < Number(rawPrice);
-  const displayPrice = formatPrice(rawPrice);
-  const discountedDisplayPrice = formatPrice(discountedRawPrice, { preserveFraction: hasDiscount });
+  const rawPrice = plan ? getPriceForPlan(room, plan, listing, checkInDate) : getPriceForPlan(room, null, listing, checkInDate);
+  const effectivePrice = apiPrice != null ? apiPrice : (discountRate > 0 && rawPrice != null ? rawPrice * (1 - discountRate / 100) : rawPrice);
+
+  // Candidate base price to strike out
+  const candidateBasePrice =
+    room?.hikePrice ||
+    listing?.hikePrice ||
+    (rawPrice != null && effectivePrice != null && Number(rawPrice) > Number(effectivePrice) ? rawPrice : null) ||
+    (discountRate > 0 && effectivePrice != null ? Number(effectivePrice) / (1 - discountRate / 100) : null) ||
+    (rawPrice != null ? rawPrice : null);
+
+  const strikePrice = (candidateBasePrice != null && effectivePrice != null && Number(candidateBasePrice) > Number(effectivePrice) + 0.001)
+    ? candidateBasePrice
+    : (room?.hikePrice || null);
+
+  const hasStrikePrice = strikePrice != null && effectivePrice != null && Number(strikePrice) > Number(effectivePrice);
+  const displayPrice = formatPrice(effectivePrice, { preserveFraction: true });
+  const strikeDisplayPrice = strikePrice != null ? formatPrice(strikePrice, { preserveFraction: true }) : null;
 
   const name = room.roomName || room.roomTypeName || room.name || "Room";
   const capacity = room.maxGuests || (room.maxAdults ? room.maxAdults + (room.maxChildren || 0) : null);
@@ -704,12 +796,12 @@ const RoomCard = ({ room, listing, onRoomSelect, isSelected, roomsCount, onRooms
           <div style={{ fontSize: "24px", fontWeight: 800, color: FG, fontFamily: '"Inter", sans-serif', lineHeight: 1 }}>
             {displayPrice ? (
               <>
-                {hasDiscount && (
-                  <span style={{ fontSize: "14px", color: M, textDecoration: "line-through", marginRight: "8px" }}>
-                    {"\u20B9"}{displayPrice}
+                {hasStrikePrice && (
+                  <span style={{ fontSize: "14px", color: M, textDecoration: "line-through", marginRight: "8px", fontWeight: 600 }}>
+                    {"\u20B9"}{strikeDisplayPrice}
                   </span>
                 )}
-                {"\u20B9"}{hasDiscount ? discountedDisplayPrice : displayPrice}
+                {"\u20B9"}{displayPrice}
                 <span style={{ fontSize: "12px", fontWeight: 500, color: M }}> / night</span>
               </>
             ) : (
@@ -884,6 +976,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
         return (
           <RoomCard
             key={roomId}
+            roomIndex={idx}
             room={room}
             listing={listing}
             onRoomSelect={onRoomSelect}

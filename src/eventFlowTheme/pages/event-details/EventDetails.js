@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSp
 import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star, Heart, Compass, Info, Building, Map } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
-import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent, previewOrderPrice } from "../../../utils/api";
+import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent, previewOrderPrice, getEventTicketPrice } from "../../../utils/api";
 import { buildExperienceUrl } from "../../../utils/experienceUrl";
 import { useTheme } from "../../../components/JUI/Theme";
 import LoadingSkeleton from "../../../components/LoadingSkeleton";
@@ -3193,34 +3193,98 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
     ? { adults: Number(initialAdultsStr) || 0, children: Number(initialChildrenStr) || 0 }
     : (initialGuestsStr ? { adults: Number(initialGuestsStr), children: 0 } : null);
 
+  const [popupTicketPrices, setPopupTicketPrices] = useState({});
+  const eventId = event?.id || event?.eventId || event?.listingId;
+
+  useEffect(() => {
+    const rawTickets = Array.isArray(event?.ticketTypes) ? event.ticketTypes :
+      Array.isArray(event?.ticketTiers) ? event.ticketTiers :
+        Array.isArray(event?.tickets) ? event.tickets : [];
+
+    if (!eventId || rawTickets.length === 0) return;
+
+    let isMounted = true;
+    const fetchPrices = async () => {
+      try {
+        const priceMap = {};
+        await Promise.all(
+          rawTickets.map(async (t, i) => {
+            const ticketId = t.ticketTypeId ?? t.ticket_type_id ?? t.ticketId ?? t.ticket_id ?? t.id ?? t.typeId ?? (i + 1);
+            if (ticketId != null && !String(ticketId).startsWith("ticket-")) {
+              try {
+                const res = await getEventTicketPrice(eventId, ticketId);
+                const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
+                if (price != null && !Number.isNaN(Number(price))) {
+                  const numP = Number(price);
+                  priceMap[String(ticketId)] = numP;
+                  if (t.id != null) priceMap[String(t.id)] = numP;
+                  if (t.ticketTypeId != null) priceMap[String(t.ticketTypeId)] = numP;
+                  if (t.name) priceMap[String(t.name).toLowerCase().trim()] = numP;
+                  priceMap[`ticket-${i}`] = numP;
+                  priceMap[String(i)] = numP;
+                }
+              } catch (err) {
+                console.error(`Failed to fetch price for ticket ${ticketId}:`, err);
+              }
+            }
+          })
+        );
+        if (isMounted && Object.keys(priceMap).length > 0) {
+          setPopupTicketPrices((prev) => ({ ...prev, ...priceMap }));
+        }
+      } catch (e) {
+        console.error("Error fetching popup ticket prices:", e);
+      }
+    };
+
+    fetchPrices();
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId, event?.ticketTypes, event?.ticketTiers, event?.tickets]);
+
   const ticketTypes = (Array.isArray(event?.ticketTypes) ? event.ticketTypes :
     Array.isArray(event?.ticketTiers) ? event.ticketTiers :
-      Array.isArray(event?.tickets) ? event.tickets : []).map((ticket, index) => ({
-        ...ticket,
-        id: ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`,
-        name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
-        price: ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0,
-        childPrice: ticket.childPrice ?? ticket.child_price ?? ticket.childTypePrice ?? ticket.child_type_price ?? ticket.childTicketPrice ?? 0,
-        totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
-        maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
-        groupPricingTiers: Array.isArray(ticket.groupPricingTiers) ? ticket.groupPricingTiers :
-          Array.isArray(ticket.group_pricing_tiers) ? ticket.group_pricing_tiers :
-            Array.isArray(ticket.groupBookingPricing) ? ticket.groupBookingPricing :
-              Array.isArray(ticket.group_booking_pricing) ? ticket.group_booking_pricing : [],
-        childPricingTiers: Array.isArray(ticket.childPricingTiers) ? ticket.childPricingTiers :
-          Array.isArray(ticket.child_pricing_tiers) ? ticket.child_pricing_tiers : [],
-        ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
-        ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate,
-        applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
-          Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
-            Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
-              Array.isArray(ticket.event_slots) ? ticket.event_slots :
-                Array.isArray(ticket.allowedSlots) ? ticket.allowedSlots :
-                  Array.isArray(ticket.allowed_slots) ? ticket.allowed_slots :
-                    Array.isArray(ticket.slotIds) ? ticket.slotIds :
-                      Array.isArray(ticket.slot_ids) ? ticket.slot_ids :
-                        Array.isArray(ticket.slots) ? ticket.slots : []
-      }));
+      Array.isArray(event?.tickets) ? event.tickets : []).map((ticket, index) => {
+        const ticketTypeId = ticket.ticketTypeId ?? ticket.ticket_type_id ?? ticket.ticketId ?? ticket.ticket_id ?? ticket.id ?? ticket.typeId ?? (index + 1);
+        const dynamicP =
+          popupTicketPrices[String(ticketTypeId)] ??
+          popupTicketPrices[String(ticket.id)] ??
+          popupTicketPrices[String(ticket.name || "").toLowerCase().trim()] ??
+          popupTicketPrices[`ticket-${index}`] ??
+          popupTicketPrices[String(index)];
+        const price = dynamicP !== undefined ? Number(dynamicP) : (ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0);
+        return {
+          ...ticket,
+          id: ticket.id ?? ticketTypeId ?? `ticket-${index}`,
+          ticketTypeId,
+          name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
+          price,
+          ticketPrice: price,
+          ticketTypePrice: price,
+          basePrice: price,
+          childPrice: ticket.childPrice ?? ticket.child_price ?? ticket.childTypePrice ?? ticket.child_type_price ?? ticket.childTicketPrice ?? 0,
+          totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
+          maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
+          groupPricingTiers: Array.isArray(ticket.groupPricingTiers) ? ticket.groupPricingTiers :
+            Array.isArray(ticket.group_pricing_tiers) ? ticket.group_pricing_tiers :
+              Array.isArray(ticket.groupBookingPricing) ? ticket.groupBookingPricing :
+                Array.isArray(ticket.group_booking_pricing) ? ticket.group_booking_pricing : [],
+          childPricingTiers: Array.isArray(ticket.childPricingTiers) ? ticket.childPricingTiers :
+            Array.isArray(ticket.child_pricing_tiers) ? ticket.child_pricing_tiers : [],
+          ticketSaleStartDate: ticket.ticketSaleStartDate || ticket.ticket_sale_start_date || ticket.saleStartDate || event?.ticketSaleStartDate || event?.ticket_sale_start_date || event?.saleStartDate,
+          ticketSaleEndDate: ticket.ticketSaleEndDate || ticket.ticket_sale_end_date || ticket.saleEndDate || event?.ticketSaleEndDate || event?.ticket_sale_end_date || event?.saleEndDate,
+          applicableSlots: Array.isArray(ticket.applicableSlots) ? ticket.applicableSlots :
+            Array.isArray(ticket.applicable_slots) ? ticket.applicable_slots :
+              Array.isArray(ticket.eventSlots) ? ticket.eventSlots :
+                Array.isArray(ticket.event_slots) ? ticket.event_slots :
+                  Array.isArray(ticket.allowedSlots) ? ticket.allowedSlots :
+                    Array.isArray(ticket.allowed_slots) ? ticket.allowed_slots :
+                      Array.isArray(ticket.slotIds) ? ticket.slotIds :
+                        Array.isArray(ticket.slot_ids) ? ticket.slot_ids :
+                          Array.isArray(ticket.slots) ? ticket.slots : []
+        };
+      });
   const firstTicket = ticketTypes[0] || {};
   const ticketPrice = firstTicket.price ?? firstTicket.amount ?? firstTicket.basePrice ?? firstTicket.b2cPrice ?? event?.ticketPrice ?? event?.price ?? 0;
   const rawSlots = event?.eventSlots || event?.slots || event?.timeSlots || ticketTypes.flatMap(ticket => ticket.applicableSlots || []);
@@ -3347,10 +3411,52 @@ function Tickets({ event }) {
   const eventTiers = Array.isArray(event?.ticketTiers) ? event.ticketTiers :
     Array.isArray(event?.tickets) ? event.tickets : [];
 
+  const [apiTicketPrices, setApiTicketPrices] = useState({});
+
+  useEffect(() => {
+    const eventId = event?.id || event?.eventId;
+    if (!eventId || eventTiers.length === 0) return;
+
+    let isMounted = true;
+    const fetchPrices = async () => {
+      try {
+        const priceMap = {};
+        await Promise.all(
+          eventTiers.map(async (t, i) => {
+            const ticketId = t.id ?? t.ticketTypeId ?? t.typeId ?? i;
+            if (ticketId != null && !String(ticketId).startsWith("ticket-")) {
+              try {
+                const res = await getEventTicketPrice(eventId, ticketId);
+                const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
+                if (price != null && !Number.isNaN(Number(price))) {
+                  priceMap[String(ticketId)] = Number(price);
+                }
+              } catch (err) {
+                console.error(`Failed to fetch price for tier ${ticketId}:`, err);
+              }
+            }
+          })
+        );
+        if (isMounted && Object.keys(priceMap).length > 0) {
+          setApiTicketPrices((prev) => ({ ...prev, ...priceMap }));
+        }
+      } catch (e) {
+        console.error("Error fetching ticket tier prices:", e);
+      }
+    };
+
+    fetchPrices();
+    return () => {
+      isMounted = false;
+    };
+  }, [event?.id, event?.eventId, eventTiers]);
+
   const slots = event?.timeSlots || event?.slots || [];
 
   const TIERS = eventTiers.length > 0 ? eventTiers.map((t, i) => {
-    const baseP = t.price ?? t.amount ?? t.basePrice ?? t.b2cPrice ?? 0;
+    const ticketIdKey = String(t.id ?? t.ticketTypeId ?? t.typeId ?? i);
+    const dynamicP = apiTicketPrices[ticketIdKey];
+    const baseP = dynamicP !== undefined ? Number(dynamicP) : (t.price ?? t.amount ?? t.basePrice ?? t.b2cPrice ?? 0);
     const taxP = t.tax ?? t.taxAmount ?? t.tax_amount ?? t.taxes ?? 0;
     const discP = t.discount ?? t.discountAmount ?? t.discount_amount ?? 0;
     const strikeP = t.strikePrice ?? t.originalPrice ?? t.strike_price ?? null;

@@ -15,9 +15,13 @@ import StayReBookingSystem from "../StayDetails/StayReBookingSystem";
 
 // Helper 
 const formatMoney = (amount, currency = "INR") => {
-  if (amount == null) return "0.00";
-  const value = Number(amount);
-  if (!Number.isFinite(value)) return "0.00";
+  if (amount == null || amount === "") return "N/A";
+  if (typeof amount === "string" && (amount.startsWith("₹") || amount.startsWith("$") || amount.startsWith("€") || amount.startsWith("£"))) {
+    return amount;
+  }
+  const cleanStr = String(amount).replace(/[^0-9.-]/g, "");
+  const value = Number(cleanStr);
+  if (!Number.isFinite(value) || cleanStr === "") return typeof amount === "string" && amount.trim() ? amount : "N/A";
   return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
     style: "currency",
     currency: currency,
@@ -1134,6 +1138,7 @@ const ViewDetails = () => {
   // Rebooking state
   const [showRebookModal, setShowRebookModal] = useState(false);
   const [rebookData, setRebookData] = useState(null);
+  const [rebookBooking, setRebookBooking] = useState(null);
   const [rebookType, setRebookType] = useState(null);
   const [isFetchingRebookData, setIsFetchingRebookData] = useState(false);
 
@@ -1402,8 +1407,88 @@ const ViewDetails = () => {
     return new Date() >= checkOutDatetime;
   };
 
+  const isPastExperienceOrEventEndTime = () => {
+    if (!booking) return false;
+
+    const businessInterestCode = String(booking?.originalData?.businessInterestCode || booking?.category || "").toUpperCase();
+    const isStayOrder = businessInterestCode === "STAYS" ||
+      booking?.originalData?.stayId != null ||
+      (booking?.originalData?.stayOrderRooms && booking?.originalData?.stayOrderRooms.length > 0) ||
+      booking?.stayData != null;
+
+    if (isStayOrder) return false; // Handled by isPastStayCheckInTime / isPastStayCheckOutTime
+
+    const status = booking.status?.toLowerCase() ||
+      booking.statusTone ||
+      (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
+
+    if (status === "cancelled" || status === "canceled" || status === "completed") {
+      return true;
+    }
+
+    const dateStr =
+      booking?.originalData?.eventDate ||
+      booking?.eventData?.eventDate ||
+      booking?.originalData?.bookingDate ||
+      booking?.originalData?.startDate ||
+      booking?.reservationDate ||
+      booking?.startDate;
+
+    if (!dateStr || dateStr === "TBD") return false;
+
+    const eventDate = new Date(dateStr);
+    if (isNaN(eventDate.getTime())) return false;
+
+    const timeStr =
+      booking?.endTime ||
+      booking?.originalData?.timeSlotEndTime ||
+      booking?.originalData?.endTime ||
+      booking?.startTime ||
+      booking?.originalData?.timeSlotStartTime ||
+      booking?.originalData?.bookingTime ||
+      booking?.bookingTime;
+
+    if (timeStr && typeof timeStr === 'string') {
+      const match = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const ampm = match[4] ? match[4].toLowerCase() : null;
+        if (ampm === "pm" && hours < 12) hours += 12;
+        if (ampm === "am" && hours === 12) hours = 0;
+        eventDate.setHours(hours, minutes, 0, 0);
+      } else {
+        eventDate.setHours(23, 59, 59, 0);
+      }
+    } else {
+      eventDate.setHours(23, 59, 59, 0);
+    }
+
+    return new Date() >= eventDate;
+  };
+
+  const isBookingEndedOrPast = () => {
+    if (!booking) return false;
+    const status = booking.status?.toLowerCase() ||
+      booking.statusTone ||
+      (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
+    if (status === "completed" || status === "cancelled" || status === "canceled") {
+      return true;
+    }
+    const businessInterestCode = String(booking?.originalData?.businessInterestCode || booking?.category || "").toUpperCase();
+    const isStayOrder = businessInterestCode === "STAYS" ||
+      booking?.originalData?.stayId != null ||
+      (booking?.originalData?.stayOrderRooms && booking?.originalData?.stayOrderRooms.length > 0) ||
+      booking?.stayData != null;
+
+    if (isStayOrder) {
+      return isPastStayCheckInTime();
+    }
+    return isPastExperienceOrEventEndTime();
+  };
+
   const handleCancelBookingClick = async () => {
-    if (isPastStayCheckInTime()) {
+    if (isBookingEndedOrPast()) {
       return;
     }
     
@@ -1515,6 +1600,7 @@ const ViewDetails = () => {
       if (data) {
         setRebookData(data);
         setRebookType(type);
+        setRebookBooking(bookingToRebook);
         setValidationModalVisible(false);
         // Add a small timeout to ensure ValidationModal unmounts before RebookingSystem mounts
         setTimeout(() => setShowRebookModal(true), 50);
@@ -1716,74 +1802,144 @@ const ViewDetails = () => {
     switch (code) {
       case "ORDER_NOT_FOUND":
         return {
-          title: "Booking not found",
-          message: "We could not find this booking. Please refresh and try again.",
+          title: "Booking details unavailable",
+          message: "We could not retrieve this booking. Please refresh the page and try again.",
           code,
           details: "",
+          isSuccess: false,
         };
       case "ORDER_NOT_PENDING":
+      case "ORDER_ALREADY_CONFIRMED":
+      case "ORDER_EXPIRED":
         return {
-          title: "Booking is no longer pending",
-          message: "This booking cannot be confirmed now because its status has changed.",
+          title: "Booking status updated",
+          message: "This booking is no longer pending confirmation.",
           code,
-          details: "",
+          details: "Please check your active bookings list.",
+          isSuccess: false,
         };
       case "WRONG_ORDER_TYPE":
         return {
-          title: "Booking type mismatch",
-          message: "We could not validate this booking due to a booking type mismatch.",
+          title: "Unable to confirm booking",
+          message: "We encountered an issue verifying this booking. Please try again or rebook.",
           code,
-          details: "",
+          details: "Would you like to rebook for another date or time?",
+          isSuccess: false,
         };
       case "DATE_UNAVAILABLE":
         return {
           title: "Selected date unavailable",
           message: "The selected date is no longer available. Please choose another date.",
           code,
-          details: "",
+          details: "Would you like to select another date?",
+          isSuccess: false,
         };
       case "SLOT_UNAVAILABLE":
+      case "SLOT_NO_LONGER_AVAILABLE":
+      case "ORDER_NO_LONGER_AVAILABLE":
+      case "ORDER_NOT_AVAILABLE":
         return {
           title: "Selected slot unavailable",
-          message: "The selected time slot is no longer available. Please choose another slot.",
+          message: "The selected time slot is no longer available. Please choose another time slot or date.",
           code,
-          details: "",
+          details: "Would you like to select another time slot?",
+          isSuccess: false,
         };
-      case "CAPACITY_EXCEEDED": {
-        const requested = details.requested != null ? String(details.requested) : "";
-        const available = details.available != null ? String(details.available) : "";
-        const ticketName = failure?.message?.match(/"([^"]+)"/)?.[1] || "";
-        const summary = requested || available
-          ? `${ticketName ? `${ticketName}: ` : ""}${available || "0"} left, requested ${requested || "N/A"}.`
-          : "Requested quantity exceeds current availability.";
+      case "CAPACITY_EXCEEDED":
+      case "INSUFFICIENT_AVAILABILITY":
+      case "INSUFFICIENT_QUANTITY":
+      case "INSUFFICIENT_SEATS":
+      case "NOT_ENOUGH_SEATS":
+      case "SEATS_UNAVAILABLE":
+      case "TICKETS_UNAVAILABLE": {
+        const availableNum = Number(details.available ?? details.availableSeats ?? details.availableTickets ?? details.availableCount);
+        const hasAvailable = !isNaN(availableNum) && availableNum >= 0;
+
+        if (hasAvailable && availableNum > 0) {
+          return {
+            title: "Not enough seats available",
+            message: `This time slot is almost fully booked. Only ${availableNum} seat${availableNum === 1 ? " is" : "s are"} currently available. Please reduce the number of guests or select another time slot.`,
+            code,
+            details: "Would you like to rebook for a new date or time slot?",
+            isSuccess: false,
+          };
+        }
+
         return {
-          title: "Not enough capacity",
-          message: "Some selected tickets are no longer available in the requested quantity.",
+          title: "Time slot fully booked",
+          message: "This time slot is completely booked and no seats are currently available. Please choose another date or time slot.",
           code,
-          details: summary,
+          details: "Would you like to rebook for a new date or time slot?",
+          isSuccess: false,
         };
       }
-      case "ROOM_UNAVAILABLE":
+      case "ROOM_UNAVAILABLE": {
+        const availableRooms = Number(details.availableRooms ?? details.available ?? 0);
+        if (availableRooms > 0) {
+          return {
+            title: "Not enough rooms available",
+            message: `This room type is almost fully booked. Only ${availableRooms} room${availableRooms === 1 ? " is" : "s are"} currently available for your dates. Please reduce your room count or choose different dates.`,
+            code,
+            details: "Would you like to choose another room type or date?",
+            isSuccess: false,
+          };
+        }
         return {
-          title: "Room unavailable",
-          message: "The selected room is not available for the chosen dates.",
+          title: "Room no longer available",
+          message: "The selected room is fully booked for your chosen dates. Please choose another room type or select different dates.",
           code,
-          details: "",
+          details: "Would you like to choose another room type or date?",
+          isSuccess: false,
         };
+      }
+      case "BED_UNAVAILABLE": {
+        const availableBeds = Number(details.availableBeds ?? details.available ?? 0);
+        if (availableBeds > 0) {
+          return {
+            title: "Not enough beds available",
+            message: `Only ${availableBeds} bed${availableBeds === 1 ? " is" : "s are"} currently available for your dates. Please adjust your guest count or select another room.`,
+            code,
+            details: "Would you like to select another date or room?",
+            isSuccess: false,
+          };
+        }
+        return {
+          title: "Bed no longer available",
+          message: "The selected bed is fully booked for your chosen dates. Please select another bed or date.",
+          code,
+          details: "Would you like to select another date or room?",
+          isSuccess: false,
+        };
+      }
       case "PROPERTY_UNAVAILABLE":
+      case "STAY_UNAVAILABLE":
         return {
           title: "Property unavailable",
-          message: "This property is not available for the selected dates.",
+          message: "This property is fully booked for the selected dates. Please choose different dates.",
           code,
-          details: "",
+          details: "Would you like to select another date?",
+          isSuccess: false,
         };
-      default:
+      default: {
+        const rawMsg = String(failure?.message || "").trim();
+        const isTechnicalMessage =
+          !rawMsg ||
+          rawMsg.includes("_") ||
+          rawMsg.includes("Error") ||
+          rawMsg.includes("Exception") ||
+          rawMsg.includes("40") ||
+          rawMsg.includes("50");
+
         return {
           title: "Availability check failed",
-          message: "We could not validate this booking right now. Please try again.",
+          message: isTechnicalMessage
+            ? "The selected experience or time slot is currently unavailable. Please choose another date or time slot."
+            : rawMsg,
           code,
-          details: "",
+          details: "Would you like to rebook for a new date?",
+          isSuccess: false,
         };
+      }
     }
   };
 
@@ -1992,10 +2148,34 @@ const ViewDetails = () => {
     }
 
     try {
-      const businessInterestCode = String(booking?.originalData?.businessInterestCode || "").toUpperCase();
-      const isStayOrder = businessInterestCode === "STAYS" ||
-        booking?.originalData?.stayId != null ||
-        Array.isArray(booking?.originalData?.stayOrderRooms);
+      const data = booking?.originalData || booking || {};
+      const businessInterestCode = String(
+        data?.businessInterestCode ||
+        data?.business_interest_code ||
+        booking?.businessInterestCode ||
+        booking?.business_interest_code ||
+        booking?.category ||
+        data?.category ||
+        data?.serviceType ||
+        data?.service_type ||
+        data?.orderType ||
+        data?.order_type ||
+        ""
+      ).toUpperCase();
+
+      const isStayOrder =
+        businessInterestCode === "STAYS" ||
+        businessInterestCode === "STAY" ||
+        businessInterestCode === "HOTEL" ||
+        businessInterestCode === "HOSTEL" ||
+        data?.stayId != null ||
+        data?.stay_id != null ||
+        booking?.stayId != null ||
+        booking?.stay_id != null ||
+        (Array.isArray(data?.stayOrderRooms) && data.stayOrderRooms.length > 0) ||
+        (Array.isArray(data?.stay_order_rooms) && data.stay_order_rooms.length > 0) ||
+        (Array.isArray(booking?.stayOrderRooms) && booking.stayOrderRooms.length > 0) ||
+        Boolean(data?.checkInDate || data?.checkOutDate || booking?.checkInDate || booking?.checkOutDate);
 
       const response = isStayOrder
         ? await validateStayOrder(booking.orderId)
@@ -2021,8 +2201,8 @@ const ViewDetails = () => {
       if (firstFailure) {
         const msgData = mapValidationFailureToFriendlyMessage(firstFailure);
         showValidationModal({
-          ...msgData,
           details: "Would you like to rebook for a new date?",
+          ...msgData,
           isRebookPrompt: true,
           bookingToRebook: booking
         });
@@ -2048,8 +2228,8 @@ const ViewDetails = () => {
         if (firstFailure) {
           const msgData = mapValidationFailureToFriendlyMessage(firstFailure);
           showValidationModal({
-            ...msgData,
             details: "Would you like to rebook for a new date?",
+            ...msgData,
             isRebookPrompt: true,
             bookingToRebook: booking
           });
@@ -2583,8 +2763,12 @@ const ViewDetails = () => {
 
   const formatMoney = (amount, currency = "INR") => {
     if (amount === null || amount === undefined || amount === "") return "N/A";
-    const numericAmount = Number(amount);
-    if (Number.isNaN(numericAmount)) return "N/A";
+    if (typeof amount === "string" && (amount.startsWith("₹") || amount.startsWith("$") || amount.startsWith("€") || amount.startsWith("£"))) {
+      return amount;
+    }
+    const cleanStr = String(amount).replace(/[^0-9.-]/g, "");
+    const numericAmount = Number(cleanStr);
+    if (Number.isNaN(numericAmount) || cleanStr === "") return typeof amount === "string" && amount.trim() ? amount : "N/A";
     if (currency === "INR") {
       return `₹${numericAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
@@ -2974,7 +3158,7 @@ const ViewDetails = () => {
       const actions = [
         { label: "Download Receipt", variant: "primary", onClick: handleDownloadReceiptClick },
       ];
-      if (!isPastStayCheckInTime()) {
+      if (!isBookingEndedOrPast()) {
         actions.push({ label: "Cancel Booking", variant: "secondary", onClick: handleCancelBookingClick });
       }
       if (canLeaveReview && isPastStayCheckOutTime() && sourceTab !== "upcoming") {
@@ -3744,29 +3928,41 @@ const ViewDetails = () => {
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
-                    <span style={{ color: "#777E90" }}>Experience:</span>
-                    <span style={{ fontWeight: "500", textAlign: "right" }}>{booking?.title}</span>
+                    <span style={{ color: "#777E90" }}>{booking?.stayData || booking?.originalData?.stayId ? "Stay / Hotel:" : "Experience:"}</span>
+                    <span style={{ fontWeight: "500", textAlign: "right" }}>{booking?.stayData?.propertyName || booking?.listingData?.title || booking?.title || "Booking"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#777E90" }}>Date:</span>
-                    <span style={{ fontWeight: "500" }}>{booking?.originalData?.bookingDate || booking?.originalData?.startDate}</span>
+                    <span style={{ fontWeight: "500" }}>{booking?.reservationDate || booking?.startDate || booking?.bookingDate || booking?.originalData?.bookingDate || booking?.originalData?.checkInDate || booking?.originalData?.startDate}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#777E90" }}>Time Slot:</span>
                     <span style={{ fontWeight: "500" }}>
-                      {booking?.originalData?.bookingTime || booking?.originalData?.startTime || booking?.originalData?.bookingSlot?.name || "Confirmed Slot"}
+                      {booking?.startTime && booking?.endTime
+                        ? `${booking.startTime} - ${booking.endTime}`
+                        : (booking?.startTime || booking?.endTime || (booking?.originalData?.timeSlotStartTime ? `${booking?.originalData?.timeSlotStartTime} - ${booking?.originalData?.timeSlotEndTime || ''}` : null) || booking?.bookingTime || "Confirmed Slot")}
                     </span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#777E90" }}>Guests:</span>
                     <span style={{ fontWeight: "500" }}>
                       {(() => {
-                        const adults = booking?.originalData?.adultsCount > 0 ? booking.originalData.adultsCount : Math.max(0, (booking?.originalData?.guestCount || 0) - (booking?.originalData?.childrenCount || 0));
-                        const children = booking?.originalData?.childrenCount || 0;
-                        if (adults > 0 || children > 0) {
-                          return `${adults} Adult${adults > 1 ? "s" : ""}${children > 0 ? `, ${children} Child${children !== 1 ? "ren" : ""}` : ""}`;
+                        const adults = Math.max(
+                          booking?.adultsCount || 0,
+                          (booking?.guestCount || 0) - (booking?.childrenCount || 0),
+                          (booking?.originalData?.guestCount || 0) - (booking?.originalData?.childrenCount || 0),
+                          booking?.originalData?.adultsCount || 0,
+                          booking?.originalData?.adultCount || 0
+                        );
+                        const children = booking?.childrenCount || booking?.originalData?.childrenCount || 0;
+                        const total = adults + children > 0 ? (adults + children) : (booking?.guestCount || booking?.originalData?.guestCount || 0);
+                        if (total > 0) {
+                          if (adults > 0 && children > 0) {
+                            return `${total} Guest${total !== 1 ? "s" : ""} (${adults} Adult${adults !== 1 ? "s" : ""}, ${children} Child${children !== 1 ? "ren" : ""})`;
+                          }
+                          return `${total} Guest${total === 1 ? "" : "s"}`;
                         }
-                        return `${booking?.originalData?.guestCount || 0} Guest${booking?.originalData?.guestCount === 1 ? "" : "s"}`;
+                        return "1 Guest";
                       })()}
                     </span>
                   </div>
@@ -3792,7 +3988,7 @@ const ViewDetails = () => {
                     {/* Base Price */}
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ color: "#777E90" }}>Base Price:</span>
-                      <span>{formatMoney(booking?.pricing?.basePrice || booking?.originalData?.basePrice, booking?.originalData?.currency)}</span>
+                      <span>{booking?.pricing?.basePrice || formatMoney(booking?.originalData?.basePrice, booking?.originalData?.currency)}</span>
                     </div>
 
                     {/* Add-ons detailed list */}
@@ -3807,10 +4003,10 @@ const ViewDetails = () => {
                                 <span>{formatMoney((parseFloat(addon.addonPrice || addon.price || addon.totalPrice || 0) * (addon.quantity || 1)), booking?.originalData?.currency)}</span>
                               </div>
                             ))}
-                            {booking?.originalData?.addonsTotal > 0 && (
+                            {(booking?.pricing?.addonsTotal || (booking?.originalData?.addonsTotal && parseFloat(booking.originalData.addonsTotal) > 0)) && (
                               <div style={{ display: "flex", justifyContent: "space-between" }}>
                                 <span style={{ color: "#777E90" }}>Add-ons Total:</span>
-                                <span>{formatMoney(booking?.originalData?.addonsTotal, booking?.originalData?.currency)}</span>
+                                <span>{booking?.pricing?.addonsTotal || formatMoney(booking?.originalData?.addonsTotal, booking?.originalData?.currency)}</span>
                               </div>
                             )}
                           </>
@@ -3820,26 +4016,26 @@ const ViewDetails = () => {
                     })()}
 
                     {/* Subtotal */}
-                    {booking?.pricing?.subtotal > 0 && (
+                    {(booking?.pricing?.subtotal || booking?.originalData?.subtotal) && (
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "#777E90" }}>Subtotal:</span>
-                        <span>{formatMoney(booking?.pricing?.subtotal, booking?.originalData?.currency)}</span>
+                        <span>{booking?.pricing?.subtotal || formatMoney(booking?.originalData?.subtotal, booking?.originalData?.currency)}</span>
                       </div>
                     )}
 
                     {/* Discounts */}
-                    {booking?.pricing?.discountAmount > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", color: "#FF6A55" }}>
+                    {(booking?.pricing?.discountAmount || (booking?.originalData?.discountAmount && parseFloat(booking.originalData.discountAmount) > 0)) && (
+                      <div style={{ display: "flex", justifyContent: "space-between", color: "#0097B2" }}>
                         <span>Discount:</span>
-                        <span>-{formatMoney(booking?.pricing?.discountAmount, booking?.originalData?.currency)}</span>
+                        <span>-{booking?.pricing?.discountAmount || formatMoney(booking?.originalData?.discountAmount, booking?.originalData?.currency)}</span>
                       </div>
                     )}
 
                     {/* Taxes */}
-                    {booking?.pricing?.taxAmount > 0 && (
+                    {(booking?.pricing?.taxAmount || (booking?.originalData?.taxAmount && parseFloat(booking.originalData.taxAmount) > 0)) && (
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "#777E90" }}>Taxes:</span>
-                        <span>{formatMoney(booking?.pricing?.taxAmount, booking?.originalData?.currency)}</span>
+                        <span>{booking?.pricing?.taxAmount || formatMoney(booking?.originalData?.taxAmount, booking?.originalData?.currency)}</span>
                       </div>
                     )}
                   </div>
@@ -3847,8 +4043,8 @@ const ViewDetails = () => {
 
                 {/* Total Payable */}
                 <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(226, 232, 240, 0.08)", paddingTop: "8px", fontSize: "16px", fontWeight: "600", margin: 0 }}>
-                  <span>{booking?.originalData?.orderStatus === "PENDING" || booking?.status === "Pending" ? "Amount Payable:" : "Total Amount:"}</span>
-                  <span style={{ color: "#0097B2" }}>{formatMoney(booking?.pricing?.total || booking?.originalData?.totalPrice || booking?.originalData?.finalAmount, booking?.originalData?.currency)}</span>
+                  <span>{(booking?.originalData?.orderStatus === "PENDING" || booking?.status === "Pending") ? "Amount Payable:" : "Total Amount:"}</span>
+                  <span style={{ color: "#0097B2" }}>{booking?.pricing?.total || formatMoney(booking?.originalData?.totalPrice || booking?.originalData?.finalAmount || booking?.originalData?.payableAmount, booking?.originalData?.currency)}</span>
                 </div>
               </div>
             </div>
@@ -4365,16 +4561,7 @@ const ViewDetails = () => {
         rebookType === "stay" ? (
           <StayReBookingSystem
             stay={rebookData}
-            checkInDate={null}
-            checkOutDate={null}
-            guests={{ adults: 1, children: 0 }}
-            childAges={[]}
-            selectedRooms={[]}
-            onRoomsCountChange={() => {}}
-            selectedAddOns={[]}
-            addOnQuantities={{}}
-            onAddOnQuantityChange={() => {}}
-            onToggleAddOn={() => {}}
+            booking={rebookBooking || booking}
             externalOpen={showRebookModal}
             onExternalOpenChange={setShowRebookModal}
           />

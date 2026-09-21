@@ -17,10 +17,16 @@ const Details = ({ className, host, businessInterests }) => {
     });
   }
   
-  if (Array.isArray(businessInterests) && businessInterests.length > 0) {
+  const formattedInterests = Array.isArray(businessInterests)
+    ? businessInterests
+        .map((item) => (typeof item === "string" ? item : item?.name || item?.businessInterestName || item?.code || ""))
+        .filter(Boolean)
+    : [];
+
+  if (formattedInterests.length > 0) {
     options.push({
       title: "Interests",
-      content: businessInterests.join(", "),
+      content: formattedInterests.join(", "),
       icon: "route",
     });
   }

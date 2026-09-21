@@ -25,31 +25,108 @@ const TermsOfService = () => {
     
     const fetchPolicy = async () => {
       try {
-        const data = await getPolicyDocuments();
+        const rawData = await getPolicyDocuments();
         let termsDoc = null;
-        if (data) {
-          if (Array.isArray(data)) {
-            termsDoc = data.find((d) =>
-              ["terms-and-conditions", "termsAndConditions", "terms_and_conditions", "terms-of-service", "terms"].includes(
-                d?.documentKey || d?.key || d?.slug
-              )
-            );
-          } else if (typeof data === "object") {
+        if (rawData) {
+          if (typeof rawData === "string") {
+            termsDoc = rawData;
+          } else if (Array.isArray(rawData)) {
+            const searchKeys = [
+              "customer-terms-and-conditions",
+              "customertermsandconditions",
+              "customer_terms_and_conditions",
+              "customer-terms",
+              "customerterms",
+              "customer_terms",
+              "terms-and-conditions",
+              "termsandconditions",
+              "terms_and_conditions",
+              "terms-of-service",
+              "termsofservice",
+              "terms_of_service",
+              "terms",
+              "conditions"
+            ];
+            termsDoc = rawData.find((d) => {
+              const k = (d?.documentKey || d?.key || d?.slug || d?.type || d?.name || d?.policyType || d?.documentType || "")
+                .toLowerCase()
+                .replace(/[-_ ]/g, "");
+              return searchKeys.some((sk) => sk.replace(/[-_ ]/g, "") === k);
+            });
+
+            if (!termsDoc) {
+              termsDoc = rawData.find((d) => {
+                const k = JSON.stringify(d).toLowerCase();
+                return k.includes("term") && k.includes("customer");
+              });
+            }
+
+            if (!termsDoc) {
+              termsDoc = rawData.find((d) => {
+                const k = (d?.documentKey || d?.key || d?.slug || d?.type || d?.name || d?.title || "").toLowerCase();
+                return k.includes("term");
+              });
+            }
+          } else if (typeof rawData === "object") {
             termsDoc =
-              data.termsAndConditions ||
-              data["terms-and-conditions"] ||
-              data.terms_and_conditions ||
-              data.termsOfService ||
-              data["terms-of-service"] ||
-              data.terms;
+              rawData.customerTermsAndConditions ||
+              rawData["customer-terms-and-conditions"] ||
+              rawData.customer_terms_and_conditions ||
+              rawData.customerTerms ||
+              rawData["customer-terms"] ||
+              rawData.customer_terms ||
+              rawData.termsAndConditions ||
+              rawData["terms-and-conditions"] ||
+              rawData.terms_and_conditions ||
+              rawData.termsOfService ||
+              rawData["terms-of-service"] ||
+              rawData.terms_of_service ||
+              rawData.terms;
+
+            if (!termsDoc) {
+              const entries = Object.entries(rawData);
+              const customerTermsEntry = entries.find(([k]) => {
+                const lk = k.toLowerCase();
+                return lk.includes("customer") && lk.includes("term");
+              });
+              if (customerTermsEntry) {
+                termsDoc = customerTermsEntry[1];
+              } else {
+                const termsEntry = entries.find(([k]) => k.toLowerCase().includes("term"));
+                if (termsEntry) {
+                  termsDoc = termsEntry[1];
+                }
+              }
+            }
+
+            if (!termsDoc && (rawData.contentHtml || rawData.content || rawData.html || rawData.body || rawData.description)) {
+              termsDoc = rawData;
+            }
           }
         }
         if (termsDoc) {
-          if (termsDoc.contentHtml) {
-            setDocumentHtml(termsDoc.contentHtml);
-          }
-          if (termsDoc.title) {
-            setTitle(termsDoc.title);
+          if (typeof termsDoc === "string") {
+            setDocumentHtml(termsDoc);
+          } else if (typeof termsDoc === "object") {
+            const htmlContent =
+              termsDoc.contentHtml ||
+              termsDoc.content ||
+              termsDoc.html ||
+              termsDoc.body ||
+              termsDoc.description ||
+              termsDoc.text ||
+              termsDoc.document ||
+              termsDoc.policy ||
+              termsDoc.details ||
+              termsDoc.value ||
+              (typeof termsDoc.data === "string" ? termsDoc.data : "");
+
+            if (htmlContent) {
+              setDocumentHtml(htmlContent);
+            }
+            if (termsDoc.title || termsDoc.name || termsDoc.documentTitle) {
+              setTitle(termsDoc.title || termsDoc.name || termsDoc.documentTitle);
+            }
           }
         }
       } catch (error) {
@@ -101,6 +178,88 @@ const TermsOfService = () => {
         }}
       />
 
+      <style>{`
+        .policy-rich-text {
+          color: ${tokens.FG};
+          font-size: 16px;
+          line-height: 1.85;
+          word-break: break-word;
+        }
+        .policy-rich-text p {
+          margin-bottom: 16px;
+        }
+        .policy-rich-text p:last-child {
+          margin-bottom: 0;
+        }
+        .policy-rich-text ul {
+          list-style-type: disc !important;
+          margin: 16px 0 16px 24px !important;
+          padding-left: 8px !important;
+        }
+        .policy-rich-text ol {
+          list-style-type: decimal !important;
+          margin: 16px 0 16px 24px !important;
+          padding-left: 8px !important;
+        }
+        .policy-rich-text li {
+          margin-bottom: 8px;
+          list-style: inherit !important;
+          display: list-item !important;
+        }
+        .policy-rich-text li:last-child {
+          margin-bottom: 0;
+        }
+        .policy-rich-text h1,
+        .policy-rich-text h2,
+        .policy-rich-text h3,
+        .policy-rich-text h4,
+        .policy-rich-text h5,
+        .policy-rich-text h6 {
+          color: ${tokens.FG};
+          margin-top: 28px;
+          margin-bottom: 12px;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+        .policy-rich-text h1 { font-size: 28px; }
+        .policy-rich-text h2 { font-size: 22px; }
+        .policy-rich-text h3 { font-size: 18px; }
+        .policy-rich-text strong, .policy-rich-text b {
+          font-weight: 600;
+          color: ${tokens.FG};
+        }
+        .policy-rich-text a {
+          color: ${tokens.A};
+          text-decoration: underline;
+        }
+        .policy-rich-text hr {
+          border: 0;
+          border-top: 1px solid ${tokens.B};
+          margin: 24px 0;
+        }
+        .policy-rich-text blockquote {
+          border-left: 3px solid ${tokens.A};
+          padding-left: 16px;
+          margin: 16px 0;
+          color: ${tokens.M};
+          font-style: italic;
+        }
+        .policy-rich-text table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 16px 0;
+        }
+        .policy-rich-text th, .policy-rich-text td {
+          border: 1px solid ${tokens.B};
+          padding: 10px 14px;
+          text-align: left;
+        }
+        .policy-rich-text th {
+          background: rgba(0, 0, 0, 0.03);
+          font-weight: 600;
+        }
+      `}</style>
+
       <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
         <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
@@ -127,6 +286,7 @@ const TermsOfService = () => {
               <p style={{ textAlign: "center", color: tokens.M }}>Loading...</p>
             ) : documentHtml ? (
               <div 
+                className="policy-rich-text"
                 style={{ 
                   color: tokens.FG, 
                   fontSize: "16px", 

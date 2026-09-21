@@ -255,30 +255,125 @@ const PrivacyPolicy = () => {
 
     const fetchPolicy = async () => {
       try {
-        const data = await getPolicyDocuments();
+        const rawData = await getPolicyDocuments();
         let privacyDoc = null;
-        if (data) {
-          if (Array.isArray(data)) {
-            privacyDoc = data.find((d) =>
-              ["privacy-policy", "privacyPolicy", "privacy_policy", "privacyAndPolicies", "privacy"].includes(
-                d?.documentKey || d?.key || d?.slug
-              )
-            );
-          } else if (typeof data === "object") {
+
+        if (rawData) {
+          if (typeof rawData === "string") {
+            privacyDoc = rawData;
+          } else if (Array.isArray(rawData)) {
+            const searchKeys = [
+              "customer-privacy-policy",
+              "customerprivacypolicy",
+              "customer_privacy_policy",
+              "customer-privacy-and-policy",
+              "customerprivacyandpolicy",
+              "customer_privacy_and_policy",
+              "customer-privacy",
+              "customerprivacy",
+              "customer_privacy",
+              "privacy-policy",
+              "privacypolicy",
+              "privacy_policy",
+              "privacyandpolicies",
+              "privacyandpolicy",
+              "privacy-and-policy",
+              "privacy",
+              "policy"
+            ];
+
+            privacyDoc = rawData.find((d) => {
+              const k = (d?.documentKey || d?.key || d?.slug || d?.type || d?.name || d?.policyType || d?.documentType || "")
+                .toLowerCase()
+                .replace(/[-_ ]/g, "");
+              return searchKeys.some((sk) => sk.replace(/[-_ ]/g, "") === k);
+            });
+
+            if (!privacyDoc) {
+              privacyDoc = rawData.find((d) => {
+                const k = JSON.stringify(d).toLowerCase();
+                return k.includes("privacy") && k.includes("customer");
+              });
+            }
+
+            if (!privacyDoc) {
+              privacyDoc = rawData.find((d) => {
+                const k = (d?.documentKey || d?.key || d?.slug || d?.type || d?.name || d?.title || "").toLowerCase();
+                return k.includes("privacy");
+              });
+            }
+
+            if (!privacyDoc && rawData.length > 0) {
+              privacyDoc = rawData[0];
+            }
+          } else if (typeof rawData === "object") {
             privacyDoc =
-              data.privacyPolicy ||
-              data["privacy-policy"] ||
-              data.privacy_policy ||
-              data.privacyAndPolicies ||
-              data.privacy;
+              rawData.customerPrivacyPolicy ||
+              rawData["customer-privacy-policy"] ||
+              rawData.customer_privacy_policy ||
+              rawData.customerPrivacyAndPolicy ||
+              rawData["customer-privacy-and-policy"] ||
+              rawData.customer_privacy_and_policy ||
+              rawData.customerPrivacy ||
+              rawData["customer-privacy"] ||
+              rawData.customer_privacy ||
+              rawData.privacyPolicy ||
+              rawData["privacy-policy"] ||
+              rawData.privacy_policy ||
+              rawData.privacyAndPolicies ||
+              rawData["privacy-and-policies"] ||
+              rawData.privacyAndPolicy ||
+              rawData["privacy-and-policy"] ||
+              rawData.privacy_and_policy ||
+              rawData.privacy ||
+              rawData.policy ||
+              rawData.data;
+
+            if (!privacyDoc) {
+              const entries = Object.entries(rawData);
+              const customerPrivacyEntry = entries.find(([k]) => {
+                const lk = k.toLowerCase();
+                return lk.includes("customer") && lk.includes("privacy");
+              });
+              if (customerPrivacyEntry) {
+                privacyDoc = customerPrivacyEntry[1];
+              } else {
+                const privacyEntry = entries.find(([k]) => k.toLowerCase().includes("privacy"));
+                if (privacyEntry) {
+                  privacyDoc = privacyEntry[1];
+                }
+              }
+            }
+
+            if (!privacyDoc && (rawData.contentHtml || rawData.content || rawData.html || rawData.body || rawData.description)) {
+              privacyDoc = rawData;
+            }
           }
         }
+
         if (privacyDoc) {
-          if (privacyDoc.contentHtml) {
-            setDocumentHtml(privacyDoc.contentHtml);
-          }
-          if (privacyDoc.title) {
-            setTitle(privacyDoc.title);
+          if (typeof privacyDoc === "string") {
+            setDocumentHtml(privacyDoc);
+          } else if (typeof privacyDoc === "object") {
+            const htmlContent =
+              privacyDoc.contentHtml ||
+              privacyDoc.content ||
+              privacyDoc.html ||
+              privacyDoc.body ||
+              privacyDoc.description ||
+              privacyDoc.text ||
+              privacyDoc.document ||
+              privacyDoc.policy ||
+              privacyDoc.details ||
+              privacyDoc.value ||
+              (typeof privacyDoc.data === "string" ? privacyDoc.data : "");
+
+            if (htmlContent) {
+              setDocumentHtml(htmlContent);
+            }
+            if (privacyDoc.title || privacyDoc.name || privacyDoc.documentTitle) {
+              setTitle(privacyDoc.title || privacyDoc.name || privacyDoc.documentTitle);
+            }
           }
         }
       } catch (error) {
@@ -338,6 +433,88 @@ const PrivacyPolicy = () => {
         }}
       />
 
+      <style>{`
+        .policy-rich-text {
+          color: ${tokens.FG};
+          font-size: 16px;
+          line-height: 1.85;
+          word-break: break-word;
+        }
+        .policy-rich-text p {
+          margin-bottom: 16px;
+        }
+        .policy-rich-text p:last-child {
+          margin-bottom: 0;
+        }
+        .policy-rich-text ul {
+          list-style-type: disc !important;
+          margin: 16px 0 16px 24px !important;
+          padding-left: 8px !important;
+        }
+        .policy-rich-text ol {
+          list-style-type: decimal !important;
+          margin: 16px 0 16px 24px !important;
+          padding-left: 8px !important;
+        }
+        .policy-rich-text li {
+          margin-bottom: 8px;
+          list-style: inherit !important;
+          display: list-item !important;
+        }
+        .policy-rich-text li:last-child {
+          margin-bottom: 0;
+        }
+        .policy-rich-text h1,
+        .policy-rich-text h2,
+        .policy-rich-text h3,
+        .policy-rich-text h4,
+        .policy-rich-text h5,
+        .policy-rich-text h6 {
+          color: ${tokens.FG};
+          margin-top: 28px;
+          margin-bottom: 12px;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+        .policy-rich-text h1 { font-size: 28px; }
+        .policy-rich-text h2 { font-size: 22px; }
+        .policy-rich-text h3 { font-size: 18px; }
+        .policy-rich-text strong, .policy-rich-text b {
+          font-weight: 600;
+          color: ${tokens.FG};
+        }
+        .policy-rich-text a {
+          color: ${tokens.A};
+          text-decoration: underline;
+        }
+        .policy-rich-text hr {
+          border: 0;
+          border-top: 1px solid ${tokens.B};
+          margin: 24px 0;
+        }
+        .policy-rich-text blockquote {
+          border-left: 3px solid ${tokens.A};
+          padding-left: 16px;
+          margin: 16px 0;
+          color: ${tokens.M};
+          font-style: italic;
+        }
+        .policy-rich-text table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 16px 0;
+        }
+        .policy-rich-text th, .policy-rich-text td {
+          border: 1px solid ${tokens.B};
+          padding: 10px 14px;
+          text-align: left;
+        }
+        .policy-rich-text th {
+          background: rgba(0, 0, 0, 0.03);
+          font-weight: 600;
+        }
+      `}</style>
+
       <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG }}>
         <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
@@ -368,6 +545,7 @@ const PrivacyPolicy = () => {
             </div>
           ) : documentHtml ? (
             <div 
+              className="policy-rich-text"
               style={{ 
                 background: tokens.BG, 
                 padding: "40px", 

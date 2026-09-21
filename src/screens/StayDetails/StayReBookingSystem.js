@@ -547,41 +547,49 @@ const formatChildAgesLabel = (childAges) => {
 const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => {
   const roomInstances = [];
   selectedRooms.forEach(sel => {
-    const catalogRoom = stayRoomsCatalog.find(
-      r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId)
+    let catalogRoom = (stayRoomsCatalog || []).find(
+      r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === String(sel.roomId)
     );
-    if (catalogRoom) {
-      const maxAdults = catalogRoom.maxAdults || 2;
-      const maxExtraAdults = Number(
-        catalogRoom.maxExtraAdults ??
-        catalogRoom.maxExtraAdultsAllowed ??
-        catalogRoom.maxExtraBeds ??
-        0
+    if (!catalogRoom && sel.roomName) {
+      catalogRoom = (stayRoomsCatalog || []).find(
+        r => (r.roomName || r.name || r.roomTypeName || r.bedType || "").trim().toLowerCase() === String(sel.roomName).trim().toLowerCase()
       );
-      const maxExtraChildren = Number(
-        catalogRoom.maxExtraChildren ??
-        catalogRoom.maxExtraChildrenAllowed ??
-        0
-      );
-      const maxGuests = maxAdults + (catalogRoom.maxChildren || 0);
-      const maxChildren = catalogRoom.maxChildren !== undefined ? catalogRoom.maxChildren : 0;
+    }
+    if (!catalogRoom && (stayRoomsCatalog || []).length === 1) {
+      catalogRoom = stayRoomsCatalog[0];
+    }
+    const maxAdults = catalogRoom?.maxAdults || sel?.maxAdults || 2;
+    const maxExtraAdults = Number(
+      catalogRoom?.maxExtraAdults ??
+      catalogRoom?.maxExtraAdultsAllowed ??
+      catalogRoom?.maxExtraBeds ??
+      sel?.maxExtraAdults ??
+      1
+    );
+    const maxExtraChildren = Number(
+      catalogRoom?.maxExtraChildren ??
+      catalogRoom?.maxExtraChildrenAllowed ??
+      sel?.maxExtraChildren ??
+      1
+    );
+    const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (sel?.maxChildren ?? 1);
+    const maxGuests = maxAdults + maxChildren;
 
-      for (let i = 0; i < sel.count; i++) {
-        roomInstances.push({
-          instanceId: `${sel.roomId}-${i}`,
-          roomId: sel.roomId,
-          roomName: catalogRoom.roomName || catalogRoom.name || "Room",
-          maxAdults,
-          maxChildren,
-          maxExtraAdults,
-          maxExtraChildren,
-          maxGuests,
-          allocatedAdults: 0,
-          allocatedChildren: 0,
-          allocatedExtraAdults: 0,
-          allocatedExtraChildren: 0
-        });
-      }
+    for (let i = 0; i < (Number(sel.count) || 1); i++) {
+      roomInstances.push({
+        instanceId: `${sel.roomId}-${i}`,
+        roomId: sel.roomId,
+        roomName: catalogRoom?.roomName || catalogRoom?.name || sel?.roomName || "Room",
+        maxAdults,
+        maxChildren,
+        maxExtraAdults,
+        maxExtraChildren,
+        maxGuests,
+        allocatedAdults: 0,
+        allocatedChildren: 0,
+        allocatedExtraAdults: 0,
+        allocatedExtraChildren: 0,
+      });
     }
   });
 
@@ -702,9 +710,62 @@ const getStayCatalogRoomIds = (stay) => {
   );
 };
 
+const getAvailableMealPlansForRoom = (catalogRoom, stay) => {
+  const plans = new Set();
+  if (catalogRoom?.mealPlanPricing && typeof catalogRoom.mealPlanPricing === "object") {
+    Object.keys(catalogRoom.mealPlanPricing).forEach((k) => {
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+  if (Array.isArray(catalogRoom?.b2cMealPlanPricing)) {
+    catalogRoom.b2cMealPlanPricing.forEach((p) => {
+      const k = p?.mealPlan || p?.mealPlanCode || p?.meal_plan;
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+  if (Array.isArray(catalogRoom?.availableMealPlans || catalogRoom?.mealPlans)) {
+    (catalogRoom.availableMealPlans || catalogRoom.mealPlans).forEach((k) => {
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+  if (catalogRoom?.epPrice != null) plans.add("EP");
+  if (catalogRoom?.bbPrice != null) plans.add("BB");
+  if (catalogRoom?.cpPrice != null) plans.add("CP");
+  if (catalogRoom?.mapPrice != null) plans.add("MAP");
+  if (catalogRoom?.apPrice != null) plans.add("AP");
+
+  if (stay?.mealPlanPricing && typeof stay.mealPlanPricing === "object") {
+    Object.keys(stay.mealPlanPricing).forEach((k) => {
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+
+  if (plans.size === 0) {
+    plans.add("EP");
+  }
+  return plans;
+};
+
+const resolveValidMealPlan = (candidateMealPlan, catalogRoom, stay) => {
+  const availablePlans = getAvailableMealPlansForRoom(catalogRoom, stay);
+  if (candidateMealPlan) {
+    const upper = String(candidateMealPlan).toUpperCase().trim();
+    if (availablePlans.has(upper)) {
+      return upper;
+    }
+  }
+  for (const preferred of ["EP", "CP", "BB", "MAP", "AP"]) {
+    if (availablePlans.has(preferred)) return preferred;
+  }
+  return Array.from(availablePlans)[0] || "EP";
+};
+
 const getStoredStayRooms = (storedRooms, stay) => {
   if (!Array.isArray(storedRooms) || storedRooms.length === 0) return [];
   const validRoomIds = getStayCatalogRoomIds(stay);
+  const catalogRooms = Array.isArray(stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.bedConfigs)
+    ? (stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.bedConfigs)
+    : [];
 
   return storedRooms
     .map((room) => {
@@ -714,21 +775,65 @@ const getStoredStayRooms = (storedRooms, stay) => {
         room?.id,
         room?.roomTypeId,
         room?.room_type_id,
+        room?.room_id,
+        room?.bed_config_id,
+        room?.stayRoomId,
+        room?.stay_room_id,
       ]
         .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
         .map((value) => String(value));
-      if (candidateIds.length === 0) return null;
 
-      const normalizedRoomId = candidateIds.find((candidateId) => validRoomIds.size === 0 || validRoomIds.has(candidateId));
-      if (!normalizedRoomId) return null;
+      const rName = (room?.roomName || room?.name || room?.roomTypeName || room?.bedType || room?.room_type_name || room?.room_name || "").trim();
+      if (candidateIds.length === 0 && rName && catalogRooms.length > 0) {
+        const matched = catalogRooms.find(cr => {
+          const crName = (cr.roomName || cr.name || cr.roomTypeName || cr.bedType || cr.room_type_name || "").trim().toLowerCase();
+          return crName && crName === rName.toLowerCase();
+        });
+        if (matched) {
+          candidateIds.push(String(matched.roomId ?? matched.id ?? matched.roomTypeId ?? matched.room_type_id ?? matched.bedConfigId ?? matched.bed_config_id));
+        }
+      }
+
+      let normalizedRoomId = candidateIds.find((candidateId) => validRoomIds.size === 0 || validRoomIds.has(candidateId));
+      if (!normalizedRoomId && catalogRooms.length > 0) {
+        if (rName) {
+          const matched = catalogRooms.find(cr => {
+            const crName = (cr.roomName || cr.name || cr.roomTypeName || cr.bedType || cr.room_type_name || "").trim().toLowerCase();
+            return crName && crName === rName.toLowerCase();
+          });
+          if (matched) {
+            normalizedRoomId = String(matched.roomId ?? matched.id ?? matched.roomTypeId ?? matched.room_type_id ?? matched.bedConfigId ?? matched.bed_config_id);
+          }
+        }
+        if (!normalizedRoomId && candidateIds.length > 0) {
+          normalizedRoomId = candidateIds[0];
+        }
+        if (!normalizedRoomId && catalogRooms.length === 1) {
+          const single = catalogRooms[0];
+          normalizedRoomId = String(single.roomId ?? single.id ?? single.roomTypeId ?? single.room_type_id ?? single.bedConfigId ?? single.bed_config_id);
+        }
+      }
+      if (!normalizedRoomId && candidateIds.length > 0) {
+        normalizedRoomId = candidateIds[0];
+      }
+      if (!normalizedRoomId) {
+        normalizedRoomId = "room-1";
+      }
+
+      const matchedCatalogRoom = catalogRooms.find(cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId ?? cr.bed_config_id) === String(normalizedRoomId));
+      const validMeal = resolveValidMealPlan(
+        room?.mealPlan || room?.mealPlanCode || room?.meal_plan || room?.selectedMealPlan,
+        matchedCatalogRoom,
+        stay
+      );
 
       return {
         roomId: normalizedRoomId,
-        bedConfigId: room?.bedConfigId != null ? String(room.bedConfigId) : null,
+        bedConfigId: room?.bedConfigId != null ? String(room.bedConfigId) : (room?.bed_config_id != null ? String(room.bed_config_id) : null),
         roomTypeId: room?.roomTypeId != null ? String(room.roomTypeId) : (room?.room_type_id != null ? String(room.room_type_id) : null),
-        roomName: room?.roomName || room?.name || room?.roomTypeName || room?.bedType || null,
-        mealPlan: room?.mealPlan || room?.mealPlanCode || room?.meal_plan || "EP",
-        count: Math.max(1, Number(room?.count ?? room?.roomCount ?? room?.numberOfRooms ?? 1) || 1),
+        roomName: rName || matchedCatalogRoom?.roomName || matchedCatalogRoom?.name || room?.roomName || room?.name || "Accommodation",
+        mealPlan: validMeal,
+        count: Math.max(1, Number(room?.count ?? room?.roomCount ?? room?.numberOfRooms ?? room?.quantity ?? room?.units ?? 1) || 1),
       };
     })
     .filter(Boolean);
@@ -736,21 +841,28 @@ const getStoredStayRooms = (storedRooms, stay) => {
 
 const StayBookingSystem = ({
   stay,
-  // These were originally controlled props, but since this is a standalone rebooking modal,
-  // we ignore the parent's dummy props and manage our own state internally.
-  checkInDate: _unused1,
+  booking,
+  initialCheckInDate,
+  initialCheckOutDate,
+  initialGuests,
+  initialChildAges,
+  initialSelectedRooms,
+  initialSelectedAddOns,
+  initialAddOnQuantities,
+  // Props that might be passed from parent
+  checkInDate: initialCheckInProp,
   setCheckInDate: _unused2,
-  checkOutDate: _unused3,
+  checkOutDate: initialCheckOutProp,
   setCheckOutDate: _unused4,
-  guests: _unused5,
+  guests: initialGuestsProp,
   setGuests: _unused6,
-  childAges: _unused7,
+  childAges: initialChildAgesProp,
   setChildAges: _unused8,
-  selectedRooms: _unused9,
+  selectedRooms: initialSelectedRoomsProp,
   setSelectedRooms: _unused10,
   onRoomsCountChange: _unused11,
-  selectedAddOns: _unused12,
-  addOnQuantities: _unused13,
+  selectedAddOns: initialSelectedAddOnsProp,
+  addOnQuantities: initialAddOnQuantitiesProp,
   onAddOnQuantityChange: _unused14,
   onToggleAddOn: _unused15,
   externalOpen,
@@ -759,12 +871,209 @@ const StayBookingSystem = ({
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
 
-  // --- Internal State Management ---
-  const [checkInDate, setCheckInDate] = useState(null);
-  const [checkOutDate, setCheckOutDate] = useState(null);
-  const [guests, setGuests] = useState({ adults: 1, children: 0 });
+  // 1. Initial Check-in Date
+  const getInitialCheckIn = useCallback(() => {
+    const b = booking || {};
+    const bo = b.originalData || {};
+    const bd = b.bookingData || {};
+    const stayRooms = b.stayOrderRooms || bo.stayOrderRooms || bd.stayOrderRooms || [];
+
+    const raw =
+      initialCheckInDate ||
+      (initialCheckInProp && initialCheckInProp !== null ? initialCheckInProp : null) ||
+      b.checkInDate || b.check_in_date || b.startDate || b.start_date ||
+      bo.checkInDate || bo.check_in_date || bo.startDate || bo.start_date ||
+      bd.checkInDate || bd.check_in_date || bd.startDate || bd.start_date ||
+      stayRooms[0]?.checkInDate || stayRooms[0]?.check_in_date;
+    if (raw) {
+      const m = moment(raw);
+      if (m.isValid()) return m;
+    }
+    return null;
+  }, [initialCheckInDate, initialCheckInProp, booking]);
+
+  // 2. Initial Check-out Date
+  const getInitialCheckOut = useCallback(() => {
+    const b = booking || {};
+    const bo = b.originalData || {};
+    const bd = b.bookingData || {};
+    const stayRooms = b.stayOrderRooms || bo.stayOrderRooms || bd.stayOrderRooms || [];
+
+    const raw =
+      initialCheckOutDate ||
+      (initialCheckOutProp && initialCheckOutProp !== null ? initialCheckOutProp : null) ||
+      b.checkOutDate || b.check_out_date || b.endDate || b.end_date ||
+      bo.checkOutDate || bo.check_out_date || bo.endDate || bo.end_date ||
+      bd.checkOutDate || bd.check_out_date || bd.endDate || bd.end_date ||
+      stayRooms[0]?.checkOutDate || stayRooms[0]?.check_out_date;
+
+    const inRaw =
+      initialCheckInDate ||
+      (initialCheckInProp && initialCheckInProp !== null ? initialCheckInProp : null) ||
+      b.checkInDate || b.check_in_date || b.startDate || b.start_date ||
+      bo.checkInDate || bo.check_in_date || bo.startDate || bo.start_date ||
+      bd.checkInDate || bd.check_in_date || bd.startDate || bd.start_date ||
+      stayRooms[0]?.checkInDate || stayRooms[0]?.check_in_date;
+
+    if (raw) {
+      const m = moment(raw);
+      if (m.isValid()) {
+        if (inRaw) {
+          const mIn = moment(inRaw);
+          if (mIn.isValid() && m.isSameOrBefore(mIn, 'day')) {
+            return moment(mIn).add(1, 'day');
+          }
+        }
+        return m;
+      }
+    }
+    if (inRaw) {
+      const mIn = moment(inRaw);
+      if (mIn.isValid()) return moment(mIn).add(1, 'day');
+    }
+    return null;
+  }, [initialCheckOutDate, initialCheckOutProp, initialCheckInDate, initialCheckInProp, booking]);
+
+  // 3. Initial Guests
+  const getInitialGuests = useCallback(() => {
+    const rawGuests = initialGuests || (initialGuestsProp && (initialGuestsProp.adults > 1 || initialGuestsProp.children > 0) ? initialGuestsProp : null);
+    if (rawGuests && (rawGuests.adults > 0 || rawGuests.children > 0)) {
+      return {
+        adults: Math.max(1, Number(rawGuests.adults) || 1),
+        children: Math.max(0, Number(rawGuests.children) || 0),
+      };
+    }
+
+    const b = booking || {};
+    const bo = b.originalData || {};
+    const bd = b.bookingData || {};
+
+    const sourceGuests = b.guests || bo.guests || bd.guests;
+
+    let adults = Number(
+      sourceGuests?.adults ??
+      b.adultsCount ?? b.adultCount ?? b.adults ?? b.numberOfAdults ??
+      bo.adultsCount ?? bo.adultCount ?? bo.adults ?? bo.numberOfAdults ??
+      bd.adultsCount ?? bd.adultCount ?? bd.adults ?? bd.numberOfAdults ??
+      0
+    );
+
+    let children = Number(
+      sourceGuests?.children ??
+      b.childrenCount ?? b.childCount ?? b.children ?? b.numberOfChildren ??
+      bo.childrenCount ?? bo.childCount ?? bo.children ?? bo.numberOfChildren ??
+      bd.childrenCount ?? bd.childCount ?? bd.children ?? bd.numberOfChildren ??
+      0
+    );
+
+    const stayRooms =
+      b.stayOrderRooms || b.stay_order_rooms ||
+      bo.stayOrderRooms || bo.stay_order_rooms ||
+      bd.stayOrderRooms || bd.stay_order_rooms ||
+      [];
+
+    if (Array.isArray(stayRooms) && stayRooms.length > 0) {
+      const roomAdults = stayRooms.reduce((sum, r) => sum + Number(r.adults || r.numberOfAdults || r.noOfAdults || r.adultCount || r.count || 0) + Number(r.extraAdults || r.extraAdult || 0), 0);
+      const roomChildren = stayRooms.reduce((sum, r) => sum + Number(r.children || r.numberOfChildren || r.noOfChildren || r.childCount || 0) + Number(r.extraChildren || r.extraChild || 0), 0);
+      if (adults === 0 && roomAdults > 0) adults = roomAdults;
+      if (children === 0 && roomChildren > 0) children = roomChildren;
+    }
+
+    return {
+      adults: Math.max(1, adults || 1),
+      children: Math.max(0, children || 0),
+    };
+  }, [initialGuests, initialGuestsProp, booking]);
+
+  // 4. Initial Child Ages
   const defaultChildAge = useMemo(() => getComplimentaryChildAgeStart(stay), [stay]);
-  const [childAges, setChildAgesState] = useState([]);
+  const getInitialChildAges = useCallback(() => {
+    const b = booking || {};
+    const bo = b.originalData || {};
+    const bd = b.bookingData || {};
+
+    const raw =
+      initialChildAges ||
+      (Array.isArray(initialChildAgesProp) && initialChildAgesProp.length > 0 ? initialChildAgesProp : null) ||
+      b.childAges || b.child_ages || b.guests?.childAges ||
+      bo.childAges || bo.child_ages || bo.guests?.childAges ||
+      bd.childAges || bd.child_ages || bd.guests?.childAges;
+
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw.map(a => Number(a) || defaultChildAge);
+    }
+    return [];
+  }, [initialChildAges, initialChildAgesProp, booking, defaultChildAge]);
+
+  // 5. Initial Selected Rooms
+  const getInitialSelectedRooms = useCallback(() => {
+    if (Array.isArray(initialSelectedRooms) && initialSelectedRooms.length > 0) {
+      return getStoredStayRooms(initialSelectedRooms, stay);
+    }
+    if (Array.isArray(initialSelectedRoomsProp) && initialSelectedRoomsProp.length > 0) {
+      return getStoredStayRooms(initialSelectedRoomsProp, stay);
+    }
+    const b = booking || {};
+    const bo = b.originalData || {};
+    const bd = b.bookingData || {};
+
+    const rawRooms =
+      b.stayOrderRooms || b.stay_order_rooms || b.rooms || b.selectedRooms ||
+      bo.stayOrderRooms || bo.stay_order_rooms || bo.rooms || bo.selectedRooms ||
+      bd.stayOrderRooms || bd.stay_order_rooms || bd.rooms || bd.selectedRooms ||
+      [];
+
+    if (Array.isArray(rawRooms) && rawRooms.length > 0) {
+      return getStoredStayRooms(rawRooms, stay);
+    }
+    return [];
+  }, [initialSelectedRooms, initialSelectedRoomsProp, booking, stay]);
+
+  const stayRoomsCatalog = useMemo(
+    () => {
+      let rawRooms = stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || [];
+      if (!Array.isArray(rawRooms)) rawRooms = [];
+      let rooms = rawRooms.map((r, idx) => ({
+        ...r,
+        roomId: String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id ?? `room-${idx}`),
+        roomTypeId: r?.roomTypeId != null ? String(r.roomTypeId) : (r?.room_type_id != null ? String(r.room_type_id) : (r?.id != null ? String(r.id) : null)),
+        roomName: r?.roomName || r?.name || r?.roomTypeName || r?.bedType || r?.room_type_name || `Room ${idx + 1}`,
+      }));
+      if (stay?.bedConfigs?.length > 0) {
+        const bedRooms = (stay?.bedConfigs || []).map((b, idx) => ({
+          ...b,
+          roomId: String(b.id ?? b.bedConfigId ?? `bed-${idx}`),
+          bedConfigId: String(b.bedConfigId ?? b.id ?? `bed-${idx}`),
+          roomName: b.bedType || b.name || "Bed",
+          units: b.bedCount || stay?.bedCount,
+          maxAdults: 1,
+          maxChildren: 0,
+          maxExtraAdults: 0,
+          maxExtraChildren: 0,
+          b2cPrice: b.b2cPrice || b.price || stay?.b2cPrice,
+          price: b.b2cPrice || b.price || stay?.b2cPrice,
+          coverImageUrl: b.bedCoverImageUrl || stay?.bedCoverImageUrl,
+          media: b.bedGalleryMedia || stay?.bedGalleryMedia || [],
+          roomAmenities: b.amenities || [],
+          isBedConfig: true
+        }));
+
+        if (stay?.inventorySetupType === "Bed-Based" && (!stay?.rooms || stay.rooms.length === 0)) {
+          rooms = bedRooms;
+        } else {
+          rooms = [...rooms, ...bedRooms];
+        }
+      }
+      return rooms;
+    },
+    [stay]
+  );
+
+  // --- Internal State Management ---
+  const [checkInDate, setCheckInDate] = useState(getInitialCheckIn);
+  const [checkOutDate, setCheckOutDate] = useState(getInitialCheckOut);
+  const [guests, setGuests] = useState(getInitialGuests);
+  const [childAges, setChildAgesState] = useState(getInitialChildAges);
   const setChildAges = useCallback((updater) => {
     if (typeof updater === "function") {
       setChildAgesState((prev) => {
@@ -775,13 +1084,15 @@ const StayBookingSystem = ({
       setChildAgesState(Array.isArray(updater) ? [...updater] : updater);
     }
   }, []);
-  const [selectedRooms, setSelectedRooms] = useState([]);
+  const [selectedRooms, setSelectedRooms] = useState(getInitialSelectedRooms);
   const [selectedAddOns, setSelectedAddOns] = useState(() => {
-    if (Array.isArray(_unused12) && _unused12.length > 0) return _unused12;
+    if (Array.isArray(initialSelectedAddOns) && initialSelectedAddOns.length > 0) return initialSelectedAddOns;
+    if (Array.isArray(initialSelectedAddOnsProp) && initialSelectedAddOnsProp.length > 0) return initialSelectedAddOnsProp;
     return [];
   });
   const [addOnQuantities, setAddOnQuantities] = useState(() => {
-    if (_unused13 && typeof _unused13 === "object") return _unused13;
+    if (initialAddOnQuantities && typeof initialAddOnQuantities === "object") return initialAddOnQuantities;
+    if (initialAddOnQuantitiesProp && typeof initialAddOnQuantitiesProp === "object") return initialAddOnQuantitiesProp;
     return {};
   });
 
@@ -848,11 +1159,39 @@ const StayBookingSystem = ({
   const stayCalculateTimerRef = useRef(null);
 
   useEffect(() => {
-    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
-      externalOpenHandledRef.current = true;
-      setShow(true);
+    if (externalOpen === true) {
+      const initRooms = getInitialSelectedRooms();
+      if (initRooms.length > 0) {
+        setSelectedRooms(initRooms);
+      } else if (!isPropertyBasedBooking(stay) && stayRoomsCatalog.length > 0) {
+        const firstRoom = stayRoomsCatalog[0];
+        const defaultPlan = firstRoom?.mealPlanPricing && Object.keys(firstRoom.mealPlanPricing).length > 0
+          ? Object.keys(firstRoom.mealPlanPricing)[0]
+          : firstRoom?.epPrice ? "EP" : firstRoom?.bbPrice ? "BB" : firstRoom?.cpPrice ? "CP" : firstRoom?.mapPrice ? "MAP" : firstRoom?.apPrice ? "AP" : "EP";
+        setSelectedRooms([{
+          roomId: String(firstRoom.roomId ?? firstRoom.id ?? firstRoom.roomTypeId),
+          mealPlan: defaultPlan,
+          count: 1,
+          roomName: firstRoom.roomName || firstRoom.name || "Room"
+        }]);
+      }
+      const initG = getInitialGuests();
+      if (initG) {
+        setGuests(initG);
+      }
+      const initIn = getInitialCheckIn();
+      if (initIn) setCheckInDate(initIn);
+      const initOut = getInitialCheckOut();
+      if (initOut) setCheckOutDate(initOut);
+      const initAges = getInitialChildAges();
+      if (initAges.length > 0) setChildAgesState(initAges);
+
+      if (!show && !externalOpenHandledRef.current) {
+        externalOpenHandledRef.current = true;
+        setShow(true);
+      }
     }
-  }, [externalOpen, show]);
+  }, [externalOpen, stay, booking, getInitialSelectedRooms, getInitialGuests, getInitialCheckIn, getInitialCheckOut, getInitialChildAges, stayRoomsCatalog, show]);
 
   useEffect(() => {
     if (externalOpen !== true) {
@@ -1121,38 +1460,6 @@ const StayBookingSystem = ({
   const [loading, setLoading] = useState(false);
   const [availabilityData, setAvailabilityData] = useState(null);
   const [fetchingAvailability, setFetchingAvailability] = useState(false);
-  const stayRoomsCatalog = useMemo(
-    () => {
-      let rooms = stay?.rooms || stay?.roomTypes || stay?.room_types || [];
-      if (stay?.bedConfigs?.length > 0) {
-        const bedRooms = (stay?.bedConfigs || []).map((b, idx) => ({
-          ...b,
-          roomId: b.id || b.bedConfigId || `bed-${idx}`,
-          bedConfigId: b.bedConfigId || b.id || `bed-${idx}`,
-          roomName: b.bedType || b.name || "Bed",
-          units: b.bedCount || stay?.bedCount,
-          maxAdults: 1,
-          maxChildren: 0,
-          maxExtraAdults: 0,
-          maxExtraChildren: 0,
-          b2cPrice: b.b2cPrice || b.price || stay?.b2cPrice,
-          price: b.b2cPrice || b.price || stay?.b2cPrice,
-          coverImageUrl: b.bedCoverImageUrl || stay?.bedCoverImageUrl,
-          media: b.bedGalleryMedia || stay?.bedGalleryMedia || [],
-          roomAmenities: b.amenities || [],
-          isBedConfig: true
-        }));
-
-        if (stay?.inventorySetupType === "Bed-Based" && (!stay?.rooms || stay.rooms.length === 0)) {
-          rooms = bedRooms;
-        } else {
-          rooms = [...rooms, ...bedRooms];
-        }
-      }
-      return rooms;
-    },
-    [stay]
-  );
 
   // Dynamic Guest Age Labels based on Child Age Policy
   const guestAgeLabels = useMemo(() => {
@@ -1267,6 +1574,7 @@ const StayBookingSystem = ({
           r?.roomTypeId,
           r?.room_type_id,
           r?.bedConfigId,
+          r?.bed_config_id,
         ]
           .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
           .map((value) => [String(value), r]);
@@ -1274,7 +1582,7 @@ const StayBookingSystem = ({
       })
     );
     const roomsSource = rawRoomsSource.map((room) => {
-      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId);
+      const key = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId ?? room?.bed_config_id);
       const base = catalogById.get(key);
       if (!base) return room;
       return {
@@ -1290,41 +1598,60 @@ const StayBookingSystem = ({
     const checkInStr = checkInDate ? (typeof checkInDate === 'string' ? checkInDate : checkInDate.format('YYYY-MM-DD')) : null;
 
     return selectedRooms.map(sel => {
-      let room = roomsSource.find(r => String(r.roomId || r.id || r.bedConfigId) === String(sel.roomId));
-      if (!room) {
-        room = stayRoomsCatalog.find(r => String(r.roomId || r.id || r.bedConfigId) === String(sel.roomId));
-      }
-      if (!room) return null;
+      const selKeys = [
+        sel?.roomId,
+        sel?.id,
+        sel?.roomTypeId,
+        sel?.room_type_id,
+        sel?.bedConfigId,
+        sel?.bed_config_id,
+      ]
+        .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+        .map((value) => String(value));
 
-      let mealPlan = sel.mealPlan || "EP";
+      const selName = (sel?.roomName || sel?.name || sel?.roomTypeName || "").trim().toLowerCase();
 
-      // Helper to check if a plan has a price
-      const hasPrice = (planCode) => {
-        if (room.mealPlanPricing && room.mealPlanPricing[planCode]) {
-          const mp = room.mealPlanPricing[planCode];
-          if (parseFloat(mp.b2cPrice || mp.price || 0) > 0) return true;
+      const matchRoom = (candidateList) => {
+        if (!Array.isArray(candidateList)) return null;
+        let match = candidateList.find((r) => {
+          const rKeys = [
+            r?.roomId,
+            r?.id,
+            r?.roomTypeId,
+            r?.room_type_id,
+            r?.bedConfigId,
+            r?.bed_config_id,
+          ]
+            .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+            .map((value) => String(value));
+          return selKeys.some((k) => rKeys.includes(k));
+        });
+        if (!match && selName) {
+          match = candidateList.find((r) => {
+            const rName = (r?.roomName || r?.name || r?.roomTypeName || r?.bedType || "").trim().toLowerCase();
+            return rName && rName === selName;
+          });
         }
-        const flatKey = { EP: "epPrice", BB: "bbPrice", CP: "cpPrice", MAP: "mapPrice", AP: "apPrice" }[planCode];
-        if (flatKey && parseFloat(room[flatKey] || 0) > 0) return true;
-        if (Array.isArray(room.b2cMealPlanPricing)) {
-          const mp = room.b2cMealPlanPricing.find(p => String(p.mealPlan).toUpperCase() === String(planCode).toUpperCase());
-          if (mp && parseFloat(mp.b2cPrice || mp.price || 0) > 0) return true;
-        }
-        return false;
+        return match;
       };
 
-      // If the selected plan has no price, fall back to one that does
-      if (!hasPrice(mealPlan)) {
-        const possiblePlans = ["EP", "BB", "CP", "MAP", "AP"];
-        if (room.mealPlanPricing) {
-          const validKey = Object.keys(room.mealPlanPricing).find(hasPrice);
-          if (validKey) mealPlan = validKey;
-        }
-        if (!hasPrice(mealPlan)) {
-          const validKey = possiblePlans.find(hasPrice);
-          if (validKey) mealPlan = validKey;
-        }
+      let room = matchRoom(roomsSource) || matchRoom(stayRoomsCatalog);
+      if (!room && stayRoomsCatalog.length === 1) {
+        room = stayRoomsCatalog[0];
       }
+      if (!room) {
+        room = {
+          ...sel,
+          roomId: String(sel.roomId || sel.id || "room-1"),
+          roomName: sel.roomName || sel.name || sel.roomTypeName || "Accommodation",
+          maxAdults: Number(stay?.maxAdults ?? 2) || 2,
+          maxChildren: Number(stay?.maxChildren ?? 1) || 1,
+          maxExtraAdults: Number(stay?.maxExtraAdults ?? stay?.maxExtraAdultsAllowed ?? 1) || 1,
+          maxExtraChildren: Number(stay?.maxExtraChildren ?? stay?.maxExtraChildrenAllowed ?? 1) || 1,
+        };
+      }
+
+      let mealPlan = resolveValidMealPlan(sel.mealPlan || sel.mealPlanCode, room, stay);
 
       // Find season that matches check-in date
       const activeSeasonObj = checkInStr ? (
@@ -2011,7 +2338,7 @@ const StayBookingSystem = ({
       resolvedSelectedRooms.forEach(r => {
         const roomsBooked = Number(r.count || 1);
         const catalogRoom = stayRoomsCatalog.find(
-          cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id) === String(r.roomId)
+          cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId) === String(r.roomId)
         );
         const maxAdults = catalogRoom?.maxAdults || r.maxAdults || 2;
         const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (r.maxChildren || 0);
@@ -2037,9 +2364,9 @@ const StayBookingSystem = ({
           : [];
 
         const isBed = r.isBedConfig;
-        const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
-        const validId = rawId > 0 ? rawId : 1;
-        const mealCode = r.mealPlan || r.mealPlanCode || "EP";
+        const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
+        const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (catalogRoom?.roomId || r.roomId || 1);
+        const mealCode = resolveValidMealPlan(r.mealPlan || r.mealPlanCode, catalogRoom || r, stay);
 
         if (isBed) {
           bedConfigsPayload.push({
@@ -2903,7 +3230,7 @@ const StayBookingSystem = ({
           resolvedSelectedRooms.forEach(r => {
             const roomsBooked = Number(r.count || 1);
             const catalogRoom = stayRoomsCatalog.find(
-              cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id) === String(r.roomId)
+              cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId) === String(r.roomId)
             );
             const maxAdults = catalogRoom?.maxAdults || r.maxAdults || 2;
             const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (r.maxChildren || 0);
@@ -2929,15 +3256,16 @@ const StayBookingSystem = ({
               : [];
 
             const isBed = r.isBedConfig;
-            const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
-            const validId = rawId > 0 ? rawId : 1;
+            const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
+            const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (catalogRoom?.roomId || r.roomId || 1);
+            const mealCode = resolveValidMealPlan(r.mealPlan || r.mealPlanCode, catalogRoom || r, stay);
 
             if (isBed) {
               bedConfigsPayload.push({
                 bedConfigId: validId,
                 name: r.roomName || r.name || "Bed",
                 bedsBooked: roomsBooked,
-                mealPlanCode: r.mealPlan || "EP"
+                mealPlanCode: mealCode
               });
             } else {
               roomsPayload.push({
@@ -2949,7 +3277,7 @@ const StayBookingSystem = ({
                 extraChildren,
                 childAges: extraRoomChildAges,
                 extraBeds: Math.min(Number(r.extraBeds || 0), maxExtraBeds),
-                mealPlanCode: r.mealPlan || "EP",
+                mealPlanCode: mealCode,
               });
             }
           });
@@ -4725,6 +5053,12 @@ const StayBookingSystem = ({
                       }
                       if (apiPayableAmount != null && Number.isFinite(apiPayableAmount)) {
                         return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(apiPayableAmount)}</span>;
+                      }
+                      if (pricing?.discountedPerNight && nightsCount > 0) {
+                        const calculatedSubtotal = (pricing.discountedPerNight * nightsCount);
+                        const taxRate = getStayGuestTaxRate(stay);
+                        const calculatedTotal = calculatedSubtotal * (1 + taxRate / 100);
+                        return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(calculatedTotal)}</span>;
                       }
                       const emptyMsg = (() => {
                         if (!checkInDate || !checkOutDate) return "Select dates";

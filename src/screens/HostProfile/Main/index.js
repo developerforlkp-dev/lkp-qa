@@ -35,37 +35,6 @@ const Main = ({ hostId, onLoadingChange }) => {
   useEffect(() => {
     let mounted = true;
 
-    const loadHostData = async () => {
-      if (!hostId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getHost(hostId);
-        if (!mounted) return;
-        setHostData(data || null);
-      } catch (err) {
-        console.error("Failed to load host data:", err);
-        if (!mounted) return;
-        setError(err.message || "Failed to load host profile");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadHostData();
-
-    return () => {
-      mounted = false;
-    };
-  }, [hostId]);
-
-  useEffect(() => {
-    let mounted = true;
-
     const normalizeArray = (payload, keys = []) => {
       if (Array.isArray(payload)) return payload;
       if (!payload || typeof payload !== "object") return [];
@@ -90,21 +59,47 @@ const Main = ({ hostId, onLoadingChange }) => {
       return String(raw || "").toUpperCase().trim();
     };
 
-    const loadTabListings = async () => {
-      if (!hostId) return;
+    const loadAllHostData = async () => {
+      if (!hostId) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      let fetchedHostData = null;
+      let hostLoadError = null;
+
+      // 1. Fetch host profile if available
+      try {
+        const data = await getHost(hostId);
+        if (data) fetchedHostData = data;
+      } catch (err) {
+        // Non-blocking: will fallback to getHostContent
+        hostLoadError = err;
+      }
+
+      // 2. Fetch host public content (GET /api/public/hosts/:leadUserId/content)
       try {
         const contentRes = await getHostContent(hostId);
-        //console.log("📦 Host content API response:", { hostId, contentRes });
 
         if (!mounted) return;
 
-        const grouped = {
-          experiences: [],
-          events: [],
-          stays: [],
-          places: [],
-          foodMenus: [],
-        };
+        // If host object is returned inside contentRes, merge it
+        if (contentRes?.host) {
+          fetchedHostData = {
+            ...(fetchedHostData || {}),
+            host: {
+              ...(contentRes.host || {}),
+              ...(fetchedHostData?.host || {}),
+            },
+            businessInterests:
+              fetchedHostData?.businessInterests ||
+              contentRes?.businessInterests ||
+              [],
+          };
+        }
 
         const directExperiences = normalizeArray(contentRes, ["experiences", "experience", "listings"]);
         const directEvents = normalizeArray(contentRes, ["events", "eventListings", "event_listings"]);
@@ -113,36 +108,57 @@ const Main = ({ hostId, onLoadingChange }) => {
         const directFood = normalizeArray(contentRes, ["foods", "foodMenus", "food_menus", "food", "menus"]);
         const genericListings = normalizeArray(contentRes, ["content", "listings", "items", "data"]);
 
-        if (directExperiences.length || directEvents.length || directStays.length || directPlaces.length || directFood.length) {
-          grouped.experiences = directExperiences;
-          grouped.events = directEvents;
-          grouped.stays = directStays;
-          grouped.places = directPlaces;
-          grouped.foodMenus = directFood;
-        } else {
-          genericListings.forEach((item) => {
-            const code = getInterestCode(item);
-            if (code === "EVENT" || code === "EVENTS") grouped.events.push(item);
-            else if (code === "STAY" || code === "STAYS") grouped.stays.push(item);
-            else if (code === "PLACE" || code === "PLACES") grouped.places.push(item);
-            else if (code === "FOOD") grouped.foodMenus.push(item);
-            else grouped.experiences.push(item);
-          });
-        }
+        const grouped = {
+          experiences: directExperiences.length
+            ? directExperiences
+            : genericListings.filter((item) => {
+                const code = getInterestCode(item);
+                return !code || code === "EXPERIENCE" || code === "EXPERIENCES";
+              }),
+          events: directEvents.length
+            ? directEvents
+            : genericListings.filter((item) => {
+                const code = getInterestCode(item);
+                return code === "EVENT" || code === "EVENTS" || item?.businessInterestId === 2;
+              }),
+          stays: directStays.length
+            ? directStays
+            : genericListings.filter((item) => {
+                const code = getInterestCode(item);
+                return code === "STAY" || code === "STAYS";
+              }),
+          places: directPlaces.length
+            ? directPlaces
+            : genericListings.filter((item) => {
+                const code = getInterestCode(item);
+                return code === "PLACE" || code === "PLACES";
+              }),
+          foodMenus: directFood.length
+            ? directFood
+            : genericListings.filter((item) => {
+                const code = getInterestCode(item);
+                return code === "FOOD" || code === "FOODS";
+              }),
+        };
 
-        setTabListings({
-          experiences: grouped.experiences,
-          events: grouped.events,
-          stays: grouped.stays,
-          places: grouped.places,
-          foodMenus: grouped.foodMenus,
-        });
+        setTabListings(grouped);
       } catch (err) {
         console.error("Failed to load host profile tab listings:", err);
       }
+
+      if (mounted) {
+        if (fetchedHostData) {
+          setHostData(fetchedHostData);
+          setError(null);
+        } else if (hostLoadError) {
+          setError(hostLoadError.message || "Failed to load host profile");
+        }
+        setLoading(false);
+      }
     };
 
-    loadTabListings();
+    loadAllHostData();
+
     return () => {
       mounted = false;
     };

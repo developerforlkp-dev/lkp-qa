@@ -702,6 +702,56 @@ const getStayCatalogRoomIds = (stay) => {
   );
 };
 
+const getAvailableMealPlansForRoom = (catalogRoom, stay) => {
+  const plans = new Set();
+  if (catalogRoom?.mealPlanPricing && typeof catalogRoom.mealPlanPricing === "object") {
+    Object.keys(catalogRoom.mealPlanPricing).forEach((k) => {
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+  if (Array.isArray(catalogRoom?.b2cMealPlanPricing)) {
+    catalogRoom.b2cMealPlanPricing.forEach((p) => {
+      const k = p?.mealPlan || p?.mealPlanCode || p?.meal_plan;
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+  if (Array.isArray(catalogRoom?.availableMealPlans || catalogRoom?.mealPlans)) {
+    (catalogRoom.availableMealPlans || catalogRoom.mealPlans).forEach((k) => {
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+  if (catalogRoom?.epPrice != null) plans.add("EP");
+  if (catalogRoom?.bbPrice != null) plans.add("BB");
+  if (catalogRoom?.cpPrice != null) plans.add("CP");
+  if (catalogRoom?.mapPrice != null) plans.add("MAP");
+  if (catalogRoom?.apPrice != null) plans.add("AP");
+
+  if (stay?.mealPlanPricing && typeof stay.mealPlanPricing === "object") {
+    Object.keys(stay.mealPlanPricing).forEach((k) => {
+      if (k && String(k).trim()) plans.add(String(k).toUpperCase());
+    });
+  }
+
+  if (plans.size === 0) {
+    plans.add("EP");
+  }
+  return plans;
+};
+
+const resolveValidMealPlan = (candidateMealPlan, catalogRoom, stay) => {
+  const availablePlans = getAvailableMealPlansForRoom(catalogRoom, stay);
+  if (candidateMealPlan) {
+    const upper = String(candidateMealPlan).toUpperCase().trim();
+    if (availablePlans.has(upper)) {
+      return upper;
+    }
+  }
+  for (const preferred of ["EP", "CP", "BB", "MAP", "AP"]) {
+    if (availablePlans.has(preferred)) return preferred;
+  }
+  return Array.from(availablePlans)[0] || "EP";
+};
+
 const getStoredStayRooms = (storedRooms, stay) => {
   if (!Array.isArray(storedRooms) || storedRooms.length === 0) return [];
   const validRoomIds = getStayCatalogRoomIds(stay);
@@ -727,7 +777,7 @@ const getStoredStayRooms = (storedRooms, stay) => {
         bedConfigId: room?.bedConfigId != null ? String(room.bedConfigId) : null,
         roomTypeId: room?.roomTypeId != null ? String(room.roomTypeId) : (room?.room_type_id != null ? String(room.room_type_id) : null),
         roomName: room?.roomName || room?.name || room?.roomTypeName || room?.bedType || null,
-        mealPlan: room?.mealPlan || room?.mealPlanCode || room?.meal_plan || "EP",
+        mealPlan: resolveValidMealPlan(room?.mealPlan || room?.mealPlanCode || room?.meal_plan, null, stay),
         count: Math.max(1, Number(room?.count ?? room?.roomCount ?? room?.numberOfRooms ?? 1) || 1),
       };
     })
@@ -1981,7 +2031,7 @@ const StayBookingSystem = ({
       resolvedSelectedRooms.forEach(r => {
         const roomsBooked = Number(r.count || 1);
         const catalogRoom = stayRoomsCatalog.find(
-          cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id) === String(r.roomId)
+          cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId) === String(r.roomId)
         );
         const maxAdults = catalogRoom?.maxAdults || r.maxAdults || 2;
         const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (r.maxChildren || 0);
@@ -2007,9 +2057,9 @@ const StayBookingSystem = ({
           : [];
 
         const isBed = r.isBedConfig;
-        const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
-        const validId = rawId > 0 ? rawId : 1;
-        const mealCode = r.mealPlan || r.mealPlanCode || "EP";
+        const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
+        const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (catalogRoom?.roomId || r.roomId || 1);
+        const mealCode = resolveValidMealPlan(r.mealPlan || r.mealPlanCode, catalogRoom || r, stay);
 
         if (isBed) {
           bedConfigsPayload.push({
@@ -2876,7 +2926,7 @@ const StayBookingSystem = ({
           resolvedSelectedRooms.forEach(r => {
             const roomsBooked = Number(r.count || 1);
             const catalogRoom = stayRoomsCatalog.find(
-              cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id) === String(r.roomId)
+              cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId) === String(r.roomId)
             );
             const maxAdults = catalogRoom?.maxAdults || r.maxAdults || 2;
             const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (r.maxChildren || 0);
@@ -2902,15 +2952,16 @@ const StayBookingSystem = ({
               : [];
 
             const isBed = r.isBedConfig;
-            const rawId = Number(String(r.bedConfigId || r.roomId || r.id).replace('bed-', ''));
-            const validId = rawId > 0 ? rawId : 1;
+            const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
+            const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (catalogRoom?.roomId || r.roomId || 1);
+            const mealCode = resolveValidMealPlan(r.mealPlan || r.mealPlanCode, catalogRoom || r, stay);
 
             if (isBed) {
               bedConfigsPayload.push({
                 bedConfigId: validId,
                 name: r.roomName || r.name || "Bed",
                 bedsBooked: roomsBooked,
-                mealPlanCode: r.mealPlan || "EP"
+                mealPlanCode: mealCode
               });
             } else {
               roomsPayload.push({
@@ -2922,7 +2973,7 @@ const StayBookingSystem = ({
                 extraChildren,
                 childAges: extraRoomChildAges,
                 extraBeds: Math.min(Number(r.extraBeds || 0), maxExtraBeds),
-                mealPlanCode: r.mealPlan || "EP",
+                mealPlanCode: mealCode,
               });
             }
           });
@@ -4658,6 +4709,12 @@ const StayBookingSystem = ({
                       }
                       if (apiPayableAmount != null && Number.isFinite(apiPayableAmount)) {
                         return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(apiPayableAmount)}</span>;
+                      }
+                      if (pricing?.discountedPerNight && nightsCount > 0) {
+                        const calculatedSubtotal = (pricing.discountedPerNight * nightsCount);
+                        const taxRate = getStayGuestTaxRate(stay);
+                        const calculatedTotal = calculatedSubtotal * (1 + taxRate / 100);
+                        return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(calculatedTotal)}</span>;
                       }
                       const emptyMsg = (() => {
                         if (!checkInDate || !checkOutDate) return "Select dates";

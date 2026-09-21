@@ -63,17 +63,23 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const shouldHidePrice = hidePrice;
 
   const isClosedEvent = (() => {
-    // Check if the API explicitly sent isClosed
+    // Check if the API explicitly sent isClosed or badge
     if (item.isClosed === true) return true;
+    if (typeof item.badge === "string" && item.badge.trim().toLowerCase() === "closed") return true;
 
     // Only apply to events
-    const isEvent = wishlistConfig?.itemType === "event" || (item.url && item.url.includes("/event"));
+    const isEvent =
+      wishlistConfig?.itemType === "event" ||
+      (item.url && item.url.includes("/event")) ||
+      String(item?.itemType || "").trim().toLowerCase() === "event";
     if (!isEvent) return false;
 
     const now = new Date();
     
     // Explicit status check
-    if (item.status && String(item.status).toLowerCase() === "closed") return true;
+    if (item.status && String(item.status).trim().toLowerCase() === "closed") return true;
+    if (item.badge && String(item.badge).trim().toLowerCase() === "closed") return true;
+    if (item.eventStatus && String(item.eventStatus).trim().toLowerCase() === "closed") return true;
     
     // Check various end dates to see if booking/ticketing is closed
     if (item.bookingEndDate && new Date(item.bookingEndDate) < now) return true;

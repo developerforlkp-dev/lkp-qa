@@ -6,8 +6,7 @@ import Testimonials from "../../components/Testimonials";
 const HostProfile = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const hostIdParam = params.get("id");
-  const hostId = hostIdParam || null;
+  const hostId = params.get("id") || params.get("leadUserId") || params.get("hostId") || null;
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

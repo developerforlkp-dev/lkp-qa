@@ -904,7 +904,7 @@ const Listings = () => {
               <div
                 className={styles.searchField}
                 ref={dateItemRef}
-                style={{ position: "relative" }}
+                style={{ position: "relative", zIndex: showDatePicker ? 100 : 1 }}
               >
                 <Icon name="calendar" size="20" />
                 <div
@@ -929,7 +929,7 @@ const Listings = () => {
               <div
                 className={styles.searchField}
                 ref={guestItemRef}
-                style={{ position: "relative" }}
+                style={{ position: "relative", zIndex: showGuestPicker ? 100 : 1 }}
               >
                 <Icon name="user" size="20" />
                 <div

@@ -1,4 +1,5 @@
 import axios from "axios";
+import moment from "moment";
 
 const normalizeBaseUrl = (url) => (url ? url.replace(/\/+$/, "") : url);
 const DEV_API_BASE_URL = "https://api.qa.littleknownplanet.com/api";
@@ -2371,6 +2372,68 @@ export const getStayHostelAvailability = async (stayId, checkInDate, checkOutDat
 
 export const getStayBedAvailability = getStayHostelAvailability;
 
+export const getStayHotelRoomPrices = async (stayId, { date, mealPlanCode } = {}) => {
+  try {
+    if (!stayId) throw new Error("stayId is required");
+    const stayIdNum = Number(stayId);
+    const stayIdStr = (!isNaN(stayIdNum) && stayIdNum > 0) ? String(stayIdNum) : String(stayId);
+    const currentDate = date || moment().format("YYYY-MM-DD");
+    const params = { date: currentDate };
+    if (mealPlanCode) {
+      params.mealPlanCode = mealPlanCode;
+    }
+
+    try {
+      const response = await ListingsAPI.get(`/public/stays/${stayIdStr}/hotel-room-prices`, {
+        params,
+      });
+      return response.data;
+    } catch (primaryErr) {
+      if (primaryErr.response?.status === 404) {
+        const response = await ListingsAPI.get(`/stays/${stayIdStr}/hotel-room-prices`, {
+          params,
+        });
+        return response.data;
+      }
+      throw primaryErr;
+    }
+  } catch (error) {
+    console.error("❌ Error fetching stay hotel room prices:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getStayHostelRoomPrices = async (stayId, { date, mealPlanCode } = {}) => {
+  try {
+    if (!stayId) throw new Error("stayId is required");
+    const stayIdNum = Number(stayId);
+    const stayIdStr = (!isNaN(stayIdNum) && stayIdNum > 0) ? String(stayIdNum) : String(stayId);
+    const currentDate = date || moment().format("YYYY-MM-DD");
+    const params = { date: currentDate };
+    if (mealPlanCode) {
+      params.mealPlanCode = mealPlanCode;
+    }
+
+    try {
+      const response = await ListingsAPI.get(`/public/stays/${stayIdStr}/hostel-room-prices`, {
+        params,
+      });
+      return response.data;
+    } catch (primaryErr) {
+      if (primaryErr.response?.status === 404) {
+        const response = await ListingsAPI.get(`/stays/${stayIdStr}/hostel-room-prices`, {
+          params,
+        });
+        return response.data;
+      }
+      throw primaryErr;
+    }
+  } catch (error) {
+    console.error("❌ Error fetching stay hostel room prices:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getStayPropertyAvailability = async (stayId, checkInDate, checkOutDate) => {
   try {
     if (!stayId) {
@@ -2417,7 +2480,7 @@ export const getHost = async (hostId) => {
 };
 
 // Get host-specific listings/content by lead user id
-export const getHostContent = async (leadUserId) => {
+export const getHostContent = async (leadUserId, params = {}) => {
   try {
     if (!leadUserId) {
       throw new Error("leadUserId is required");
@@ -2426,7 +2489,9 @@ export const getHostContent = async (leadUserId) => {
     const leadUserIdNum = Number(leadUserId);
     const leadUserIdStr = (!isNaN(leadUserIdNum) && leadUserIdNum > 0) ? String(leadUserIdNum) : String(leadUserId);
 
-    const response = await ListingsAPI.get(`/public/hosts/${leadUserIdStr}/content`);
+    const response = await ListingsAPI.get(`/public/hosts/${leadUserIdStr}/content`, {
+      params,
+    });
     return response.data;
   } catch (error) {
     console.error(`❌ Error fetching host content for lead user ${leadUserId}:`, error.response?.data || error.message);
@@ -3100,5 +3165,35 @@ export const submitPublicDirectBooking = async (token, payload) => {
     throw error;
   }
 };
+
+/**
+ * GET /api/public/events/:id/ticket-prices?ticketTypeId=12
+ * Fetches dynamic ticket price for an event ticket type.
+ */
+export const getEventTicketPrice = async (eventId, ticketTypeId) => {
+  if (!eventId) throw new Error("Event ID is required");
+  if (ticketTypeId == null) throw new Error("Ticket Type ID is required");
+
+  let response;
+  try {
+    response = await ListingsAPI.get(`/public/events/${eventId}/ticket-prices`, {
+      params: { ticketTypeId },
+    });
+  } catch (err) {
+    const baseUrl = getApiBaseURL();
+    const endpoint = baseUrl.endsWith("/api")
+      ? `${baseUrl}/public/events/${eventId}/ticket-prices`
+      : `${baseUrl}/api/public/events/${eventId}/ticket-prices`;
+    response = await axios.get(endpoint, {
+      params: { ticketTypeId },
+    });
+  }
+
+  const rawData = response?.data;
+  const data = rawData?.data !== undefined ? rawData.data : rawData;
+  const price = data?.price ?? data?.ticketPrice ?? data?.ticket_price ?? (typeof data === "number" ? data : (typeof rawData === "number" ? rawData : null));
+  return price != null ? { price: Number(price) } : data;
+};
+
 
 

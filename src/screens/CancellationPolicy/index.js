@@ -25,29 +25,107 @@ const CancellationPolicy = () => {
     
     const fetchPolicy = async () => {
       try {
-        const data = await getPolicyDocuments();
+        const rawData = await getPolicyDocuments();
         let cancelDoc = null;
-        if (data) {
-          if (Array.isArray(data)) {
-            cancelDoc = data.find((d) =>
-              ["cancellation-policy", "cancellationPolicy", "cancellation_policy", "cancellation"].includes(
-                d?.documentKey || d?.key || d?.slug
-              )
-            );
-          } else if (typeof data === "object") {
+        if (rawData) {
+          if (typeof rawData === "string") {
+            cancelDoc = rawData;
+          } else if (Array.isArray(rawData)) {
+            const searchKeys = [
+              "customer-cancellation-policy",
+              "customercancellationpolicy",
+              "customer_cancellation_policy",
+              "customer-cancellation",
+              "customercancellation",
+              "customer_cancellation",
+              "cancellation-policy",
+              "cancellationpolicy",
+              "cancellation_policy",
+              "cancellation",
+              "refund-policy",
+              "refundpolicy",
+              "refund"
+            ];
+            cancelDoc = rawData.find((d) => {
+              const k = (d?.documentKey || d?.key || d?.slug || d?.type || d?.name || d?.policyType || d?.documentType || "")
+                .toLowerCase()
+                .replace(/[-_ ]/g, "");
+              return searchKeys.some((sk) => sk.replace(/[-_ ]/g, "") === k);
+            });
+
+            if (!cancelDoc) {
+              cancelDoc = rawData.find((d) => {
+                const k = JSON.stringify(d).toLowerCase();
+                return k.includes("cancel") && k.includes("customer");
+              });
+            }
+
+            if (!cancelDoc) {
+              cancelDoc = rawData.find((d) => {
+                const k = (d?.documentKey || d?.key || d?.slug || d?.type || d?.name || d?.title || "").toLowerCase();
+                return k.includes("cancel");
+              });
+            }
+          } else if (typeof rawData === "object") {
             cancelDoc =
-              data.cancellationPolicy ||
-              data["cancellation-policy"] ||
-              data.cancellation_policy ||
-              data.cancellation;
+              rawData.customerCancellationPolicy ||
+              rawData["customer-cancellation-policy"] ||
+              rawData.customer_cancellation_policy ||
+              rawData.customerCancellation ||
+              rawData["customer-cancellation"] ||
+              rawData.customer_cancellation ||
+              rawData.cancellationPolicy ||
+              rawData["cancellation-policy"] ||
+              rawData.cancellation_policy ||
+              rawData.cancellation ||
+              rawData.refundPolicy ||
+              rawData["refund-policy"] ||
+              rawData.refund_policy;
+
+            if (!cancelDoc) {
+              const entries = Object.entries(rawData);
+              const customerCancelEntry = entries.find(([k]) => {
+                const lk = k.toLowerCase();
+                return lk.includes("customer") && lk.includes("cancel");
+              });
+              if (customerCancelEntry) {
+                cancelDoc = customerCancelEntry[1];
+              } else {
+                const cancelEntry = entries.find(([k]) => k.toLowerCase().includes("cancel"));
+                if (cancelEntry) {
+                  cancelDoc = cancelEntry[1];
+                }
+              }
+            }
+
+            if (!cancelDoc && (rawData.contentHtml || rawData.content || rawData.html || rawData.body || rawData.description)) {
+              cancelDoc = rawData;
+            }
           }
         }
         if (cancelDoc) {
-          if (cancelDoc.contentHtml) {
-            setDocumentHtml(cancelDoc.contentHtml);
-          }
-          if (cancelDoc.title) {
-            setTitle(cancelDoc.title);
+          if (typeof cancelDoc === "string") {
+            setDocumentHtml(cancelDoc);
+          } else if (typeof cancelDoc === "object") {
+            const htmlContent =
+              cancelDoc.contentHtml ||
+              cancelDoc.content ||
+              cancelDoc.html ||
+              cancelDoc.body ||
+              cancelDoc.description ||
+              cancelDoc.text ||
+              cancelDoc.document ||
+              cancelDoc.policy ||
+              cancelDoc.details ||
+              cancelDoc.value ||
+              (typeof cancelDoc.data === "string" ? cancelDoc.data : "");
+
+            if (htmlContent) {
+              setDocumentHtml(htmlContent);
+            }
+            if (cancelDoc.title || cancelDoc.name || cancelDoc.documentTitle) {
+              setTitle(cancelDoc.title || cancelDoc.name || cancelDoc.documentTitle);
+            }
           }
         }
       } catch (error) {
@@ -99,6 +177,88 @@ const CancellationPolicy = () => {
         }}
       />
 
+      <style>{`
+        .policy-rich-text {
+          color: ${tokens.FG};
+          font-size: 16px;
+          line-height: 1.85;
+          word-break: break-word;
+        }
+        .policy-rich-text p {
+          margin-bottom: 16px;
+        }
+        .policy-rich-text p:last-child {
+          margin-bottom: 0;
+        }
+        .policy-rich-text ul {
+          list-style-type: disc !important;
+          margin: 16px 0 16px 24px !important;
+          padding-left: 8px !important;
+        }
+        .policy-rich-text ol {
+          list-style-type: decimal !important;
+          margin: 16px 0 16px 24px !important;
+          padding-left: 8px !important;
+        }
+        .policy-rich-text li {
+          margin-bottom: 8px;
+          list-style: inherit !important;
+          display: list-item !important;
+        }
+        .policy-rich-text li:last-child {
+          margin-bottom: 0;
+        }
+        .policy-rich-text h1,
+        .policy-rich-text h2,
+        .policy-rich-text h3,
+        .policy-rich-text h4,
+        .policy-rich-text h5,
+        .policy-rich-text h6 {
+          color: ${tokens.FG};
+          margin-top: 28px;
+          margin-bottom: 12px;
+          font-weight: 600;
+          line-height: 1.3;
+        }
+        .policy-rich-text h1 { font-size: 28px; }
+        .policy-rich-text h2 { font-size: 22px; }
+        .policy-rich-text h3 { font-size: 18px; }
+        .policy-rich-text strong, .policy-rich-text b {
+          font-weight: 600;
+          color: ${tokens.FG};
+        }
+        .policy-rich-text a {
+          color: ${tokens.A};
+          text-decoration: underline;
+        }
+        .policy-rich-text hr {
+          border: 0;
+          border-top: 1px solid ${tokens.B};
+          margin: 24px 0;
+        }
+        .policy-rich-text blockquote {
+          border-left: 3px solid ${tokens.A};
+          padding-left: 16px;
+          margin: 16px 0;
+          color: ${tokens.M};
+          font-style: italic;
+        }
+        .policy-rich-text table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 16px 0;
+        }
+        .policy-rich-text th, .policy-rich-text td {
+          border: 1px solid ${tokens.B};
+          padding: 10px 14px;
+          text-align: left;
+        }
+        .policy-rich-text th {
+          background: rgba(0, 0, 0, 0.03);
+          font-weight: 600;
+        }
+      `}</style>
+
       <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
         <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
@@ -125,6 +285,7 @@ const CancellationPolicy = () => {
               <p style={{ textAlign: "center", color: tokens.M }}>Loading...</p>
             ) : documentHtml ? (
               <div 
+                className="policy-rich-text"
                 style={{ 
                   color: tokens.FG, 
                   fontSize: "16px", 

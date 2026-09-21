@@ -10,7 +10,7 @@ import TimeSlotsPicker from "../TimeSlotsPicker";
 import Counter from "../Counter";
 import Dropdown from "../Dropdown";
 import ChildAgeSelect from "../ChildAgeSelect";
-import { createEventOrder, createOrder, previewOrderPrice, getEventSlotAvailability, getListingSlots, precheckEventOrder, formatEventPrecheckErrorMessage, finalizeFreeEvent, calculateExperienceTotal, calculateEventTotal } from "../../utils/api";
+import { createEventOrder, createOrder, previewOrderPrice, getEventSlotAvailability, getListingSlots, precheckEventOrder, formatEventPrecheckErrorMessage, finalizeFreeEvent, calculateExperienceTotal, calculateEventTotal, getEventTicketPrice } from "../../utils/api";
 import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout, isAuthOrTokenError } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
@@ -1637,6 +1637,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [isTicketDropdownOpen, setIsTicketDropdownOpen] = useState(false);
   const [selectedEventSlotIds, setSelectedEventSlotIds] = useState([]);
   const selectedEventSlotId = selectedEventSlotIds[0] || "";
+  const [apiTicketPrices, setApiTicketPrices] = useState({});
 
   // Rehydrate booking selection state if returning from successful authentication redirect
   useEffect(() => {
@@ -1681,6 +1682,76 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
     return eventTickets.length === 1 ? eventTickets[0] : null;
   }, [eventTickets, isEventBooking, selectedTicketTypeId]);
+
+  const eventIdForAvailability = listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId;
+
+  // Fetch dynamic ticket prices from GET /api/public/events/:id/ticket-prices?ticketTypeId=...
+  useEffect(() => {
+    if (!isEventBooking || !eventIdForAvailability) return;
+    const allTickets = [
+      ...(Array.isArray(eventTickets) ? eventTickets : []),
+      ...(selectedTicket ? [selectedTicket] : []),
+    ];
+
+    if (allTickets.length === 0 && !selectedTicketTypeId) return;
+
+    let isMounted = true;
+    const fetchPrices = async () => {
+      try {
+        const priceMap = {};
+        await Promise.all(
+          allTickets.map(async (ticket, idx) => {
+            const rawId = ticket?.ticketTypeId ?? ticket?.ticket_type_id ?? ticket?.ticketId ?? ticket?.ticket_id ?? ticket?.id ?? ticket?.typeId ?? (idx + 1);
+            if (rawId != null && !String(rawId).startsWith("ticket-")) {
+              try {
+                const res = await getEventTicketPrice(eventIdForAvailability, rawId);
+                const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
+                if (price != null && !Number.isNaN(Number(price))) {
+                  const numP = Number(price);
+                  priceMap[String(rawId)] = numP;
+                  if (ticket.id != null) priceMap[String(ticket.id)] = numP;
+                  if (ticket.ticketTypeId != null) priceMap[String(ticket.ticketTypeId)] = numP;
+                  if (ticket.ticket_type_id != null) priceMap[String(ticket.ticket_type_id)] = numP;
+                  if (ticket.ticketId != null) priceMap[String(ticket.ticketId)] = numP;
+                  if (ticket.ticket_id != null) priceMap[String(ticket.ticket_id)] = numP;
+                  if (ticket.typeId != null) priceMap[String(ticket.typeId)] = numP;
+                  if (ticket.name) priceMap[String(ticket.name).toLowerCase().trim()] = numP;
+                  if (ticket.ticketName) priceMap[String(ticket.ticketName).toLowerCase().trim()] = numP;
+                  if (ticket.ticketTypeName) priceMap[String(ticket.ticketTypeName).toLowerCase().trim()] = numP;
+                  priceMap[`ticket-${idx}`] = numP;
+                  priceMap[String(idx)] = numP;
+                }
+              } catch (err) {
+                console.error(`Failed to fetch ticket price for ticket ${rawId}:`, err);
+              }
+            }
+          })
+        );
+        if (selectedTicketTypeId && !priceMap[String(selectedTicketTypeId)] && !String(selectedTicketTypeId).startsWith("ticket-")) {
+          try {
+            const res = await getEventTicketPrice(eventIdForAvailability, selectedTicketTypeId);
+            const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
+            if (price != null && !Number.isNaN(Number(price))) {
+              priceMap[String(selectedTicketTypeId)] = Number(price);
+            }
+          } catch (err) {
+            console.error(`Failed to fetch ticket price for selected ticket ${selectedTicketTypeId}:`, err);
+          }
+        }
+        if (isMounted && Object.keys(priceMap).length > 0) {
+          setApiTicketPrices((prev) => ({ ...prev, ...priceMap }));
+        }
+      } catch (e) {
+        console.error("Error fetching event ticket prices:", e);
+      }
+    };
+
+    fetchPrices();
+    return () => {
+      isMounted = false;
+    };
+  }, [isEventBooking, eventIdForAvailability, eventTickets, selectedTicketTypeId, selectedTicket, showTicketPicker]);
+
   const ticketSaleWindow = useMemo(() => (
     isEventBooking ? getTicketSaleWindow(listing, selectedTicket) : { isOpen: true, status: "open", message: "" }
   ), [isEventBooking, listing, selectedTicket]);
@@ -1721,7 +1792,22 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const allEventSlotSource = useMemo(() => (
     eventFallbackSlots.length > 0 ? eventFallbackSlots : allEventTicketsSlots
   ), [eventFallbackSlots, allEventTicketsSlots]);
-  const eventPrice = getTicketPrice(selectedTicket, asNumber(listing?.ticketPrice) ?? asNumber(listing?.price) ?? asNumber(listing?.basePrice) ?? 0);
+  const selectedTicketIdStr = String(selectedTicket?.id ?? selectedTicket?.ticketTypeId ?? selectedTicket?.typeId ?? selectedTicketTypeId ?? "");
+  const dynamicSelectedTicketPrice =
+    apiTicketPrices[selectedTicketIdStr] ??
+    apiTicketPrices[String(selectedTicket?.ticketTypeId)] ??
+    apiTicketPrices[String(selectedTicket?.ticket_type_id)] ??
+    apiTicketPrices[String(selectedTicket?.ticketId)] ??
+    apiTicketPrices[String(selectedTicket?.ticket_id)] ??
+    apiTicketPrices[String(selectedTicket?.id)] ??
+    apiTicketPrices[String(selectedTicket?.typeId)] ??
+    apiTicketPrices[String(selectedTicket?.name || "").toLowerCase().trim()] ??
+    apiTicketPrices[String(selectedTicket?.ticketName || "").toLowerCase().trim()] ??
+    apiTicketPrices[String(selectedTicket?.ticketTypeName || "").toLowerCase().trim()] ??
+    apiTicketPrices[String(selectedTicketTypeId)];
+  const eventPrice = dynamicSelectedTicketPrice !== undefined
+    ? Number(dynamicSelectedTicketPrice)
+    : getTicketPrice(selectedTicket, asNumber(listing?.ticketPrice) ?? asNumber(listing?.price) ?? asNumber(listing?.basePrice) ?? 0);
   const effectiveEventPrice = useMemo(() => (
     getEffectiveTicketPrice(selectedTicket, billableAdults, eventPrice)
   ), [selectedTicket, billableAdults, eventPrice]);
@@ -1730,7 +1816,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   ), [effectiveEventPrice.price, listing?.pricing, listing?.earlyBirdDiscounts, startDate]);
   const selectedTicketTotalTickets = getTicketTotalTickets(selectedTicket);
   const selectedTicketMaxPerBooking = getTicketMaxPerBooking(selectedTicket);
-  const eventIdForAvailability = asNumber(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId);
   const [eventAvailabilityLoading, setEventAvailabilityLoading] = useState(false);
   const [eventAvailabilityError, setEventAvailabilityError] = useState("");
   const [eventAvailabilityRecords, setEventAvailabilityRecords] = useState([]);
@@ -4940,7 +5025,20 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                           {ticketsForSelectedSlot.map((ticket, index) => {
                                             const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
                                             const isSelected = String(selectedTicketTypeId) === ticketId;
-                                            const ticketBasePrice = getTicketPrice(ticket, 0);
+                                            const priceCandidate =
+                                              apiTicketPrices[ticketId] ??
+                                              apiTicketPrices[String(ticket.ticketTypeId)] ??
+                                              apiTicketPrices[String(ticket.ticket_type_id)] ??
+                                              apiTicketPrices[String(ticket.ticketId)] ??
+                                              apiTicketPrices[String(ticket.ticket_id)] ??
+                                              apiTicketPrices[String(ticket.id)] ??
+                                              apiTicketPrices[String(ticket.typeId)] ??
+                                              apiTicketPrices[String(ticket.name || "").toLowerCase().trim()] ??
+                                              apiTicketPrices[String(ticket.ticketName || "").toLowerCase().trim()] ??
+                                              apiTicketPrices[String(ticket.ticketTypeName || "").toLowerCase().trim()] ??
+                                              apiTicketPrices[`ticket-${index}`] ??
+                                              apiTicketPrices[String(index)];
+                                            const ticketBasePrice = priceCandidate !== undefined ? Number(priceCandidate) : getTicketPrice(ticket, 0);
                                             const ticketEffectivePrice = getEffectiveTicketPrice(ticket, billableAdults, ticketBasePrice).price;
                                             const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
                                             return (
@@ -4978,7 +5076,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                   )}
                                                 </div>
                                                 <div style={{ fontWeight: 800, fontSize: 14, color: isSelected ? A : FG }}>
-                                                  ₹{Number(ticketGuestPrice || 0).toFixed(2)}
+                                                  ₹{Number(ticketBasePrice || 0).toFixed(2)}
                                                 </div>
                                               </div>
                                             );
@@ -5284,22 +5382,26 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                             {/* Ticket Applied Details */}
                             {isEventBooking && selectedTicketTypeId && selectedTicket && (
                               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                                <span style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                  padding: "4px 10px",
-                                  borderRadius: 100,
-                                  background: `${A}12`,
-                                  border: `1px solid ${A}28`,
-                                  color: A,
-                                  fontSize: 10,
-                                  fontWeight: 800,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.05em",
-                                  width: "fit-content"
-                                }}>
-                                  🏷 Ticket Applied : {selectedTicket.ticketName || selectedTicket.name}
+                                <span
+                                  onClick={() => setShowTicketPicker(true)}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "4px 10px",
+                                    borderRadius: 100,
+                                    background: `${A}12`,
+                                    border: `1px solid ${A}28`,
+                                    color: A,
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                    width: "fit-content",
+                                    cursor: "pointer"
+                                  }}
+                                >
+                                  🏷 Ticket : {selectedTicket.ticketName || selectedTicket.name} — ₹{Number(eventPrice || 0).toFixed(2)} (Change)
                                 </span>
                               </div>
                             )}
