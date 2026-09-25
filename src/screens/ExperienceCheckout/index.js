@@ -580,6 +580,8 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
           bookingDate: dateStr,
           guestCount,
           includePriority,
+          isPrivateBooking: Boolean(bookingData?.isPrivateBooking || bookingData?.privateBooking),
+          privateBooking: Boolean(bookingData?.isPrivateBooking || bookingData?.privateBooking),
         });
 
         if (!active || !res) return;

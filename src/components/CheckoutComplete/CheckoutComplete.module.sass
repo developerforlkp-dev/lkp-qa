@@ -214,3 +214,25 @@
             margin-right: 12px
             +m
                 margin-right: 0
+
+@media print
+    body
+        background: #ffffff !important
+        color: #141416 !important
+
+    header, footer, nav, [class*="Header"], [class*="Footer"], [class*="Control"], [class*="CheckoutSlider"], [class*="slider"]
+        display: none !important
+
+    .btns
+        display: none !important
+
+    .complete
+        position: static !important
+        width: 100% !important
+        max-width: 100% !important
+        margin: 0 !important
+        padding: 0 !important
+        box-shadow: none !important
+        border: none !important
+        background: #ffffff !important
+        color: #141416 !important

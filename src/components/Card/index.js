@@ -6,6 +6,7 @@ import Icon from "../Icon";
 import Favorite from "../Favorite";
 
 const getWishlistConfig = (item) => {
+  if (item?.isCategoryCard || item?.isCategory) return null;
   const explicitType = String(item?.wishlistItemType || item?.itemType || "").trim().toLowerCase();
   const explicitId = item?.wishlistItemId ?? item?.itemId ?? item?.listingId ?? item?.eventId ?? item?.stayId;
 
@@ -48,6 +49,8 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   }, []);
   const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
+  const shouldHideWishlist = hideWishlist || item?.hideWishlist || item?.isCategoryCard || item?.isCategory;
+  const shouldHideRating = item?.hideRating || item?.isCategoryCard || item?.isCategory;
   
   const defaultImage = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
   const hasSasToken = item.src && item.src.includes("lkpleadstoragedev.blob.core.windows.net") && 
@@ -114,6 +117,12 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     }
   };
 
+  const hasRatingOrBadge = !shouldHideRating && (
+    Number(item.reviews) > 0 || !location.pathname.includes('/listings')
+  );
+  const hasPriceToDisplay = !shouldHidePrice && item.hasPrice && item.cost;
+  const showFoot = hasRatingOrBadge || hasPriceToDisplay;
+
   return (
     <Link
       className={cn(
@@ -146,7 +155,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
             CLOSED
           </div>
         )}
-        {wishlistConfig && !hideWishlist && (
+        {wishlistConfig && !shouldHideWishlist && (
           <Favorite
             className={styles.favorite}
             itemType={wishlistConfig.itemType}
@@ -196,53 +205,55 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
           </div>
         )}
 
-        <div className={styles.foot}>
-          <div className={styles.flex}>
-            {!item.hideRating && (
-              Number(item.reviews) > 0 ? (
-                <div className={styles.rating}>
-                  <div className={styles.ratingTop}>
-                    <Icon name="star" />
-                    <span className={styles.number}>
-                      {typeof item.rating === "number" && !Number.isInteger(item.rating)
-                        ? item.rating.toFixed(1)
-                        : (item.rating || 0)}
+        {showFoot && (
+          <div className={styles.foot}>
+            <div className={styles.flex}>
+              {!shouldHideRating && (
+                Number(item.reviews) > 0 ? (
+                  <div className={styles.rating}>
+                    <div className={styles.ratingTop}>
+                      <Icon name="star" />
+                      <span className={styles.number}>
+                        {typeof item.rating === "number" && !Number.isInteger(item.rating)
+                          ? item.rating.toFixed(1)
+                          : (item.rating || 0)}
+                      </span>
+                    </div>
+                    <span className={styles.review}>
+                      ({item.reviews || 0})
                     </span>
                   </div>
-                  <span className={styles.review}>
-                    ({item.reviews || 0})
-                  </span>
-                </div>
-              ) : (
-                !location.pathname.includes('/listings') && (
-                  <div className={styles.newBadge}>
-                    <Icon name="star" />
-                    <span>
-                      {(() => {
-                        const t = wishlistConfig?.itemType || String(item?.itemType || item?.type || "").toLowerCase();
-                        const url = String(item?.url || "").toLowerCase();
-                        if (t === "stay" || url.includes("/stay-details")) return "New Stay";
-                        if (t === "event" || url.includes("/event")) return "New Event";
-                        if (t === "food" || url.includes("/food")) return "New Food";
-                        if (t === "place" || url.includes("/place")) return "New Place";
-                        return "New Experience";
-                      })()}
-                    </span>
-                  </div>
+                ) : (
+                  !location.pathname.includes('/listings') && (
+                    <div className={styles.newBadge}>
+                      <Icon name="star" />
+                      <span>
+                        {(() => {
+                          const t = wishlistConfig?.itemType || String(item?.itemType || item?.type || "").toLowerCase();
+                          const url = String(item?.url || "").toLowerCase();
+                          if (t === "stay" || url.includes("/stay-details")) return "New Stay";
+                          if (t === "event" || url.includes("/event")) return "New Event";
+                          if (t === "food" || url.includes("/food")) return "New Food";
+                          if (t === "place" || url.includes("/place")) return "New Place";
+                          return "New Experience";
+                        })()}
+                      </span>
+                    </div>
+                  )
                 )
-              )
-            )}
+              )}
 
-            {!shouldHidePrice && item.hasPrice && item.cost && (
-              <div className={styles.price}>
-                {item.priceOld && <div className={styles.old}>{item.priceOld}</div>}
-                <div className={styles.cost}>
-                  {item.cost}
+              {hasPriceToDisplay && (
+                <div className={styles.price}>
+                  {item.priceOld && <div className={styles.old}>{item.priceOld}</div>}
+                  <div className={styles.cost}>
+                    {item.cost}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Link>
   );

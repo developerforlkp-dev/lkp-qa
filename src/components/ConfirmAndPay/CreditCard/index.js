@@ -179,6 +179,7 @@ const resolveOrderPayload = (bookingData, guestDetails, messageText) => {
         })).filter(a => Boolean(a.addonId)),
         guestAnswers: bookingData?.guestAnswers || [],
         privateBooking: Boolean(bookingData?.privateBooking || bookingData?.isPrivateBooking),
+        isPrivateBooking: Boolean(bookingData?.privateBooking || bookingData?.isPrivateBooking),
       };
     } else if (bookingType === "event" && (bookingData?.eventId || bookingData?.id)) {
       payload = {

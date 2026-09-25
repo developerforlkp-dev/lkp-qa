@@ -152,6 +152,18 @@ export default function MobileBottomNavbar() {
           const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
           const isLandingPage = homeRoutes.includes(normalizedPath);
           
+          // 1. Check if footer is visible in the viewport (on any page)
+          const footer = document.getElementById("main-footer") || document.querySelector(".cinematic-footer, footer");
+          if (footer) {
+            const rect = footer.getBoundingClientRect();
+            if (rect.top < window.innerHeight) {
+              setVisible(false);
+              lastScrollYRef.current = currentScrollY;
+              ticking = false;
+              return;
+            }
+          }
+
           // Landing page specific behavior
           if (isLandingPage) {
             const exploreSection = document.getElementById("explore-by-section");
@@ -170,7 +182,7 @@ export default function MobileBottomNavbar() {
           } else {
             // Normal behavior for other pages
 
-            // 1. If we are near the top of the page, always show the navbar
+            // If we are near the top of the page, always show the navbar
             if (currentScrollY < 10) {
               setVisible(true);
               lastScrollYRef.current = currentScrollY;
@@ -178,19 +190,7 @@ export default function MobileBottomNavbar() {
               return;
             }
 
-            // 2. Check if footer is visible in the viewport
-            const footer = document.querySelector(".cinematic-footer, footer");
-            if (footer) {
-              const rect = footer.getBoundingClientRect();
-              if (rect.top < window.innerHeight) {
-                setVisible(false);
-                lastScrollYRef.current = currentScrollY;
-                ticking = false;
-                return;
-              }
-            }
-
-            // 3. Compare scroll positions to decide visibility (threshold of 5px)
+            // Compare scroll positions to decide visibility (threshold of 5px)
             if (Math.abs(currentScrollY - lastScrollY) > 5) {
               if (currentScrollY > lastScrollY) {
                 setVisible(false); // scrolling down -> hide

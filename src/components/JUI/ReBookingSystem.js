@@ -430,41 +430,11 @@ const getRateFromPricing = (...values) => {
   return 0;
 };
 
-const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts = [], bookingDate = null) => {
+const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts = [], bookingDate = null, discountedUnitPrice = null) => {
   const baseUnitPrice = asNumber(unitPrice) ?? 0;
   const discount = pricing?.discount || {};
   const tax = pricing?.tax || {};
 
-  const promoDiscountRate = getRateFromPricing(
-    discount.customer,
-    discount.guest,
-    discount.total,
-    pricing?.discountRate,
-    pricing?.discount
-  );
-
-  let earlyBirdDiscountRate = 0;
-
-  // Apply Early Bird Discount if applicable
-  if (bookingDate && Array.isArray(earlyBirdDiscounts) && earlyBirdDiscounts.length > 0) {
-    const today = moment().startOf('day');
-    const bDate = moment(bookingDate).startOf('day');
-    const daysInAdvance = bDate.diff(today, 'days');
-
-    const applicableDiscounts = earlyBirdDiscounts.filter(d =>
-      d.isActive !== false && daysInAdvance >= (asNumber(d.daysInAdvance) ?? 0)
-    );
-
-    if (applicableDiscounts.length > 0) {
-      // Use the discount with the highest percentage if multiple apply
-      const bestDiscount = applicableDiscounts.reduce((prev, current) =>
-        ((asNumber(current.percentage) ?? 0) > (asNumber(prev.percentage) ?? 0)) ? current : prev
-      );
-      earlyBirdDiscountRate = (asNumber(bestDiscount.percentage) ?? 0);
-    }
-  }
-
-  const discountRate = promoDiscountRate + earlyBirdDiscountRate;
   const customerTaxRate = getRateFromPricing(
     tax.customer,
     tax.guest,
@@ -474,11 +444,56 @@ const calculateEventGuestPricing = (unitPrice, pricing = {}, earlyBirdDiscounts 
     tax.total
   );
 
-  const discountAmount = baseUnitPrice * (discountRate / 100);
-  const promoDiscountAmount = baseUnitPrice * (promoDiscountRate / 100);
-  const earlyBirdDiscountAmount = baseUnitPrice * (earlyBirdDiscountRate / 100);
+  let promoDiscountRate = 0;
+  let promoDiscountAmount = 0;
+  let earlyBirdDiscountRate = 0;
+  let earlyBirdDiscountAmount = 0;
+  let discountRate = 0;
+  let discountAmount = 0;
+  let priceAfterDiscount = baseUnitPrice;
 
-  const priceAfterDiscount = Math.max(0, baseUnitPrice - discountAmount);
+  if (discountedUnitPrice != null && !Number.isNaN(Number(discountedUnitPrice)) && Number(discountedUnitPrice) >= 0) {
+    const discountedNum = Number(discountedUnitPrice);
+    priceAfterDiscount = discountedNum;
+    if (baseUnitPrice > discountedNum && baseUnitPrice > 0) {
+      discountAmount = baseUnitPrice - discountedNum;
+      discountRate = (discountAmount / baseUnitPrice) * 100;
+    }
+  } else {
+    promoDiscountRate = getRateFromPricing(
+      discount.customer,
+      discount.guest,
+      discount.total,
+      pricing?.discountRate,
+      pricing?.discount
+    );
+
+    // Apply Early Bird Discount if applicable
+    if (bookingDate && Array.isArray(earlyBirdDiscounts) && earlyBirdDiscounts.length > 0) {
+      const today = moment().startOf('day');
+      const bDate = moment(bookingDate).startOf('day');
+      const daysInAdvance = bDate.diff(today, 'days');
+
+      const applicableDiscounts = earlyBirdDiscounts.filter(d =>
+        d.isActive !== false && daysInAdvance >= (asNumber(d.daysInAdvance) ?? 0)
+      );
+
+      if (applicableDiscounts.length > 0) {
+        // Use the discount with the highest percentage if multiple apply
+        const bestDiscount = applicableDiscounts.reduce((prev, current) =>
+          ((asNumber(current.percentage) ?? 0) > (asNumber(prev.percentage) ?? 0)) ? current : prev
+        );
+        earlyBirdDiscountRate = (asNumber(bestDiscount.percentage) ?? 0);
+      }
+    }
+
+    discountRate = promoDiscountRate + earlyBirdDiscountRate;
+    discountAmount = baseUnitPrice * (discountRate / 100);
+    promoDiscountAmount = baseUnitPrice * (promoDiscountRate / 100);
+    earlyBirdDiscountAmount = baseUnitPrice * (earlyBirdDiscountRate / 100);
+    priceAfterDiscount = Math.max(0, baseUnitPrice - discountAmount);
+  }
+
   const taxAmount = priceAfterDiscount * (customerTaxRate / 100);
   const finalUnitPrice = priceAfterDiscount + taxAmount;
 
@@ -1685,7 +1700,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   const eventIdForAvailability = listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId;
 
-  // Fetch dynamic ticket prices from GET /api/public/events/:id/ticket-prices?ticketTypeId=...
+  // Fetch dynamic ticket prices from GET /api/public/events/:id/ticket-prices
   useEffect(() => {
     if (!isEventBooking || !eventIdForAvailability) return;
     const allTickets = [
@@ -1693,51 +1708,50 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       ...(selectedTicket ? [selectedTicket] : []),
     ];
 
-    if (allTickets.length === 0 && !selectedTicketTypeId) return;
-
     let isMounted = true;
     const fetchPrices = async () => {
       try {
         const priceMap = {};
-        await Promise.all(
-          allTickets.map(async (ticket, idx) => {
-            const rawId = ticket?.ticketTypeId ?? ticket?.ticket_type_id ?? ticket?.ticketId ?? ticket?.ticket_id ?? ticket?.id ?? ticket?.typeId ?? (idx + 1);
-            if (rawId != null && !String(rawId).startsWith("ticket-")) {
-              try {
-                const res = await getEventTicketPrice(eventIdForAvailability, rawId);
-                const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
-                if (price != null && !Number.isNaN(Number(price))) {
-                  const numP = Number(price);
-                  priceMap[String(rawId)] = numP;
-                  if (ticket.id != null) priceMap[String(ticket.id)] = numP;
-                  if (ticket.ticketTypeId != null) priceMap[String(ticket.ticketTypeId)] = numP;
-                  if (ticket.ticket_type_id != null) priceMap[String(ticket.ticket_type_id)] = numP;
-                  if (ticket.ticketId != null) priceMap[String(ticket.ticketId)] = numP;
-                  if (ticket.ticket_id != null) priceMap[String(ticket.ticket_id)] = numP;
-                  if (ticket.typeId != null) priceMap[String(ticket.typeId)] = numP;
-                  if (ticket.name) priceMap[String(ticket.name).toLowerCase().trim()] = numP;
-                  if (ticket.ticketName) priceMap[String(ticket.ticketName).toLowerCase().trim()] = numP;
-                  if (ticket.ticketTypeName) priceMap[String(ticket.ticketTypeName).toLowerCase().trim()] = numP;
-                  priceMap[`ticket-${idx}`] = numP;
-                  priceMap[String(idx)] = numP;
-                }
-              } catch (err) {
-                console.error(`Failed to fetch ticket price for ticket ${rawId}:`, err);
+        const res = await getEventTicketPrice(eventIdForAvailability);
+        const rawPrices = res?.price ?? res?.prices ?? res?.data?.price ?? res?.data?.prices ?? res?.data ?? res;
+        const pricesArray = Array.isArray(rawPrices) ? rawPrices : null;
+
+        if (Array.isArray(pricesArray)) {
+          pricesArray.forEach((p, idx) => {
+            const numP = Number(p);
+            if (!Number.isNaN(numP)) {
+              priceMap[String(idx)] = numP;
+              priceMap[`ticket-${idx}`] = numP;
+              const ticket = eventTickets?.[idx] || allTickets?.[idx];
+              if (ticket) {
+                const rawId = ticket?.ticketTypeId ?? ticket?.ticket_type_id ?? ticket?.ticketId ?? ticket?.ticket_id ?? ticket?.id ?? ticket?.typeId;
+                if (rawId != null) priceMap[String(rawId)] = numP;
+                if (ticket.id != null) priceMap[String(ticket.id)] = numP;
+                if (ticket.ticketTypeId != null) priceMap[String(ticket.ticketTypeId)] = numP;
+                if (ticket.ticket_type_id != null) priceMap[String(ticket.ticket_type_id)] = numP;
+                if (ticket.ticketId != null) priceMap[String(ticket.ticketId)] = numP;
+                if (ticket.ticket_id != null) priceMap[String(ticket.ticket_id)] = numP;
+                if (ticket.typeId != null) priceMap[String(ticket.typeId)] = numP;
+                if (ticket.name) priceMap[String(ticket.name).toLowerCase().trim()] = numP;
+                if (ticket.ticketName) priceMap[String(ticket.ticketName).toLowerCase().trim()] = numP;
+                if (ticket.ticketTypeName) priceMap[String(ticket.ticketTypeName).toLowerCase().trim()] = numP;
               }
             }
-          })
-        );
-        if (selectedTicketTypeId && !priceMap[String(selectedTicketTypeId)] && !String(selectedTicketTypeId).startsWith("ticket-")) {
-          try {
-            const res = await getEventTicketPrice(eventIdForAvailability, selectedTicketTypeId);
-            const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
-            if (price != null && !Number.isNaN(Number(price))) {
-              priceMap[String(selectedTicketTypeId)] = Number(price);
+          });
+        } else if (rawPrices != null && !Number.isNaN(Number(rawPrices))) {
+          const numP = Number(rawPrices);
+          priceMap["0"] = numP;
+          priceMap["ticket-0"] = numP;
+          allTickets.forEach((ticket, idx) => {
+            priceMap[String(idx)] = numP;
+            priceMap[`ticket-${idx}`] = numP;
+            if (ticket) {
+              const rawId = ticket?.ticketTypeId ?? ticket?.ticket_type_id ?? ticket?.ticketId ?? ticket?.ticket_id ?? ticket?.id ?? ticket?.typeId;
+              if (rawId != null) priceMap[String(rawId)] = numP;
             }
-          } catch (err) {
-            console.error(`Failed to fetch ticket price for selected ticket ${selectedTicketTypeId}:`, err);
-          }
+          });
         }
+
         if (isMounted && Object.keys(priceMap).length > 0) {
           setApiTicketPrices((prev) => ({ ...prev, ...priceMap }));
         }
@@ -1750,7 +1764,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return () => {
       isMounted = false;
     };
-  }, [isEventBooking, eventIdForAvailability, eventTickets, selectedTicketTypeId, selectedTicket, showTicketPicker]);
+  }, [isEventBooking, eventIdForAvailability, eventTickets]);
 
   const ticketSaleWindow = useMemo(() => (
     isEventBooking ? getTicketSaleWindow(listing, selectedTicket) : { isOpen: true, status: "open", message: "" }
@@ -1793,6 +1807,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     eventFallbackSlots.length > 0 ? eventFallbackSlots : allEventTicketsSlots
   ), [eventFallbackSlots, allEventTicketsSlots]);
   const selectedTicketIdStr = String(selectedTicket?.id ?? selectedTicket?.ticketTypeId ?? selectedTicket?.typeId ?? selectedTicketTypeId ?? "");
+  const selectedTicketIndex = eventTickets.findIndex(t => String(t.id ?? t.ticketTypeId ?? t.typeId ?? "") === selectedTicketIdStr);
+  const defaultDynamicPrice = apiTicketPrices["0"] ?? apiTicketPrices["ticket-0"];
   const dynamicSelectedTicketPrice =
     apiTicketPrices[selectedTicketIdStr] ??
     apiTicketPrices[String(selectedTicket?.ticketTypeId)] ??
@@ -1804,16 +1820,27 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     apiTicketPrices[String(selectedTicket?.name || "").toLowerCase().trim()] ??
     apiTicketPrices[String(selectedTicket?.ticketName || "").toLowerCase().trim()] ??
     apiTicketPrices[String(selectedTicket?.ticketTypeName || "").toLowerCase().trim()] ??
-    apiTicketPrices[String(selectedTicketTypeId)];
+    apiTicketPrices[String(selectedTicketTypeId)] ??
+    (selectedTicketIndex >= 0 ? apiTicketPrices[`ticket-${selectedTicketIndex}`] : undefined) ??
+    (selectedTicketIndex >= 0 ? apiTicketPrices[String(selectedTicketIndex)] : undefined) ??
+    (!selectedTicketTypeId && defaultDynamicPrice !== undefined ? defaultDynamicPrice : undefined);
+  // Base price from event detail (ticketTypes array price field)
+  const ticketBasePrice = getTicketPrice(selectedTicket, asNumber(listing?.ticketPrice) ?? asNumber(listing?.price) ?? asNumber(listing?.basePrice) ?? 0);
+  const effectiveEventPrice = useMemo(() => (
+    getEffectiveTicketPrice(selectedTicket, billableAdults, ticketBasePrice)
+  ), [selectedTicket, billableAdults, ticketBasePrice]);
+  const eventGuestPricing = useMemo(() => (
+    calculateEventGuestPricing(
+      effectiveEventPrice.price,
+      listing?.pricing,
+      listing?.earlyBirdDiscounts,
+      startDate,
+      dynamicSelectedTicketPrice !== undefined ? Number(dynamicSelectedTicketPrice) : null
+    )
+  ), [effectiveEventPrice.price, listing?.pricing, listing?.earlyBirdDiscounts, startDate, dynamicSelectedTicketPrice]);
   const eventPrice = dynamicSelectedTicketPrice !== undefined
     ? Number(dynamicSelectedTicketPrice)
-    : getTicketPrice(selectedTicket, asNumber(listing?.ticketPrice) ?? asNumber(listing?.price) ?? asNumber(listing?.basePrice) ?? 0);
-  const effectiveEventPrice = useMemo(() => (
-    getEffectiveTicketPrice(selectedTicket, billableAdults, eventPrice)
-  ), [selectedTicket, billableAdults, eventPrice]);
-  const eventGuestPricing = useMemo(() => (
-    calculateEventGuestPricing(effectiveEventPrice.price, listing?.pricing, listing?.earlyBirdDiscounts, startDate)
-  ), [effectiveEventPrice.price, listing?.pricing, listing?.earlyBirdDiscounts, startDate]);
+    : eventGuestPricing.priceAfterDiscount;
   const selectedTicketTotalTickets = getTicketTotalTickets(selectedTicket);
   const selectedTicketMaxPerBooking = getTicketMaxPerBooking(selectedTicket);
   const [eventAvailabilityLoading, setEventAvailabilityLoading] = useState(false);
@@ -3837,6 +3864,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           quantity: safeTotalGuests,
           childCount: safeChildren,
           childAges: childAges,
+          isPrivateBooking: Boolean(privateBooking),
+          privateBooking: Boolean(privateBooking),
           guestDetails: {
             adults: safeAdults,
             children: safeChildren,
@@ -5025,6 +5054,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                           {ticketsForSelectedSlot.map((ticket, index) => {
                                             const ticketId = String(ticket.id ?? ticket.ticketTypeId ?? ticket.typeId ?? `ticket-${index}`);
                                             const isSelected = String(selectedTicketTypeId) === ticketId;
+                                            const originalIndex = eventTickets.findIndex(t => String(t.id ?? t.ticketTypeId ?? t.typeId ?? "") === ticketId);
                                             const priceCandidate =
                                               apiTicketPrices[ticketId] ??
                                               apiTicketPrices[String(ticket.ticketTypeId)] ??
@@ -5036,11 +5066,22 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                               apiTicketPrices[String(ticket.name || "").toLowerCase().trim()] ??
                                               apiTicketPrices[String(ticket.ticketName || "").toLowerCase().trim()] ??
                                               apiTicketPrices[String(ticket.ticketTypeName || "").toLowerCase().trim()] ??
+                                              (originalIndex >= 0 ? apiTicketPrices[`ticket-${originalIndex}`] : undefined) ??
+                                              (originalIndex >= 0 ? apiTicketPrices[String(originalIndex)] : undefined) ??
                                               apiTicketPrices[`ticket-${index}`] ??
                                               apiTicketPrices[String(index)];
-                                            const ticketBasePrice = priceCandidate !== undefined ? Number(priceCandidate) : getTicketPrice(ticket, 0);
+                                            const ticketBasePrice = getTicketPrice(ticket, 0);
                                             const ticketEffectivePrice = getEffectiveTicketPrice(ticket, billableAdults, ticketBasePrice).price;
-                                            const ticketGuestPrice = calculateEventGuestPricing(ticketEffectivePrice, listing?.pricing).finalUnitPrice;
+                                            const ticketGuestPrice = calculateEventGuestPricing(
+                                              ticketEffectivePrice,
+                                              listing?.pricing,
+                                              listing?.earlyBirdDiscounts,
+                                              startDate,
+                                              priceCandidate !== undefined && priceCandidate !== null ? Number(priceCandidate) : null
+                                            ).finalUnitPrice;
+                                            const displayPrice = priceCandidate !== undefined && priceCandidate !== null
+                                              ? Number(priceCandidate)
+                                              : (ticketGuestPrice !== undefined && ticketGuestPrice !== null ? Number(ticketGuestPrice) : Number(ticketBasePrice || 0));
                                             return (
                                               <div
                                                 key={ticketId}
@@ -5076,7 +5117,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                                   )}
                                                 </div>
                                                 <div style={{ fontWeight: 800, fontSize: 14, color: isSelected ? A : FG }}>
-                                                  ₹{Number(ticketBasePrice || 0).toFixed(2)}
+                                                  ₹{Number(displayPrice || 0).toFixed(2)}
                                                 </div>
                                               </div>
                                             );

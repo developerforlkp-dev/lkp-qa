@@ -763,10 +763,10 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     startDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || apiBooking.bookingDate),
     endDate: formatDate(apiBooking.checkOutDate || apiBooking.eventDate || apiBooking.bookingDate),
     bookingDate: formatDate(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingDate),
-    bookingTime: formatTime(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingTime),
+    bookingTime: formatTime(apiBooking.orderDate || apiBooking.createdAt),
     reservationDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || (apiBooking.timeSlotStartTime && (apiBooking.timeSlotStartTime.includes('T') || apiBooking.timeSlotStartTime.includes(' ')) ? apiBooking.timeSlotStartTime.split(/[T ]/)[0] : null) || apiBooking.bookingDate),
-    startTime: formatTime(apiBooking.checkInTime || apiBooking.originalData?.checkInTime || stayData?.checkInTime), // Will be overridden by slot data if present
-    endTime: formatTime(apiBooking.checkOutTime || apiBooking.originalData?.checkOutTime || stayData?.checkOutTime), // Will be overridden by slot data if present
+    startTime: formatTime(apiBooking.timeSlotStartTime || apiBooking.startTime || apiBooking.slotStartTime || apiBooking.bookingSlot?.startTime || apiBooking.eventSlot?.startTime || apiBooking.eventSlot?.slotStartTime || apiBooking.bookingTime || apiBooking.checkInTime || apiBooking.originalData?.checkInTime || stayData?.checkInTime || eventData?.startTime), // Will be overridden by slot data if present
+    endTime: formatTime(apiBooking.timeSlotEndTime || apiBooking.endTime || apiBooking.slotEndTime || apiBooking.bookingSlot?.endTime || apiBooking.eventSlot?.endTime || apiBooking.eventSlot?.slotEndTime || apiBooking.checkOutTime || apiBooking.originalData?.checkOutTime || stayData?.checkOutTime || eventData?.endTime), // Will be overridden by slot data if present
     guestCount: apiBooking.numberOfGuests || 0,
     adultsCount: Math.max(
       apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
@@ -811,6 +811,7 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     },
     // Keep original data for reference
     originalData: apiBooking,
+    refunds: apiBooking?.refunds || null,
     listingData: listingData,
     eventData: eventData,
     stayData: stayData,
@@ -1214,7 +1215,9 @@ const ViewDetails = () => {
     })();
     const scheduleLabel = booking.startTime && booking.endTime
       ? `${booking.reservationDate || booking.startDate} | ${booking.startTime} - ${booking.endTime}`
-      : `${booking.reservationDate || booking.startDate}${booking.bookingTime ? ` | ${booking.bookingTime}` : ""}`;
+      : booking.startTime
+      ? `${booking.reservationDate || booking.startDate} | ${booking.startTime}`
+      : `${booking.reservationDate || booking.startDate}`;
     const discountPercent = getReceiptPercent(discountAmount, subtotalAmount);
     const taxBaseAmount = subtotalAmount - (getReceiptNumericAmount(discountAmount) || 0);
     const taxPercent = getReceiptPercent(taxAmount, taxBaseAmount > 0 ? taxBaseAmount : subtotalAmount);
@@ -1407,6 +1410,74 @@ const ViewDetails = () => {
     return new Date() >= checkOutDatetime;
   };
 
+  const isPastExperienceStartTime = () => {
+    if (!booking) return false;
+    const businessInterestCode = String(booking?.originalData?.businessInterestCode || booking?.category || "").toUpperCase();
+    const isStayOrder = businessInterestCode === "STAYS" ||
+      booking?.originalData?.stayId != null ||
+      (Array.isArray(booking?.originalData?.stayOrderRooms) && booking?.originalData?.stayOrderRooms.length > 0) ||
+      booking?.stayData != null;
+
+    if (isStayOrder) return false;
+
+    const status = booking.status?.toLowerCase() ||
+      booking.statusTone ||
+      (booking.originalData?.orderStatus ? String(booking.originalData.orderStatus).toLowerCase() : "");
+
+    if (status === "cancelled" || status === "canceled" || status === "completed") {
+      return true;
+    }
+
+    const dateStr =
+      booking?.originalData?.bookingDate ||
+      booking?.originalData?.eventDate ||
+      booking?.eventData?.eventDate ||
+      booking?.originalData?.eventDetails?.eventDate ||
+      booking?.originalData?.startDate ||
+      booking?.reservationDate ||
+      booking?.startDate;
+
+    if (!dateStr || dateStr === "TBD") return false;
+
+    const timeStr =
+      booking?.originalData?.timeSlotStartTime ||
+      booking?.originalData?.startTime ||
+      booking?.startTime ||
+      booking?.originalData?.eventDetails?.startTime ||
+      booking?.eventData?.startTime ||
+      booking?.originalData?.bookingTime ||
+      booking?.bookingTime ||
+      "00:00:00";
+
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+
+    if (timeStr && typeof timeStr === 'string') {
+      const match = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+      if (match) {
+        hours = parseInt(match[1], 10);
+        minutes = parseInt(match[2], 10);
+        seconds = match[3] ? parseInt(match[3], 10) : 0;
+        const ampm = match[4] ? match[4].toLowerCase() : null;
+        if (ampm === "pm" && hours < 12) hours += 12;
+        if (ampm === "am" && hours === 12) hours = 0;
+      }
+    }
+
+    let startDatetime;
+    if (typeof dateStr === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      const [y, m, d] = dateStr.substring(0, 10).split("-").map(Number);
+      startDatetime = new Date(y, m - 1, d, hours, minutes, seconds, 0);
+    } else {
+      startDatetime = new Date(dateStr);
+      if (isNaN(startDatetime.getTime())) return false;
+      startDatetime.setHours(hours, minutes, seconds, 0);
+    }
+
+    return new Date() >= startDatetime;
+  };
+
   const isPastExperienceOrEventEndTime = () => {
     if (!booking) return false;
 
@@ -1436,9 +1507,6 @@ const ViewDetails = () => {
 
     if (!dateStr || dateStr === "TBD") return false;
 
-    const eventDate = new Date(dateStr);
-    if (isNaN(eventDate.getTime())) return false;
-
     const timeStr =
       booking?.endTime ||
       booking?.originalData?.timeSlotEndTime ||
@@ -1448,20 +1516,30 @@ const ViewDetails = () => {
       booking?.originalData?.bookingTime ||
       booking?.bookingTime;
 
+    let hours = 23;
+    let minutes = 59;
+    let seconds = 59;
+
     if (timeStr && typeof timeStr === 'string') {
       const match = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
       if (match) {
-        let hours = parseInt(match[1], 10);
-        const minutes = parseInt(match[2], 10);
+        hours = parseInt(match[1], 10);
+        minutes = parseInt(match[2], 10);
+        seconds = match[3] ? parseInt(match[3], 10) : 0;
         const ampm = match[4] ? match[4].toLowerCase() : null;
         if (ampm === "pm" && hours < 12) hours += 12;
         if (ampm === "am" && hours === 12) hours = 0;
-        eventDate.setHours(hours, minutes, 0, 0);
-      } else {
-        eventDate.setHours(23, 59, 59, 0);
       }
+    }
+
+    let eventDate;
+    if (typeof dateStr === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      const [y, m, d] = dateStr.substring(0, 10).split("-").map(Number);
+      eventDate = new Date(y, m - 1, d, hours, minutes, seconds, 0);
     } else {
-      eventDate.setHours(23, 59, 59, 0);
+      eventDate = new Date(dateStr);
+      if (isNaN(eventDate.getTime())) return false;
+      eventDate.setHours(hours, minutes, seconds, 0);
     }
 
     return new Date() >= eventDate;
@@ -1484,7 +1562,7 @@ const ViewDetails = () => {
     if (isStayOrder) {
       return isPastStayCheckInTime();
     }
-    return isPastExperienceOrEventEndTime();
+    return isPastExperienceStartTime();
   };
 
   const handleCancelBookingClick = async () => {
@@ -1558,42 +1636,96 @@ const ViewDetails = () => {
     setIsFetchingRebookData(true);
     
     try {
-      const businessInterestCode = String(bookingToRebook?.originalData?.businessInterestCode || bookingToRebook?.category || "").toUpperCase();
-      const isStayOrder = businessInterestCode === "STAYS" || bookingToRebook?.originalData?.stayId != null || Array.isArray(bookingToRebook?.originalData?.stayOrderRooms);
-      const isEventOrder = businessInterestCode === "EVENTS" || bookingToRebook?.originalData?.eventId != null || bookingToRebook?.isEventOrder;
+      const businessInterestCode = String(
+        bookingToRebook?.originalData?.businessInterestCode ||
+        bookingToRebook?.originalData?.business_interest_code ||
+        bookingToRebook?.businessInterestCode ||
+        bookingToRebook?.business_interest_code ||
+        bookingToRebook?.category ||
+        bookingToRebook?.bookingData?.businessInterestCode ||
+        bookingToRebook?.serviceType ||
+        ""
+      ).toUpperCase();
+
+      const isStayOrder =
+        businessInterestCode === "STAYS" ||
+        businessInterestCode === "STAY" ||
+        businessInterestCode === "HOTEL" ||
+        businessInterestCode === "HOSTEL" ||
+        bookingToRebook?.originalData?.stayId != null ||
+        bookingToRebook?.bookingData?.stayId != null ||
+        bookingToRebook?.stayId != null ||
+        bookingToRebook?.stayData?.id != null ||
+        bookingToRebook?.stayData?.stayId != null ||
+        Array.isArray(bookingToRebook?.originalData?.stayOrderRooms) ||
+        Array.isArray(bookingToRebook?.bookingData?.stayOrderRooms);
+
+      const isEventOrder =
+        businessInterestCode === "EVENTS" ||
+        businessInterestCode === "EVENT" ||
+        bookingToRebook?.originalData?.eventId != null ||
+        bookingToRebook?.bookingData?.eventId != null ||
+        bookingToRebook?.eventId != null ||
+        bookingToRebook?.eventData?.id != null ||
+        bookingToRebook?.eventData?.eventId != null ||
+        bookingToRebook?.isEventOrder;
       
       let data = null;
       let type = "experience";
 
       if (isStayOrder) {
         type = "stay";
-        data = bookingToRebook?.stayData;
-        if (!data) {
-          const stayId = bookingToRebook?.stayData?.id || bookingToRebook?.stayData?.stayId || bookingToRebook?.originalData?.propertyId || bookingToRebook?.originalData?.stayId || bookingToRebook?.originalData?.stayOrderRooms?.[0]?.stayId || bookingToRebook?.originalData?.stayOrderRooms?.[0]?.propertyId;
-          if (stayId) {
-            const res = await getStayDetails(stayId);
-            data = res?.stay || res;
-          }
+        const stayId =
+          bookingToRebook?.originalData?.stayId ||
+          bookingToRebook?.originalData?.propertyId ||
+          bookingToRebook?.bookingData?.stayId ||
+          bookingToRebook?.bookingData?.propertyId ||
+          bookingToRebook?.stayData?.id ||
+          bookingToRebook?.stayData?.stayId ||
+          bookingToRebook?.originalData?.stayOrderRooms?.[0]?.stayId ||
+          bookingToRebook?.originalData?.stayOrderRooms?.[0]?.propertyId ||
+          bookingToRebook?.bookingData?.stayOrderRooms?.[0]?.stayId ||
+          bookingToRebook?.bookingData?.stayOrderRooms?.[0]?.propertyId ||
+          bookingToRebook?.stayId ||
+          bookingToRebook?.listingId;
+
+        if (stayId) {
+          const res = await getStayDetails(stayId);
+          data = res?.stay || res?.data?.stay || res?.data || res;
+        } else if (bookingToRebook?.stayData) {
+          data = bookingToRebook.stayData;
         }
       } else if (isEventOrder) {
         type = "event";
-        data = bookingToRebook?.eventData;
-        if (!data) {
-          const eventId = bookingToRebook?.eventData?.id || bookingToRebook?.eventData?.eventId || bookingToRebook?.originalData?.eventId;
-          if (eventId) {
-            const res = await getEventDetails(eventId);
-            data = res?.event || res;
-          }
+        const eventId =
+          bookingToRebook?.originalData?.eventId ||
+          bookingToRebook?.bookingData?.eventId ||
+          bookingToRebook?.eventData?.id ||
+          bookingToRebook?.eventData?.eventId ||
+          bookingToRebook?.eventId ||
+          bookingToRebook?.listingId;
+
+        if (eventId) {
+          const res = await getEventDetails(eventId);
+          data = res?.event || res?.data?.event || res?.data || res;
+        } else if (bookingToRebook?.eventData) {
+          data = bookingToRebook.eventData;
         }
       } else {
         type = "experience";
-        data = bookingToRebook?.listingData;
-        if (!data) {
-          const listingId = bookingToRebook?.listingData?.id || bookingToRebook?.listingData?.listingId || bookingToRebook?.originalData?.listingId;
-          if (listingId) {
-            const res = await getListing(listingId);
-            data = res?.listing || res;
-          }
+        const listingId =
+          bookingToRebook?.originalData?.listingId ||
+          bookingToRebook?.bookingData?.listingId ||
+          bookingToRebook?.listingData?.id ||
+          bookingToRebook?.listingData?.listingId ||
+          bookingToRebook?.listingId ||
+          bookingToRebook?.id;
+
+        if (listingId) {
+          const res = await getListing(listingId);
+          data = res?.listing || res?.data?.listing || res?.data || res;
+        } else if (bookingToRebook?.listingData) {
+          data = bookingToRebook.listingData;
         }
       }
 
@@ -2070,32 +2202,7 @@ const ViewDetails = () => {
     }
   };
 
-  const isPastExperienceStartTime = () => {
-    if (!booking) return false;
-    const businessInterestCode = String(booking?.originalData?.businessInterestCode || "").toUpperCase();
-    const isStayOrder = businessInterestCode === "STAYS" || booking?.originalData?.stayId != null || Array.isArray(booking?.originalData?.stayOrderRooms);
-    if (isStayOrder) return false;
 
-    const dateStr = booking?.originalData?.bookingDate || booking?.originalData?.startDate || booking?.bookingDate;
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    const timeStr = booking?.originalData?.bookingTime || booking?.originalData?.startTime || booking?.bookingTime || "00:00:00";
-    if (timeStr && typeof timeStr === 'string' && timeStr.includes(':')) {
-      const match = timeStr.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
-      if (match) {
-        let hours = parseInt(match[1], 10);
-        const minutes = parseInt(match[2], 10);
-        const ampm = match[3] ? match[3].toUpperCase() : null;
-        if (ampm === "PM" && hours < 12) hours += 12;
-        if (ampm === "AM" && hours === 12) hours = 0;
-        date.setHours(hours, minutes, 0, 0);
-      } else {
-        const parts = timeStr.split(':').map(p => parseInt(p, 10));
-        date.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
-      }
-    }
-    return new Date() >= date;
-  };
 
 
 
@@ -2413,6 +2520,7 @@ const ViewDetails = () => {
         // Determine if this is an event order
         const isEventOrder = bookingType === "event" ||
           apiBookingData?.businessInterestCode === "EVENTS" ||
+          apiBookingData?.businessInterestCode === "EVENT" ||
           apiBookingData?.eventId != null;
 
         // For event orders, prefer using event info embedded in the event-details API response
@@ -2709,17 +2817,43 @@ const ViewDetails = () => {
         return;
       }
 
+      // Check if booking data already has embedded refund information
+      const embeddedRefundsList =
+        (Array.isArray(booking?.originalData?.refunds) && booking.originalData.refunds) ||
+        (Array.isArray(booking?.refunds) && booking.refunds) ||
+        [];
+      const embeddedRefund =
+        embeddedRefundsList.length > 0
+          ? embeddedRefundsList[0]
+          : (booking?.originalData?.refundDetails || booking?.refundDetails || booking?.originalData?.refund || null);
+
+      let fetchedData = null;
       try {
-        const data = await getOrderRefundDetails(booking.orderId);
-        setRefundDetails(data && typeof data === "object" ? data : null);
+        fetchedData = await getOrderRefundDetails(booking.orderId);
       } catch (err) {
-        console.warn("⚠️ Failed to fetch refund details:", err?.message || err);
+        // Silently fallback to embedded refunds if available
+      }
+
+      const source = (fetchedData && typeof fetchedData === "object" ? fetchedData : null) || embeddedRefund;
+
+      if (source) {
+        const refundItem = (Array.isArray(source.refunds) && source.refunds[0]) || source.refund || source;
+        const normalized = {
+          ...refundItem,
+          refundStatus: refundItem.refundStatus || refundItem.status || refundItem.razorpayStatus || source.refundStatus || source.status || "PROCESSING",
+          refundAmount: refundItem.refundAmount ?? refundItem.amount ?? source.refundAmount ?? source.amount ?? booking?.pricing?.total ?? 0,
+          totalPaid: refundItem.totalPaid ?? source.totalPaid ?? source.totalAmount ?? booking?.pricing?.total ?? refundItem.refundAmount ?? 0,
+          currency: refundItem.currency || source.currency || booking?.originalData?.currency || "INR",
+          reason: refundItem.reason || source.reason || booking?.originalData?.changeReason || null,
+        };
+        setRefundDetails(normalized);
+      } else {
         setRefundDetails(null);
       }
     };
 
     loadRefundDetails();
-  }, [booking?.orderId]);
+  }, [booking?.orderId, booking?.originalData?.refunds, booking?.originalData?.orderStatus]);
 
   useEffect(() => {
     const loadCancelPreview = async () => {
@@ -2729,7 +2863,7 @@ const ViewDetails = () => {
       }
 
       const statusTone = String(booking?.statusTone || booking?.status || "").toLowerCase();
-      if (statusTone === "completed" || statusTone === "cancelled" || statusTone === "canceled") {
+      if (statusTone === "completed" || statusTone === "cancelled" || statusTone === "canceled" || statusTone === "rejected") {
         setCancelPreview(null);
         return;
       }
@@ -2776,9 +2910,12 @@ const ViewDetails = () => {
   };
 
   const formatRefundStatus = (status) => {
-    const raw = String(status || "").trim();
+    const raw = String(status || "").trim().toUpperCase();
     if (!raw) return "N/A";
-    if (raw.toUpperCase() === "NOT_REQUIRED") return "No Refund";
+    if (raw === "NOT_REQUIRED") return "No Refund";
+    if (raw === "PROCESSED" || raw === "SUCCESS" || raw === "COMPLETED") return "Refunded";
+    if (raw === "PROCESSING" || raw === "PENDING" || raw === "INITIATED") return "Processing";
+    if (raw === "FAILED") return "Failed";
     return raw.replaceAll("_", " ");
   };
 
@@ -2848,7 +2985,18 @@ const ViewDetails = () => {
       booking?.originalData?.orderStatus ||
       ""
     ).toLowerCase().trim();
-    const isCancelled = bookingStatus === "cancelled" || bookingStatus === "canceled";
+    const isCancelled =
+      bookingStatus === "cancelled" ||
+      bookingStatus === "canceled" ||
+      bookingStatus === "rejected";
+
+    if (bookingStatus === "rejected") {
+      const rejectReason = refundDetails?.reason || refundDetails?.notes?.reason || booking?.originalData?.changeReason;
+      if (rejectReason && String(rejectReason).trim() && String(rejectReason).trim().toLowerCase() !== "n") {
+        return `Booking was rejected by host (${String(rejectReason).trim()}). 100% refund initiated.`;
+      }
+      return "Booking was rejected by host. 100% refund initiated.";
+    }
 
     if (isCancelled) {
       const appliedPolicy = (
@@ -3119,7 +3267,7 @@ const ViewDetails = () => {
     if (originalStatus === "COMPLETED") {
       return styles.statusCompleted;
     }
-    if (originalStatus === "CANCELLED" || originalStatus === "CANCELED") {
+    if (originalStatus === "CANCELLED" || originalStatus === "CANCELED" || originalStatus === "REJECTED") {
       return styles.statusCancelled;
     }
 
@@ -3137,7 +3285,7 @@ const ViewDetails = () => {
     if (statusLower === "completed") {
       return styles.statusCompleted;
     }
-    if (statusLower === "cancelled" || statusLower === "canceled") {
+    if (statusLower === "cancelled" || statusLower === "canceled" || statusLower === "rejected") {
       return styles.statusCancelled;
     }
     return styles.statusDefault;
@@ -3227,7 +3375,10 @@ const ViewDetails = () => {
     booking?.originalData?.orderStatus ||
     ""
   ).toLowerCase().trim();
-  const isCancelledBooking = bookingStatusLower === "cancelled" || bookingStatusLower === "canceled";
+  const isCancelledBooking =
+    bookingStatusLower === "cancelled" ||
+    bookingStatusLower === "canceled" ||
+    bookingStatusLower === "rejected";
 
   const getConfirmCancelSummaryRows = (preview) => {
     if (!preview || typeof preview !== "object") return [];
@@ -3295,22 +3446,28 @@ const ViewDetails = () => {
               <div className={styles.summaryValue}>{booking.bookingId}</div>
             </div>
             <div className={styles.summaryItem}>
-              <div className={styles.summaryLabel}>Booking Date</div>
-              <div className={styles.summaryValue}>{booking.bookingDate}</div>
+              <div className={styles.summaryLabel}>Booked Date</div>
+              <div className={styles.summaryValue}>{booking.bookingDate || "N/A"}</div>
             </div>
-            <div className={styles.summaryItem}>
-              <div className={styles.summaryLabel}>Booking Time</div>
-              <div className={styles.summaryValue}>{booking.bookingTime || "Not specified"}</div>
-            </div>
+            {booking.bookingTime && (
+              <div className={styles.summaryItem}>
+                <div className={styles.summaryLabel}>Booked Time</div>
+                <div className={styles.summaryValue}>{booking.bookingTime}</div>
+              </div>
+            )}
             {booking.reservationDate && (
               <div className={styles.summaryItem}>
-                <div className={styles.summaryLabel}>Reservation Date</div>
+                <div className={styles.summaryLabel}>
+                  {booking.isEventOrder ? "Event Date" : booking.stayData ? "Check-in Date" : "Reservation Date"}
+                </div>
                 <div className={styles.summaryValue}>{booking.reservationDate}</div>
               </div>
             )}
             {(booking.startTime || booking.endTime) && (
               <div className={styles.summaryItem}>
-                <div className={styles.summaryLabel}>Reservation Time</div>
+                <div className={styles.summaryLabel}>
+                  {booking.isEventOrder ? "Event Time" : booking.stayData ? "Check-in Time" : "Slot Time"}
+                </div>
                 <div className={styles.summaryValue}>
                   {booking.startTime && booking.endTime ? (
                     <>
@@ -3368,6 +3525,7 @@ const ViewDetails = () => {
                       if (normalized === "CONFIRMED") return "Confirmed";
                       if (normalized === "COMPLETED") return "Completed";
                       if (normalized === "CANCELLED" || normalized === "CANCELED") return "Cancelled";
+                      if (normalized === "REJECTED") return "Rejected";
                     }
 
                     // Fallback to booking.status if originalStatus not available
@@ -3572,26 +3730,37 @@ const ViewDetails = () => {
                   {isCancelledBooking && (
                     <div className={styles.paymentRow}>
                       <span>Refund Status</span>
-                      <span>{formatRefundStatus(refundDetails.refundStatus)}</span>
+                      <span>{formatRefundStatus(refundDetails.refundStatus || refundDetails.status || refundDetails.razorpayStatus)}</span>
                     </div>
                   )}
                   <div className={styles.paymentRow}>
                     <span>Refund Amount</span>
                     <span>{formatMoney(refundDetails.refundAmount, refundDetails.currency || booking?.originalData?.currency || "INR")}</span>
                   </div>
-                  <div className={styles.paymentRow}>
-                    <span>Total Amount</span>
-                    <span>{formatMoney(refundDetails.totalPaid, refundDetails.currency || booking?.originalData?.currency || "INR")}</span>
-                  </div>
+                  {refundDetails.totalPaid != null && (
+                    <div className={styles.paymentRow}>
+                      <span>Total Amount</span>
+                      <span>{formatMoney(refundDetails.totalPaid, refundDetails.currency || booking?.originalData?.currency || "INR")}</span>
+                    </div>
+                  )}
                 </>
               )}
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E6E8EC' }}>
                 {(() => {
                   const isRefundAmountZero = refundDetails && Number(refundDetails.refundAmount) <= 0;
                   const isNoRefundStatus = refundDetails && (String(refundDetails.refundStatus).toUpperCase() === 'NOT_REQUIRED' || String(refundDetails.refundStatus).toUpperCase() === 'NO_REFUND');
-                  const hasNoRefund = isCancelledBooking && (isRefundAmountZero || isNoRefundStatus);
+                  const hasNoRefund = isCancelledBooking && (isRefundAmountZero || isNoRefundStatus) && bookingStatusLower !== "rejected";
                   const policyText = getAppliedRefundPolicyText();
                   const isPolicyTextNoRefund = policyText && policyText.toLowerCase().includes("no refund");
+
+                  if (bookingStatusLower === "rejected") {
+                    return (
+                      <p style={{ fontSize: '12px', color: '#777E90', lineHeight: '1.5', marginBottom: '0' }}>
+                        <span style={{ fontWeight: 500 }}>Rejection & Refund: </span>
+                        {policyText || "This booking was rejected. A full refund has been initiated to your original payment method."}
+                      </p>
+                    );
+                  }
 
                   if (!isCancelledBooking || hasNoRefund || isPolicyTextNoRefund) {
                     return (
@@ -3809,7 +3978,6 @@ const ViewDetails = () => {
               <button
                 type="button"
                 className={cn("button-stroke", styles.cancelModalBtn)}
-                style={{ marginLeft: '12px' }}
                 onClick={() => handleRebook(validationModalData.bookingToRebook)}
                 disabled={isFetchingRebookData}
               >
@@ -3820,7 +3988,6 @@ const ViewDetails = () => {
               <button
                 type="button"
                 className={cn("button", styles.cancelModalBtn)}
-                style={{ marginLeft: '12px' }}
                 onClick={() => {
                   setValidationModalVisible(false);
                   const originalStatus = booking?.originalData?.orderStatus ? String(booking.originalData.orderStatus).toUpperCase().trim() : "";

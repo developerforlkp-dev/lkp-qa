@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import { ChevronDown, ArrowUp } from "lucide-react";
@@ -170,6 +170,102 @@ const accordionData = [
   }
 ];
 
+const parseHtmlToSections = (htmlString) => {
+  if (!htmlString || typeof htmlString !== "string" || !htmlString.trim()) return null;
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, "text/html");
+    const body = doc.body;
+
+    // Find all headings
+    const headings = Array.from(body.querySelectorAll("h1, h2, h3, h4"));
+    if (headings.length === 0) {
+      return null;
+    }
+
+    // Identify if there is a common wrapper element
+    let container = body;
+    while (
+      container.children.length === 1 &&
+      container.firstElementChild &&
+      !/^H[1-4]$/i.test(container.firstElementChild.tagName) &&
+      container.firstElementChild.querySelectorAll("h1, h2, h3, h4").length === headings.length
+    ) {
+      container = container.firstElementChild;
+    }
+
+    const sections = [];
+    let introHtml = "";
+
+    // Check if headings are top-level children of container
+    const isDirectHeading = Array.from(container.children).some(el => /^H[1-4]$/i.test(el.tagName));
+
+    if (isDirectHeading) {
+      let currentSection = null;
+      let introNodes = [];
+
+      Array.from(container.childNodes).forEach((node) => {
+        const isHeading = node.nodeType === Node.ELEMENT_NODE && /^H[1-4]$/i.test(node.tagName);
+
+        if (isHeading) {
+          if (currentSection) {
+            sections.push(currentSection);
+          }
+          currentSection = {
+            title: node.textContent.trim() || node.innerText || "Section",
+            contentHtml: "",
+          };
+        } else {
+          const nodeHtml = node.nodeType === Node.ELEMENT_NODE ? node.outerHTML : (node.textContent?.trim() ? `<p>${node.textContent}</p>` : "");
+          if (currentSection) {
+            currentSection.contentHtml += nodeHtml;
+          } else {
+            if (nodeHtml) introNodes.push(nodeHtml);
+          }
+        }
+      });
+
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+      introHtml = introNodes.join("").trim();
+    } else {
+      // If headings are nested in distinct wrapper blocks
+      Array.from(container.children).forEach((child) => {
+        const heading = child.querySelector("h1, h2, h3, h4");
+        if (heading) {
+          const title = heading.textContent.trim();
+          const clone = child.cloneNode(true);
+          const clonedHeading = clone.querySelector("h1, h2, h3, h4");
+          if (clonedHeading) clonedHeading.remove();
+          sections.push({
+            title: title || "Section",
+            contentHtml: clone.innerHTML.trim()
+          });
+        } else {
+          if (sections.length === 0) {
+            introHtml += child.outerHTML;
+          } else if (sections.length > 0) {
+            sections[sections.length - 1].contentHtml += child.outerHTML;
+          }
+        }
+      });
+    }
+
+    const validSections = sections.filter(s => s.title && s.title.trim().length > 0);
+    if (validSections.length === 0) return null;
+
+    return {
+      introHtml,
+      sections: validSections
+    };
+  } catch (error) {
+    console.warn("Failed to parse policy HTML into sections:", error);
+    return null;
+  }
+};
+
 const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
   const { FG, M, B, A, BG } = themeTokens;
   const [isHovered, setIsHovered] = useState(false);
@@ -227,7 +323,14 @@ const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
             <div style={{ padding: "0px 32px 32px 32px", color: M, fontSize: "1.1rem", lineHeight: 1.9 }}>
-              {item.content}
+              {item.contentHtml ? (
+                <div 
+                  className="policy-rich-text"
+                  dangerouslySetInnerHTML={{ __html: item.contentHtml }}
+                />
+              ) : (
+                item.content
+              )}
             </div>
           </motion.div>
         )}
@@ -396,6 +499,11 @@ const PrivacyPolicy = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const parsedSectionsData = useMemo(() => {
+    if (!documentHtml) return null;
+    return parseHtmlToSections(documentHtml);
+  }, [documentHtml]);
+
   const goToTop = () => {
     window.scrollTo({
       top: 0,
@@ -542,6 +650,35 @@ const PrivacyPolicy = () => {
           {loading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
               <p style={{ color: tokens.M, fontSize: "16px" }}>Loading...</p>
+            </div>
+          ) : parsedSectionsData && parsedSectionsData.sections.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {parsedSectionsData.introHtml && (
+                <div 
+                  className="policy-rich-text"
+                  style={{
+                    marginBottom: "24px",
+                    padding: "24px 32px",
+                    borderRadius: "12px",
+                    background: tokens.BG,
+                    border: `1px solid ${tokens.B}`,
+                    color: tokens.FG,
+                    fontSize: "16px",
+                    lineHeight: 1.9,
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.02)",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: parsedSectionsData.introHtml }}
+                />
+              )}
+              {parsedSectionsData.sections.map((item, index) => (
+                <AccordionItem
+                  key={index}
+                  item={item}
+                  isOpen={openIndices.includes(index)}
+                  onClick={() => toggleAccordion(index)}
+                  themeTokens={tokens}
+                />
+              ))}
             </div>
           ) : documentHtml ? (
             <div 

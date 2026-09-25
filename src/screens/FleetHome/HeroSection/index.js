@@ -58,42 +58,7 @@ const HeroSection = () => {
   const [heroReady, setHeroReady] = useState(false);
   const [error, setError] = useState(null);
   const { isMobile } = useWindowSize();
-  const heroStageRef = useRef(null);
 
-  useEffect(() => {
-    if (!isMobile) return;
-    
-    let animationFrameId = null;
-    
-    const handleScroll = () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      
-      animationFrameId = requestAnimationFrame(() => {
-        if (!heroStageRef.current) return;
-        
-        const scrollY = window.scrollY;
-        if (scrollY <= 0) {
-          heroStageRef.current.style.transform = 'scale(1) translateY(0px)';
-          heroStageRef.current.style.opacity = '1';
-          heroStageRef.current.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
-        } else {
-          // Scale down up to 0.9, move it down slightly for parallax
-          const scale = Math.max(0.92, 1 - (scrollY / 1200));
-          const opacity = Math.max(0.5, 1 - (scrollY / 500));
-          const translateY = scrollY * 0.3; // Parallax effect
-          heroStageRef.current.style.transform = `scale(${scale}) translateY(${translateY}px)`;
-          heroStageRef.current.style.opacity = opacity.toString();
-          heroStageRef.current.style.transition = 'none'; // Instant follow on scroll
-        }
-      });
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    };
-  }, [isMobile]);
 
   useEffect(() => {
     const loadHeroData = async () => {
@@ -194,7 +159,7 @@ const HeroSection = () => {
 
   return (
     <div ref={containerRef} className={styles.container}>
-      <div ref={heroStageRef} className={styles.heroStage} style={{ transformOrigin: 'top center', willChange: 'transform, opacity' }}>
+      <div className={styles.heroStage}>
         {isMobile ? (
           <MobileHeroSlider
             destinations={heroData}

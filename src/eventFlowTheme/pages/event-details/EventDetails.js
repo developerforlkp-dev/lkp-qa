@@ -652,7 +652,12 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
     return () => clearInterval(timer);
   }, [discounts]);
 
-  if (!discounts || discounts.length === 0) return null;
+  if (!Array.isArray(discounts) || discounts.length === 0) return null;
+
+  const currentDiscount = discounts[index % discounts.length];
+  if (!currentDiscount) return null;
+  const days = currentDiscount.daysInAdvance ?? currentDiscount.days_in_advance ?? 0;
+  const percentage = currentDiscount.percentage ?? currentDiscount.discountPercentage ?? 0;
 
   return (
     <div style={{ display: "grid", height: 20, alignItems: "center", overflow: "hidden" }}>
@@ -676,11 +681,11 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
         >
           <span style={{ opacity: 0.7 }}>Book</span>{" "}
           <span style={{ color: isDark ? "#38BDF8" : "#0284C7", fontWeight: 800 }}>
-            {discounts[index].daysInAdvance} Days
+            {days} Days
           </span>{" "}
           <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
           <span style={{ color: isDark ? "#4ADE80" : "#16A34A", fontWeight: 800 }}>
-            {discounts[index].percentage}% OFF
+            {percentage}% OFF
           </span>
         </motion.span>
       </AnimatePresence>
@@ -2038,6 +2043,7 @@ function Venue({ event, hostName }) {
   const { theme, tokens: { A, BG, FG, M, S, B, W } } = useTheme();
   const isMobile = useMobileView();
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
   const tags = Array.isArray(event?.tags) ? event.tags :
@@ -2132,8 +2138,21 @@ function Venue({ event, hostName }) {
 
             {/* RIGHT: Details List */}
             <Rev delay={0.2} style={{ height: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: isMobile ? "0" : "16px 16px 16px 0" }}>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: isMobile ? "0" : "16px 16px 16px 0", marginTop: isMobile ? 16 : 0 }}>
+                {isMobile && (
+                  <button 
+                    onClick={() => setDetailsExpanded(!detailsExpanded)}
+                    style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", background: "transparent", border: `1px solid ${B}`, borderRadius: detailsExpanded ? "12px 12px 0 0" : 12, color: FG, cursor: "pointer", outline: "none", marginBottom: detailsExpanded ? 0 : 16 }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <MapPin size={16} color={A} />
+                      <span style={{ fontSize: 14, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>View Location Details</span>
+                    </div>
+                    <ChevronDown size={16} color={M} style={{ transform: detailsExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+                  </button>
+                )}
+                <div style={{ display: (!isMobile || detailsExpanded) ? "block" : "none", border: isMobile ? `1px solid ${B}` : "none", borderTop: "none", borderRadius: isMobile ? "0 0 12px 12px" : 0, padding: isMobile ? "0 16px 16px" : 0, marginBottom: isMobile ? 16 : 0 }}>
+                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
                   {venueAddress && (
                     <li style={{ display: "flex", gap: isMobile ? 16 : 24, alignItems: "center", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: isMobile ? "none" : `1px solid ${B}` }}>
                       <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -2214,6 +2233,7 @@ function Venue({ event, hostName }) {
                     </li>
                   )}
                 </ul>
+                </div>
               </div>
             </Rev>
           </div>
@@ -2956,8 +2976,8 @@ function HostDetails({ event, hostName }) {
                     }}>
                       Newly Added
                     </span>
-                    <h4 style={{ fontSize: 20, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: "Poppins, sans-serif" }}>Welcome to LKP</h4>
-                    <p style={{ fontSize: 13, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5 }}>
+                    <h4 style={{ fontSize: 16, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: '"Poppins", sans-serif' }}>Welcome to LKP</h4>
+                    <p style={{ fontSize: 12, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5, fontFamily: '"Poppins", sans-serif' }}>
                       This listing is new to our platform. It is currently building its verified trust score based on guest experiences.
                     </p>
                   </div>
@@ -3207,28 +3227,40 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
     const fetchPrices = async () => {
       try {
         const priceMap = {};
-        await Promise.all(
-          rawTickets.map(async (t, i) => {
-            const ticketId = t.ticketTypeId ?? t.ticket_type_id ?? t.ticketId ?? t.ticket_id ?? t.id ?? t.typeId ?? (i + 1);
-            if (ticketId != null && !String(ticketId).startsWith("ticket-")) {
-              try {
-                const res = await getEventTicketPrice(eventId, ticketId);
-                const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
-                if (price != null && !Number.isNaN(Number(price))) {
-                  const numP = Number(price);
-                  priceMap[String(ticketId)] = numP;
-                  if (t.id != null) priceMap[String(t.id)] = numP;
-                  if (t.ticketTypeId != null) priceMap[String(t.ticketTypeId)] = numP;
-                  if (t.name) priceMap[String(t.name).toLowerCase().trim()] = numP;
-                  priceMap[`ticket-${i}`] = numP;
-                  priceMap[String(i)] = numP;
-                }
-              } catch (err) {
-                console.error(`Failed to fetch price for ticket ${ticketId}:`, err);
+        const res = await getEventTicketPrice(eventId);
+        const rawPrices = res?.price ?? res?.prices ?? res?.data?.price ?? res?.data?.prices ?? res?.data ?? res;
+        const pricesArray = Array.isArray(rawPrices) ? rawPrices : null;
+
+        if (Array.isArray(pricesArray)) {
+          pricesArray.forEach((p, idx) => {
+            const numP = Number(p);
+            if (!Number.isNaN(numP)) {
+              priceMap[String(idx)] = numP;
+              priceMap[`ticket-${idx}`] = numP;
+              const t = rawTickets[idx];
+              if (t) {
+                const ticketId = t.ticketTypeId ?? t.ticket_type_id ?? t.ticketId ?? t.ticket_id ?? t.id ?? t.typeId;
+                if (ticketId != null) priceMap[String(ticketId)] = numP;
+                if (t.id != null) priceMap[String(t.id)] = numP;
+                if (t.ticketTypeId != null) priceMap[String(t.ticketTypeId)] = numP;
+                if (t.name) priceMap[String(t.name).toLowerCase().trim()] = numP;
               }
             }
-          })
-        );
+          });
+        } else if (rawPrices != null && !Number.isNaN(Number(rawPrices))) {
+          const numP = Number(rawPrices);
+          priceMap["0"] = numP;
+          priceMap["ticket-0"] = numP;
+          rawTickets.forEach((t, idx) => {
+            priceMap[String(idx)] = numP;
+            priceMap[`ticket-${idx}`] = numP;
+            if (t) {
+              const ticketId = t.ticketTypeId ?? t.ticket_type_id ?? t.ticketId ?? t.ticket_id ?? t.id ?? t.typeId;
+              if (ticketId != null) priceMap[String(ticketId)] = numP;
+            }
+          });
+        }
+
         if (isMounted && Object.keys(priceMap).length > 0) {
           setPopupTicketPrices((prev) => ({ ...prev, ...priceMap }));
         }
@@ -3253,16 +3285,17 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
           popupTicketPrices[String(ticket.name || "").toLowerCase().trim()] ??
           popupTicketPrices[`ticket-${index}`] ??
           popupTicketPrices[String(index)];
-        const price = dynamicP !== undefined ? Number(dynamicP) : (ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0);
+        const basePrice = ticket.price ?? ticket.ticketTypePrice ?? ticket.typePrice ?? ticket.ticketPrice ?? ticket.individualPrice ?? ticket.amount ?? ticket.basePrice ?? 0;
         return {
           ...ticket,
           id: ticket.id ?? ticketTypeId ?? `ticket-${index}`,
           ticketTypeId,
           name: ticket.name || ticket.ticketTypeName || ticket.typeName || ticket.title || ticket.ticketName || `Ticket ${index + 1}`,
-          price,
-          ticketPrice: price,
-          ticketTypePrice: price,
-          basePrice: price,
+          price: basePrice,
+          ticketPrice: basePrice,
+          ticketTypePrice: basePrice,
+          basePrice: basePrice,
+          discountedPrice: dynamicP !== undefined ? Number(dynamicP) : undefined,
           childPrice: ticket.childPrice ?? ticket.child_price ?? ticket.childTypePrice ?? ticket.child_type_price ?? ticket.childTicketPrice ?? 0,
           totalTickets: ticket.totalTickets ?? ticket.totalTicket ?? ticket.total_tickets ?? ticket.total_ticket,
           maxPerBooking: ticket.maxPerBooking ?? ticket.max_per_booking ?? ticket.maxTicketsPerBooking ?? ticket.max_tickets_per_booking,
@@ -3421,22 +3454,38 @@ function Tickets({ event }) {
     const fetchPrices = async () => {
       try {
         const priceMap = {};
-        await Promise.all(
-          eventTiers.map(async (t, i) => {
-            const ticketId = t.id ?? t.ticketTypeId ?? t.typeId ?? i;
-            if (ticketId != null && !String(ticketId).startsWith("ticket-")) {
-              try {
-                const res = await getEventTicketPrice(eventId, ticketId);
-                const price = res?.price ?? res?.data?.price ?? (typeof res === "number" ? res : null);
-                if (price != null && !Number.isNaN(Number(price))) {
-                  priceMap[String(ticketId)] = Number(price);
-                }
-              } catch (err) {
-                console.error(`Failed to fetch price for tier ${ticketId}:`, err);
+        const res = await getEventTicketPrice(eventId);
+        const rawPrices = res?.price ?? res?.prices ?? res?.data?.price ?? res?.data?.prices ?? res?.data ?? res;
+        const pricesArray = Array.isArray(rawPrices) ? rawPrices : null;
+
+        if (Array.isArray(pricesArray)) {
+          pricesArray.forEach((p, idx) => {
+            const numP = Number(p);
+            if (!Number.isNaN(numP)) {
+              priceMap[String(idx)] = numP;
+              priceMap[`ticket-${idx}`] = numP;
+              const t = eventTiers[idx];
+              if (t) {
+                const ticketId = t.id ?? t.ticketTypeId ?? t.typeId;
+                if (ticketId != null) priceMap[String(ticketId)] = numP;
+                if (t.name) priceMap[String(t.name).toLowerCase().trim()] = numP;
               }
             }
-          })
-        );
+          });
+        } else if (rawPrices != null && !Number.isNaN(Number(rawPrices))) {
+          const numP = Number(rawPrices);
+          priceMap["0"] = numP;
+          priceMap["ticket-0"] = numP;
+          eventTiers.forEach((t, idx) => {
+            priceMap[String(idx)] = numP;
+            priceMap[`ticket-${idx}`] = numP;
+            if (t) {
+              const ticketId = t.id ?? t.ticketTypeId ?? t.typeId;
+              if (ticketId != null) priceMap[String(ticketId)] = numP;
+            }
+          });
+        }
+
         if (isMounted && Object.keys(priceMap).length > 0) {
           setApiTicketPrices((prev) => ({ ...prev, ...priceMap }));
         }
@@ -3456,10 +3505,11 @@ function Tickets({ event }) {
   const TIERS = eventTiers.length > 0 ? eventTiers.map((t, i) => {
     const ticketIdKey = String(t.id ?? t.ticketTypeId ?? t.typeId ?? i);
     const dynamicP = apiTicketPrices[ticketIdKey];
-    const baseP = dynamicP !== undefined ? Number(dynamicP) : (t.price ?? t.amount ?? t.basePrice ?? t.b2cPrice ?? 0);
+    const rawBaseP = Number(t.price ?? t.amount ?? t.basePrice ?? t.b2cPrice ?? 0);
+    const baseP = dynamicP !== undefined ? Number(dynamicP) : rawBaseP;
     const taxP = t.tax ?? t.taxAmount ?? t.tax_amount ?? t.taxes ?? 0;
     const discP = t.discount ?? t.discountAmount ?? t.discount_amount ?? 0;
-    const strikeP = t.strikePrice ?? t.originalPrice ?? t.strike_price ?? null;
+    const strikeP = t.strikePrice ?? t.originalPrice ?? t.strike_price ?? ((dynamicP !== undefined && rawBaseP > dynamicP) ? rawBaseP : null);
 
     return {
       id: t.id || i,

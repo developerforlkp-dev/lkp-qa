@@ -695,16 +695,16 @@ const getStoredStayGuests = (storedGuests) => {
 };
 
 const getStayCatalogRoomIds = (stay) => {
-  const baseRooms = Array.isArray(stay?.rooms || stay?.roomTypes || stay?.room_types)
-    ? (stay?.rooms || stay?.roomTypes || stay?.room_types)
+  const baseRooms = Array.isArray(stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.stayRoomTypes || stay?.stay_room_types)
+    ? (stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.stayRoomTypes || stay?.stay_room_types)
     : [];
-  const bedRooms = Array.isArray(stay?.bedConfigs)
-    ? stay.bedConfigs
+  const bedRooms = Array.isArray(stay?.bedConfigs || stay?.bed_configs)
+    ? (stay?.bedConfigs || stay?.bed_configs)
     : [];
 
   return new Set(
     [...baseRooms, ...bedRooms]
-      .map((room) => room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId)
+      .map((room) => room?.roomId ?? room?.roomTypeId ?? room?.room_type_id ?? room?.id ?? room?.bedConfigId ?? room?.bed_config_id)
       .filter((roomId) => roomId !== undefined && roomId !== null)
       .map((roomId) => String(roomId))
   );
@@ -762,85 +762,127 @@ const resolveValidMealPlan = (candidateMealPlan, catalogRoom, stay) => {
 
 const getStoredStayRooms = (storedRooms, stay) => {
   if (!Array.isArray(storedRooms) || storedRooms.length === 0) return [];
-  const validRoomIds = getStayCatalogRoomIds(stay);
-  const catalogRooms = Array.isArray(stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.bedConfigs)
-    ? (stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.bedConfigs)
+  const actualStay = stay?.stay || stay?.data?.stay || stay?.data || stay;
+  const validRoomIds = getStayCatalogRoomIds(actualStay);
+  const catalogRooms = Array.isArray(actualStay?.rooms || actualStay?.roomTypes || actualStay?.room_types || actualStay?.stayRooms || actualStay?.stay_rooms || actualStay?.stayRoomTypes || actualStay?.stay_room_types || actualStay?.bedConfigs || actualStay?.bed_configs)
+    ? (actualStay?.rooms || actualStay?.roomTypes || actualStay?.room_types || actualStay?.stayRooms || actualStay?.stay_rooms || actualStay?.stayRoomTypes || actualStay?.stay_room_types || actualStay?.bedConfigs || actualStay?.bed_configs)
     : [];
 
-  return storedRooms
-    .map((room) => {
+  const rawMapped = storedRooms
+    .map((room, roomIndex) => {
+      // Prioritize actual room type identifier over order-item row ID (which is often just order record PK)
       const candidateIds = [
-        room?.bedConfigId,
-        room?.roomId,
-        room?.id,
         room?.roomTypeId,
         room?.room_type_id,
+        room?.roomId,
         room?.room_id,
-        room?.bed_config_id,
         room?.stayRoomId,
         room?.stay_room_id,
+        room?.typeId,
+        room?.type_id,
+        room?.bedConfigId,
+        room?.bed_config_id,
+        room?.id,
       ]
         .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
         .map((value) => String(value));
 
-      const rName = (room?.roomName || room?.name || room?.roomTypeName || room?.bedType || room?.room_type_name || room?.room_name || "").trim();
-      if (candidateIds.length === 0 && rName && catalogRooms.length > 0) {
-        const matched = catalogRooms.find(cr => {
-          const crName = (cr.roomName || cr.name || cr.roomTypeName || cr.bedType || cr.room_type_name || "").trim().toLowerCase();
-          return crName && crName === rName.toLowerCase();
+      const rName = (
+        room?.roomTypeName ||
+        room?.room_type_name ||
+        room?.roomName ||
+        room?.room_name ||
+        room?.name ||
+        room?.title ||
+        room?.bedType ||
+        room?.bed_type ||
+        room?.roomType ||
+        room?.room_type ||
+        room?.typeName ||
+        room?.type_name ||
+        ""
+      ).trim();
+
+      // 1. Find matching catalog room by candidate IDs
+      let matchedCatalogRoom = catalogRooms.find((cr) => {
+        const crIds = [
+          cr?.roomId,
+          cr?.roomTypeId,
+          cr?.room_type_id,
+          cr?.id,
+          cr?.bedConfigId,
+          cr?.bed_config_id
+        ].filter((v) => v !== undefined && v !== null && String(v).trim() !== "").map((v) => String(v));
+        return candidateIds.some((cid) => crIds.includes(cid));
+      });
+
+      // 2. If not matched by ID, try matching by room name
+      if (!matchedCatalogRoom && rName && catalogRooms.length > 0) {
+        matchedCatalogRoom = catalogRooms.find((cr) => {
+          const crName = (cr?.roomName || cr?.name || cr?.roomTypeName || cr?.bedType || cr?.room_type_name || "").trim().toLowerCase();
+          return crName && (crName === rName.toLowerCase() || crName.includes(rName.toLowerCase()) || rName.toLowerCase().includes(crName));
         });
-        if (matched) {
-          candidateIds.push(String(matched.roomId ?? matched.id ?? matched.roomTypeId ?? matched.room_type_id ?? matched.bedConfigId ?? matched.bed_config_id));
-        }
       }
 
-      let normalizedRoomId = candidateIds.find((candidateId) => validRoomIds.size === 0 || validRoomIds.has(candidateId));
-      if (!normalizedRoomId && catalogRooms.length > 0) {
-        if (rName) {
-          const matched = catalogRooms.find(cr => {
-            const crName = (cr.roomName || cr.name || cr.roomTypeName || cr.bedType || cr.room_type_name || "").trim().toLowerCase();
-            return crName && crName === rName.toLowerCase();
-          });
-          if (matched) {
-            normalizedRoomId = String(matched.roomId ?? matched.id ?? matched.roomTypeId ?? matched.room_type_id ?? matched.bedConfigId ?? matched.bed_config_id);
-          }
-        }
-        if (!normalizedRoomId && candidateIds.length > 0) {
-          normalizedRoomId = candidateIds[0];
-        }
-        if (!normalizedRoomId && catalogRooms.length === 1) {
-          const single = catalogRooms[0];
-          normalizedRoomId = String(single.roomId ?? single.id ?? single.roomTypeId ?? single.room_type_id ?? single.bedConfigId ?? single.bed_config_id);
-        }
-      }
-      if (!normalizedRoomId && candidateIds.length > 0) {
-        normalizedRoomId = candidateIds[0];
-      }
-      if (!normalizedRoomId) {
-        normalizedRoomId = "room-1";
+      // 3. If still not matched, pick catalog room by index or first catalog room
+      if (!matchedCatalogRoom && catalogRooms.length > 0) {
+        matchedCatalogRoom = catalogRooms[Math.min(roomIndex, catalogRooms.length - 1)] || catalogRooms[0];
       }
 
-      const matchedCatalogRoom = catalogRooms.find(cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId ?? cr.bed_config_id) === String(normalizedRoomId));
+      let normalizedRoomId = null;
+      if (matchedCatalogRoom) {
+        normalizedRoomId = String(
+          matchedCatalogRoom.roomId ??
+          matchedCatalogRoom.roomTypeId ??
+          matchedCatalogRoom.room_type_id ??
+          matchedCatalogRoom.id ??
+          matchedCatalogRoom.bedConfigId ??
+          matchedCatalogRoom.bed_config_id
+        );
+      } else {
+        const firstValid = Array.from(validRoomIds)[0];
+        normalizedRoomId = candidateIds.find((cid) => validRoomIds.has(cid)) || firstValid || "1";
+      }
+
       const validMeal = resolveValidMealPlan(
         room?.mealPlan || room?.mealPlanCode || room?.meal_plan || room?.selectedMealPlan,
         matchedCatalogRoom,
-        stay
+        actualStay
       );
 
+      const countVal = Math.max(1, Number(room?.count ?? room?.roomsBooked ?? room?.rooms_booked ?? room?.bedsBooked ?? room?.beds_booked ?? room?.roomCount ?? room?.numberOfRooms ?? room?.quantity ?? room?.units ?? 1) || 1);
+
+      const finalRoomName = matchedCatalogRoom?.roomName || matchedCatalogRoom?.name || matchedCatalogRoom?.roomTypeName || matchedCatalogRoom?.bedType || rName || "Room";
+
       return {
+        ...room,
         roomId: normalizedRoomId,
-        bedConfigId: room?.bedConfigId != null ? String(room.bedConfigId) : (room?.bed_config_id != null ? String(room.bed_config_id) : null),
-        roomTypeId: room?.roomTypeId != null ? String(room.roomTypeId) : (room?.room_type_id != null ? String(room.room_type_id) : null),
-        roomName: rName || matchedCatalogRoom?.roomName || matchedCatalogRoom?.name || room?.roomName || room?.name || "Accommodation",
+        bedConfigId: matchedCatalogRoom?.bedConfigId != null ? String(matchedCatalogRoom.bedConfigId) : (room?.bedConfigId != null ? String(room.bedConfigId) : (room?.bed_config_id != null ? String(room.bed_config_id) : null)),
+        roomTypeId: matchedCatalogRoom?.roomTypeId != null ? String(matchedCatalogRoom.roomTypeId) : (room?.roomTypeId != null ? String(room.roomTypeId) : (room?.room_type_id != null ? String(room.room_type_id) : null)),
+        roomName: finalRoomName,
         mealPlan: validMeal,
-        count: Math.max(1, Number(room?.count ?? room?.roomCount ?? room?.numberOfRooms ?? room?.quantity ?? room?.units ?? 1) || 1),
+        count: countVal,
+        isBedConfig: matchedCatalogRoom?.isBedConfig || Boolean(room?.bedConfigId || room?.bed_config_id || room?.isBedConfig),
       };
     })
     .filter(Boolean);
+
+  // Group duplicate rooms of the same roomId & mealPlan into one entry with sum of counts
+  const aggregated = [];
+  rawMapped.forEach((r) => {
+    const existing = aggregated.find((a) => String(a.roomId) === String(r.roomId) && String(a.mealPlan) === String(r.mealPlan));
+    if (existing) {
+      existing.count += (Number(r.count) || 1);
+    } else {
+      aggregated.push({ ...r });
+    }
+  });
+
+  return aggregated;
 };
 
 const StayBookingSystem = ({
-  stay,
+  stay: rawStay,
   booking,
   initialCheckInDate,
   initialCheckOutDate,
@@ -868,6 +910,7 @@ const StayBookingSystem = ({
   externalOpen,
   onExternalOpenChange,
 }) => {
+  const stay = rawStay?.stay || rawStay?.data?.stay || rawStay?.data || rawStay;
   const history = useHistory();
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
 
@@ -1031,21 +1074,25 @@ const StayBookingSystem = ({
 
   const stayRoomsCatalog = useMemo(
     () => {
-      let rawRooms = stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || [];
+      let rawRooms = stay?.rooms || stay?.roomTypes || stay?.room_types || stay?.stayRooms || stay?.stay_rooms || stay?.stayRoomTypes || stay?.stay_room_types || [];
       if (!Array.isArray(rawRooms)) rawRooms = [];
-      let rooms = rawRooms.map((r, idx) => ({
-        ...r,
-        roomId: String(r?.roomId ?? r?.id ?? r?.roomTypeId ?? r?.room_type_id ?? `room-${idx}`),
-        roomTypeId: r?.roomTypeId != null ? String(r.roomTypeId) : (r?.room_type_id != null ? String(r.room_type_id) : (r?.id != null ? String(r.id) : null)),
-        roomName: r?.roomName || r?.name || r?.roomTypeName || r?.bedType || r?.room_type_name || `Room ${idx + 1}`,
-      }));
-      if (stay?.bedConfigs?.length > 0) {
-        const bedRooms = (stay?.bedConfigs || []).map((b, idx) => ({
+      let rooms = rawRooms.map((r, idx) => {
+        const rId = String(r?.roomId ?? r?.roomTypeId ?? r?.room_type_id ?? r?.id ?? `room-${idx}`);
+        return {
+          ...r,
+          roomId: rId,
+          roomTypeId: r?.roomTypeId != null ? String(r.roomTypeId) : (r?.room_type_id != null ? String(r.room_type_id) : (r?.id != null ? String(r.id) : rId)),
+          roomName: r?.roomName || r?.name || r?.roomTypeName || r?.bedType || r?.room_type_name || `Room ${idx + 1}`,
+        };
+      });
+      if (stay?.bedConfigs?.length > 0 || stay?.bed_configs?.length > 0) {
+        const bedConfigs = stay?.bedConfigs || stay?.bed_configs || [];
+        const bedRooms = bedConfigs.map((b, idx) => ({
           ...b,
-          roomId: String(b.id ?? b.bedConfigId ?? `bed-${idx}`),
-          bedConfigId: String(b.bedConfigId ?? b.id ?? `bed-${idx}`),
+          roomId: String(b.bedConfigId ?? b.bed_config_id ?? b.id ?? `bed-${idx}`),
+          bedConfigId: String(b.bedConfigId ?? b.bed_config_id ?? b.id ?? `bed-${idx}`),
           roomName: b.bedType || b.name || "Bed",
-          units: b.bedCount || stay?.bedCount,
+          units: b.bedCount || b.totalBeds || stay?.bedCount,
           maxAdults: 1,
           maxChildren: 0,
           maxExtraAdults: 0,
@@ -1694,7 +1741,18 @@ const StayBookingSystem = ({
         ? parseFloat(mealSeasonData.extraChildPrice)
         : null;
 
-      return { ...room, ...sel, calculatedPrice: roomBasePrice, seasonalExtraAdultPrice, seasonalExtraChildPrice };
+      const catalogRoomId = String(room?.roomId ?? room?.roomTypeId ?? room?.room_type_id ?? room?.id ?? sel?.roomId ?? "room-1");
+
+      return {
+        ...sel,
+        ...room,
+        roomId: catalogRoomId,
+        count: Number(sel?.count || room?.count || 1) || 1,
+        mealPlan,
+        calculatedPrice: roomBasePrice,
+        seasonalExtraAdultPrice,
+        seasonalExtraChildPrice
+      };
     }).filter(Boolean);
   }, [stay, selectedRooms, availabilityData, checkInDate, stayRoomsCatalog]);
   const isEntirelyBedBased = useMemo(
@@ -2339,7 +2397,10 @@ const StayBookingSystem = ({
         const roomsBooked = Number(r.count || 1);
         const catalogRoom = stayRoomsCatalog.find(
           cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId) === String(r.roomId)
-        );
+        ) || stayRoomsCatalog.find(
+          cr => (cr.roomName || cr.name || cr.roomTypeName || cr.bedType || "").trim().toLowerCase() === String(r.roomName || r.name).trim().toLowerCase()
+        ) || (stayRoomsCatalog.length === 1 ? stayRoomsCatalog[0] : null);
+
         const maxAdults = catalogRoom?.maxAdults || r.maxAdults || 2;
         const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (r.maxChildren || 0);
         const maxExtraBeds = Number(catalogRoom?.maxExtraBeds ?? r.maxExtraBeds ?? 0);
@@ -2363,9 +2424,10 @@ const StayBookingSystem = ({
           ? allRoomChildAges.slice(-extraChildren)
           : [];
 
-        const isBed = r.isBedConfig;
-        const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
-        const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (catalogRoom?.roomId || r.roomId || 1);
+        const isBed = r.isBedConfig || Boolean(catalogRoom?.isBedConfig);
+        const rawCatalogId = catalogRoom?.roomId ?? catalogRoom?.roomTypeId ?? catalogRoom?.room_type_id ?? catalogRoom?.id ?? r.roomId;
+        const numericId = Number(rawCatalogId);
+        const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (Number(catalogRoom?.roomId) || 1);
         const mealCode = resolveValidMealPlan(r.mealPlan || r.mealPlanCode, catalogRoom || r, stay);
 
         if (isBed) {
@@ -3231,7 +3293,10 @@ const StayBookingSystem = ({
             const roomsBooked = Number(r.count || 1);
             const catalogRoom = stayRoomsCatalog.find(
               cr => String(cr.roomId ?? cr.id ?? cr.roomTypeId ?? cr.room_type_id ?? cr.bedConfigId) === String(r.roomId)
-            );
+            ) || stayRoomsCatalog.find(
+              cr => (cr.roomName || cr.name || cr.roomTypeName || cr.bedType || "").trim().toLowerCase() === String(r.roomName || r.name).trim().toLowerCase()
+            ) || (stayRoomsCatalog.length === 1 ? stayRoomsCatalog[0] : null);
+
             const maxAdults = catalogRoom?.maxAdults || r.maxAdults || 2;
             const maxChildren = catalogRoom?.maxChildren !== undefined ? catalogRoom.maxChildren : (r.maxChildren || 0);
             const maxExtraBeds = Number(catalogRoom?.maxExtraBeds ?? r.maxExtraBeds ?? 0);
@@ -3255,9 +3320,10 @@ const StayBookingSystem = ({
               ? allRoomChildAges.slice(-extraChildren)
               : [];
 
-            const isBed = r.isBedConfig;
-            const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
-            const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (catalogRoom?.roomId || r.roomId || 1);
+            const isBed = r.isBedConfig || Boolean(catalogRoom?.isBedConfig);
+            const rawCatalogId = catalogRoom?.roomId ?? catalogRoom?.roomTypeId ?? catalogRoom?.room_type_id ?? catalogRoom?.id ?? r.roomId;
+            const numericId = Number(rawCatalogId);
+            const validId = Number.isFinite(numericId) && numericId > 0 ? numericId : (Number(catalogRoom?.roomId) || 1);
             const mealCode = resolveValidMealPlan(r.mealPlan || r.mealPlanCode, catalogRoom || r, stay);
 
             if (isBed) {
@@ -4209,22 +4275,11 @@ const StayBookingSystem = ({
               }}
             >
               {/* Header */}
-              <div className="booking-modal-header" style={{ padding: "16px 28px 8px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="booking-modal-header" style={{ padding: "20px 28px", borderBottom: `1px solid ${B}88`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <h2 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2, lineHeight: "1.2" }}>
+                  <h2 style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: A, margin: 0, lineHeight: "1.2" }}>
                     Reserve Your Stay
                   </h2>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    {!fetchingAvailability && modalHeaderPricing.hasDiscount && (
-                      <span style={{ fontSize: 13, fontWeight: 600, color: M, textDecoration: "line-through", opacity: 0.7 }}>
-                        {"\u20B9"}{formatPrice(modalHeaderPricing.originalPerNight)}
-                      </span>
-                    )}
-                    <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>
-                      {fetchingAvailability ? "..." : `${"\u20B9"}${formatPrice(modalHeaderPricing.discountedPerNight)}`}
-                    </span>
-                    <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>/ night</span>
-                  </div>
                 </div>
                 <button type="button" onClick={closeBookingModal} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG }}>
                   <X size={18} />
@@ -4687,19 +4742,10 @@ const StayBookingSystem = ({
                                   <Counter
                                     value={guests.adults}
                                     setValue={(v) => {
-                                      if (!isPropertyBased) {
-                                        if (v > guests.adults) {
-                                          if (v > allowedAdults) {
-                                            handleAddAnotherRoom();
-                                          }
-                                        } else if (v < guests.adults) {
-                                          handleReduceRoomCount(v);
-                                        }
-                                      }
                                       setGuests(prev => ({ ...prev, adults: v }));
                                     }}
                                     min={1}
-                                    max={absoluteMaxAdults}
+                                    max={Math.max(1, allowedAdults)}
                                   />
                                 </div>
 
@@ -4711,7 +4757,7 @@ const StayBookingSystem = ({
                                       setGuests(prev => ({ ...prev, children: v }));
                                     }}
                                     min={0}
-                                    max={!isPropertyBased ? Math.max(0, allowedChildren) : absoluteMaxChildren}
+                                    max={Math.max(0, allowedChildren)}
                                   />
                                 </div>
                               </div>
@@ -4864,97 +4910,18 @@ const StayBookingSystem = ({
                         </div>
                       )}
 
-                      {capacityFeedback && capacityFeedback.exceeded && (() => {
-                        const isEntirelyBedBased = resolvedSelectedRooms.length > 0 && resolvedSelectedRooms.every(r => r.isBedConfig);
-                        const shouldHideAutoAdd = isHostelBooking(stay) && isEntirelyBedBased;
-                        if (shouldHideAutoAdd) return null;
-
-                        return (
-                          <motion.button
-                            whileHover={{ scale: 1.02, background: AL }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleAddAnotherRoom}
-                            style={{
-                              marginTop: 8,
-                              width: "100%",
-                              padding: "10px 16px",
-                              borderRadius: 14,
-                              border: `1px solid ${A}44`,
-                              background: "transparent",
-                              color: A,
-                              fontSize: 12,
-                              fontWeight: 800,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 6,
-                              transition: "background-color 0.2s ease"
-                            }}
-                          >
-                            <Plus size={14} />
-                            {isEntirelyBedBased ? "Add Another Bed" : "Add Another Room"}
-                          </motion.button>
-                        );
-                      })()}
-
-
-
-                      {/* Selected Rooms */}
+                      {/* Selected Rooms (Fixed for rebooking) */}
                       {resolvedSelectedRooms.length > 0 && (
-                        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                           {resolvedSelectedRooms.map((room) => (
                             <div key={room.roomId || room.id} style={{ padding: "10px 14px", background: BG, borderRadius: 16, border: `1px solid ${B}` }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                                  <div style={{ width: 26, height: 26, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
-                                    <Bed size={13} />
+                                  <div style={{ width: 28, height: 28, borderRadius: 8, background: AL, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
+                                    <Bed size={14} />
                                   </div>
                                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                      <p style={{ fontSize: 13, fontWeight: 600, color: FG, margin: 0 }}>{room.roomName || room.name}</p>
-                                      {stayRoomsCatalog.length > 1 && (
-                                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                                          <select
-                                            value={room.roomId || room.id}
-                                            onChange={(e) => {
-                                              const newRoomId = e.target.value;
-                                              setSelectedRooms(prev => prev.map(r =>
-                                                (r.roomId || r.id) === (room.roomId || room.id) ? { ...r, roomId: newRoomId } : r
-                                              ));
-                                            }}
-                                            style={{
-                                              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer'
-                                            }}
-                                          >
-                                            {stayRoomsCatalog.map(catalogRoom => {
-                                              const cId = String(catalogRoom.roomId ?? catalogRoom.id ?? catalogRoom.roomTypeId ?? catalogRoom.room_type_id);
-                                              return (
-                                                <option key={cId} value={cId}>
-                                                  {catalogRoom.roomName || catalogRoom.name || catalogRoom.bedType || "Accommodation"}
-                                                </option>
-                                              );
-                                            })}
-                                          </select>
-                                          <div style={{
-                                            fontSize: 10,
-                                            fontWeight: 700,
-                                            color: A,
-                                            background: `${A}11`,
-                                            border: `1px solid ${A}44`,
-                                            borderRadius: 6,
-                                            padding: "2px 6px",
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 4,
-                                            pointerEvents: 'none',
-                                            boxShadow: `0 1px 2px ${B}44`,
-                                          }}>
-                                            Change <ChevronDown size={10} color={A} />
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: FG, margin: 0 }}>{room.roomName || room.name}</p>
                                     <p style={{ fontSize: 10, fontWeight: 500, color: M, margin: 0 }}>
                                       {getMealPlanDisplayLabel(
                                         room.mealPlan || "EP",
@@ -4964,36 +4931,43 @@ const StayBookingSystem = ({
                                     </p>
                                   </div>
                                 </div>
-                                <Counter
-                                  value={room.count}
-                                  setValue={(v) => {
-                                    if (v === 0) {
-                                      setSelectedRooms(prev => prev.filter(r => (r.roomId || r.id) !== (room.roomId || room.id)));
-                                    } else {
-                                      if (!room.isBedConfig && !isPropertyBasedBooking(stay)) {
-                                        const diff = v - (room.count || 1);
-                                        if (diff > 0) {
-                                          const currentNonBedRooms = resolvedSelectedRooms.filter(r => !r.isBedConfig).reduce((sum, r) => sum + Number(r.count || 0), 0);
-                                          const newTotalRooms = currentNonBedRooms + diff;
-                                          if (newTotalRooms > (guests?.adults || 1)) {
-                                            setGuests(prev => ({ ...prev, adults: Math.max(prev.adults || 1, newTotalRooms) }));
-                                          }
-                                        }
-                                      }
-                                      handleRoomCountChangeWithReset(room.roomId || room.id, v);
-                                    }
-                                  }}
-                                  min={resolvedSelectedRooms.length > 1 ? 0 : 1}
-                                  max={Number(room.units || room.totalRooms || room.availableRooms || 99)}
-                                />
+                                <div style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  padding: "4px 10px",
+                                  background: S,
+                                  borderRadius: 8,
+                                  border: `1px solid ${B}`,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: FG
+                                }}>
+                                  <span>{room.count || 1} {room.isBedConfig ? (room.count > 1 ? "Beds" : "Bed") : (room.count > 1 ? "Rooms" : "Room")}</span>
+                                </div>
                               </div>
                             </div>
                           ))}
+
+                          {/* Message for fixed room configuration */}
+                          <div style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 8,
+                            padding: "8px 12px",
+                            background: `${A}0a`,
+                            border: `1px solid ${A}22`,
+                            borderRadius: 12,
+                            marginTop: 2
+                          }}>
+                            <Info size={14} color={A} style={{ flexShrink: 0, marginTop: 2 }} />
+                            <span style={{ fontSize: 11, color: M, lineHeight: 1.4 }}>
+                              Room configuration is fixed for rebooking. If you need to change room configuration, please create a new booking.
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
-
-
 
                     {/* Warnings */}
                     {pricing.warning && (

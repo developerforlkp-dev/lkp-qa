@@ -64,10 +64,12 @@ const Item = ({ className, item }) => {
         )}
         <div className={styles.overlay}>
           <div className={styles.title}>{item.title}</div>
-          <div className={styles.counter}>
-            <Icon name="star" size="14" />
-            <span className={styles.ratingNumber}>{rating} ({item.counter || 0})</span>
-          </div>
+          {!item.hideRating && !item.isCategoryCard && (
+            <div className={styles.counter}>
+              <Icon name="star" size="14" />
+              <span className={styles.ratingNumber}>{rating} ({item.counter || 0})</span>
+            </div>
+          )}
         </div>
       </div>
     </Link>

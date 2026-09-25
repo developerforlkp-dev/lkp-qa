@@ -1,18 +1,119 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
+import html2pdf from "html2pdf.js";
 import styles from "./CheckoutComplete.module.sass";
 import Icon from "../Icon";
 
-const CheckoutComplete = ({ className, title, parameters, options, items, paymentFailed = false, onRetryPayment, isStay, isEvent, hostName, avatarUrl, rating, reviews, isDirectBooking = false }) => {
+const CheckoutComplete = ({
+  className,
+  title,
+  parameters,
+  options,
+  items,
+  paymentFailed = false,
+  onRetryPayment,
+  isStay,
+  isEvent,
+  hostName,
+  avatarUrl,
+  rating,
+  reviews,
+  isDirectBooking = false,
+  onPrintReceipt,
+}) => {
+  const receiptRef = useRef(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+
   const bookedMessage = isStay
     ? "Your stay has been booked!"
     : isEvent
       ? "Your event has been booked!"
       : "Your trip has been booked!";
 
+  const handlePrintReceipt = async () => {
+    if (onPrintReceipt) {
+      onPrintReceipt();
+      return;
+    }
+
+    const targetElement = receiptRef.current;
+    if (!targetElement) {
+      window.print();
+      return;
+    }
+
+    try {
+      setIsPrinting(true);
+
+      // Clone the receipt card to avoid mutating active UI
+      const clone = targetElement.cloneNode(true);
+
+      // Remove the action buttons from the printed receipt
+      const btns = clone.querySelector(`.${styles.btns}`) || clone.querySelector('[class*="btns"]');
+      if (btns) btns.remove();
+
+      // Create an off-screen container styled for clean PDF capture
+      const container = document.createElement("div");
+      container.style.position = "absolute";
+      container.style.top = "-9999px";
+      container.style.left = "-9999px";
+      container.style.width = "750px";
+      container.style.padding = "36px 40px";
+      container.style.background = "#ffffff";
+      container.style.color = "#141416";
+      container.style.boxSizing = "border-box";
+      container.style.fontFamily = "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+      // Top branding header for the receipt
+      const headerBrand = document.createElement("div");
+      headerBrand.style.display = "flex";
+      headerBrand.style.justifyContent = "space-between";
+      headerBrand.style.alignItems = "center";
+      headerBrand.style.paddingBottom = "16px";
+      headerBrand.style.marginBottom = "24px";
+      headerBrand.style.borderBottom = "2px solid #0097B2";
+      headerBrand.innerHTML = `
+        <div style="font-size: 22px; font-weight: 700; color: #0097B2; letter-spacing: -0.02em;">
+          Little Known Planet
+        </div>
+        <div style="font-size: 11px; font-weight: 700; color: #777E90; text-transform: uppercase; letter-spacing: 0.08em;">
+          Booking Receipt
+        </div>
+      `;
+      container.appendChild(headerBrand);
+      container.appendChild(clone);
+      document.body.appendChild(container);
+
+      const orderRef =
+        options?.find((o) => o.title?.toLowerCase().includes("reference") || o.title?.toLowerCase().includes("payment"))?.content ||
+        "Receipt";
+      const cleanRef = String(orderRef).replace(/[^a-zA-Z0-9-_]/g, "");
+
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `LKP_Receipt_${cleanRef || "DirectBooking"}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" },
+        pagebreak: { mode: ["avoid-all", "css"] },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      await html2pdf().from(container).set(opt).save();
+
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    } catch (err) {
+      console.error("Receipt generation error:", err);
+      window.print();
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   return (
-    <div className={cn(className, styles.complete)}>
+    <div ref={receiptRef} id="checkout-complete-receipt" className={cn(className, styles.complete)}>
       <div className={styles.head}>
         {paymentFailed ? (
           <>
@@ -123,9 +224,10 @@ const CheckoutComplete = ({ className, title, parameters, options, items, paymen
               <button
                 type="button"
                 className={cn("button-stroke", styles.button)}
-                onClick={() => window.print()}
+                onClick={handlePrintReceipt}
+                disabled={isPrinting}
               >
-                Print Receipt
+                {isPrinting ? "Generating Receipt..." : "Print Receipt"}
               </button>
             )}
           </>

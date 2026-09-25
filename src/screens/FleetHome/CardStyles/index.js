@@ -193,17 +193,18 @@ const getEntityUrl = (listing, id) => {
 
 const transformListingToCard = (listing, section) => {
   //console.log("Listing Object for Card:", listing);
+  const isCategory = listing?.isCategoryCard || isShowCategoriesOnly(section);
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
-  const primaryCategoryLabel = isShowListingMode(section)
+  const primaryCategoryLabel = !isCategory && isShowListingMode(section)
     ? getPrimaryCategoryLabel(listing)
     : null;
 
   const entityType = getEntityType(listing);
 
   // Price formatting
-  const price = listing.individualPrice ?? listing.startingPrice ?? 0;
-  const hasPrice = price > 0 && entityType !== "place";
+  const price = isCategory ? 0 : (listing.individualPrice ?? listing.startingPrice ?? 0);
+  const hasPrice = !isCategory && price > 0 && entityType !== "place";
   let suffix = "";
   if (entityType === "experience" || entityType === "event") suffix = " / person";
   if (entityType === "stay") suffix = " / night";
@@ -216,16 +217,16 @@ const transformListingToCard = (listing, section) => {
   if (locationParts.length === 2 && locationParts[0] === locationParts[1]) {
     locationParts = [locationParts[0]];
   }
-  let locationText = locationParts.join(", ") || listing.locationName;
+  let locationText = isCategory ? null : (locationParts.join(", ") || listing.locationName);
 
-  if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
+  if (!isCategory && (locationText === "India" || locationText === "TBD, India" || locationText === "TBD")) {
     locationText = listing.cityArea || listing.state || listing.address || "India";
   }
 
   // Date Badge formatting (for events)
   let dateBadge = null;
   const dateStr = listing.eventDate || listing.startDate || listing.date;
-  if (entityType === "event" && dateStr) {
+  if (!isCategory && entityType === "event" && dateStr) {
     try {
       const d = new Date(dateStr);
       if (!isNaN(d.getTime())) {
@@ -238,21 +239,23 @@ const transformListingToCard = (listing, section) => {
   }
 
   // Tags & Badges
-  const tags = listing.tags || [];
+  const tags = isCategory ? [] : (listing.tags || []);
   const normalizedTags = tags.map(t => typeof t === 'string' ? t.toUpperCase() : '');
   let finalCategoryText = primaryCategoryLabel;
   let badgeColor = "teal";
 
-  if (normalizedTags.includes("TOP PICK")) {
-    finalCategoryText = "TOP PICK";
-    badgeColor = "orange";
-  } else if (normalizedTags.includes("TRENDING")) {
-    finalCategoryText = "TRENDING";
-    badgeColor = "orange";
-  }
+  if (!isCategory) {
+    if (normalizedTags.includes("TOP PICK")) {
+      finalCategoryText = "TOP PICK";
+      badgeColor = "orange";
+    } else if (normalizedTags.includes("TRENDING")) {
+      finalCategoryText = "TRENDING";
+      badgeColor = "orange";
+    }
 
-  if (entityType === "place") {
-    finalCategoryText = null;
+    if (entityType === "place") {
+      finalCategoryText = null;
+    }
   }
 
   return {
@@ -265,11 +268,14 @@ const transformListingToCard = (listing, section) => {
     location: locationText || null,
     priceActual: priceDisplay,
     hasPrice: hasPrice,
-    rating: listing.averageRating ?? listing.rating ?? 0,
-    reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
-    briefDescription: listing.briefDescription ?? listing.shortDescription,
+    rating: isCategory ? 0 : (listing.averageRating ?? listing.rating ?? 0),
+    reviews: isCategory ? 0 : (listing.totalReviews ?? listing.reviewCount ?? 0),
+    hideRating: isCategory,
+    hideWishlist: isCategory,
+    isCategoryCard: isCategory,
+    briefDescription: isCategory ? null : (listing.briefDescription ?? listing.shortDescription),
     tags: tags,
-    host: listing.host,
+    host: isCategory ? null : listing.host,
     priceOld: null,
     cost: priceDisplay,
     options: [],
@@ -284,6 +290,7 @@ const transformListingToCard = (listing, section) => {
 
 // Transform API listing to Browse component format (for carousel)
 const transformListingToBrowse = (listing, section) => {
+  const isCategory = listing?.isCategoryCard || isShowCategoriesOnly(section);
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
@@ -296,8 +303,10 @@ const transformListingToBrowse = (listing, section) => {
     url: getEntityUrl(listing, id, section),
     categoryText: null, // Remove location/address from carousel cards
     category: null,
-    counter: listing.totalReviews || listing.reviewCount || 0,
-    rating: listing.averageRating ?? listing.rating ?? 0,
+    counter: isCategory ? 0 : (listing.totalReviews || listing.reviewCount || 0),
+    rating: isCategory ? 0 : (listing.averageRating ?? listing.rating ?? 0),
+    hideRating: isCategory,
+    isCategoryCard: isCategory,
     isClosed: Boolean(listing.isClosed),
   };
 };
@@ -321,6 +330,7 @@ const transformListingToDestination = (listing, section) => {
 
 // Transform API listing to Destination component format (for horizontal rectangular cards)
 const transformListingToDestinationHorizontal = (listing, section) => {
+  const isCategory = listing?.isCategoryCard || isShowCategoriesOnly(section);
   const id = getEntityId(listing);
   const coverPhotoUrl = formatImageUrl(getEntityImageUrl(listing));
 
@@ -331,9 +341,9 @@ const transformListingToDestinationHorizontal = (listing, section) => {
   if (locationParts.length === 2 && locationParts[0] === locationParts[1]) {
     locationParts = [locationParts[0]];
   }
-  let locationText = locationParts.join(", ") || listing.locationName;
+  let locationText = isCategory ? null : (locationParts.join(", ") || listing.locationName);
 
-  if (locationText === "India" || locationText === "TBD, India" || locationText === "TBD") {
+  if (!isCategory && (locationText === "India" || locationText === "TBD, India" || locationText === "TBD")) {
     locationText = listing.cityArea || listing.state || listing.address || "India";
   }
 
@@ -346,8 +356,11 @@ const transformListingToDestinationHorizontal = (listing, section) => {
     url: getEntityUrl(listing, id, section),
     categoryText: null, // Optional category badge
     category: null,
-    rating: listing.averageRating ?? listing.rating ?? 0,
-    reviews: listing.totalReviews ?? listing.reviewCount ?? 0,
+    rating: isCategory ? 0 : (listing.averageRating ?? listing.rating ?? 0),
+    reviews: isCategory ? 0 : (listing.totalReviews ?? listing.reviewCount ?? 0),
+    hideRating: isCategory,
+    hideWishlist: isCategory,
+    isCategoryCard: isCategory,
     hasPrice: false,
     cost: null,
     location: locationText || null,

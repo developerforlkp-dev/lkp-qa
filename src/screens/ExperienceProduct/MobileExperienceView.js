@@ -68,7 +68,12 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
     return () => clearInterval(timer);
   }, [discounts]);
 
-  if (!discounts || discounts.length === 0) return null;
+  if (!Array.isArray(discounts) || discounts.length === 0) return null;
+
+  const currentDiscount = discounts[index % discounts.length];
+  if (!currentDiscount) return null;
+  const days = currentDiscount.daysInAdvance ?? currentDiscount.days_in_advance ?? 0;
+  const percentage = currentDiscount.percentage ?? currentDiscount.discountPercentage ?? 0;
 
   return (
     <div style={{ display: "grid", height: 20, alignItems: "center", overflow: "hidden" }}>
@@ -92,11 +97,11 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
         >
           <span style={{ opacity: 0.7 }}>Book</span>{" "}
           <span style={{ color: isDark ? "#38BDF8" : "#0284C7", fontWeight: 800 }}>
-            {discounts[index].daysInAdvance} Days
+            {days} Days
           </span>{" "}
           <span style={{ opacity: 0.7 }}>Advance:</span>{" "}
           <span style={{ color: isDark ? "#4ADE80" : "#16A34A", fontWeight: 800 }}>
-            {discounts[index].percentage}% OFF
+            {percentage}% OFF
           </span>
         </motion.span>
       </AnimatePresence>
@@ -582,11 +587,11 @@ export default function MobileExperienceView({
           ╚═══════════════════════════════════╝ */}
       <div className="mob-section" style={{ background: isDark ? BG : W }}>
         <span className="mob-section-eyebrow" style={{ color: A }}>Location & Details</span>
-        <h2 className="mob-section-title" style={{ color: FG }}>Where it All Happens</h2>
+        <h2 className="mob-section-title" style={{ color: FG, marginBottom: 16 }}>Where it All Happens</h2>
 
         {/* Map embed */}
         {(listing?.meetingLatitude && listing?.meetingLongitude) && (
-          <div className="mob-map-container" style={{ border: `1px solid ${B}`, width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 12 }}>
+          <div className="mob-map-container" style={{ border: `1px solid ${B}`, width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 12, marginBottom: 16 }}>
             <iframe
               title="Location"
               src={`https://maps.google.com/maps?q=${listing.meetingLatitude},${listing.meetingLongitude}&z=14&output=embed`}
@@ -597,66 +602,74 @@ export default function MobileExperienceView({
           </div>
         )}
 
-        {/* Detail rows */}
-        <div className="mob-detail-rows">
-          {listing?.meetingAddress && (
-            <div className="mob-detail-row" style={{ borderColor: B }}>
-              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                <MapPin size={18} color={A} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
-                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingAddress}</span>
-              </div>
-            </div>
-          )}
-          {listing?.meetingDistrict && (
-            <div className="mob-detail-row" style={{ borderColor: B }}>
-              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                <Building size={18} color={A} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
-                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingDistrict}</span>
-              </div>
-            </div>
-          )}
-          {listing?.meetingState && (
-            <div className="mob-detail-row" style={{ borderColor: B }}>
-              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                <Map size={18} color={A} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
-                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingState}</span>
-              </div>
-            </div>
-          )}
-          {listing?.meetingCountry && (
-            <div className="mob-detail-row" style={{ borderColor: B }}>
-              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                <Globe size={18} color={A} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
-                <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingCountry}</span>
-              </div>
-            </div>
-          )}
-          {listing?.meetingInstructions && (
-            <div className="mob-detail-row" style={{ borderColor: B }}>
-              <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
-                <Info size={18} color={A} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
-                <div style={{ minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>
-                  <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
+        <Accordion 
+          title="View Location Details"
+          icon={<MapPin size={16} color={A} />}
+          borderColor={B} fgColor={FG} mColor={M} accentColor={A}
+        >
+          <div style={{ paddingTop: 8 }}>
+            {/* Detail rows */}
+            <div className="mob-detail-rows">
+              {listing?.meetingAddress && (
+                <div className="mob-detail-row" style={{ borderColor: B }}>
+                  <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                    <MapPin size={18} color={A} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
+                    <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingAddress}</span>
+                  </div>
                 </div>
-              </div>
+              )}
+              {listing?.meetingDistrict && (
+                <div className="mob-detail-row" style={{ borderColor: B }}>
+                  <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                    <Building size={18} color={A} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>District</span>
+                    <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingDistrict}</span>
+                  </div>
+                </div>
+              )}
+              {listing?.meetingState && (
+                <div className="mob-detail-row" style={{ borderColor: B }}>
+                  <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                    <Map size={18} color={A} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>State</span>
+                    <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingState}</span>
+                  </div>
+                </div>
+              )}
+              {listing?.meetingCountry && (
+                <div className="mob-detail-row" style={{ borderColor: B }}>
+                  <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                    <Globe size={18} color={A} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Country</span>
+                    <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{listing.meetingCountry}</span>
+                  </div>
+                </div>
+              )}
+              {listing?.meetingInstructions && (
+                <div className="mob-detail-row" style={{ borderColor: B }}>
+                  <div className="mob-detail-icon" style={{ background: isDark ? "#1E293B" : "#F0F9FA" }}>
+                    <Info size={18} color={A} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Instructions</span>
+                    <div style={{ minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>
+                      <ExpandableInstructionText text={listing.meetingInstructions} FG={FG} A={A} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        </Accordion>
 
         {/* Things to Keep in Mind */}
         {(listing?.thingsToKeepInMind?.length > 0 || listing?.whatToBring?.length > 0 || listing?.notSuitableFor?.length > 0) && (
@@ -728,7 +741,7 @@ export default function MobileExperienceView({
           <div className="mob-host-card" style={{ borderColor: B, background: isDark ? "#111" : W }}>
             <div className="mob-host-avatar" style={{ background: `linear-gradient(135deg, ${A}20, ${A}08)`, color: A, border: `2px solid ${A}40` }}>
               <img
-                src={fmt(leadData?.profilePhotoUrl || leadData?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || hostData?.host?.profilePhotoUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
+                src={fmt(hostData?.profilePhotoUrl || hostData?.profileImageUrl || hostData?.host?.profilePhotoUrl || hostData?.host?.profileImageUrl || hostData?.avatar || hostData?.host?.avatar || leadData?.profilePhotoUrl || leadData?.profileImageUrl) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`}
                 alt={displayHostName}
                 style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                 onError={(e) => { e.target.onerror = null; e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayHostName)}&backgroundColor=0097B2&color=ffffff`; }}
@@ -834,45 +847,74 @@ export default function MobileExperienceView({
                 if (!items || items.length === 0) return null;
                 return (
                   <Accordion key={catTitle} title={catTitle} icon={icon} borderColor={B} fgColor={FG} mColor={M} accentColor={A}>
-                    {items.map((item, idx) => (
-                      <div key={idx} style={{ marginBottom: idx === items.length - 1 ? 0 : 16 }}>
-                        {item.title && item.title !== item.desc && (
-                          <p style={{ fontWeight: 700, fontSize: 14, color: FG, marginBottom: 4 }}>{item.title}</p>
-                        )}
-                        {item.desc && (
-                          <div style={{ fontSize: 13, color: M, marginBottom: 8 }}>
-                            {catTitle.toLowerCase().includes('cancellation') && item.desc.split('. ').filter(s => s.trim().length > 0).length > 1 ? (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-                                {item.desc.split('. ').filter(s => s.trim().length > 0).map((sentence, idx) => (
-                                  <div key={idx} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                                    <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
-                                    <div style={{ flex: 1 }}>
-                                      {sentence.trim()}{sentence.trim().endsWith('.') ? '' : '.'}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {items.map((item, idx) => {
+                        const hasQuestions = item.questions && item.questions.length > 0;
+                        return (
+                          <div key={idx} style={{ borderBottom: idx === items.length - 1 ? "none" : `1px solid ${B}`, paddingBottom: idx === items.length - 1 ? 0 : 12 }}>
+                            {/* If item has no questions, treat item.title / item.desc as bullet point item */}
+                            {!hasQuestions && (
+                              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                                <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                                <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+                                  {item.title && (
+                                    <span style={{ fontWeight: 600, fontSize: 13, color: FG, lineHeight: 1.4 }}>{item.title}</span>
+                                  )}
+                                  {item.desc && item.desc !== item.title && (
+                                    <div style={{ fontSize: 13, color: M, lineHeight: 1.5 }}>
+                                      {catTitle.toLowerCase().includes('cancellation') && item.desc.split('. ').filter(s => s.trim().length > 0).length > 1 ? (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                                          {item.desc.split('. ').filter(s => s.trim().length > 0).map((sentence, sIdx) => (
+                                            <div key={sIdx} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                                              <div style={{ width: 5, height: 5, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                                              <div style={{ flex: 1 }}>
+                                                {sentence.trim()}{sentence.trim().endsWith('.') ? '' : '.'}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p style={{ margin: 0 }}>{item.desc}</p>
+                                      )}
                                     </div>
-                                  </div>
-                                ))}
+                                  )}
+                                </div>
                               </div>
-                            ) : (
-                              <p style={{ margin: 0 }}>{item.desc}</p>
+                            )}
+
+                            {/* If item has questions, render title if different, and each question with bullet point */}
+                            {hasQuestions && (
+                              <div>
+                                {item.title && item.title !== "Requirement" && (
+                                  <p style={{ fontWeight: 700, fontSize: 13, color: FG, marginBottom: 6 }}>{item.title}</p>
+                                )}
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                  {item.questions.map((q, qi) => {
+                                    const questionTitle = q.title || q.question?.title;
+                                    const answerText = q.answer?.valueText || q.valueText;
+                                    return (
+                                      <div key={qi} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                                        <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+                                          <span style={{ fontWeight: 600, fontSize: 13, color: FG, lineHeight: 1.4 }}>{questionTitle}</span>
+                                          {answerText && (
+                                            <div style={{ marginTop: 2 }}>
+                                              <span style={{ display: "inline-block", fontSize: 12, padding: "3px 10px", borderRadius: 100, background: AL, color: A, fontWeight: 600 }}>
+                                                {answerText}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             )}
                           </div>
-                        )}
-                        {item.questions?.map((q, qi) => {
-                          const questionTitle = q.title || q.question?.title;
-                          const answerText = q.answer?.valueText || q.valueText;
-                          return (
-                            <div key={qi} style={{ marginTop: 8 }}>
-                              <p style={{ fontWeight: 600, fontSize: 13, color: FG, marginBottom: 4 }}>{questionTitle}</p>
-                              {answerText && (
-                                <span style={{ display: "inline-block", fontSize: 12, padding: "4px 10px", borderRadius: 100, background: AL, color: A, fontWeight: 600, marginRight: 6, marginBottom: 4 }}>
-                                  {answerText}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
+                        );
+                      })}
+                    </div>
                   </Accordion>
                 );
               };

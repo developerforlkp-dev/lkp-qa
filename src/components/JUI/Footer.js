@@ -7,11 +7,10 @@ import Modal from "../Modal";
 import { getSupportGuest } from "../../utils/api";
 
 
-function FooterCol({ title, children }) {
-  const [isOpen, setIsOpen] = useState(false);
+function FooterCol({ title, isOpen, onToggle, children }) {
   return (
     <div className={styles.linkCol}>
-      <h4 onClick={() => setIsOpen(!isOpen)} className={`${styles.colTitle} ${isOpen ? styles.colTitleOpen : ''}`}>
+      <h4 onClick={onToggle} className={`${styles.colTitle} ${isOpen ? styles.colTitleOpen : ''}`}>
         {title}
         <span className={`${styles.colIcon} ${isOpen ? styles.colIconOpen : ''}`}>
           <ChevronDown size={16} />
@@ -25,9 +24,14 @@ function FooterCol({ title, children }) {
 }
 
 export function Footer() {
+  const [openSection, setOpenSection] = useState(null);
   const [isHostingFormVisible, setIsHostingFormVisible] = useState(false);
   const [isContactModalVisible, setIsContactModalVisible] = useState(false);
   const [contacts, setContacts] = useState([]);
+
+  const toggleSection = (sectionTitle) => {
+    setOpenSection((prev) => (prev === sectionTitle ? null : sectionTitle));
+  };
 
   React.useEffect(() => {
     const fetchSupport = async () => {
@@ -110,28 +114,46 @@ export function Footer() {
 
           {/* Links Sections */}
           <div className={styles.rightSection}>
-            <FooterCol title="Explore"><ul>
+            <FooterCol
+              title="Explore"
+              isOpen={openSection === "Explore"}
+              onToggle={() => toggleSection("Explore")}
+            >
+              <ul>
                 <li><Link to="/experiences" onClick={handleExploreClick}>Experiences</Link></li>
                 <li><Link to="/events" onClick={handleExploreClick}>Events</Link></li>
                 <li><Link to="/stays" onClick={handleExploreClick}>Stays</Link></li>
                 <li><Link to="/food" onClick={handleExploreClick}>Food</Link></li>
                 <li><Link to="/places" onClick={handleExploreClick}>Places</Link></li>
                 <li><Link to="/blog">Blog</Link></li>
-              </ul></FooterCol>
+              </ul>
+            </FooterCol>
 
-            <FooterCol title="Company"><ul>
+            <FooterCol
+              title="Company"
+              isOpen={openSection === "Company"}
+              onToggle={() => toggleSection("Company")}
+            >
+              <ul>
                 <li><Link to="/about">About Little Known Planet</Link></li>
                 <li><button onClick={() => setIsHostingFormVisible(true)} className={styles.linkButton}>Become a Host</button></li>
                 <li><button onClick={() => setIsContactModalVisible(true)} className={styles.linkButton}>Contact Us</button></li>
-              </ul></FooterCol>
+              </ul>
+            </FooterCol>
             
-            <FooterCol title="Support"><ul>
+            <FooterCol
+              title="Support"
+              isOpen={openSection === "Support"}
+              onToggle={() => toggleSection("Support")}
+            >
+              <ul>
                 <li><Link to="/faq">FAQ</Link></li>
                 <li><Link to="/support">Support Ticket</Link></li>
                 <li><Link to="/cancellation-policy">Cancellation Policy</Link></li>
                 <li><Link to="/privacy-policy">Privacy Policy</Link></li>
                 <li><Link to="/terms-of-service">Terms & Conditions</Link></li>
-              </ul></FooterCol>
+              </ul>
+            </FooterCol>
           </div>
 
         </div>

@@ -89,11 +89,17 @@ function PolicyCategoryItem({ category }) {
             <div style={{ padding: "0 24px 24px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
               {category.items.map((item, idx) => (
                 <div key={item.id || idx} style={{ borderBottom: idx === category.items.length - 1 ? "none" : `1px solid ${B}`, paddingBottom: idx === category.items.length - 1 ? 0 : 16, paddingTop: idx === 0 ? 0 : 16 }}>
-                  {item.title && item.title !== item.body && (
+                  {(!item.questions || item.questions.length === 0) && item.title && item.title !== item.body && (
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 6 }}>
+                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: FG, flex: 1 }}>{item.title}</span>
+                    </div>
+                  )}
+                  {item.questions && item.questions.length > 0 && item.title && item.title !== "Requirement" && (
                     <span style={{ fontSize: "14px", fontWeight: 700, color: FG, display: "block", marginBottom: 6 }}>{item.title}</span>
                   )}
                   {item.body && (
-                    <div style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0 }}>
+                    <div style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0, paddingLeft: (!item.questions || item.questions.length === 0) && item.title && item.title !== item.body ? 18 : 0 }}>
                       {category.title?.toLowerCase().includes('cancellation') && (item.body.includes('\n') || item.body.split('. ').filter(s => s.trim().length > 0).length > 1) ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
                           {(item.body.includes('\n') ? item.body.split('\n') : item.body.split('. ')).filter(s => s.trim().length > 0).map((sentence, idx) => (
@@ -118,7 +124,7 @@ function PolicyCategoryItem({ category }) {
                         return (
                           <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                             <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
                               <span style={{ fontSize: 13, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{questionTitle}</span>
                               {answerText && (
                                 <span style={{ fontSize: 12, color: M, lineHeight: 1.4 }}>{answerText}</span>

@@ -926,7 +926,12 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
     return () => clearInterval(timer);
   }, [discounts]);
 
-  if (!discounts || discounts.length === 0) return null;
+  if (!Array.isArray(discounts) || discounts.length === 0) return null;
+
+  const currentDiscount = discounts[index % discounts.length];
+  if (!currentDiscount) return null;
+  const days = currentDiscount.daysInAdvance ?? currentDiscount.days_in_advance ?? 0;
+  const percentage = currentDiscount.percentage ?? currentDiscount.discountPercentage ?? 0;
 
   return (
     <div style={{ display: "grid", height: 16, width: 220, alignItems: "center", overflow: "hidden", justifyItems: "flex-start" }}>
@@ -950,11 +955,11 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
         >
           <span style={{ opacity: 0.8 }}>Book</span>{" "}
           <span style={{ color: A, fontSize: 11, fontWeight: 800 }}>
-            {discounts[index].daysInAdvance} Days
+            {days} Days
           </span>{" "}
           <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
           <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 11, fontWeight: 800, letterSpacing: "0.05em" }}>
-            {discounts[index].percentage}% OFF
+            {percentage}% OFF
           </span>
         </motion.span>
       </AnimatePresence>
@@ -967,18 +972,53 @@ function MobileAboutSection({ stay }) {
   const { tokens: { A, FG, M } } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
-  const description = stay?.detailedDescription || stay?.description || stay?.shortDescription || "A luxury stay with modern amenities and premium comfort. Perfect for a peaceful escape surrounded by nature and privacy.";
+  const short = stay?.shortDescription || "";
+  const description = stay?.detailedDescription || stay?.description || (!short ? "A luxury stay with modern amenities and premium comfort. Perfect for a peaceful escape surrounded by nature and privacy." : "");
   const isLong = description.length > 150;
   const displayText = (!expanded && isLong) ? description.slice(0, 150) + "..." : description;
 
   return (
-    <div className="mobile-about-section">
-      <span style={{ display: "block", fontSize: "12px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif', marginBottom: "16px" }}>
+    <div className="mobile-about-section" style={{ textAlign: "center", padding: "28px 20px 16px", maxWidth: "560px", margin: "0 auto" }}>
+      <span className="premium-editorial-tag" style={{ color: A, marginBottom: "12px", display: "inline-block" }}>
         Overview
       </span>
-      <p className="about-text" style={{ color: FG }}>{displayText}</p>
+      {short && (
+        <h2
+          className="editorial-headline"
+          style={{
+            fontSize: "22px",
+            lineHeight: 1.35,
+            color: FG,
+            textAlign: "center",
+            margin: "0 auto 16px auto",
+            padding: "0 20px",
+            maxWidth: "420px",
+          }}
+        >
+          {short}
+        </h2>
+      )}
+      <div className="editorial-divider" style={{ margin: "0 auto 16px auto" }}>
+        <div className="editorial-divider-dot" style={{ background: A }} />
+      </div>
+      {displayText && (
+        <p
+          className="about-text"
+          style={{
+            color: M,
+            fontSize: "14px",
+            lineHeight: 1.7,
+            textAlign: "center",
+            margin: "0 auto",
+            maxWidth: "460px",
+            padding: "0 12px",
+          }}
+        >
+          {displayText}
+        </p>
+      )}
       {isLong && (
-        <button className="read-more-btn" onClick={() => setExpanded(!expanded)}>
+        <button className="read-more-btn" onClick={() => setExpanded(!expanded)} style={{ margin: "12px auto 0", display: "inline-flex", justifyContent: "center" }}>
           {expanded ? "Read less" : "Read more"}{" "}
           <ChevronDown size={16} style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.3s" }} />
         </button>
@@ -1840,11 +1880,17 @@ function PolicyCategoryItem({ category }) {
             <div style={{ padding: "0 24px 24px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
               {category.items.map((item, idx) => (
                 <div key={item.id || idx} style={{ borderBottom: idx === category.items.length - 1 ? "none" : `1px solid ${B}`, paddingBottom: idx === category.items.length - 1 ? 0 : 16, paddingTop: idx === 0 ? 0 : 16 }}>
-                  {item.title && item.title !== item.body && (
+                  {(!item.questions || item.questions.length === 0) && item.title && item.title !== item.body && (
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 6 }}>
+                      <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: FG, flex: 1 }}>{item.title}</span>
+                    </div>
+                  )}
+                  {item.questions && item.questions.length > 0 && item.title && item.title !== "Requirement" && (
                     <span style={{ fontSize: "14px", fontWeight: 700, color: FG, display: "block", marginBottom: 6 }}>{item.title}</span>
                   )}
                   {item.body && (
-                    <div style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0 }}>
+                    <div style={{ fontSize: 13, color: M, lineHeight: 1.6, margin: 0, paddingLeft: (!item.questions || item.questions.length === 0) && item.title && item.title !== item.body ? 18 : 0 }}>
                       {category.title?.toLowerCase().includes('cancellation') && item.body.split('. ').filter(s => s.trim().length > 0).length > 1 ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
                           {item.body.split('. ').filter(s => s.trim().length > 0).map((sentence, idx) => (
@@ -1869,7 +1915,7 @@ function PolicyCategoryItem({ category }) {
                         return (
                           <div key={j} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                             <div style={{ width: 6, height: 6, background: A, borderRadius: "50%", flexShrink: 0, marginTop: 7 }} />
-                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
                               <span style={{ fontSize: 13, color: FG, lineHeight: 1.4, fontWeight: 500 }}>{questionTitle}</span>
                               {answerText && (
                                 <span style={{ fontSize: 12, color: M, lineHeight: 1.4 }}>{answerText}</span>
@@ -4702,6 +4748,7 @@ function StayLocation({ stay }) {
   const { isMobile } = useWindowSize();
   const { tokens: { A, BG, FG, M, S, B, W }, theme } = useTheme();
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const { city, district, state } = getStayLocationParts(stay);
 
   // Coordinates
@@ -4788,9 +4835,22 @@ function StayLocation({ stay }) {
 
           {/* RIGHT: Details List */}
           <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: isMobile ? "0" : "16px 16px 16px 0" }}>
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
-                {address && (
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", padding: isMobile ? "0" : "16px 16px 16px 0", marginTop: isMobile ? 16 : 0 }}>
+              {isMobile && (
+                <button 
+                  onClick={() => setDetailsExpanded(!detailsExpanded)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", background: "transparent", border: `1px solid ${B}`, borderRadius: detailsExpanded ? "12px 12px 0 0" : 12, color: FG, cursor: "pointer", outline: "none", marginBottom: detailsExpanded ? 0 : 16 }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <MapPin size={16} color={A} />
+                    <span style={{ fontSize: 14, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>View Location Details</span>
+                  </div>
+                  <ChevronDown size={16} color={M} style={{ transform: detailsExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+                </button>
+              )}
+              <div style={{ display: (!isMobile || detailsExpanded) ? "block" : "none", border: isMobile ? `1px solid ${B}` : "none", borderTop: "none", borderRadius: isMobile ? "0 0 12px 12px" : 0, padding: isMobile ? "0 16px 16px" : 0, marginBottom: isMobile ? 16 : 0 }}>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", margin: 0, padding: 0 }}>
+                  {address && (
                   <li style={{ display: "flex", gap: isMobile ? 12 : 24, alignItems: "flex-start", borderBottom: `1px solid ${B}`, padding: "12px 0", borderTop: isMobile ? "none" : `1px solid ${B}`  }}>
                     <div style={{ width: 40, height: 40, borderRadius: "8px", background: theme === 'dark' ? '#1E293B' : '#F0F9FA', display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <MapPin size={20} color={A} fill="transparent" />
@@ -4874,6 +4934,7 @@ function StayLocation({ stay }) {
                   </li>
                 )}
               </ul>
+              </div>
             </div>
           </Rev>
         </div>

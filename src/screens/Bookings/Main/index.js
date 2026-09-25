@@ -838,20 +838,21 @@ const actionsByStatus = {
 
 const isPastStayCheckInTime = (booking) => {
   if (!booking) return false;
-  const { bookingData, stayData } = booking;
+  const bookingData = booking?.bookingData || booking?.originalData || booking;
+  const stayData = booking?.stayData;
 
   // Only apply to Stays
   const businessInterestCode = String(bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
   const isStayOrder = businessInterestCode === "STAYS" ||
     bookingData?.stayId != null ||
-    (bookingData?.stayOrderRooms && bookingData?.stayOrderRooms.length > 0) ||
+    (Array.isArray(bookingData?.stayOrderRooms) && bookingData.stayOrderRooms.length > 0) ||
     stayData != null;
 
   if (!isStayOrder) return false;
 
   const status = booking.statusTone || booking.status?.toLowerCase();
   if (status === "cancelled" || status === "canceled" || status === "completed") {
-    return false;
+    return true;
   }
 
   const checkInDateStr =
@@ -859,9 +860,7 @@ const isPastStayCheckInTime = (booking) => {
     bookingData?.bookingDate ||
     stayData?.checkInDate;
 
-  if (!checkInDateStr) return false;
-
-  const checkInDatetime = new Date(checkInDateStr);
+  if (!checkInDateStr || checkInDateStr === "TBD") return false;
 
   const checkInTimeStr =
     bookingData?.checkInTime ||
@@ -869,11 +868,30 @@ const isPastStayCheckInTime = (booking) => {
     stayData?.checkInTime ||
     "14:00:00";
 
+  let hours = 14;
+  let minutes = 0;
+  let seconds = 0;
+
   if (checkInTimeStr && typeof checkInTimeStr === 'string' && checkInTimeStr.includes(':')) {
-    const parts = checkInTimeStr.split(':').map(Number);
-    checkInDatetime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+    const match = checkInTimeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (match) {
+      hours = parseInt(match[1], 10);
+      minutes = parseInt(match[2], 10);
+      seconds = match[3] ? parseInt(match[3], 10) : 0;
+      const ampm = match[4] ? match[4].toLowerCase() : null;
+      if (ampm === 'pm' && hours < 12) hours += 12;
+      if (ampm === 'am' && hours === 12) hours = 0;
+    }
+  }
+
+  let checkInDatetime;
+  if (typeof checkInDateStr === "string" && /^\d{4}-\d{2}-\d{2}/.test(checkInDateStr)) {
+    const [y, m, d] = checkInDateStr.substring(0, 10).split("-").map(Number);
+    checkInDatetime = new Date(y, m - 1, d, hours, minutes, seconds, 0);
   } else {
-    checkInDatetime.setHours(14, 0, 0, 0);
+    checkInDatetime = new Date(checkInDateStr);
+    if (isNaN(checkInDatetime.getTime())) return false;
+    checkInDatetime.setHours(hours, minutes, seconds, 0);
   }
 
   return new Date() >= checkInDatetime;
@@ -881,13 +899,14 @@ const isPastStayCheckInTime = (booking) => {
 
 const isPastStayCheckOutTime = (booking) => {
   if (!booking) return false;
-  const { bookingData, stayData } = booking;
+  const bookingData = booking?.bookingData || booking?.originalData || booking;
+  const stayData = booking?.stayData;
 
   // Only apply to Stays
   const businessInterestCode = String(bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
   const isStayOrder = businessInterestCode === "STAYS" ||
     bookingData?.stayId != null ||
-    (bookingData?.stayOrderRooms && bookingData?.stayOrderRooms.length > 0) ||
+    (Array.isArray(bookingData?.stayOrderRooms) && bookingData.stayOrderRooms.length > 0) ||
     stayData != null;
 
   if (!isStayOrder) return true; // Non-stays bypass stay checkout restriction
@@ -906,9 +925,7 @@ const isPastStayCheckOutTime = (booking) => {
     bookingData?.endDate ||
     stayData?.checkOutDate;
 
-  if (!checkOutDateStr) return true; // If missing checkout date, don't restrict
-
-  const checkOutDatetime = new Date(checkOutDateStr);
+  if (!checkOutDateStr || checkOutDateStr === "TBD") return true; // If missing checkout date, don't restrict
 
   const checkOutTimeStr =
     roomCheckOutTimes[0] ||
@@ -917,11 +934,30 @@ const isPastStayCheckOutTime = (booking) => {
     stayData?.checkOutTime ||
     "11:00:00";
 
+  let hours = 11;
+  let minutes = 0;
+  let seconds = 0;
+
   if (checkOutTimeStr && typeof checkOutTimeStr === 'string' && checkOutTimeStr.includes(':')) {
-    const parts = checkOutTimeStr.split(':').map(Number);
-    checkOutDatetime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0, 0);
+    const match = checkOutTimeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (match) {
+      hours = parseInt(match[1], 10);
+      minutes = parseInt(match[2], 10);
+      seconds = match[3] ? parseInt(match[3], 10) : 0;
+      const ampm = match[4] ? match[4].toLowerCase() : null;
+      if (ampm === 'pm' && hours < 12) hours += 12;
+      if (ampm === 'am' && hours === 12) hours = 0;
+    }
+  }
+
+  let checkOutDatetime;
+  if (typeof checkOutDateStr === "string" && /^\d{4}-\d{2}-\d{2}/.test(checkOutDateStr)) {
+    const [y, m, d] = checkOutDateStr.substring(0, 10).split("-").map(Number);
+    checkOutDatetime = new Date(y, m - 1, d, hours, minutes, seconds, 0);
   } else {
-    checkOutDatetime.setHours(11, 0, 0, 0);
+    checkOutDatetime = new Date(checkOutDateStr);
+    if (isNaN(checkOutDatetime.getTime())) return true;
+    checkOutDatetime.setHours(hours, minutes, seconds, 0);
   }
 
   return new Date() >= checkOutDatetime;
@@ -929,56 +965,71 @@ const isPastStayCheckOutTime = (booking) => {
 
 const isPastExperienceStartTime = (booking) => {
   if (!booking) return false;
-  const { bookingData } = booking;
+  const bookingData = booking?.bookingData || booking?.originalData || booking;
 
   const businessInterestCode = String(bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
   const isExperienceLikeOrder =
     businessInterestCode === "EXPERIENCE" ||
     businessInterestCode === "EVENTS" ||
     businessInterestCode === "EVENT" ||
-    bookingData?.eventId != null;
+    bookingData?.eventId != null ||
+    bookingData?.eventDetails != null;
 
   if (!isExperienceLikeOrder) return false;
 
   const status = booking.statusTone || booking.status?.toLowerCase();
   if (status === "cancelled" || status === "canceled" || status === "completed") {
-    return false;
+    return true;
   }
 
   const startDateStr =
+    bookingData?.bookingDate ||
     bookingData?.eventDate ||
     booking?.eventData?.eventDate ||
-    bookingData?.bookingDate ||
+    bookingData?.eventDetails?.eventDate ||
     bookingData?.startDate ||
-    booking?.startDate;
+    booking?.startDate ||
+    booking?.reservationDate;
 
-  if (!startDateStr) return false;
-
-  const startDatetime = new Date(startDateStr);
-  if (isNaN(startDatetime.getTime())) return false; // invalid date
+  if (!startDateStr || startDateStr === "TBD") return false;
 
   const startTimeStr =
-    bookingData?.bookingTime ||
-    bookingData?.startTime ||
     bookingData?.timeSlotStartTime ||
-    bookingData?.bookingSlot?.name ||
+    bookingData?.startTime ||
     bookingData?.bookingSlot?.startTime ||
+    bookingData?.bookingSlot?.name ||
+    booking?.startTime ||
+    bookingData?.eventDetails?.startTime ||
+    booking?.eventData?.startTime ||
+    bookingData?.bookingTime ||
+    booking?.bookingTime ||
     "00:00:00";
+
+  let hours = 0;
+  let minutes = 0;
+  let seconds = 0;
 
   if (startTimeStr && typeof startTimeStr === 'string') {
     const timeMatch = startTimeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
     if (timeMatch) {
-      let hours = parseInt(timeMatch[1], 10);
-      const minutes = parseInt(timeMatch[2], 10);
+      hours = parseInt(timeMatch[1], 10);
+      minutes = parseInt(timeMatch[2], 10);
+      seconds = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
       const ampm = timeMatch[4] ? timeMatch[4].toLowerCase() : null;
 
       if (ampm === 'pm' && hours < 12) hours += 12;
       if (ampm === 'am' && hours === 12) hours = 0;
-
-      startDatetime.setHours(hours, minutes, 0, 0);
-    } else {
-      startDatetime.setHours(0, 0, 0, 0);
     }
+  }
+
+  let startDatetime;
+  if (typeof startDateStr === "string" && /^\d{4}-\d{2}-\d{2}/.test(startDateStr)) {
+    const [y, m, d] = startDateStr.substring(0, 10).split("-").map(Number);
+    startDatetime = new Date(y, m - 1, d, hours, minutes, seconds, 0);
+  } else {
+    startDatetime = new Date(startDateStr);
+    if (isNaN(startDatetime.getTime())) return false;
+    startDatetime.setHours(hours, minutes, seconds, 0);
   }
 
   return new Date() >= startDatetime;
@@ -1138,32 +1189,96 @@ const Main = ({
     setIsFetchingRebookData(true);
     
     try {
-      const businessInterestCode = String(booking?.bookingData?.businessInterestCode || booking?.category || "").toUpperCase();
-      const isStayOrder = businessInterestCode === "STAYS" || booking?.bookingData?.stayId != null || Array.isArray(booking?.bookingData?.stayOrderRooms);
-      const isEventOrder = businessInterestCode === "EVENTS" || booking?.bookingData?.eventId != null;
+      const businessInterestCode = String(
+        booking?.bookingData?.businessInterestCode ||
+        booking?.bookingData?.business_interest_code ||
+        booking?.originalData?.businessInterestCode ||
+        booking?.originalData?.business_interest_code ||
+        booking?.businessInterestCode ||
+        booking?.business_interest_code ||
+        booking?.category ||
+        booking?.serviceType ||
+        ""
+      ).toUpperCase();
+
+      const isStayOrder =
+        businessInterestCode === "STAYS" ||
+        businessInterestCode === "STAY" ||
+        businessInterestCode === "HOTEL" ||
+        businessInterestCode === "HOSTEL" ||
+        booking?.bookingData?.stayId != null ||
+        booking?.originalData?.stayId != null ||
+        booking?.stayId != null ||
+        booking?.stayData?.id != null ||
+        booking?.stayData?.stayId != null ||
+        Array.isArray(booking?.bookingData?.stayOrderRooms) ||
+        Array.isArray(booking?.originalData?.stayOrderRooms);
+
+      const isEventOrder =
+        businessInterestCode === "EVENTS" ||
+        businessInterestCode === "EVENT" ||
+        booking?.bookingData?.eventId != null ||
+        booking?.originalData?.eventId != null ||
+        booking?.eventId != null ||
+        booking?.eventData?.id != null ||
+        booking?.eventData?.eventId != null ||
+        booking?.isEventOrder;
       
       let data = null;
       let type = "experience";
 
       if (isStayOrder) {
-        const stayId = booking?.bookingData?.stayId || booking?.stayId || booking?.listingId || booking?.bookingData?.listingId;
+        const stayId =
+          booking?.bookingData?.stayId ||
+          booking?.bookingData?.propertyId ||
+          booking?.originalData?.stayId ||
+          booking?.originalData?.propertyId ||
+          booking?.stayData?.id ||
+          booking?.stayData?.stayId ||
+          booking?.bookingData?.stayOrderRooms?.[0]?.stayId ||
+          booking?.bookingData?.stayOrderRooms?.[0]?.propertyId ||
+          booking?.originalData?.stayOrderRooms?.[0]?.stayId ||
+          booking?.originalData?.stayOrderRooms?.[0]?.propertyId ||
+          booking?.stayId ||
+          booking?.listingId;
+
         if (stayId) {
           const res = await getStayDetails(stayId);
-          data = res?.stay || res;
+          data = res?.stay || res?.data?.stay || res?.data || res;
+        } else if (booking?.stayData) {
+          data = booking.stayData;
         }
         type = "stay";
       } else if (isEventOrder) {
-        const eventId = booking?.bookingData?.eventId || booking?.eventId || booking?.listingId || booking?.bookingData?.listingId;
+        const eventId =
+          booking?.bookingData?.eventId ||
+          booking?.originalData?.eventId ||
+          booking?.eventData?.id ||
+          booking?.eventData?.eventId ||
+          booking?.eventId ||
+          booking?.listingId;
+
         if (eventId) {
           const res = await getEventDetails(eventId);
-          data = res?.event || res;
+          data = res?.event || res?.data?.event || res?.data || res;
+        } else if (booking?.eventData) {
+          data = booking.eventData;
         }
         type = "event";
       } else {
-        const listingId = booking?.bookingData?.listingId || booking?.listingId;
+        const listingId =
+          booking?.bookingData?.listingId ||
+          booking?.originalData?.listingId ||
+          booking?.listingData?.id ||
+          booking?.listingData?.listingId ||
+          booking?.listingId ||
+          booking?.id;
+
         if (listingId) {
           const res = await getListing(listingId);
-          data = res?.listing || res;
+          data = res?.listing || res?.data?.listing || res?.data || res;
+        } else if (booking?.listingData) {
+          data = booking.listingData;
         }
         type = "experience";
       }

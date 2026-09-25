@@ -65,11 +65,13 @@
   position: relative
   z-index: 20
   color: #fff !important
-  padding: 1.5rem 1rem 1rem
+  padding: 1.5rem 1rem calc(6rem + env(safe-area-inset-bottom, 0px))
 
   @media (min-width: 768px)
     padding-top: 5rem
     padding-bottom: 3rem
+    padding-left: 1.5rem
+    padding-right: 1.5rem
 
 .container
   max-width: 80rem

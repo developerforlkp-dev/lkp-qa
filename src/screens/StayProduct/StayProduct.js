@@ -409,7 +409,12 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
     return () => clearInterval(timer);
   }, [discounts]);
 
-  if (!discounts || discounts.length === 0) return null;
+  if (!Array.isArray(discounts) || discounts.length === 0) return null;
+
+  const currentDiscount = discounts[index % discounts.length];
+  if (!currentDiscount) return null;
+  const days = currentDiscount.daysInAdvance ?? currentDiscount.days_in_advance ?? 0;
+  const percentage = currentDiscount.percentage ?? currentDiscount.discountPercentage ?? 0;
 
   return (
     <div style={{ display: "grid", height: 15, alignItems: "center", overflow: "hidden" }}>
@@ -433,11 +438,11 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
         >
           <span style={{ opacity: 0.8 }}>Book</span>{" "}
           <span style={{ color: A, fontSize: 11, fontWeight: 900 }}>
-            {discounts[index].daysInAdvance} Days
+            {days} Days
           </span>{" "}
           <span style={{ opacity: 0.8 }}>Advance:</span>{" "}
           <span style={{ color: isDark === false ? "#059669" : "#4ADE80", fontSize: 12, fontWeight: 900, letterSpacing: "0.1em" }}>
-            {discounts[index].percentage}% OFF
+            {percentage}% OFF
           </span>
         </motion.span>
       </AnimatePresence>

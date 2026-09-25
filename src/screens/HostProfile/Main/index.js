@@ -234,12 +234,34 @@ const Main = ({ hostId, onLoadingChange }) => {
   return (
     <div className={cn("section", styles.section)}>
       <div className={cn("container", styles.container)}>
-        <div className={styles.hero}>
+        <div className={styles.hero} style={{ display: 'flex', alignItems: 'center', padding: '32px 48px', gap: '32px' }}>
           <div className={styles.heroGlowOne} />
           <div className={styles.heroGlowTwo} />
-          <div className={styles.heroContent}>
+          <div className={styles.avatar} style={{ width: '120px', height: '120px', margin: 0, border: '4px solid #fff', borderRadius: '50%', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', position: 'relative', zIndex: 2 }}>
+            {host?.profilePhotoUrl || host?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || host?.avatar ? (
+              <img 
+                src={host?.profilePhotoUrl || host?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || host?.avatar}
+                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                alt={hostName}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(hostName)}&backgroundColor=0097B2&color=ffffff`;
+                }}
+              />
+            ) : (
+              <img 
+                src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(hostName)}&backgroundColor=0097B2&color=ffffff`}
+                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                alt={hostName}
+              />
+            )}
+            <div className={styles.check} style={{ width: 32, height: 32, bottom: 0, right: 0, top: 'auto' }}>
+              <Icon name="tick" size="20" />
+            </div>
+          </div>
+          <div className={styles.heroContent} style={{ padding: 0, position: 'relative', zIndex: 2 }}>
             <div className={styles.heroEyebrow}>Host Profile</div>
-            <h1 className={styles.heroTitle}>{hostName}</h1>
+            <h1 className={styles.heroTitle} style={{ margin: 0 }}>{hostName}</h1>
           </div>
         </div>
         <div className={styles.row}>
@@ -248,39 +270,11 @@ const Main = ({ hostId, onLoadingChange }) => {
             parametersUser={parametersUser}
             hideContactButton={true}
             hideReportButton={true}
-            info={host?.bio || ""}
             joinedDate={joinedDate}
             siteUrl={null}
             phoneNumber={hostPhone}
             email={hostEmail}
           >
-            <div className={styles.headStack}>
-              <div className={styles.avatar}>
-                {host?.profilePhotoUrl || host?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || host?.avatar ? (
-                  <img 
-                    src={host?.profilePhotoUrl || host?.profileImageUrl || hostData?.profilePhotoUrl || hostData?.profileImageUrl || host?.avatar}
-                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                    alt={hostName}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(hostName)}&backgroundColor=0097B2&color=ffffff`;
-                    }}
-                  />
-                ) : (
-                  <img 
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(hostName)}&backgroundColor=0097B2&color=ffffff`}
-                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                    alt={hostName}
-                  />
-                )}
-                <div className={styles.check}>
-                  <Icon name="tick" size="24" />
-                </div>
-              </div>
-              <div className={styles.descriptionRow}>
-                <div className={styles.man}>{hostName}</div>
-              </div>
-            </div>
           </Profile>
           <div className={styles.wrapper}>
             <Details
