@@ -37,64 +37,145 @@ const CheckoutComplete = ({
       return;
     }
 
-    const targetElement = receiptRef.current;
-    if (!targetElement) {
-      window.print();
-      return;
-    }
-
     try {
       setIsPrinting(true);
 
-      // Clone the receipt card to avoid mutating active UI
-      const clone = targetElement.cloneNode(true);
-
-      // Remove the action buttons from the printed receipt
-      const btns = clone.querySelector(`.${styles.btns}`) || clone.querySelector('[class*="btns"]');
-      if (btns) btns.remove();
-
-      // Create an off-screen container styled for clean PDF capture
-      const container = document.createElement("div");
-      container.style.position = "absolute";
-      container.style.top = "-9999px";
-      container.style.left = "-9999px";
-      container.style.width = "750px";
-      container.style.padding = "36px 40px";
-      container.style.background = "#ffffff";
-      container.style.color = "#141416";
-      container.style.boxSizing = "border-box";
-      container.style.fontFamily = "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-
-      // Top branding header for the receipt
-      const headerBrand = document.createElement("div");
-      headerBrand.style.display = "flex";
-      headerBrand.style.justifyContent = "space-between";
-      headerBrand.style.alignItems = "center";
-      headerBrand.style.paddingBottom = "16px";
-      headerBrand.style.marginBottom = "24px";
-      headerBrand.style.borderBottom = "2px solid #0097B2";
-      headerBrand.innerHTML = `
-        <div style="font-size: 22px; font-weight: 700; color: #0097B2; letter-spacing: -0.02em;">
-          Little Known Planet
-        </div>
-        <div style="font-size: 11px; font-weight: 700; color: #777E90; text-transform: uppercase; letter-spacing: 0.08em;">
-          Booking Receipt
-        </div>
-      `;
-      container.appendChild(headerBrand);
-      container.appendChild(clone);
-      document.body.appendChild(container);
+      const formattedDate = new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
 
       const orderRef =
         options?.find((o) => o.title?.toLowerCase().includes("reference") || o.title?.toLowerCase().includes("payment"))?.content ||
         "Receipt";
       const cleanRef = String(orderRef).replace(/[^a-zA-Z0-9-_]/g, "");
 
+      const itemsHtml = Array.isArray(items) && items.length > 0
+        ? items.map(x => `
+          <div style="background: #F4F5F6; border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; border: 1px solid #E6E8EC;">
+            <div style="font-size: 11px; font-weight: 700; color: #777E90; text-transform: uppercase; letter-spacing: 0.05em;">${x.title || ""}</div>
+            <div style="font-size: 14px; font-weight: 600; color: #141416;">${x.content || ""}</div>
+          </div>
+        `).join("")
+        : "";
+
+      const optionsHtml = Array.isArray(options) && options.length > 0
+        ? options.map((x, idx) => {
+          const isTotal = /total/i.test(x.title || "");
+          const bg = isTotal ? "#E6F6F8" : (idx % 2 === 0 ? "#FAFAFB" : "#FFFFFF");
+          const textColor = isTotal ? "#0097B2" : "#141416";
+          const fontWeight = isTotal ? "800" : "600";
+          const fontSize = isTotal ? "16px" : "13px";
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: ${bg}; border-bottom: 1px solid #E6E8EC; font-size: ${fontSize};">
+              <span style="color: ${isTotal ? '#0097B2' : '#353945'}; font-weight: ${fontWeight};">${x.title || ""}</span>
+              <span style="color: ${textColor}; font-weight: ${fontWeight};">${x.content || ""}</span>
+            </div>
+          `;
+        }).join("")
+        : "";
+
+      // Create a fixed off-screen container at (0,0) so html2canvas renders accurately
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.zIndex = "-9999";
+      container.style.opacity = "1";
+      container.style.pointerEvents = "none";
+      container.style.width = "750px";
+      container.style.padding = "32px 36px";
+      container.style.background = "#ffffff";
+      container.style.color = "#141416";
+      container.style.boxSizing = "border-box";
+      container.style.fontFamily = "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #0097B2; margin-bottom: 24px;">
+          <div>
+            ${isDirectBooking ? `
+              <div style="font-size: 24px; font-weight: 800; color: #0097B2; letter-spacing: -0.02em; margin-bottom: 4px;">
+                Booking Confirmation
+              </div>
+            ` : `
+              <div style="font-size: 24px; font-weight: 800; color: #0097B2; letter-spacing: -0.02em; margin-bottom: 4px;">
+                Little Known Planet
+              </div>
+              <div style="font-size: 12px; color: #777E90; font-weight: 500;">
+                dev.littleknownplanet.com
+              </div>
+            `}
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; font-weight: 800; color: #0097B2; text-transform: uppercase; letter-spacing: 0.1em; background: rgba(0, 151, 178, 0.08); padding: 4px 12px; border-radius: 100px; display: inline-block; margin-bottom: 6px;">
+              Official Receipt
+            </div>
+            <div style="font-size: 12px; color: #777E90; font-weight: 600;">
+              ${formattedDate}
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px; background: #FAFAFB; border-radius: 16px; padding: 20px; border: 1px solid #E6E8EC;">
+          <div style="font-size: 18px; font-weight: 700; color: #141416; margin-bottom: 6px;">
+            ${paymentFailed ? "Payment Failed" : (title || "Experience Booking")}
+          </div>
+          <div style="font-size: 13px; color: ${paymentFailed ? '#E53935' : '#0097B2'}; font-weight: 600; margin-bottom: 8px;">
+            ${paymentFailed ? "Your payment could not be processed." : bookedMessage}
+          </div>
+          ${hostName ? `
+            <div style="font-size: 12px; color: #777E90; font-weight: 500;">
+              Hosted by <strong style="color: #141416;">${hostName}</strong>
+            </div>
+          ` : ""}
+        </div>
+
+        ${itemsHtml ? `
+          <div style="margin-bottom: 24px;">
+            <div style="font-size: 12px; font-weight: 800; color: #777E90; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">
+              Reservation Summary
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+              ${itemsHtml}
+            </div>
+          </div>
+        ` : ""}
+
+        ${optionsHtml ? `
+          <div style="margin-bottom: 28px;">
+            <div style="font-size: 12px; font-weight: 800; color: #777E90; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">
+              Payment & Pricing Breakdown
+            </div>
+            <div style="border-radius: 12px; overflow: hidden; border: 1px solid #E6E8EC;">
+              ${optionsHtml}
+            </div>
+          </div>
+        ` : ""}
+
+        <div style="text-align: center; padding-top: 16px; border-top: 1px solid #E6E8EC; font-size: 11px; color: #777E90; line-height: 1.6;">
+          <div>${isDirectBooking ? "Thank you for your booking!" : "Thank you for booking with Little Known Planet!"}</div>
+          <div style="font-size: 10px; color: #B1B5C3; margin-top: 2px;">
+            ${isDirectBooking ? "Secure booking & payment" : "Secure booking & payment powered by Little Known Planet"}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(container);
+
       const opt = {
         margin: [8, 8, 8, 8],
-        filename: `LKP_Receipt_${cleanRef || "DirectBooking"}.pdf`,
+        filename: `${isDirectBooking ? "Receipt" : "LKP_Receipt"}_${cleanRef || "DirectBooking"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          scrollY: 0,
+          scrollX: 0,
+          windowWidth: 750,
+        },
         pagebreak: { mode: ["avoid-all", "css"] },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };

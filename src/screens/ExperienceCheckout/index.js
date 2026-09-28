@@ -1648,7 +1648,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
 
 
   return (
-    <div className={cn("section-mb80", styles.section)}>
+    <div className={cn("section-mb80", styles.section, { [styles.directBookingSection]: isDirectBooking })}>
       <div className={cn("container", styles.container)}>
         <div className={styles.headerRow}>
           <Control

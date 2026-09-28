@@ -15,6 +15,7 @@ import LoginPromptModal from "../LoginPromptModal";
 import { clearPendingCheckoutState, persistPendingCheckout, isAuthOrTokenError } from "../../utils/paymentSession";
 import { StayInlineCalendar } from "../../screens/StayDetails/StayBookingSystem";
 import { calculateExperienceGuestPricing, getExperienceCommissionRate } from "../../utils/experiencePricing";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 
 
 const asNumber = (value) => {
@@ -1365,8 +1366,10 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   );
 }
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests, isFreeEvent = false }) {
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, onClearAddons, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests, isFreeEvent = false, isDirectBooking = false }) {
   const history = useHistory();
+  const location = useLocation();
+  const isDirect = isDirectBooking || isDirectBookingPathOrState(location);
   const { tokens: { A, AH, BG, FG, M, S, B, AL, W, E, EL } } = useTheme();
   const isMountedRef = useRef(true);
   const hasHandledUnavailableRef = useRef(false);
@@ -1400,33 +1403,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return () => window.removeEventListener("resize", handleAddonsScroll);
   }, [show, listing?.addons, handleAddonsScroll]);
 
-  // Sync external open state
-  const externalOpenHandledRef = useRef(false);
-  const lastCalculatedPayloadRef = useRef("");
-  const calculateDebounceTimerRef = useRef(null);
-  const childrenDetailsRef = useRef(null);
-  useEffect(() => {
-    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
-      externalOpenHandledRef.current = true;
-      setShow(true);
-    }
-  }, [externalOpen, show]);
 
-  useEffect(() => {
-    if (externalOpen !== true) {
-      externalOpenHandledRef.current = false;
-    }
-  }, [externalOpen]);
-
-  const closeBookingModal = useCallback(() => {
-    externalOpenHandledRef.current = false;
-    setShow(false);
-    if (onExternalOpenChange) {
-      onExternalOpenChange(false);
-    }
-  }, [onExternalOpenChange]);
-
-  // Removed faulty useEffect that called onExternalOpenChange(show) on mount
 
   // Real State management
   const [startDate, setStartDate] = useState(() => initialDate ? moment(initialDate) : null);
@@ -1501,6 +1478,81 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       return lockedSingleEventDate.clone();
     });
   }, [isSingleEventSchedule, lockedSingleEventDate]);
+
+  const resetBookingFormState = useCallback(() => {
+    if (isSingleEventSchedule && lockedSingleEventDate) {
+      setStartDate(lockedSingleEventDate.clone());
+    } else if (initialDate) {
+      setStartDate(moment(initialDate));
+    } else {
+      setStartDate(null);
+    }
+
+    setStartTime(null);
+
+    if (initialGuests && typeof initialGuests === 'object') {
+      setGuests({ adults: initialGuests.adults || 0, children: initialGuests.children || 0, infants: 0, childAges: [] });
+    } else if (initialGuests && typeof initialGuests === 'number' && initialGuests > 0) {
+      setGuests({ adults: initialGuests, children: 0, infants: 0, childAges: [] });
+    } else {
+      setGuests({ adults: 0, children: 0, infants: 0, childAges: [] });
+    }
+
+    setPrivateBooking(false);
+    setValidationErrors({});
+    setShowValidation(false);
+    setShowDateWarning(false);
+    setShowDatePicker(false);
+    setShowTimePicker(false);
+    setShowTicketPicker(false);
+    setApiPayableAmount(null);
+    setApiPayableLoading(false);
+    setErrorPopup({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" });
+
+    if (typeof onClearAddons === "function") {
+      onClearAddons();
+    } else if (Array.isArray(selectedAddOns) && selectedAddOns.length > 0 && typeof onUpdateAddonQuantity === "function") {
+      selectedAddOns.forEach((addon) => {
+        onUpdateAddonQuantity(addon, -999);
+      });
+    }
+  }, [
+    initialDate,
+    initialGuests,
+    isSingleEventSchedule,
+    lockedSingleEventDate,
+    onClearAddons,
+    onUpdateAddonQuantity,
+    selectedAddOns,
+  ]);
+
+  // Sync external open state
+  const externalOpenHandledRef = useRef(false);
+  const lastCalculatedPayloadRef = useRef("");
+  const calculateDebounceTimerRef = useRef(null);
+  const childrenDetailsRef = useRef(null);
+  useEffect(() => {
+    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
+      externalOpenHandledRef.current = true;
+      resetBookingFormState();
+      setShow(true);
+    }
+  }, [externalOpen, show, resetBookingFormState]);
+
+  useEffect(() => {
+    if (externalOpen !== true) {
+      externalOpenHandledRef.current = false;
+    }
+  }, [externalOpen]);
+
+  const closeBookingModal = useCallback(() => {
+    externalOpenHandledRef.current = false;
+    setShow(false);
+    resetBookingFormState();
+    if (onExternalOpenChange) {
+      onExternalOpenChange(false);
+    }
+  }, [onExternalOpenChange, resetBookingFormState]);
 
   const getBusinessInterestLabel = useCallback(() => {
     const normalizedType = String(type || "").trim().toLowerCase();
@@ -3005,6 +3057,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     // Immediately cache the payloadKey so subsequent re-renders during the debounce delay do not loop
     lastCalculatedPayloadRef.current = payloadKey;
+    setApiPayableLoading(true);
 
     if (calculateDebounceTimerRef.current) {
       clearTimeout(calculateDebounceTimerRef.current);
@@ -3012,7 +3065,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     calculateDebounceTimerRef.current = setTimeout(() => {
       if (!isMountedRef.current) return;
-      setApiPayableLoading(true);
 
       calculationFn(payload)
         .then((res) => {
@@ -5529,7 +5581,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
                   <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
                     <ShieldCheck size={12} />
-                    <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
+                    <span style={{ fontWeight: 600 }}>{isDirect ? "Secure booking & payment" : "Secure booking & payment powered by Little Known Planet"}</span>
                   </div>
                 </>
               )}

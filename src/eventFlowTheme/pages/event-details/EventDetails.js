@@ -18,6 +18,7 @@ import Icon from "../../../components/Icon";
 import FullScreenImage from "../../../components/FullScreenImage";
 import PolicyCategoryItem from "../../../components/PolicyCategoryItem";
 import CuratedContent from "../../../components/CuratedContent";
+import { isDirectBookingPathOrState } from "../../../utils/directBooking";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -2536,6 +2537,8 @@ function Rules({ event }) {
 function HostDetails({ event, hostName }) {
   const { tokens: { A, AL, BG, FG, M, S, B, W }, theme } = useTheme();
   const history = useHistory();
+  const location = useLocation();
+  const isDirect = isDirectBookingPathOrState(location);
   const isMobile = useMobileView();
   const isDark = theme === "dark" || (typeof BG === 'string' && BG.toLowerCase().includes('000'));
   const displayHostName = hostName || event?.host?.displayName || event?.host?.name || event?.host?.firstName || event?.organizerName;
@@ -2594,7 +2597,7 @@ function HostDetails({ event, hostName }) {
   return (
     <section className="host-quality-section" style={{ background: W, padding: "32px 80px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "4fr 6fr", gap: 64 }} className="host-quality-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isDirect ? "1fr" : "4fr 6fr", maxWidth: isDirect ? "680px" : "100%", margin: isDirect ? "0 auto" : undefined, gap: 64 }} className="host-quality-grid">
 
           {/* Host Profile (40%) */}
           <Rev delay={0.1} style={{ height: "100%" }}>
@@ -2779,212 +2782,214 @@ function HostDetails({ event, hostName }) {
           </Rev>
 
           {/* Quality Index Card (60%) */}
-          <Rev delay={0.2} style={{ height: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{
-                padding: "24px 32px",
-                background: theme === "dark"
-                  ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
-                  : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
-                backdropFilter: "blur(25px) saturate(160%)",
-                border: `1px solid ${B}`,
-                borderRadius: "24px",
-                boxShadow: theme === "dark"
-                  ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                  : "0 20px 40px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                alignItems: "center",
-                gap: 32,
-                height: "100%",
-                minHeight: 250,
-                position: "relative",
-                overflow: "hidden",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-              }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = A;
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = theme === "dark"
-                    ? `0 24px 48px ${A}15`
-                    : `0 24px 48px rgba(15, 23, 42, 0.08)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = B;
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = theme === "dark"
+          {!isDirect && (
+            <Rev delay={0.2} style={{ height: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                <div style={{
+                  padding: "24px 32px",
+                  background: theme === "dark"
+                    ? "linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)"
+                    : "linear-gradient(135deg, #FFFFFF 0%, rgba(248, 250, 252, 0.9) 100%)",
+                  backdropFilter: "blur(25px) saturate(160%)",
+                  border: `1px solid ${B}`,
+                  borderRadius: "24px",
+                  boxShadow: theme === "dark"
                     ? "0 20px 40px rgba(0, 0, 0, 0.3)"
-                    : "0 20px 40px rgba(15, 23, 42, 0.04)";
+                    : "0 20px 40px rgba(15, 23, 42, 0.04)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 32,
+                  height: "100%",
+                  minHeight: 250,
+                  position: "relative",
+                  overflow: "hidden",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 }}
-              >
-                {event?.lkpQualityIndex ? (
-                  <>
-                    {/* Visual Accent Top Bar */}
-                    <div style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 3,
-                      background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
-                    }} />
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = A;
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = theme === "dark"
+                      ? `0 24px 48px ${A}15`
+                      : `0 24px 48px rgba(15, 23, 42, 0.08)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = B;
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = theme === "dark"
+                      ? "0 20px 40px rgba(0, 0, 0, 0.3)"
+                      : "0 20px 40px rgba(15, 23, 42, 0.04)";
+                  }}
+                >
+                  {event?.lkpQualityIndex ? (
+                    <>
+                      {/* Visual Accent Top Bar */}
+                      <div style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 3,
+                        background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
+                      }} />
 
-                    {/* Background Ambient Glow under the circle */}
-                    <div style={{
-                      position: "absolute",
-                      left: 20,
-                      top: 50,
-                      width: 140,
-                      height: 140,
-                      borderRadius: "50%",
-                      background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
-                      pointerEvents: "none"
-                    }} />
+                      {/* Background Ambient Glow under the circle */}
+                      <div style={{
+                        position: "absolute",
+                        left: 20,
+                        top: 50,
+                        width: 140,
+                        height: 140,
+                        borderRadius: "50%",
+                        background: `radial-gradient(circle, ${A}12 0%, rgba(255,255,255,0) 70%)`,
+                        pointerEvents: "none"
+                      }} />
 
-                    {/* Left: Score Circle replacement */}
-                    {(() => {
-                      const displayScore = event.lkpQualityIndex.score || 9.2;
-                      const ratingText = event.lkpQualityIndex.displayName || event.lkpQualityIndex.ratingText || event.lkpQualityIndex.status || event.lkpQualityIndex.ratingLabel || "Exceptional";
+                      {/* Left: Score Circle replacement */}
+                      {(() => {
+                        const displayScore = event.lkpQualityIndex.score || 9.2;
+                        const ratingText = event.lkpQualityIndex.displayName || event.lkpQualityIndex.ratingText || event.lkpQualityIndex.status || event.lkpQualityIndex.ratingLabel || "Exceptional";
 
-                      const LaurelSVG = ({ style }) => (
-                        <svg width="28" height="68" viewBox="0 0 28 68" fill="none" style={style}>
-                          <path d="M 8,64 Q 24,34 8,4" stroke={A} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-                          {/* Outer leaves */}
-                          <ellipse cx="16" cy="50" rx="3.5" ry="2" transform="rotate(-30 16 50)" fill={A} />
-                          <ellipse cx="18" cy="41" rx="3.5" ry="2" transform="rotate(-30 18 41)" fill={A} />
-                          <ellipse cx="18" cy="32" rx="3.5" ry="2" transform="rotate(-30 18 32)" fill={A} />
-                          <ellipse cx="16" cy="23" rx="3.5" ry="2" transform="rotate(-30 16 23)" fill={A} />
-                          <ellipse cx="12" cy="14" rx="3.5" ry="2" transform="rotate(-30 12 14)" fill={A} />
-                          {/* Inner leaves */}
-                          <ellipse cx="11" cy="46" rx="3.5" ry="2" transform="rotate(30 11 46)" fill={A} />
-                          <ellipse cx="13" cy="37" rx="3.5" ry="2" transform="rotate(30 13 37)" fill={A} />
-                          <ellipse cx="13" cy="28" rx="3.5" ry="2" transform="rotate(30 13 28)" fill={A} />
-                          <ellipse cx="11" cy="19" rx="3.5" ry="2" transform="rotate(30 11 19)" fill={A} />
-                          <ellipse cx="7" cy="10" rx="3.5" ry="2" transform="rotate(30 7 10)" fill={A} />
-                          {/* Top leaf */}
-                          <ellipse cx="8" cy="3" rx="3.5" ry="2" transform="rotate(-60 8 3)" fill={A} />
-                        </svg>
-                      );
+                        const LaurelSVG = ({ style }) => (
+                          <svg width="28" height="68" viewBox="0 0 28 68" fill="none" style={style}>
+                            <path d="M 8,64 Q 24,34 8,4" stroke={A} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                            {/* Outer leaves */}
+                            <ellipse cx="16" cy="50" rx="3.5" ry="2" transform="rotate(-30 16 50)" fill={A} />
+                            <ellipse cx="18" cy="41" rx="3.5" ry="2" transform="rotate(-30 18 41)" fill={A} />
+                            <ellipse cx="18" cy="32" rx="3.5" ry="2" transform="rotate(-30 18 32)" fill={A} />
+                            <ellipse cx="16" cy="23" rx="3.5" ry="2" transform="rotate(-30 16 23)" fill={A} />
+                            <ellipse cx="12" cy="14" rx="3.5" ry="2" transform="rotate(-30 12 14)" fill={A} />
+                            {/* Inner leaves */}
+                            <ellipse cx="11" cy="46" rx="3.5" ry="2" transform="rotate(30 11 46)" fill={A} />
+                            <ellipse cx="13" cy="37" rx="3.5" ry="2" transform="rotate(30 13 37)" fill={A} />
+                            <ellipse cx="13" cy="28" rx="3.5" ry="2" transform="rotate(30 13 28)" fill={A} />
+                            <ellipse cx="11" cy="19" rx="3.5" ry="2" transform="rotate(30 11 19)" fill={A} />
+                            <ellipse cx="7" cy="10" rx="3.5" ry="2" transform="rotate(30 7 10)" fill={A} />
+                            {/* Top leaf */}
+                            <ellipse cx="8" cy="3" rx="3.5" ry="2" transform="rotate(-60 8 3)" fill={A} />
+                          </svg>
+                        );
 
-                      return (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", width: 140, flexShrink: 0, gap: 10 }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                            {/* Left Laurel */}
-                            <LaurelSVG style={{ transform: "scaleX(-1)" }} />
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", width: 140, flexShrink: 0, gap: 10 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                              {/* Left Laurel */}
+                              <LaurelSVG style={{ transform: "scaleX(-1)" }} />
 
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                              <span style={{ fontSize: 48, fontWeight: 700, color: FG, letterSpacing: "-0.02em", fontFamily: '"Playfair Display", serif', lineHeight: 1 }}>
-                                {displayScore.toFixed(1)}
-                              </span>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em" }}>
-                                LKP Index
-                              </span>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                <span style={{ fontSize: 48, fontWeight: 700, color: FG, letterSpacing: "-0.02em", fontFamily: '"Playfair Display", serif', lineHeight: 1 }}>
+                                  {displayScore.toFixed(1)}
+                                </span>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+                                  LKP Index
+                                </span>
+                              </div>
+
+                              {/* Right Laurel */}
+                              <LaurelSVG />
                             </div>
 
-                            {/* Right Laurel */}
-                            <LaurelSVG />
-                          </div>
-
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
-                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }} />
-                              <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                                <div style={{ width: 6, height: 6, borderRadius: "50%", background: A }} />
+                                <div style={{ width: 40, height: 1.5, background: `${A}66` }} />
+                              </div>
+                              <span style={{ fontSize: 16, fontStyle: "italic", fontWeight: 500, color: M, fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>
+                                {ratingText}
+                              </span>
                             </div>
-                            <span style={{ fontSize: 16, fontStyle: "italic", fontWeight: 500, color: M, fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>
-                              {ratingText}
-                            </span>
                           </div>
+                        );
+                      })()}
+
+                      {/* Right: Narrative Details & Verification Checks */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+                        <div>
+                          <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
+                          <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
                         </div>
-                      );
-                    })()}
 
-                    {/* Right: Narrative Details & Verification Checks */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-                      <div>
-                        <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
-                        <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
+                        <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
+                          {event.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
+                        </p>
+
+                        {/* Verification Criteria Pills */}
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                          <span style={{
+                            fontSize: "9px",
+                            fontWeight: 700,
+                            color: A,
+                            background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
+                            border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4
+                          }}>
+                            ✓ Verified Host
+                          </span>
+
+                          <span style={{
+                            fontSize: "9px",
+                            fontWeight: 700,
+                            color: "#10B981",
+                            background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
+                            border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4
+                          }}>
+                            ✓ Safety Check
+                          </span>
+
+                          <span style={{
+                            fontSize: "9px",
+                            fontWeight: 700,
+                            color: "#D97706",
+                            background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
+                            border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4
+                          }}>
+                            ✓ High Rated
+                          </span>
+                        </div>
                       </div>
-
-                      <p style={{ fontSize: 12.5, color: M, lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-                        {event.lkpQualityIndex.description || "Consistently delivers outstanding hospitality, verified standards, and top-tier guest experiences."}
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", textAlign: "center" }}>
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: theme === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.08)",
+                        color: "#10B981",
+                        padding: "6px 16px",
+                        borderRadius: "20px",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        marginBottom: 16
+                      }}>
+                        Newly Added
+                      </span>
+                      <h4 style={{ fontSize: 16, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: '"Poppins", sans-serif' }}>Welcome to LKP</h4>
+                      <p style={{ fontSize: 12, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5, fontFamily: '"Poppins", sans-serif' }}>
+                        This listing is new to our platform. It is currently building its verified trust score based on guest experiences.
                       </p>
-
-                      {/* Verification Criteria Pills */}
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-                        <span style={{
-                          fontSize: "9px",
-                          fontWeight: 700,
-                          color: A,
-                          background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
-                          border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4
-                        }}>
-                          ✓ Verified Host
-                        </span>
-
-                        <span style={{
-                          fontSize: "9px",
-                          fontWeight: 700,
-                          color: "#10B981",
-                          background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
-                          border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4
-                        }}>
-                          ✓ Safety Check
-                        </span>
-
-                        <span style={{
-                          fontSize: "9px",
-                          fontWeight: 700,
-                          color: "#D97706",
-                          background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
-                          border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4
-                        }}>
-                          ✓ High Rated
-                        </span>
-                      </div>
                     </div>
-                  </>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", textAlign: "center" }}>
-                    <span style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: theme === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.08)",
-                      color: "#10B981",
-                      padding: "6px 16px",
-                      borderRadius: "20px",
-                      fontSize: 11,
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      marginBottom: 16
-                    }}>
-                      Newly Added
-                    </span>
-                    <h4 style={{ fontSize: 16, fontWeight: 700, color: FG, margin: "0 0 8px 0", fontFamily: '"Poppins", sans-serif' }}>Welcome to LKP</h4>
-                    <p style={{ fontSize: 12, color: M, margin: 0, maxWidth: 280, lineHeight: 1.5, fontFamily: '"Poppins", sans-serif' }}>
-                      This listing is new to our platform. It is currently building its verified trust score based on guest experiences.
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </Rev>
+            </Rev>
+          )}
 
         </div>
       </div>
@@ -3200,7 +3205,7 @@ function EventReviews({ reviews = [] }) {
   );
 }
 
-function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
+function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity, onClearAddons, addonsLoading }) {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const [bookingModalOpen, setBookingModalOpen] = useState(Boolean(location.state?.openReserveModal));
@@ -3214,6 +3219,7 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
     : (initialGuestsStr ? { adults: Number(initialGuestsStr), children: 0 } : null);
 
   const [popupTicketPrices, setPopupTicketPrices] = useState({});
+  const [isPricesLoading, setIsPricesLoading] = useState(true);
   const eventId = event?.id || event?.eventId || event?.listingId;
 
   useEffect(() => {
@@ -3221,9 +3227,13 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
       Array.isArray(event?.ticketTiers) ? event.ticketTiers :
         Array.isArray(event?.tickets) ? event.tickets : [];
 
-    if (!eventId || rawTickets.length === 0) return;
+    if (!eventId || rawTickets.length === 0) {
+      setIsPricesLoading(false);
+      return;
+    }
 
     let isMounted = true;
+    setIsPricesLoading(true);
     const fetchPrices = async () => {
       try {
         const priceMap = {};
@@ -3266,6 +3276,8 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
         }
       } catch (e) {
         console.error("Error fetching popup ticket prices:", e);
+      } finally {
+        if (isMounted) setIsPricesLoading(false);
       }
     };
 
@@ -3361,7 +3373,29 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity }) {
   };
 
   const isFree = event?.eventType?.toLowerCase() === 'free' || event?.event_type?.toLowerCase() === 'free';
-  return <BookingSystem listing={listing} type="event" selectedAddOns={selectedAddOns} onUpdateAddonQuantity={onUpdateAddonQuantity} triggerLabel="Reserve Ticket" reserveLabel="Reserve Ticket" initialDate={initialDateStr} initialGuests={initialGuests} externalOpen={bookingModalOpen} onExternalOpenChange={setBookingModalOpen} isFreeEvent={isFree} />;
+  return (
+    <BookingSystem
+      listing={listing}
+      type="event"
+      selectedAddOns={selectedAddOns}
+      onUpdateAddonQuantity={onUpdateAddonQuantity}
+      onClearAddons={onClearAddons}
+      triggerLabel="Reserve Ticket"
+      reserveLabel="Reserve Ticket"
+      initialDate={initialDateStr}
+      initialGuests={initialGuests}
+      externalOpen={bookingModalOpen}
+      onExternalOpenChange={(isOpen) => {
+        setBookingModalOpen(isOpen);
+        if (!isOpen && typeof onClearAddons === "function") {
+          onClearAddons();
+        }
+      }}
+      isFreeEvent={isFree}
+      ticketPricesLoading={isPricesLoading}
+      addonsLoading={addonsLoading}
+    />
+  );
 }
 
 function Tickets({ event }) {
@@ -4463,7 +4497,7 @@ export default function EventDetails() {
         <Rules event={event} />
         <HostDetails event={event} hostName={hostName} />
         <EventReviews reviews={reviews} />
-        <EventBookingPopup event={event} selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} />
+        <EventBookingPopup event={event} selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} onClearAddons={() => setSelectedAddOns([])} addonsLoading={!event?.addons} />
         <RelatedListingsStrip
           businessInterestId={2}
           primaryCategoryId={primaryCategoryId}

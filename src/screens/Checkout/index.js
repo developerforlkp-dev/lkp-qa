@@ -23,6 +23,7 @@ import {
   isFailedPaymentStatus,
   isPendingCheckoutComplete,
 } from "../../utils/paymentSession";
+import { isDirectBookingPathOrState } from "../../utils/directBooking";
 
 const formatImageUrl = (url) => {
   if (!url) return null;
@@ -306,9 +307,12 @@ const reorderPriceRows = (rows, computedTotal = null) => {
   // The correct breadcrumbs logic is placed in the component render method
 
 
-const Checkout = () => {
+const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
   const location = useLocation();
   const history = useHistory();
+  const isDirectBooking = useMemo(() => {
+    return isDirectBookingProp || isDirectBookingPathOrState(location) || Boolean(location.state?.isDirectBooking);
+  }, [isDirectBookingProp, location]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [bookingData, setBookingData] = useState(location.state?.bookingData || null);
   const [paymentData, setPaymentData] = useState(null);
@@ -1102,7 +1106,7 @@ const Checkout = () => {
   ];
 
   return (
-    <div className={cn("section-mb80", styles.section)}>
+    <div className={cn("section-mb80", styles.section, { [styles.directBookingSection]: isDirectBooking })}>
       <div className={cn("container", styles.container)}>
         <div className={styles.headerRow}>
           <Control

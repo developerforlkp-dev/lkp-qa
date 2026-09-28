@@ -1872,12 +1872,15 @@ const ViewDetails = () => {
     const clone = originalElement.cloneNode(true);
     clone.classList.add(styles.receiptPdfMode);
 
-    // Create an off-screen container
+    // Create a fixed off-screen container at (0,0) for accurate canvas capture
     const container = document.createElement("div");
-    container.style.position = "absolute";
-    container.style.top = "-9999px";
-    container.style.left = "-9999px";
-    container.style.width = "1000px"; // Provide enough width for desktop layout rendering
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.left = "0";
+    container.style.zIndex = "-9999";
+    container.style.opacity = "1";
+    container.style.pointerEvents = "none";
+    container.style.width = "1000px";
     
     container.appendChild(clone);
     document.body.appendChild(container);
@@ -1886,13 +1889,21 @@ const ViewDetails = () => {
       margin: [8, 8, 8, 8],
       filename: `LKP_Receipt_${booking.orderId}.pdf`,
       image: { type: 'jpeg', quality: 1 },
-      html2canvas: { scale: 1.7, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      html2canvas: {
+        scale: 1.7,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollY: 0,
+        scrollX: 0,
+        windowWidth: 1000,
+      },
       pagebreak: { mode: ['avoid-all', 'css'] },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     html2pdf()
-      .from(clone)
+      .from(container)
       .set(opt)
       .save()
       .finally(() => {

@@ -548,7 +548,7 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
   }, [booking]);
 
   return (
-    <div className={cn("section-mb80", styles.section)}>
+    <div className={cn("section-mb80", styles.section, { [styles.directBookingSection]: isDirectBooking })}>
       <div className={cn("container", styles.container)}>
         {!isDirectBooking && (
           <Control

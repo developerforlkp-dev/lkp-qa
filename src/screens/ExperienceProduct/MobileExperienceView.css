@@ -900,7 +900,7 @@
   display: flex;
   align-items: center;
   width: max-content;
-  animation: mobMarqueeScroll var(--marquee-duration, 20s) linear infinite;
+  animation: mobMarqueeScroll var(--marquee-duration, 80s) linear infinite;
 }
 
 @keyframes mobMarqueeScroll {

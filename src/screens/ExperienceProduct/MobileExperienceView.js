@@ -114,7 +114,7 @@ const EarlyBirdTicker = ({ discounts, A, FG, isDark }) => {
    ════════════════════════════════════════════════════════════ */
 export default function MobileExperienceView({
   listing, hostData, leadData, galleryItems,
-  selectedAddOns, handleUpdateAddonQuantity,
+  selectedAddOns, handleUpdateAddonQuantity, onClearAddons,
   reviews, reviewSummary, eligibleBookings,
   history, id, formatImageUrl: parentFmt,
   description, primaryCategoryId, currentListingId,
@@ -390,7 +390,7 @@ export default function MobileExperienceView({
           ╚═══════════════════════════════════╝ */}
       {rawTags.length > 0 && (
         <div className="mob-marquee" style={{ borderColor: B, background: isDark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.005)" }}>
-          <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(rawTags.length * 3, 12)}s` }}>
+          <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(rawTags.length * 20, 65)}s` }}>
             {[...rawTags, ...rawTags, ...rawTags, ...rawTags].map((tag, i) => (
               <div key={i} className="mob-marquee-item">
                 <span className="mob-marquee-text" style={{ fontWeight: i % 2 === 0 ? 700 : 300, color: i % 2 === 0 ? FG : M, opacity: i % 2 === 0 ? 1 : 0.75 }}>
@@ -716,7 +716,7 @@ export default function MobileExperienceView({
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`
           }}>
-            <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(displayCats.length * 12, 35)}s` }}>
+            <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(displayCats.length * 45, 90)}s` }}>
               {repeatedCats.map((cat, i) => (
                 <div key={i} className="mob-marquee-item">
                   <span className="mob-marquee-text" style={{ fontWeight: i % 2 === 0 ? 700 : 300, color: i % 2 === 0 ? FG : M, opacity: i % 2 === 0 ? 1 : 0.75 }}>
@@ -935,7 +935,7 @@ export default function MobileExperienceView({
       {/* ╔═══════════════════════════════════╗
           ║         LKP INDEX SECTION         ║
           ╚═══════════════════════════════════╝ */}
-      {listing?.lkpQualityIndex && (
+      {!isDirectBooking && listing?.lkpQualityIndex && (
         <div className="mob-section" style={{ background: BG }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "20px 0" }}>
             {(() => {
@@ -1135,9 +1135,15 @@ export default function MobileExperienceView({
         listing={listing}
         selectedAddOns={selectedAddOns}
         onUpdateAddonQuantity={handleUpdateAddonQuantity}
+        onClearAddons={onClearAddons}
         hideTrigger={true}
         externalOpen={bookingOpen}
-        onExternalOpenChange={setBookingOpen}
+        onExternalOpenChange={(isOpen) => {
+          setBookingOpen(isOpen);
+          if (!isOpen && typeof onClearAddons === "function") {
+            onClearAddons();
+          }
+        }}
         initialDate={initialDateStr}
         initialGuests={initialGuests}
         hostName={displayHostName}

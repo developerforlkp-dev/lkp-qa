@@ -1404,7 +1404,7 @@ function EventInlineCalendar({ selectedDate, onDateSelect, availableDateKeys, to
   );
 }
 
-export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests, isFreeEvent = false, isDirectBooking = false }) {
+export function BookingSystem({ listing, type = "experience", selectedAddOns = [], triggerLabel = "Reserve Now", reserveLabel = "Reserve Experience", onUpdateAddonQuantity, onClearAddons, externalOpen, onExternalOpenChange, hideTrigger = false, hostName: externalHostName, hostAvatar: externalHostAvatar, initialDate, initialGuests, isFreeEvent = false, isDirectBooking = false, ticketPricesLoading: externalTicketPricesLoading, addonsLoading: externalAddonsLoading }) {
   const history = useHistory();
   const location = useLocation();
   const isDirect = isDirectBooking || isDirectBookingPathOrState(location);
@@ -1494,38 +1494,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     };
   }, [show, listing?.addons, isHoveringAddons]);
 
-  // Sync external open state
-  const externalOpenHandledRef = useRef(false);
-  const lastCalculatedPayloadRef = useRef("");
-  const calculateDebounceTimerRef = useRef(null);
-  const childrenDetailsRef = useRef(null);
-  useEffect(() => {
-    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
-      externalOpenHandledRef.current = true;
-      setShow(true);
-    }
-  }, [externalOpen, show]);
-
-  useEffect(() => {
-    if (externalOpen !== true) {
-      externalOpenHandledRef.current = false;
-    }
-  }, [externalOpen]);
-
-  const closeBookingModal = useCallback(() => {
-    externalOpenHandledRef.current = false;
-    setShow(false);
-    if (onExternalOpenChange) {
-      onExternalOpenChange(false);
-    }
-  }, [onExternalOpenChange]);
-
-  useEffect(() => {
-    if (onExternalOpenChange) {
-      onExternalOpenChange(show);
-    }
-  }, [onExternalOpenChange, show]);
-
   // Real State management
   const [startDate, setStartDate] = useState(() => initialDate ? moment(initialDate) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -1561,9 +1529,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   const [apiPayableLoading, setApiPayableLoading] = useState(false);
   const pendingRestoreRef = useRef(null);
   const pendingEventTicketRestoreRef = useRef(null);
-
-
-
 
   const isEventBooking = type === "event";
   const eventScheduleType = String(
@@ -1601,6 +1566,91 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       return lockedSingleEventDate.clone();
     });
   }, [isSingleEventSchedule, lockedSingleEventDate]);
+
+  const resetBookingFormState = useCallback(() => {
+    if (isSingleEventSchedule && lockedSingleEventDate) {
+      setStartDate(lockedSingleEventDate.clone());
+    } else if (initialDate) {
+      setStartDate(moment(initialDate));
+    } else {
+      setStartDate(null);
+    }
+
+    setStartTime(null);
+    setSelectedSlotId(null);
+
+    if (initialGuests && typeof initialGuests === 'object') {
+      setGuests({ adults: initialGuests.adults || 0, children: initialGuests.children || 0, infants: 0, childAges: [] });
+    } else if (initialGuests && typeof initialGuests === 'number' && initialGuests > 0) {
+      setGuests({ adults: initialGuests, children: 0, infants: 0, childAges: [] });
+    } else {
+      setGuests({ adults: 0, children: 0, infants: 0, childAges: [] });
+    }
+
+    setSelectedTicketTypeId("");
+    setSelectedEventSlotIds([]);
+    setPrivateBooking(false);
+    setIncludePriorityFee(false);
+    setValidationErrors({});
+    setShowValidation(false);
+    setShowDateWarning(false);
+    setShowDatePicker(false);
+    setShowTimePicker(false);
+    setShowTicketPicker(false);
+    setApiPayableAmount(null);
+    setApiPayableLoading(false);
+    setErrorPopup({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" });
+
+    if (typeof onClearAddons === "function") {
+      onClearAddons();
+    } else if (Array.isArray(selectedAddOns) && selectedAddOns.length > 0 && typeof onUpdateAddonQuantity === "function") {
+      selectedAddOns.forEach((addon) => {
+        onUpdateAddonQuantity(addon, -999);
+      });
+    }
+  }, [
+    initialDate,
+    initialGuests,
+    isSingleEventSchedule,
+    lockedSingleEventDate,
+    onClearAddons,
+    onUpdateAddonQuantity,
+    selectedAddOns,
+  ]);
+
+  // Sync external open state
+  const externalOpenHandledRef = useRef(false);
+  const lastCalculatedPayloadRef = useRef("");
+  const calculateDebounceTimerRef = useRef(null);
+  const childrenDetailsRef = useRef(null);
+  useEffect(() => {
+    if (externalOpen === true && !show && !externalOpenHandledRef.current) {
+      externalOpenHandledRef.current = true;
+      resetBookingFormState();
+      setShow(true);
+    }
+  }, [externalOpen, show, resetBookingFormState]);
+
+  useEffect(() => {
+    if (externalOpen !== true) {
+      externalOpenHandledRef.current = false;
+    }
+  }, [externalOpen]);
+
+  const closeBookingModal = useCallback(() => {
+    externalOpenHandledRef.current = false;
+    setShow(false);
+    resetBookingFormState();
+    if (onExternalOpenChange) {
+      onExternalOpenChange(false);
+    }
+  }, [onExternalOpenChange, resetBookingFormState]);
+
+  useEffect(() => {
+    if (onExternalOpenChange) {
+      onExternalOpenChange(show);
+    }
+  }, [onExternalOpenChange, show]);
 
   const getBusinessInterestLabel = useCallback(() => {
     const normalizedType = String(type || "").trim().toLowerCase();
@@ -1799,16 +1849,23 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   }, [eventTickets, isEventBooking, selectedTicketTypeId]);
 
   const eventIdForAvailability = listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId;
+  const [internalPricesLoading, setInternalPricesLoading] = useState(isEventBooking && Boolean(eventIdForAvailability));
+  const ticketPricesLoading = externalTicketPricesLoading !== undefined ? externalTicketPricesLoading : internalPricesLoading;
+  const addonsLoading = Boolean(externalAddonsLoading);
 
   // Fetch dynamic ticket prices from GET /api/public/events/:id/ticket-prices
   useEffect(() => {
-    if (!isEventBooking || !eventIdForAvailability) return;
+    if (!isEventBooking || !eventIdForAvailability) {
+      setInternalPricesLoading(false);
+      return;
+    }
     const allTickets = [
       ...(Array.isArray(eventTickets) ? eventTickets : []),
       ...(selectedTicket ? [selectedTicket] : []),
     ];
 
     let isMounted = true;
+    setInternalPricesLoading(true);
     const fetchPrices = async () => {
       try {
         const priceMap = {};
@@ -1857,6 +1914,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         }
       } catch (e) {
         console.error("Error fetching event ticket prices:", e);
+      } finally {
+        if (isMounted) setInternalPricesLoading(false);
       }
     };
 
@@ -3197,6 +3256,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     // Immediately cache the payloadKey so subsequent re-renders during the debounce delay do not loop
     lastCalculatedPayloadRef.current = payloadKey;
+    setApiPayableLoading(true);
 
     if (calculateDebounceTimerRef.current) {
       clearTimeout(calculateDebounceTimerRef.current);
@@ -3204,7 +3264,6 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     calculateDebounceTimerRef.current = setTimeout(() => {
       if (!isMountedRef.current) return;
-      setApiPayableLoading(true);
 
       calculationFn(payload)
         .then((res) => {
@@ -4371,12 +4430,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   const IconComp = data.icon;
   const canReserve = isEventBooking
-    ? Boolean(ticketSaleWindow.isOpen && startDate && selectedTicket && selectedEventSlots.length > 0 && getSlotId(selectedEventSlots[0]) != null && totalGuests >= 1 && (selectedTicketMaxPerBooking === undefined || totalGuests <= selectedTicketMaxPerBooking) && (selectedTicketRemainingTickets === undefined || totalGuests <= selectedTicketRemainingTickets) && !selectedTicketSoldOut && !eventAvailabilityLoading && !bookingLoading)
-    : Boolean(startDate && selectedSlotData && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && (!privateBooking || selectedSlotPrivateBookingAvailable) && !selectedSlotHasPrivateBooking && !bookingLoading);
+    ? Boolean(ticketSaleWindow.isOpen && startDate && selectedTicket && selectedEventSlots.length > 0 && getSlotId(selectedEventSlots[0]) != null && totalGuests >= 1 && (selectedTicketMaxPerBooking === undefined || totalGuests <= selectedTicketMaxPerBooking) && (selectedTicketRemainingTickets === undefined || totalGuests <= selectedTicketRemainingTickets) && !selectedTicketSoldOut && !eventAvailabilityLoading && !bookingLoading && !apiPayableLoading)
+    : Boolean(startDate && selectedSlotData && startTime && totalGuests >= 1 && (guestSeatLimit === undefined || totalGuests <= guestSeatLimit) && (!privateBooking || selectedSlotPrivateBookingAvailable) && !selectedSlotHasPrivateBooking && !bookingLoading && !apiPayableLoading);
   const triggerDisabled = (isEventBooking && !ticketSaleWindow.isOpen) || isFreeEvent;
 
   const handleOpenBooking = useCallback(() => {
     if (triggerDisabled) return;
+    resetBookingFormState();
     setShow(true);
 
     if (isEventBooking || (!listingId && !directToken) || !slotsLookupEndDate) return;
@@ -4551,12 +4611,29 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
               }}
             >
               {!renderContent ? (
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    style={{ width: 24, height: 24, border: `2px solid ${A}33`, borderTopColor: A, borderRadius: "50%" }}
-                  />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "24px 28px", gap: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div className="booking-shimmer-box" style={{ width: 140, height: 12, borderRadius: 6 }} />
+                      <div className="booking-shimmer-box" style={{ width: 100, height: 24, borderRadius: 8 }} />
+                    </div>
+                    <div className="booking-shimmer-box" style={{ width: 32, height: 32, borderRadius: "50%" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 12, overflow: "hidden" }}>
+                    {[1, 2].map((n) => (
+                      <div key={n} className="addon-card-item booking-shimmer-card" style={{ flex: "0 0 220px", height: 72, pointerEvents: "none" }}>
+                        <div className="addon-img-box booking-shimmer-box" style={{ height: "100%", opacity: 0.6 }} />
+                        <div className="addon-content" style={{ gap: 6 }}>
+                          <div className="booking-shimmer-box" style={{ width: "80%", height: 12, borderRadius: 4 }} />
+                          <div className="booking-shimmer-box" style={{ width: "50%", height: 10, borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+                    <div className="booking-shimmer-box" style={{ width: "100%", height: 48, borderRadius: 16 }} />
+                    <div className="booking-shimmer-box" style={{ width: "100%", height: 48, borderRadius: 16 }} />
+                  </div>
                 </div>
               ) : (
                 <>
@@ -4567,12 +4644,24 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         {isEventBooking ? "Reserve Your Event" : "Reserve Your Experience"}
                       </h2>
 
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", minHeight: 30 }}>
                         {(() => {
                           const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
                           const hasDiscount = gp && gp.discountRate > 0;
                           const baseDisplayPrice = gp ? gp.baseUnitPrice : Number(data.price || 0);
                           const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
+                          const isExplicitFree = isFreeEvent || (isEventBooking && String(listing?.eventType || listing?.event_type || "").toLowerCase() === "free");
+                          const isPriceLoadingNow = ticketPricesLoading && isEventBooking && !isExplicitFree && dynamicSelectedTicketPrice === undefined && (!baseDisplayPrice || baseDisplayPrice <= 0);
+
+                          if (isPriceLoadingNow) {
+                            return (
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}>
+                                <div className="booking-shimmer-box" style={{ width: 96, height: 24, borderRadius: 8 }} />
+                                <span style={{ fontSize: 11, color: M, fontWeight: 500 }}>per {data.unit}</span>
+                              </div>
+                            );
+                          }
+
                           return (
                             <>
                               {hasDiscount && baseDisplayPrice != null && baseDisplayPrice > 0 && (
@@ -4580,7 +4669,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                   ₹{Number(baseDisplayPrice).toFixed(2)}
                                 </span>
                               )}
-                              {Number(discountedDisplayPrice || 0) === 0 ? (
+                              {isExplicitFree || Number(discountedDisplayPrice || 0) === 0 ? (
                                 <span style={{ fontSize: 22, fontWeight: 800, color: A }}>Free Event</span>
                               ) : (
                                 <>
@@ -4626,7 +4715,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                   </div>
 
                   {/* Add-ons Row */}
-                  {(listing?.addons || []).length > 0 && (
+                  {((listing?.addons && listing.addons.length > 0) || (addonsLoading && (!listing?.addons || listing.addons.length === 0))) && (
                     <div style={{ padding: "16px 28px", background: BG, borderBottom: `1px solid ${B}88` }}>
                       <style>{`
                     #header-addons-scroll::-webkit-scrollbar {
@@ -4783,7 +4872,25 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           msOverflowStyle: "none",
                           width: "100%",
                         }}>
-                          {listing.addons.map((item, i) => {
+                          {addonsLoading && (!listing?.addons || listing.addons.length === 0) ? (
+                            [1, 2, 3].map((n) => (
+                              <div
+                                key={`addon-skel-${n}`}
+                                className="addon-card-item booking-shimmer-card"
+                                style={{ pointerEvents: "none" }}
+                              >
+                                <div className="addon-img-box booking-shimmer-box" style={{ height: "100%", opacity: 0.6 }} />
+                                <div className="addon-content" style={{ gap: 6 }}>
+                                  <div className="booking-shimmer-box" style={{ width: "75%", height: 13, borderRadius: 4 }} />
+                                  <div className="booking-shimmer-box" style={{ width: "45%", height: 10, borderRadius: 3 }} />
+                                </div>
+                                <div className="addon-action-area">
+                                  <div className="booking-shimmer-box" style={{ width: 28, height: 28, borderRadius: "50%" }} />
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            listing.addons.map((item, i) => {
                             const addon = item.addon || item;
                             const addonId = addon.addonId || addon.id;
                             const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
@@ -4883,7 +4990,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                 </div>
                               </div>
                             );
-                          })}
+                          }))}
                         </div>
 
                         {showRightAddonArrow && (
@@ -5886,16 +5993,31 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         const currentTotalGuests = Number(guests?.adults || 0) + Number(guests?.children || 0);
                         const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
                         const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
-                        const isFreeEvent = Number(discountedDisplayPrice || 0) === 0;
-                        if (isFreeEvent) {
+                        const isExplicitFree = isFreeEvent || (isEventBooking && String(listing?.eventType || listing?.event_type || "").toLowerCase() === "free");
+                        const isPriceLoadingNow = ticketPricesLoading && isEventBooking && !isExplicitFree && dynamicSelectedTicketPrice === undefined;
+
+                        if (isPriceLoadingNow) {
+                          return (
+                            <>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, height: 26, marginTop: 4 }}>
+                                <div className="booking-shimmer-box" style={{ width: 90, height: 20, borderRadius: 6 }} />
+                              </div>
+                              <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Loading pricing...</span>
+                            </>
+                          );
+                        }
+
+                        if (isExplicitFree || (Number(discountedDisplayPrice || 0) === 0 && !isPriceLoadingNow)) {
                           return <span style={{ fontSize: 22, fontWeight: 800, color: A }}>Free Event</span>;
                         }
 
                         if (apiPayableLoading) {
                           return (
                             <>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: M, marginTop: 2 }}>Calculating...</span>
-                              <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Including all taxes.</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, height: 26, marginTop: 4 }}>
+                                <div className="booking-shimmer-box" style={{ width: 100, height: 20, borderRadius: 6 }} />
+                              </div>
+                              <span style={{ fontSize: 10, color: M, fontWeight: 600 }}>Calculating total...</span>
                             </>
                           );
                         }
@@ -5963,7 +6085,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
                   <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 28px 12px", color: M, fontSize: 10, background: BG }}>
                     <ShieldCheck size={12} />
-                    <span style={{ fontWeight: 600 }}>Secure booking & payment powered by Little Known Planet</span>
+                    <span style={{ fontWeight: 600 }}>{isDirect ? "Secure booking & payment" : "Secure booking & payment powered by Little Known Planet"}</span>
                   </div>
                 </>
               )}
@@ -6078,6 +6200,29 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         )}
       </AnimatePresence>
       <style>{`
+        @keyframes booking-shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        .booking-shimmer-box {
+          background: linear-gradient(90deg, ${B}44 0%, ${B}99 50%, ${B}44 100%) !important;
+          background-size: 200% 100% !important;
+          animation: booking-shimmer 1.6s ease-in-out infinite !important;
+        }
+
+        .booking-shimmer-card {
+          background: ${S} !important;
+          border: 1.5px solid ${B} !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+          position: relative !important;
+        }
+
         .SingleDatePicker_picker,
         .SingleDatePickerPortal,
         .DateRangePicker_picker,
