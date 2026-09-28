@@ -289,7 +289,7 @@ const syncChildAges = (ages, childrenCount, defaultAge = 0) => {
   const safeCount = Math.max(0, Number(childrenCount || 0));
   const current = Array.isArray(ages) ? ages : [];
   if (current.length === safeCount && current.every(a => a !== "" && a !== null && a !== undefined)) {
-    return [...current];
+    return current;
   }
   const next = current.slice(0, safeCount);
   while (next.length < safeCount) {
@@ -549,7 +549,7 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
   const roomInstances = [];
   selectedRooms.forEach(sel => {
     const catalogRoom = stayRoomsCatalog.find(
-      r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId)
+      r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === String(sel.roomId)
     );
     if (catalogRoom) {
       const maxAdults = catalogRoom.maxAdults || 2;
@@ -829,19 +829,35 @@ const StayBookingSystem = ({
       if (typeof externalSetChildAges === "function") {
         externalSetChildAges((prev) => {
           const res = updater(prev);
+          if (Array.isArray(prev) && Array.isArray(res) && prev.length === res.length && prev.every((v, i) => v === res[i])) {
+            return prev;
+          }
           return Array.isArray(res) ? [...res] : res;
         });
       }
       setInternalChildAges((prev) => {
         const res = updater(prev);
+        if (Array.isArray(prev) && Array.isArray(res) && prev.length === res.length && prev.every((v, i) => v === res[i])) {
+          return prev;
+        }
         return Array.isArray(res) ? [...res] : res;
       });
     } else {
       const nextVal = Array.isArray(updater) ? [...updater] : updater;
       if (typeof externalSetChildAges === "function") {
-        externalSetChildAges(nextVal);
+        externalSetChildAges((prev) => {
+          if (Array.isArray(prev) && Array.isArray(nextVal) && prev.length === nextVal.length && prev.every((v, i) => v === nextVal[i])) {
+            return prev;
+          }
+          return nextVal;
+        });
       }
-      setInternalChildAges(nextVal);
+      setInternalChildAges((prev) => {
+        if (Array.isArray(prev) && Array.isArray(nextVal) && prev.length === nextVal.length && prev.every((v, i) => v === nextVal[i])) {
+          return prev;
+        }
+        return nextVal;
+      });
     }
   }, [externalSetChildAges]);
 
@@ -902,11 +918,7 @@ const StayBookingSystem = ({
     }
   }, [onExternalOpenChange, resetStayBookingFormState]);
 
-  useEffect(() => {
-    if (onExternalOpenChange) {
-      onExternalOpenChange(show);
-    }
-  }, [onExternalOpenChange, show]);
+  // Removed faulty useEffect that called onExternalOpenChange(show) on mount/render
 
   const handleAddonsScroll = () => {
     const container = document.getElementById("stay-header-addons-scroll");
@@ -936,7 +948,7 @@ const StayBookingSystem = ({
       const roomId = selRoom.roomId;
       const currentCount = selRoom.count || 0;
       const catalogRoom = stayRoomsCatalog.find(
-        r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(roomId)
+        r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === String(roomId)
       );
       return {
         selRoom,
@@ -985,7 +997,7 @@ const StayBookingSystem = ({
 
     const getNonBedCount = (roomsList) => {
       return roomsList.reduce((sum, sel) => {
-        const cat = stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(sel.roomId));
+        const cat = stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === String(sel.roomId));
         return sum + (cat?.isBedConfig ? 0 : Number(sel.count || 0));
       }, 0);
     };
@@ -997,7 +1009,7 @@ const StayBookingSystem = ({
     while (totalNonBed > 1) {
       let candidateIndex = -1;
       for (let i = currentSel.length - 1; i >= 0; i--) {
-        const cat = stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(currentSel[i].roomId));
+        const cat = stayRoomsCatalog.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === String(currentSel[i].roomId));
         if (!cat?.isBedConfig && currentSel[i].count > 0) {
           candidateIndex = i;
           break;
@@ -1328,9 +1340,9 @@ const StayBookingSystem = ({
     const checkInStr = checkInDate ? (typeof checkInDate === 'string' ? checkInDate : checkInDate.format('YYYY-MM-DD')) : null;
 
     return selectedRooms.map(sel => {
-      let room = roomsSource.find(r => String(r.roomId || r.id || r.bedConfigId) === String(sel.roomId));
+      let room = roomsSource.find(r => String(r.roomId || r.id || r.roomTypeId || r.room_type_id || r.bedConfigId || r.bed_config_id) === String(sel.roomId));
       if (!room) {
-        room = stayRoomsCatalog.find(r => String(r.roomId || r.id || r.bedConfigId) === String(sel.roomId));
+        room = stayRoomsCatalog.find(r => String(r.roomId || r.id || r.roomTypeId || r.room_type_id || r.bedConfigId || r.bed_config_id) === String(sel.roomId));
       }
       if (!room) return null;
 
@@ -4372,7 +4384,7 @@ const StayBookingSystem = ({
                           absoluteMaxBeds = 0;
                           selectedRooms.forEach(selRoom => {
                             const catalogRoom = stayRoomsCatalog.find(
-                              r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === String(selRoom.roomId)
+                              r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === String(selRoom.roomId)
                             );
                             const maxLimit = catalogRoom
                               ? Number(catalogRoom.units || catalogRoom.totalRooms || catalogRoom.availableRooms || 99)

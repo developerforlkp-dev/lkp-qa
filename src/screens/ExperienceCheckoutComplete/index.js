@@ -441,11 +441,35 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
 
     //console.log("💰 Final amount paid:", amountPaid);
 
+    const directOrderId =
+      booking?.displayDirectBookingOrderId ||
+      booking?.displayDirectBookingOrderld ||
+      booking?.directBookingOrderId ||
+      booking?.directBookingOrderld ||
+      location?.state?.displayDirectBookingOrderId ||
+      location?.state?.displayDirectBookingOrderld ||
+      location?.state?.directBookingOrderId ||
+      location?.state?.directBookingOrderld ||
+      location?.state?.orderId ||
+      location?.state?.bookingData?.displayDirectBookingOrderId ||
+      location?.state?.bookingData?.displayDirectBookingOrderld ||
+      location?.state?.bookingData?.directBookingOrderId ||
+      location?.state?.bookingData?.orderId ||
+      paymentSuccess?.displayDirectBookingOrderId ||
+      paymentSuccess?.displayDirectBookingOrderld ||
+      paymentSuccess?.directBookingOrderId ||
+      paymentSuccess?.directBookingOrderld ||
+      paymentSuccess?.order_id ||
+      booking?.orderId ||
+      booking?.id ||
+      (typeof window !== "undefined" ? localStorage.getItem("displayDirectBookingOrderId") || localStorage.getItem("directBookingOrderId") : null) ||
+      `DIR-${Date.now().toString().slice(-6)}`;
+
     return [
       {
-        title: isDirectBooking ? "Order Reference:" : "Payment ID:",
+        title: isDirectBooking ? "Direct Booking Order ID:" : "Payment ID:",
         content: isDirectBooking
-          ? (booking?.orderId || booking?.id || paymentSuccess?.order_id || paymentSuccess?.payment_id || `DIR-${Date.now().toString().slice(-6)}`)
+          ? directOrderId
           : (paymentSuccess?.razorpay_payment_id || paymentSuccess?.payment_id || (paymentFailed ? "Payment Failed" : "—")),
         icon: "hand-cart",
       },
@@ -472,7 +496,7 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
         icon: paymentFailed ? "alert-circle" : "wallet",
       },
     ];
-  }, [booking, paymentSuccess, paymentData, paymentFailed, isDirectBooking]);
+  }, [booking, paymentSuccess, paymentData, paymentFailed, isDirectBooking, location]);
 
   const items = useMemo(() => {
     // Format time slot with start and end time if available
@@ -568,6 +592,8 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
               title={title}
               options={options}
               items={items}
+              booking={booking}
+              hostName={booking?.hostName || booking?.officialName || booking?.leadName || booking?.directBooking?.leadName}
               paymentFailed={paymentFailed}
               isEvent={isEventBooking}
               isDirectBooking={isDirectBooking}

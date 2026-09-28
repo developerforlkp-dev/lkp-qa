@@ -29,32 +29,37 @@ const formatTimeRange = (startTime, endTime) => {
   };
 };
 
-// Day-of-week mappings (JS getDay() returns 0=Sun ... 6=Sat)
 const DAY_CODES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const DAY_FLAGS = ['isSunday', 'isMonday', 'isTuesday', 'isWednesday', 'isThursday', 'isFriday', 'isSaturday'];
+const DAY_FLAGS_SNAKE = ['is_sunday', 'is_monday', 'is_tuesday', 'is_wednesday', 'is_thursday', 'is_friday', 'is_saturday'];
 
 /**
  * Return true if the slot is offered on the given JS weekday index (0=Sun...6=Sat).
- * Checks three possible data shapes:
- *   1. selected_days: ["MON", "TUE", ...]
- *   2. isMonday / isTuesday / ... boolean flags
+ * Checks possible data shapes:
+ *   1. selected_days / selectedDays: ["MON", "TUE", ...]
+ *   2. isMonday / is_monday boolean flags on slot or schedule
  *   3. No day data at all -- always show
  */
 const isSlotAvailableOnDay = (slot, dayIndex) => {
+  if (!slot || typeof slot !== "object") return true;
   if (dayIndex === null || dayIndex === undefined) return true;
 
   const dayCode = DAY_CODES[dayIndex];
   const dayFlag = DAY_FLAGS[dayIndex];
+  const dayFlagSnake = DAY_FLAGS_SNAKE[dayIndex];
+  const schedule = slot.schedule && typeof slot.schedule === "object" ? slot.schedule : null;
 
-  // Shape 1: selected_days array
-  if (Array.isArray(slot.selected_days) && slot.selected_days.length > 0) {
-    return slot.selected_days.includes(dayCode);
+  // Shape 1: selected_days / selectedDays array
+  const selectedDays = slot.selected_days || slot.selectedDays || schedule?.selected_days || schedule?.selectedDays;
+  if (Array.isArray(selectedDays) && selectedDays.length > 0) {
+    return selectedDays.includes(dayCode);
   }
 
-  // Shape 2: explicit boolean flags on the raw slot object
-  if (slot[dayFlag] !== undefined) {
-    return slot[dayFlag] === true;
-  }
+  // Shape 2: explicit boolean flags on raw slot or schedule
+  if (slot[dayFlag] !== undefined) return Boolean(slot[dayFlag]);
+  if (slot[dayFlagSnake] !== undefined) return Boolean(slot[dayFlagSnake]);
+  if (schedule && schedule[dayFlag] !== undefined) return Boolean(schedule[dayFlag]);
+  if (schedule && schedule[dayFlagSnake] !== undefined) return Boolean(schedule[dayFlagSnake]);
 
   // No day restriction info -- show slot
   return true;

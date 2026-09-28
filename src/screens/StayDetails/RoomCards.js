@@ -391,7 +391,8 @@ const ModalPortal = ({ children }) => {
 
 
 
-const RoomCard = ({ room, roomIndex, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan, checkInDate }) => {
+const RoomCard = ({ roomId: propRoomId, room, roomIndex, listing, onRoomSelect, isSelected, roomsCount, onRoomsCountChange, selectedMealPlan, checkInDate }) => {
+  const roomId = String(propRoomId ?? room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId ?? room?.bed_config_id ?? roomIndex ?? "");
   const { tokens: { FG, B, A, AL, S, W, M, BG } } = useTheme();
   const { isMobile } = useWindowSize();
   const [showModal, setShowModal] = useState(false);
@@ -557,11 +558,11 @@ const RoomCard = ({ room, roomIndex, listing, onRoomSelect, isSelected, roomsCou
 
   const handlePlanChange = (code) => {
     setPlan(code);
-    if (isSelected && onRoomSelect) onRoomSelect(room.roomId ?? room.id, code, "update");
+    if (isSelected && onRoomSelect) onRoomSelect(roomId, code, "update");
   };
 
   const handleSelect = () => {
-    if (onRoomSelect) onRoomSelect(room.roomId ?? room.id, plan, isSelected ? "toggle" : "select");
+    if (onRoomSelect) onRoomSelect(roomId, plan, isSelected ? "toggle" : "select");
   };
 
   return (
@@ -941,7 +942,8 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
   if (listing?.bedConfigs?.length > 0) {
     const bedRooms = listing.bedConfigs.map((b, idx) => ({
       ...b,
-      roomId: b.id || b.bedConfigId || `bed-${idx}`,
+      roomId: b.id || b.bedConfigId || b.bed_config_id || `bed-${idx}`,
+      bedConfigId: b.bedConfigId || b.id || b.bed_config_id || `bed-${idx}`,
       roomName: b.bedType || b.name || "Bed",
       totalRooms: b.bedCount || listing?.bedCount,
       coverImageUrl: b.coverImageUrl || b.bedCoverImageUrl || listing?.bedCoverImageUrl,
@@ -971,11 +973,12 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
   const content = (
     <div className={styles.list}>
       {rooms.map((room, idx) => {
-        const roomId = String(room.roomId ?? room.id ?? idx);
-        const selection = selectedRooms.find(r => r.roomId === roomId);
+        const roomId = String(room?.roomId ?? room?.id ?? room?.roomTypeId ?? room?.room_type_id ?? room?.bedConfigId ?? room?.bed_config_id ?? idx);
+        const selection = selectedRooms.find(r => String(r.roomId ?? r.id) === roomId);
         return (
           <RoomCard
             key={roomId}
+            roomId={roomId}
             roomIndex={idx}
             room={room}
             listing={listing}
@@ -983,7 +986,7 @@ const RoomCards = ({ listing, onRoomSelect, selectedRooms = [], noContainer, onR
             isSelected={!!selection}
             selectedMealPlan={selection?.mealPlan}
             roomsCount={selection?.count || 1}
-            onRoomsCountChange={(count) => onRoomsCountChange(roomId, count)}
+            onRoomsCountChange={(count) => onRoomsCountChange && onRoomsCountChange(roomId, count)}
             checkInDate={checkInDate}
           />
         );

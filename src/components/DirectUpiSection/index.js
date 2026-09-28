@@ -339,14 +339,42 @@ export default function DirectUpiSection({
 
     try {
       const res = await submitPublicDirectBooking(token, formData);
-      localStorage.setItem(`utr_${config.orderId}`, utrNumber.trim());
-      localStorage.setItem(`utr_submitted_${config.orderId}`, "true");
+      const directOrderId =
+        res?.displayDirectBookingOrderId ||
+        res?.displayDirectBookingOrderld ||
+        res?.directBookingOrderId ||
+        res?.directBookingOrderld ||
+        res?.orderId ||
+        res?.data?.displayDirectBookingOrderId ||
+        res?.data?.displayDirectBookingOrderld ||
+        res?.data?.directBookingOrderId ||
+        res?.data?.orderId ||
+        config.orderId;
+
+      const directBookingRequestId =
+        res?.directBookingRequestId ||
+        res?.data?.directBookingRequestId;
+
+      if (directOrderId) {
+        localStorage.setItem("displayDirectBookingOrderId", String(directOrderId));
+        localStorage.setItem("directBookingOrderId", String(directOrderId));
+        localStorage.setItem(`utr_${directOrderId}`, utrNumber.trim());
+        localStorage.setItem(`utr_submitted_${directOrderId}`, "true");
+      }
+      if (config?.orderId) {
+        localStorage.setItem(`utr_${config.orderId}`, utrNumber.trim());
+        localStorage.setItem(`utr_submitted_${config.orderId}`, "true");
+      }
       setIsSubmitted(true);
 
       const directPaymentSuccess = {
         payment_method: "upi",
         payment_id: `UPI_${utrNumber.trim()}`,
-        order_id: config.orderId,
+        order_id: directOrderId,
+        displayDirectBookingOrderId: directOrderId,
+        directBookingOrderId: directOrderId,
+        directBookingRequestId: directBookingRequestId,
+        submitResponse: res,
         status: "confirmed",
         utrNumber: utrNumber.trim(),
       };
@@ -355,6 +383,11 @@ export default function DirectUpiSection({
       if (bookingData) {
         bookingData.isDirectBooking = true;
         bookingData.utrNumber = utrNumber.trim();
+        bookingData.orderId = directOrderId;
+        bookingData.displayDirectBookingOrderId = directOrderId;
+        bookingData.directBookingOrderId = directOrderId;
+        bookingData.directBookingRequestId = directBookingRequestId;
+        bookingData.submitResponse = res;
         if (guestDetails) {
           bookingData.guestDetails = guestDetails;
         }
@@ -362,7 +395,11 @@ export default function DirectUpiSection({
       }
 
       if (typeof onSuccess === "function") {
-        onSuccess(res || { utrNumber: utrNumber.trim() });
+        onSuccess(res || {
+          utrNumber: utrNumber.trim(),
+          displayDirectBookingOrderId: directOrderId,
+          orderId: directOrderId,
+        });
       }
     } catch (err) {
       console.error("Direct booking submit error:", err);

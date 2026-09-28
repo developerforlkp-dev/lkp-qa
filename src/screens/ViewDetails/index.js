@@ -1877,7 +1877,7 @@ const ViewDetails = () => {
     container.style.position = "fixed";
     container.style.top = "0";
     container.style.left = "0";
-    container.style.zIndex = "-9999";
+    container.style.zIndex = "999999";
     container.style.opacity = "1";
     container.style.pointerEvents = "none";
     container.style.width = "1000px";

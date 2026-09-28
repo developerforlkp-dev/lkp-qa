@@ -1717,15 +1717,33 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
                 paymentData={paymentData}
                 guestDetails={guestDetails}
                 amount={resolvedAmountToPay ? (isAmountInPaise ? resolvedAmountToPay / 100 : resolvedAmountToPay) : undefined}
-                onSuccess={() => {
+                onSuccess={(submitRes) => {
+                  const directOrderId =
+                    submitRes?.displayDirectBookingOrderId ||
+                    submitRes?.displayDirectBookingOrderld ||
+                    submitRes?.directBookingOrderId ||
+                    submitRes?.directBookingOrderld ||
+                    submitRes?.orderId ||
+                    submitRes?.data?.displayDirectBookingOrderId ||
+                    submitRes?.data?.displayDirectBookingOrderld ||
+                    submitRes?.data?.directBookingOrderId ||
+                    submitRes?.data?.orderId;
+
                   history.push(
                     isDirectBooking ? "/direct-booking/complete" : "/experience-checkout-complete",
                     {
                       isDirectBooking: true,
+                      displayDirectBookingOrderId: directOrderId,
+                      directBookingOrderId: directOrderId,
+                      orderId: directOrderId,
                       bookingData: {
                         ...bookingData,
                         isDirectBooking: true,
                         guestDetails,
+                        displayDirectBookingOrderId: directOrderId,
+                        directBookingOrderId: directOrderId,
+                        orderId: directOrderId || bookingData?.orderId,
+                        submitResponse: submitRes,
                       },
                     }
                   );

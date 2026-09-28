@@ -2759,6 +2759,13 @@ const StayDetails = () => {
     setAddOnQuantities({});
   }, []);
 
+  const handleExternalOpenChange = useCallback((isOpen) => {
+    setBookingModalOpen(isOpen);
+    if (!isOpen) {
+      resetStayBookingState();
+    }
+  }, [resetStayBookingState]);
+
   const handleToggleAddOn = useCallback((addOnId, pricingType) => {
     const aid = String(addOnId);
     setSelectedAddOns((prev) => {
@@ -2817,21 +2824,30 @@ const StayDetails = () => {
     const rid = String(roomId);
     setSelectedRooms(prev => {
       let updated;
-      const exists = prev.find(r => r.roomId === rid);
+      const exists = prev.find(r => String(r.roomId ?? r.id) === rid);
       if (exists) {
         if (action === "update") {
           return prev.map((room) => (
-            room.roomId === rid
+            String(room.roomId ?? room.id) === rid
               ? { ...room, mealPlan: mealPlan || room.mealPlan || "EP" }
               : room
           ));
         }
 
-        const filtered = prev.filter(r => r.roomId !== rid);
+        const filtered = prev.filter(r => String(r.roomId ?? r.id) !== rid);
         // Allow empty — user must intentionally select a room
         updated = filtered;
       } else {
-        const addedRoom = (stay?.rooms || stay?.roomTypes || stay?.room_types || []).find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id) === rid);
+        const allRooms = [
+          ...(stay?.rooms || stay?.roomTypes || stay?.room_types || []),
+          ...(stay?.bedConfigs || []).map((b, idx) => ({
+            ...b,
+            roomId: b.id || b.bedConfigId || b.bed_config_id || `bed-${idx}`,
+            bedConfigId: b.bedConfigId || b.id || b.bed_config_id || `bed-${idx}`,
+            isBedConfig: true
+          }))
+        ];
+        const addedRoom = allRooms.find(r => String(r.roomId ?? r.id ?? r.roomTypeId ?? r.room_type_id ?? r.bedConfigId ?? r.bed_config_id) === rid);
         const defaultPlan = addedRoom?.mealPlanPricing && Object.keys(addedRoom.mealPlanPricing).length > 0 ? Object.keys(addedRoom.mealPlanPricing)[0] : addedRoom?.epPrice ? "EP" : addedRoom?.bbPrice ? "BB" : addedRoom?.cpPrice ? "CP" : addedRoom?.mapPrice ? "MAP" : addedRoom?.apPrice ? "AP" : "EP";
         updated = [...prev, { roomId: rid, mealPlan: mealPlan || defaultPlan, count: 1 }];
       }
@@ -2851,7 +2867,7 @@ const StayDetails = () => {
     const newCount = Math.max(1, count);
     setSelectedRooms(prev => {
       const updated = prev.map(r =>
-        r.roomId === rid ? { ...r, count: newCount } : r
+        String(r.roomId ?? r.id) === rid ? { ...r, count: newCount } : r
       );
       const totalRooms = updated.reduce((sum, r) => sum + Number(r.count || 0), 0);
       setGuests(g => {
@@ -3146,7 +3162,7 @@ const StayDetails = () => {
 
         const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
         const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
-        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
+        const tagsDuration = tagsDistance / 8; // constant speed of 8px/s
 
         return (
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
@@ -3519,7 +3535,7 @@ const StayDetails = () => {
 
         const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
         const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 2; // offset 50% is rawTags * 2
-        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
+        const tagsDuration = tagsDistance / 8; // constant speed of 8px/s
 
         return (
           <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
@@ -3626,12 +3642,7 @@ const StayDetails = () => {
         onToggleAddOn={handleToggleAddOn}
         onClearBookingState={resetStayBookingState}
         externalOpen={bookingModalOpen}
-        onExternalOpenChange={(isOpen) => {
-          setBookingModalOpen(isOpen);
-          if (!isOpen) {
-            resetStayBookingState();
-          }
-        }}
+        onExternalOpenChange={handleExternalOpenChange}
       />
 
       <div className="related-listings-wrapper" style={{ padding: isMobile ? "24px 0" : "64px 0", background: theme === 'dark' ? BG : W }}>
