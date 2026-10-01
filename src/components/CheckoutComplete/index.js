@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
 import styles from "./CheckoutComplete.module.sass";
@@ -24,6 +24,47 @@ const CheckoutComplete = ({
 }) => {
   const receiptRef = useRef(null);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+
+  const normalizedHostName = (
+    hostName ||
+    propBooking?.officialName ||
+    propBooking?.hostName ||
+    propBooking?.leadName ||
+    propBooking?.directBooking?.leadName ||
+    "Host"
+  ).trim();
+
+  const hostInitial = useMemo(
+    () => (normalizedHostName ? normalizedHostName.charAt(0).toUpperCase() : "H"),
+    [normalizedHostName]
+  );
+
+  const effectiveAvatar =
+    avatarUrl ||
+    propBooking?.hostAvatarUrl ||
+    propBooking?.hostAvatar ||
+    propBooking?.listing?.host?.profilePhotoUrl ||
+    propBooking?.profilePhotoUrl ||
+    propBooking?.listing?.host?.profileImageUrl ||
+    propBooking?.listing?.host?.avatar ||
+    propBooking?.host?.avatar ||
+    propBooking?.host?.profilePhotoUrl;
+
+  const avatarSrc = useMemo(() => {
+    if (!effectiveAvatar) return null;
+    const raw = String(effectiveAvatar).trim();
+    if (!raw) return null;
+    if (raw.includes("/images/content/avatar.jpg")) return null;
+    if (raw.includes("localhost") || raw.includes("127.0.0.1")) return null;
+    return raw;
+  }, [effectiveAvatar]);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarSrc]);
+
+  const showLetterAvatar = avatarLoadFailed || !avatarSrc;
 
   const bookedMessage = isStay
     ? "Your stay has been booked!"
@@ -386,13 +427,21 @@ const CheckoutComplete = ({
           </>
         )}
         <div className={styles.subtitle}>{title}</div>
-        {hostName && (
+        {normalizedHostName && (
           <div className={styles.author}>
             <div className={styles.text}>Hosted by</div>
             <div className={styles.avatar}>
-              <img src={avatarUrl || "/images/content/avatar.jpg"} alt="Avatar" />
+              {showLetterAvatar ? (
+                <div className={styles.avatarLetter}>{hostInitial}</div>
+              ) : (
+                <img
+                  src={avatarSrc}
+                  alt={normalizedHostName}
+                  onError={() => setAvatarLoadFailed(true)}
+                />
+              )}
             </div>
-            <div className={styles.man}>{hostName}</div>
+            <div className={styles.man}>{hostName || normalizedHostName}</div>
           </div>
         )}
       </div>

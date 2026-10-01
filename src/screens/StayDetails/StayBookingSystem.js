@@ -658,20 +658,32 @@ const distributeGuests = (selectedRooms, stayRoomsCatalog, adults, children) => 
   };
 };
 
-const mapChildAgesToRoomAllocations = (allocations, childAges) => {
-  const ageQueue = (Array.isArray(childAges) ? childAges : [])
-    .map((age) => (age !== "" && age !== null && age !== undefined && !Number.isNaN(Number(age))) ? Number(age) : 0);
+const mapChildAgesToRoomAllocations = (allocations, childAges, defaultChildAge = 0) => {
+  const normalizedAllocations = Array.isArray(allocations) ? allocations : [];
+  const totalBaseChildren = normalizedAllocations.reduce(
+    (sum, alloc) => sum + Math.max(0, Number(alloc?.children || 0) - Number(alloc?.extraChildren || 0)),
+    0
+  );
+  const totalExtraChildren = normalizedAllocations.reduce(
+    (sum, alloc) => sum + Math.max(0, Number(alloc?.extraChildren || 0)),
+    0
+  );
+
+  const rawAges = Array.isArray(childAges) ? childAges : [];
+  const extraChildAgesQueue = rawAges
+    .slice(totalBaseChildren, totalBaseChildren + totalExtraChildren)
+    .map((age) => (age !== "" && age !== null && age !== undefined && !Number.isNaN(Number(age))) ? Number(age) : Number(defaultChildAge || 0));
 
   const perRoom = {};
 
-  (Array.isArray(allocations) ? allocations : []).forEach((allocation) => {
+  normalizedAllocations.forEach((allocation) => {
     const roomKey = String(allocation?.roomId ?? "");
     if (!roomKey) return;
     if (!perRoom[roomKey]) perRoom[roomKey] = [];
 
-    const childrenCount = Number(allocation?.children || 0);
-    for (let index = 0; index < childrenCount; index += 1) {
-      const nextAge = ageQueue.length > 0 ? ageQueue.shift() : 0;
+    const extraChildrenCount = Number(allocation?.extraChildren || 0);
+    for (let index = 0; index < extraChildrenCount; index += 1) {
+      const nextAge = extraChildAgesQueue.length > 0 ? extraChildAgesQueue.shift() : Number(defaultChildAge || 0);
       perRoom[roomKey].push(nextAge);
     }
   });
@@ -2049,7 +2061,7 @@ const StayBookingSystem = ({
         roomId: propRoomId > 0 ? propRoomId : 1,
         roomsBooked: 1,
         adults: Number(guests.adults || 1),
-        children: Number(guests.children || 0),
+        children: Math.max(0, Number(guests.children || 0) - requiredExtraChildCount),
         extraAdults: requiredExtraAdultCount,
         extraChildren: requiredExtraChildCount,
         childAges: propChildAges,
@@ -2079,12 +2091,21 @@ const StayBookingSystem = ({
         const includedChildren = maxChildren * roomsBooked;
         const extraAdults = Math.max(0, roomAdults - includedAdults);
         const extraChildren = Math.max(0, roomChildren - includedChildren);
+        const baseChildren = Math.max(0, roomChildren - extraChildren);
 
         const isChildAgePricingEnabled = shouldUseChildAgeSelector(stay);
-        const allRoomChildAges = roomChildAges[String(r.roomId || r.id)] || [];
-        const extraRoomChildAges = isChildAgePricingEnabled && extraChildren > 0
-          ? allRoomChildAges.slice(-extraChildren)
-          : [];
+        const assignedRoomExtraChildAges = roomChildAges[String(r.roomId || r.id)] || [];
+        let extraRoomChildAges = [];
+        if (isChildAgePricingEnabled && extraChildren > 0) {
+          if (assignedRoomExtraChildAges.length >= extraChildren) {
+            extraRoomChildAges = assignedRoomExtraChildAges.slice(0, extraChildren);
+          } else {
+            extraRoomChildAges = [...assignedRoomExtraChildAges];
+            while (extraRoomChildAges.length < extraChildren) {
+              extraRoomChildAges.push(Number(defaultChildAge || 0));
+            }
+          }
+        }
 
         const isBed = r.isBedConfig;
         const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
@@ -2104,7 +2125,7 @@ const StayBookingSystem = ({
             roomId: validId,
             roomsBooked,
             adults: roomAdults,
-            children: roomChildren,
+            children: baseChildren,
             extraAdults,
             extraChildren,
             childAges: extraRoomChildAges,
@@ -2135,7 +2156,7 @@ const StayBookingSystem = ({
 
     if (isPropertyBased) {
       bookingObj.adults = Number(guests.adults || 1);
-      bookingObj.children = Number(guests.children || 0);
+      bookingObj.children = Math.max(0, Number(guests.children || 0) - requiredExtraChildCount);
       bookingObj.extraAdults = requiredExtraAdultCount;
       bookingObj.extraChildren = requiredExtraChildCount;
       bookingObj.childAges = propChildAges;
@@ -2973,12 +2994,21 @@ const StayBookingSystem = ({
             const includedChildren = maxChildren * roomsBooked;
             const extraAdults = isHostel ? 0 : Math.max(0, roomAdults - includedAdults);
             const extraChildren = Math.max(0, roomChildren - includedChildren);
+            const baseChildren = Math.max(0, roomChildren - extraChildren);
 
             const isChildAgePricingEnabled = shouldUseChildAgeSelector(stay);
-            const allRoomChildAges = roomChildAges[String(r.roomId || r.id)] || [];
-            const extraRoomChildAges = isChildAgePricingEnabled && extraChildren > 0
-              ? allRoomChildAges.slice(-extraChildren)
-              : [];
+            const assignedRoomExtraChildAges = roomChildAges[String(r.roomId || r.id)] || [];
+            let extraRoomChildAges = [];
+            if (isChildAgePricingEnabled && extraChildren > 0) {
+              if (assignedRoomExtraChildAges.length >= extraChildren) {
+                extraRoomChildAges = assignedRoomExtraChildAges.slice(0, extraChildren);
+              } else {
+                extraRoomChildAges = [...assignedRoomExtraChildAges];
+                while (extraRoomChildAges.length < extraChildren) {
+                  extraRoomChildAges.push(Number(defaultChildAge || 0));
+                }
+              }
+            }
 
             const isBed = r.isBedConfig;
             const numericId = Number(catalogRoom?.roomId ?? catalogRoom?.id ?? catalogRoom?.roomTypeId ?? r.roomId ?? r.id);
@@ -2997,7 +3027,7 @@ const StayBookingSystem = ({
                 roomId: validId,
                 roomsBooked,
                 adults: roomAdults,
-                children: roomChildren,
+                children: baseChildren,
                 extraAdults,
                 extraChildren,
                 childAges: extraRoomChildAges,
@@ -3146,7 +3176,7 @@ const StayBookingSystem = ({
         stayBookingObj = {
           ...stayBookingObj,
           adults: Number(payload.adults || guests.adults || 1),
-          children: Number(payload.children || guests.children || 0),
+          children: Math.max(0, Number(payload.children ?? guests.children ?? 0) - requiredExtraChildCount),
           childAges: propChildAges,
           extraAdults: Number(extraAdultsCount || 0),
           extraChildren: Number(requiredExtraChildCount || 0),

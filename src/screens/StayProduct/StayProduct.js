@@ -2892,13 +2892,14 @@ const StayProduct = () => {
     };
 
     if (isPropertyBased) {
+      const extraChildren = Number(frontendBreakdown?.extraChildren || 0);
       stayBookingObj = {
         ...stayBookingObj,
         adults: Number(guests?.adults || 1),
-        children: Number(guests?.children || 0),
+        children: Math.max(0, Number(guests?.children || 0) - extraChildren),
         childAges: syncChildAges(guests?.childAges, guests?.children || 0, 0).map(Number),
         extraAdults: Number(frontendBreakdown?.extraAdults || 0),
-        extraChildren: Number(frontendBreakdown?.extraChildren || 0),
+        extraChildren,
       };
     } else if (selectedRoom?.isBedConfig) {
       stayBookingObj = {
@@ -2912,6 +2913,7 @@ const StayProduct = () => {
         ],
       };
     } else {
+      const extraChildren = Number(frontendBreakdown?.extraChildren || 0);
       stayBookingObj = {
         ...stayBookingObj,
         rooms: [
@@ -2919,12 +2921,12 @@ const StayProduct = () => {
             roomId: Number(selectedRoom?.roomId || selectedRoom?.id || 1),
             roomsBooked: Number(bookingInfo?.roomsNeeded || 1),
             adults: Number(guests?.adults || 1),
-            children: Number(guests?.children || 0),
+            children: Math.max(0, Number(guests?.children || 0) - extraChildren),
             childAges: syncChildAges(guests?.childAges, guests?.children || 0, 0).map(Number),
             mealPlanCode: mealCode || "EP",
             extraBeds: 0,
             extraAdults: Number(frontendBreakdown?.extraAdults || 0),
-            extraChildren: Number(frontendBreakdown?.extraChildren || 0),
+            extraChildren,
           },
         ],
       };

@@ -142,11 +142,11 @@ export const getDirectBookingConfig = (bookingData = {}, hostData = null, paymen
   if (!orderId && typeof window !== "undefined") {
     try {
       const stored = sessionStorage.getItem("directBookingSessionOrderId");
-      if (stored) {
+      if (stored && !bookingData?.listingId) {
         orderId = stored;
       } else {
-        const seed = bookingData?.directBookingToken || bookingData?.listingId || Math.floor(Math.random() * 900000 + 100000);
-        const generated = `DIR-${String(seed).slice(-6)}`;
+        const randomHex = Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0");
+        const generated = `DIR-${randomHex}`;
         sessionStorage.setItem("directBookingSessionOrderId", generated);
         orderId = generated;
       }

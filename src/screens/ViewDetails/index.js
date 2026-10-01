@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useHistory } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ViewDetails.module.sass";
 import Icon from "../../components/Icon";
@@ -223,6 +223,72 @@ const formatMessageDateTime = (value) => {
   });
 };
 
+// Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "";
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+// Format time from "05:44:00" to "5:44 AM" format
+const formatTime = (timeString) => {
+  if (!timeString) return "";
+
+  const isEpoch = !isNaN(Number(timeString)) && String(timeString).trim().length > 0;
+  const isIsoOrFullDate = typeof timeString === 'string' && (timeString.includes("T") || timeString.match(/[a-zA-Z]{3}.*\d{4}/));
+
+  if (isEpoch || isIsoOrFullDate) {
+    const date = new Date(isEpoch ? Number(timeString) : timeString);
+    if (!Number.isNaN(date.getTime())) {
+      const hour = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minutes} ${ampm}`;
+    }
+  }
+
+  let timePart = String(timeString);
+  if (timePart.includes(" ")) {
+    timePart = timePart.split(" ")[1] || timePart;
+  }
+  const parts = timePart.split(":");
+  if (parts.length < 2) return timeString;
+
+  const hour = parseInt(parts[0], 10);
+  if (isNaN(hour)) return timeString;
+
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${parts[1]} ${ampm}`;
+};
+
+// Format currency amount
+const formatCurrency = (amount, currency = "INR") => {
+  if (!amount) return "0.00";
+  const numAmount = parseFloat(amount);
+  if (currency === "INR") {
+    return `₹${numAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `${currency} ${numAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 // Transform API booking data to component format
 // eventData is used for EVENTS orders to get event details (images, title, location, etc.)
 const transformBookingData = (apiBooking, listingData = null, eventData = null, stayData = null, reviewData = null, profileData = null) => {
@@ -318,71 +384,6 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     apiBooking?.customerEmail,
     useProfileInfo ? (profileData.email || "") : null
   );
-  // Format date from "2025-11-19" to "Fri, 21 Nov 2025" format
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return "";
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-  };
-
-  // Format time from "05:44:00" to "5:44 AM" format
-  const formatTime = (timeString) => {
-    if (!timeString) return "";
-
-    const isEpoch = !isNaN(Number(timeString)) && String(timeString).trim().length > 0;
-    const isIsoOrFullDate = typeof timeString === 'string' && (timeString.includes("T") || timeString.match(/[a-zA-Z]{3}.*\d{4}/));
-
-    if (isEpoch || isIsoOrFullDate) {
-      const date = new Date(isEpoch ? Number(timeString) : timeString);
-      if (!Number.isNaN(date.getTime())) {
-        const hour = date.getHours();
-        const minutes = date.getMinutes().toString().padStart(2, "0");
-        const ampm = hour >= 12 ? "PM" : "AM";
-        const displayHour = hour % 12 || 12;
-        return `${displayHour}:${minutes} ${ampm}`;
-      }
-    }
-
-    let timePart = String(timeString);
-    if (timePart.includes(" ")) {
-      timePart = timePart.split(" ")[1] || timePart;
-    }
-    const parts = timePart.split(":");
-    if (parts.length < 2) return timeString;
-
-    const hour = parseInt(parts[0], 10);
-    if (isNaN(hour)) return timeString;
-
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${parts[1]} ${ampm}`;
-  };
-
-  // Format currency amount
-  const formatCurrency = (amount, currency = "INR") => {
-    if (!amount) return "0.00";
-    const numAmount = parseFloat(amount);
-    if (currency === "INR") {
-      return `₹${numAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    return `${currency} ${numAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   // Determine status mapping - handle case-insensitive matching
   const getOrderStatus = (orderStatus) => {
@@ -752,6 +753,10 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
     }))
     : [];
 
+  const eventDetailItem = Array.isArray(apiBooking?.eventDetails)
+    ? apiBooking.eventDetails[0]
+    : (apiBooking?.eventDetails || (Array.isArray(eventData) ? eventData[0] : eventData) || {});
+
   const result = {
     id: `bk-${apiBooking.orderId}`,
     orderId: apiBooking.orderId,
@@ -760,13 +765,48 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
       : `LKP-${apiBooking.orderId}`,
     title: title,
     status: status,
-    startDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || apiBooking.bookingDate),
-    endDate: formatDate(apiBooking.checkOutDate || apiBooking.eventDate || apiBooking.bookingDate),
+    startDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || eventDetailItem?.slotStartDate || apiBooking.bookingDate),
+    endDate: formatDate(apiBooking.checkOutDate || apiBooking.eventDate || eventDetailItem?.slotEndDate || apiBooking.bookingDate),
     bookingDate: formatDate(apiBooking.orderDate || apiBooking.createdAt || apiBooking.bookingDate),
     bookingTime: formatTime(apiBooking.orderDate || apiBooking.createdAt),
-    reservationDate: formatDate(apiBooking.checkInDate || apiBooking.eventDate || (apiBooking.timeSlotStartTime && (apiBooking.timeSlotStartTime.includes('T') || apiBooking.timeSlotStartTime.includes(' ')) ? apiBooking.timeSlotStartTime.split(/[T ]/)[0] : null) || apiBooking.bookingDate),
-    startTime: formatTime(apiBooking.timeSlotStartTime || apiBooking.startTime || apiBooking.slotStartTime || apiBooking.bookingSlot?.startTime || apiBooking.eventSlot?.startTime || apiBooking.eventSlot?.slotStartTime || apiBooking.bookingTime || apiBooking.checkInTime || apiBooking.originalData?.checkInTime || stayData?.checkInTime || eventData?.startTime), // Will be overridden by slot data if present
-    endTime: formatTime(apiBooking.timeSlotEndTime || apiBooking.endTime || apiBooking.slotEndTime || apiBooking.bookingSlot?.endTime || apiBooking.eventSlot?.endTime || apiBooking.eventSlot?.slotEndTime || apiBooking.checkOutTime || apiBooking.originalData?.checkOutTime || stayData?.checkOutTime || eventData?.endTime), // Will be overridden by slot data if present
+    reservationDate: formatDate(
+      apiBooking.checkInDate ||
+      apiBooking.eventDate ||
+      eventDetailItem?.slotStartDate ||
+      (apiBooking.timeSlotStartTime && (apiBooking.timeSlotStartTime.includes('T') || apiBooking.timeSlotStartTime.includes(' ')) ? apiBooking.timeSlotStartTime.split(/[T ]/)[0] : null) ||
+      apiBooking.bookingDate
+    ),
+    startTime: formatTime(
+      apiBooking.timeSlotStartTime ||
+      apiBooking.slotStartTime ||
+      apiBooking.startTime ||
+      eventDetailItem?.slotStartTime ||
+      eventDetailItem?.startTime ||
+      apiBooking.bookingSlot?.startTime ||
+      apiBooking.eventSlot?.startTime ||
+      apiBooking.eventSlot?.slotStartTime ||
+      eventData?.slotStartTime ||
+      eventData?.startTime ||
+      apiBooking.bookingTime ||
+      apiBooking.checkInTime ||
+      apiBooking.originalData?.checkInTime ||
+      stayData?.checkInTime
+    ),
+    endTime: formatTime(
+      apiBooking.timeSlotEndTime ||
+      apiBooking.slotEndTime ||
+      apiBooking.endTime ||
+      eventDetailItem?.slotEndTime ||
+      eventDetailItem?.endTime ||
+      apiBooking.bookingSlot?.endTime ||
+      apiBooking.eventSlot?.endTime ||
+      apiBooking.eventSlot?.slotEndTime ||
+      eventData?.slotEndTime ||
+      eventData?.endTime ||
+      apiBooking.checkOutTime ||
+      apiBooking.originalData?.checkOutTime ||
+      stayData?.checkOutTime
+    ),
     guestCount: apiBooking.numberOfGuests || 0,
     adultsCount: Math.max(
       apiBooking.guests?.adults || apiBooking.originalData?.guests?.adults || apiBooking.originalData?.pricing?.adultsCount || apiBooking.adultsCount || apiBooking.adultCount || apiBooking.adults || 0,
@@ -1090,6 +1130,7 @@ const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPrevie
 
 const ViewDetails = () => {
   const location = useLocation();
+  const history = useHistory();
   const params = new URLSearchParams(location.search);
   const bookingId = params.get("id") || "bk-up-001";
   const bookingType = params.get("type"); // "event" for event orders
@@ -1441,6 +1482,10 @@ const ViewDetails = () => {
 
     const timeStr =
       booking?.originalData?.timeSlotStartTime ||
+      booking?.originalData?.slotStartTime ||
+      booking?.eventData?.slotStartTime ||
+      booking?.originalData?.eventDetails?.slotStartTime ||
+      (Array.isArray(booking?.originalData?.eventDetails) ? booking?.originalData?.eventDetails[0]?.slotStartTime : null) ||
       booking?.originalData?.startTime ||
       booking?.startTime ||
       booking?.originalData?.eventDetails?.startTime ||
@@ -1510,9 +1555,14 @@ const ViewDetails = () => {
     const timeStr =
       booking?.endTime ||
       booking?.originalData?.timeSlotEndTime ||
+      booking?.originalData?.slotEndTime ||
+      booking?.eventData?.slotEndTime ||
+      booking?.originalData?.eventDetails?.slotEndTime ||
+      (Array.isArray(booking?.originalData?.eventDetails) ? booking?.originalData?.eventDetails[0]?.slotEndTime : null) ||
       booking?.originalData?.endTime ||
       booking?.startTime ||
       booking?.originalData?.timeSlotStartTime ||
+      booking?.originalData?.slotStartTime ||
       booking?.originalData?.bookingTime ||
       booking?.bookingTime;
 
@@ -2508,16 +2558,51 @@ const ViewDetails = () => {
           setOrderMessagesLoading(false);
         }
 
-        // Use time slot information from order response
-        // The order response includes: timeSlotName, timeSlotStartTime, timeSlotEndTime, timeSlotMaxSeats
-        if (apiBookingData.timeSlotStartTime || apiBookingData.timeSlotEndTime) {
+        // Extract event details list and primary event detail
+        const rawEventDetails =
+          orderResponse?.eventDetails ||
+          orderResponse?.data?.eventDetails ||
+          apiBookingData?.eventDetails ||
+          orderResponse?.event ||
+          orderResponse?.data?.event ||
+          apiBookingData?.event ||
+          null;
+
+        const eventDetailsList = Array.isArray(rawEventDetails)
+          ? rawEventDetails
+          : (rawEventDetails && typeof rawEventDetails === "object" ? [rawEventDetails] : []);
+        const primaryEventDetail = eventDetailsList[0] || (rawEventDetails && typeof rawEventDetails === "object" ? rawEventDetails : null) || {};
+
+        // Use time slot information from order response or eventDetails
+        const rawSlotStartTime =
+          apiBookingData.timeSlotStartTime ||
+          apiBookingData.slotStartTime ||
+          apiBookingData.startTime ||
+          primaryEventDetail?.slotStartTime ||
+          primaryEventDetail?.startTime ||
+          null;
+
+        const rawSlotEndTime =
+          apiBookingData.timeSlotEndTime ||
+          apiBookingData.slotEndTime ||
+          apiBookingData.endTime ||
+          primaryEventDetail?.slotEndTime ||
+          primaryEventDetail?.endTime ||
+          null;
+
+        if (rawSlotStartTime || rawSlotEndTime) {
           slotDetails = {
-            slotName: apiBookingData.timeSlotName,
-            startTime: apiBookingData.timeSlotStartTime,
-            endTime: apiBookingData.timeSlotEndTime,
-            maxSeats: apiBookingData.timeSlotMaxSeats,
+            slotName: apiBookingData.timeSlotName || apiBookingData.slotName || primaryEventDetail?.slotName,
+            startTime: rawSlotStartTime,
+            endTime: rawSlotEndTime,
+            maxSeats: apiBookingData.timeSlotMaxSeats || apiBookingData.maxSeats || primaryEventDetail?.maxSeats,
           };
-          //console.log("✅ Using time slot from order data:", slotDetails);
+          if (!apiBookingData.timeSlotStartTime && rawSlotStartTime) {
+            apiBookingData.timeSlotStartTime = rawSlotStartTime;
+          }
+          if (!apiBookingData.timeSlotEndTime && rawSlotEndTime) {
+            apiBookingData.timeSlotEndTime = rawSlotEndTime;
+          }
         }
 
         // Merge addons from orderResponse if available (they might be in response root or in order.addons)
@@ -2538,18 +2623,8 @@ const ViewDetails = () => {
         // so the page can render without additional calls.
         let eventData = null;
         if (isEventOrder) {
-          const embeddedEvent =
-            orderResponse?.event ||
-            orderResponse?.eventDetails ||
-            orderResponse?.data?.event ||
-            orderResponse?.data?.eventDetails ||
-            apiBookingData?.event ||
-            apiBookingData?.eventDetails ||
-            null;
-
-          if (embeddedEvent && typeof embeddedEvent === "object") {
-            eventData = embeddedEvent;
-            // console.log("✅ Using embedded event details from event-details API response:", eventData);
+          if (eventDetailsList.length > 0 && primaryEventDetail) {
+            eventData = { ...primaryEventDetail };
           }
         }
 
@@ -2571,16 +2646,20 @@ const ViewDetails = () => {
           // what the event API considers the canonical values.
           if (eventIdForDetails) {
             try {
-              if (!hasTitle || !hasImage) {
-                // console.log(`📦 Enriching event details for eventId: ${eventIdForDetails}`);
-              } else {
-                // console.log(`📦 Refreshing event details for eventId: ${eventIdForDetails} (override image/title if different)`);
-              }
               const enriched = await getEventDetails(eventIdForDetails);
               const embedded = eventData || {};
               eventData = {
                 ...embedded,
                 ...enriched,
+                // Preserve slot start/end times and slot dates from the order's specific eventDetails
+                slotStartTime: embedded?.slotStartTime || enriched?.slotStartTime,
+                slotEndTime: embedded?.slotEndTime || enriched?.slotEndTime,
+                slotStartDate: embedded?.slotStartDate || enriched?.slotStartDate,
+                slotEndDate: embedded?.slotEndDate || enriched?.slotEndDate,
+                slotName: embedded?.slotName || enriched?.slotName,
+                venueFullAddress: embedded?.venueFullAddress || enriched?.venueFullAddress || enriched?.venueAddress,
+                venueLatitude: embedded?.venueLatitude || enriched?.venueLatitude || enriched?.latitude,
+                venueLongitude: embedded?.venueLongitude || enriched?.venueLongitude || enriched?.longitude,
                 // Ensure enriched image fields win even if embedded already had a different image
                 eventCoverImageUrl: enriched?.eventCoverImageUrl ?? embedded?.eventCoverImageUrl,
                 eventCoverPhotoUrl: enriched?.eventCoverPhotoUrl ?? embedded?.eventCoverPhotoUrl,
@@ -2718,8 +2797,8 @@ const ViewDetails = () => {
         try {
           const mergedApiBookingData =
             orderResponse && typeof orderResponse === "object" && orderResponse.order
-              ? { ...orderResponse, ...orderResponse.order }
-              : apiBookingData;
+              ? { ...orderResponse, ...orderResponse.order, eventDetails: eventDetailsList.length > 0 ? eventDetailsList : (orderResponse.eventDetails || apiBookingData.eventDetails) }
+              : { ...apiBookingData, eventDetails: eventDetailsList.length > 0 ? eventDetailsList : apiBookingData.eventDetails };
 
           // Fetch review data using category-specific API
           let reviewData = null;
@@ -2743,28 +2822,41 @@ const ViewDetails = () => {
           //  console.log("✅ Original API booking data paymentMethod:", apiBookingData.paymentMethod);
           //  console.log("✅ Transformed paymentMethod:", transformed.paymentMethod);
 
-          // Add slot time information from order data
-          if (apiBookingData.timeSlotStartTime || apiBookingData.timeSlotEndTime) {
+          // Add slot time information from order data / event details
+          const slotStartTimeVal =
+            apiBookingData.timeSlotStartTime ||
+            apiBookingData.slotStartTime ||
+            apiBookingData.startTime ||
+            primaryEventDetail?.slotStartTime ||
+            primaryEventDetail?.startTime ||
+            eventData?.slotStartTime ||
+            eventData?.startTime ||
+            slotDetails?.startTime;
+
+          const slotEndTimeVal =
+            apiBookingData.timeSlotEndTime ||
+            apiBookingData.slotEndTime ||
+            apiBookingData.endTime ||
+            primaryEventDetail?.slotEndTime ||
+            primaryEventDetail?.endTime ||
+            eventData?.slotEndTime ||
+            eventData?.endTime ||
+            slotDetails?.endTime;
+
+          if (slotStartTimeVal || slotEndTimeVal) {
             const formatSlotTime = (timeString) => {
               if (!timeString) return "";
-              // Handle both "HH:mm" and "HH:mm:ss" formats
-              const timePart = timeString.split(" ")[0]; // Remove any date part
-              const [hours, minutes] = timePart.split(":");
-              const hour = parseInt(hours, 10);
-              if (isNaN(hour)) return "";
-              const ampm = hour >= 12 ? "PM" : "AM";
-              const displayHour = hour % 12 || 12;
-              return `${displayHour}:${minutes} ${ampm}`;
+              return formatTime(timeString);
             };
 
-            if (apiBookingData.timeSlotStartTime) {
-              transformed.startTime = formatSlotTime(apiBookingData.timeSlotStartTime);
-              //console.log("✅ Set start time from order:", apiBookingData.timeSlotStartTime, "->", transformed.startTime);
+            if (slotStartTimeVal) {
+              transformed.startTime = formatSlotTime(slotStartTimeVal);
+              //console.log("✅ Set start time from order:", slotStartTimeVal, "->", transformed.startTime);
             }
 
-            if (apiBookingData.timeSlotEndTime) {
-              transformed.endTime = formatSlotTime(apiBookingData.timeSlotEndTime);
-              //console.log("✅ Set end time from order:", apiBookingData.timeSlotEndTime, "->", transformed.endTime);
+            if (slotEndTimeVal) {
+              transformed.endTime = formatSlotTime(slotEndTimeVal);
+              //console.log("✅ Set end time from order:", slotEndTimeVal, "->", transformed.endTime);
             }
           }
 
@@ -3301,6 +3393,64 @@ const ViewDetails = () => {
     }
     return styles.statusDefault;
   };
+  const handleExploreAlternatives = () => {
+    const businessInterestCode = String(
+      booking?.originalData?.businessInterestCode ||
+      booking?.originalData?.business_interest_code ||
+      booking?.businessInterestCode ||
+      booking?.business_interest_code ||
+      booking?.category ||
+      booking?.bookingData?.businessInterestCode ||
+      booking?.serviceType ||
+      ""
+    ).toUpperCase();
+
+    const isStayOrder =
+      businessInterestCode === "STAYS" ||
+      businessInterestCode === "STAY" ||
+      businessInterestCode === "HOTEL" ||
+      businessInterestCode === "HOSTEL" ||
+      booking?.originalData?.stayId != null ||
+      booking?.originalData?.propertyId != null ||
+      booking?.bookingData?.stayId != null ||
+      booking?.bookingData?.propertyId != null ||
+      booking?.stayId != null ||
+      booking?.stayData?.id != null ||
+      booking?.stayData?.stayId != null ||
+      booking?.stayData != null ||
+      booking?.isStay ||
+      Array.isArray(booking?.originalData?.stayOrderRooms) ||
+      Array.isArray(booking?.bookingData?.stayOrderRooms);
+
+    const isEventOrder =
+      bookingType === "event" ||
+      businessInterestCode === "EVENTS" ||
+      businessInterestCode === "EVENT" ||
+      booking?.originalData?.eventId != null ||
+      booking?.bookingData?.eventId != null ||
+      booking?.eventId != null ||
+      booking?.eventData?.id != null ||
+      booking?.eventData?.eventId != null ||
+      booking?.eventData != null ||
+      booking?.isEventOrder ||
+      booking?.isEvent;
+
+    let targetPath = "/experiences";
+    if (isStayOrder) {
+      targetPath = "/stays";
+    } else if (isEventOrder) {
+      targetPath = "/events";
+    } else {
+      targetPath = "/experiences";
+    }
+
+    if (history && history.push) {
+      history.push(targetPath);
+    } else {
+      window.location.href = targetPath;
+    }
+  };
+
   const getActionButtons = () => {
     const status = booking.status?.toLowerCase() ||
       booking.statusTone ||
@@ -3362,9 +3512,9 @@ const ViewDetails = () => {
         });
       }
       return actions;
-    } else if (status === "cancelled" || status === "canceled") {
+    } else if (status === "cancelled" || status === "canceled" || status === "rejected") {
       return [
-        { label: "Explore Alternatives", variant: "primary", onClick: () => window.location.href = "/" },
+        { label: "Explore Alternatives", variant: "primary", onClick: handleExploreAlternatives },
       ];
     } else {
       return [

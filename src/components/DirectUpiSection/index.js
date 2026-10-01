@@ -223,18 +223,35 @@ export default function DirectUpiSection({
   const [customerPhone, setCustomerPhone] = useState(initialCustomerPhone);
   const [copied, setCopied] = useState(false);
   const [copiedNote, setCopiedNote] = useState(false);
-  const [utrNumber, setUtrNumber] = useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem(`utr_${config.orderId}`) || "" : "")
-  );
+  const [utrNumber, setUtrNumber] = useState("");
   const [screenshotFile, setScreenshotFile] = useState(null);
   const [screenshotPreview, setScreenshotPreview] = useState(null);
   const [screenshotName, setScreenshotName] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(
-    () => (typeof window !== "undefined" ? Boolean(localStorage.getItem(`utr_submitted_${config.orderId}`)) : false)
-  );
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({
+    customerName: "",
+    customerPhone: "",
+    utrNumber: "",
+    screenshot: "",
+  });
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    setIsSubmitted(false);
+    setUtrNumber("");
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    setScreenshotName("");
+    setSubmitError(null);
+    setFieldErrors({
+      customerName: "",
+      customerPhone: "",
+      utrNumber: "",
+      screenshot: "",
+    });
+  }, [bookingData?.listingId, bookingData?.selectedDate, bookingData?.selectedSlotId, bookingData?.bookingSlotId]);
 
   useEffect(() => {
     if (guestDetails) {
@@ -247,7 +264,7 @@ export default function DirectUpiSection({
       }
       const derivedPhone = guestDetails.mobileNumber || guestDetails.phone || "";
       if (derivedPhone && !customerPhone) {
-        setCustomerPhone(derivedPhone);
+        setCustomerPhone(derivedPhone.slice(0, 15));
       }
     }
   }, [guestDetails]);
@@ -271,6 +288,7 @@ export default function DirectUpiSection({
     if (!file) return;
     setScreenshotFile(file);
     setScreenshotName(file.name);
+    setFieldErrors((prev) => ({ ...prev, screenshot: "" }));
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -286,17 +304,52 @@ export default function DirectUpiSection({
     setScreenshotFile(null);
     setScreenshotName("");
     setScreenshotPreview(null);
+    setFieldErrors((prev) => ({ ...prev, screenshot: "Please upload the payment screenshot." }));
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    const trimmedName = (customerName || "").trim();
+    if (!trimmedName || trimmedName.toLowerCase() === "guest user") {
+      errors.customerName = "Please enter your name.";
+    }
+
+    const trimmedPhone = (customerPhone || "").trim();
+    if (!trimmedPhone) {
+      errors.customerPhone = "Please enter your phone number.";
+    } else if (trimmedPhone.length > 15) {
+      errors.customerPhone = "Phone number cannot exceed 15 characters.";
+    } else if (!/^[+]?[\d\s-]{7,15}$/.test(trimmedPhone)) {
+      errors.customerPhone = "Please enter a valid phone number (at least 7 digits).";
+    }
+
+    const trimmedUtr = (utrNumber || "").trim();
+    if (!trimmedUtr) {
+      errors.utrNumber = "Please enter the 12-digit UPI reference / UTR number.";
+    } else if (!/^\d{12}$/.test(trimmedUtr)) {
+      errors.utrNumber = "UTR number must be exactly 12 numeric digits.";
+    }
+
+    if (!screenshotFile) {
+      errors.screenshot = "Please upload the payment screenshot or receipt.";
+    }
+
+    return errors;
+  };
+
   const handleSubmitConfirmation = async (e) => {
     e.preventDefault();
-    if (!utrNumber.trim()) {
-      setSubmitError("Please enter your 12-digit UPI reference / UTR number.");
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setSubmitError("Please fill in all required fields correctly.");
       return;
     }
+
+    setFieldErrors({ customerName: "", customerPhone: "", utrNumber: "", screenshot: "" });
     setSubmitting(true);
     setSubmitError(null);
 
@@ -757,18 +810,23 @@ export default function DirectUpiSection({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: M, marginBottom: 4 }}>
-                      Customer Name
+                      Customer Name *
                     </label>
                     <input
                       type="text"
                       placeholder="Your Name"
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      onChange={(e) => {
+                        setCustomerName(e.target.value);
+                        if (fieldErrors.customerName) {
+                          setFieldErrors((prev) => ({ ...prev, customerName: "" }));
+                        }
+                      }}
                       style={{
                         width: "100%",
                         padding: "8px 12px",
                         borderRadius: 8,
-                        border: `1px solid ${B}`,
+                        border: fieldErrors.customerName ? "1px solid #EF4444" : `1px solid ${B}`,
                         background: isDark ? "#141416" : "#FFFFFF",
                         color: FG,
                         fontSize: 12,
@@ -776,22 +834,35 @@ export default function DirectUpiSection({
                         boxSizing: "border-box",
                       }}
                     />
+                    {fieldErrors.customerName && (
+                      <div style={{ fontSize: 11, color: "#EF4444", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                        <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                        <span>{fieldErrors.customerName}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: M, marginBottom: 4 }}>
-                      Phone Number
+                      Phone Number *
                     </label>
                     <input
                       type="tel"
                       placeholder="Your Phone Number"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      maxLength={15}
+                      onChange={(e) => {
+                        const val = e.target.value.slice(0, 15);
+                        setCustomerPhone(val);
+                        if (fieldErrors.customerPhone) {
+                          setFieldErrors((prev) => ({ ...prev, customerPhone: "" }));
+                        }
+                      }}
                       style={{
                         width: "100%",
                         padding: "8px 12px",
                         borderRadius: 8,
-                        border: `1px solid ${B}`,
+                        border: fieldErrors.customerPhone ? "1px solid #EF4444" : `1px solid ${B}`,
                         background: isDark ? "#141416" : "#FFFFFF",
                         color: FG,
                         fontSize: 12,
@@ -799,25 +870,44 @@ export default function DirectUpiSection({
                         boxSizing: "border-box",
                       }}
                     />
+                    {fieldErrors.customerPhone && (
+                      <div style={{ fontSize: 11, color: "#EF4444", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                        <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                        <span>{fieldErrors.customerPhone}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* UTR / Reference Number Input */}
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: M, marginBottom: 4 }}>
-                    UPI Reference / UTR Number (12 digits) *
-                  </label>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: M }}>
+                      UPI Reference / UTR Number (12 digits) *
+                    </label>
+                    <span style={{ fontSize: 10, fontFamily: "monospace", color: utrNumber.length === 12 ? "#22C55E" : M }}>
+                      {utrNumber.length}/12 digits
+                    </span>
+                  </div>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="e.g. 123456789012"
                     value={utrNumber}
-                    onChange={(e) => setUtrNumber(e.target.value)}
-                    maxLength={24}
+                    maxLength={12}
+                    onChange={(e) => {
+                      const digitsOnly = e.target.value.replace(/[^\d]/g, "").slice(0, 12);
+                      setUtrNumber(digitsOnly);
+                      if (fieldErrors.utrNumber) {
+                        setFieldErrors((prev) => ({ ...prev, utrNumber: "" }));
+                      }
+                    }}
                     style={{
                       width: "100%",
                       padding: "10px 12px",
                       borderRadius: 10,
-                      border: `1px solid ${B}`,
+                      border: fieldErrors.utrNumber ? "1px solid #EF4444" : `1px solid ${B}`,
                       background: isDark ? "#141416" : "#FFFFFF",
                       color: FG,
                       fontSize: 13,
@@ -827,12 +917,18 @@ export default function DirectUpiSection({
                       letterSpacing: "0.04em",
                     }}
                   />
+                  {fieldErrors.utrNumber && (
+                    <div style={{ fontSize: 11, color: "#EF4444", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                      <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                      <span>{fieldErrors.utrNumber}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Screenshot Upload Field */}
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: M, marginBottom: 4 }}>
-                    Payment Screenshot (Optional)
+                    Payment Screenshot * <span style={{ fontSize: 11, color: A || "#08B5D6" }}>(Required)</span>
                   </label>
                   <input
                     ref={fileInputRef}
@@ -902,9 +998,9 @@ export default function DirectUpiSection({
                         width: "100%",
                         padding: "10px 14px",
                         borderRadius: 10,
-                        border: `1px dashed ${B}`,
+                        border: fieldErrors.screenshot ? "1px dashed #EF4444" : `1px dashed ${B}`,
                         background: isDark ? "rgba(255,255,255,0.02)" : "#FFFFFF",
-                        color: M,
+                        color: fieldErrors.screenshot ? "#EF4444" : M,
                         fontSize: 12,
                         cursor: "pointer",
                         display: "flex",
@@ -914,9 +1010,15 @@ export default function DirectUpiSection({
                         transition: "all 0.2s",
                       }}
                     >
-                      <UploadCloud size={16} color={A || "#08B5D6"} />
+                      <UploadCloud size={16} color={fieldErrors.screenshot ? "#EF4444" : (A || "#08B5D6")} />
                       <span>Upload payment receipt / screenshot</span>
                     </button>
+                  )}
+                  {fieldErrors.screenshot && (
+                    <div style={{ fontSize: 11, color: "#EF4444", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                      <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                      <span>{fieldErrors.screenshot}</span>
+                    </div>
                   )}
                 </div>
 
@@ -941,16 +1043,17 @@ export default function DirectUpiSection({
 
                 <button
                   type="submit"
-                  disabled={!utrNumber.trim() || submitting}
+                  disabled={submitting}
                   style={{
                     padding: "12px 18px",
                     borderRadius: 12,
-                    background: utrNumber.trim() ? (A || "#08B5D6") : (isDark ? "#23262F" : "#E6E8EC"),
-                    color: utrNumber.trim() ? "#FFFFFF" : M,
+                    background: A || "#08B5D6",
+                    color: "#FFFFFF",
                     border: "none",
                     fontSize: 13,
                     fontWeight: 700,
-                    cursor: utrNumber.trim() ? "pointer" : "default",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    opacity: submitting ? 0.7 : 1,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

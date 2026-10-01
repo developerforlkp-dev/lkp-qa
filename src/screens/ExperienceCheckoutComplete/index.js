@@ -148,6 +148,10 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
     } catch (e) {
       console.error("Error checking payment failure status:", e);
     }
+
+    try {
+      sessionStorage.removeItem("directBookingSessionOrderId");
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
@@ -594,6 +598,16 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
               items={items}
               booking={booking}
               hostName={booking?.hostName || booking?.officialName || booking?.leadName || booking?.directBooking?.leadName}
+              avatarUrl={formatImageUrl(
+                booking?.hostAvatarUrl ||
+                booking?.hostAvatar ||
+                booking?.listing?.host?.profilePhotoUrl ||
+                booking?.profilePhotoUrl ||
+                booking?.listing?.host?.profileImageUrl ||
+                booking?.listing?.host?.avatar ||
+                booking?.host?.avatar ||
+                booking?.host?.profilePhotoUrl
+              )}
               paymentFailed={paymentFailed}
               isEvent={isEventBooking}
               isDirectBooking={isDirectBooking}
