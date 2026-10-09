@@ -11,6 +11,7 @@
     margin: 0 auto
     padding: 0 80px
     position: relative
+    box-sizing: border-box
     +t
         padding: 0 40px
     +m
@@ -32,9 +33,11 @@
     &::-webkit-scrollbar
         display: none
     +m
-        justify-content: flex-start
-        padding: 0 4px
+        justify-content: space-between
         margin: 24px auto 16px
+        gap: 4px
+        width: 100%
+        box-sizing: border-box
 
 .categoryNavItem
     display: flex
@@ -51,6 +54,15 @@
     white-space: nowrap
     +dark
         color: $n5
+    +m
+        padding: 8px
+        gap: 0
+        span
+            display: none
+            opacity: 0
+            width: 0
+            overflow: hidden
+            transition: all 0.2s ease
     svg
         color: $n2
         fill: none
@@ -111,25 +123,153 @@
         width: 100%
 
 .categoryNavItemActive
-    background: $p1
-    border-color: $p1
-    color: $n8
+    background: $p1 !important
+    border-color: $p1 !important
+    color: $n8 !important
     box-shadow: 0 4px 12px rgba(0, 151, 178, 0.25)
     +dark
-        background: $p1
-        border-color: $p1
-        color: $n8
+        background: $p1 !important
+        border-color: $p1 !important
+        color: $n8 !important
         box-shadow: 0 4px 12px rgba(0, 151, 178, 0.4)
+    +m
+        padding: 8px 16px
+        gap: 8px
+        span
+            display: inline-block
+            opacity: 1
+            width: auto
+            color: $n8 !important
     svg
-        color: $n8
+        color: $n8 !important
         fill: none
         stroke: currentColor
         +dark
-            color: $n8
+            color: $n8 !important
     &:hover
-        background: darken(#0097B2, 5%)
+        background: darken(#0097B2, 5%) !important
+// ─── Compact Mobile Search (Airbnb style) ───────────────────────────────────
+@keyframes scaleIn
+    0%
+        opacity: 0
+        transform: translateY(-10px) scale(0.98)
+    100%
+        opacity: 1
+        transform: translateY(0) scale(1)
+
+@keyframes fadeIn
+    0%
+        opacity: 0
+        transform: translateY(10px)
+    100%
+        opacity: 1
+        transform: translateY(0)
+
+.compactSearchButton
+    display: none
+    +m
+        display: flex
+        align-items: center
+        background: #FFFFFF
+        border-radius: 100px
+        padding: 10px 16px
+        gap: 16px
+        margin: 0 auto 16px
+        width: 100%
+        max-width: 400px
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08)
+        border: 1px solid rgba(0, 151, 178, 0.1)
+        cursor: pointer
+        animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)
         +dark
-            background: darken(#0097B2, 5%)
+            background: $n1
+            border-color: $n3
+
+.compactSearchIcon
+    +m
+        display: flex
+        align-items: center
+        justify-content: center
+        color: $n8
+        background: #0097B2
+        border-radius: 50%
+        width: 36px
+        height: 36px
+        flex-shrink: 0
+
+.compactSearchContent
+    +m
+        display: flex
+        flex-direction: column
+        justify-content: center
+        gap: 2px
+
+.compactSearchTitle
+    +m
+        font-size: 14px
+        font-weight: 600
+        color: $n2
+        line-height: 1
+        +dark
+            color: $n8
+
+.compactSearchSub
+    +m
+        font-size: 12px
+        font-weight: 500
+        color: $n4
+        line-height: 1
+        +dark
+            color: $n5
+
+.mobileSearchExpanded
+    +m
+        animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)
+
+.mobileSearchHidden
+    +m
+        display: none !important
+
+.mobileSearchClose
+    display: none
+    +m
+        display: flex
+        align-items: center
+        justify-content: center
+        position: absolute
+        top: -12px
+        right: -12px
+        width: 32px
+        height: 32px
+        background: $n8
+        border: 1px solid rgba(0, 151, 178, 0.2)
+        border-radius: 50%
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15)
+        color: $n2
+        cursor: pointer
+        z-index: 10
+        +dark
+            background: $n2
+            border-color: $n3
+            color: $n5
+
+.mobileClearSearch
+    display: none
+    +m
+        display: block
+        grid-column: 1 / -1
+        background: transparent
+        border: none
+        text-align: right
+        padding: 4px 8px
+        margin-top: -4px
+        font-size: 12px
+        font-weight: 600
+        text-decoration: underline
+        color: #777E90
+        cursor: pointer
+        +dark
+            color: $n5
 
 // ─── Desktop Search Bar Section ────────────────────────────────────────────────────────
 .searchBar
@@ -148,17 +288,22 @@
         background: $n1
         border-color: #0097B2
     +m
-        flex-direction: column
-        gap: 0
+        display: grid
+        grid-template-columns: 1fr 1fr
+        gap: 8px
         margin-top: 0
         margin-bottom: 8px
-        background: $n8
+        background: rgba(255, 255, 255, 0.95)
         border-radius: 20px
-        padding: 12px 16px
-        border: 1px solid #0097B2
+        padding: 12px
+        border: none
+        width: 100%
+        min-width: 0
+        box-sizing: border-box
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06)
         +dark
             background: $n1
-            border-color: #0097B2
+            border: 1px solid $n3
 
 
 .searchField
@@ -168,13 +313,41 @@
     gap: 12px
     padding: 0 20px
     +m
-        padding: 8px 4px
-        width: 100%
-        border-bottom: 1px solid $n6
+        padding: 12px 24px 12px 10px
+        gap: 8px
+        min-width: 0
+        box-sizing: border-box
+        border: 1px solid rgba(0, 151, 178, 0.15)
+        border-radius: 12px
+        background: #FFFFFF
+        flex-direction: row
+        position: relative
+        box-shadow: 0 2px 6px rgba(0,0,0,0.02)
+        &:first-of-type
+            grid-column: 1 / -1
+        &:nth-of-type(3)
+            grid-column: 1 / 2
+        &:nth-of-type(5)
+            grid-column: 2 / -1
+        &::after
+            content: ''
+            position: absolute
+            right: 8px
+            top: 50%
+            transform: translateY(-50%)
+            width: 14px
+            height: 14px
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23B1B5C3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>') center/contain no-repeat
+        > svg
+            background: #E8F7FA
+            color: #0097B2
+            width: 28px
+            height: 28px
+            padding: 5px
+            border-radius: 50%
         +dark
-            border-bottom-color: $n3
-        &:last-of-type
-            border-bottom: none
+            background: $n2
+            border: 1px solid $n3
     svg
         fill: $p1
         flex-shrink: 0
@@ -187,6 +360,9 @@
     flex-direction: column
     gap: 3px
     position: relative
+    min-width: 0
+    +m
+        gap: 0px
 
 .searchLabel
     +caption-2
@@ -196,10 +372,18 @@
     letter-spacing: 0.04em
     +dark
         color: $n5
+    +m
+        font-size: 10px
+        color: #777E90
+        margin-bottom: 2px
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
 
 .searchInput
     border: none
     background: transparent
+    font-family: inherit
     +body-2
     color: $n2
     outline: none
@@ -210,6 +394,13 @@
             color: $n5
     +dark
         color: $n8
+    +m
+        font-size: 13px
+        font-weight: 500
+        line-height: 1.2
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
     // For date and guest picker display
     &:not(input)
         cursor: pointer
@@ -279,10 +470,35 @@
     transition: background .2s ease, box-shadow .2s ease
     white-space: nowrap
     +m
-        width: 100%
-        margin-top: 8px
-        padding: 12px 24px
-        border-radius: 14px
+        grid-column: 1 / -1
+        min-width: 0
+        box-sizing: border-box
+        margin-top: 4px
+        padding: 16px 24px
+        border-radius: 100px
+        display: flex
+        align-items: center
+        justify-content: center
+        gap: 8px
+        &::before
+            content: ''
+            display: inline-block
+            width: 20px
+            height: 20px
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') center/contain no-repeat
+
+.searchButtonDesktopText
+    display: inline
+    +m
+        display: none
+
+.searchButtonMobileText
+    display: none
+    +m
+        display: inline
+        font-size: 15px
+        font-weight: 700
+        color: $n8
     &:hover
         background: darken(#0097B2, 5%)
 
@@ -293,8 +509,9 @@
     right: 0
     z-index: 200
     +m
-        left: -32px
-        right: -32px
+        left: 0
+        right: auto
+        width: calc(200% + 8px)
 
 .guestPicker
     position: absolute
@@ -303,8 +520,9 @@
     right: 0
     z-index: 200
     +m
-        left: -32px
-        right: -32px
+        left: auto
+        right: 0
+        width: calc(200% + 8px)
 
 // ─── Mobile Sort/Filter Chips Row ────────────────────────────────────────────
 .mobileSortChipsWrap

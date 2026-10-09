@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, createContext, useContext, useRef } from "react";
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate } from "framer-motion";
-import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star, Heart, Compass, Info, Building, Map } from "lucide-react";
+import { ArrowDown, ArrowRight, MapPin, Phone, Globe, Check, Zap, ChevronDown, Moon, Sun, Plus, Minus, Calendar, Clock, Users, ChevronLeft, ChevronRight, Share2, Sparkles, ShieldCheck, Mail, Star, Heart, Compass, Info, Building, Map, X } from "lucide-react";
 import { BookingSystem } from "../../../components/JUI/BookingSystem";
 import { Footer } from "../../../components/JUI/Footer";
 import { getEventDetails, getEventAddons, getEventReviews, getHost, getHostContent, previewOrderPrice, getEventTicketPrice } from "../../../utils/api";
@@ -18,6 +18,7 @@ import Icon from "../../../components/Icon";
 import FullScreenImage from "../../../components/FullScreenImage";
 import PolicyCategoryItem from "../../../components/PolicyCategoryItem";
 import CuratedContent from "../../../components/CuratedContent";
+import { getShareText } from "../../../utils/shareUtils";
 import { isDirectBookingPathOrState } from "../../../utils/directBooking";
 
 const formatImageUrl = (url) => {
@@ -314,9 +315,13 @@ function HeroShareFab({ title, text, url, style = {} }) {
     setTimeout(() => setRipple(false), 700);
     try {
       if (navigator.share) {
-        await navigator.share({ title, text, url: shareUrl });
+        await navigator.share({ 
+          title, 
+          text: text ? `${text}\n${shareUrl}` : shareUrl 
+        });
       } else {
-        await navigator.clipboard.writeText(shareUrl);
+        const fallbackText = text ? `${text}\n${shareUrl}` : shareUrl;
+        await navigator.clipboard.writeText(fallbackText);
         setCopied(true);
         setTimeout(() => setCopied(false), 2400);
       }
@@ -887,9 +892,14 @@ function MobileHero({ event, heroRef }) {
     const shareUrl = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title, text: `Check out ${title}`, url: shareUrl });
+        const shareText = getShareText(event, "event");
+        await navigator.share({ 
+          title, 
+          text: shareText ? `${shareText}\n${shareUrl}` : shareUrl 
+        });
       } else {
-        await navigator.clipboard.writeText(shareUrl);
+        const fallbackText = `${getShareText(event, "event")}\n${shareUrl}`;
+        await navigator.clipboard.writeText(fallbackText);
       }
     } catch (_) { }
   };
@@ -1297,7 +1307,7 @@ function Hero({ event, heroRef }) {
         </Favorite>
         <HeroShareFab
           title={title}
-          text={`Check out ${title} on Little Known Planet`}
+          text={getShareText(event, "event")}
           url={window.location.href}
           style={{
             position: "relative",
@@ -2916,12 +2926,12 @@ function HostDetails({ event, hostName }) {
                         {/* Verification Criteria Pills */}
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
                           <span style={{
-                            fontSize: "9px",
+                            fontSize: "11px",
                             fontWeight: 700,
                             color: A,
                             background: theme === "dark" ? "rgba(0, 151, 178, 0.08)" : "rgba(0, 151, 178, 0.05)",
                             border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.2)" : "rgba(0, 151, 178, 0.12)"}`,
-                            padding: "3px 8px",
+                            padding: "5px 12px",
                             borderRadius: "6px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -2931,12 +2941,12 @@ function HostDetails({ event, hostName }) {
                           </span>
 
                           <span style={{
-                            fontSize: "9px",
+                            fontSize: "11px",
                             fontWeight: 700,
                             color: "#10B981",
                             background: theme === "dark" ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
                             border: `1px solid ${theme === "dark" ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)"}`,
-                            padding: "3px 8px",
+                            padding: "5px 12px",
                             borderRadius: "6px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -2946,12 +2956,12 @@ function HostDetails({ event, hostName }) {
                           </span>
 
                           <span style={{
-                            fontSize: "9px",
+                            fontSize: "11px",
                             fontWeight: 700,
                             color: "#D97706",
                             background: theme === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)",
                             border: `1px solid ${theme === "dark" ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.12)"}`,
-                            padding: "3px 8px",
+                            padding: "5px 12px",
                             borderRadius: "6px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -3010,6 +3020,8 @@ function EventReviews({ reviews = [] }) {
     sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+
   const normalizedReviews = useMemo(() => {
     if (Array.isArray(reviews)) return reviews;
     if (Array.isArray(reviews?.reviews)) return reviews.reviews;
@@ -3029,13 +3041,13 @@ function EventReviews({ reviews = [] }) {
         <span className="mob-section-eyebrow" style={{ color: A }}>Guest Feedback</span>
         <h2 className="mob-section-title" style={{ color: FG }}>What people say</h2>
 
-        <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 16, msOverflowStyle: "none", scrollbarWidth: "none" }} className="hide-scroll">
+        <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16, msOverflowStyle: "none", scrollbarWidth: "none", scrollSnapType: "x mandatory" }} className="hide-scroll">
           {displayReviews.map((rev, idx) => {
             const name = rev.customerName || rev.reviewerName || rev.author || "Guest";
             const rating = rev.rating || 5;
             const text = rev.comment || rev.text || rev.reviewText || "";
             return (
-              <div key={idx} style={{ width: 260, flexShrink: 0, padding: 16, borderRadius: 16, border: `1px solid ${B}`, background: isDark ? "#111" : "#FAFAFA", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div key={idx} style={{ width: "85vw", flexShrink: 0, scrollSnapAlign: "center", padding: 16, borderRadius: 16, border: `1px solid ${B}`, background: isDark ? "#111" : "#FAFAFA", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: A, color: W, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>
@@ -3054,6 +3066,12 @@ function EventReviews({ reviews = [] }) {
             );
           })}
         </div>
+        {displayReviews.length > 3 && (
+          <button onClick={() => setReviewsModalOpen(true)} style={{ marginTop: 16, width: "100%", padding: "14px", borderRadius: 12, border: `1px solid ${B}`, background: "transparent", color: A, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            See All Reviews
+          </button>
+        )}
+        {reviewsModalOpen && <EventReviewsPopup reviews={displayReviews} onClose={() => setReviewsModalOpen(false)} />}
       </div>
     );
   }
@@ -3115,7 +3133,7 @@ function EventReviews({ reviews = [] }) {
           }}
           className="no-scrollbar"
         >
-          {displayReviews.map((rev, idx) => {
+          {displayReviews.slice(0, 8).map((rev, idx) => {
             const name = rev.customerName || rev.reviewerName || rev.author || "Guest";
             const rating = rev.rating || 5;
             const text = rev.comment || rev.text || rev.reviewText || "";
@@ -3199,8 +3217,38 @@ function EventReviews({ reviews = [] }) {
               </motion.div>
             );
           })}
+          {displayReviews.length > 8 && (
+            <motion.div
+              whileHover={{ y: -8, scale: 1.02 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              onClick={() => setReviewsModalOpen(true)}
+              style={{
+                width: "360px",
+                background: theme === "dark"
+                  ? "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)"
+                  : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%)",
+                backdropFilter: "blur(20px)",
+                border: `1px solid ${B}`,
+                borderRadius: "24px",
+                padding: "28px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 16,
+                flexShrink: 0,
+                cursor: "pointer",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
+            >
+              <span style={{ fontSize: 18, fontWeight: 700, color: A }}>View all {displayReviews.length} reviews &rarr;</span>
+            </motion.div>
+          )}
         </div>
       </div>
+      {reviewsModalOpen && <EventReviewsPopup reviews={displayReviews} onClose={() => setReviewsModalOpen(false)} />}
     </section>
   );
 }
@@ -4509,6 +4557,85 @@ export default function EventDetails() {
         <Footer />
       </div>
     </ScopedThemeProvider>
+  );
+}
+
+function EventReviewsPopup({ reviews, onClose }) {
+  const { tokens: { A, B, FG, M, W, BG, AL }, theme } = useTheme();
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(4px)",
+          zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24
+        }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "100%", maxWidth: 680, maxHeight: "85vh",
+            background: theme === "dark" ? "#111" : "#FFF",
+            borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.2)"
+          }}
+        >
+          <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${B}` }}>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: FG, fontFamily: '"Cormorant Garamond", serif' }}>All Guest Reviews</h2>
+            <button onClick={onClose} style={{ background: "transparent", border: "none", color: FG, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <X size={24} />
+            </button>
+          </div>
+          <div style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+            {reviews.map((rev, i) => {
+              const name = rev.customerName || rev.reviewerName || rev.author || "Verified Guest";
+              const rating = rev.rating || 5;
+              const text = rev.comment || rev.text || rev.reviewText || "";
+              const vendorResponse = rev.vendorResponse || rev.hostResponse || rev.reply || "";
+              return (
+                <div key={i} style={{ borderRadius: 16, border: `1px solid ${B}`, padding: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: FG, display: "block" }}>{name}</span>
+                      <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
+                        {[...Array(5)].map((_, si) => (
+                          <Star key={si} size={12} color={si < rating ? "#F59E0B" : "#CBD5E1"} style={{ fill: si < rating ? "#F59E0B" : "transparent" }} />
+                        ))}
+                      </div>
+                    </div>
+                    <span style={{ marginLeft: "auto", fontSize: 13, color: M, fontWeight: 500 }}>
+                      {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "Recently"}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 14, color: FG, margin: 0, lineHeight: 1.6 }}>{text}</p>
+                  {vendorResponse && (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${B}`, opacity: 0.96 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: M, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                        Response from Host
+                      </div>
+                      <p style={{ fontSize: 14, color: FG, margin: 0, lineHeight: 1.6 }}>
+                        {vendorResponse}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

@@ -21,6 +21,7 @@ import Favorite from "../../components/Favorite";
 import Icon from "../../components/Icon";
 import FullScreenImage from "../../components/FullScreenImage";
 import CuratedContent from "../../components/CuratedContent";
+import { getShareText } from "../../utils/shareUtils";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -523,9 +524,14 @@ function PlaceHero({ place, galleryItems, id }) {
     setTimeout(() => setShareRipple(false), 700);
     try {
       if (navigator.share) {
-        await navigator.share({ title: place?.placeName || "Place", text: place?.description || "", url: window.location.href });
+        const shareText = getShareText(place, "place");
+        await navigator.share({ 
+          title: place?.placeName || "Place", 
+          text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+        });
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        const fallbackText = `${getShareText(place, "place")}\n${window.location.href}`;
+        await navigator.clipboard.writeText(fallbackText);
         setShareCopied(true);
         setTimeout(() => setShareCopied(false), 2400);
       }
@@ -2516,9 +2522,14 @@ function MobileHero({ place, galleryItems, id }) {
     setTimeout(() => setShareRipple(false), 700);
     try {
       if (navigator.share) {
-        await navigator.share({ title: place?.placeName || "Place", text: place?.description || "", url: window.location.href });
+        const shareText = getShareText(place, "place");
+        await navigator.share({ 
+          title: place?.placeName || "Place", 
+          text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+        });
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        const fallbackText = `${getShareText(place, "place")}\n${window.location.href}`;
+        await navigator.clipboard.writeText(fallbackText);
         setShareCopied(true);
         setTimeout(() => setShareCopied(false), 2400);
       }
@@ -2551,9 +2562,14 @@ function MobileHero({ place, galleryItems, id }) {
             e.stopPropagation(); 
             try {
               if (navigator.share) {
-                await navigator.share({ title: place?.placeName || place?.title || "", text: place?.description || "", url: window.location.href });
+                const shareText = getShareText(place, "place");
+                await navigator.share({ 
+                  title: place?.placeName || place?.title || "", 
+                  text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+                });
               } else {
-                await navigator.clipboard.writeText(window.location.href);
+                const fallbackText = `${getShareText(place, "place")}\n${window.location.href}`;
+                await navigator.clipboard.writeText(fallbackText);
               }
             } catch (_) {}
           }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>

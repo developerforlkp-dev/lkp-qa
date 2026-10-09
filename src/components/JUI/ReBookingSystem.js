@@ -2149,31 +2149,84 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     if (privateBooking) {
       const blockedDates = new Set();
-      if (Array.isArray(listing?.availability)) {
-        listing.availability.forEach((avail) => {
-          const booked = avail?.booked_seats ?? avail?.bookedSeats ?? 0;
-          if (booked > 0) {
-            const key = getDateKey(avail.date);
-            if (key) blockedDates.add(key);
-          }
-        });
-      }
       const allSlots = [
         ...(Array.isArray(listing?.slots) ? listing.slots : []),
         ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
         ...(Array.isArray(allFetchedSlots) ? allFetchedSlots : [])
       ];
-      allSlots.forEach(slot => {
-        if (Array.isArray(slot?.availability)) {
-          slot.availability.forEach(avail => {
-            const booked = avail?.booked_seats ?? avail?.bookedSeats ?? 0;
-            if (booked > 0) {
-              const key = getDateKey(avail.date);
-              if (key) blockedDates.add(key);
-            }
-          });
+
+      const seenSlotIds = new Set();
+      const uniqueSlots = [];
+      allSlots.forEach((slot) => {
+        if (!slot || typeof slot !== "object") return;
+        const slotId = getSlotId(slot) || slot.slotId || slot.slot_id || slot.slotName || slot.startTime;
+        if (slotId && !seenSlotIds.has(slotId)) {
+          seenSlotIds.add(slotId);
+          uniqueSlots.push(slot);
         }
       });
+
+      keys.forEach((dateKey) => {
+        const dateObj = makeLocalDate(dateKey);
+        const weekday = !Number.isNaN(dateObj.getTime()) ? dateObj.getDay() : null;
+
+        const activeSlotsOnDate = uniqueSlots.filter((slot) => {
+          if (slot.is_active === false || slot.isActive === false) return false;
+          const schedule = slot.schedule || {};
+          if (weekday != null) {
+            if (!isWeekdayEnabled(slot, weekday) && !isWeekdayEnabled(schedule, weekday)) return false;
+          }
+          const slotStart = getDateKey(slot.startDate || slot.start_date || schedule.startDate || schedule.start_date || slot.slotStartDate || slot.slot_start_date);
+          const slotEnd = getDateKey(slot.endDate || slot.end_date || schedule.endDate || schedule.end_date || slot.slotEndDate || slot.slot_end_date);
+          if (slotStart && dateKey < slotStart) return false;
+          if (slotEnd && dateKey > slotEnd) return false;
+          return true;
+        });
+
+        if (activeSlotsOnDate.length > 0) {
+          const privateBookedSlotsForThisDate = collectPrivateBookedSlotIdsForDate(listing, dateKey);
+          const fullyBookedSlotsForThisDate = collectFullyBookedSlotIdsForDate(listing, dateKey);
+
+          const hasAnyPrivateSlot = activeSlotsOnDate.some((slot) => {
+            const slotId = getSlotId(slot);
+            if (slotId != null && privateBookedSlotsForThisDate.has(String(slotId))) return false;
+            if (slotId != null && fullyBookedSlotsForThisDate.has(String(slotId))) return false;
+
+            const availability = getSlotAvailabilityForDate(slot, dateKey);
+            const privateBookingEnabled = availability?.privateBookingEnabled ?? availability?.private_booking_enabled ?? slot.privateBookingEnabled ?? slot.private_booking_enabled ?? (listing?.privateBookingEnabled ?? listing?.private_booking_enabled ?? true);
+            if (!privateBookingEnabled) return false;
+
+            const hasPrivateBooking = availability?.hasPrivateBooking ?? availability?.has_private_booking ?? slot.hasPrivateBooking ?? slot.has_private_booking ?? false;
+            if (hasPrivateBooking) return false;
+
+            const isAvailable = availability?.isAvailable ?? availability?.is_available ?? slot.is_available ?? slot.isAvailable;
+            if (isAvailable === false) return false;
+
+            const bookedSeats = availability?.bookedSeats ?? availability?.booked_seats ?? 0;
+            if (bookedSeats > 0) return false;
+
+            const availableSeats = availability?.availableSeats ?? availability?.available_seats ?? slot.availableSeats ?? slot.available_seats;
+            if (availableSeats != null && availableSeats <= 0) return false;
+
+            return true;
+          });
+
+          if (!hasAnyPrivateSlot) {
+            blockedDates.add(dateKey);
+          }
+        } else if (Array.isArray(listing?.availability)) {
+          const avail = listing.availability.find((a) => getDateKey(a.date) === dateKey);
+          if (avail) {
+            const booked = avail?.booked_seats ?? avail?.bookedSeats ?? 0;
+            const hasPrivateBooking = avail?.hasPrivateBooking ?? avail?.has_private_booking ?? false;
+            const isAvail = avail?.is_available ?? avail?.isAvailable;
+            if (booked > 0 || hasPrivateBooking || isAvail === false) {
+              blockedDates.add(dateKey);
+            }
+          }
+        }
+      });
+
       blockedDates.forEach((key) => keys.delete(key));
     }
 
@@ -2229,6 +2282,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       ...(Array.isArray(baseTimeSlots) ? baseTimeSlots : []),
       ...(Array.isArray(dateFilteredSlots) ? dateFilteredSlots : []),
       ...(Array.isArray(listing?.slots) ? listing.slots : []),
+      ...(Array.isArray(listing?.timeSlots) ? listing.timeSlots : []),
+      ...(Array.isArray(allFetchedSlots) ? allFetchedSlots : []),
     ];
 
     const seenSlotIds = new Set();
@@ -2254,8 +2309,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (!isWeekdayEnabled(slot, weekday) && !isWeekdayEnabled(schedule, weekday)) return false;
 
       // 3. Check date range
-      const slotStart = slot.startDate || slot.start_date || schedule.startDate || schedule.start_date;
-      const slotEnd = slot.endDate || slot.end_date || schedule.endDate || schedule.end_date;
+      const slotStart = slot.startDate || slot.start_date || schedule.startDate || schedule.start_date || slot.slotStartDate || slot.slot_start_date;
+      const slotEnd = slot.endDate || slot.end_date || schedule.endDate || schedule.end_date || slot.slotEndDate || slot.slot_end_date;
       if (slotStart) {
         const start = makeLocalDate(getDateKey(slotStart));
         if (indiaNow.toDate() < start) return false;
@@ -2280,7 +2335,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       if (seats != null && seats <= 0) return false;
 
       // 5. Check time validity (future slots only)
-      const startTime = slot.startTime || slot.start_time || schedule.startTime || schedule.start_time;
+      const startTime = slot.startTime || slot.start_time || schedule.startTime || schedule.start_time || slot.slotName || slot.slot_name;
       if (startTime) {
         const slotStartTimeValue = getSlotStartTimeValue(slot, startTime);
         const cutoffMoment = getSlotCutoffMoment(todayKey, String(slotStartTimeValue), getExperienceBookingCutoffHours(slot));
@@ -2293,7 +2348,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     });
 
     return validSlots.length > 0;
-  }, [baseTimeSlots, dateFilteredSlots, eventSlots, listing, isEventBooking]);
+  }, [baseTimeSlots, dateFilteredSlots, eventSlots, listing, isEventBooking, allFetchedSlots, isDirect]);
 
 
 
@@ -4572,6 +4627,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       width: 50px;
                       flex-shrink: 0;
                       border-right: 1px solid ${B}55;
+                      position: relative;
                     }
                     .addon-content {
                       flex: 1;
@@ -5001,9 +5057,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                                         const key = date.format("YYYY-MM-DD");
                                         const todayKey = getIndiaDateKey();
                                         if (key < todayKey) return true;
+                                        if (key === todayKey && !hasTodayValidSlots) return true;
+                                        if (isDirect) return false;
                                         const availableKeys = isEventBooking ? eventAvailableDateKeys : experienceAvailableDateKeys;
                                         if (!availableKeys.has(key)) return true;
-                                        if (key === todayKey && !hasTodayValidSlots) return true;
                                         return false;
                                       }}
                                       tokens={{ A, AL, BG, FG, M, B, S, W }}

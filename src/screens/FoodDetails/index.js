@@ -19,6 +19,7 @@ import Icon from "../../components/Icon";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import CuratedContent from "../../components/CuratedContent";
+import { getShareText } from "../../utils/shareUtils";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -739,9 +740,13 @@ function HeroShareFab({ title, text, url, label = "Share Taste" }) {
     e.stopPropagation();
     try {
       if (navigator.share) {
-        await navigator.share({ title, text, url });
+        await navigator.share({ 
+          title, 
+          text: text ? `${text}\n${url}` : url 
+        });
       } else {
-        await navigator.clipboard.writeText(url);
+        const fallbackText = text ? `${text}\n${url}` : url;
+        await navigator.clipboard.writeText(fallbackText);
         setCopied(true);
         setTimeout(() => setCopied(false), 2400);
       }
@@ -923,9 +928,14 @@ function CulinaryHero({ food, galleryItems }) {
               e.stopPropagation(); 
               try {
                 if (navigator.share) {
-                  await navigator.share({ title: food?.menuName || food?.title || "", text: food?.detailedDescription || food?.shortDescription || food?.description || "", url: window.location.href });
+                  const shareText = getShareText(food, "food");
+                  await navigator.share({ 
+                    title: food?.menuName || food?.title || "", 
+                    text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+                  });
                 } else {
-                  await navigator.clipboard.writeText(window.location.href);
+                  const fallbackText = `${getShareText(food, "food")}\n${window.location.href}`;
+                  await navigator.clipboard.writeText(fallbackText);
                 }
               } catch (_) {}
             }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
@@ -1023,7 +1033,7 @@ function CulinaryHero({ food, galleryItems }) {
         </Favorite>
         <HeroShareFab
           title={food?.menuName || food?.title || ""}
-          text={food?.detailedDescription || food?.shortDescription || food?.description || ""}
+          text={getShareText(food, "food")}
           url={window.location.href}
         />
       </div>

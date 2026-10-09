@@ -13,7 +13,7 @@ import Dropdown from "../../components/Dropdown";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
 import { getBusinessInterestFilters } from "../../utils/api";
-import { Compass, Ticket, Home, Utensils, MapPin } from "lucide-react";
+import { Compass, Ticket, Home, Utensils, MapPin, X } from "lucide-react";
 import Loader from "../../components/Loader";
 import TravelJourneyIllustration from "../../components/TravelJourneyIllustration";
 
@@ -254,6 +254,7 @@ const Listings = () => {
   const [isDesktop, setIsDesktop] = useState(
     typeof window !== "undefined" ? window.innerWidth > 1023 : true
   );
+  const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -261,6 +262,16 @@ const Listings = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!isDesktop && isMobileSearchExpanded && searchBarRef.current && !searchBarRef.current.contains(event.target)) {
+        setIsMobileSearchExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDesktop, isMobileSearchExpanded]);
 
   useEffect(() => {
     const target = document.getElementById("header-center-portal");
@@ -567,10 +578,58 @@ const Listings = () => {
     });
   };
 
+  // Handle clearing the search fields
+  const handleClearSearch = (e) => {
+    if (e) e.stopPropagation();
+    
+    // Clear UI inputs
+    setSearchLocation("");
+    setSelectedDestination(null);
+    setSelectedDate(null);
+    setGuests({ adults: 0, children: 0, infants: 0, pets: 0 });
+    
+    // Auto-trigger search with empty params
+    setIsCategoryDerivedSearch(false);
+    setActiveSearch("");
+    setIsMobileSearchExpanded(false);
+
+    const params = new URLSearchParams();
+    params.set("businessInterest", businessInterest);
+    
+    const resolvedIdByInterest = (() => {
+      const normalized = String(businessInterest || "").toUpperCase();
+      if (normalized.includes("EVENT")) return 2;
+      if (normalized.includes("STAY")) return 3;
+      if (normalized.includes("PLACE")) return 4;
+      if (normalized.includes("FOOD")) return 5;
+      return 1;
+    })();
+    params.set("businessInterestId", String(resolvedIdByInterest));
+
+    if (routeCategoryFilterState) {
+      params.set("categoryType", routeCategoryFilterState.categoryType);
+      routeCategoryFilterState.categoryValues.forEach((value) => params.append("categoryValues", value));
+      if (routeCategoryFilterState.selectedCategoryLabel) {
+        params.set("selectedCategoryLabel", routeCategoryFilterState.selectedCategoryLabel);
+      }
+    }
+
+    history.replace({
+      pathname: "/listings",
+      search: params.toString() ? `?${params.toString()}` : "",
+      state: {
+        location: "",
+        dateRange: null,
+        guests: { adults: 0, children: 0, infants: 0, pets: 0 },
+      },
+    });
+  };
+
   // Handle search button click or Enter key
   const handleSearch = () => {
     setIsCategoryDerivedSearch(false);
     setActiveSearch(searchLocation);
+    setIsMobileSearchExpanded(false);
 
     const newState = {
       location: searchLocation,
@@ -820,8 +879,48 @@ const Listings = () => {
           </div>
         )}
 
+        {/* Compact Mobile Search Button (Visible only on mobile when collapsed) */}
+        {!isDesktop && !isMobileSearchExpanded && (
+          <div 
+            className={styles.compactSearchButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMobileSearchExpanded(true);
+            }}
+          >
+            <div className={styles.compactSearchIcon}>
+              <Icon name="search" size="18" />
+            </div>
+            <div className={styles.compactSearchContent}>
+              <span className={styles.compactSearchTitle}>
+                {searchLocation || "Where to?"}
+              </span>
+              <span className={styles.compactSearchSub}>
+                {formattedDate !== "Add dates" ? formattedDate : "Any week"} • {guestCountText !== "Add guests" ? guestCountText : "Add guests"}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Search Bar Section */}
-        <div className={styles.searchBar} ref={searchBarRef}>
+        <div 
+          className={cn(styles.searchBar, {
+            [styles.mobileSearchExpanded]: !isDesktop && isMobileSearchExpanded,
+            [styles.mobileSearchHidden]: !isDesktop && !isMobileSearchExpanded,
+          })} 
+          ref={searchBarRef}
+        >
+          {!isDesktop && isMobileSearchExpanded && (
+            <button 
+              className={styles.mobileSearchClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMobileSearchExpanded(false);
+              }}
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
+          )}
           <div className={styles.searchField} ref={destinationRef}>
             <Icon name="arrow-right" size="20" />
             <div className={styles.searchFieldContent}>
@@ -937,7 +1036,7 @@ const Listings = () => {
                   onClick={() => setShowGuestPicker(!showGuestPicker)}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className={styles.searchLabel}>Guest Count</div>
+                  <div className={styles.searchLabel}>Guests</div>
                   <div className={styles.searchInput}>{guestCountText}</div>
                 </div>
                 <GuestPicker
@@ -953,8 +1052,19 @@ const Listings = () => {
               </div>
             </>
           )}
+          {!isDesktop && isMobileSearchExpanded && (
+            <button 
+              className={styles.mobileClearSearch}
+              onClick={handleClearSearch}
+            >
+              Clear all
+            </button>
+          )}
           <button className={styles.searchButton} onClick={handleSearch} disabled={loading}>
-            Search
+            <span className={styles.searchButtonDesktopText}>Search</span>
+            <span className={styles.searchButtonMobileText}>
+              Search {(categoryOptions.find(opt => String(businessInterest || "").toUpperCase().includes(opt.id)) || categoryOptions[0]).label}
+            </span>
           </button>
         </div>
       </div>

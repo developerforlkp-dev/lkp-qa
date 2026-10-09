@@ -998,11 +998,6 @@ const FleetHome = () => {
                       <img src={filter.image} alt={filter.label} className={styles.mobileCategoryBg} />
                       <div className={styles.mobileCategoryOverlay} />
                       <div className={styles.mobileCategoryContent}>
-                        {isActive && (
-                          <div className={styles.activeCheckBadge}>
-                            <Check size={12} strokeWidth={4} color="#fff" />
-                          </div>
-                        )}
                         <div className={styles.mobileCategoryIcon}>
                           {filter.id === "experience" && <Compass size={28} />}
                           {filter.id === "events" && <Ticket size={28} />}

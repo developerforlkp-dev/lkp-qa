@@ -36,7 +36,12 @@ const Page = ({
       path.includes("settings") ||
       path.includes("profile") ||
       path.includes("support") ||
-      path.includes("messages")
+      path.includes("messages") ||
+      path.includes("/experience/") ||
+      path.includes("/event") ||
+      path.includes("/stay-details") ||
+      path.includes("/food-details") ||
+      path.includes("/place-details")
     ) {
       return false;
     }

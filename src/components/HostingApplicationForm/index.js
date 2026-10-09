@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import cn from "classnames";
 import styles from "./HostingApplicationForm.module.sass";
 import Icon from "../Icon";
+import Dropdown from "../Dropdown";
 import { getBusinessInterests, requestHostingOtp, verifyHostingOtp, resendHostingOtp } from "../../utils/api";
 
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-places-script";
@@ -232,6 +233,13 @@ const HostingApplicationForm = ({ visible, onClose }) => {
       return;
     }
 
+    if (name === "pincode") {
+      if (value !== "" && !/^[0-9]*$/.test(value)) return;
+      if (value.length > 6) return;
+      setFormData(prev => ({ ...prev, [name]: value }));
+      return;
+    }
+
     if (name === "state") {
       setFormData(prev => ({ ...prev, [name]: value, district: "" }));
     } else {
@@ -257,7 +265,13 @@ const HostingApplicationForm = ({ visible, onClose }) => {
       const data = err.response.data;
       if (status === 400) {
         if (data.details) {
-          return `Validation Error: ${Object.values(data.details).join(", ")}`;
+          const parseDetail = (val) => {
+            if (Array.isArray(val)) return val.join(", ");
+            if (typeof val === "object" && val !== null) return Object.values(val).map(parseDetail).join(", ");
+            return String(val);
+          };
+          const messages = Object.values(data.details).map(parseDetail).filter(Boolean);
+          return `Validation Error: ${messages.join(", ")}`;
         }
         return data.error || "Please check your form and try again.";
       }
@@ -289,6 +303,10 @@ const HostingApplicationForm = ({ visible, onClose }) => {
     if (!phoneRegex.test(formData.phoneNumber.trim())) return setError("Phone number must be +91 followed by 10 digits");
 
     if (!formData.address.trim() && !formData.manualAddress.trim()) return setError("Address or Manual Address is required");
+    if (!formData.pincode.trim()) return setError("Pincode is required");
+    if (formData.pincode.trim().length !== 6) return setError("Please enter a valid 6-digit Pincode");
+    if (!formData.state || formData.state === "Select State") return setError("State is required");
+    if (!formData.district || formData.district === "Select District") return setError("District is required");
     if (formData.interestIds.length === 0) return setError("Please select at least one Business Interest");
 
     setLoading(true);
@@ -462,10 +480,12 @@ const HostingApplicationForm = ({ visible, onClose }) => {
             <div className={styles.row}>
               <div className={styles.field}>
                 <label className={styles.label}>Account Type</label>
-                <select className={styles.select} name="accountType" value={formData.accountType} onChange={handleChange} disabled={loading}>
-                  <option value="Individual">Individual</option>
-                  <option value="Company">Company</option>
-                </select>
+                <Dropdown
+                  className={styles.dropdown}
+                  value={formData.accountType}
+                  setValue={(val) => handleChange({ target: { name: "accountType", value: val } })}
+                  options={["Individual", "Company"]}
+                />
               </div>
               {formData.accountType === "Company" && (
                 <div className={styles.field}>
@@ -511,29 +531,31 @@ const HostingApplicationForm = ({ visible, onClose }) => {
                 <input type="text" className={styles.input} name="location" value={formData.location} onChange={handleChange} placeholder="Your City" disabled={loading} />
               </div>
               <div className={styles.field}>
-                <label className={styles.label}>Pincode</label>
-                <input type="text" className={styles.input} name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Your Pincode" disabled={loading} />
+                <label className={styles.label}>Pincode *</label>
+                <input type="text" className={styles.input} name="pincode" value={formData.pincode} onChange={handleChange} placeholder="Your Pincode" maxLength={6} disabled={loading} required />
               </div>
             </div>
 
             <div className={styles.row}>
-              <div className={styles.field}>
+              <div className={styles.field} style={{ pointerEvents: loading ? 'none' : 'auto', opacity: loading ? 0.6 : 1 }}>
                 <label className={styles.label}>State *</label>
-                <select className={styles.select} name="state" value={formData.state} onChange={handleChange} disabled={loading} required>
-                  <option value="" disabled>Select State</option>
-                  {Object.keys(INDIA_STATE_DISTRICTS).map((state) => (
-                    <option key={state} value={state}>{state}</option>
-                  ))}
-                </select>
+                <Dropdown
+                  className={styles.dropdown}
+                  value={formData.state || "Select State"}
+                  setValue={(val) => handleChange({ target: { name: "state", value: val } })}
+                  options={Object.keys(INDIA_STATE_DISTRICTS)}
+                  searchable={true}
+                />
               </div>
-              <div className={styles.field}>
+              <div className={styles.field} style={{ pointerEvents: loading || !formData.state ? 'none' : 'auto', opacity: loading || !formData.state ? 0.6 : 1 }}>
                 <label className={styles.label}>District *</label>
-                <select className={styles.select} name="district" value={formData.district} onChange={handleChange} disabled={loading || !formData.state} required>
-                  <option value="" disabled>Select District</option>
-                  {formData.state && INDIA_STATE_DISTRICTS[formData.state]?.map((district) => (
-                    <option key={district} value={district}>{district}</option>
-                  ))}
-                </select>
+                <Dropdown
+                  className={styles.dropdown}
+                  value={formData.district || "Select District"}
+                  setValue={(val) => handleChange({ target: { name: "district", value: val } })}
+                  options={formData.state ? INDIA_STATE_DISTRICTS[formData.state] : []}
+                  searchable={true}
+                />
               </div>
             </div>
 

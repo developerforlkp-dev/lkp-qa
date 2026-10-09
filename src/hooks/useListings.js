@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getFilteredListings,
   searchNearbyListings,
@@ -11,6 +11,19 @@ import {
   getFoodMenus,
   getPlaces,
 } from "../utils/api";
+
+const getListingId = (item) => {
+  if (!item) return null;
+  return (
+    item.id ??
+    item._id ??
+    item.listingId ??
+    item.placeId ??
+    (item.title && (item.city || item.locationName || item.location)
+      ? `${item.title}-${item.city || item.locationName || item.location}`
+      : null)
+  );
+};
 
 /**
  * Custom hook for fetching listings with filters and pagination
@@ -39,6 +52,11 @@ export const useListings = ({
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [totalCountState, setTotalCountState] = useState(null);
+
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const mapToNearbyBusinessInterest = useCallback((value) => {
     const normalized = String(value || "").toUpperCase();
@@ -263,55 +281,7 @@ export const useListings = ({
         hasMoreFromAPI = nearbyResponse.hasMore ?? null;
       }
 
-      // Determine if there are more results
-      // Priority: 1. API metadata (hasMore flag), 2. Total count comparison, 3. Array length check
-      let shouldHaveMore = false;
-
-      if (hasMoreFromAPI !== null) {
-        // Use explicit API flag if available
-        shouldHaveMore = hasMoreFromAPI;
-      } else if (totalCount !== null) {
-        // If we have total count, check if current offset + listings length is less than total
-        const currentTotal = reset ? listings.length : currentOffset + listings.length;
-        shouldHaveMore = currentTotal < totalCount;
-      } else {
-        // Fallback logic:
-        // - If we got exactly the limit, assume there might be more
-        // - If we got fewer than limit, assume no more (unless it's the first page and we got results)
-        // - Only set to false if we got 0 items
-        if (listings.length === 0) {
-          shouldHaveMore = false;
-        } else if (listings.length === limit) {
-          // Got exactly what we asked for - likely more available
-          shouldHaveMore = true;
-        } else {
-          // Got fewer than requested
-          // On first page (offset 0), if we got some results, try fetching more
-          // On subsequent pages, if we got fewer than requested, assume no more
-          shouldHaveMore = (reset || currentOffset === 0) && listings.length > 0;
-        }
-      }
-
-      setHasMore(shouldHaveMore);
-      if (totalCount !== null) {
-        setTotalCountState(totalCount);
-      } else if (reset) {
-        setTotalCountState(null);
-      }
-
-      // Log pagination info for debugging
-      /*console.log("📄 Pagination info:", {
-        requested: limit,
-        received: listings.length,
-        offset: nextOffset,
-        totalCount,
-        hasMoreFromAPI,
-        shouldHaveMore,
-        reset,
-      });*/
-
       // Client-side filtering as an extra layer for non-nearby flow.
-      // Nearby endpoint is already location-specific and sorted by distance.
       let processedListings = listings;
       if (location && !hasLocationSearch) {
         const query = location.toLowerCase();
@@ -326,17 +296,63 @@ export const useListings = ({
           (l.host?.name && l.host.name.toLowerCase().includes(query))
         );
 
-        // If we filtered out everything, but API returned results, 
-        // fallback to API results to avoid showing nothing
         if (processedListings.length === 0 && listings.length > 0) {
           processedListings = listings;
         }
       }
 
+      const existingData = dataRef.current || [];
+      const existingIds = new Set(existingData.map(getListingId).filter(Boolean));
+
+      // Determine unique new items for pagination
+      const uniqueNewItems = reset || currentOffset === 0
+        ? processedListings
+        : processedListings.filter((item) => {
+            const id = getListingId(item);
+            return id ? !existingIds.has(id) : true;
+          });
+
+      // Determine if there are more results
+      // Priority: 1. API metadata (hasMore flag), 2. Total count comparison, 3. Array length check & deduplication
+      let shouldHaveMore = false;
+
+      if (hasMoreFromAPI !== null) {
+        shouldHaveMore = Boolean(hasMoreFromAPI);
+      } else if (totalCount !== null) {
+        const currentTotal = reset ? processedListings.length : currentOffset + uniqueNewItems.length;
+        shouldHaveMore = currentTotal < totalCount;
+      } else {
+        if (listings.length === 0 || listings.length < limit) {
+          shouldHaveMore = false;
+        } else if (!reset && currentOffset > 0) {
+          // If in pagination mode and all returned items were already in data, no more items exist
+          shouldHaveMore = uniqueNewItems.length > 0;
+        } else {
+          // First page returned exactly limit items, might have more
+          shouldHaveMore = true;
+        }
+      }
+
+      setHasMore(shouldHaveMore);
+      if (totalCount !== null) {
+        setTotalCountState(totalCount);
+      } else if (reset) {
+        setTotalCountState(null);
+      }
+
       if (reset || currentOffset === 0) {
         setData(processedListings);
       } else {
-        setData((prev) => [...prev, ...processedListings]);
+        if (uniqueNewItems.length > 0) {
+          setData((prev) => {
+            const prevIds = new Set(prev.map(getListingId).filter(Boolean));
+            const freshItems = uniqueNewItems.filter((item) => {
+              const id = getListingId(item);
+              return id ? !prevIds.has(id) : true;
+            });
+            return [...prev, ...freshItems];
+          });
+        }
       }
     } catch (err) {
       console.error("Error fetching listings:", err);
@@ -355,10 +371,10 @@ export const useListings = ({
 
   const fetchMore = useCallback(() => {
     if (!loading && hasMore) {
-      const nextOffset = data.length;
+      const nextOffset = dataRef.current.length;
       fetchListings(nextOffset, false);
     }
-  }, [loading, hasMore, data.length, fetchListings]);
+  }, [loading, hasMore, fetchListings]);
 
   return {
     data,
@@ -370,4 +386,5 @@ export const useListings = ({
     refetch: () => fetchListings(0, true),
   };
 };
+
 

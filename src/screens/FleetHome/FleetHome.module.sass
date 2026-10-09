@@ -1000,29 +1000,24 @@
     display: none
     +m
         display: block
-        width: 100vw
-        margin-left: -20px
-        margin-top: 4px
-        margin-bottom: 20px
+        width: calc(100% + 40px)
+        margin: 4px -20px 20px -20px
         overflow: hidden
 
 .mobileCategoriesScroll
     display: flex
-    gap: 12px
+    gap: 8px
     width: 100%
     padding: 4px 20px 12px 20px
-    justify-content: flex-start
-    overflow-x: auto
-    -webkit-overflow-scrolling: touch
-    &::-webkit-scrollbar
-        display: none
-    scrollbar-width: none
+    justify-content: space-between
+    overflow: hidden
+    box-sizing: border-box
 
 .mobileCategoryCard
     position: relative
-    flex: 0 0 auto
-    width: clamp(70px, 20vw, 90px)
-    height: clamp(70px, 20vw, 90px)
+    flex: 1 1 0
+    aspect-ratio: 1
+    height: auto
     border-radius: 14px
     overflow: hidden
     cursor: pointer
@@ -1139,10 +1134,10 @@
 
 .mobileCategoryIcon
     color: #ffffff
-    margin-bottom: 6px
+    margin-bottom: 4px
     svg
-        width: 22px
-        height: 22px
+        width: 18px
+        height: 18px
         stroke-width: 1.5px
         fill: none !important
         stroke: currentColor !important
@@ -1150,7 +1145,7 @@
 .mobileCategoryLabel
     color: #ffffff
     font-family: 'Inter', sans-serif
-    font-size: 11px
+    font-size: 9.5px
     font-weight: 600
     letter-spacing: -0.2px
     text-align: center

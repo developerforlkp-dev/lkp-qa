@@ -206,10 +206,11 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
       <div className={cn(styles.grid, { [styles.listGrid]: listView })}>
         {cardItems.map((item, index) => {
           const originalListing = listings[index];
+          const key = item.id || originalListing?.id || originalListing?._id || index;
           return listView ? (
             <Link 
               to={item.url} 
-              key={item.id} 
+              key={key} 
               className={styles.listCardLink}
               target={isMobile ? "_self" : "_blank"}
               rel="noopener noreferrer"
@@ -217,7 +218,7 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
               <ListCard item={item} listing={originalListing} />
             </Link>
           ) : (
-            <Card className={styles.gridCard} item={item} key={item.id} />
+            <Card className={styles.gridCard} item={item} key={key} />
           );
         })}
       </div>

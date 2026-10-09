@@ -143,39 +143,36 @@
 
 /* ─── Quick Facts Strip ─── */
 .mob-facts {
-  display: flex;
-  gap: 10px;
-  padding: 20px var(--mob-pad);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 24px var(--mob-pad);
 }
 
-.mob-facts::-webkit-scrollbar {
-  display: none;
-}
-
-.mob-fact-pill {
+.mob-fact-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  border-radius: 100px;
-  white-space: nowrap;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+}
+
+.mob-fact-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   flex-shrink: 0;
-  scroll-snap-align: start;
-  font-size: 13px;
+}
+
+.mob-fact-label {
+  font-size: 12px;
   font-weight: 600;
-  transition: transform 0.2s ease;
-}
-
-.mob-fact-pill:active {
-  transform: scale(0.96);
-}
-
-.mob-fact-pill svg {
-  flex-shrink: 0;
+  line-height: 1.2;
 }
 
 /* ─── Section Shared Styles ─── */
@@ -716,11 +713,22 @@
 /* ─── Reviews ─── */
 .mob-reviews-list {
   display: flex;
-  flex-direction: column;
-  gap: var(--mob-gap);
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 8px;
+}
+
+.mob-reviews-list::-webkit-scrollbar {
+  display: none;
 }
 
 .mob-review-card {
+  flex-shrink: 0;
+  width: 85vw;
+  scroll-snap-align: center;
   border-radius: var(--mob-radius);
   border: 1px solid;
   padding: 20px;

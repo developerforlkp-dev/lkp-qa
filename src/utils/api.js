@@ -2752,11 +2752,27 @@ export const searchNearbyListings = async ({
       else if (Array.isArray(payload.results)) listings = payload.results;
 
       if (payload.totalCount !== undefined) totalCount = payload.totalCount;
+      else if (payload.total_count !== undefined) totalCount = payload.total_count;
       else if (payload.total !== undefined) totalCount = payload.total;
       else if (payload.count !== undefined) totalCount = payload.count;
+      else if (payload.pagination?.totalItems !== undefined) totalCount = payload.pagination.totalItems;
+      else if (payload.pagination?.totalCount !== undefined) totalCount = payload.pagination.totalCount;
+      else if (payload.pagination?.total_count !== undefined) totalCount = payload.pagination.total_count;
+      else if (payload.pagination?.total !== undefined) totalCount = payload.pagination.total;
+      else if (payload.pagination?.count !== undefined) totalCount = payload.pagination.count;
+      else if (payload.meta?.totalCount !== undefined) totalCount = payload.meta.totalCount;
+      else if (payload.meta?.total_count !== undefined) totalCount = payload.meta.total_count;
+      else if (payload.meta?.total !== undefined) totalCount = payload.meta.total;
+      else if (payload.data?.totalCount !== undefined) totalCount = payload.data.totalCount;
 
       if (payload.hasMore !== undefined) hasMore = payload.hasMore;
       else if (payload.has_more !== undefined) hasMore = payload.has_more;
+      else if (payload.pagination?.hasMore !== undefined) hasMore = payload.pagination.hasMore;
+      else if (payload.pagination?.has_more !== undefined) hasMore = payload.pagination.has_more;
+      else if (payload.pagination?.hasNextPage !== undefined) hasMore = payload.pagination.hasNextPage;
+      else if (payload.meta?.hasMore !== undefined) hasMore = payload.meta.hasMore;
+      else if (payload.meta?.has_more !== undefined) hasMore = payload.meta.has_more;
+      else if (payload.data?.hasMore !== undefined) hasMore = payload.data.hasMore;
     }
 
     return {

@@ -259,7 +259,7 @@ const Login = ({ onClose }) => {
         firstName: customer?.firstName || decodedGoogleData.given_name || "",
         lastName: customer?.lastName || decodedGoogleData.family_name || "",
         email: customer?.email || decodedGoogleData.email || "",
-        avatar: customer?.avatar || googleAvatar || "",
+        avatar: customer?.avatarUrl || customer?.avatar || googleAvatar || "",
         customerId: customer?.customerId,
         loginMethod: 'google'
       };
@@ -319,7 +319,7 @@ const Login = ({ onClose }) => {
           firstName: customer?.firstName || decodedGoogleData.given_name || "",
           lastName: customer?.lastName || decodedGoogleData.family_name || "",
           email: customer?.email || decodedGoogleData.email || "",
-          avatar: customer?.avatar || googleAvatar || "",
+          avatar: customer?.avatarUrl || customer?.avatar || googleAvatar || "",
           customerId: customer?.customerId,
           loginMethod: 'google'
         };
@@ -469,6 +469,7 @@ const Login = ({ onClose }) => {
         firstName: firstName.trim() || "",
         lastName: lastName.trim() || "",
         name: firstName.trim() + (lastName.trim() ? " " + lastName.trim() : ""),
+        avatar: response?.customer?.avatarUrl || response?.customer?.avatar || response?.user?.avatarUrl || response?.user?.avatar || response?.data?.user?.avatarUrl || response?.data?.user?.avatar || "",
         ...(response.user || response.data?.user || {})
       };
       localStorage.setItem("userInfo", JSON.stringify(userInfo));

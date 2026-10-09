@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft, ChevronDown, Clock, User, Users, Zap, Baby, Languages,
-  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart, Building, Map, Globe, Camera
+  ShieldCheck, MapPin, Phone, Mail, Star, Sparkles, Share2, Info, Compass, Heart, Building, Map, Globe, Camera, X
 } from "lucide-react";
 import { useTheme } from "../../components/JUI/Theme";
 import PhotoView from "../../components/PhotoView";
@@ -13,6 +13,7 @@ import Icon from "../../components/Icon";
 import { BookingSystem } from "../../components/JUI/BookingSystem";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
 import CuratedContent from "../../components/CuratedContent";
+import { getShareText } from "../../utils/shareUtils";
 import "./MobileExperienceView.css";
 
 /* ── helpers (copied from parent to avoid coupling) ── */
@@ -150,6 +151,7 @@ export default function MobileExperienceView({
   const [addonPhotoVisible, setAddonPhotoVisible] = useState(false);
   const [selectedAddonImages, setSelectedAddonImages] = useState([]);
   const [addonPhotoIndex, setAddonPhotoIndex] = useState(0);
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const galleryRef = useRef(null);
 
   /* ── gallery scroll handler ── */
@@ -189,9 +191,14 @@ export default function MobileExperienceView({
   const handleShare = async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title: listing?.title, url: window.location.href });
+        const shareText = getShareText(listing, "experience");
+        await navigator.share({ 
+          title: listing?.title, 
+          text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+        });
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        const fallbackText = `${getShareText(listing, "experience")}\n${window.location.href}`;
+        await navigator.clipboard.writeText(fallbackText);
       }
     } catch (_) { }
   };
@@ -344,17 +351,23 @@ export default function MobileExperienceView({
           ╚═══════════════════════════════════╝ */}
       <div className="mob-facts" style={{ background: BG }}>
         {[
-          { icon: <Clock size={15} color={A} />, label: listing?.duration ? `${listing.duration} ${listing.durationUnit || "Hrs"}` : "2.5 Hrs" },
-          { icon: <User size={15} color={A} />, label: listing?.minimumAge ? `Min Age: ${listing.minimumAge}` : "All Ages Welcome" },
-          { icon: <Zap size={15} color={A} />, label: listing?.difficultyLevel || "Moderate" },
-          { icon: <Baby size={15} color={A} />, label: listing?.allowsInfants || listing?.infantsAllowed ? "Infants OK" : "No Infants" },
-          { icon: <Languages size={15} color={A} />, label: (() => { const l = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 ? listing.languagesOffered : (typeof listing?.languages === "string" && listing.languages.trim() ? listing.languages.split(",").map(s => s.trim()) : []); return l.length > 0 ? l.join(", ") : "Flexible"; })() },
-          { icon: <ShieldCheck size={15} color={A} />, label: listing?.privateOptionAvailable ? "Private Tour" : "Group Tour" },
-          { icon: <Users size={15} color={A} />, label: `Max ${displayMaxGuests || 15} Guests` },
+          { icon: <Clock size={14} color={A} />, label: listing?.duration ? `${listing.duration} ${listing.durationUnit || "Hrs"}` : "2.5 Hrs" },
+          { icon: <User size={14} color={A} />, label: listing?.minimumAge ? `Min Age: ${listing.minimumAge}` : "All Ages Welcome" },
+          { icon: <Zap size={14} color={A} />, label: listing?.difficultyLevel || "Moderate" },
+          { icon: <Baby size={14} color={A} />, label: listing?.allowsInfants || listing?.infantsAllowed ? "Infants OK" : "No Infants" },
+          { icon: <Languages size={14} color={A} />, label: (() => { const l = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 ? listing.languagesOffered : (typeof listing?.languages === "string" && listing.languages.trim() ? listing.languages.split(",").map(s => s.trim()) : []); return l.length > 0 ? l.join(", ") : "Flexible"; })() },
+          { icon: <ShieldCheck size={14} color={A} />, label: listing?.privateOptionAvailable ? "Private Tour" : "Group Tour" },
+          { icon: <Users size={14} color={A} />, label: `Max ${displayMaxGuests || 15} Guests` },
         ].map((fact, i) => (
-          <div key={i} className="mob-fact-pill" style={{ background: isDark ? "#1A1A1A" : "#F5F7FA", color: FG, border: `1px solid ${B}` }}>
-            {fact.icon}
-            <span>{fact.label}</span>
+          <div key={i} className="mob-fact-item" style={{ 
+            color: FG, 
+            background: isDark ? "#1A1A1A" : "#FFFFFF", 
+            borderColor: isDark ? "#333333" : "rgba(0, 151, 178, 0.15)" 
+          }}>
+            <div className="mob-fact-icon" style={{ background: isDark ? "rgba(0, 151, 178, 0.15)" : "rgba(0, 151, 178, 0.08)" }}>
+              {fact.icon}
+            </div>
+            <span className="mob-fact-label">{fact.label}</span>
           </div>
         ))}
       </div>
@@ -390,7 +403,7 @@ export default function MobileExperienceView({
           ╚═══════════════════════════════════╝ */}
       {rawTags.length > 0 && (
         <div className="mob-marquee" style={{ borderColor: B, background: isDark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.005)" }}>
-          <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(rawTags.length * 20, 65)}s` }}>
+          <div className="mob-marquee-track" style={{ "--marquee-duration": `${rawTags.length * 4 * 1.8}s` }}>
             {[...rawTags, ...rawTags, ...rawTags, ...rawTags].map((tag, i) => (
               <div key={i} className="mob-marquee-item">
                 <span className="mob-marquee-text" style={{ fontWeight: i % 2 === 0 ? 700 : 300, color: i % 2 === 0 ? FG : M, opacity: i % 2 === 0 ? 1 : 0.75 }}>
@@ -470,7 +483,7 @@ export default function MobileExperienceView({
                           setActivityPhotoVisible(true);
                         }}
                       >
-                        <img src={imgUrl} alt={act.name || act.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={imgUrl} alt={act.name || act.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
                         <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)" }}>
                           <Camera size={12} /> GALLERY
                         </div>
@@ -716,7 +729,7 @@ export default function MobileExperienceView({
             borderTop: `1px solid ${B}`,
             borderBottom: `1px solid ${B}`
           }}>
-            <div className="mob-marquee-track" style={{ "--marquee-duration": `${Math.max(displayCats.length * 45, 90)}s` }}>
+            <div className="mob-marquee-track" style={{ "--marquee-duration": `${displayCats.length * 12 * 1.8}s` }}>
               {repeatedCats.map((cat, i) => (
                 <div key={i} className="mob-marquee-item">
                   <span className="mob-marquee-text" style={{ fontWeight: i % 2 === 0 ? 700 : 300, color: i % 2 === 0 ? FG : M, opacity: i % 2 === 0 ? 1 : 0.75 }}>
@@ -1000,12 +1013,12 @@ export default function MobileExperienceView({
                     {/* Verification Criteria Pills */}
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
                       <span style={{
-                        fontSize: "9px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         color: A,
                         background: "rgba(0, 151, 178, 0.08)",
                         border: "1px solid rgba(0, 151, 178, 0.2)",
-                        padding: "4px 10px",
+                        padding: "5px 12px",
                         borderRadius: "6px",
                         display: "inline-flex",
                         alignItems: "center",
@@ -1015,12 +1028,12 @@ export default function MobileExperienceView({
                       </span>
 
                       <span style={{
-                        fontSize: "9px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         color: "#10B981",
                         background: "rgba(16, 185, 129, 0.08)",
                         border: "1px solid rgba(16, 185, 129, 0.2)",
-                        padding: "4px 10px",
+                        padding: "5px 12px",
                         borderRadius: "6px",
                         display: "inline-flex",
                         alignItems: "center",
@@ -1030,12 +1043,12 @@ export default function MobileExperienceView({
                       </span>
 
                       <span style={{
-                        fontSize: "9px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         color: "#D97706",
                         background: "rgba(245, 158, 11, 0.08)",
                         border: "1px solid rgba(245, 158, 11, 0.2)",
-                        padding: "4px 10px",
+                        padding: "5px 12px",
                         borderRadius: "6px",
                         display: "inline-flex",
                         alignItems: "center",
@@ -1101,7 +1114,7 @@ export default function MobileExperienceView({
           </div>
 
           {revs.length > 3 && (
-            <button onClick={() => history.push(`/reviews/experience/${currentListingId}`)}
+            <button onClick={() => setReviewsModalOpen(true)}
               style={{ marginTop: 16, width: "100%", padding: "14px", borderRadius: 12, border: `1px solid ${B}`, background: "transparent", color: A, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, outline: "none" }}>
               See All Reviews
             </button>
@@ -1202,6 +1215,68 @@ export default function MobileExperienceView({
             onNavigate={setAddonPhotoIndex}
             onClose={() => setAddonPhotoVisible(false)}
           />
+        )}
+        {reviewsModalOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: isDark ? "#000" : "#FFF",
+              zIndex: 9999,
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
+            <div style={{ position: "sticky", top: 0, background: isDark ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${B}`, zIndex: 10 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: FG }}>All Guest Reviews</h2>
+              <button onClick={() => setReviewsModalOpen(false)} style={{ background: "transparent", border: "none", color: FG, padding: 8, cursor: "pointer" }}>
+                <X size={24} />
+              </button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+              {reviewSummary?.averageRating && (
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, padding: "16px", borderRadius: 12, border: `1px solid ${B}`, background: isDark ? "#111" : W }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: A }}>{Number(reviewSummary.averageRating).toFixed(1)}</span>
+                  <div>
+                    <div style={{ display: "flex", gap: 2 }}>
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={16} color={i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "#CBD5E1"} fill={i < Math.round(reviewSummary.averageRating) ? "#F59E0B" : "transparent"} />
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 12, color: M, fontWeight: 600, margin: "4px 0 0", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                      {reviewSummary.totalReviews || revs.length} reviews
+                    </p>
+                  </div>
+                </div>
+              )}
+              {revs.map((rev, i) => (
+                <div key={i} style={{ borderRadius: 16, border: `1px solid ${B}`, padding: 20, background: isDark ? "#111" : W }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: AL, border: `2px solid ${A}22`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+                      {(rev.customerName || rev.author || "G")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: FG, display: "block" }}>{rev.customerName || rev.author || "Verified Guest"}</span>
+                      <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
+                        {[...Array(5)].map((_, si) => (
+                          <Star key={si} size={12} color={si < (rev.rating || 5) ? "#F59E0B" : "#CBD5E1"} style={{ fill: si < (rev.rating || 5) ? "#F59E0B" : "transparent" }} />
+                        ))}
+                      </div>
+                    </div>
+                    <span style={{ marginLeft: "auto", fontSize: 12, color: M, fontWeight: 500 }}>
+                      {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Recently"}
+                    </span>
+                  </div>
+                  <ExpandableReviewText text={rev.comment || rev.text} vendorResponse={rev.vendorResponse || rev.hostResponse || rev.reply} FG={FG} A={A} />
+                </div>
+              ))}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
