@@ -1191,6 +1191,15 @@ function DestAbout({ place, hostData, hostAvatar }) {
 
 function Logistics({ place, hostData }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
+  const latitude = place?.latitude;
+  const longitude = place?.longitude;
+  const placeName = place?.placeName;
+  const address = place?.address || place?.fullAddress;
+  
+  const openInMapsUrl = (latitude && longitude)
+    ? `https://maps.google.com/maps?q=${latitude},${longitude}${placeName ? `+(${encodeURIComponent(placeName)})` : ""}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([placeName, address].filter(Boolean).join(", "))}`;
+
   return (
     <section style={{ background: S, padding: "140px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
@@ -1203,7 +1212,14 @@ function Logistics({ place, hostData }) {
                   <h4 style={{ fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: M, marginBottom: 12 }}>Address</h4>
                   <p style={{ fontSize: 16, color: FG, fontWeight: 600, maxWidth: 350, lineHeight: 1.6 }}>{place?.address || "Not Specified"}</p>
                 </div>
-                <motion.a whileHover={{ scale: 1.1 }} href={`https://www.google.com/maps/search/?api=1&query=${place?.placeName}`} target="_blank" style={{ background: A, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+                <motion.a 
+                  whileHover={{ scale: 1.1 }} 
+                  href={openInMapsUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  title="Open in Maps"
+                  style={{ background: A, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                >
                   <Navigation size={22} color={W} />
                 </motion.a>
               </div>
@@ -2295,6 +2311,22 @@ function LocationSection({ place }) {
   const country = place?.country || place?.meetingCountry;
   const instructions = place?.instructions || place?.meetingInstructions;
   const fullAddress = place?.fullAddress;
+  const placeName = place?.placeName;
+
+  let mapQuery = "";
+  if (latitude && longitude) {
+    mapQuery = placeName ? `${latitude},${longitude}+(${placeName})` : `${latitude},${longitude}`;
+  } else if (placeName || address || fullAddress) {
+    mapQuery = [placeName, address || fullAddress, city, district, state, country].filter(Boolean).join(", ");
+  }
+
+  const embedUrl = mapQuery
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&hl=en&z=15&output=embed`
+    : "";
+
+  const openInMapsUrl = (latitude && longitude)
+    ? `https://maps.google.com/maps?q=${latitude},${longitude}${placeName ? `+(${encodeURIComponent(placeName)})` : ""}`
+    : (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : "");
 
   return (
     <section className="location-section" style={{ background: theme === 'dark' ? BG : W, padding: isMobile ? "32px 24px" : "48px 80px" }}>
@@ -2328,45 +2360,39 @@ function LocationSection({ place }) {
 
           <Rev delay={0.1} style={{ height: isMobile ? "250px" : "100%", minWidth: 0 }}>
             <div style={{ position: "relative", height: "100%", minHeight: isMobile ? "250px" : 320, width: "100%", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}`, boxSizing: "border-box" }}>
-              <div style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                zIndex: 10,
-                background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
-                padding: "8px 16px",
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-                border: `1px solid ${B}`,
-                display: isMobile ? "none" : "flex",
-                alignItems: "center",
-                gap: 8,
-                pointerEvents: "none",
-                maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
-              }}>
-                <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{place?.placeName || "Location"}</span>
-              </div>
-              {latitude && longitude ? (
+              {placeName && (
+                <div style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  zIndex: 10,
+                  background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                  padding: "8px 16px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+                  border: `1px solid ${B}`,
+                  display: isMobile ? "none" : "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  pointerEvents: "none",
+                  maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
+                }}>
+                  <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{placeName}</span>
+                </div>
+              )}
+              {embedUrl ? (
                 <iframe
                   width="100%"
                   height="100%"
                   frameBorder="0"
                   style={{ border: 0 }}
-                  src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=en&z=14&output=embed`}
+                  src={embedUrl}
                   allowFullScreen
                   title="Location Map"
                 />
               ) : (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  style={{ border: 0 }}
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(place?.placeName || "")}&hl=en&z=14&output=embed`}
-                  allowFullScreen
-                  title="Location Map"
-                />
+                <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
               )}
             </div>
           </Rev>
@@ -2396,6 +2422,28 @@ function LocationSection({ place }) {
                       <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
                       <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: isMobile ? "none" : 1, minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{address}</span>
                     </div>
+                    {openInMapsUrl && (
+                      <a
+                        href={openInMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open in Maps"
+                        style={{
+                          background: A,
+                          width: 38,
+                          height: 38,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          textDecoration: "none",
+                          flexShrink: 0,
+                          boxShadow: "0 4px 12px rgba(0, 151, 178, 0.2)"
+                        }}
+                      >
+                        <Navigation size={16} color="#FFF" />
+                      </a>
+                    )}
                   </li>
                 )}
 
@@ -3152,9 +3200,12 @@ function MobileLogistics({ place, hostData }) {
               </p>
             </div>
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${place?.placeName}`}
+              href={(place?.latitude && place?.longitude)
+                ? `https://maps.google.com/maps?q=${place.latitude},${place.longitude}${place?.placeName ? `+(${encodeURIComponent(place.placeName)})` : ""}`
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([place?.placeName, place?.address].filter(Boolean).join(", "))}`}
               target="_blank"
               rel="noopener noreferrer"
+              title="Open in Maps"
               style={{
                 background: A,
                 width: 38,

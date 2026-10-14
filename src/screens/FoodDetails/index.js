@@ -6,7 +6,7 @@ import {
   Utensils, Star, Clock, MapPin, ChefHat, Award, Leaf, Globe,
   Coffee, Info, ChevronRight, ChevronDown, Phone, Instagram, Check, ArrowRight, ArrowDown,
   Calendar, Zap, CheckCircle, ChevronLeft, UtensilsCrossed, Share2, Search, Sparkles,
-  Users, DollarSign, GlassWater, CloudSun, Tag, Heart, Navigation, Map, Building
+  Users, DollarSign, GlassWater, CloudSun, Tag, Heart, Navigation, Map, Building, ExternalLink
 } from "lucide-react";
 import cn from "classnames";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
@@ -1535,6 +1535,26 @@ function LocationSection({ food }) {
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const fullAddress = food?.fullAddress;
 
+  const lat = food?.meetingLatitude || food?.latitude;
+  const lng = food?.meetingLongitude || food?.longitude;
+  const address = food?.meetingAddress || food?.address || fullAddress;
+  const locationName = food?.meetingLocationName || food?.title;
+
+  let mapQuery = "";
+  if (lat && lng) {
+    mapQuery = locationName ? `${lat},${lng}+(${locationName})` : `${lat},${lng}`;
+  } else if (locationName || address) {
+    mapQuery = [locationName, address, food?.meetingDistrict || food?.district, food?.meetingState || food?.state].filter(Boolean).join(", ");
+  }
+
+  const srcUrl = mapQuery
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&hl=en&z=15&output=embed`
+    : null;
+
+  const openInMapsUrl = (lat && lng)
+    ? `https://maps.google.com/maps?q=${lat},${lng}${locationName ? `+(${encodeURIComponent(locationName)})` : ""}`
+    : (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : null);
+
   return (
     <section className="prep-section" style={{ background: W, padding: isMobile ? "32px 24px" : "32px 0" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? 0 : "0 20px", boxSizing: "border-box", width: "100%" }}>
@@ -1572,55 +1592,46 @@ function LocationSection({ food }) {
           {/* LEFT: Map */}
           <Rev delay={0.1} style={{ height: isMobile ? "250px" : "100%", minWidth: 0 }}>
             <div style={{ position: "relative", height: "100%", minHeight: isMobile ? "250px" : 320, width: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 16, border: `1px solid ${B}` }}>
-              <div style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                zIndex: 10,
-                background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
-                padding: "8px 16px",
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-                border: `1px solid ${B}`,
-                display: isMobile ? "none" : "flex",
-                alignItems: "center",
-                gap: 8,
-                pointerEvents: "none",
-                maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
-              }}>
-                <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{food?.meetingLocationName || "Location"}</span>
-              </div>
-              {(() => {
-                const lat = food?.meetingLatitude || food?.latitude;
-                const lng = food?.meetingLongitude || food?.longitude;
-                const address = food?.meetingAddress || food?.address;
-                const srcUrl = (lat && lng)
-                  ? `https://maps.google.com/maps?ll=${lat},${lng}&hl=en&z=14&output=embed`
-                  : (address ? `https://maps.google.com/maps?q=${encodeURIComponent(address)}&hl=en&z=14&output=embed` : null);
-
-                return (
-                  <>
-                    {srcUrl ? (
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={srcUrl}
-                        allowFullScreen
-                        title="Meeting Location"
-                      />
-                    ) : (
-                      <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
-                    )}
-                    {/* Radar pulse animation overlaid on top of the map background */}
-                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%", pointerEvents: "none", zIndex: 5 }}>
-                      <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
-                    </div>
-                  </>
-                );
-              })()}
+              {food?.meetingLocationName && (
+                <div style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  zIndex: 10,
+                  background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                  padding: "8px 16px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+                  border: `1px solid ${B}`,
+                  display: isMobile ? "none" : "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  pointerEvents: "none",
+                  maxWidth: isMobile ? "calc(100% - 130px)" : "calc(100% - 32px)",
+                }}>
+                  <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: FG, fontFamily: '"Inter", sans-serif', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{food.meetingLocationName}</span>
+                </div>
+              )}
+              {srcUrl ? (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  style={{ border: 0 }}
+                  src={srcUrl}
+                  allowFullScreen
+                  title="Meeting Location"
+                />
+              ) : (
+                <>
+                  <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}18 1px,transparent 1px),linear-gradient(90deg,${A}18 1px,transparent 1px)`, backgroundSize: "20px 20px" }} />
+                  {/* Radar pulse animation overlaid on top of the fallback background */}
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 12, height: 12, background: A, borderRadius: "50%", pointerEvents: "none", zIndex: 5 }}>
+                    <motion.div animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: "absolute", inset: "-6px", border: `2px solid ${A}`, borderRadius: "50%" }} />
+                  </div>
+                </>
+              )}
             </div>
           </Rev>
 
@@ -1650,6 +1661,28 @@ function LocationSection({ food }) {
                       <span style={{ fontSize: "12px", letterSpacing: "0.15em", textTransform: "uppercase", color: A, width: isMobile ? "auto" : 110, flexShrink: 0, fontWeight: 700, fontFamily: '"Inter", sans-serif' }}>Address</span>
                       <span style={{ fontSize: 16, color: FG, fontWeight: 400, lineHeight: 1.4, fontFamily: '"Inter", sans-serif', flex: isMobile ? "none" : 1, minWidth: 0, overflowWrap: "anywhere", wordBreak: "normal", whiteSpace: "normal" }}>{food.meetingAddress || food.address}</span>
                     </div>
+                    {openInMapsUrl && (
+                      <a
+                        href={openInMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open in Maps"
+                        style={{
+                          background: A,
+                          width: 38,
+                          height: 38,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          textDecoration: "none",
+                          flexShrink: 0,
+                          boxShadow: "0 4px 12px rgba(0, 151, 178, 0.2)"
+                        }}
+                      >
+                        <Navigation size={16} color="#FFF" />
+                      </a>
+                    )}
                   </li>
                 )}
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Calendar, Users, ChevronUp, ChevronDown, X, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import moment from "moment";
 import cn from "classnames";
@@ -1277,78 +1277,7 @@ export default function MobileCinematicSearch({
   const [localShowDatePicker, setLocalShowDatePicker] = React.useState(false);
   const [localShowGuestPicker, setLocalShowGuestPicker] = React.useState(false);
 
-  // Sticky search bar visibility state
-  const [isStickyVisible, setIsStickyVisible] = React.useState(false);
 
-  // Dynamic scale interpolation on scroll
-  const { scrollY } = useScroll();
-  const scale = useTransform(scrollY, [200, 600], [1, 0.96], { clamp: true });
-
-  // Scroll listener and MutationObserver to track page scrolling and active modals/scroll locks
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    const checkVisibility = () => {
-      const currentScrollY = window.scrollY;
-
-      // 1. Show sticky search ONLY if scrolled down >= 200px (180–220px threshold)
-      const isScrolledPastHero = currentScrollY >= 200;
-
-      // 2. Hide when footer is visible in the viewport
-      let isFooterVisible = false;
-      const footer = document.querySelector(".cinematic-footer");
-      if (footer) {
-        const rect = footer.getBoundingClientRect();
-        if (rect.top < window.innerHeight) {
-          isFooterVisible = true;
-        }
-      }
-
-      // 3. Hide if any modal, gallery, or reservation popup is open
-      const isScrollLocked =
-        document.body.style.overflow === "hidden" ||
-        document.documentElement.style.overflow === "hidden" ||
-        document.body.style.position === "fixed" ||
-        !!document.querySelector('[class*="Modal_modal"]') ||
-        !!document.querySelector('[class*="PhotoView_modal"]');
-
-      const shouldShow = isScrolledPastHero && !isFooterVisible && !isScrollLocked && !sheetOpen;
-      setIsStickyVisible(shouldShow);
-    };
-
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          checkVisibility();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    // Set up MutationObserver to detect modal/scroll-lock state changes immediately
-    const observer = new MutationObserver(() => {
-      checkVisibility();
-    });
-
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ["style", "class"],
-      childList: true,
-      subtree: true,
-    });
-
-    // Run initial check
-    checkVisibility();
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      observer.disconnect();
-    };
-  }, [sheetOpen]);
 
   // Ref for the date field — used for smooth scroll when calendar expands
   const dateFieldRef = useRef(null);

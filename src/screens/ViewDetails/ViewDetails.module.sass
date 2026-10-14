@@ -664,14 +664,26 @@
 
 .noteList
     margin: 0
-    padding-left: 20px
+    padding: 0
     display: flex
     flex-direction: column
-    gap: 8px
+    gap: 12px
     +body-2
     color: $n3
+    list-style: none
     li
+        position: relative
+        padding-left: 20px
         line-height: 1.6
+        &::before
+            content: ""
+            position: absolute
+            left: 4px
+            top: 10px
+            width: 6px
+            height: 6px
+            border-radius: 50%
+            background-color: $p1
     +dark
         color: $n6
 

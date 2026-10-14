@@ -844,6 +844,15 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
         eventData?.cancellationPolicySummary,
         eventData?.cancellationPolicyText,
         eventData?.cancellationPolicy,
+        apiBooking?.cancellationPolicySummary,
+        apiBooking?.cancellationPolicyText,
+        apiBooking?.cancellationPolicy,
+        apiBooking?.originalData?.eventData?.cancellationPolicySummary,
+        apiBooking?.originalData?.eventData?.cancellationPolicyText,
+        apiBooking?.originalData?.eventData?.cancellationPolicy,
+        apiBooking?.originalData?.stayData?.cancellationPolicySummary,
+        apiBooking?.originalData?.stayData?.cancellationPolicyText,
+        apiBooking?.originalData?.stayData?.cancellationPolicy,
         stayData?.cancellationPolicySummary,
         stayData?.cancellationPolicyTemplate,
         stayData?.cancellationPolicyText,
@@ -1050,8 +1059,168 @@ const formatAmountInWords = (value) => {
   return `${rupeesText} and ${numberToWordsIndian(paise)} Paise Only`;
 };
 
+const splitSentences = (text) => {
+  if (!text || typeof text !== "string") return [];
+  const trimmed = text.trim();
+
+  // If text has semicolons, split by semicolon
+  if (trimmed.includes(";")) {
+    const semiParts = trimmed
+      .split(/\s*;\s*/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 3);
+    if (semiParts.length > 1) {
+      return semiParts;
+    }
+  }
+
+  const parts = trimmed.split(/([.!?]+(?:\s+|$))/);
+  const result = [];
+  let current = "";
+
+  for (let i = 0; i < parts.length; i++) {
+    current += parts[i];
+    if (/[.!?]+(?:\s+|$)$/.test(current)) {
+      const clean = current.trim();
+      if (clean.length > 8 && !/\b(e\.g|i\.e|mr|mrs|ms|dr|vs|etc|no|rs)\.$/i.test(clean)) {
+        result.push(clean);
+        current = "";
+      }
+    }
+  }
+
+  if (current.trim()) {
+    result.push(current.trim());
+  }
+
+  return result.length > 1 ? result : [trimmed];
+};
+
+const splitTextIntoPoints = (input) => {
+  if (!input) return [];
+
+  const rawItems = Array.isArray(input) ? input : [input];
+  const points = [];
+
+  const addPoint = (text) => {
+    if (!text || typeof text !== "string") return;
+    // Only strip bullet characters or list numbering like "1. " or "1) "
+    // Do NOT strip percentages like "100%" or "0%"!
+    const cleaned = text
+      .replace(/^[\s•\-*\u2022\u25cf\u2023\u25e6]+/, "")
+      .replace(/^\(?\d+[.)]\s+/, "")
+      .trim();
+
+    if (!cleaned || cleaned.length < 2) return;
+
+    // Filter out the generic price section boilerplate if it appears in policy text
+    if (cleaned.toLowerCase().includes("cancellation and refund eligibility will be determined based on the date of cancellation")) {
+      return;
+    }
+
+    if (!points.includes(cleaned)) {
+      points.push(cleaned);
+    }
+  };
+
+  rawItems.forEach((raw) => {
+    if (!raw) return;
+
+    if (Array.isArray(raw)) {
+      splitTextIntoPoints(raw).forEach(addPoint);
+      return;
+    }
+
+    if (typeof raw === "object") {
+      const extracted =
+        raw.rule ||
+        raw.text ||
+        raw.description ||
+        raw.content ||
+        raw.policyRule ||
+        raw.value ||
+        raw.name ||
+        raw.title;
+      if (extracted) {
+        splitTextIntoPoints(extracted).forEach(addPoint);
+      }
+      return;
+    }
+
+    let text = String(raw).trim();
+    if (!text) return;
+
+    // 1. HTML markup
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+      const liMatches = text.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+      if (liMatches && liMatches.length > 0) {
+        liMatches.forEach((li) => {
+          const clean = li.replace(/<[^>]+>/g, "").trim();
+          addPoint(clean);
+        });
+        return;
+      }
+      text = text
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/div>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .trim();
+    }
+
+    // 2. Explicit newlines
+    if (text.includes("\n") || text.includes("\r")) {
+      const lines = text.split(/\r?\n/);
+      lines.forEach((line) => {
+        const trimmedLine = line.trim();
+        if (trimmedLine) {
+          const subSentences = splitSentences(trimmedLine);
+          if (subSentences.length > 1) {
+            subSentences.forEach(addPoint);
+          } else {
+            addPoint(trimmedLine);
+          }
+        }
+      });
+      return;
+    }
+
+    // 3. Bullet characters
+    if (/[•\u2022\u25cf\u2023\u25e6]/.test(text)) {
+      const parts = text.split(/[•\u2022\u25cf\u2023\u25e6]/);
+      parts.forEach((part) => {
+        const trimmedPart = part.trim();
+        if (trimmedPart) addPoint(trimmedPart);
+      });
+      return;
+    }
+
+    // 4. Numbered patterns e.g. "1. ... 2. ..." or "1) ... 2) ..."
+    const numberedRegex = /(?:^|\s)(?:\d+[.)]|\(\d+\))\s+/;
+    if (numberedRegex.test(text)) {
+      const parts = text.split(/(?:^|\s)(?:\d+[.)]|\(\d+\))\s+/);
+      const filtered = parts.map((p) => p.trim()).filter(Boolean);
+      if (filtered.length > 1) {
+        filtered.forEach(addPoint);
+        return;
+      }
+    }
+
+    // 5. Multi-sentence paragraph
+    const sentences = splitSentences(text);
+    if (sentences.length > 1) {
+      sentences.forEach(addPoint);
+      return;
+    }
+
+    addPoint(text);
+  });
+
+  return points;
+};
+
 const normalizePolicyTextList = (...values) => {
-  const results = [];
+  const rawList = [];
 
   const pushValue = (value) => {
     if (!value) return;
@@ -1063,19 +1232,27 @@ const normalizePolicyTextList = (...values) => {
 
     if (typeof value === "string") {
       const trimmed = value.trim();
-      if (trimmed) results.push(trimmed);
+      if (trimmed) rawList.push(trimmed);
       return;
     }
 
     if (typeof value === "object") {
+      const rulesArray =
+        value.cancellationPolicyRules ||
+        value.cancellationRules ||
+        value.policyRules ||
+        value.rules;
+      if (Array.isArray(rulesArray) && rulesArray.length > 0) {
+        rulesArray.forEach(pushValue);
+        return;
+      }
+
       const objectText =
         value.cancellationPolicySummary ||
         value.cancellationPolicyTemplate ||
         value.cancellationPolicyText ||
         value.cancellationPolicy ||
         value.cancellationPolicies ||
-        value.cancellationPolicyRules ||
-        value.cancellationRules ||
         value.policySummary ||
         value.policyText ||
         value.text ||
@@ -1089,13 +1266,13 @@ const normalizePolicyTextList = (...values) => {
         value.content;
 
       if (typeof objectText === "string" && objectText.trim()) {
-        results.push(objectText.trim());
+        rawList.push(objectText.trim());
       }
     }
   };
 
   values.forEach(pushValue);
-  return [...new Set(results)];
+  return splitTextIntoPoints(rawList);
 };
 
 const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPreview }) => {
@@ -3351,14 +3528,14 @@ const ViewDetails = () => {
   ];
 
   const getNotesContent = () => {
-    if (activeNotesTab === "cancellation" && booking.notes.cancellationPolicy) {
-      return booking.notes.cancellationPolicy;
+    if (activeNotesTab === "cancellation" && booking?.notes?.cancellationPolicy) {
+      return splitTextIntoPoints(booking.notes.cancellationPolicy);
     }
-    if (activeNotesTab === "host" && booking.notes.hostInstructions) {
-      return booking.notes.hostInstructions;
+    if (activeNotesTab === "host" && booking?.notes?.hostInstructions) {
+      return splitTextIntoPoints(booking.notes.hostInstructions);
     }
-    if (activeNotesTab === "requirements" && booking.notes.requirements) {
-      return booking.notes.requirements;
+    if (activeNotesTab === "requirements" && booking?.notes?.requirements) {
+      return splitTextIntoPoints(booking.notes.requirements);
     }
     return [];
   };
@@ -3921,43 +4098,37 @@ const ViewDetails = () => {
                   )}
                 </>
               )}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E6E8EC' }}>
-                {(() => {
-                  const isRefundAmountZero = refundDetails && Number(refundDetails.refundAmount) <= 0;
-                  const isNoRefundStatus = refundDetails && (String(refundDetails.refundStatus).toUpperCase() === 'NOT_REQUIRED' || String(refundDetails.refundStatus).toUpperCase() === 'NO_REFUND');
-                  const hasNoRefund = isCancelledBooking && (isRefundAmountZero || isNoRefundStatus) && bookingStatusLower !== "rejected";
-                  const policyText = getAppliedRefundPolicyText();
-                  const isPolicyTextNoRefund = policyText && policyText.toLowerCase().includes("no refund");
-
-                  if (bookingStatusLower === "rejected") {
-                    return (
+              {(() => {
+                const policyText = getAppliedRefundPolicyText();
+                if (bookingStatusLower === "rejected") {
+                  return (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E6E8EC' }}>
                       <p style={{ fontSize: '12px', color: '#777E90', lineHeight: '1.5', marginBottom: '0' }}>
                         <span style={{ fontWeight: 500 }}>Rejection & Refund: </span>
                         {policyText || "This booking was rejected. A full refund has been initiated to your original payment method."}
                       </p>
-                    );
-                  }
+                    </div>
+                  );
+                }
 
-                  if (!isCancelledBooking || hasNoRefund || isPolicyTextNoRefund) {
-                    return (
-                      <p style={{ fontSize: '12px', color: '#777E90', marginBottom: '0', lineHeight: '1.5' }}>
-                        Cancellation and refund eligibility will be determined based on the date of cancellation and the applicable refund policy.
-                      </p>
-                    );
-                  }
+                const isRefundAmountZero = refundDetails && Number(refundDetails.refundAmount) <= 0;
+                const isNoRefundStatus = refundDetails && (String(refundDetails.refundStatus).toUpperCase() === 'NOT_REQUIRED' || String(refundDetails.refundStatus).toUpperCase() === 'NO_REFUND');
+                const hasNoRefund = isCancelledBooking && (isRefundAmountZero || isNoRefundStatus);
+                const isPolicyTextNoRefund = policyText && policyText.toLowerCase().includes("no refund");
 
-                  if (policyText) {
-                    return (
+                if (isCancelledBooking && !hasNoRefund && !isPolicyTextNoRefund && policyText) {
+                  return (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E6E8EC' }}>
                       <p style={{ fontSize: '12px', color: '#777E90', lineHeight: '1.5', marginBottom: '0' }}>
                         <span style={{ fontWeight: 500 }}>Applied Cancellation Policy: </span>
                         {policyText}
                       </p>
-                    );
-                  }
+                    </div>
+                  );
+                }
 
-                  return null;
-                })()}
-              </div>
+                return null;
+              })()}
             </div>
           </div>
         </div>
