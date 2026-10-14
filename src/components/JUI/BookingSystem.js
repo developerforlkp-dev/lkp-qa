@@ -1074,15 +1074,33 @@ const normalizeEventAvailability = (payload) => {
   return records;
 };
 
-const mapDirectOfflineSlots = (payload) => {
+const mapDirectOfflineSlots = (payload, dateKey) => {
   if (!payload || typeof payload !== "object") return [];
-  const rawSlots = Array.isArray(payload?.timeSlots)
-    ? payload.timeSlots
-    : (Array.isArray(payload?.slots) ? payload.slots : (Array.isArray(payload?.data?.timeSlots) ? payload.data.timeSlots : (Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []))));
-  const basePrice = Number(payload?.basePricePerGuest ?? payload?.pricePerPerson ?? payload?.basePrice ?? payload?.data?.basePricePerGuest ?? 500);
-  const seats = payload?.availableSlots != null ? Number(payload.availableSlots) : (payload?.data?.availableSlots != null ? Number(payload.data.availableSlots) : (payload?.availableSeats != null ? Number(payload.availableSeats) : 20));
+  const source = payload?.offlineReservation && typeof payload.offlineReservation === "object"
+    ? payload.offlineReservation
+    : payload;
+  const rawSlots = Array.isArray(source?.timeSlots)
+    ? source.timeSlots
+    : (Array.isArray(source?.slots) ? source.slots : (Array.isArray(source?.data?.timeSlots) ? source.data.timeSlots : (Array.isArray(source?.data) ? source.data : [])));
+  const basePrice = Number(source?.basePricePerGuest ?? source?.pricePerPerson ?? source?.basePrice ?? source?.data?.basePricePerGuest ?? 500);
+  const seats = source?.availableSlots != null ? Number(source.availableSlots) : (source?.data?.availableSlots != null ? Number(source.data.availableSlots) : (source?.availableSeats != null ? Number(source.availableSeats) : 20));
 
-  return rawSlots.map((slot, index) => {
+  const now = new Date();
+  const todayKey = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+  const isPast = (slot) => {
+    if (!dateKey || !slot?.startTime || dateKey > todayKey) return false;
+    if (dateKey < todayKey) return true;
+    const match = String(slot.startTime).match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+    if (!match) return false;
+    let hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    const meridiem = match[3]?.toUpperCase();
+    if (meridiem === "PM" && hours < 12) hours += 12;
+    if (meridiem === "AM" && hours === 12) hours = 0;
+    return hours * 60 + minutes <= now.getHours() * 60 + now.getMinutes();
+  };
+
+  return rawSlots.filter((slot) => !isPast(slot)).map((slot, index) => {
     const start = slot?.startTime || slot?.start_time || "";
     const end = slot?.endTime || slot?.end_time || "";
     const slotId = slot?.id ?? slot?.slotId ?? slot?.slot_id ?? `slot-${index + 1}`;
@@ -1112,9 +1130,9 @@ const mapDirectOfflineSlots = (payload) => {
   });
 };
 
-const unwrapSlotsPayload = (payload) => {
+const unwrapSlotsPayload = (payload, dateKey) => {
   if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.timeSlots) || Array.isArray(payload?.data?.timeSlots)) return mapDirectOfflineSlots(payload?.timeSlots ? payload : payload.data);
+  if (Array.isArray(payload?.timeSlots) || Array.isArray(payload?.offlineReservation?.timeSlots) || Array.isArray(payload?.data?.timeSlots)) return mapDirectOfflineSlots(payload, dateKey);
   if (Array.isArray(payload?.slots)) return payload.slots;
   if (Array.isArray(payload?.data?.slots)) return payload.data.slots;
   if (Array.isArray(payload?.data)) return payload.data;
@@ -2558,7 +2576,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setDateFilteredSlotsLoaded(false);
 
     const fetchSlotsPromise = isDirect && directToken
-      ? getPublicDirectBookingOfflineReservationSlots(directToken)
+      ? (listing?.directBooking?.offlineReservation?.timeSlots
+        ? Promise.resolve(listing.directBooking)
+        : getPublicDirectBookingOfflineReservationSlots(directToken))
       : getListingSlots(listingId, selectedDateKey, slotsLookupEndDate);
 
     fetchSlotsPromise
@@ -2567,7 +2587,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         if (isDirect) {
           setDirectOfflineSlotsData(payload);
         }
-        const unwrapped = unwrapSlotsPayload(payload);
+        const unwrapped = unwrapSlotsPayload(payload, selectedDateKey);
         const normalized = normalizeExperienceSlots(unwrapped, selectedDateKey);
         setDateFilteredSlots(normalized);
         setDateFilteredSlotsLoaded(true);
@@ -2625,7 +2645,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     return () => {
       cancelled = true;
     };
-  }, [directToken, isDirect, isEventBooking, listingId, selectedDateKey, show, slotsLookupEndDate]);
+  }, [directToken, isDirect, isEventBooking, listing, listingId, selectedDateKey, show, slotsLookupEndDate]);
 
   useEffect(() => {
     if (!isEventBooking) return;
