@@ -496,7 +496,12 @@ function SpinBadge({ event }) {
     const totalTickets = Number(ticket?.totalTickets ?? ticket?.totalTicket ?? 0);
     return sum + (Number.isFinite(totalTickets) ? totalTickets : 0);
   }, 0);
-  const participantCount = event?.participantCount ?? (guestCount > 0 ? guestCount : 0);
+  const eventType = String(event?.eventType || event?.event_type || "").trim().toLowerCase();
+  const slots = event?.slots || event?.eventSlots || event?.timeSlots || [];
+  const slotGuestCount = Array.isArray(slots)
+    ? slots.reduce((sum, slot) => sum + (Number(slot?.guestCount) || 0), 0)
+    : 0;
+  const participantCount = event?.participantCount ?? (eventType === "ticketed" ? guestCount : slotGuestCount);
 
   return (
     <div style={{
@@ -1686,11 +1691,17 @@ function About({ event }) {
   const ageLimit = event?.minimumAge != null ? `${event.minimumAge}+` : (event?.ageLimit || "All ages");
 
   const categoryName = event?.primaryCategoryName || event?.category || "Festival";
-  const isFreeEvent = event?.eventType?.toLowerCase() === 'free' || event?.event_type?.toLowerCase() === 'free';
-  const endDateDisplay = event?.endDate ? new Date(event.endDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : "Not specified";
-  const guestOrDateItem = isFreeEvent 
-    ? { value: endDateDisplay, l: "End Date", sub: "Event end date", isCount: false }
-    : { value: guestCount, l: "Guest Count", sub: "Total ticket capacity", isCount: true };
+  const isTicketedEvent = String(event?.eventType || event?.event_type || "").trim().toLowerCase() === "ticketed";
+  const slotGuestCount = Array.isArray(slots)
+    ? slots.reduce((sum, slot) => sum + (Number(slot?.guestCount) || 0), 0)
+    : 0;
+  const displayedGuestCount = isTicketedEvent ? guestCount : slotGuestCount;
+  const guestOrDateItem = {
+    value: displayedGuestCount,
+    l: "Guest Count",
+    sub: isTicketedEvent ? "Total ticket capacity" : "Total slot capacity",
+    isCount: true,
+  };
 
   const statsList = [
     { value: eventType, l: "Event Type", sub: "Program format" },
