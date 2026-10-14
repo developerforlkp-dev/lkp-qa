@@ -540,13 +540,13 @@ function SpinBadge({ event }) {
 
 
 
-function ImageRing({ event, onImageHover }) {
+function ImageRing({ event, onImageHover, onImageClick }) {
   const { tokens: { B } } = useTheme();
 
   // Use actual event media for the ring
   const media = Array.isArray(event?.media) ? event.media : [];
   const ringImages = media.length > 0
-    ? [...media].slice(0, 6).map(m => m.url)
+    ? [...media].slice(0, 6).map(m => m.url || m.src)
     : [];
 
   const R = 150;
@@ -564,17 +564,42 @@ function ImageRing({ event, onImageHover }) {
           return (
             <div
               key={i}
-              style={{ position: "absolute", top: "50%", left: "50%", transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`, zIndex: 5 }}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
+                zIndex: 5,
+                pointerEvents: onImageClick ? "auto" : undefined,
+              }}
               onMouseEnter={() => onImageHover && onImageHover(finalSrc)}
               onMouseLeave={() => onImageHover && onImageHover(null)}
             >
               <div className="counter-rotating-card">
                 <motion.div
                   whileHover={{ scale: 1.6, zIndex: 100 }}
+                  whileTap={onImageClick ? { scale: 0.95 } : undefined}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  style={{ width: 84, height: 110, borderRadius: 16, border: `1px solid ${B}`, overflow: "hidden", backgroundColor: "#000", boxShadow: "0 12px 40px -10px rgba(0,0,0,0.3)", cursor: "pointer" }}
+                  style={{
+                    width: 84,
+                    height: 110,
+                    borderRadius: 16,
+                    border: `1px solid ${B}`,
+                    overflow: "hidden",
+                    backgroundColor: "#000",
+                    boxShadow: "0 12px 40px -10px rgba(0,0,0,0.3)",
+                    cursor: onImageClick ? "pointer" : "default",
+                    pointerEvents: onImageClick ? "auto" : undefined,
+                  }}
+                  onClick={(e) => {
+                    if (onImageClick) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onImageClick(finalSrc, i);
+                    }
+                  }}
                 >
-                  <img src={finalSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                  <img src={finalSrc} style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} alt="" />
                 </motion.div>
               </div>
             </div>
@@ -906,6 +931,36 @@ function MobileHero({ event, heroRef }) {
 
   const itemId = event?.eventId || event?.id || event?._id || new URLSearchParams(window.location.search).get("id");
 
+  const [photoViewVisible, setPhotoViewVisible] = useState(false);
+  const [photoViewIndex, setPhotoViewIndex] = useState(0);
+
+  const allMediaUrls = useMemo(() => {
+    const list = [];
+    if (Array.isArray(event?.media) && event.media.length > 0) {
+      event.media.forEach((m) => {
+        const u = m?.url || m?.src || m?.mediaUrl;
+        if (u && !list.includes(u)) list.push(u);
+      });
+    }
+    if (Array.isArray(event?.images) && event.images.length > 0) {
+      event.images.forEach((img) => {
+        const u = typeof img === 'string' ? img : img?.url || img?.src;
+        if (u && !list.includes(u)) list.push(u);
+      });
+    }
+    if (bgImage && !list.includes(bgImage)) {
+      list.push(bgImage);
+    }
+    return list.filter(Boolean);
+  }, [event, bgImage]);
+
+  const handleRingImageClick = (src, i) => {
+    const items = allMediaUrls.length > 0 ? allMediaUrls : (src ? [src] : []);
+    const index = items.indexOf(src);
+    setPhotoViewIndex(index !== -1 ? index : (i || 0));
+    setPhotoViewVisible(true);
+  };
+
   return (
     <div ref={heroRef} style={{
       position: "relative",
@@ -930,13 +985,13 @@ function MobileHero({ event, heroRef }) {
       <div style={{
         position: "absolute",
         top: "40%",
-        right: "-70px",
+        right: "15px",
         transform: "translateY(-50%) scale(0.55)",
         transformOrigin: "center right",
         zIndex: 5,
         pointerEvents: "none"
       }}>
-        <ImageRing event={event} />
+        <ImageRing event={event} onImageClick={handleRingImageClick} />
       </div>
 
       {/* Top Controls */}
@@ -1053,6 +1108,18 @@ function MobileHero({ event, heroRef }) {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {photoViewVisible && allMediaUrls.length > 0 && (
+          <FullScreenImage
+            src={allMediaUrls[photoViewIndex] || allMediaUrls[0]}
+            items={allMediaUrls}
+            currentIndex={photoViewIndex}
+            onNavigate={setPhotoViewIndex}
+            onClose={() => setPhotoViewVisible(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -4545,7 +4612,9 @@ export default function EventDetails() {
         <Rules event={event} />
         <HostDetails event={event} hostName={hostName} />
         <EventReviews reviews={reviews} />
-        <EventBookingPopup event={event} selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} onClearAddons={() => setSelectedAddOns([])} addonsLoading={!event?.addons} />
+        {String(event?.eventType || event?.event_type || "").trim().toLowerCase() === "ticketed" && (
+          <EventBookingPopup event={event} selectedAddOns={selectedAddOns} onUpdateAddonQuantity={handleUpdateAddonQuantity} onClearAddons={() => setSelectedAddOns([])} addonsLoading={!event?.addons} />
+        )}
         <RelatedListingsStrip
           businessInterestId={2}
           primaryCategoryId={primaryCategoryId}

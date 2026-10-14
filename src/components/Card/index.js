@@ -5,7 +5,7 @@ import styles from "./Card.module.sass";
 import Icon from "../Icon";
 import Favorite from "../Favorite";
 
-const getWishlistConfig = (item) => {
+export const getWishlistConfig = (item) => {
   if (item?.isCategoryCard || item?.isCategory) return null;
   const explicitType = String(item?.wishlistItemType || item?.itemType || "").trim().toLowerCase();
   const explicitId = item?.wishlistItemId ?? item?.itemId ?? item?.listingId ?? item?.eventId ?? item?.stayId;

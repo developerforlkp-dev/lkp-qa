@@ -284,11 +284,19 @@
         transition: fill .2s
         +dark
             fill: #FFFFFF
+    img
+        width: 24px
+        height: 24px
+        object-fit: contain
+        display: block
+        transition: transform .2s ease
     &:hover
         svg
             fill: $n2
             +dark
                 fill: $n6
+        img
+            transform: scale(1.08)
 
 .notification
     display: none

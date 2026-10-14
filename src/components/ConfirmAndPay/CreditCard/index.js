@@ -110,6 +110,30 @@ const getOrderCreationErrorMessage = (error) => {
   return message;
 };
 
+const getConcurrentBookingErrorMessage = (error) => {
+  const responseData = error?.response?.data;
+  const responseText = (() => {
+    try {
+      return JSON.stringify(responseData || {}).toLowerCase();
+    } catch (serializationError) {
+      return String(responseData || "").toLowerCase();
+    }
+  })();
+  const status = Number(error?.response?.status);
+  const hasEmptyResponseBody =
+    responseData && typeof responseData === "object" && !Array.isArray(responseData) && Object.keys(responseData).length === 0;
+  const isAvailabilityConflict =
+    status === 409 ||
+    (hasEmptyResponseBody && (status === 400 || status === 422)) ||
+    /no availability|not available|unavailable|sold.?out|fully booked|already booked|insufficient inventory|inventory|capacity|seat|slot.*taken|booking.*conflict|duplicate booking/.test(responseText);
+
+  if (isAvailabilityConflict) {
+    return "This slot is no longer available because another guest completed the booking first. Please choose another time or try a different date.";
+  }
+
+  return null;
+};
+
 const resolveBookingType = (bookingData) => {
   const type = String(
     bookingData?.checkoutType ||
@@ -502,9 +526,12 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
       console.error("Failed to create or initialize payment:", error);
       const hasOrderId = Boolean(orderId);
       const respData = error?.response?.data;
+      const concurrentBookingMessage = getConcurrentBookingErrorMessage(error);
       let apiErrorMsg = respData?.message || respData?.details;
       
-      if (isAuthOrTokenError(error) || isAuthOrTokenError(apiErrorMsg)) {
+      if (concurrentBookingMessage) {
+        apiErrorMsg = concurrentBookingMessage;
+      } else if (isAuthOrTokenError(error) || isAuthOrTokenError(apiErrorMsg)) {
         apiErrorMsg = "Your session has expired. Please log in again to continue.";
       } else if (respData?.errors) {
         const errorDetails = typeof respData.errors === 'string' 
@@ -772,7 +799,9 @@ const CreditCard = ({ className, buttonUrl, hidePaymentFields = false, paymentDa
             </svg>
           </div>
           <h3 style={{ marginBottom: "16px", fontSize: "20px", fontWeight: "600" }}>
-            {typeof errorModalMsg === 'string' && errorModalMsg.toLowerCase().includes("already booked")
+            {typeof errorModalMsg === 'string' && errorModalMsg.toLowerCase().includes("no longer available")
+              ? "Slot Unavailable"
+              : typeof errorModalMsg === 'string' && errorModalMsg.toLowerCase().includes("already booked")
               ? "Dates Unavailable"
               : typeof errorModalMsg === 'string' && errorModalMsg.includes("currently disabled") 
                 ? "Booking Unavailable" 

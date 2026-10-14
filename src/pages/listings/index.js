@@ -835,9 +835,6 @@ const Listings = () => {
       </div>
 
       <div className={cn("container", styles.container)}>
-        {/* Background Decorative Travel Line Art */}
-        <TravelJourneyIllustration />
-        
         {/* Category Navigation Header inside Portal */}
         {(portalTarget && isDesktop) ? ReactDOM.createPortal(
           <div className={styles.categoryNav}>
@@ -1097,6 +1094,31 @@ const Listings = () => {
               {chip.label}
             </button>
           ))}
+          <button
+            className={cn(styles.mobileFilterChip)}
+            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+          >
+            {viewMode === "grid" ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ marginRight: '4px' }}>
+                  <rect x="1" y="2" width="14" height="2" rx="1" />
+                  <rect x="1" y="7" width="14" height="2" rx="1" />
+                  <rect x="1" y="12" width="14" height="2" rx="1" />
+                </svg>
+                List View
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ marginRight: '4px' }}>
+                  <rect x="1" y="1" width="6" height="6" rx="1.5" />
+                  <rect x="9" y="1" width="6" height="6" rx="1.5" />
+                  <rect x="1" y="9" width="6" height="6" rx="1.5" />
+                  <rect x="9" y="9" width="6" height="6" rx="1.5" />
+                </svg>
+                Card View
+              </>
+            )}
+          </button>
         </div>
       </div>
 

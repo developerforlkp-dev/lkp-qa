@@ -112,7 +112,7 @@ const Favorite = ({
             [styles.active]: saved,
             [styles.iconOnly]: variant === "icon",
             [styles.hero]: variant === "hero",
-            [styles.loading]: loading || pending,
+            [styles.loading]: pending,
           },
           className
         )}
@@ -121,7 +121,7 @@ const Favorite = ({
         type="button"
         aria-pressed={saved}
         aria-label={buttonText}
-        disabled={loading || pending}
+        disabled={pending}
       >
         <div className={styles.inner}>
           <Icon name={saved ? "heart-fill" : "heart"} size={variant === "hero" ? "16" : "12"} />

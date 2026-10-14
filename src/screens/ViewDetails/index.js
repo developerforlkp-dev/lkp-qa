@@ -838,6 +838,9 @@ const transformBookingData = (apiBooking, listingData = null, eventData = null, 
         listingData?.cancellationPolicySummary,
         listingData?.cancellationPolicyText,
         listingData?.cancellationPolicy,
+        listingData?.cancellationPolicies,
+        listingData?.cancellationPolicyRules,
+        listingData?.cancellationRules,
         eventData?.cancellationPolicySummary,
         eventData?.cancellationPolicyText,
         eventData?.cancellationPolicy,
@@ -1070,6 +1073,9 @@ const normalizePolicyTextList = (...values) => {
         value.cancellationPolicyTemplate ||
         value.cancellationPolicyText ||
         value.cancellationPolicy ||
+        value.cancellationPolicies ||
+        value.cancellationPolicyRules ||
+        value.cancellationRules ||
         value.policySummary ||
         value.policyText ||
         value.text ||
@@ -1122,7 +1128,7 @@ const getPublicCancellationPolicyTexts = ({ booking, refundDetails, cancelPrevie
   const policies = normalizePolicyTextList(
     stayData?.cancellationPolicySummary || stayData?.cancellationPolicyTemplate || stayData?.cancellationPolicyText || stayData?.cancellationPolicy,
     eventData?.cancellationPolicySummary || eventData?.cancellationPolicyText || eventData?.cancellationPolicy,
-    listingData?.cancellationPolicySummary || listingData?.cancellationPolicyText || listingData?.cancellationPolicy
+    listingData?.cancellationPolicySummary || listingData?.cancellationPolicyText || listingData?.cancellationPolicy || listingData?.cancellationPolicies || listingData?.cancellationPolicyRules || listingData?.cancellationRules
   );
 
   return policies.length > 0 ? [policies[0]] : [];
@@ -3227,6 +3233,14 @@ const ViewDetails = () => {
 
   const [activeNotesTab, setActiveNotesTab] = useState(getInitialTab);
 
+  // The listing detail response is loaded asynchronously. Once it provides a
+  // cancellation policy, make that policy immediately visible on the detail page.
+  useEffect(() => {
+    if (booking?.notes?.cancellationPolicy?.length) {
+      setActiveNotesTab("cancellation");
+    }
+  }, [booking]);
+
   // Handle review submission
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
@@ -3332,6 +3346,7 @@ const ViewDetails = () => {
   }
 
   const notesTabs = [
+    { id: "cancellation", label: "Cancellation Policy" },
     { id: "host", label: "Host Instructions" },
   ];
 

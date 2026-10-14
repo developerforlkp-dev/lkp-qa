@@ -38,6 +38,12 @@ export const clearWishlistCache = () => {
 export const dispatchWishlistChange = (detail) => {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(WISHLIST_EVENT_NAME, { detail }));
+  try {
+    localStorage.setItem(
+      "lkp:wishlist-sync",
+      JSON.stringify({ ...detail, _t: Date.now() })
+    );
+  } catch (_) {}
 };
 
 export default function useWishlist({ itemType, itemId, initialSaved = false }) {
@@ -86,7 +92,9 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       return cached;
     }
 
-    if (isMounted.current) setLoading(true);
+    if (!wishlistCache.has(key) && isMounted.current) {
+      setLoading(true);
+    }
     try {
       const response = await getCustomerWishlistStatus(normalizedType, itemId);
       const nextSaved = Boolean(response?.saved);
@@ -135,17 +143,30 @@ export default function useWishlist({ itemType, itemId, initialSaved = false }) 
       }
     };
 
-    const handleFocus = () => {
-      syncSaved(true).catch(() => {});
+    const handleStorageChange = (event) => {
+      if (event?.key !== "lkp:wishlist-sync" || !event?.newValue) return;
+      try {
+        const detail = JSON.parse(event.newValue);
+        if (!key) return;
+        if (detail.key === key || (detail.itemType === normalizedType && String(detail.itemId) === String(itemId))) {
+          if (typeof detail.saved === "boolean") {
+            wishlistCache.set(key, detail.saved);
+            if (isMounted.current) {
+              setSaved(detail.saved);
+              setLoading(false);
+            }
+          }
+        }
+      } catch (_) {}
     };
 
     window.addEventListener(WISHLIST_EVENT_NAME, handleWishlistChange);
-    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorageChange);
     return () => {
       window.removeEventListener(WISHLIST_EVENT_NAME, handleWishlistChange);
-      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorageChange);
     };
-  }, [itemId, key, normalizedType, syncSaved]);
+  }, [itemId, key, normalizedType]);
 
   const toggleSaved = useCallback(async () => {
     if (!supported) {

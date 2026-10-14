@@ -5,7 +5,9 @@ import styles from "./ListingsGrid.module.sass";
 import Card from "../../Card";
 import Loader from "../../Loader";
 import Icon from "../../Icon";
+import Favorite from "../../Favorite";
 import { transformListingToCard } from "../../../screens/FleetHome/CardStyles";
+import { getWishlistConfig } from "../../Card";
 
 // Redesigned horizontal split-layout list view card
 const ListCard = ({ item, listing }) => {
@@ -26,6 +28,8 @@ const ListCard = ({ item, listing }) => {
 
   const images = listing?.images || listing?.photos || listing?.gallery || [];
   const imagesCount = Array.isArray(images) ? images.length : 0;
+  
+  const wishlistConfig = getWishlistConfig(item);
 
   return (
     <div className={styles.listCard}>
@@ -43,6 +47,15 @@ const ListCard = ({ item, listing }) => {
             setImageLoaded(true);
           }}
         />
+        {wishlistConfig && (
+          <Favorite
+            className={styles.favorite}
+            itemType={wishlistConfig.itemType}
+            itemId={wishlistConfig.itemId}
+            initialSaved={wishlistConfig.initialSaved}
+            variant="icon"
+          />
+        )}
         {item.categoryText && (
           <div className={styles.categoryBadge}>{item.categoryText}</div>
         )}
@@ -61,7 +74,7 @@ const ListCard = ({ item, listing }) => {
           <div className={styles.metaRow}>
             {locationText && <span className={styles.locationText}>{locationText}</span>}
             <div className={styles.ratingRow}>
-              <Icon name="star" className={styles.starIcon} size="14" />
+              <Icon name="star" className={styles.starIcon} size="14" fill="#ffc107" />
               {item.rating > 0 ? (
                 <>
                   <span className={styles.ratingVal}>{item.rating.toFixed(1)}</span>
@@ -104,10 +117,9 @@ const ListCard = ({ item, listing }) => {
 
         {/* BOTTOM: Pricing and CTA Action button */}
         <div className={styles.bottomLayer}>
-          {false && !isStay && item.priceActual && (
+          {!isStay && item.priceActual && (
             <div className={styles.priceContainer}>
               <span className={styles.priceValue}>{item.priceActual}</span>
-              <span className={styles.pricePeriod}>{pricePeriod}</span>
             </div>
           )}
 
