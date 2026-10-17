@@ -2626,51 +2626,74 @@ function MobileHero({ place, galleryItems, id }) {
         </div>
       </div>
 
-      {/* Layered Image Stack / Peeking Slider */}
-      <div style={{
-        display: "flex",
-        gap: 16,
-        overflowX: "auto",
-        padding: "16px 24px",
-        scrollSnapType: "x mandatory",
-        WebkitOverflowScrolling: "touch"
-      }} className="no-scrollbar">
-        {images.map((img, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: i * 0.1, ease: E }}
-            style={{
-              flexShrink: 0,
-              width: "calc(100vw - 64px)", // leaves space on left/right for peeking next/prev images
-              height: "45vh",
-              borderRadius: 28,
-              overflow: "hidden",
-              border: `1.5px solid ${B}`,
-              boxShadow: theme === "dark" ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.08)",
-              scrollSnapAlign: "center",
-              position: "relative"
-            }}
-          >
-            {/* Soft Ambient Zoom Effect */}
-            <motion.img
-              src={img}
-              animate={{ scale: [1, 1.04, 1] }}
-              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              alt=""
-            />
-            {/* Subtle bottom shadow overlay inside card */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4) 100%)",
-              pointerEvents: "none"
-            }} />
-          </motion.div>
-        ))}
-      </div>
+      {/* Auto Moving Hero Image Stack / Marquee */}
+      {(() => {
+        const baseHeroList = images.length > 0 ? images : ["https://picsum.photos/seed/destination/800/1000"];
+        let filledHero = [...baseHeroList];
+        while (filledHero.length < 6) {
+          filledHero = [...filledHero, ...baseHeroList];
+        }
+        const doubledHero = [...filledHero, ...filledHero];
+        const cardWidth = "calc(82vw)";
+        const heroDuration = filledHero.length * 9;
+
+        return (
+          <div style={{ position: "relative", overflow: "hidden", width: "100%", padding: "16px 0" }}>
+            <style>{`
+              @keyframes placeMobileHeroScroll {
+                0% { transform: translate3d(0, 0, 0); }
+                100% { transform: translate3d(-50%, 0, 0); }
+              }
+            `}</style>
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                width: "max-content",
+                animation: `placeMobileHeroScroll ${heroDuration}s linear infinite`,
+                willChange: "transform",
+                transform: "translate3d(0, 0, 0)",
+                WebkitTransform: "translate3d(0, 0, 0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}
+            >
+              {doubledHero.map((img, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flexShrink: 0,
+                    width: cardWidth,
+                    height: "45vh",
+                    borderRadius: 28,
+                    overflow: "hidden",
+                    border: `1.5px solid ${B}`,
+                    boxShadow: theme === "dark" ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.08)",
+                    position: "relative",
+                    transform: "translateZ(0)",
+                    WebkitTransform: "translateZ(0)",
+                    WebkitMaskImage: "-webkit-radial-gradient(white, black)"
+                  }}
+                >
+                  <img
+                    src={img}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    alt=""
+                    loading="eager"
+                  />
+                  {/* Subtle bottom shadow overlay inside card */}
+                  <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4) 100%)",
+                    pointerEvents: "none"
+                  }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Overlapping Content Card */}
       <motion.div

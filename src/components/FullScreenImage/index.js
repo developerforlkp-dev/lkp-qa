@@ -160,15 +160,13 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         
         .fs-image {
           object-fit: contain !important;
-          width: 100% !important;
-          height: 100% !important;
+          max-width: calc(100% - 48px) !important;
+          max-height: calc(100% - 48px) !important;
+          width: auto !important;
+          height: auto !important;
+          border-radius: 20px !important;
+          overflow: hidden;
           filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
-          position: absolute;
-          top: 0;
-          left: 0;
-          padding: 24px;
-          box-sizing: border-box;
-          border-radius: 40px;
           z-index: 1;
         }
         
@@ -272,8 +270,11 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
           }
           .fs-image {
             object-fit: contain !important;
-            border-radius: 32px 0 0 32px;
-            padding: 0;
+            border-radius: 20px !important;
+            max-width: calc(100% - 32px) !important;
+            max-height: calc(100% - 32px) !important;
+            width: auto !important;
+            height: auto !important;
           }
           .fs-image-bg {
             display: none;
@@ -342,8 +343,13 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
             padding: 0;
           }
           .fs-image {
-            padding: 12px !important;
             object-fit: contain !important;
+            border-radius: 16px !important;
+            max-width: calc(100% - 24px) !important;
+            max-height: calc(100% - 24px) !important;
+            width: auto !important;
+            height: auto !important;
+            padding: 0 !important;
           }
           .fs-nav-btn {
             width: 40px;
@@ -391,7 +397,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
             <div className="fs-count-pill" style={{ position: 'absolute', top: 24, left: 24, zIndex: 100, background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
               {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{Math.max(1, items.length)}</span>
             </div>
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {/* Blurred background layer for aesthetic fill */}
               <motion.img
                 className="fs-image-bg"
@@ -400,19 +406,31 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.6 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.4 }}
                 alt=""
               />
-              <motion.img
-                className="fs-image"
+              <motion.div
                 key={src}
-                src={src}
-                initial={{ opacity: 0, scale: 0.98, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'brightness(1)' }}
-                exit={{ opacity: 0, scale: 1.02, filter: isDark ? 'brightness(0.5)' : 'brightness(1.1)' }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                alt="Viewer"
-              />
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                <img
+                  className="fs-image"
+                  src={src}
+                  alt="Viewer"
+                  style={{ pointerEvents: 'auto' }}
+                />
+              </motion.div>
             </AnimatePresence>
 
             {hasNavigation && (

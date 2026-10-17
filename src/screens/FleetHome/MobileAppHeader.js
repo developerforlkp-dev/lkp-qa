@@ -58,7 +58,7 @@ const MobileAppHeader = ({
           <div className={styles.searchBar} onClick={onSearchClick}>
             <Search size={18} className={styles.searchIcon} />
             <div className={styles.searchText}>
-              <div className={styles.searchTitle}>Search by...</div>
+              <div className={styles.searchTitle}>Search</div>
             </div>
           </div>
         )}
@@ -80,7 +80,7 @@ const MobileAppHeader = ({
               aria-label="Wishlists"
               style={{ position: 'relative' }}
             >
-              <Heart size={20} />
+              <Heart size={18} />
               {wishlistCount > 0 && (
                 <span className={styles.wishlistBadge}>
                   {wishlistCount > 99 ? "99+" : wishlistCount}

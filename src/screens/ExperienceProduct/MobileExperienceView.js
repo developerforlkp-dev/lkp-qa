@@ -142,7 +142,6 @@ export default function MobileExperienceView({
   const [descExpanded, setDescExpanded] = useState(false);
   const [photoVisible, setPhotoVisible] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [galleryIndex, setGalleryIndex] = useState(0);
   const [expandedActivities, setExpandedActivities] = useState({});
   const [bookingOpen, setBookingOpen] = useState(false);
   const [activityPhotoVisible, setActivityPhotoVisible] = useState(false);
@@ -152,9 +151,8 @@ export default function MobileExperienceView({
   const [selectedAddonImages, setSelectedAddonImages] = useState([]);
   const [addonPhotoIndex, setAddonPhotoIndex] = useState(0);
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
-  const galleryRef = useRef(null);
 
-  /* ── gallery scroll handler ── */
+  /* ── footer visibility handler ── */
   const [isFooterVisible, setIsFooterVisible] = useState(false);
 
   React.useEffect(() => {
@@ -177,14 +175,6 @@ export default function MobileExperienceView({
       clearInterval(interval);
       observer.disconnect();
     };
-  }, []);
-
-  const handleGalleryScroll = useCallback(() => {
-    if (!galleryRef.current) return;
-    const el = galleryRef.current;
-    const itemWidth = el.querySelector(".mob-gallery-item")?.offsetWidth || 280;
-    const idx = Math.round(el.scrollLeft / (itemWidth + 12));
-    setGalleryIndex(idx);
   }, []);
 
   /* ── share handler ── */
@@ -327,49 +317,157 @@ export default function MobileExperienceView({
           ║         GALLERY SECTION           ║
           ╚═══════════════════════════════════╝ */}
       {imgs.length > 0 && (
-        <div className="mob-gallery" style={{ background: BG, paddingTop: 16 }}>
-          <div className="mob-gallery-scroll" ref={galleryRef} onScroll={handleGalleryScroll}>
-            {imgs.map((src, i) => (
-              <div key={i} className="mob-gallery-item" onClick={() => { setPhotoIndex(i); setPhotoVisible(true); }}>
-                <img src={src} alt={`Gallery ${i + 1}`} loading="lazy" />
+        <div className="mob-gallery" style={{ background: BG, paddingTop: 16, paddingBottom: 24, position: "relative", overflow: "hidden" }}>
+
+          {(() => {
+            const baseItemsLocal = imgs.length > 0 ? imgs : ["/images/content/placeholder.jpg"];
+            let filledItems = [...baseItemsLocal];
+            while (filledItems.length < 8) {
+              filledItems = [...filledItems, ...baseItemsLocal];
+            }
+            const doubledItems = [...filledItems, ...filledItems];
+
+            const itemWidth = 240;
+            const gap = 12;
+            const galleryDistance = filledItems.length * (itemWidth + gap);
+            const galleryDuration = galleryDistance / 20;
+
+            return (
+              <div
+                style={{
+                  display: "flex",
+                  gap: gap,
+                  width: "max-content",
+                  animation: `expMobMarqueeScroll ${galleryDuration}s linear infinite`,
+                  willChange: "transform",
+                  transform: "translate3d(0, 0, 0)",
+                  WebkitTransform: "translate3d(0, 0, 0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
+                }}
+              >
+                <style>{`
+                  @keyframes expMobMarqueeScroll {
+                    0% { transform: translate3d(0, 0, 0); }
+                    100% { transform: translate3d(-50%, 0, 0); }
+                  }
+                `}</style>
+                {doubledItems.map((img, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      setPhotoIndex(i % (imgs.length || 1));
+                      setPhotoVisible(true);
+                    }}
+                    style={{
+                      width: itemWidth,
+                      height: 160,
+                      borderRadius: 18,
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      border: `1px solid ${B}`,
+                      cursor: "pointer",
+                      transform: "translateZ(0)",
+                      WebkitTransform: "translateZ(0)",
+                      WebkitMaskImage: "-webkit-radial-gradient(white, black)"
+                    }}
+                  >
+                    <img
+                      src={img}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      alt="Gallery"
+                      loading="eager"
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {imgs.length > 1 && (
-            <div className="mob-gallery-dots">
-              {imgs.slice(0, Math.min(imgs.length, 8)).map((_, i) => (
-                <div key={i} className={`mob-gallery-dot${galleryIndex === i ? " active" : ""}`}
-                  style={{ background: galleryIndex === i ? A : (isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)") }} />
-              ))}
-            </div>
-          )}
+            );
+          })()}
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setPhotoIndex(0);
+              setPhotoVisible(true);
+            }}
+            style={{
+              position: "absolute",
+              bottom: 32,
+              right: 20,
+              background: "rgba(0, 0, 0, 0.45)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
+              borderRadius: 20,
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: "12px",
+              fontWeight: 500,
+              fontFamily: '"Inter", sans-serif',
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
+              cursor: "pointer",
+              zIndex: 10
+            }}
+          >
+            <Camera size={14} />
+            See photos
+          </motion.button>
         </div>
       )}
 
       {/* ╔═══════════════════════════════════╗
-          ║       QUICK FACTS STRIP           ║
+          ║       QUICK FACTS / AMENITIES     ║
           ╚═══════════════════════════════════╝ */}
-      <div className="mob-facts" style={{ background: BG }}>
-        {[
-          { icon: <Clock size={14} color={A} />, label: listing?.duration ? `${listing.duration} ${listing.durationUnit || "Hrs"}` : "2.5 Hrs" },
-          { icon: <User size={14} color={A} />, label: listing?.minimumAge ? `Min Age: ${listing.minimumAge}` : "All Ages Welcome" },
-          { icon: <Zap size={14} color={A} />, label: listing?.difficultyLevel || "Moderate" },
-          { icon: <Baby size={14} color={A} />, label: listing?.allowsInfants || listing?.infantsAllowed ? "Infants OK" : "No Infants" },
-          { icon: <Languages size={14} color={A} />, label: (() => { const l = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 ? listing.languagesOffered : (typeof listing?.languages === "string" && listing.languages.trim() ? listing.languages.split(",").map(s => s.trim()) : []); return l.length > 0 ? l.join(", ") : "Flexible"; })() },
-          { icon: <ShieldCheck size={14} color={A} />, label: listing?.privateOptionAvailable ? "Private Tour" : "Group Tour" },
-          { icon: <Users size={14} color={A} />, label: `Max ${displayMaxGuests || 15} Guests` },
-        ].map((fact, i) => (
-          <div key={i} className="mob-fact-item" style={{ 
-            color: FG, 
-            background: isDark ? "#1A1A1A" : "#FFFFFF", 
-            borderColor: isDark ? "#333333" : "rgba(0, 151, 178, 0.15)" 
+      <div style={{ padding: "8px 20px 24px", background: BG }}>
+        <div style={{
+          background: isDark ? "#141414" : "#FFFFFF",
+          border: `1px solid ${isDark ? "#282828" : "rgba(0, 151, 178, 0.15)"}`,
+          borderRadius: 20,
+          padding: "16px",
+          boxShadow: isDark ? "0 8px 24px rgba(0,0,0,0.3)" : "0 8px 24px rgba(0,0,0,0.03)"
+        }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "12px 16px"
           }}>
-            <div className="mob-fact-icon" style={{ background: isDark ? "rgba(0, 151, 178, 0.15)" : "rgba(0, 151, 178, 0.08)" }}>
-              {fact.icon}
-            </div>
-            <span className="mob-fact-label">{fact.label}</span>
+            {[
+              { icon: <Clock size={15} color={A} />, label: listing?.duration ? `${listing.duration} ${listing.durationUnit || "Hrs"}` : "2.5 Hrs" },
+              { icon: <User size={15} color={A} />, label: listing?.minimumAge ? `Min Age: ${listing.minimumAge}` : "All Ages Welcome" },
+              { icon: <Zap size={15} color={A} />, label: listing?.difficultyLevel || "Moderate" },
+              { icon: <Baby size={15} color={A} />, label: listing?.allowsInfants || listing?.infantsAllowed ? "Infants OK" : "No Infants" },
+              { icon: <Languages size={15} color={A} />, label: (() => { const l = Array.isArray(listing?.languagesOffered) && listing.languagesOffered.length > 0 ? listing.languagesOffered : (typeof listing?.languages === "string" && listing.languages.trim() ? listing.languages.split(",").map(s => s.trim()) : []); return l.length > 0 ? l.join(", ") : "Flexible"; })() },
+              { icon: <ShieldCheck size={15} color={A} />, label: listing?.privateOptionAvailable ? "Private Tour" : "Group Tour" },
+              { icon: <Users size={15} color={A} />, label: `Max ${displayMaxGuests || 15} Guests` },
+            ].map((fact, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: isDark ? "rgba(0, 151, 178, 0.15)" : "rgba(0, 151, 178, 0.08)",
+                  flexShrink: 0
+                }}>
+                  {fact.icon}
+                </div>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: FG,
+                  lineHeight: 1.3
+                }}>
+                  {fact.label}
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
 

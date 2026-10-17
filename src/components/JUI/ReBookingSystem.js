@@ -4540,7 +4540,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     </div>
 
                     <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
-                      {experienceSupportsPrivateBooking && (
+                      {!isDirect && experienceSupportsPrivateBooking && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 8 }}>
                           <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Private Booking</span>
                           <button

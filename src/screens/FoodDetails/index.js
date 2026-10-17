@@ -19,6 +19,7 @@ import Icon from "../../components/Icon";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import CuratedContent from "../../components/CuratedContent";
+import FullScreenImage from "../../components/FullScreenImage";
 import { getShareText } from "../../utils/shareUtils";
 
 const toDisplayString = (value) => {
@@ -819,12 +820,14 @@ function CulinaryHero({ food, galleryItems }) {
   const history = useHistory();
   const { isMobile } = useWindowSize();
   const { theme, tokens } = useTheme();
-  const { A, FG, M, BG, W, B, AL } = tokens;
+  const { A, FG, M, BG, W, B, S, AL } = tokens;
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const id = food?.id || food?.foodId || food?._id || searchParams.get("id");
 
   const [idx, setIdx] = useState(0);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const items = galleryItems?.length ? galleryItems : ["https://picsum.photos/seed/culinary/1200/800"];
 
   useEffect(() => {
@@ -870,48 +873,36 @@ function CulinaryHero({ food, galleryItems }) {
   }, [food?.openingDays]);
 
   if (isMobile) {
-    return (
-      <section className="hero-section-wrapper-mobile" style={{ background: BG, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "40px" }}>
-        {/* Full-width screen bleed image slider at the top */}
-        <div className="hero-mobile-image-container" style={{ width: "100%", height: "55vh", position: "relative", overflow: "hidden", borderRadius: "0 0 36px 36px" }}>
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={idx}
-              src={items[idx]}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-              alt={title}
-            />
-          </AnimatePresence>
-          {/* Subtle dark gradient overlay at the bottom of the image container to transition into the page background */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: `linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.65))` }} />
-          
-          {/* Reposition floating badges (e.g., Family Friendly, Parking Available) as compact overlays */}
-          <div style={{ position: "absolute", top: 100, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-            {(food?.isFamilyFriendly || food?.familyFriendly) && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${B}`, boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}>
-                <Star size={12} color={A} fill={A} style={{ display: "block" }} />
-                <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.05em" }}>Family Friendly</span>
-              </div>
-            )}
-          </div>
-          {(food?.isParkingAvailable || food?.parkingAvailable) && (
-            <div style={{ position: "absolute", bottom: 20, right: 20, zIndex: 10, display: "flex", alignItems: "center", gap: 6, background: "rgba(0, 151, 178, 0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "4px 10px", borderRadius: 20, border: `1px solid ${A}33`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
-              <MapPin size={12} color="#fff" />
-              <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>Parking Available</span>
-            </div>
-          )}
-        </div>
+    const mainImg = items[0];
+    const subImg1 = items[1] || items[0];
+    const subImg2 = items[2] || items[1] || items[0];
+    const subImg3 = items[3] || items[0];
+    const totalCount = items.length;
 
-        {/* Mobile Top Controls */}
-        <div style={{ position: "absolute", top: 80, left: 20, right: 20, display: "flex", justifyContent: "flex-end", zIndex: 200, pointerEvents: "none" }}>
-          <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
+    return (
+      <section className="hero-section-wrapper-mobile" style={{ background: BG, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "32px", paddingTop: "72px" }}>
+        {/* Top Action Bar */}
+        <div style={{ padding: "0 16px 12px", display: "flex", alignItems: "center", justifyContent: "flex-end", position: "relative", zIndex: 10 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <Favorite itemType="food" itemId={id}>
               {({ saved, onClick }) => (
-                <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                  aria-label="Save to favorites"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
+                    border: `1px solid ${B}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                    outline: "none",
+                    cursor: "pointer"
+                  }}
+                >
                   <style>{`
                     .mobile-save-icon-alt-${id} svg {
                       fill: ${saved ? (A || "#0097B2") : (theme === "dark" ? "#FFFFFF" : "#111111")};
@@ -919,61 +910,251 @@ function CulinaryHero({ food, galleryItems }) {
                     }
                   `}</style>
                   <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                    <Icon name={saved ? "heart-fill" : "heart"} size={18} />
                   </div>
                 </button>
               )}
             </Favorite>
-            <button onClick={async (e) => { 
-              e.stopPropagation(); 
-              try {
-                if (navigator.share) {
-                  const shareText = getShareText(food, "food");
-                  await navigator.share({ 
-                    title: food?.menuName || food?.title || "", 
-                    text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
-                  });
-                } else {
-                  const fallbackText = `${getShareText(food, "food")}\n${window.location.href}`;
-                  await navigator.clipboard.writeText(fallbackText);
-                }
-              } catch (_) {}
-            }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
-              <Share2 size={20} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
+            <button
+              onClick={async (e) => { 
+                e.stopPropagation(); 
+                try {
+                  if (navigator.share) {
+                    const shareText = getShareText(food, "food");
+                    await navigator.share({ 
+                      title: food?.menuName || food?.title || "", 
+                      text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+                    });
+                  } else {
+                    const fallbackText = `${getShareText(food, "food")}\n${window.location.href}`;
+                    await navigator.clipboard.writeText(fallbackText);
+                  }
+                } catch (_) {}
+              }}
+              aria-label="Share"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
+                border: `1px solid ${B}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <Share2 size={18} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
             </button>
           </div>
         </div>
 
-        {/* Floating Content Card */}
-        <div className="hero-mobile-floating-card" style={{
-          marginTop: "-64px",
-          marginLeft: "16px",
-          marginRight: "16px",
-          padding: "24px 20px",
-          borderRadius: "28px",
-          background: theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.82)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: `1px solid ${B}`,
-          boxShadow: theme === "dark" ? "0 20px 48px rgba(0, 0, 0, 0.35)" : "0 20px 48px rgba(0, 0, 0, 0.08)",
-          zIndex: 15,
-          position: "relative"
-        }}>
-          <h1 style={{
-            fontSize: "clamp(2rem, 8vw, 2.5rem)",
-            fontWeight: 700,
-            lineHeight: 1.1,
-            color: FG,
-            margin: 0,
-            letterSpacing: "-0.02em",
-            fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
-            textTransform: "capitalize"
-          }}>
+        {/* Compact Responsive Mobile Bento Image Grid */}
+        <div style={{ padding: "0 16px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.7fr 1fr",
+              gap: 8,
+              height: 290,
+              width: "100%",
+              borderRadius: 24,
+              overflow: "hidden",
+              position: "relative"
+            }}
+          >
+            {/* Primary Large Image (Left, 2 rows high) */}
+            <div
+              onClick={() => {
+                setActivePhotoIndex(0);
+                setIsGalleryOpen(true);
+              }}
+              style={{
+                position: "relative",
+                width: "100%",
+                height: "100%",
+                borderRadius: 20,
+                overflow: "hidden",
+                border: `1px solid ${B}`,
+                background: S,
+                cursor: "pointer"
+              }}
+            >
+              <img
+                src={mainImg}
+                alt={title}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, transparent 80%)",
+                  pointerEvents: "none"
+                }}
+              />
+              {/* Category pill on main card */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  background: "rgba(0,0,0,0.55)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  padding: "4px 10px",
+                  borderRadius: 14,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase"
+                }}
+              >
+                {category}
+              </div>
+
+              {/* Badges on main card */}
+              <div style={{ position: "absolute", bottom: 12, left: 12, right: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(food?.isFamilyFriendly || food?.familyFriendly) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "3px 8px", borderRadius: 12, border: `1px solid ${B}` }}>
+                    <Star size={10} color={A} fill={A} style={{ display: "block" }} />
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.04em" }}>Family</span>
+                  </div>
+                )}
+                {(food?.isParkingAvailable || food?.parkingAvailable) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(0, 151, 178, 0.9)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "3px 8px", borderRadius: 12 }}>
+                    <MapPin size={10} color="#fff" />
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.04em" }}>Parking</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: 2 stacked sub-images */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: "1fr 1fr",
+                gap: 8,
+                height: "100%",
+                minWidth: 0
+              }}
+            >
+              {/* Sub Image 1 (Top-Right) */}
+              <div
+                onClick={() => {
+                  setActivePhotoIndex(1 < items.length ? 1 : 0);
+                  setIsGalleryOpen(true);
+                }}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  border: `1px solid ${B}`,
+                  background: S,
+                  cursor: "pointer"
+                }}
+              >
+                <img
+                  src={subImg1}
+                  alt={`${title} detail 1`}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+              </div>
+
+              {/* Sub Image 2 (Bottom-Right, with overlay for more photos) */}
+              <div
+                onClick={() => {
+                  setActivePhotoIndex(2 < items.length ? 2 : 0);
+                  setIsGalleryOpen(true);
+                }}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  border: `1px solid ${B}`,
+                  background: S,
+                  cursor: "pointer"
+                }}
+              >
+                <img
+                  src={subImg2}
+                  alt={`${title} detail 2`}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+                {totalCount > 3 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0, 0, 0, 0.5)",
+                      backdropFilter: "blur(3px)",
+                      WebkitBackdropFilter: "blur(3px)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 4,
+                      color: "#FFFFFF",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.04em"
+                    }}
+                  >
+                    <span>+{totalCount - 3}</span>
+                    <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.9 }}>photos</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dish Title & Source */}
+        <div
+          style={{
+            marginTop: "16px",
+            padding: "0 20px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: A || "#0097B2", fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+            <Globe size={14} color={A || "#0097B2"} />
+            <span>{source}</span>
+          </div>
+          <h1
+            style={{
+              fontSize: "clamp(1.9rem, 7.5vw, 2.3rem)",
+              fontWeight: 700,
+              lineHeight: 1.15,
+              color: FG,
+              margin: 0,
+              letterSpacing: "-0.02em",
+              fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
+              textTransform: "capitalize"
+            }}
+          >
             {title}
           </h1>
         </div>
 
-
+        {/* Full-Screen Gallery Modal */}
+        <AnimatePresence>
+          {isGalleryOpen && (
+            <FullScreenImage
+              src={items[activePhotoIndex]}
+              items={items}
+              currentIndex={activePhotoIndex}
+              onNavigate={(newIdx) => setActivePhotoIndex(newIdx)}
+              onClose={() => setIsGalleryOpen(false)}
+            />
+          )}
+        </AnimatePresence>
       </section>
     );
   }
