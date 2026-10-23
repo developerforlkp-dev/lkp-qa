@@ -23,9 +23,16 @@ import { isDirectBookingPathOrState } from "../../../utils/directBooking";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('/')) return url;
-  return url;
+  const raw = String(url).trim();
+  if (!raw) return "";
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("/")) return raw;
+
+  // Azure blob storage path (e.g., "leads/Events/..." or encoded "leads%2F...")
+  const [pathPart, queryPart] = raw.split("?");
+  const normalizedPath = String(pathPart).replaceAll("%2F", "/");
+  const encodedPath = encodeURI(normalizedPath);
+  return `https://lkpleadstoragedev.blob.core.windows.net/lead-documents/${encodedPath}${queryPart ? `?${queryPart}` : ""}`;
 };
 
 const formatHostName = (hostPayload) => {
@@ -551,7 +558,7 @@ function ImageRing({ event, onImageHover, onImageClick }) {
   // Use actual event media for the ring
   const media = Array.isArray(event?.media) ? event.media : [];
   const ringImages = media.length > 0
-    ? [...media].slice(0, 6).map(m => m.url || m.src)
+    ? [...media].slice(0, 6).map(m => formatImageUrl(m.url || m.src || m.mediaUrl || m.fileUrl || m))
     : [];
 
   const R = 150;
@@ -563,8 +570,7 @@ function ImageRing({ event, onImageHover, onImageClick }) {
           const x = (Math.cos(ang) * R).toFixed(3);
           const y = (Math.sin(ang) * R).toFixed(3);
 
-          // If we are using placeholders, construct the URL
-          const finalSrc = src;
+          const finalSrc = formatImageUrl(src);
 
           return (
             <div
@@ -1247,42 +1253,73 @@ function Hero({ event, heroRef }) {
       boxShadow: "0 10px 40px rgba(0,0,0,0.03)"
     }}>
       {/* Dynamic Background Image Overlay */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {currentBgImage && (
           <motion.div
             key={currentBgImage}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
             style={{
               position: "absolute",
               inset: 0,
-              backgroundImage: `url(${currentBgImage})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
               zIndex: 0,
-              pointerEvents: "none"
+              pointerEvents: "none",
+              overflow: "hidden"
             }}
           >
+            {/* Blurred ambient background layer to fill whitespace on non-standard aspect ratios */}
+            <img
+              src={currentBgImage}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: -20,
+                width: "calc(100% + 40px)",
+                height: "calc(100% + 40px)",
+                objectFit: "cover",
+                objectPosition: "center",
+                filter: "blur(28px) brightness(0.7)",
+                transform: "scale(1.1)",
+                pointerEvents: "none"
+              }}
+            />
+            {/* Crisp main background image */}
+            <img
+              src={currentBgImage}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center",
+                pointerEvents: "none"
+              }}
+            />
+            {/* Consistent dark gradient overlay so text is ALWAYS clearly legible whether the image is light, dark, or white */}
             <div style={{
               position: "absolute",
               inset: 0,
               background: theme === "dark"
-                ? "linear-gradient(to right, rgba(15,23,42,0.05) 0%, rgba(15,23,42,0.2) 70%, rgba(15,23,42,0.4) 100%)"
-                : "linear-gradient(to right, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.2) 70%, rgba(255,255,255,0.4) 100%)"
+                ? "linear-gradient(to right, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.65) 45%, rgba(15,23,42,0.3) 100%)"
+                : "linear-gradient(to right, rgba(10,20,30,0.78) 0%, rgba(10,20,30,0.52) 45%, rgba(10,20,30,0.18) 100%)"
             }} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Background Orbs & Grid */}
-      <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}>
-        <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.25, 0.4, 0.25] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-15%", left: "30%", width: 900, height: 900, borderRadius: "50%", background: `radial-gradient(circle, ${A}15 0%, transparent 60%)` }} />
-        <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }} style={{ position: "absolute", bottom: "-10%", right: "10%", width: 700, height: 700, borderRadius: "50%", background: `radial-gradient(circle, ${A}10 0%, transparent 60%)` }} />
-        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}06 1px, transparent 1px), linear-gradient(90deg, ${A}06 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 60%, ${W}99 100%)` }} />
-      </motion.div>
+      {/* Background Orbs & Grid - only when no background image is active */}
+      {!currentBgImage && (
+        <motion.div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}>
+          <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.25, 0.4, 0.25] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", top: "-15%", left: "30%", width: 900, height: 900, borderRadius: "50%", background: `radial-gradient(circle, ${A}15 0%, transparent 60%)` }} />
+          <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }} style={{ position: "absolute", bottom: "-10%", right: "10%", width: 700, height: 700, borderRadius: "50%", background: `radial-gradient(circle, ${A}10 0%, transparent 60%)` }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${A}06 1px, transparent 1px), linear-gradient(90deg, ${A}06 1px, transparent 1px)`, backgroundSize: "80px 80px" }} />
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, transparent 60%, ${W}99 100%)` }} />
+        </motion.div>
+      )}
 
       {/* Controls: Back & Share */}
       <button
@@ -1405,11 +1442,12 @@ function Hero({ event, heroRef }) {
               {(() => {
                 const words = title.split(' ');
                 let displayTitle;
+                const mainTitleColor = currentBgImage ? "#FFFFFF" : FG;
                 if (words.length >= 2) {
                   const lastWord = words.pop();
                   displayTitle = (
                     <>
-                      <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>
+                      <span style={{ color: mainTitleColor, WebkitTextFillColor: mainTitleColor }}>
                         {words.join(' ')}{' '}
                       </span>
                       <span style={{
@@ -1426,7 +1464,7 @@ function Hero({ event, heroRef }) {
                     </>
                   );
                 } else {
-                  displayTitle = <span style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}>{title}</span>;
+                  displayTitle = <span style={{ color: mainTitleColor, WebkitTextFillColor: mainTitleColor }}>{title}</span>;
                 }
 
                 return (
