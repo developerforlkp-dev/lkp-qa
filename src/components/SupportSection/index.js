@@ -16,15 +16,15 @@ const SupportSection = ({ title = "Need Help?", description = "Our support team 
         </div>
       </div>
       <div className={styles.supportRight}>
-        <Link to="/support" className={styles.chatButton}>
-          <Icon name="comment" size="16" className={styles.chatIcon} />
-          Raise a ticket
-        </Link>
+        <a href="tel:+919895521927" className={styles.chatButton}>
+          <Icon name="phone" size="16" className={styles.chatIcon} />
+          Call Support
+        </a>
         <div className={styles.emailContact}>
           <Icon name="email" size="20" className={styles.emailIcon} />
           <div className={styles.emailText}>
             <strong>Email us</strong>
-            <a href="mailto:support@littleplanet.com">support@littleplanet.com</a>
+            <a href="mailto:support@littleknownplanet.com">support@littleknownplanet.com</a>
           </div>
         </div>
       </div>

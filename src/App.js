@@ -301,7 +301,7 @@ function App() {
             />
             <Route
               exact
-              path="/place-details"
+              path={["/place-details", "/places/:slugOrId"]}
               render={() => (
                 <Page separatorHeader fooferHide>
                   <PlaceDetails />

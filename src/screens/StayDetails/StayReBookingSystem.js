@@ -1201,6 +1201,7 @@ const StayBookingSystem = ({
   // ---------------------------------
   const [show, setShow] = useState(false);
   const [showNoRoomTip, setShowNoRoomTip] = useState(false);
+  const noRoomTipTimerRef = useRef(null);
   const [validationError, setValidationError] = useState("");
   const [selectionMode, setSelectionMode] = useState("check-in");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -4128,6 +4129,14 @@ const StayBookingSystem = ({
             width: calc(100% - 40px) !important;
             margin: 0 auto !important;
           }
+          .stay-booking-noroom-tip {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            width: max-content !important;
+            max-width: calc(100vw - 48px) !important;
+            text-align: center !important;
+          }
           .stay-booking-trigger {
             width: 100% !important;
             justify-content: center !important;
@@ -4171,6 +4180,13 @@ const StayBookingSystem = ({
 
         const handleFloatingClick = () => {
           if (!hasRoomSelected) {
+            setShowNoRoomTip(true);
+            if (noRoomTipTimerRef.current) {
+              clearTimeout(noRoomTipTimerRef.current);
+            }
+            noRoomTipTimerRef.current = setTimeout(() => {
+              setShowNoRoomTip(false);
+            }, 3500);
             scrollToAccommodations();
             return;
           }
@@ -4191,6 +4207,7 @@ const StayBookingSystem = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.95 }}
                   transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  className="stay-booking-noroom-tip"
                   style={{
                     position: "absolute",
                     bottom: "calc(100% + 14px)",
@@ -4201,7 +4218,7 @@ const StayBookingSystem = ({
                     fontWeight: 600,
                     padding: "11px 16px",
                     borderRadius: 12,
-                    maxWidth: 260,
+                    maxWidth: 280,
                     whiteSpace: "normal",
                     lineHeight: 1.5,
                     boxShadow: `0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px ${B}`,
@@ -4242,18 +4259,18 @@ const StayBookingSystem = ({
               onClick={handleFloatingClick}
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: isFooterVisible ? 150 : 0, opacity: isFooterVisible ? 0 : 1 }}
-              whileHover={hasRoomSelected ? {
+              whileHover={{
                 scale: 1.04,
                 background: AH || A,
                 boxShadow: `0 20px 35px -8px rgba(0,0,0,0.15), 0 30px 60px -10px ${A}55, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)`
-              } : { scale: 1.02 }}
+              }}
               whileTap={{ scale: 0.96 }}
               className="stay-booking-trigger"
               style={{
                 position: "relative",
                 bottom: "auto",
                 right: "auto",
-                background: hasRoomSelected ? A : `${A}88`,
+                background: A,
                 color: "#FFF",
                 padding: "18px 42px",
                 borderRadius: 100,
@@ -4261,17 +4278,15 @@ const StayBookingSystem = ({
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 12,
-                boxShadow: hasRoomSelected
-                  ? `0 12px 24px -6px rgba(0,0,0,0.12), 0 20px 40px -8px ${A}3b, 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.25)`
-                  : `0 4px 12px rgba(0,0,0,0.08)`,
+                boxShadow: `0 12px 24px -6px rgba(0,0,0,0.12), 0 20px 40px -8px ${A}3b, 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.25)`,
                 border: "none",
-                cursor: hasRoomSelected ? "pointer" : "not-allowed",
+                cursor: "pointer",
                 fontWeight: 800,
                 fontSize: 17,
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
                 transition: "background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease",
-                opacity: hasRoomSelected ? 1 : 0.65,
+                opacity: 1,
               }}
             >
               <Bed size={22} />

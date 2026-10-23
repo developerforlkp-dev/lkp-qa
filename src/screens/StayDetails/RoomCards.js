@@ -700,54 +700,184 @@ const RoomCard = ({ roomId: propRoomId, room, roomIndex, listing, onRoomSelect, 
             )}
 
             {/* Amenities Row */}
-            <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "8px", overflowX: isMobile ? "auto" : "visible", paddingBottom: isMobile ? "4px" : "0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              {(() => {
-                const chips = [];
-                if (room.bedType) chips.push({ type: 'bed', val: room.bedType });
-                if (room.roomSize) chips.push({ type: 'size', val: room.roomSize });
-                features.forEach(f => chips.push({ type: 'feature', val: f }));
+            {(() => {
+              const chips = [];
+              if (room.bedType) chips.push({ type: 'bed', val: room.bedType });
+              if (room.roomSize) chips.push({ type: 'size', val: room.roomSize });
+              features.forEach(f => chips.push({ type: 'feature', val: f }));
 
-                const visibleChips = showAllAmenities ? chips : chips.slice(0, 5);
-                const hiddenCount = chips.length - 5;
+              const maxInitial = isMobile ? 3 : 5;
+              const hasOverflow = chips.length > maxInitial;
+              const initialChips = chips.slice(0, maxInitial);
+              const extraChips = chips.slice(maxInitial);
+              const hiddenCount = extraChips.length;
 
-                return (
-                  <>
-                    {visibleChips.map((chip, i) => (
-                      <span key={i} style={{ flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}>
+              return (
+                <motion.div
+                  layout
+                  transition={{ layout: { duration: 0.35, ease: [0.25, 1, 0.5, 1] } }}
+                  style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      alignItems: "center"
+                    }}
+                  >
+                    {/* Always visible initial chips */}
+                    {initialChips.map((chip, i) => (
+                      <span
+                        key={`init-${chip.type}-${chip.val}-${i}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          fontSize: "11.5px",
+                          fontWeight: 700,
+                          color: A,
+                          background: "rgba(0, 151, 178, 0.06)",
+                          padding: "5px 12px",
+                          borderRadius: "100px",
+                          border: "1px solid rgba(0, 151, 178, 0.18)",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
                         {chip.type === 'size' ? `${chip.val} sq ft` : chip.val}
                       </span>
                     ))}
-                    {!showAllAmenities && hiddenCount > 0 && (
-                      <span
-                        onClick={() => setShowAllAmenities(true)}
-                        style={{ cursor: "pointer", flexShrink: 0, fontSize: "11px", fontWeight: 700, color: A, background: "rgba(0, 151, 178, 0.06)", padding: "4px 10px", borderRadius: "100px", border: "1px solid rgba(0, 151, 178, 0.15)", whiteSpace: "nowrap" }}
+
+                    {/* Smooth expanding / collapsing extra chips */}
+                    <AnimatePresence initial={false}>
+                      {showAllAmenities && extraChips.map((chip, i) => (
+                        <motion.span
+                          key={`extra-${chip.type}-${chip.val}-${i}`}
+                          initial={{ opacity: 0, scale: 0.8, y: -4 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.8, y: -4 }}
+                          transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            fontSize: "11.5px",
+                            fontWeight: 700,
+                            color: A,
+                            background: "rgba(0, 151, 178, 0.06)",
+                            padding: "5px 12px",
+                            borderRadius: "100px",
+                            border: "1px solid rgba(0, 151, 178, 0.18)",
+                            whiteSpace: "nowrap"
+                          }}
+                        >
+                          {chip.type === 'size' ? `${chip.val} sq ft` : chip.val}
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
+
+                    {/* Toggle Button */}
+                    {hasOverflow && (
+                      <motion.button
+                        layout
+                        type="button"
+                        onClick={() => setShowAllAmenities(!showAllAmenities)}
+                        whileTap={{ scale: 0.94 }}
+                        transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          cursor: "pointer",
+                          fontSize: "11.5px",
+                          fontWeight: 800,
+                          color: A,
+                          background: "rgba(0, 151, 178, 0.1)",
+                          padding: "5px 12px",
+                          borderRadius: "100px",
+                          border: "1px solid rgba(0, 151, 178, 0.28)",
+                          whiteSpace: "nowrap",
+                          outline: "none"
+                        }}
                       >
-                        +{hiddenCount} more
-                      </span>
+                        {showAllAmenities ? (
+                          <>
+                            Show less
+                            <ChevronDown size={13} style={{ transform: "rotate(180deg)", transition: "transform 0.25s ease" }} />
+                          </>
+                        ) : (
+                          <>
+                            +{hiddenCount} more
+                            <ChevronDown size={13} style={{ transition: "transform 0.25s ease" }} />
+                          </>
+                        )}
+                      </motion.button>
                     )}
-                  </>
-                )
-              })()}
-            </div>
+                  </div>
+                </motion.div>
+              );
+            })()}
           </div>
         </div>
 
         {description && (
-          <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
-            <motion.p
-              layout="position"
-              style={{ fontSize: "14px", color: M, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif', opacity: 0.8 }}
-            >
-              {(!showDesc && description.length > 150) ? `${description.slice(0, 150)}...` : description}
-            </motion.p>
-            {description.length > 150 && (
-              <button
-                onClick={() => setShowDesc(!showDesc)}
-                style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 700, color: A, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: '"Inter", sans-serif' }}
+          <div style={{ marginTop: "16px" }}>
+            {isMobile ? (
+              <motion.p
+                layout="position"
+                style={{
+                  fontSize: "14px",
+                  color: M,
+                  lineHeight: 1.6,
+                  margin: 0,
+                  fontFamily: '"Inter", sans-serif',
+                  opacity: 0.8,
+                  fontWeight: 400
+                }}
               >
-                {showDesc ? "Less details" : "More details"}
-                <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showDesc ? "rotate(180deg)" : "none" }} />
-              </button>
+                {(!showDesc && description.length > 150) ? `${description.slice(0, 150)}... ` : `${description} `}
+                {description.length > 150 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDesc(!showDesc)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      fontSize: "14px",
+                      fontWeight: 400,
+                      color: A,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      fontFamily: '"Inter", sans-serif',
+                      verticalAlign: "baseline",
+                      lineHeight: "inherit",
+                      opacity: 1
+                    }}
+                  >
+                    {showDesc ? "Less details" : "More details"}
+                    <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showDesc ? "rotate(180deg)" : "none", display: "inline-block" }} />
+                  </button>
+                )}
+              </motion.p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
+                <motion.p
+                  layout="position"
+                  style={{ fontSize: "14px", color: M, lineHeight: 1.6, margin: 0, fontFamily: '"Inter", sans-serif', opacity: 0.8 }}
+                >
+                  {(!showDesc && description.length > 150) ? `${description.slice(0, 150)}...` : description}
+                </motion.p>
+                {description.length > 150 && (
+                  <button
+                    onClick={() => setShowDesc(!showDesc)}
+                    style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: 700, color: A, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: '"Inter", sans-serif' }}
+                  >
+                    {showDesc ? "Less details" : "More details"}
+                    <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showDesc ? "rotate(180deg)" : "none" }} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}

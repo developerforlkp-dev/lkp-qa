@@ -233,6 +233,17 @@
     top: 12px
     right: 12px
     z-index: 2
+    +m
+        top: 8px
+        right: 8px
+        width: 28px !important
+        height: 28px !important
+        min-width: 28px !important
+        padding: 0 !important
+        transform: none !important
+        svg
+            width: 15px !important
+            height: 15px !important
 
 .contentSection
     display: flex
@@ -441,3 +452,44 @@
     gap: 4px
     svg
         fill: white
+
+.closedBadge
+    position: absolute
+    top: 12px
+    left: 12px
+    z-index: 3
+    display: flex
+    align-items: center
+    gap: 8px
+    background: rgba(15, 23, 42, 0.85)
+    color: #ffffff
+    padding: 6px 14px
+    border-radius: 8px
+    font-size: 12px
+    font-weight: 800
+    font-family: 'Inter', sans-serif
+    text-transform: uppercase
+    letter-spacing: 0.06em
+    backdrop-filter: blur(12px)
+    -webkit-backdrop-filter: blur(12px)
+    border: 1px solid rgba(255, 255, 255, 0.25)
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4)
+    +m
+        top: 8px
+        left: 8px
+        padding: 3px 8px
+        font-size: 9.5px
+        letter-spacing: 0.04em
+        gap: 5px
+        border-radius: 6px
+
+.closedDot
+    width: 8px
+    height: 8px
+    border-radius: 50%
+    background: #FF4D4D
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.6)
+    +m
+        width: 6px
+        height: 6px
+

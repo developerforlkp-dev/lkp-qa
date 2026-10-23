@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo, createContext, useContext, useRef } from "react";
 import useDarkMode from "../../hooks/useDarkMode";
-import { useLocation, Link, useHistory } from "react-router-dom";
+import { useLocation, Link, useHistory, useParams } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Sparkles, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart, X, Building, ChevronDown
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart, X, Building, ChevronDown, Car
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -22,6 +22,8 @@ import Icon from "../../components/Icon";
 import FullScreenImage from "../../components/FullScreenImage";
 import CuratedContent from "../../components/CuratedContent";
 import { getShareText } from "../../utils/shareUtils";
+import SEOHead from "../../components/SEOHead";
+import { buildPlaceSchema, buildBreadcrumbSchema } from "../../utils/schemaBuilder";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -1021,14 +1023,46 @@ function PlaceDescription({ place }) {
   const { isMobile } = useWindowSize();
   const description = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
 
+  const entryFeeDisplay = useMemo(() => {
+    const isFree = place?.entryType && String(place.entryType).toLowerCase() === "free";
+    if (isFree) return "Free Entry";
+    if (place?.entryFee && !isNaN(Number(place.entryFee))) {
+      return `₹${parseFloat(place.entryFee)}`;
+    }
+    return place?.entryFee || (place?.entryType ? `${place.entryType} Entry` : "Not Specified");
+  }, [place?.entryFee, place?.entryType]);
+
+  const parkingDisplay = useMemo(() => {
+    if (typeof place?.parkingAvailable === "boolean") {
+      return place.parkingAvailable ? "Available" : "Not Available";
+    }
+    if (typeof place?.isParkingAvailable === "boolean") {
+      return place.isParkingAvailable ? "Available" : "Not Available";
+    }
+    if (typeof place?.parking === "string" && place.parking.trim()) {
+      const val = place.parking.trim().toLowerCase();
+      if (val === "true" || val === "available" || val === "yes") return "Available";
+      if (val === "false" || val === "not available" || val === "no" || val === "none") return "Not Available";
+      return place.parking;
+    }
+    if (place?.parkingAvailable !== undefined && place?.parkingAvailable !== null) {
+      return place.parkingAvailable ? "Available" : "Not Available";
+    }
+    return "Not Specified";
+  }, [place?.parkingAvailable, place?.isParkingAvailable, place?.parking]);
+
   const facts = [
     { label: "Timings", val: (place?.openingTime && place?.closingTime) ? `${place.openingTime} - ${place.closingTime}` : (place?.timings || place?.openingHours || "Not Specified"), icon: Clock },
-    { label: "Entry Fee", val: place?.entryFee || "Not Specified", icon: Ticket },
+    { label: "Entry Fee", val: entryFeeDisplay, icon: Ticket },
     { label: "Best Time", val: place?.bestTimeToVisit || "Not Specified", icon: Star },
-    { label: "Rating", val: place?.rating || place?.averageRating ? `${place?.rating || place?.averageRating} Rating` : "Not Rated", icon: Check },
+    { label: "Parking", val: parkingDisplay, icon: Car },
   ];
 
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
+
   if (isMobile) {
+    const isLongDescription = description.length > 180;
+
     return (
       <section className="place-description-section" style={{ background: W, padding: "32px 16px", borderBottom: `1px solid ${B}` }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -1057,18 +1091,48 @@ function PlaceDescription({ place }) {
           </div>
 
           {/* Description Text */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <span style={{ fontSize: "10px", fontWeight: 700, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: '"Inter", sans-serif' }}>About this place</span>
-            <p style={{
-              fontSize: 15,
-              lineHeight: 1.7,
-              color: FG,
-              margin: 0,
-              fontWeight: 400,
-              fontFamily: '"Inter", sans-serif'
-            }}>
-              {description}
-            </p>
+            <div style={{ position: "relative" }}>
+              <p style={{
+                fontSize: 15,
+                lineHeight: 1.7,
+                color: FG,
+                margin: 0,
+                fontWeight: 400,
+                fontFamily: '"Inter", sans-serif',
+                display: !isDescExpanded && isLongDescription ? "-webkit-box" : "block",
+                WebkitLineClamp: !isDescExpanded && isLongDescription ? 3 : "unset",
+                WebkitBoxOrient: "vertical",
+                overflow: !isDescExpanded && isLongDescription ? "hidden" : "visible",
+                transition: "all 0.3s ease"
+              }}>
+                {description}
+              </p>
+              {isLongDescription && (
+                <button
+                  type="button"
+                  onClick={() => setIsDescExpanded(!isDescExpanded)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: "8px 0 0 0",
+                    margin: 0,
+                    color: A,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    outline: "none"
+                  }}
+                >
+                  {isDescExpanded ? "Read Less" : "Read More"}
+                  <span style={{ fontSize: 12, transform: isDescExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>▼</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -1504,9 +1568,31 @@ function VisitorInformation({ place }) {
   const { tokens: { A, B, FG, M, W, S } } = useTheme();
   const { isMobile } = useWindowSize();
   const [showAllVehicles, setShowAllVehicles] = useState(false);
+  const [showAllTickets, setShowAllTickets] = useState(false);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const carouselTrackRef = useRef(null);
+
+  const handleMobileScroll = () => {
+    if (!carouselTrackRef.current) return;
+    const { scrollLeft, offsetWidth } = carouselTrackRef.current;
+    if (offsetWidth > 0) {
+      const idx = Math.round(scrollLeft / (offsetWidth * 0.85 + 16));
+      setActiveCardIndex(Math.min(3, Math.max(0, idx)));
+    }
+  };
+
+  const scrollToCard = (index) => {
+    if (!carouselTrackRef.current) return;
+    const width = carouselTrackRef.current.offsetWidth;
+    carouselTrackRef.current.scrollTo({
+      left: index * (width * 0.85 + 16),
+      behavior: "smooth"
+    });
+    setActiveCardIndex(index);
+  };
 
   useEffect(() => {
-    if (showAllVehicles) {
+    if (showAllVehicles || showAllTickets) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -1514,7 +1600,7 @@ function VisitorInformation({ place }) {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showAllVehicles]);
+  }, [showAllVehicles, showAllTickets]);
 
   const formatList = (arr, singleStr, fallback, formatter) => {
     if (Array.isArray(arr) && arr.length > 0) {
@@ -1542,6 +1628,27 @@ function VisitorInformation({ place }) {
     return disp ? disp.split(',').map(t => t.trim()) : ["Not Specified"];
   }, [place?.suitableFor]);
 
+  const ticketCategories = useMemo(() => {
+    if (Array.isArray(place?.ticketCategories) && place.ticketCategories.length > 0) {
+      return place.ticketCategories;
+    }
+    if (typeof place?.ticketCategories === "string") {
+      try {
+        const parsed = JSON.parse(place.ticketCategories);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (_) {}
+    }
+    return [];
+  }, [place?.ticketCategories]);
+
+  const hasTicketCategories = ticketCategories.length > 0;
+  const isFreeEntry = place?.entryType && String(place.entryType).toLowerCase() === "free";
+  const entryFeeDisplay = isFreeEntry 
+    ? "Free" 
+    : (place?.entryFee && !isNaN(Number(place.entryFee)) 
+        ? `₹${parseFloat(place.entryFee)}` 
+        : (place?.entryFee || (hasTicketCategories ? `From ₹${parseFloat(ticketCategories[0]?.price) || ticketCategories[0]?.price}` : null)));
+
   // Ticket notch decoration styles helper
   const ticketNotchStyle = (side) => ({
     width: 20,
@@ -1558,26 +1665,62 @@ function VisitorInformation({ place }) {
   });
 
   return (
-    <section style={{ background: W, padding: isMobile ? "40px 16px" : "48px 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <h3 style={{
-          fontSize: isMobile ? 32 : "clamp(2.5rem, 4vw, 3.5rem)",
-          fontWeight: 700,
-          color: FG,
-          lineHeight: 1.1,
-          letterSpacing: "-0.02em",
-          marginBottom: 32,
-          fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
-        }}>Visitor Guide</h3>
+    <section style={{ background: W, padding: isMobile ? "32px 0 24px" : "48px 80px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 16px" : 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: isMobile ? 18 : 32 }}>
+          <div>
+            {isMobile && (
+              <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 800, display: "block", marginBottom: 4 }}>
+                Essential Details
+              </span>
+            )}
+            <h3 style={{
+              fontSize: isMobile ? 26 : "clamp(2.5rem, 4vw, 3.5rem)",
+              fontWeight: 700,
+              color: FG,
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+              margin: 0,
+              fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
+            }}>Visitor Guide</h3>
+          </div>
+          {isMobile && (
+            <span style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: A,
+              letterSpacing: "0.08em",
+              background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "0, 164, 196"}, 0.1)`,
+              padding: "4px 10px",
+              borderRadius: 20
+            }}>
+              {activeCardIndex + 1} / 4
+            </span>
+          )}
+        </div>
 
         <Soul y={30}>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)",
-            gap: 32,
-            width: "100%",
-            boxSizing: "border-box"
-          }}>
+          <div
+            ref={carouselTrackRef}
+            onScroll={isMobile ? handleMobileScroll : undefined}
+            style={isMobile ? {
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              padding: "8px 16px 16px 16px",
+              margin: "0 -16px",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none"
+            } : {
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 32,
+              width: "100%",
+              boxSizing: "border-box"
+            }}
+          >
             {/* Card 1: Official & Administrative Permit */}
             <motion.div
               whileHover={{ y: -8, boxShadow: "0 30px 60px rgba(0,0,0,0.06)" }}
@@ -1591,7 +1734,10 @@ function VisitorInformation({ place }) {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                minHeight: 480,
+                minHeight: isMobile ? 420 : 480,
+                flex: isMobile ? "0 0 85%" : undefined,
+                maxWidth: isMobile ? "330px" : undefined,
+                scrollSnapAlign: isMobile ? "start" : undefined,
                 boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
               }}
             >
@@ -1611,26 +1757,26 @@ function VisitorInformation({ place }) {
               {/* Card content top */}
               <div style={{ padding: "32px 28px 20px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, display: "flex", alignItems: "center", justifyContent: "center", color: A }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     </div>
                     <div>
                       <span style={{ fontSize: 8, color: M, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700 }}>Permit Category</span>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2, flexWrap: "wrap" }}>
                         <h4 style={{ fontSize: 16, fontWeight: 800, color: FG, margin: 0 }}>
                           {place?.entryType ? `${place.entryType} Entry` : (place?.entryFee ? "Paid Entry" : "Not Specified")}
                         </h4>
-                        {place?.entryFee && (!place?.entryType || place.entryType.toLowerCase() !== 'free') && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>
-                            {place.entryFee}
+                        {entryFeeDisplay && (
+                          <span style={{ fontSize: 11, fontWeight: 750, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                            {entryFeeDisplay}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div>
                       <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 2 }}>Managed By</span>
                       <p style={{ fontSize: 14, fontWeight: 700, color: FG, margin: 0 }}>{place?.managedBy || "Not Specified"}</p>
@@ -1661,8 +1807,49 @@ function VisitorInformation({ place }) {
               {/* Card content bottom (Detached Stamp Stub) */}
               <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em" }}>Log Status</span>
-                  <span style={{ fontWeight: 800, color: FG, fontSize: 12 }}>VERIFIED PERMIT</span>
+                  <span style={{ fontSize: 9, color: M, textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
+                    {hasTicketCategories ? "Ticket Categories" : "Log Status"}
+                  </span>
+                  {hasTicketCategories ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 2, maxWidth: 180 }}>
+                      {ticketCategories.slice(0, 2).map((cat, idx) => (
+                        <span key={idx} style={{ padding: "2px 6px", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.1)`, borderRadius: 4, fontSize: 10, fontWeight: 700, color: A, whiteSpace: "nowrap" }}>
+                          {cat?.name || "General"} · ₹{parseFloat(cat?.price) || cat?.price}
+                        </span>
+                      ))}
+                      {ticketCategories.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllTickets(true)}
+                          style={{
+                            padding: "2px 8px",
+                            background: A,
+                            border: "none",
+                            borderRadius: 4,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: W,
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            zIndex: 10,
+                            position: "relative"
+                          }}
+                          onMouseOver={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)"; }}
+                          onMouseOut={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)"; }}
+                        >
+                          +{ticketCategories.length - 2} More
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontWeight: 800, color: FG, fontSize: 12 }}>VERIFIED PERMIT</span>
+                  )}
                 </div>
 
                 {/* Stamp Clipart */}
@@ -1703,7 +1890,10 @@ function VisitorInformation({ place }) {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                minHeight: 480,
+                minHeight: isMobile ? 420 : 480,
+                flex: isMobile ? "0 0 85%" : undefined,
+                maxWidth: isMobile ? "330px" : undefined,
+                scrollSnapAlign: isMobile ? "start" : undefined,
                 boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
               }}
             >
@@ -1828,7 +2018,10 @@ function VisitorInformation({ place }) {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                minHeight: 480,
+                minHeight: isMobile ? 420 : 480,
+                flex: isMobile ? "0 0 85%" : undefined,
+                maxWidth: isMobile ? "330px" : undefined,
+                scrollSnapAlign: isMobile ? "start" : undefined,
                 boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
               }}
             >
@@ -1859,13 +2052,19 @@ function VisitorInformation({ place }) {
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
-                      <span style={{ fontSize: 12, color: M }}>Permit Category</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.entryFee || "Not Specified"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
+                      <span style={{ fontSize: 12, color: M }}>Permit / Entry Fee</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>
+                        {entryFeeDisplay || (place?.entryType ? `${place.entryType} Entry` : "Not Specified")}
+                      </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
                       <span style={{ fontSize: 12, color: M }}>Parking Place</span>
-                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>{place?.parking || "Not Specified"}</span>
+                      <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>
+                        {typeof place?.parkingAvailable === "boolean"
+                          ? (place.parkingAvailable ? "Available" : "Not Available")
+                          : (place?.parking || "Not Specified")}
+                      </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
                       <span style={{ fontSize: 12, color: M }}>Wheelchair</span>
@@ -1933,7 +2132,10 @@ function VisitorInformation({ place }) {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                minHeight: 480,
+                minHeight: isMobile ? 420 : 480,
+                flex: isMobile ? "0 0 85%" : undefined,
+                maxWidth: isMobile ? "330px" : undefined,
+                scrollSnapAlign: isMobile ? "start" : undefined,
                 boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
               }}
             >
@@ -2021,6 +2223,30 @@ function VisitorInformation({ place }) {
             </motion.div>
           </div>
         </Soul>
+
+        {/* Mobile Pagination Indicator Dots */}
+        {isMobile && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 14 }}>
+            {[0, 1, 2, 3].map((idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => scrollToCard(idx)}
+                aria-label={`Go to Visitor Guide Card ${idx + 1}`}
+                style={{
+                  width: activeCardIndex === idx ? 22 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: activeCardIndex === idx ? A : B,
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  transition: "all 0.3s ease"
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Vehicle Access Modal */}
@@ -2061,17 +2287,69 @@ function VisitorInformation({ place }) {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Ticket Categories Modal */}
+      <AnimatePresence>
+        {showAllTickets && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAllTickets(false)}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              style={{ background: W, borderRadius: 28, padding: 32, width: "100%", maxWidth: 480, position: "relative", zIndex: 10000, boxShadow: "0 24px 48px rgba(0,0,0,0.15)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <div>
+                  <span style={{ fontSize: 9, color: A, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 800 }}>Admission Pricing</span>
+                  <h3 style={{ margin: "4px 0 0 0", fontSize: "clamp(1.5rem, 2.5vw, 2.2rem)", fontWeight: 700, color: FG, letterSpacing: "-0.02em", fontFamily: '"Cormorant Garamond", "Playfair Display", serif' }}>Ticket Categories</h3>
+                </div>
+                <button onClick={() => setShowAllTickets(false)} style={{ background: S, border: "none", cursor: "pointer", color: FG, padding: 8, borderRadius: 50, display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = B} onMouseOut={e => e.currentTarget.style.background = S}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              </div>
+
+              <div className="no-scrollbars" style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 12, paddingBottom: 12 }}>
+                {ticketCategories.map((cat, idx) => (
+                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: S, border: `1.5px solid ${B}`, borderRadius: 18, transition: "border-color 0.2s" }} onMouseOver={e => e.currentTarget.style.borderColor = A} onMouseOut={e => e.currentTarget.style.borderColor = B}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: FG }}>{cat?.name || "General"}</span>
+                      {cat?.guestCount && (
+                        <span style={{ fontSize: 11, color: M }}>
+                          Includes up to {cat.guestCount} {cat.guestCount === 1 ? "guest" : "guests"}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                      <span style={{ fontSize: 20, fontWeight: 850, color: A }}>₹{parseFloat(cat?.price) || cat?.price}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
 
 function GoodToKnow({ place }) {
-  const { tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
+  const { theme, tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
+  const isDark = theme === "dark";
 
-  const warningBg = A === "#0097B2" ? "#fff5f5" : "rgba(239, 68, 68, 0.05)";
-  const warningBorder = A === "#0097B2" ? "#fee2e2" : "rgba(239, 68, 68, 0.2)";
-  const warningText = A === "#0097B2" ? "#b91c1c" : "#fca5a5";
-  const warningHeader = A === "#0097B2" ? "#991b1b" : "#f87171";
+  const warningBg = isDark ? "#120808" : "#fff5f5";
+  const warningBorder = isDark ? "rgba(239, 68, 68, 0.28)" : "#fee2e2";
+  const warningText = isDark ? "#fca5a5" : "#b91c1c";
+  const warningHeader = isDark ? "#f87171" : "#991b1b";
+  const warningItemBg = isDark ? "rgba(239, 68, 68, 0.08)" : "rgba(239, 68, 68, 0.03)";
+  const warningIconBg = isDark ? "#1a0f0f" : W;
 
   const carryItems = Array.isArray(place?.whatToCarry) && place.whatToCarry.length > 0 
     ? place.whatToCarry.map(i => typeof i === 'string' ? i : i.name || i)
@@ -2132,11 +2410,7 @@ function GoodToKnow({ place }) {
                     </div>
                   </div>
 
-                  {/* Flight Label Details */}
-                  <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px dashed ${B}`, paddingBottom: 6, marginBottom: 12, fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.05em" }}>
-                    <div>DEP: LKP-GATEWAY</div>
-                    <div>CLASS: FIRST</div>
-                  </div>
+
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     {carryItems.map(item => (
@@ -2239,12 +2513,12 @@ function GoodToKnow({ place }) {
                           alignItems: "center",
                           gap: 10,
                           padding: "8px 12px",
-                          background: "rgba(239, 68, 68, 0.03)",
+                          background: warningItemBg,
                           borderRadius: 10,
                           border: `1px dashed ${warningBorder}`
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: W, flexShrink: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: warningIconBg, flexShrink: 0 }}>
                           <XCircle size={10} color="#ef4444" />
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 700, color: warningText }}>{item}</span>
@@ -2866,34 +3140,67 @@ function MobileGallery({ galleryItems }) {
         </h3>
       </div>
 
-      {/* Horizontal Scroll Image Cards */}
-      <div style={{
-        display: "flex",
-        gap: 14,
-        overflowX: "auto",
-        padding: "0 16px 8px 16px",
-        scrollSnapType: "x mandatory"
-      }} className="no-scrollbar">
-        {galleryItems.map((img, i) => (
-          <div
-            key={i}
-            onClick={() => openLightbox(i)}
-            style={{
-              flexShrink: 0,
-              width: 240,
-              height: 160,
-              borderRadius: 20,
-              overflow: "hidden",
-              border: `1.5px solid ${B}`,
-              boxShadow: "0 10px 24px rgba(0,0,0,0.04)",
-              scrollSnapAlign: "start",
-              cursor: "pointer"
-            }}
-          >
-            <img src={img} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+      {/* Auto Marquee Image Track */}
+      {(() => {
+        let baseList = [...galleryItems];
+        while (baseList.length < 6) {
+          baseList = [...baseList, ...galleryItems];
+        }
+        const doubledList = [...baseList, ...baseList];
+        const duration = Math.max(20, baseList.length * 6);
+
+        return (
+          <div style={{ position: "relative", overflow: "hidden", width: "100%", padding: "4px 0" }}>
+            <style>{`
+              @keyframes placeVisualJourneyMarquee {
+                0% { transform: translate3d(0, 0, 0); }
+                100% { transform: translate3d(-50%, 0, 0); }
+              }
+            `}</style>
+            <div
+              style={{
+                display: "flex",
+                gap: 14,
+                width: "max-content",
+                animation: `placeVisualJourneyMarquee ${duration}s linear infinite`,
+                willChange: "transform",
+                transform: "translate3d(0, 0, 0)",
+                WebkitTransform: "translate3d(0, 0, 0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}
+            >
+              {doubledList.map((img, i) => {
+                const originalIndex = i % galleryItems.length;
+                return (
+                  <div
+                    key={i}
+                    onClick={() => openLightbox(originalIndex)}
+                    style={{
+                      flexShrink: 0,
+                      width: 240,
+                      height: 160,
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      border: `1.5px solid ${B}`,
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.04)",
+                      cursor: "pointer",
+                      position: "relative"
+                    }}
+                  >
+                    <img
+                      src={img}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      alt=""
+                      loading="lazy"
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Lightbox Modal */}
       <AnimatePresence>
@@ -3010,12 +3317,15 @@ function MobileItinerary({ place }) {
 }
 
 function MobileGoodToKnow({ place }) {
-  const { tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
+  const { theme, tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
+  const isDark = theme === "dark";
 
-  const warningBg = A === "#0097B2" ? "#fff5f5" : "rgba(239, 68, 68, 0.05)";
-  const warningBorder = A === "#0097B2" ? "#fee2e2" : "rgba(239, 68, 68, 0.2)";
-  const warningText = A === "#0097B2" ? "#b91c1c" : "#fca5a5";
-  const warningHeader = A === "#0097B2" ? "#991b1b" : "#f87171";
+  const warningBg = isDark ? "#120808" : "#fff5f5";
+  const warningBorder = isDark ? "rgba(239, 68, 68, 0.28)" : "#fee2e2";
+  const warningText = isDark ? "#fca5a5" : "#b91c1c";
+  const warningHeader = isDark ? "#f87171" : "#991b1b";
+  const warningItemBg = isDark ? "rgba(239, 68, 68, 0.08)" : "rgba(239, 68, 68, 0.03)";
+  const warningIconBg = isDark ? "#1a0f0f" : W;
 
   const carryItems = ["Comfortable Shoes", "Water Bottle", "Camera", "Sun Protection"];
   const avoidItems = ["Littering", "Unsafe Climbing", "Disrespecting Local Privacy"];
@@ -3535,8 +3845,9 @@ const PlaceDetails = () => {
   const { isMobile } = useWindowSize();
   const location = useLocation();
   const history = useHistory();
-  const params = new URLSearchParams(location.search);
-  const id = params.get("id");
+  const routeParams = useParams() || {};
+  const queryParams = new URLSearchParams(location.search);
+  const id = routeParams.slugOrId || queryParams.get("id");
 
   const [place, setPlace] = useState(null);
   const [hostData, setHostData] = useState(null);
@@ -3686,6 +3997,52 @@ const PlaceDetails = () => {
   const primaryCategoryId = place?.primaryCategoryId || place?.primaryCategory?.id || place?.categoryId || place?.category?.id;
   const currentListingId = place?.placeId || place?.id || id;
 
+  // Structured Data Schema for AEO / GEO (Called unconditionally)
+  const schemas = useMemo(() => {
+    if (!place) return [];
+    const placeName = place?.placeName || place?.name || place?.title;
+    const placeDescription = place?.seo_description || place?.seoDescription || place?.description || place?.placeDescription;
+    const identifier = place?.seo_slug || place?.seoSlug || currentListingId;
+    const canonicalUrl = `https://littleknownplanet.com/places/${identifier}`;
+
+    const mainSchema = buildPlaceSchema({
+      name: placeName,
+      description: placeDescription,
+      url: canonicalUrl,
+      images: galleryItems,
+      location: place?.city || place?.location,
+      latitude: place?.latitude || place?.lat,
+      longitude: place?.longitude || place?.lng,
+      openingHours: place?.openingHours || place?.timings,
+      entryFee: place?.entryFee,
+      rating: place?.rating || place?.reviewsCount?.rating,
+      reviewCount: place?.reviewsCount?.count,
+    });
+
+    const breadcrumbs = buildBreadcrumbSchema([
+      { name: "Home", url: "/" },
+      { name: "Places", url: "/places" },
+      { name: placeName, url: `/places/${identifier}` },
+    ]);
+
+    return [mainSchema, breadcrumbs].filter(Boolean);
+  }, [place, galleryItems, currentListingId]);
+
+  const seoElement = (
+    <SEOHead
+      seoSlug={place?.seo_slug || place?.seoSlug}
+      seoTitle={place?.seo_title || place?.seoTitle}
+      seoDescription={place?.seo_description || place?.seoDescription}
+      fallbackTitle={place?.placeName || place?.name || place?.title}
+      fallbackDescription={place?.description || place?.placeDescription}
+      fallbackId={currentListingId}
+      category="places"
+      image={galleryItems?.[0]}
+      location={place?.city || place?.location}
+      schemas={schemas}
+    />
+  );
+
   if (!place && !unavailablePopupOpen) {
     return (
       <div style={{ minHeight: '100vh' }}>
@@ -3706,6 +4063,7 @@ const PlaceDetails = () => {
   if (isMobile) {
     return (
       <ScopedThemeProvider>
+        {seoElement}
         <ScopedStyles />
         <ProgressBar />
         <MobilePlaceDetails
@@ -3723,6 +4081,7 @@ const PlaceDetails = () => {
 
   return (
     <ScopedThemeProvider>
+      {seoElement}
       <ScopedStyles />
       <ProgressBar />
       {unavailablePopup}

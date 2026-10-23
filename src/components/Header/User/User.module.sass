@@ -12,7 +12,7 @@
         .body
             visibility: visible
             opacity: 1
-            transform: translateY(0)
+            transform: translateY(0) scale(1)
 
 .head
     width: 40px
@@ -38,17 +38,20 @@
     
 .body
     position: absolute
-    top: calc(100% + 32px)
-    right: -32px
-    width: 292px
-    padding: 16px
+    top: calc(100% + 20px)
+    right: 0
+    width: 240px
+    padding: 8px
     border-radius: 20px
-    box-shadow: 0px 40px 32px -8px rgba(15, 15, 15, 0.12)
-    background: $n8
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.04)
+    background: rgba(255, 255, 255, 0.96)
+    backdrop-filter: blur(16px)
+    -webkit-backdrop-filter: blur(16px)
+    border: 1px solid rgba(0, 0, 0, 0.06)
     visibility: hidden
     opacity: 0
-    transform: translateY(10px)
-    transition: all .3s
+    transform: translateY(8px) scale(0.98)
+    transition: all .2s cubic-bezier(0.16, 1, 0.3, 1)
     overflow: hidden
     z-index: 10000
     isolation: isolate
@@ -58,70 +61,94 @@
         right: 16px
         width: auto
     +dark
-        background: $n1
-        box-shadow: 0px 10px 32px $n2
-
-.group
-    margin-bottom: 16px
+        background: rgba(20, 20, 22, 0.95)
+        border: 1px solid rgba(255, 255, 255, 0.08)
+        box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)
 
 .menu
-    position: relative
-    overflow: hidden
-    isolation: isolate
-    &:not(:last-child)
-        margin-bottom: 16px
-        padding-bottom: 16px
-        border-bottom: 1px solid $n6
-        +dark
-            border-color: $n3
+    display: flex
+    flex-direction: column
+    gap: 2px
 
 .item
     display: flex
     align-items: center
-    padding: 0 20px
-    height: 48px
-    border-radius: 24px
-    +button-2
-    color: $n1
-    font-weight: 600
-    transition: all .2s
+    width: 100%
+    padding: 0 14px
+    height: 44px
+    border-radius: 12px
+    border: none
+    background: transparent
+    +dm-sans
+    font-size: 14px
+    font-weight: 500
+    color: $n2
+    text-align: left
+    cursor: pointer
+    transition: all .18s ease
     position: relative
-    overflow: hidden
-    z-index: 1
+    user-select: none
     +dark
-        color: $n8
-    svg
+        color: $n7
+        background: transparent
+    .icon
+        display: flex
+        align-items: center
+        justify-content: center
+        width: 28px
+        height: 28px
         margin-right: 12px
-        fill: $n3
-        transition: fill .2s
+        flex-shrink: 0
+        transition: transform .18s ease
+    svg
+        fill: $n4
+        stroke: none
+        transition: fill .18s ease, stroke .18s ease
         +dark
-            fill: $n5
+            fill: $n4
+    .text
+        flex-grow: 1
     &:hover
         color: $p1
         background: rgba(0, 151, 178, 0.08)
+        .icon
+            transform: translateX(2px)
         svg
             fill: $p1
         +dark
             color: #00D2FF
-            background: rgba(0, 210, 255, 0.1)
+            background: rgba(0, 210, 255, 0.12)
             svg
                 fill: #00D2FF
-    &.active
-        background: $n2
-        color: $n6
-        svg
-            fill: $n6
-        +dark
-            background: $n8
-            color: $n3
-            svg
-                fill: $n3
-        
-.btns
-    display: flex
-    margin: 0 -4px
 
-.button
-    flex: 0 0 calc(50% - 8px)
-    width: calc(50% - 8px)
-    margin: 0 4px
+.divider
+    height: 1px
+    margin: 6px 8px
+    background: $n6
+    +dark
+        background: rgba(255, 255, 255, 0.08)
+
+.logoutItem
+    color: #EF4444
+    +dark
+        color: #F87171
+    svg.logoutIcon
+        stroke: #EF4444
+        fill: none
+        stroke-width: 2
+        transition: stroke .18s ease
+        +dark
+            stroke: #F87171
+    &:hover
+        color: #DC2626
+        background: rgba(239, 68, 68, 0.08)
+        svg.logoutIcon
+            stroke: #DC2626
+            fill: none
+        +dark
+            color: #FCA5A5
+            background: rgba(239, 68, 68, 0.15)
+            svg.logoutIcon
+                stroke: #FCA5A5
+                fill: none
+

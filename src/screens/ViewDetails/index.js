@@ -946,7 +946,7 @@ const formatRefundPolicyUsed = (percentage) => {
 };
 
 const RECEIPT_SUPPORT_EMAIL = "support@littleknownplanet.com";
-const RECEIPT_SUPPORT_PHONE = "Available on request";
+const RECEIPT_SUPPORT_PHONE = "+91 9895521927";
 
 const getReceiptDateLabel = (value) => {
   if (!value) return "N/A";
@@ -5050,9 +5050,9 @@ const ViewDetails = () => {
                   <div className={styles.receiptFooter}>
                     <div className={styles.receiptFooterBrand}>Little Known Planet</div>
                     <div className={styles.receiptFooterLinks}>
-                      <span><Icon name="globe" size="14" />{receiptViewModel.companyWebsite.replace(/^https?:\/\//, "")}</span>
-                      <span><Icon name="email" size="14" />{receiptViewModel.companyEmail}</span>
-                      <span><Icon name="phone" size="14" />{receiptViewModel.companyPhone}</span>
+                      <a href={receiptViewModel.companyWebsite} target="_blank" rel="noopener noreferrer"><Icon name="globe" size="14" />{receiptViewModel.companyWebsite.replace(/^https?:\/\//, "")}</a>
+                      <a href={`mailto:${receiptViewModel.companyEmail}`}><Icon name="email" size="14" />{receiptViewModel.companyEmail}</a>
+                      <a href={`tel:${receiptViewModel.companyPhone.replace(/\s+/g, "")}`}><Icon name="phone" size="14" />{receiptViewModel.companyPhone}</a>
                     </div>
                   </div>
                 </div>

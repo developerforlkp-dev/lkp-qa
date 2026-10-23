@@ -1048,6 +1048,8 @@
     box-shadow: 0 0 0 2px rgba(0, 151, 178, 0.4), 0 8px 16px rgba(0,0,0,0.2)
     z-index: 2
     opacity: 1 !important
+    .mobileCategoryIcon
+        color: #0097B2
 
 .activeCheckBadge
     position: absolute
@@ -1138,12 +1140,18 @@
 .mobileCategoryIcon
     color: #ffffff
     margin-bottom: 4px
+    transition: color 0.2s ease
     svg
         width: 18px
         height: 18px
         stroke-width: 1.5px
         fill: none !important
         stroke: currentColor !important
+
+.mobileCategoryIconActive
+    color: #0097B2 !important
+    svg
+        stroke: #0097B2 !important
 
 .mobileCategoryLabel
     color: #ffffff

@@ -31,6 +31,43 @@ const ListCard = ({ item, listing }) => {
   
   const wishlistConfig = getWishlistConfig(item);
 
+  const isClosedEvent = (() => {
+    const raw = listing || item?.rawListing || {};
+    if (item.isClosed === true || raw.isClosed === true) return true;
+    if (typeof item.badge === "string" && item.badge.trim().toLowerCase() === "closed") return true;
+    if (typeof raw.badge === "string" && raw.badge.trim().toLowerCase() === "closed") return true;
+
+    const isEventCheck =
+      isEvent ||
+      wishlistConfig?.itemType === "event" ||
+      String(item?.itemType || "").trim().toLowerCase() === "event" ||
+      raw.eventId != null ||
+      raw.event_id != null ||
+      String(raw.businessInterestCode || raw.businessInterest || "").toUpperCase().includes("EVENT") ||
+      (typeof window !== "undefined" && window.location.search.toUpperCase().includes("EVENT"));
+    if (!isEventCheck) return false;
+
+    const now = new Date();
+    const statusVal = item.status || raw.status;
+    if (statusVal && String(statusVal).trim().toLowerCase() === "closed") return true;
+    const badgeVal = item.badge || raw.badge;
+    if (badgeVal && String(badgeVal).trim().toLowerCase() === "closed") return true;
+    const eventStatusVal = item.eventStatus || raw.eventStatus;
+    if (eventStatusVal && String(eventStatusVal).trim().toLowerCase() === "closed") return true;
+
+    const bookingEndDateVal = item.bookingEndDate || raw.bookingEndDate || item.bookingClosedDate || raw.bookingClosedDate;
+    if (bookingEndDateVal && new Date(bookingEndDateVal) < now) return true;
+    const endDateVal = item.endDate || raw.endDate || raw.eventEndDate;
+    if (endDateVal && new Date(endDateVal) < now) return true;
+    const eventDateVal = item.eventDate || raw.eventDate || item.startDate || raw.startDate || item.date || raw.date;
+    if (eventDateVal) {
+      const parsedDate = new Date(eventDateVal);
+      if (!isNaN(parsedDate.getTime()) && parsedDate < now) return true;
+    }
+
+    return false;
+  })();
+
   return (
     <div className={styles.listCard}>
       {/* Left side: Property Cover Image */}
@@ -47,6 +84,12 @@ const ListCard = ({ item, listing }) => {
             setImageLoaded(true);
           }}
         />
+        {isClosedEvent && (
+          <div className={styles.closedBadge}>
+            <div className={styles.closedDot} />
+            CLOSED
+          </div>
+        )}
         {wishlistConfig && (
           <Favorite
             className={styles.favorite}
@@ -56,7 +99,7 @@ const ListCard = ({ item, listing }) => {
             variant="icon"
           />
         )}
-        {item.categoryText && (
+        {item.categoryText && !isClosedEvent && (
           <div className={styles.categoryBadge}>{item.categoryText}</div>
         )}
         {imagesCount > 1 && (
@@ -117,7 +160,7 @@ const ListCard = ({ item, listing }) => {
 
         {/* BOTTOM: Pricing and CTA Action button */}
         <div className={styles.bottomLayer}>
-          {!isStay && item.priceActual && (
+          {item.priceActual && (
             <div className={styles.priceContainer}>
               <span className={styles.priceValue}>{item.priceActual}</span>
             </div>

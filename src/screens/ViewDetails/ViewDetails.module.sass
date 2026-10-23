@@ -1506,9 +1506,15 @@
     margin-top: 10px
     color: #49627f
     font-size: 13px
-    span
-        display: block
+    span, a
+        display: inline-flex
+        align-items: center
         line-height: 14px
+        color: inherit
+        text-decoration: none
+        &:hover
+            color: #0b66f0
+            text-decoration: underline
     svg
         display: inline-block
         vertical-align: middle

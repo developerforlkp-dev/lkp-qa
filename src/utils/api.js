@@ -1061,6 +1061,9 @@ const VALID_WISHLIST_ITEM_TYPES = new Set(["listing", "event", "stay", "place", 
 
 export const normalizeWishlistItemType = (itemType) => {
   const normalized = String(itemType || "").trim().toLowerCase();
+  if (normalized === "experience" || normalized === "experiences") {
+    return "listing";
+  }
   return VALID_WISHLIST_ITEM_TYPES.has(normalized) ? normalized : null;
 };
 

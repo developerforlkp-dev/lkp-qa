@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   getCustomerWishlistStatus,
   isSupportedWishlistItemType,
+  normalizeWishlistItemType,
   removeCustomerWishlistItem,
   saveCustomerWishlistItem,
 } from "../utils/api";
@@ -16,7 +17,7 @@ const hasValidToken = () => {
 };
 
 export const buildWishlistKey = (itemType, itemId) => {
-  const normalizedType = String(itemType || "").trim().toLowerCase();
+  const normalizedType = normalizeWishlistItemType(itemType) || String(itemType || "").trim().toLowerCase();
   return normalizedType && itemId != null && itemId !== ""
     ? `${normalizedType}:${String(itemId)}`
     : null;
@@ -47,7 +48,7 @@ export const dispatchWishlistChange = (detail) => {
 };
 
 export default function useWishlist({ itemType, itemId, initialSaved = false }) {
-  const normalizedType = String(itemType || "").trim().toLowerCase();
+  const normalizedType = normalizeWishlistItemType(itemType) || String(itemType || "").trim().toLowerCase();
   const key = useMemo(
     () => buildWishlistKey(normalizedType, itemId),
     [normalizedType, itemId]

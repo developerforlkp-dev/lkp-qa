@@ -1436,7 +1436,7 @@ const ExperienceProduct = () => {
           const tagsDuration = tagsDistance / 8; // ultra-slow marquee speed (8px/s) for very calm, subtle motion
 
           return (
-            <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto", padding: isMobile ? "0 16px" : "0", boxSizing: "border-box" }}>
               <div style={{
                 width: "100%",
                 overflow: "hidden",
@@ -1446,10 +1446,6 @@ const ExperienceProduct = () => {
                 borderTop: `1px solid ${B}`,
                 borderBottom: `1px solid ${B}`,
               }}>
-                {/* Left & Right Edge Fades */}
-                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-                <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
                 <motion.div
                   animate={{ x: ["0%", "-50%"] }}
                   transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
@@ -2095,7 +2091,7 @@ const ExperienceProduct = () => {
           const catsDuration = catsDistance / 8; // ultra-slow marquee speed (8px/s) for very calm, subtle motion
 
           return (
-            <div style={{ width: "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto" }}>
+            <div style={{ width: isMobile ? "100%" : "calc(100% - 80px)", maxWidth: "1200px", margin: "0 auto", padding: isMobile ? "0 16px" : "0", boxSizing: "border-box" }}>
               <div style={{
                 width: "100%",
                 overflow: "hidden",
@@ -2105,10 +2101,6 @@ const ExperienceProduct = () => {
                 borderTop: `1px solid ${B}`,
                 borderBottom: `1px solid ${B}`,
               }}>
-                {/* Left & Right Edge Fades */}
-                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to right, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-                <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "160px", background: `linear-gradient(to left, ${BG} 0%, transparent 100%)`, zIndex: 10, pointerEvents: "none" }} />
-
                 <motion.div
                   animate={{ x: ["0%", "-50%"] }}
                   transition={{ repeat: Infinity, ease: "linear", duration: catsDuration }}

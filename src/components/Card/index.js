@@ -7,7 +7,8 @@ import Favorite from "../Favorite";
 
 export const getWishlistConfig = (item) => {
   if (item?.isCategoryCard || item?.isCategory) return null;
-  const explicitType = String(item?.wishlistItemType || item?.itemType || "").trim().toLowerCase();
+  const rawExplicitType = String(item?.wishlistItemType || item?.itemType || "").trim().toLowerCase();
+  const explicitType = rawExplicitType === "experience" || rawExplicitType === "experiences" ? "listing" : rawExplicitType;
   const explicitId = item?.wishlistItemId ?? item?.itemId ?? item?.listingId ?? item?.eventId ?? item?.stayId;
 
   if (explicitType && explicitId != null && explicitId !== "") {
@@ -66,27 +67,43 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   const shouldHidePrice = hidePrice;
 
   const isClosedEvent = (() => {
+    const raw = item?.rawListing || {};
     // Check if the API explicitly sent isClosed or badge
-    if (item.isClosed === true) return true;
+    if (item.isClosed === true || raw.isClosed === true) return true;
     if (typeof item.badge === "string" && item.badge.trim().toLowerCase() === "closed") return true;
+    if (typeof raw.badge === "string" && raw.badge.trim().toLowerCase() === "closed") return true;
 
     // Only apply to events
     const isEvent =
       wishlistConfig?.itemType === "event" ||
       (item.url && item.url.includes("/event")) ||
-      String(item?.itemType || "").trim().toLowerCase() === "event";
+      String(item?.itemType || "").trim().toLowerCase() === "event" ||
+      raw.eventId != null ||
+      raw.event_id != null ||
+      String(raw.businessInterestCode || raw.businessInterest || "").toUpperCase().includes("EVENT") ||
+      (typeof window !== "undefined" && window.location.search.toUpperCase().includes("EVENT"));
     if (!isEvent) return false;
 
     const now = new Date();
     
     // Explicit status check
-    if (item.status && String(item.status).trim().toLowerCase() === "closed") return true;
-    if (item.badge && String(item.badge).trim().toLowerCase() === "closed") return true;
-    if (item.eventStatus && String(item.eventStatus).trim().toLowerCase() === "closed") return true;
+    const statusVal = item.status || raw.status;
+    if (statusVal && String(statusVal).trim().toLowerCase() === "closed") return true;
+    const badgeVal = item.badge || raw.badge;
+    if (badgeVal && String(badgeVal).trim().toLowerCase() === "closed") return true;
+    const eventStatusVal = item.eventStatus || raw.eventStatus;
+    if (eventStatusVal && String(eventStatusVal).trim().toLowerCase() === "closed") return true;
     
     // Check various end dates to see if booking/ticketing is closed
-    if (item.bookingEndDate && new Date(item.bookingEndDate) < now) return true;
-    if (item.endDate && new Date(item.endDate) < now) return true;
+    const bookingEndDateVal = item.bookingEndDate || raw.bookingEndDate || item.bookingClosedDate || raw.bookingClosedDate;
+    if (bookingEndDateVal && new Date(bookingEndDateVal) < now) return true;
+    const endDateVal = item.endDate || raw.endDate || raw.eventEndDate;
+    if (endDateVal && new Date(endDateVal) < now) return true;
+    const eventDateVal = item.eventDate || raw.eventDate || item.startDate || raw.startDate || item.date || raw.date;
+    if (eventDateVal) {
+      const parsedDate = new Date(eventDateVal);
+      if (!isNaN(parsedDate.getTime()) && parsedDate < now) return true;
+    }
 
     return false;
   })();

@@ -1,3 +1,14 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Disallow indexing of private or internal endpoints
+Disallow: /admin/
+Disallow: /api/
+Disallow: /account-settings
+Disallow: /message-center
+Disallow: /bookings
+Disallow: /wishlists
+
+# Canonical Sitemap
+Sitemap: https://littleknownplanet.com/sitemap.xml

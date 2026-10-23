@@ -37,11 +37,28 @@ export function Footer() {
     const fetchSupport = async () => {
       try {
         const data = await getSupportGuest();
-        if (data && data.contacts) {
+        if (data && data.contacts && data.contacts.length > 0) {
           setContacts(data.contacts);
+        } else {
+          setContacts([
+            {
+              supportContactId: "default-support",
+              name: "Customer Support",
+              email: "support@littleknownplanet.com",
+              phoneNumber: "+91 9895521927",
+            },
+          ]);
         }
       } catch (err) {
         console.error("Failed to fetch support contacts", err);
+        setContacts([
+          {
+            supportContactId: "default-support",
+            name: "Customer Support",
+            email: "support@littleknownplanet.com",
+            phoneNumber: "+91 9895521927",
+          },
+        ]);
       }
     };
     fetchSupport();
@@ -210,7 +227,7 @@ export function Footer() {
                       </a>
                     )}
                     {contact.phoneNumber && (
-                      <a href={`tel:${contact.phoneNumber}`} className={styles.contactActionPill}>
+                      <a href={`tel:${String(contact.phoneNumber).replace(/\s+/g, "")}`} className={styles.contactActionPill}>
                         <div className={styles.pillIconWrapper} style={{ backgroundColor: theme.bg, color: theme.text }}>
                           <Phone size={16} />
                         </div>

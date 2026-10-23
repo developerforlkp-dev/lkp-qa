@@ -58,7 +58,7 @@ const StayItinerary = ({ itinerary }) => {
   if (!itinerary || !itinerary.length) return null;
 
   return (
-    <section style={{ padding: "80px 24px", background: tokens.W, overflow: "hidden" }}>
+    <section className="stay-itinerary-section" style={{ padding: "80px 24px", background: tokens.W, overflow: "hidden" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", width: "100%" }}>
         {/* Header */}
         <div style={{ marginBottom: 64, textAlign: "left" }}>
@@ -176,20 +176,24 @@ const StayItinerary = ({ itinerary }) => {
         }
 
         @media (max-width: 768px) {
+          .stay-itinerary-section {
+            padding: 32px 20px 16px 20px !important;
+          }
           .stay-itinerary-item { 
             flex-direction: column-reverse !important; 
-            margin-bottom: 40px !important; 
+            margin-bottom: 24px !important; 
             padding-left: 32px !important;
             border-left: 2px dashed ${tokens.A}66;
             align-items: flex-start !important;
           }
           .stay-itinerary-item:last-child {
             border-left-color: transparent;
+            margin-bottom: 0 !important;
           }
           .stay-itinerary-image-col { 
             padding: 0 !important; 
-            margin-top: 20px; 
-            margin-bottom: 12px;
+            margin-top: 16px; 
+            margin-bottom: 0px !important;
             justify-content: flex-start !important; 
             width: 100% !important;
           }

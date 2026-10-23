@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import cn from "classnames";
 import styles from "./Login.module.sass";
 import Icon from "../Icon";
@@ -597,6 +598,27 @@ const Login = ({ onClose }) => {
             {error && <div className={styles.error}>{error}</div>}
           </form>
 
+          <div className={styles.termsNotice}>
+            By continuing, you agree to Little Known Planet’s{" "}
+            <Link
+              to="/terms-of-service"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.legalLink}
+            >
+              Terms &amp; Conditions
+            </Link>{" "}
+            and consent to our{" "}
+            <Link
+              to="/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.legalLink}
+            >
+              Privacy Policy
+            </Link>
+            .
+          </div>
         </div>
       )}
 
@@ -671,6 +693,27 @@ const Login = ({ onClose }) => {
               {loading ? "Verifying..." : "Continue"}
             </button>
           </form>
+          <div className={styles.termsNotice}>
+            By continuing, you agree to our{" "}
+            <Link
+              to="/terms-of-service"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.legalLink}
+            >
+              Terms &amp; Conditions
+            </Link>{" "}
+            and consent to our{" "}
+            <Link
+              to="/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.legalLink}
+            >
+              Privacy Policy
+            </Link>
+            .
+          </div>
         </div>
       )}
 
@@ -771,6 +814,27 @@ const Login = ({ onClose }) => {
               {loading ? "Saving..." : pendingGoogleCredential && !pendingToken ? "Continue with Google" : "Complete Profile"}
             </button>
           </form>
+          <div className={styles.termsNotice}>
+            Your information is secured and processed in accordance with our{" "}
+            <Link
+              to="/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.legalLink}
+            >
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link
+              to="/terms-of-service"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.legalLink}
+            >
+              Terms &amp; Conditions
+            </Link>
+            .
+          </div>
         </div>
       )}
     </div>

@@ -202,8 +202,44 @@ const transformListingToCard = (listing, section) => {
 
   const entityType = getEntityType(listing);
 
-  // Price formatting
-  const price = isCategory ? 0 : (listing.individualPrice ?? listing.startingPrice ?? 0);
+// Helper to robustly extract price across stays, experiences, events, and food
+const getListingPrice = (listing, entityType) => {
+  if (!listing || typeof listing !== "object") return 0;
+
+  // Direct price properties
+  const directPrice =
+    listing.individualPrice ??
+    listing.startingPrice ??
+    listing.price ??
+    listing.basePrice ??
+    listing.ticketPrice ??
+    listing.ticketTypePrice ??
+    listing.itemPrice ??
+    listing.pricing?.basePrice ??
+    listing.pricePerNight;
+
+  if (directPrice != null && !isNaN(Number(directPrice)) && Number(directPrice) > 0) {
+    return Number(directPrice);
+  }
+
+  // Event ticket tiers/types fallback
+  if (entityType === "event") {
+    const tickets = listing.ticketTypes || listing.ticketTiers || listing.tickets;
+    if (Array.isArray(tickets) && tickets.length > 0) {
+      const prices = tickets
+        .map((t) => Number(t?.price ?? t?.ticketPrice ?? t?.ticketTypePrice ?? t?.individualPrice ?? t?.amount ?? t?.basePrice))
+        .filter((p) => !isNaN(p) && p > 0);
+      if (prices.length > 0) {
+        return Math.min(...prices);
+      }
+    }
+  }
+
+  return 0;
+};
+
+// Price formatting
+  const price = isCategory ? 0 : getListingPrice(listing, entityType);
   const hasPrice = !isCategory && price > 0 && entityType !== "place";
   let suffix = "";
   if (entityType === "experience" || entityType === "event") suffix = " / person";
@@ -285,6 +321,19 @@ const transformListingToCard = (listing, section) => {
     comment: null,
     avatar: null,
     isClosed: Boolean(listing.isClosed),
+    itemType: entityType,
+    wishlistItemType: entityType === "experience" ? "listing" : entityType,
+    wishlistItemId: id,
+    status: listing.status,
+    eventStatus: listing.eventStatus,
+    badge: listing.badge,
+    eventDate: listing.eventDate,
+    startDate: listing.startDate,
+    date: listing.date,
+    bookingEndDate: listing.bookingEndDate,
+    endDate: listing.endDate,
+    bookingClosedDate: listing.bookingClosedDate,
+    rawListing: listing,
   };
 };
 

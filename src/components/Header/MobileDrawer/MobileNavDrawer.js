@@ -174,6 +174,19 @@ const MobileNavDrawer = ({
                   <span className={styles.navLabel}>Account</span>
                 </NavLink>
 
+                {/* Support */}
+                <NavLink
+                  className={styles.navLink}
+                  to="/support"
+                  activeClassName={styles.navLinkActive}
+                  onClick={onClose}
+                >
+                  <span className={styles.navIcon}>
+                    <Icon name="info" size="20" />
+                  </span>
+                  <span className={styles.navLabel}>Support</span>
+                </NavLink>
+
                 {/* Log out */}
                 <button
                   className={cn(styles.navLink, styles.logoutBtn)}

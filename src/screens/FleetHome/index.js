@@ -5,7 +5,7 @@ import moment from "moment";
 import styles from "./FleetHome.module.sass";
 import Icon from "../../components/Icon";
 import CategoryCard from "../../components/CategoryCard";
-import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces, filterPlaces, getBusinessInterests } from "../../utils/api";
+import { getHomepageSections, getHomepageSectionListings, getEventListings, getStayListings, getFoodMenus, getPlaces, filterPlaces, getBusinessInterests, getFilteredListings, filterEventListings } from "../../utils/api";
 import { HomepageSectionCard } from "./CardStyles";
 import InlineDatePicker from "../../components/InlineDatePicker";
 import GuestPicker from "../../components/GuestPicker";
@@ -617,10 +617,82 @@ const FleetHome = () => {
 
 
         //console.log("✅ Loaded all sections with listings:", resolvedSections);
-        //console.log(`✅ Total sections: ${resolvedSections.length}, Sections with listings: ${resolvedSections.filter(s => s.listings && s.listings.length > 0).length}`);
+        // Enrich experience and event listings if their section payload returned 0 prices
+        let finalSections = resolvedSections;
+        if (activeFilter === "experiences" || businessInterestId === 1) {
+          try {
+            const filterRes = await getFilteredListings({
+              businessInterestId: 1,
+              limit: 50,
+              offset: 0,
+              sortBy: "newest",
+            });
+            const filterItems = filterRes?.listings || [];
+            const priceMap = {};
+            filterItems.forEach((item) => {
+              const p = item.startingPrice ?? item.individualPrice ?? item.price;
+              if (p != null && !isNaN(Number(p)) && Number(p) > 0) {
+                priceMap[String(item.listingId || item.id)] = Number(p);
+              }
+            });
 
+            if (Object.keys(priceMap).length > 0) {
+              finalSections = resolvedSections.map((sec) => ({
+                ...sec,
+                listings: (sec.listings || []).map((l) => {
+                  const id = String(l.listingId ?? l.id);
+                  if (priceMap[id] && (!l.startingPrice && !l.individualPrice)) {
+                    return {
+                      ...l,
+                      startingPrice: priceMap[id],
+                      individualPrice: priceMap[id],
+                    };
+                  }
+                  return l;
+                }),
+              }));
+            }
+          } catch (enrichErr) {
+            console.warn("⚠️ Failed to enrich experience prices from filter:", enrichErr);
+          }
+        } else if (activeFilter === "events" || businessInterestId === 2) {
+          try {
+            const filterRes = await filterEventListings({
+              limit: 50,
+              offset: 0,
+              sortBy: "newest",
+            });
+            const filterItems = filterRes?.events || filterRes?.listings || [];
+            const priceMap = {};
+            filterItems.forEach((item) => {
+              const p = item.startingPrice ?? item.individualPrice ?? item.price;
+              if (p != null && !isNaN(Number(p)) && Number(p) > 0) {
+                priceMap[String(item.eventId || item.listingId || item.id)] = Number(p);
+              }
+            });
 
-        setSectionsData(resolvedSections);
+            if (Object.keys(priceMap).length > 0) {
+              finalSections = resolvedSections.map((sec) => ({
+                ...sec,
+                listings: (sec.listings || []).map((l) => {
+                  const id = String(l.eventId ?? l.listingId ?? l.id);
+                  if (priceMap[id] && (!l.startingPrice && !l.individualPrice)) {
+                    return {
+                      ...l,
+                      startingPrice: priceMap[id],
+                      individualPrice: priceMap[id],
+                    };
+                  }
+                  return l;
+                }),
+              }));
+            }
+          } catch (enrichErr) {
+            console.warn("⚠️ Failed to enrich event prices from filter:", enrichErr);
+          }
+        }
+
+        setSectionsData(finalSections);
 
 
       } catch (err) {
@@ -998,12 +1070,16 @@ const FleetHome = () => {
                       <img src={filter.image} alt={filter.label} className={styles.mobileCategoryBg} />
                       <div className={styles.mobileCategoryOverlay} />
                       <div className={styles.mobileCategoryContent}>
-                        <div className={styles.mobileCategoryIcon}>
-                          {filter.id === "experience" && <Compass size={28} />}
-                          {filter.id === "events" && <Ticket size={28} />}
-                          {filter.id === "stays" && <Home size={28} />}
-                          {filter.id === "food" && <Utensils size={28} />}
-                          {filter.id === "places" && <MapPin size={28} />}
+                        <div
+                          className={cn(styles.mobileCategoryIcon, {
+                            [styles.mobileCategoryIconActive]: isActive,
+                          })}
+                        >
+                          {filter.id === "experience" && <Compass size={28} color={isActive ? "#0097B2" : "#ffffff"} />}
+                          {filter.id === "events" && <Ticket size={28} color={isActive ? "#0097B2" : "#ffffff"} />}
+                          {filter.id === "stays" && <Home size={28} color={isActive ? "#0097B2" : "#ffffff"} />}
+                          {filter.id === "food" && <Utensils size={28} color={isActive ? "#0097B2" : "#ffffff"} />}
+                          {filter.id === "places" && <MapPin size={28} color={isActive ? "#0097B2" : "#ffffff"} />}
                         </div>
                         <span className={styles.mobileCategoryLabel}>{filter.label}</span>
                       </div>
