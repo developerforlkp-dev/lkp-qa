@@ -611,22 +611,29 @@ export default function MobileExperienceView({
               const addon = addonItem.addon || addonItem;
               const addonId = addon.addonId || addon.id;
               const selected = selectedAddOns.find(a => (a.addonId || a.id) === addonId || (a.addon?.addonId || a.addon?.id) === addonId);
-              const addonImg = fmt(addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image);
+              const addonImages = [...new Set([
+                ...(Array.isArray(addon.imageUrls) ? addon.imageUrls : []),
+                addon.imageUrl,
+                addon.image,
+                ...(Array.isArray(addonItem.imageUrls) ? addonItem.imageUrls : []),
+                addonItem.imageUrl,
+                addonItem.image
+              ].map(fmt).filter(Boolean))];
+              const addonImg = addonImages[0];
               const price = addon.price || addon.addonPrice || addon.amount || 0;
               const addonName = addon.title || addon.name || addon.addonName || `Add-on ${i + 1}`;
               const isGroupAddon = addon.pricingType === "Group" || addon.priceType === "per_booking";
 
               return (
                 <div key={i} className="mob-addon-card" style={{ borderColor: selected ? A : B, background: isDark ? "#111" : W }}>
-                  {addonImg && (
+                  {addonImages.length > 0 && (
                     <img
                       className="mob-addon-img"
                       src={addonImg}
                       alt={addonName}
                       loading="lazy"
                       onClick={() => {
-                        const imgs = addon.imageUrls?.length > 0 ? addon.imageUrls.map(fmt) : [addonImg];
-                        setSelectedAddonImages(imgs);
+                        setSelectedAddonImages(addonImages);
                         setAddonPhotoIndex(0);
                         setAddonPhotoVisible(true);
                       }}

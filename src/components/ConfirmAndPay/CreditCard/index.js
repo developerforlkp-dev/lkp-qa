@@ -128,7 +128,7 @@ const getConcurrentBookingErrorMessage = (error) => {
     /no availability|not available|unavailable|sold.?out|fully booked|already booked|insufficient inventory|inventory|capacity|seat|slot.*taken|booking.*conflict|duplicate booking/.test(responseText);
 
   if (isAvailabilityConflict) {
-    return "This slot is no longer available because another guest completed the booking first. Please choose another time or try a different date.";
+    return "Sorry, this slot is no longer available. Please select another date or time.";
   }
 
   return null;

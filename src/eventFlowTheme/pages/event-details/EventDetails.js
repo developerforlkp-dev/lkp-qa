@@ -3512,6 +3512,13 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity, onCle
     endTime: event?.endTime || "",
     pricePerPerson: ticketPrice
   }];
+  const sortedAddons = useMemo(() => [...(Array.isArray(event?.addons) ? event.addons : (Array.isArray(event?.addOns) ? event.addOns : []))].sort((left, right) => {
+      const a = left.addon || left;
+      const b = right.addon || right;
+      const nameA = String(a.title || a.name || a.addonName || "");
+      const nameB = String(b.title || b.name || b.addonName || "");
+      return nameA.localeCompare(nameB) || String(a.addonId ?? a.id ?? "").localeCompare(String(b.addonId ?? b.id ?? ""));
+    }), [event?.addons, event?.addOns]);
   const listing = {
     ...event,
     listingId: event?.listingId || event?.id || event?.eventId,
@@ -3528,7 +3535,7 @@ function EventBookingPopup({ event, selectedAddOns, onUpdateAddonQuantity, onCle
       ...(event?.pricing || {}),
       basePrice: ticketPrice
     },
-    addons: Array.isArray(event?.addons) ? event.addons : (Array.isArray(event?.addOns) ? event.addOns : []),
+    addons: sortedAddons,
     ticketTypes,
     eventSlots: timeSlots,
     slots: timeSlots,
@@ -4494,7 +4501,14 @@ export default function EventDetails() {
                         const addon = item.addon || item;
                         const addonId = addon.addonId || addon.id;
                         const pricingType = addon.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                        const addonImage = addon.imageUrl || (addon.imageUrls && addon.imageUrls[0]) || addon.image;
+                        const addonImages = [...new Set([
+                          ...(Array.isArray(addon.imageUrls) ? addon.imageUrls : []),
+                          addon.imageUrl,
+                          addon.image,
+                          ...(Array.isArray(item.imageUrls) ? item.imageUrls : []),
+                          item.imageUrl,
+                          item.image
+                        ].map(formatImageUrl).filter(Boolean))];
                         const isSelected = selectedAddOns.some(a => (a.addonId || a.id) === addonId);
 
                         return (
@@ -4522,16 +4536,19 @@ export default function EventDetails() {
                           >
                             {/* Left side: ONLY image */}
                             <div style={{ width: "160px", flexShrink: 0, overflow: "hidden", background: W, position: "relative" }}>
-                              {addonImage ? (
-                                <img
-                                  src={formatImageUrl(addonImage)}
-                                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-                                  alt={addon.title}
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = "/images/content/placeholder.jpg";
-                                  }}
-                                />
+                              {addonImages.length ? (
+                                <div style={{ display: "flex", width: "100%", height: "100%", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+                                  {addonImages.map((imageUrl, imageIndex) => (
+                                    <img
+                                      key={`${imageUrl}-${imageIndex}`}
+                                      src={imageUrl}
+                                      style={{ flex: "0 0 100%", width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", scrollSnapAlign: "start" }}
+                                      alt={`${addon.title || "Add-on"} ${imageIndex + 1}`}
+                                      loading="lazy"
+                                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                    />
+                                  ))}
+                                </div>
                               ) : (
                                 <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: AL }}>
                                   <Plus size={24} color={A} />

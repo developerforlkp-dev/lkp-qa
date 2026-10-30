@@ -3298,7 +3298,14 @@ const StayDetails = () => {
                       const addon = item.addon || item;
                       const addonId = addon.addonId || item.assignmentId || addon.id || item.id;
                       const pricingType = addon.pricingType || item.pricingType || (addon.priceType === "per_booking" ? "Group" : "Individual");
-                      const addonImage = addon.imageUrl || (Array.isArray(addon.imageUrls) && addon.imageUrls[0]) || addon.image || (Array.isArray(item.imageUrls) && item.imageUrls[0]) || item.imageUrl;
+                      const addonImages = [...new Set([
+                        ...(Array.isArray(addon.imageUrls) ? addon.imageUrls : []),
+                        addon.imageUrl,
+                        addon.image,
+                        ...(Array.isArray(item.imageUrls) ? item.imageUrls : []),
+                        item.imageUrl,
+                        item.image
+                      ].map(fixImageUrl).filter(Boolean))];
 
                       return (
                         <motion.div
@@ -3325,16 +3332,19 @@ const StayDetails = () => {
                         >
                           {/* Left side: Image */}
                           <div style={{ width: isMobile ? "64px" : "160px", margin: isMobile ? "16px 0 16px 16px" : 0, borderRadius: isMobile ? "8px" : 0, flexShrink: 0, overflow: "hidden", background: W, position: "relative" }}>
-                            {addonImage ? (
-                              <img
-                                src={addonImage}
-                                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-                                alt={addon.title || addon.name}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = "/images/content/placeholder.jpg";
-                                }}
-                              />
+                            {addonImages.length ? (
+                              <div style={{ display: "flex", width: "100%", height: "100%", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+                                {addonImages.map((imageUrl, imageIndex) => (
+                                  <img
+                                    key={`${imageUrl}-${imageIndex}`}
+                                    src={imageUrl}
+                                    style={{ flex: "0 0 100%", width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", scrollSnapAlign: "start" }}
+                                    alt={`${addon.title || addon.name || "Add-on"} ${imageIndex + 1}`}
+                                    loading="lazy"
+                                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                                  />
+                                ))}
+                              </div>
                             ) : (
                               <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: `${A}08` }}>
                                 <Plus size={24} color={A} />

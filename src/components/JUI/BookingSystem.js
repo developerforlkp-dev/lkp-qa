@@ -4856,10 +4856,10 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           const baseDisplayPrice = gp ? gp.baseUnitPrice : Number(data.price || 0);
                           const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
                           const isExplicitFree = isFreeEvent || (isEventBooking && String(listing?.eventType || listing?.event_type || "").toLowerCase() === "free");
-                          const isPriceLoadingNow = ticketPricesLoading && isEventBooking && !isExplicitFree && dynamicSelectedTicketPrice === undefined && (!baseDisplayPrice || baseDisplayPrice <= 0);
+                          const isPriceLoadingNow = ticketPricesLoading && isEventBooking && !isExplicitFree;
 
                           if (isPriceLoadingNow) {
-                            return null;
+                            return <span style={{ fontSize: 12, color: M }} role="status">Loading pricing...</span>;
                           }
 
                           if (isExplicitFree) {
@@ -6221,7 +6221,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                         const gp = isEventBooking ? eventGuestPricing : experienceGuestPricing;
                         const discountedDisplayPrice = gp ? gp.priceAfterDiscount : Number(data.price || 0);
                         const isExplicitFree = isFreeEvent || (isEventBooking && String(listing?.eventType || listing?.event_type || "").toLowerCase() === "free");
-                        const isPriceLoadingNow = ticketPricesLoading && isEventBooking && !isExplicitFree && dynamicSelectedTicketPrice === undefined;
+                        const isPriceLoadingNow = ticketPricesLoading && isEventBooking && !isExplicitFree;
 
                         if (isPriceLoadingNow) {
                           return (
