@@ -1673,6 +1673,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   // Sync external open state
   const externalOpenHandledRef = useRef(false);
   const lastCalculatedPayloadRef = useRef("");
+  const calculationVersionRef = useRef(0);
   const calculateDebounceTimerRef = useRef(null);
   const childrenDetailsRef = useRef(null);
   useEffect(() => {
@@ -3230,6 +3231,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   useEffect(() => {
     if (!show) {
+      calculationVersionRef.current += 1;
       if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
       lastCalculatedPayloadRef.current = "";
       setApiPayableAmount(null);
@@ -3241,6 +3243,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     const childCount = Number(guests?.children || 0);
     const totalGuestsCount = isDirect ? (adultCount + childCount) : adultCount;
     if (totalGuestsCount <= 0) {
+      calculationVersionRef.current += 1;
       if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
       lastCalculatedPayloadRef.current = "";
       setApiPayableAmount(null);
@@ -3261,6 +3264,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     if (isEventBooking) {
       const eventId = Number(listing?.eventId ?? listing?.event_id ?? listing?.id ?? listing?.listingId);
       if (!eventId) {
+        calculationVersionRef.current += 1;
         if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
         lastCalculatedPayloadRef.current = "";
         setApiPayableAmount(null);
@@ -3381,6 +3385,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     } else {
       const listingId = Number(listing?.listingId || listing?.id || listing?.experienceId);
       if (!listingId) {
+        calculationVersionRef.current += 1;
         if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
         lastCalculatedPayloadRef.current = "";
         setApiPayableAmount(null);
@@ -3425,6 +3430,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
     // Immediately cache the payloadKey so subsequent re-renders during the debounce delay do not loop
     lastCalculatedPayloadRef.current = payloadKey;
+    const calculationVersion = ++calculationVersionRef.current;
+    const isCurrentCalculation = () => isMountedRef.current && calculationVersionRef.current === calculationVersion;
     setApiPayableLoading(true);
 
     if (calculateDebounceTimerRef.current) {
@@ -3432,11 +3439,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     }
 
     calculateDebounceTimerRef.current = setTimeout(() => {
-      if (!isMountedRef.current) return;
+      if (!isCurrentCalculation()) return;
 
       calculationFn(payload)
         .then((res) => {
-          if (!isMountedRef.current) return;
+          if (!isCurrentCalculation()) return;
           setCalculateError(null);
           const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total ?? res?.totalAmount;
           if (amount != null && Number.isFinite(Number(amount))) {
@@ -3444,7 +3451,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           }
         })
         .catch((err) => {
-          if (!isMountedRef.current) return;
+          if (!isCurrentCalculation()) return;
           console.warn("calculateTotal error:", err);
           const errData = err?.response?.data;
           const errMsg = errData?.error || errData?.message || (typeof errData === "string" ? errData : null);
@@ -3456,7 +3463,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           }
         })
         .finally(() => {
-          if (isMountedRef.current) setApiPayableLoading(false);
+          if (isCurrentCalculation()) setApiPayableLoading(false);
         });
     }, 250);
   }, [
@@ -4020,7 +4027,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           ticketTypeId,
           selectedSlot: selectedEventSlot,
           selectedSlots: selectedEventSlots,
-          cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
+          cancellationPolicySummary: isDirect ? null : (listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText),
           orderRequest: {
             ...payload,
             eventId: previewPriceRes?.eventId ? Number(previewPriceRes.eventId) : eventIdNum,
@@ -4274,7 +4281,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         guestCount: totalGuests,
         billableGuestCount: totalGuests
       },
-      cancellationPolicySummary: listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText,
+      cancellationPolicySummary: isDirect ? null : (listing?.cancellationPolicySummary || listing?.cancellationPolicy || listing?.cancellationPolicyText),
     };
     if (privateBooking) bookingData.privateBooking = true;
 
@@ -6238,7 +6245,9 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           return <span style={{ fontSize: 22, fontWeight: 800, color: A }}>Free Event</span>;
                         }
 
-                        if (apiPayableLoading) {
+                        // Keep the confirmed total in place while refreshing it to avoid
+                        // replacing the price with a shimmer on every guest change.
+                        if (apiPayableLoading && apiPayableAmount == null) {
                           return (
                             <>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, height: 26, marginTop: 4 }}>
@@ -6291,7 +6300,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      disabled={bookingLoading}
+                      disabled={bookingLoading || apiPayableLoading}
                       onClick={handleReserve}
                       style={{
                         padding: "12px 32px",

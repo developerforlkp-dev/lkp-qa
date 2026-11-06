@@ -1509,12 +1509,16 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
 
   // Sync cancellation policy from bookingData
   useEffect(() => {
+    if (isDirectBooking) {
+      setCancellationPolicy(null);
+      return;
+    }
     if (bookingData?.cancellationPolicySummary) {
       setCancellationPolicy(bookingData.cancellationPolicySummary);
     } else if (bookingData?.cancellationAllowed === false) {
       setCancellationPolicy(null);
     }
-  }, [bookingData?.cancellationAllowed, bookingData?.cancellationPolicySummary]);
+  }, [isDirectBooking, bookingData?.cancellationAllowed, bookingData?.cancellationPolicySummary]);
 
   // Show loading state while checking payment status
   if (checkingPayment) {
@@ -1699,7 +1703,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
               currency={resolvedCurrency}
               hostName={hostName}
               hostAvatar={hostAvatar}
-              cancellationPolicy={cancellationPolicy}
+              cancellationPolicy={isDirectBooking ? null : cancellationPolicy}
               rating={reviewsData.rating}
               reviewsCount={reviewsData.count}
               buttonUrl={isDirectBooking ? "/direct-booking/complete" : "/experience-checkout-complete"}

@@ -8,11 +8,16 @@ export function Layout1ModernMinimalist({ post }) {
   const relatedPosts = posts.filter((p) => post.relatedIds?.includes(p.id));
 
   return (
-    <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "0px", marginTop: "-40px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
+    <div className="blog-page-root l1-root" style={{ minHeight: "100vh", paddingTop: "32px", marginTop: "0px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
       {/* SCOPED CSS STYLES */}
       <style>{`
-        
+        @media (max-width: 768px) {
+          .l1-root {
+            padding-top: 20px !important;
+            margin-top: 0 !important;
+          }
+        }
         .l1-root { background-color: #FAFAFA; color: #333; transition: background-color 0.3s, color 0.3s; }
         .dark-mode .l1-root, body.dark-mode .l1-root { background-color: #0a0a0a !important; color: #f1f1f1 !important; }
         .dark-mode .l1-root .blog-title, body.dark-mode .l1-root .blog-title { color: #FFF !important; }
@@ -379,10 +384,15 @@ export function Layout2EditorialMagazine({ post }) {
   const relatedPosts = posts.filter((p) => post.relatedIds?.includes(p.id));
 
   return (
-    <div className="blog-page-root l2-root" style={{ minHeight: "100vh", paddingTop: "0px", marginTop: "-40px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
+    <div className="blog-page-root l2-root" style={{ minHeight: "100vh", paddingTop: "32px", marginTop: "0px", paddingBottom: "80px", fontFamily: "\"Inter\", sans-serif" }}>
       
       <style>{`
-        
+        @media (max-width: 768px) {
+          .l2-root {
+            padding-top: 20px !important;
+            margin-top: 0 !important;
+          }
+        }
         .l2-root { background-color: #F8FCFD; color: #333; transition: background-color 0.3s, color 0.3s; }
         .dark-mode .l2-root, body.dark-mode .l2-root { background-color: #050505 !important; color: #f1f1f1 !important; }
         .dark-mode .l2-root .l2-hero-card, body.dark-mode .l2-root .l2-hero-card { background: #111 !important; box-shadow: none !important; border: 1px solid #222 !important; }

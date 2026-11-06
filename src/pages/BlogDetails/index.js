@@ -55,7 +55,7 @@ export default function BlogDetails() {
 
   if (loading) {
     return (
-      <div className="blog-page-root min-h-screen pt-[0px] mt-[0px] md:mt-[-40px] pb-[80px]" style={{ fontFamily: '"Inter", sans-serif', backgroundColor: '#FAFAFA' }}>
+      <div className="blog-page-root min-h-screen pt-[20px] md:pt-[32px] mt-0 pb-[80px]" style={{ fontFamily: '"Inter", sans-serif', backgroundColor: '#FAFAFA' }}>
         <div className="max-w-[1100px] mx-auto px-6 box-border animate-pulse pt-20 md:pt-32">
           <div className="flex flex-col items-center mb-[60px]">
              <div className="bg-gray-200 h-4 w-24 mb-5 rounded"></div>

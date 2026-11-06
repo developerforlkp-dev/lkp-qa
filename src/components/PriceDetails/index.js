@@ -206,7 +206,7 @@ const PriceDetails = ({
           />
         )}
 
-        {cancellationPolicy && (
+        {!isDirectBooking && cancellationPolicy && (
           <div className={styles.cancellation}>
             {!hideCancellationIcon && <Icon name="coin" size="16" />}
             <div className={styles.cancellationList}>

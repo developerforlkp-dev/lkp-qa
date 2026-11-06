@@ -37,6 +37,9 @@
         padding: 0 32px
     +m
         padding: 0 clamp(16px, 5vw, 24px)
+        border: none !important
+        box-shadow: none !important
+        transition: none !important
 
 .floatingPill
     background: #FFFFFF
@@ -51,6 +54,10 @@
         background: $n1
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3)
         border: 1px solid rgba(255, 255, 255, 0.04)
+        +m
+            border: none !important
+            box-shadow: none !important
+            background: transparent !important
     padding: 0 40px !important
     +t
         width: calc(100% - 48px)
@@ -63,6 +70,7 @@
         width: 100% !important
         height: auto !important
         border: none !important
+        outline: none !important
         padding: 0 clamp(16px, 5vw, 24px) !important
 
 .logo

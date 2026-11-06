@@ -11,6 +11,7 @@ import {
   getHost,
   getHostContent,
 } from "../../../utils/api";
+import MobileHostProfileView from "../MobileHostProfileView";
 
 
 
@@ -25,6 +26,16 @@ const Main = ({ hostId, onLoadingChange }) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (onLoadingChange) {
@@ -228,6 +239,21 @@ const Main = ({ hostId, onLoadingChange }) => {
           <div>Error loading host profile: {error}</div>
         </div>
       </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <MobileHostProfileView
+        host={host}
+        hostData={hostData}
+        hostName={hostName}
+        joinedDate={joinedDate}
+        hostPhone={hostPhone}
+        hostEmail={hostEmail}
+        businessInterests={businessInterests}
+        tabListings={tabListings}
+      />
     );
   }
 

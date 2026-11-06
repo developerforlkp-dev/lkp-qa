@@ -137,7 +137,7 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
           { [styles.hideOnMobile]: hideOnMobile }
         )}
       >
-        <div className={cn("container", styles.container, { [styles.floatingPill]: isHomepage && hasScrolled })}>
+        <div className={cn("container", styles.container, { [styles.floatingPill]: isHomepage && !isDetailPage && !useMobileHeader && hasScrolled })}>
           {leftContent ? (
             leftContent
           ) : (

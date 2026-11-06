@@ -52,7 +52,8 @@ const Page = ({
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
   const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details") || pathname.startsWith("/wishlists");
   const isBlogPage = pathname.startsWith("/blog") || pathname.startsWith("/bookings") || pathname.startsWith("/viewdetails") || pathname.startsWith("/host-profile") || pathname.startsWith("/account-settings") || pathname.startsWith("/about") || pathname.startsWith("/support") || pathname.startsWith("/faq") || pathname.startsWith("/cancellation-policy") || pathname.startsWith("/terms-of-service") || pathname.startsWith("/privacy-policy") || pathname.includes("checkout");
-  const isHomeRoute = homeRoutes.includes(pathname) || isDetailPage;
+  const isActualHomeRoute = homeRoutes.includes(pathname);
+  const isHomeRoute = isActualHomeRoute || isDetailPage;
 
   useEffect(() => {
     clearAllBodyScrollLocks();
@@ -150,7 +151,7 @@ const Page = ({
             wide={wide}
             notAuthorized={notAuthorized}
             hideOnMobile={hideHeaderOnMobile}
-            isHomepage={isHomeRoute}
+            isHomepage={isActualHomeRoute && !isDetailPage}
             hasScrolled={scrolled}
             leftContent={headerLeftContent}
             hideBookings={hideBookings}
@@ -204,6 +205,11 @@ const Page = ({
           }
           .slim-header-wrapper.is-detail-page [class*="Header_container"], .slim-header-wrapper.is-blog-page [class*="Header_container"], .slim-header-wrapper.is-filter-page [class*="Header_container"] {
             padding: 0 16px !important;
+            border: none !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            transition: none !important;
           }
           .slim-header-wrapper.is-detail-page img, .slim-header-wrapper.is-blog-page img, .slim-header-wrapper.is-filter-page img {
             height: 44px !important;

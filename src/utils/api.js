@@ -3219,5 +3219,26 @@ export const getEventTicketPrice = async (eventId, ticketTypeId) => {
 
 export const getEventTicketPrices = getEventTicketPrice;
 
+/**
+ * GET /api/public/reel-media/:reelId
+ * Fetches media information (videoUrl, etc.) for an Instagram reel.
+ * Public endpoint (no admin token required).
+ */
+export const getPublicReelMedia = async (reelId) => {
+  if (!reelId) throw new Error("Reel ID is required");
 
+  let response;
+  try {
+    response = await ListingsAPI.get(`/public/reel-media/${encodeURIComponent(reelId)}`);
+  } catch (err) {
+    const baseUrl = getApiBaseURL();
+    const endpoint = baseUrl.endsWith("/api")
+      ? `${baseUrl}/public/reel-media/${encodeURIComponent(reelId)}`
+      : `${baseUrl}/api/public/reel-media/${encodeURIComponent(reelId)}`;
+    response = await axios.get(endpoint);
+  }
+
+  const rawData = response?.data;
+  return rawData?.data !== undefined ? rawData.data : rawData;
+};
 

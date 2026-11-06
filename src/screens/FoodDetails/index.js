@@ -21,6 +21,7 @@ import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import CuratedContent from "../../components/CuratedContent";
 import FullScreenImage from "../../components/FullScreenImage";
 import { getShareText } from "../../utils/shareUtils";
+import { formatTimingsRange } from "../../utils/timeUtils";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -2449,7 +2450,7 @@ function FoodMetadataCard({ food }) {
                 <div>
                   <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Hours of Service</span>
                   <span style={{ fontSize: "13px", fontWeight: 700, color: tokens.FG, lineHeight: 1.2 }}>
-                    {food?.openingTime || "11:00 AM"} - {food?.closingTime || "08:30 PM"}
+                    {formatTimingsRange(food?.openingTime, food?.closingTime, null, "11:00 AM – 08:30 PM")}
                   </span>
                 </div>
               </div>

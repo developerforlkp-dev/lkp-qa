@@ -450,6 +450,8 @@ const FleetHome = () => {
   // Fetch homepage sections and their listings
   // Business interest IDs: 1=Experience, 2=Events, 3=Stays, 4=Places, 5=Food
   useEffect(() => {
+    let isCancelled = false;
+
     if (!isActiveFilterListingsEnabled) {
       setSectionsData([]);
       setLoading(false);
@@ -463,12 +465,15 @@ const FleetHome = () => {
     }
 
     const loadHomepageData = async () => {
+      // Clear previous sections data immediately so stale category content isn't shown while loading
+      setSectionsData([]);
       setLoading(true);
       setError(null);
 
       try {
         // Step 1: Fetch sections for the selected business interest
         const fetchedSections = await getHomepageSections(businessInterestId);
+        if (isCancelled) return;
         //console.log("✅ Fetched homepage sections (businessInterestId=" + businessInterestId + "):", fetchedSections);
 
 
@@ -493,6 +498,7 @@ const FleetHome = () => {
           // console.log(`💰 priceStartingFrom for section ${section.sectionId}:`, section.priceStartingFrom);
           try {
             const sectionData = await getHomepageSectionListings(section.sectionId, 50, 0);
+            if (isCancelled) return { section: section, listings: [] };
             //console.log(`✅ Section ${section.sectionId} data:`, sectionData);
 
 
@@ -528,9 +534,11 @@ const FleetHome = () => {
             if (isEventsSection && (!listings || listings.length === 0)) {
               try {
                 const eventResult = await getEventListings(12, 0);
-                const eventListingsArray = Array.isArray(eventResult?.listings) ? eventResult.listings : (Array.isArray(eventResult?.events) ? eventResult.events : (Array.isArray(eventResult) ? eventResult : []));
-                if (eventListingsArray.length > 0) {
-                  listings = eventListingsArray;
+                if (!isCancelled) {
+                  const eventListingsArray = Array.isArray(eventResult?.listings) ? eventResult.listings : (Array.isArray(eventResult?.events) ? eventResult.events : (Array.isArray(eventResult) ? eventResult : []));
+                  if (eventListingsArray.length > 0) {
+                    listings = eventListingsArray;
+                  }
                 }
               } catch (eventErr) {
                 console.warn("⚠️ Failed to fetch event listings fallback:", eventErr);
@@ -539,9 +547,11 @@ const FleetHome = () => {
             if (isStaysSection && (!listings || listings.length === 0)) {
               try {
                 const stayResult = await getStayListings(12, 0);
-                const stayListings = Array.isArray(stayResult?.listings) ? stayResult.listings : (Array.isArray(stayResult?.stays) ? stayResult.stays : (Array.isArray(stayResult) ? stayResult : []));
-                if (stayListings.length > 0) {
-                  listings = stayListings;
+                if (!isCancelled) {
+                  const stayListings = Array.isArray(stayResult?.listings) ? stayResult.listings : (Array.isArray(stayResult?.stays) ? stayResult.stays : (Array.isArray(stayResult) ? stayResult : []));
+                  if (stayListings.length > 0) {
+                    listings = stayListings;
+                  }
                 }
               } catch (stayErr) {
                 console.warn("⚠️ Failed to fetch stay listings fallback:", stayErr);
@@ -550,9 +560,11 @@ const FleetHome = () => {
             if (isFoodSection && (!listings || listings.length === 0)) {
               try {
                 const foodResult = await getFoodMenus(12, 0);
-                const foodListings = Array.isArray(foodResult?.listings) ? foodResult.listings : (Array.isArray(foodResult?.menus) ? foodResult.menus : (Array.isArray(foodResult) ? foodResult : []));
-                if (foodListings.length > 0) {
-                  listings = foodListings;
+                if (!isCancelled) {
+                  const foodListings = Array.isArray(foodResult?.listings) ? foodResult.listings : (Array.isArray(foodResult?.menus) ? foodResult.menus : (Array.isArray(foodResult) ? foodResult : []));
+                  if (foodListings.length > 0) {
+                    listings = foodListings;
+                  }
                 }
               } catch (foodErr) {
                 console.warn("⚠️ Failed to fetch food listings fallback:", foodErr);
@@ -570,9 +582,11 @@ const FleetHome = () => {
               if (categoryValues.length > 0) {
                 try {
                   const placeResult = await filterPlaces({ categoryType: categoryType, categoryValues: categoryValues.join(","), limit: 50, sortBy: "newest" });
-                  const placeListingsArray = Array.isArray(placeResult?.places) ? placeResult.places : (Array.isArray(placeResult?.listings) ? placeResult.listings : (Array.isArray(placeResult) ? placeResult : []));
-                  if (placeListingsArray.length > 0) {
-                    listings = placeListingsArray;
+                  if (!isCancelled) {
+                    const placeListingsArray = Array.isArray(placeResult?.places) ? placeResult.places : (Array.isArray(placeResult?.listings) ? placeResult.listings : (Array.isArray(placeResult) ? placeResult : []));
+                    if (placeListingsArray.length > 0) {
+                      listings = placeListingsArray;
+                    }
                   }
                 } catch (err) {
                   console.warn("⚠️ Failed to filter places fallback:", err);
@@ -580,9 +594,11 @@ const FleetHome = () => {
               } else if (!listings || listings.length === 0) {
                 try {
                   const placeResult = await getPlaces(50, 0);
-                  const placeListingsArray = Array.isArray(placeResult?.places) ? placeResult.places : (Array.isArray(placeResult?.listings) ? placeResult.listings : (Array.isArray(placeResult) ? placeResult : []));
-                  if (placeListingsArray.length > 0) {
-                    listings = placeListingsArray;
+                  if (!isCancelled) {
+                    const placeListingsArray = Array.isArray(placeResult?.places) ? placeResult.places : (Array.isArray(placeResult?.listings) ? placeResult.listings : (Array.isArray(placeResult) ? placeResult : []));
+                    if (placeListingsArray.length > 0) {
+                      listings = placeListingsArray;
+                    }
                   }
                 } catch (placeErr) {
                   console.warn("⚠️ Failed to fetch place listings fallback:", placeErr);
@@ -607,6 +623,8 @@ const FleetHome = () => {
 
 
         const sectionsWithListings = await Promise.allSettled(sectionPromises);
+        if (isCancelled) return;
+
         const resolvedSections = sectionsWithListings.map((result) => {
           if (result.status === "fulfilled") {
             return result.value;
@@ -627,6 +645,7 @@ const FleetHome = () => {
               offset: 0,
               sortBy: "newest",
             });
+            if (isCancelled) return;
             const filterItems = filterRes?.listings || [];
             const priceMap = {};
             filterItems.forEach((item) => {
@@ -662,6 +681,7 @@ const FleetHome = () => {
               offset: 0,
               sortBy: "newest",
             });
+            if (isCancelled) return;
             const filterItems = filterRes?.events || filterRes?.listings || [];
             const priceMap = {};
             filterItems.forEach((item) => {
@@ -692,10 +712,12 @@ const FleetHome = () => {
           }
         }
 
+        if (isCancelled) return;
         setSectionsData(finalSections);
 
 
       } catch (err) {
+        if (isCancelled) return;
         console.error("❌ Error loading homepage data:", err);
         // Check if it's a connection/network error
         const isConnectionError = err.message?.includes("proxy") ||
@@ -709,11 +731,17 @@ const FleetHome = () => {
           setError(err.message || "Failed to load homepage data");
         }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     loadHomepageData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [activeFilter, isActiveFilterListingsEnabled]);
 
   // ── Explore By Cards Micro-Interaction ─────────────────────────────────────

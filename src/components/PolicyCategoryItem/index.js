@@ -3,9 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Users, Clock, Sparkles, ChevronDown, Globe } from "lucide-react";
 import { useTheme } from "../JUI/Theme";
 
-function PolicyCategoryItem({ category }) {
+function PolicyCategoryItem({ category, isDirectBooking = false }) {
   const { tokens: { FG, A, M, AL, B, W }, theme } = useTheme();
   const [op, setOp] = useState(false);
+
+  const lowerTitle = (category?.title || "").toLowerCase();
+  const isCancellationCategory =
+    category?.id === 'cat-cancel' ||
+    lowerTitle.includes("cancellation");
+
+  if (isDirectBooking && isCancellationCategory) {
+    return null;
+  }
 
   const getIcon = () => {
     const lowerTitle = (category.title || "").toLowerCase();

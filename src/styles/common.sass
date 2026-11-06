@@ -18,7 +18,7 @@ body
 // against third-party CSS that may load later.
 // Note: interactive elements (buttons/links) are excluded so their
 // hover/active states can override this base color.
-body:not(.dark-mode) :is(h1, h2, h3, h4, h5, h6, p, label, input, textarea, li, strong, em):not(.event-details-premium *)
+body:not(.dark-mode) :is(h1, h2, h3, h4, h5, h6, p, label, input, textarea, li, strong, em):not(.event-details-premium *):not(#main-footer *):not(footer *):not([class*="footer"] *):not(.hero-mobile-container *):not([class*="hero-text-mobile-white"]):not([class*="hero-text-mobile-white"] *)
     color: $n2 !important
 
     // placeholders

@@ -103,10 +103,10 @@ export function Footer() {
                 <Globe size={32} strokeWidth={2} />
               </div>
               <div>
-                <h3 className={styles.brandHeading}>Explore World.<br />Experience More.</h3>
+                <h3 className={styles.brandHeading} style={{ color: "#ffffff" }}>Explore World.<br />Experience More.</h3>
               </div>
             </div>
-            <p className={styles.brandDesc}>
+            <p className={styles.brandDesc} style={{ color: "#ffffff" }}>
               Discover handpicked experiences, unique stays, local food, cultural events and hidden places across World.
             </p>
 
