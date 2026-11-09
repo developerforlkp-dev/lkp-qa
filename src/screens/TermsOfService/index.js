@@ -6,86 +6,6 @@ import Page from "../../components/Page";
 import { getPolicyDocuments } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
 
-const accordionData = [
-  {
-    title: "1. Introduction & Acceptance of Terms",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>These Terms and Conditions constitute a legally binding agreement between you and Little Known Planet. By accessing, browsing, or using our website, mobile application, or related services, you agree to be bound by these terms.</p>
-        <p>If you do not agree with any part of these Terms and Conditions, you must discontinue the use of our Platform immediately.</p>
-        <p>Little Known Planet reserves the right to modify, amend, or update these terms at any time without prior notice. Continued use of the platform constitutes your acceptance of any revisions.</p>
-      </div>
-    )
-  },
-  {
-    title: "2. User Accounts & Eligibility",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>To access certain features of the Platform, you may be required to register and create an account with accurate, complete, and current information.</p>
-        <p>You are responsible for maintaining the confidentiality of your account credentials and passwords, and you accept full responsibility for all activities that occur under your account.</p>
-        <p>Users must be at least 18 years of age or the age of majority in their jurisdiction to enter into binding agreements on the Platform.</p>
-      </div>
-    )
-  },
-  {
-    title: "3. Bookings, Payments & Pricing",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>All bookings made through the Platform are subject to host acceptance and availability. Prices displayed on the platform are inclusive or exclusive of applicable taxes and fees as indicated at checkout.</p>
-        <p>Payments must be made through authorized payment gateways provided on the Platform. We do not store sensitive payment card details directly.</p>
-        <p>Any additional charges, security deposits, or local tariffs required on-site by hosts must be clearly disclosed prior to booking confirmation.</p>
-      </div>
-    )
-  },
-  {
-    title: "4. Cancellations, Refunds & Rescheduling",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>Cancellations and refunds are governed by the specific Cancellation Policy associated with each experience, stay, or event listing.</p>
-        <p>Refunds, if applicable, will be processed back to the original payment method in accordance with standard banking timelines.</p>
-        <p>In cases of force majeure, natural disasters, or government restrictions, special consideration may apply as detailed in our policies.</p>
-      </div>
-    )
-  },
-  {
-    title: "5. User Conduct & Obligations",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>Users agree to use the Platform strictly for legitimate personal or business purposes and in compliance with all applicable local, national, and international laws.</p>
-        <p>Users shall not post defamatory, fraudulent, obscene, or infringing content, nor attempt to compromise the integrity, security, or availability of the Platform.</p>
-        <p>Hosts and guests are expected to treat each other with respect, adhere to safety guidelines, and comply with house rules established by property and experience hosts.</p>
-      </div>
-    )
-  },
-  {
-    title: "6. Intellectual Property",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>All content, trademarks, logos, graphics, software, and design elements featured on the Platform are the exclusive property of Little Known Planet or its licensors.</p>
-        <p>Users may not copy, reproduce, distribute, or create derivative works from platform content without prior written consent from Little Known Planet.</p>
-      </div>
-    )
-  },
-  {
-    title: "7. Limitation of Liability & Disclaimer",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>The Platform and all associated services are provided on an "as is" and "as available" basis without warranties of any kind, whether express or implied.</p>
-        <p>Little Known Planet acts as an intermediary platform connecting guests with independent hosts and operators. We are not liable for acts, omissions, injuries, or property damage caused by third parties.</p>
-      </div>
-    )
-  },
-  {
-    title: "8. Governing Law & Dispute Resolution",
-    content: (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <p>These Terms and Conditions shall be governed by and construed in accordance with the laws of India.</p>
-        <p>Any disputes arising out of or related to these terms shall be subject to the exclusive jurisdiction of the courts located in the registered office jurisdiction of Little Known Planet.</p>
-      </div>
-    )
-  }
-];
-
 const parseHtmlToSections = (htmlString) => {
   if (!htmlString || typeof htmlString !== "string" || !htmlString.trim()) return null;
 
@@ -258,7 +178,7 @@ const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
 const TermsOfService = () => {
   const { tokens } = useTheme();
   const [documentHtml, setDocumentHtml] = useState("");
-  const [title, setTitle] = useState("Terms & Conditions");
+  const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [openIndices, setOpenIndices] = useState([0]);
   const [showTopBtn, setShowTopBtn] = useState(false);
@@ -422,8 +342,8 @@ const TermsOfService = () => {
   return (
     <Page>
       <Helmet>
-        <title>{title} | Little Known Planet</title>
-        <meta name="description" content={`Review the ${title} for using Little Known Planet services.`} />
+        <title>{title ? `${title} | Little Known Planet` : "Little Known Planet"}</title>
+        {title && <meta name="description" content={`Review the ${title} for using Little Known Planet services.`} />}
       </Helmet>
       
       {/* Top Progress Bar */}
@@ -442,6 +362,18 @@ const TermsOfService = () => {
       />
 
       <style>{`
+        @keyframes terms-skeleton-pulse {
+          50% { opacity: 0.45; }
+        }
+        .terms-skeleton {
+          background: ${tokens.B};
+          border-radius: 8px;
+          animation: terms-skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .terms-skeleton { animation: none; }
+        }
+
         .policy-rich-text {
           color: ${tokens.FG};
           font-size: 16px;
@@ -526,6 +458,12 @@ const TermsOfService = () => {
       <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
         <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
           
+          {loading ? (
+            <div role="status" aria-label="Loading terms and conditions" style={{ marginBottom: "40px" }}>
+              <div aria-hidden="true" className="terms-skeleton" style={{ width: "min(100%, 760px)", height: "100px", margin: "0 auto 16px" }} />
+              <div aria-hidden="true" className="terms-skeleton" style={{ width: "min(100%, 600px)", height: "28px", margin: "0 auto" }} />
+            </div>
+          ) : (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -546,10 +484,13 @@ const TermsOfService = () => {
               Please review the terms and conditions for using our platform and services.
             </p>
           </motion.div>
+          )}
 
           {loading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
-              <p style={{ color: tokens.M, fontSize: "16px" }}>Loading...</p>
+            <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {[0, 1, 2, 3, 4].map((index) => (
+                <div key={index} className="terms-skeleton" style={{ height: index === 0 ? "180px" : "76px" }} />
+              ))}
             </div>
           ) : parsedSectionsData && parsedSectionsData.sections.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -596,17 +537,9 @@ const TermsOfService = () => {
               dangerouslySetInnerHTML={{ __html: documentHtml }} 
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {accordionData.map((item, index) => (
-                <AccordionItem
-                  key={index}
-                  item={item}
-                  isOpen={openIndices.includes(index)}
-                  onClick={() => toggleAccordion(index)}
-                  themeTokens={tokens}
-                />
-              ))}
-            </div>
+            <p role="alert" style={{ textAlign: "center", color: tokens.M }}>
+              Terms are currently unavailable. Please try again later.
+            </p>
           )}
 
         </div>
