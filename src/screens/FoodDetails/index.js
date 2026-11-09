@@ -12,6 +12,7 @@ import cn from "classnames";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { Footer } from "../../components/JUI/Footer";
 import RelatedListingsStrip from "../../components/RelatedListingsStrip";
+import ExperienceReelsCarousel, { extractInstagramReelId } from "../../components/ExperienceReelsCarousel";
 import { getFoodDetails, getHost, getHostContent } from "../../utils/api";
 import ShareButton from "../../components/ShareButton";
 import Favorite from "../../components/Favorite";
@@ -2481,6 +2482,46 @@ const FoodDetails = () => {
   const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
   const unavailableRedirectRef = useRef(false);
 
+  // Reels / Social media links from food menu details
+  const foodReels = useMemo(() => {
+    const candidates = [
+      food?.socialMediaLinks,
+      food?.social_media_links,
+      food?.data?.socialMediaLinks,
+      food?.data?.social_media_links,
+      food?.reelUrls,
+      food?.reels,
+    ];
+
+    const allItems = [];
+    candidates.forEach((cand) => {
+      if (!cand) return;
+      if (Array.isArray(cand)) {
+        allItems.push(...cand);
+      } else if (typeof cand === "string" && cand.trim()) {
+        try {
+          const parsed = JSON.parse(cand);
+          if (Array.isArray(parsed)) allItems.push(...parsed);
+          else allItems.push(cand);
+        } catch (_) {
+          cand.split(",").forEach((s) => allItems.push(s.trim()));
+        }
+      }
+    });
+
+    return Array.from(
+      new Set(
+        allItems
+          .map((link) => {
+            if (!link) return null;
+            const urlStr = typeof link === "string" ? link : link?.url || link?.link || link?.href || "";
+            return extractInstagramReelId(urlStr) || urlStr;
+          })
+          .filter(Boolean)
+      )
+    );
+  }, [food]);
+
   // Dynamic browser tab title
   useDocumentTitle(food?.menuName || food?.title, "Food");
 
@@ -2794,6 +2835,14 @@ const FoodDetails = () => {
       <LocationSection food={food} />
 
       <ReservationNoir food={food} hostData={hostData} hostAvatar={hostAvatar} />
+
+      <ExperienceReelsCarousel
+        reelUrls={foodReels}
+        title="Food Reels"
+        subtitle="Watch real moments & highlights from this food experience"
+        theme={theme}
+        tokens={{ FG, BG, M, A, B, W }}
+      />
 
       <RelatedListingsStrip
         businessInterestId={5}

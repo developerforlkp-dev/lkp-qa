@@ -2790,7 +2790,14 @@ const ExperienceProduct = () => {
 
         {!isDirectBooking && (
           <ExperienceReelsCarousel
-            reelUrls={listing?.reelUrls || listing?.reels}
+            reelUrls={
+              listing?.reelUrls ||
+              listing?.reels ||
+              (Array.isArray(listing?.socialMediaLinks) ? listing.socialMediaLinks : null) ||
+              (Array.isArray(reviews?.socialMediaLinks) ? reviews.socialMediaLinks : null) ||
+              (Array.isArray(reviews?.data?.socialMediaLinks) ? reviews.data.socialMediaLinks : null) ||
+              (Array.isArray(reviewSummary?.socialMediaLinks) ? reviewSummary.socialMediaLinks : null)
+            }
             theme={theme}
             tokens={{ FG, BG, M, A, B, W }}
           />

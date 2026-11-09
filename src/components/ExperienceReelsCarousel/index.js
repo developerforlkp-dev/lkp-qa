@@ -8,7 +8,9 @@ import { getPublicReelMedia } from "../../utils/api";
 export const extractInstagramReelId = (urlOrId) => {
   if (!urlOrId) return null;
   const str = String(urlOrId).trim();
-  const match = str.match(/(?:instagram\.com\/(?:reel|reels|p)\/|reel\/)([A-Za-z0-9_-]+)/i);
+  const match =
+    str.match(/(?:instagram\.com\/(?:[^/?#]+\/)?(?:reel|reels|p)\/|reel\/)([A-Za-z0-9_-]+)/i) ||
+    str.match(/(?:instagram\.com\/(?:reel|reels|p)\/)([A-Za-z0-9_-]+)/i);
   if (match && match[1]) {
     return match[1];
   }
@@ -24,6 +26,7 @@ export const extractInstagramReelId = (urlOrId) => {
  */
 function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
   const [videoUrl, setVideoUrl] = useState(null);
+  const [posterUrl, setPosterUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const videoRef = useRef(null);
@@ -54,9 +57,16 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
           res?.video_url ||
           res?.url ||
           (typeof res === "string" && res.startsWith("http") ? res : null);
+        const resolvedPosterUrl =
+          res?.posterUrl ||
+          res?.poster_url ||
+          res?.thumbnailUrl ||
+          res?.thumbnail_url ||
+          null;
 
         if (resolvedVideoUrl) {
           setVideoUrl(resolvedVideoUrl);
+          if (resolvedPosterUrl) setPosterUrl(resolvedPosterUrl);
           setHasError(false);
         } else {
           setHasError(true);
@@ -176,6 +186,7 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
         <video
           ref={videoRef}
           src={videoUrl}
+          poster={posterUrl || undefined}
           autoPlay
           muted
           loop
@@ -330,7 +341,7 @@ export default function ExperienceReelsCarousel({
       }
     }
     return list
-      .map((item) => (typeof item === "string" ? item.trim() : item?.url || String(item)))
+      .map((item) => (typeof item === "string" ? item.trim() : item?.url || item?.link || item?.href || String(item)))
       .filter((url) => Boolean(url && url.length > 0));
   }, [reelUrls]);
 

@@ -10,6 +10,7 @@ import Loader from "../../components/Loader";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import ChildAgeSelect from "../../components/ChildAgeSelect";
 import { getStayDetails, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, createStayOrder, getStayReviews, getStayHotelRoomAvailability, getStayHostelAvailability, previewOrderPrice, getStayHotelRoomPrices, getStayHostelRoomPrices } from "../../utils/api";
+import ExperienceReelsCarousel, { extractInstagramReelId } from "../../components/ExperienceReelsCarousel";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -2026,6 +2027,50 @@ const StayProduct = () => {
       });
     }
   }, [stayId]);
+
+  // Reels / Social media links from stay reviews or stay details
+  const stayReels = useMemo(() => {
+    const candidates = [
+      reviews?.socialMediaLinks,
+      reviews?.social_media_links,
+      reviews?.data?.socialMediaLinks,
+      reviews?.data?.social_media_links,
+      stay?.socialMediaLinks,
+      stay?.social_media_links,
+      stay?.data?.socialMediaLinks,
+      stay?.data?.social_media_links,
+      stay?.reelUrls,
+      stay?.reels,
+    ];
+
+    const allItems = [];
+    candidates.forEach((cand) => {
+      if (!cand) return;
+      if (Array.isArray(cand)) {
+        allItems.push(...cand);
+      } else if (typeof cand === "string" && cand.trim()) {
+        try {
+          const parsed = JSON.parse(cand);
+          if (Array.isArray(parsed)) allItems.push(...parsed);
+          else allItems.push(cand);
+        } catch (_) {
+          cand.split(",").forEach((s) => allItems.push(s.trim()));
+        }
+      }
+    });
+
+    return Array.from(
+      new Set(
+        allItems
+          .map((link) => {
+            if (!link) return null;
+            const urlStr = typeof link === "string" ? link : link?.url || link?.link || link?.href || "";
+            return extractInstagramReelId(urlStr) || urlStr;
+          })
+          .filter(Boolean)
+      )
+    );
+  }, [reviews, stay]);
   const [roomsCount, setRoomsCount] = useState(1);
 
   const numberOfNights = useMemo(() => {
@@ -3431,6 +3476,12 @@ const StayProduct = () => {
             />
 
             <ReviewsSection reviews={reviews} stayId={stayId} />
+
+            <ExperienceReelsCarousel
+              reelUrls={stayReels}
+              title="Stay Reels"
+              subtitle="Watch real moments & highlights from this stay"
+            />
           </div>
 
           <div className={styles.sidebarWrapper}>

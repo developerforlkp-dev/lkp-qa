@@ -18,6 +18,7 @@ import RoomCards from "./RoomCards";
 import StayNotFound from "./StayNotFound";
 import roomStyles from "./RoomCards.module.sass";
 import { getStayDetails, getHost, getHostContent, createStayOrder, getStayReviews, getEligibleBookings, submitOrderReview, getReviewErrorMessage } from "../../utils/api";
+import ExperienceReelsCarousel, { extractInstagramReelId } from "../../components/ExperienceReelsCarousel";
 import StayBookingSystem from "./StayBookingSystem";
 import StayItinerary from "./StayItinerary";
 import CuratedContent from "../../components/CuratedContent";
@@ -2761,6 +2762,50 @@ const StayDetails = () => {
   const [unavailablePopupOpen, setUnavailablePopupOpen] = useState(false);
   const unavailableRedirectRef = useRef(false);
 
+  // Reels / Social media links from stay reviews or stay details
+  const stayReels = useMemo(() => {
+    const candidates = [
+      reviews?.socialMediaLinks,
+      reviews?.social_media_links,
+      reviews?.data?.socialMediaLinks,
+      reviews?.data?.social_media_links,
+      stay?.socialMediaLinks,
+      stay?.social_media_links,
+      stay?.data?.socialMediaLinks,
+      stay?.data?.social_media_links,
+      stay?.reelUrls,
+      stay?.reels,
+    ];
+
+    const allItems = [];
+    candidates.forEach((cand) => {
+      if (!cand) return;
+      if (Array.isArray(cand)) {
+        allItems.push(...cand);
+      } else if (typeof cand === "string" && cand.trim()) {
+        try {
+          const parsed = JSON.parse(cand);
+          if (Array.isArray(parsed)) allItems.push(...parsed);
+          else allItems.push(cand);
+        } catch (_) {
+          cand.split(",").forEach((s) => allItems.push(s.trim()));
+        }
+      }
+    });
+
+    return Array.from(
+      new Set(
+        allItems
+          .map((link) => {
+            if (!link) return null;
+            const urlStr = typeof link === "string" ? link : link?.url || link?.link || link?.href || "";
+            return extractInstagramReelId(urlStr) || urlStr;
+          })
+          .filter(Boolean)
+      )
+    );
+  }, [reviews, stay]);
+
   // Dynamic browser tab title
   useDocumentTitle(stay?.propertyName || stay?.title, "Stays");
 
@@ -3657,6 +3702,14 @@ const StayDetails = () => {
             return String(bStayId) === String(id);
           }));
         }}
+      />
+
+      <ExperienceReelsCarousel
+        reelUrls={stayReels}
+        title="Stay Reels"
+        subtitle="Watch real moments & highlights from this stay"
+        theme={theme}
+        tokens={{ FG, BG, M, A, B, W }}
       />
 
       <StayBookingSystem

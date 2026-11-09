@@ -4676,8 +4676,16 @@ export default function EventDetails() {
 
         <ExperienceReelsCarousel
           reelUrls={Array.from(new Set(
-            (Array.isArray(event?.socialMediaLinks) ? event.socialMediaLinks : [])
-              .map((link) => extractInstagramReelId(typeof link === "string" ? link : link?.url))
+            (
+              (Array.isArray(event?.socialMediaLinks) && event.socialMediaLinks.length > 0)
+                ? event.socialMediaLinks
+                : (Array.isArray(reviews?.socialMediaLinks) && reviews.socialMediaLinks.length > 0)
+                ? reviews.socialMediaLinks
+                : (Array.isArray(reviews?.data?.socialMediaLinks) && reviews.data.socialMediaLinks.length > 0)
+                ? reviews.data.socialMediaLinks
+                : (Array.isArray(event?.social_media_links) ? event.social_media_links : [])
+            )
+              .map((link) => extractInstagramReelId(typeof link === "string" ? link : link?.url || link?.link || link?.href || ""))
               .filter(Boolean)
           ))}
           title="Event Reels"
