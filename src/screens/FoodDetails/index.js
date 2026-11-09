@@ -23,7 +23,8 @@ import CuratedContent from "../../components/CuratedContent";
 import FullScreenImage from "../../components/FullScreenImage";
 import { getShareText } from "../../utils/shareUtils";
 import { formatTimingsRange } from "../../utils/timeUtils";
-import StaircaseCarousel from "./StaircaseCarousel";
+import SocialCards from "./SocialCards";
+import keralaFoodBg from "./kerala-culinary-bg.webp";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -819,27 +820,18 @@ function HeroShareFab({ title, text, url, label = "Share Taste" }) {
 }
 
 /* ─── CULINARY SECTIONS ─────────── */
-function LegacyCulinaryHero({ food, galleryItems }) {
+function CulinaryHero({ food, galleryItems }) {
   const history = useHistory();
-  const { isMobile } = useWindowSize();
+  const { isMobile, width } = useWindowSize();
   const { theme, tokens } = useTheme();
   const { A, FG, M, BG, W, B, S, AL } = tokens;
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const id = food?.id || food?.foodId || food?._id || searchParams.get("id");
 
-  const [idx, setIdx] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const items = galleryItems?.length ? galleryItems : ["https://picsum.photos/seed/culinary/1200/800"];
-
-  useEffect(() => {
-    if (items.length <= 1) return;
-    const timer = setInterval(() => {
-      setIdx(prev => (prev + 1) % items.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [items.length]);
 
   const title = food?.menuName || food?.title || "Signature Dish";
   const cuisine = Array.isArray(food?.cuisineTypeNames) ? food.cuisineTypeNames.join(", ") : (food?.cuisineTypeNames || food?.cuisineType?.displayName || "Gourmet");
@@ -851,697 +843,203 @@ function LegacyCulinaryHero({ food, galleryItems }) {
     : (food?.serviceMode || food?.serveMode || "N/A");
   const source = food?.sourceType?.displayName || food?.sourceType?.code || food?.sourceType || "Home-Made";
 
-  const openDays = useMemo(() => {
-    const dayMap = { "Mon": 1, "Tue": 2, "Wed": 3, "Thu": 4, "Fri": 5, "Sat": 6, "Sun": 7 };
-    const rawDays = Array.isArray(food?.openingDays) ? [...food.openingDays].sort((a, b) => (dayMap[a] || 0) - (dayMap[b] || 0)) : [];
-
-    if (rawDays.length === 0) return "Daily Service";
-    if (rawDays.length === 7) return "Everyday";
-
-    // Check if consecutive
-    const indices = rawDays.map(d => dayMap[d] || 0).filter(i => i > 0);
-    let isConsecutive = true;
-    for (let i = 0; i < indices.length - 1; i++) {
-      if (indices[i + 1] !== indices[i] + 1) {
-        isConsecutive = false;
-        break;
-      }
-    }
-
-    if (isConsecutive && rawDays.length >= 3) {
-      return `${rawDays[0]} - ${rawDays[rawDays.length - 1]}`;
-    }
-
-    return rawDays.join(", ");
-  }, [food?.openingDays]);
-
-  if (isMobile) {
-    const mainImg = items[0];
-    const subImg1 = items[1] || items[0];
-    const subImg2 = items[2] || items[1] || items[0];
-    const subImg3 = items[3] || items[0];
-    const totalCount = items.length;
-
-    return (
-      <section className="hero-section-wrapper-mobile" style={{ background: BG, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", paddingBottom: "32px", paddingTop: "72px" }}>
-        {/* Top Action Bar */}
-        <div style={{ padding: "0 16px 12px", display: "flex", alignItems: "center", justifyContent: "flex-end", position: "relative", zIndex: 10 }}>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <Favorite itemType="food" itemId={id}>
-              {({ saved, onClick }) => (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onClick(e); }}
-                  aria-label="Save to favorites"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
-                    border: `1px solid ${B}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                    outline: "none",
-                    cursor: "pointer"
-                  }}
-                >
-                  <style>{`
-                    .mobile-save-icon-alt-${id} svg {
-                      fill: ${saved ? (A || "#0097B2") : (theme === "dark" ? "#FFFFFF" : "#111111")};
-                      transition: fill 0.3s ease;
-                    }
-                  `}</style>
-                  <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icon name={saved ? "heart-fill" : "heart"} size={18} />
-                  </div>
-                </button>
-              )}
-            </Favorite>
-            <button
-              onClick={async (e) => { 
-                e.stopPropagation(); 
-                try {
-                  if (navigator.share) {
-                    const shareText = getShareText(food, "food");
-                    await navigator.share({ 
-                      title: food?.menuName || food?.title || "", 
-                      text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
-                    });
-                  } else {
-                    const fallbackText = `${getShareText(food, "food")}\n${window.location.href}`;
-                    await navigator.clipboard.writeText(fallbackText);
-                  }
-                } catch (_) {}
-              }}
-              aria-label="Share"
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
-                border: `1px solid ${B}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                outline: "none",
-                cursor: "pointer"
-              }}
-            >
-              <Share2 size={18} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
-            </button>
-          </div>
-        </div>
-
-        {/* Compact Responsive Mobile Bento Image Grid */}
-        <div style={{ padding: "0 16px" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1.7fr 1fr",
-              gap: 8,
-              height: 290,
-              width: "100%",
-              borderRadius: 24,
-              overflow: "hidden",
-              position: "relative"
-            }}
-          >
-            {/* Primary Large Image (Left, 2 rows high) */}
-            <div
-              onClick={() => {
-                setActivePhotoIndex(0);
-                setIsGalleryOpen(true);
-              }}
-              style={{
-                position: "relative",
-                width: "100%",
-                height: "100%",
-                borderRadius: 20,
-                overflow: "hidden",
-                border: `1px solid ${B}`,
-                background: S,
-                cursor: "pointer"
-              }}
-            >
-              <img
-                src={mainImg}
-                alt={title}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, transparent 80%)",
-                  pointerEvents: "none"
-                }}
-              />
-              {/* Category pill on main card */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  left: 12,
-                  background: "rgba(0,0,0,0.55)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  padding: "4px 10px",
-                  borderRadius: 14,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#FFFFFF",
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase"
-                }}
-              >
-                {category}
-              </div>
-
-              {/* Badges on main card */}
-              <div style={{ position: "absolute", bottom: 12, left: 12, right: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {(food?.isFamilyFriendly || food?.familyFriendly) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "3px 8px", borderRadius: 12, border: `1px solid ${B}` }}>
-                    <Star size={10} color={A} fill={A} style={{ display: "block" }} />
-                    <span style={{ fontSize: 9, fontWeight: 700, color: "#000", textTransform: "uppercase", letterSpacing: "0.04em" }}>Family</span>
-                  </div>
-                )}
-                {(food?.isParkingAvailable || food?.parkingAvailable) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(0, 151, 178, 0.9)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", padding: "3px 8px", borderRadius: 12 }}>
-                    <MapPin size={10} color="#fff" />
-                    <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.04em" }}>Parking</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column: 2 stacked sub-images */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateRows: "1fr 1fr",
-                gap: 8,
-                height: "100%",
-                minWidth: 0
-              }}
-            >
-              {/* Sub Image 1 (Top-Right) */}
-              <div
-                onClick={() => {
-                  setActivePhotoIndex(1 < items.length ? 1 : 0);
-                  setIsGalleryOpen(true);
-                }}
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: 18,
-                  overflow: "hidden",
-                  border: `1px solid ${B}`,
-                  background: S,
-                  cursor: "pointer"
-                }}
-              >
-                <img
-                  src={subImg1}
-                  alt={`${title} detail 1`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                />
-              </div>
-
-              {/* Sub Image 2 (Bottom-Right, with overlay for more photos) */}
-              <div
-                onClick={() => {
-                  setActivePhotoIndex(2 < items.length ? 2 : 0);
-                  setIsGalleryOpen(true);
-                }}
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: 18,
-                  overflow: "hidden",
-                  border: `1px solid ${B}`,
-                  background: S,
-                  cursor: "pointer"
-                }}
-              >
-                <img
-                  src={subImg2}
-                  alt={`${title} detail 2`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                />
-                {totalCount > 3 && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "rgba(0, 0, 0, 0.5)",
-                      backdropFilter: "blur(3px)",
-                      WebkitBackdropFilter: "blur(3px)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 4,
-                      color: "#FFFFFF",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      letterSpacing: "0.04em"
-                    }}
-                  >
-                    <span>+{totalCount - 3}</span>
-                    <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.9 }}>photos</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Dish Title & Source */}
-        <div
-          style={{
-            marginTop: "16px",
-            padding: "0 20px"
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 6, color: A || "#0097B2", fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
-            <Globe size={14} color={A || "#0097B2"} />
-            <span>{source}</span>
-          </div>
-          <h1
-            style={{
-              fontSize: "clamp(1.9rem, 7.5vw, 2.3rem)",
-              fontWeight: 700,
-              lineHeight: 1.15,
-              color: FG,
-              margin: 0,
-              letterSpacing: "-0.02em",
-              fontFamily: '"Cormorant Garamond", "Playfair Display", serif',
-              textTransform: "capitalize"
-            }}
-          >
-            {title}
-          </h1>
-        </div>
-
-        {/* Full-Screen Gallery Modal */}
-        <AnimatePresence>
-          {isGalleryOpen && (
-            <FullScreenImage
-              src={items[activePhotoIndex]}
-              items={items}
-              currentIndex={activePhotoIndex}
-              onNavigate={(newIdx) => setActivePhotoIndex(newIdx)}
-              onClose={() => setIsGalleryOpen(false)}
-            />
-          )}
-        </AnimatePresence>
-      </section>
-    );
-  }
-
-  return (
-    <section className="hero-section-wrapper" style={{ background: BG, height: "100vh", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", padding: "120px 0 60px", boxSizing: "border-box" }}>
-      {/* Hero Back Button */}
-      <button
-        type="button"
-        className="premium-back-button"
-        onClick={() => history.goBack()}
-        aria-label="Go back"
-        style={{ zIndex: 10 }}
-      >
-        <ChevronLeft size={20} />
-      </button>
-
-      {/* Share Button absolute overlays */}
-      <div style={{ position: "absolute", top: isMobile ? 90 : 96, right: isMobile ? 20 : 60, zIndex: 200, display: "flex", alignItems: "center", gap: 12 }}>
-        <Favorite itemType="food" itemId={id}>
-          {({ saved, pending, onClick }) => {
-            const isDark = theme === "dark";
-            const textColor = isDark ? FG : (A || "#0097B2");
-            return (
-              <motion.button
-                onClick={(e) => { e.stopPropagation(); onClick(e); }}
-                whileTap={{ scale: 0.86 }}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: isDark ? "#141414" : "#FFFFFF",
-                  border: `1.5px solid ${isDark ? `${A}66` : `${A}4D`}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 6px 18px rgba(15,15,15,0.12)",
-                  cursor: "pointer",
-                  pointerEvents: "auto",
-                  position: "relative",
-                  zIndex: 200,
-                  outline: "none"
-                }}
-              >
-                <style>{`
-                  .desktop-save-icon-${id} svg {
-                    fill: ${saved ? (A || "#0097B2") : textColor};
-                    transition: fill 0.3s ease;
-                  }
-                `}</style>
-                <div className={`desktop-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
-                </div>
-              </motion.button>
-            );
-          }}
-        </Favorite>
-        <HeroShareFab
-          title={food?.menuName || food?.title || ""}
-          text={getShareText(food, "food")}
-          url={window.location.href}
-        />
-      </div>
-
-      {/* Header Blending Gradient */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: `linear-gradient(to bottom, ${BG}, transparent)`, zIndex: 5, pointerEvents: "none" }} />
-      
-      <div className="bento-grid-container" style={{ position: "relative", zIndex: 6 }}>
-        {/* Card 1: Signature Dish Main Card (2x2) */}
-        <div className="bento-card bento-span-2-2">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={idx}
-                  src={items[idx]}
-                  initial={{ opacity: 0, scale: 1.05 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                  alt={title}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-                />
-              </AnimatePresence>
-              
-              {/* Linear dark gradient overlay for white text visibility */}
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.85) 100%)",
-                zIndex: 1,
-                pointerEvents: "none"
-              }} />
-
-              {/* Category in top left */}
-              <div style={{
-                position: "absolute",
-                top: 24,
-                left: 24,
-                color: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: '"Inter", sans-serif',
-                zIndex: 2
-              }}>
-                {category}
-              </div>
-
-              {/* Title & Cuisine in bottom left */}
-              <div style={{
-                position: "absolute",
-                bottom: 24,
-                left: 24,
-                right: 24,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                zIndex: 2
-              }}>
-                <Rev>
-                  <h1 className="hero-title" style={{
-                    fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
-                    fontWeight: 700,
-                    lineHeight: 1.1,
-                    color: "#FFFFFF",
-                    WebkitTextFillColor: "#FFFFFF",
-                    margin: 0,
-                    letterSpacing: "-0.02em",
-                    fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
-                  }}>
-                    {title}
-                  </h1>
-                </Rev>
-                <Rev delay={0.15}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
-                    <Globe size={15} color={A || "#0097B2"} />
-                    <span>{source}</span>
-                  </div>
-                </Rev>
-              </div>
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[(idx + 1) % items.length] || items[0]} alt="Signature alternative view" />
-              
-              {/* Linear dark gradient overlay for white text visibility */}
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.85) 100%)",
-                zIndex: 1,
-                pointerEvents: "none"
-              }} />
-
-              {/* Category in top left */}
-              <div style={{
-                position: "absolute",
-                top: 24,
-                left: 24,
-                color: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                fontFamily: '"Inter", sans-serif',
-                zIndex: 2
-              }}>
-                {category}
-              </div>
-
-              {/* Title & Cuisine in bottom left */}
-              <div style={{
-                position: "absolute",
-                bottom: 24,
-                left: 24,
-                right: 24,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                zIndex: 2
-              }}>
-                <Rev>
-                  <h1 className="hero-title" style={{
-                    fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
-                    fontWeight: 700,
-                    lineHeight: 1.1,
-                    color: "#FFFFFF",
-                    WebkitTextFillColor: "#FFFFFF",
-                    margin: 0,
-                    letterSpacing: "-0.02em",
-                    fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
-                  }}>
-                    {title}
-                  </h1>
-                </Rev>
-                <Rev delay={0.15}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#E0E0E0", fontSize: "14px", fontWeight: 500 }}>
-                    <Globe size={15} color={A || "#0097B2"} />
-                    <span>{source}</span>
-                  </div>
-                </Rev>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Cuisine Explore (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[1] || items[0]} alt="Explore cuisine view" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[2] || items[0]} alt="Cuisine layout detail" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Cost & Dietary (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[2] || items[0]} alt="Cost and dietary preview" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[3] || items[0]} alt="Dietary view details" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Horizontal Story Card (2x1) */}
-        <div className="bento-card bento-span-2-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[3] || items[0]} alt="Story behind the dish" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[4] || items[0]} alt="Gourmet detail" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 5: Gallery Image 4 (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[4] || items[0]} alt="Culinary composition" />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[5] || items[0]} alt="Preparation detail" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 6: Operating Hours & Days (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[5] || items[1] || items[0]} alt="Operating hours backdrop" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[6] || items[0]} alt="Seating environment details" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 7: Gallery Image 5 (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[6] || items[2] || items[0]} alt="Gourmet detail" />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[7] || items[0]} alt="Close-up crop presentation" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 8: Service & Origin (1x1) */}
-        <div className="bento-card bento-span-1-1">
-          <div className="flip-card-inner">
-            <div className="flip-card-front image-card">
-              <img src={items[7] || items[3] || items[0]} alt="Service option details" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div className="flip-card-back image-card">
-              <img src={items[0]} alt="Origin representation backdrop" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Decorative Background Patterns */}
-      <div style={{ position: "absolute", top: "8%", left: "1%", opacity: 0.08, zIndex: 1 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 6px)", gap: 12 }}>
-          {Array(25).fill(0).map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: FG }} />)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CulinaryHero({ food, galleryItems }) {
-  const history = useHistory();
-  const location = useLocation();
-  const { isMobile, width } = useWindowSize();
-  const { theme, tokens } = useTheme();
-  const { A, FG, BG } = tokens;
-  const searchParams = new URLSearchParams(location.search);
-  const id = food?.id || food?.foodId || food?._id || searchParams.get("id");
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  const images = galleryItems?.length ? galleryItems : ["https://picsum.photos/seed/culinary/900/1200"];
-  const title = food?.menuName || food?.title || "Signature Dish";
-  const cuisine = Array.isArray(food?.cuisineTypeNames)
-    ? food.cuisineTypeNames.join(", ")
-    : (food?.cuisineTypeNames || food?.cuisineType?.displayName || "");
-  const category = toDisplayString(food?.category);
-  const dietary = Array.isArray(food?.dietaryOptionNames)
-    ? food.dietaryOptionNames.join(", ")
-    : (food?.dietaryOptionNames || (food?.isVeg === true ? "Vegetarian" : food?.isVeg === false ? "Non-vegetarian" : ""));
-  const source = toDisplayString(food?.sourceType);
-  const serviceNames = food?.serveModeNames || food?.serviceModeNames;
-  const service = Array.isArray(serviceNames)
-    ? serviceNames.join(", ")
-    : (serviceNames || food?.serviceMode || food?.serveMode || "");
-  const openingDays = Array.isArray(food?.openingDays) ? food.openingDays.filter(Boolean).join(", ") : "";
   const heroMeta = [
     category,
     source,
     cuisine,
     dietary,
-    service,
+    serveMode,
   ].filter((value, index, values) => value && values.indexOf(value) === index).slice(0, 3);
-  const expandedDesktop = !isMobile && width > 2400;
-  const desktopSlideWidth = "clamp(230px, 29vw, 430px)";
-  const desktopSlidePitch = "clamp(135px, 12vw, 185px)";
+
   const dishNames = Array.isArray(food?.signatureDishes)
     ? food.signatureDishes.map((dish) => typeof dish === "string" ? dish : dish?.name || dish?.title).filter(Boolean)
     : [];
-  const leadIndex = Math.min(2, images.length - 1);
-  const dataSlides = [
-    { title: cuisine, eyebrow: "Cuisine" },
-    { title: category, eyebrow: "Category" },
-    { title: dietary, eyebrow: "Dietary" },
-    { title: service, eyebrow: "Service" },
-    { title: source, eyebrow: "Source" },
-    { title: openingDays, eyebrow: "Available" },
-    ...dishNames.map((dish) => ({ title: dish, eyebrow: "Signature dish" })),
-  ].filter((item) => item.title);
-  dataSlides.splice(leadIndex, 0, { title, eyebrow: cuisine || category || source || "Menu" });
-  const carouselItems = images.map((src, index) => ({
-    src,
-    title: dataSlides[index % dataSlides.length]?.title || title,
-    eyebrow: dataSlides[index % dataSlides.length]?.eyebrow || cuisine || category,
-    alt: index === 0 ? title : `${title}, gallery view ${index + 1}`,
-  }));
 
-  const openGallery = (_, index) => {
+  const cards = useMemo(() => {
+    const list = items.length ? items : ["https://picsum.photos/seed/culinary/900/1200"];
+    const metaList = [
+      { eyebrow: "Cuisine", title: cuisine },
+      { eyebrow: "Category", title: category },
+      { eyebrow: "Dietary", title: dietary },
+      { eyebrow: "Service", title: serveMode },
+      { eyebrow: "Source", title: source },
+      ...dishNames.map(dish => ({ eyebrow: "Signature", title: dish })),
+    ].filter(m => m.title);
+
+    return list.map((src, index) => {
+      const meta = metaList[index % (metaList.length || 1)] || { eyebrow: category, title };
+      return {
+        imgUrl: src,
+        alt: `${title} photo ${index + 1}`,
+        eyebrow: meta.eyebrow,
+        title: meta.title || title,
+      };
+    });
+  }, [items, cuisine, category, dietary, serveMode, source, dishNames, title]);
+
+  const handleCardClick = (_, index) => {
     setActivePhotoIndex(index);
     setIsGalleryOpen(true);
   };
 
+  const expandedDesktop = !isMobile && width > 2400;
+
   return (
-    <section className="food-staircase-hero" style={{ position: "relative", width: "100%", maxWidth: expandedDesktop ? 1320 : "none", margin: expandedDesktop ? "0 auto" : 0, background: BG, "--food-hero-scale": 1, "--food-hero-edge": "60px", "--food-hero-top": "28px", "--food-hero-bottom": "28px", "--food-hero-control-bottom": "28px" }}>
+    <section
+      className="food-fan-hero"
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: expandedDesktop ? 1320 : "none",
+        margin: expandedDesktop ? "0 auto" : 0,
+        background: theme === "dark"
+          ? "linear-gradient(160deg, #0a1a24 0%, #0d2535 60%, #0a1f2e 100%)"
+          : "#daf4f8",
+        backgroundImage: `url(${keralaFoodBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+        backgroundRepeat: "no-repeat",
+        minHeight: isMobile ? "auto" : "90vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: isMobile ? "60px 16px 32px" : "100px 24px 48px",
+        boxSizing: "border-box",
+        overflow: "hidden"
+      }}
+    >
+      {/* Background overlay for contrast */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: theme === "dark"
+          ? "rgba(8, 20, 30, 0.72)"
+          : "rgba(220, 244, 250, 0.45)",
+        pointerEvents: "none",
+        zIndex: 1,
+      }} />
+
       <style>{`
-        .food-staircase-hero__actions{position:absolute;top:var(--food-hero-top,28px);right:var(--food-hero-edge,60px);z-index:20;display:flex;align-items:center;gap:12px;transform:scale(var(--food-hero-scale,1));transform-origin:100% 0}
-        .food-staircase-hero__save{width:44px;height:44px;border-radius:50%;background:${theme === "dark" ? "#141414" : "#fff"};border:1.5px solid ${A}55;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(15,15,15,.12);cursor:pointer;color:${theme === "dark" ? FG : A}}
-        .food-staircase-hero__content{position:absolute;left:var(--food-hero-edge,60px);bottom:var(--food-hero-bottom,28px);z-index:4;max-width:720px;pointer-events:none;transform:scale(var(--food-hero-scale,1));transform-origin:0 100%}
-        .food-staircase-hero__meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
-        .food-staircase-hero__meta-value{display:inline-flex;align-items:center;min-height:30px;padding:6px 12px;border:1px solid color-mix(in srgb,var(--A) 38%,transparent);border-radius:999px;background:color-mix(in srgb,var(--A) 13%,var(--BG));box-shadow:0 4px 16px rgba(0,151,178,.1);color:var(--A);font:800 10px/1.25 'Inter',sans-serif;letter-spacing:.045em;text-transform:uppercase;backdrop-filter:blur(8px)}
-        .food-staircase-hero__food-name{max-width:min(36vw,540px);margin:0;color:${FG};font:700 clamp(26px,2.8vw,46px)/1.05 'Fraunces',Georgia,serif;letter-spacing:-.035em}
-        .food-staircase-hero__food-name::before{content:"";display:block;width:36px;height:2px;margin-bottom:12px;background:${A}}
-        @media(max-width:640px){.food-staircase-hero__actions{top:16px;right:16px;gap:8px}.food-staircase-hero__save{width:40px;height:40px}.food-staircase-hero__content{left:14px;right:14px;bottom:14px;max-width:none;display:flex;flex-direction:column;padding:16px;border:1px solid color-mix(in srgb,var(--A) 32%,var(--B));border-radius:22px;background:color-mix(in srgb,var(--BG) 90%,transparent);box-shadow:0 14px 40px rgba(15,15,15,.16);backdrop-filter:blur(14px)}.food-staircase-hero__meta{order:1;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;overflow:visible;pointer-events:auto}.food-staircase-hero__meta-value{justify-content:center;min-width:0;min-height:26px;padding:4px 9px;border-color:color-mix(in srgb,var(--A) 42%,transparent);background:color-mix(in srgb,var(--A) 14%,var(--BG));font-size:8px;line-height:1.2;text-align:center;white-space:normal}.food-staircase-hero__meta-value--wide{grid-column:auto}.food-staircase-hero__food-name{order:2;max-width:none;font-size:clamp(24px,7.5vw,32px);color:var(--FG)}.food-staircase-hero__food-name::before{width:28px;margin-bottom:8px}}
+        .food-fan-hero__actions {
+          position: absolute;
+          top: 28px;
+          right: 28px;
+          z-index: 40;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .food-fan-hero__save {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: ${theme === "dark" ? "rgba(20,20,20,0.75)" : "rgba(255,255,255,0.80)"};
+          border: 1.5px solid ${A}55;
+          backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 6px 18px rgba(15,15,15,0.12);
+          cursor: pointer;
+          color: ${theme === "dark" ? FG : A};
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .food-fan-hero__save:hover {
+          transform: scale(1.06);
+          border-color: ${A};
+        }
+        .food-fan-hero__header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          max-width: 860px;
+          margin-bottom: 20px;
+          position: relative;
+          z-index: 25;
+        }
+        .food-fan-hero__meta {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+        .food-fan-hero__meta-pill {
+          display: inline-flex;
+          align-items: center;
+          min-height: 28px;
+          padding: 4px 14px;
+          border: 1.5px solid ${A}60;
+          border-radius: 999px;
+          background: ${theme === "dark" ? "rgba(0,151,178,0.15)" : "rgba(255,255,255,0.65)"};
+          box-shadow: 0 2px 10px rgba(0, 151, 178, 0.10);
+          color: ${theme === "dark" ? A : "#0097B2"};
+          font: 700 11px/1.2 'Inter', sans-serif;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          backdrop-filter: blur(10px);
+        }
+        .food-fan-hero__title {
+          margin: 0;
+          color: ${theme === "dark" ? "#F5F5F5" : "#0F1A22"};
+          font: 800 clamp(30px, 4.5vw, 60px)/1.05 'Fraunces', Georgia, serif;
+          letter-spacing: -0.03em;
+          text-shadow: ${theme === "dark" ? "0 2px 20px rgba(0,0,0,0.5)" : "0 1px 0 rgba(255,255,255,0.6)"};
+        }
+        .food-fan-hero__hint {
+          margin-top: 10px;
+          font-size: 13.5px;
+          color: ${theme === "dark" ? "rgba(255,255,255,0.55)" : "#4a7a8a"};
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          letter-spacing: 0.01em;
+        }
+        @media (max-width: 640px) {
+          .food-fan-hero__actions {
+            top: 14px;
+            right: 14px;
+            gap: 8px;
+          }
+          .food-fan-hero__save {
+            width: 38px;
+            height: 38px;
+          }
+          .food-fan-hero__header {
+            margin-bottom: 8px;
+            max-width: 100%;
+            padding: 0 8px;
+          }
+          .food-fan-hero__meta {
+            gap: 6px;
+            margin-bottom: 10px;
+          }
+          .food-fan-hero__title {
+            font-size: clamp(22px, 6.5vw, 32px);
+            letter-spacing: -0.02em;
+          }
+          .food-fan-hero__hint {
+            display: none;
+          }
+        }
       `}</style>
 
-      <button type="button" className="premium-back-button" onClick={() => history.goBack()} aria-label="Go back" style={{ zIndex: 20 }}>
-        <ChevronLeft size={20} />
-      </button>
-
-      <div className="food-staircase-hero__actions">
+      {/* Action Buttons (Save & Share) */}
+      <div className="food-fan-hero__actions">
         <Favorite itemType="food" itemId={id}>
           {({ saved, onClick }) => (
-            <button type="button" className="food-staircase-hero__save" onClick={(event) => { event.stopPropagation(); onClick(event); }} aria-label={saved ? "Remove from favorites" : "Save to favorites"}>
+            <button
+              type="button"
+              className="food-fan-hero__save"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick(e);
+              }}
+              aria-label={saved ? "Remove from favorites" : "Save to favorites"}
+            >
               <Icon name={saved ? "heart-fill" : "heart"} size={20} />
             </button>
           )}
@@ -1549,37 +1047,40 @@ function CulinaryHero({ food, galleryItems }) {
         <HeroShareFab title={title} text={getShareText(food, "food")} url={window.location.href} />
       </div>
 
-      <div className="food-staircase-hero__content">
+      {/* Dish Name & Metadata Header */}
+      <div className="food-fan-hero__header">
         {heroMeta.length > 0 && (
-          <div className="food-staircase-hero__meta" aria-label="Food details">
-            {heroMeta.map((value) => <span key={value} className={`food-staircase-hero__meta-value${String(value).length > 20 ? " food-staircase-hero__meta-value--wide" : ""}`}>{value}</span>)}
+          <div className="food-fan-hero__meta" aria-label="Food details">
+            {heroMeta.map((value) => (
+              <span key={value} className="food-fan-hero__meta-pill">
+                {value}
+              </span>
+            ))}
           </div>
         )}
-        <h1 className="food-staircase-hero__food-name">{title}</h1>
+        <h1 className="food-fan-hero__title">{title}</h1>
+        <div className="food-fan-hero__hint">
+          <span>Click any card to open full-screen gallery</span>
+        </div>
       </div>
-      <StaircaseCarousel
-        items={carouselItems}
-        height={isMobile ? "calc(100svh - 66px)" : "calc(100svh - 10px)"}
-        slideWidth={isMobile ? "min(58vw, 230px)" : desktopSlideWidth}
-        slidePitch={isMobile ? "min(38vw, 150px)" : desktopSlidePitch}
-        slideAspectRatio="4 / 3"
-        inactiveScale={isMobile ? 0.36 : 0.34}
-        sideOffset={isMobile ? 14 : 105}
-        radius={26}
-        step={isMobile ? 0.4 : 0.45}
-        titles={false}
-        autoPlay
-        autoPlayInterval={2800}
-        loop
-        defaultIndex={leadIndex}
-        ariaLabel={`${title} photo gallery`}
-        onSelect={openGallery}
-      />
+
+      {/* Fan Cards Carousel */}
+      <div style={{ width: "100%", position: "relative", zIndex: 20 }}>
+        <SocialCards
+          cards={cards}
+          onCardClick={handleCardClick}
+          theme={theme}
+          accentColor={A || "#0097B2"}
+          autoPlay={cards.length > 7}
+        />
+      </div>
+
+      {/* Lightbox / Fullscreen Image viewer */}
       <AnimatePresence>
         {isGalleryOpen && (
           <FullScreenImage
-            src={images[activePhotoIndex]}
-            items={images}
+            src={items[activePhotoIndex]}
+            items={items}
             currentIndex={activePhotoIndex}
             onNavigate={setActivePhotoIndex}
             onClose={() => setIsGalleryOpen(false)}
@@ -1589,6 +1090,7 @@ function CulinaryHero({ food, galleryItems }) {
     </section>
   );
 }
+
 
 function CulinaryNarrative({ food, hostData, hostAvatar }) {
   const { isMobile } = useWindowSize();

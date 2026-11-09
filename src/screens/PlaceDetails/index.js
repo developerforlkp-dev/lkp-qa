@@ -485,7 +485,12 @@ function PlaceHero({ place, galleryItems, id }) {
       const prints = [];
       const notes = [];
 
-      if (list.length > 1 && nextImg && nextImg !== img) {
+      // Only add occasional random decorative polaroid / tape prints (approx every 3rd or 4th page, never on the first page)
+      const hasPolaroid = i > 0 && (i * 7 + 3) % 4 === 0;
+      const hasTapePrint = i > 0 && (i * 11 + 5) % 5 === 0;
+      const hasNote = i > 0 && (i * 13 + 7) % 3 === 0;
+
+      if (hasPolaroid && list.length > 1 && nextImg && nextImg !== img) {
         prints.push({
           src: nextImg,
           x: i % 2 === 0 ? 70 : 8,
@@ -496,7 +501,7 @@ function PlaceHero({ place, galleryItems, id }) {
         });
       }
 
-      if (list.length > 2 && altImg && altImg !== img && altImg !== nextImg) {
+      if (hasTapePrint && list.length > 2 && altImg && altImg !== img && altImg !== nextImg) {
         prints.push({
           src: altImg,
           x: i % 2 === 0 ? 10 : 72,
@@ -507,26 +512,28 @@ function PlaceHero({ place, galleryItems, id }) {
         });
       }
 
-      if (highlight) {
-        notes.push({
-          x: i % 2 === 0 ? 8 : 48,
-          y: i % 2 === 0 ? 14 : 64,
-          w: 38,
-          rotate: i % 2 === 0 ? -2 : 3,
-          style: i % 3 === 0 ? "card" : "ink",
-          title: toDisplayString(tagText || category),
-          body: toDisplayString(highlight)
-        });
-      } else if (itineraryStep?.description || itineraryStep?.text) {
-        notes.push({
-          x: i % 2 === 0 ? 12 : 50,
-          y: i % 2 === 0 ? 18 : 62,
-          w: 36,
-          rotate: 2,
-          style: "card",
-          title: toDisplayString(itineraryStep?.title || itineraryStep?.name || "Discovery"),
-          body: toDisplayString(itineraryStep?.description || itineraryStep?.text)
-        });
+      if (hasNote) {
+        if (highlight) {
+          notes.push({
+            x: i % 2 === 0 ? 8 : 48,
+            y: i % 2 === 0 ? 14 : 64,
+            w: 38,
+            rotate: i % 2 === 0 ? -2 : 3,
+            style: i % 3 === 0 ? "card" : "ink",
+            title: toDisplayString(tagText || category),
+            body: toDisplayString(highlight)
+          });
+        } else if (itineraryStep?.description || itineraryStep?.text) {
+          notes.push({
+            x: i % 2 === 0 ? 12 : 50,
+            y: i % 2 === 0 ? 18 : 62,
+            w: 36,
+            rotate: 2,
+            style: "card",
+            title: toDisplayString(itineraryStep?.title || itineraryStep?.name || "Discovery"),
+            body: toDisplayString(itineraryStep?.description || itineraryStep?.text)
+          });
+        }
       }
 
       return {
@@ -2933,7 +2940,12 @@ function MobileHero({ place, galleryItems, id }) {
       const prints = [];
       const notes = [];
 
-      if (list.length > 1 && nextImg && nextImg !== img) {
+      // Only add occasional random decorative polaroid / tape prints (approx every 3rd or 4th page, never on the first page)
+      const hasPolaroid = i > 0 && (i * 7 + 3) % 4 === 0;
+      const hasTapePrint = i > 0 && (i * 11 + 5) % 5 === 0;
+      const hasNote = i > 0 && (i * 13 + 7) % 3 === 0;
+
+      if (hasPolaroid && list.length > 1 && nextImg && nextImg !== img) {
         prints.push({
           src: nextImg,
           x: i % 2 === 0 ? 68 : 8,
@@ -2944,7 +2956,7 @@ function MobileHero({ place, galleryItems, id }) {
         });
       }
 
-      if (list.length > 2 && altImg && altImg !== img && altImg !== nextImg) {
+      if (hasTapePrint && list.length > 2 && altImg && altImg !== img && altImg !== nextImg) {
         prints.push({
           src: altImg,
           x: i % 2 === 0 ? 10 : 70,
@@ -2955,26 +2967,28 @@ function MobileHero({ place, galleryItems, id }) {
         });
       }
 
-      if (highlight) {
-        notes.push({
-          x: i % 2 === 0 ? 8 : 46,
-          y: i % 2 === 0 ? 14 : 62,
-          w: 42,
-          rotate: i % 2 === 0 ? -2 : 3,
-          style: i % 3 === 0 ? "card" : "ink",
-          title: toDisplayString(tagText || category),
-          body: toDisplayString(highlight)
-        });
-      } else if (itineraryStep?.description || itineraryStep?.text) {
-        notes.push({
-          x: i % 2 === 0 ? 10 : 48,
-          y: i % 2 === 0 ? 18 : 60,
-          w: 40,
-          rotate: 2,
-          style: "card",
-          title: toDisplayString(itineraryStep?.title || itineraryStep?.name || "Discovery"),
-          body: toDisplayString(itineraryStep?.description || itineraryStep?.text)
-        });
+      if (hasNote) {
+        if (highlight) {
+          notes.push({
+            x: i % 2 === 0 ? 8 : 46,
+            y: i % 2 === 0 ? 14 : 62,
+            w: 42,
+            rotate: i % 2 === 0 ? -2 : 3,
+            style: i % 3 === 0 ? "card" : "ink",
+            title: toDisplayString(tagText || category),
+            body: toDisplayString(highlight)
+          });
+        } else if (itineraryStep?.description || itineraryStep?.text) {
+          notes.push({
+            x: i % 2 === 0 ? 10 : 48,
+            y: i % 2 === 0 ? 18 : 60,
+            w: 40,
+            rotate: 2,
+            style: "card",
+            title: toDisplayString(itineraryStep?.title || itineraryStep?.name || "Discovery"),
+            body: toDisplayString(itineraryStep?.description || itineraryStep?.text)
+          });
+        }
       }
 
       return {
