@@ -23,6 +23,7 @@ import CuratedContent from "../../components/CuratedContent";
 import FullScreenImage from "../../components/FullScreenImage";
 import { getShareText } from "../../utils/shareUtils";
 import { formatTimingsRange } from "../../utils/timeUtils";
+import StaircaseCarousel from "./StaircaseCarousel";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -818,7 +819,7 @@ function HeroShareFab({ title, text, url, label = "Share Taste" }) {
 }
 
 /* ─── CULINARY SECTIONS ─────────── */
-function CulinaryHero({ food, galleryItems }) {
+function LegacyCulinaryHero({ food, galleryItems }) {
   const history = useHistory();
   const { isMobile } = useWindowSize();
   const { theme, tokens } = useTheme();
@@ -1455,6 +1456,136 @@ function CulinaryHero({ food, galleryItems }) {
           {Array(25).fill(0).map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: FG }} />)}
         </div>
       </div>
+    </section>
+  );
+}
+
+function CulinaryHero({ food, galleryItems }) {
+  const history = useHistory();
+  const location = useLocation();
+  const { isMobile, width } = useWindowSize();
+  const { theme, tokens } = useTheme();
+  const { A, FG, BG } = tokens;
+  const searchParams = new URLSearchParams(location.search);
+  const id = food?.id || food?.foodId || food?._id || searchParams.get("id");
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const images = galleryItems?.length ? galleryItems : ["https://picsum.photos/seed/culinary/900/1200"];
+  const title = food?.menuName || food?.title || "Signature Dish";
+  const cuisine = Array.isArray(food?.cuisineTypeNames)
+    ? food.cuisineTypeNames.join(", ")
+    : (food?.cuisineTypeNames || food?.cuisineType?.displayName || "");
+  const category = toDisplayString(food?.category);
+  const dietary = Array.isArray(food?.dietaryOptionNames)
+    ? food.dietaryOptionNames.join(", ")
+    : (food?.dietaryOptionNames || (food?.isVeg === true ? "Vegetarian" : food?.isVeg === false ? "Non-vegetarian" : ""));
+  const source = toDisplayString(food?.sourceType);
+  const serviceNames = food?.serveModeNames || food?.serviceModeNames;
+  const service = Array.isArray(serviceNames)
+    ? serviceNames.join(", ")
+    : (serviceNames || food?.serviceMode || food?.serveMode || "");
+  const openingDays = Array.isArray(food?.openingDays) ? food.openingDays.filter(Boolean).join(", ") : "";
+  const heroMeta = [
+    category,
+    source,
+    cuisine,
+    dietary,
+    service,
+  ].filter((value, index, values) => value && values.indexOf(value) === index).slice(0, 3);
+  const expandedDesktop = !isMobile && width > 2400;
+  const desktopSlideWidth = "clamp(230px, 29vw, 430px)";
+  const desktopSlidePitch = "clamp(135px, 12vw, 185px)";
+  const dishNames = Array.isArray(food?.signatureDishes)
+    ? food.signatureDishes.map((dish) => typeof dish === "string" ? dish : dish?.name || dish?.title).filter(Boolean)
+    : [];
+  const leadIndex = Math.min(2, images.length - 1);
+  const dataSlides = [
+    { title: cuisine, eyebrow: "Cuisine" },
+    { title: category, eyebrow: "Category" },
+    { title: dietary, eyebrow: "Dietary" },
+    { title: service, eyebrow: "Service" },
+    { title: source, eyebrow: "Source" },
+    { title: openingDays, eyebrow: "Available" },
+    ...dishNames.map((dish) => ({ title: dish, eyebrow: "Signature dish" })),
+  ].filter((item) => item.title);
+  dataSlides.splice(leadIndex, 0, { title, eyebrow: cuisine || category || source || "Menu" });
+  const carouselItems = images.map((src, index) => ({
+    src,
+    title: dataSlides[index % dataSlides.length]?.title || title,
+    eyebrow: dataSlides[index % dataSlides.length]?.eyebrow || cuisine || category,
+    alt: index === 0 ? title : `${title}, gallery view ${index + 1}`,
+  }));
+
+  const openGallery = (_, index) => {
+    setActivePhotoIndex(index);
+    setIsGalleryOpen(true);
+  };
+
+  return (
+    <section className="food-staircase-hero" style={{ position: "relative", width: "100%", maxWidth: expandedDesktop ? 1320 : "none", margin: expandedDesktop ? "0 auto" : 0, background: BG, "--food-hero-scale": 1, "--food-hero-edge": "60px", "--food-hero-top": "28px", "--food-hero-bottom": "28px", "--food-hero-control-bottom": "28px" }}>
+      <style>{`
+        .food-staircase-hero__actions{position:absolute;top:var(--food-hero-top,28px);right:var(--food-hero-edge,60px);z-index:20;display:flex;align-items:center;gap:12px;transform:scale(var(--food-hero-scale,1));transform-origin:100% 0}
+        .food-staircase-hero__save{width:44px;height:44px;border-radius:50%;background:${theme === "dark" ? "#141414" : "#fff"};border:1.5px solid ${A}55;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(15,15,15,.12);cursor:pointer;color:${theme === "dark" ? FG : A}}
+        .food-staircase-hero__content{position:absolute;left:var(--food-hero-edge,60px);bottom:var(--food-hero-bottom,28px);z-index:4;max-width:720px;pointer-events:none;transform:scale(var(--food-hero-scale,1));transform-origin:0 100%}
+        .food-staircase-hero__meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+        .food-staircase-hero__meta-value{display:inline-flex;align-items:center;min-height:30px;padding:6px 12px;border:1px solid color-mix(in srgb,var(--A) 38%,transparent);border-radius:999px;background:color-mix(in srgb,var(--A) 13%,var(--BG));box-shadow:0 4px 16px rgba(0,151,178,.1);color:var(--A);font:800 10px/1.25 'Inter',sans-serif;letter-spacing:.045em;text-transform:uppercase;backdrop-filter:blur(8px)}
+        .food-staircase-hero__food-name{max-width:min(36vw,540px);margin:0;color:${FG};font:700 clamp(26px,2.8vw,46px)/1.05 'Fraunces',Georgia,serif;letter-spacing:-.035em}
+        .food-staircase-hero__food-name::before{content:"";display:block;width:36px;height:2px;margin-bottom:12px;background:${A}}
+        @media(max-width:640px){.food-staircase-hero__actions{top:16px;right:16px;gap:8px}.food-staircase-hero__save{width:40px;height:40px}.food-staircase-hero__content{left:14px;right:14px;bottom:14px;max-width:none;display:flex;flex-direction:column;padding:16px;border:1px solid color-mix(in srgb,var(--A) 32%,var(--B));border-radius:22px;background:color-mix(in srgb,var(--BG) 90%,transparent);box-shadow:0 14px 40px rgba(15,15,15,.16);backdrop-filter:blur(14px)}.food-staircase-hero__meta{order:1;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;overflow:visible;pointer-events:auto}.food-staircase-hero__meta-value{justify-content:center;min-width:0;min-height:26px;padding:4px 9px;border-color:color-mix(in srgb,var(--A) 42%,transparent);background:color-mix(in srgb,var(--A) 14%,var(--BG));font-size:8px;line-height:1.2;text-align:center;white-space:normal}.food-staircase-hero__meta-value--wide{grid-column:auto}.food-staircase-hero__food-name{order:2;max-width:none;font-size:clamp(24px,7.5vw,32px);color:var(--FG)}.food-staircase-hero__food-name::before{width:28px;margin-bottom:8px}}
+      `}</style>
+
+      <button type="button" className="premium-back-button" onClick={() => history.goBack()} aria-label="Go back" style={{ zIndex: 20 }}>
+        <ChevronLeft size={20} />
+      </button>
+
+      <div className="food-staircase-hero__actions">
+        <Favorite itemType="food" itemId={id}>
+          {({ saved, onClick }) => (
+            <button type="button" className="food-staircase-hero__save" onClick={(event) => { event.stopPropagation(); onClick(event); }} aria-label={saved ? "Remove from favorites" : "Save to favorites"}>
+              <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+            </button>
+          )}
+        </Favorite>
+        <HeroShareFab title={title} text={getShareText(food, "food")} url={window.location.href} />
+      </div>
+
+      <div className="food-staircase-hero__content">
+        {heroMeta.length > 0 && (
+          <div className="food-staircase-hero__meta" aria-label="Food details">
+            {heroMeta.map((value) => <span key={value} className={`food-staircase-hero__meta-value${String(value).length > 20 ? " food-staircase-hero__meta-value--wide" : ""}`}>{value}</span>)}
+          </div>
+        )}
+        <h1 className="food-staircase-hero__food-name">{title}</h1>
+      </div>
+      <StaircaseCarousel
+        items={carouselItems}
+        height={isMobile ? "calc(100svh - 66px)" : "calc(100svh - 10px)"}
+        slideWidth={isMobile ? "min(58vw, 230px)" : desktopSlideWidth}
+        slidePitch={isMobile ? "min(38vw, 150px)" : desktopSlidePitch}
+        slideAspectRatio="4 / 3"
+        inactiveScale={isMobile ? 0.36 : 0.34}
+        sideOffset={isMobile ? 14 : 105}
+        radius={26}
+        step={isMobile ? 0.4 : 0.45}
+        titles={false}
+        autoPlay
+        autoPlayInterval={2800}
+        loop
+        defaultIndex={leadIndex}
+        ariaLabel={`${title} photo gallery`}
+        onSelect={openGallery}
+      />
+      <AnimatePresence>
+        {isGalleryOpen && (
+          <FullScreenImage
+            src={images[activePhotoIndex]}
+            items={images}
+            currentIndex={activePhotoIndex}
+            onNavigate={setActivePhotoIndex}
+            onClose={() => setIsGalleryOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

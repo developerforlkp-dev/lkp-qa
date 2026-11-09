@@ -4,7 +4,7 @@ import { useLocation, Link, useHistory, useParams } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Sparkles, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, ChevronRight, ChevronLeft, Share2, Camera, Heart, X, Building, ChevronDown, Car
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, Share2, Camera, Heart, X, Building, ChevronDown, Car
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -21,6 +21,7 @@ import DetailPageNavPortal from "../../components/DetailPageNavPortal";
 import Favorite from "../../components/Favorite";
 import Icon from "../../components/Icon";
 import FullScreenImage from "../../components/FullScreenImage";
+import JournalSpreadCarousel from "../../components/JournalSpreadCarousel";
 import CuratedContent from "../../components/CuratedContent";
 import { getShareText } from "../../utils/shareUtils";
 import SEOHead from "../../components/SEOHead";
@@ -132,7 +133,7 @@ const E = [0.22, 1, 0.36, 1];
 
 const ScopedStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Poppins:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Poppins:wght@400;500;600;700;800&display=swap');
 
       .place-details-premium {
       font-family: 'DM Sans', sans-serif;
@@ -418,29 +419,9 @@ function SHdr({ idx, label }) {
 
 /* ─── PLACE SECTIONS ─────────── */
 function PlaceHero({ place, galleryItems, id }) {
-  const { theme, tokens: { A, FG, M, W, B, S } } = useTheme();
-  const { isMobile } = useWindowSize();
-  const r = useRef(null);
-  const sliderRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: r, offset: ["start start", "end start"] });
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
-  const scale = useTransform(smoothProgress, [0, 0.5], [1, 1.3]);
-  const rotate = useTransform(smoothProgress, [0, 0.5], [0, 3]);
-  const [hoveredImage, setHoveredImage] = useState(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { theme, tokens: { A, AH, AL, FG, W, B, BG, M, S } } = useTheme();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [showArrows, setShowArrows] = useState(false);
-  const [isSliderHovered, setIsSliderHovered] = useState(false);
-  const arrowTimeoutRef = useRef(null);
-
-  const handleMouseMove = () => {
-    setShowArrows(true);
-    if (arrowTimeoutRef.current) clearTimeout(arrowTimeoutRef.current);
-    arrowTimeoutRef.current = setTimeout(() => {
-      setShowArrows(false);
-    }, 1500);
-  };
 
   // Take unique gallery items
   const baseItems = useMemo(() => {
@@ -450,72 +431,14 @@ function PlaceHero({ place, galleryItems, id }) {
     return galleryItems;
   }, [galleryItems]);
 
-  // Duplicate items multiple times to ensure seamless looping without getting stuck
-  const scrolledItems = useMemo(() => {
-    if (baseItems.length === 0) return [];
-    const repeats = Math.max(4, Math.ceil(15 / baseItems.length));
-    const items = [];
-    for (let i = 0; i < repeats; i++) {
-      items.push(...baseItems);
-    }
-    return items;
-  }, [baseItems]);
-
   const placeName = place?.placeName || place?.title || "COASTAL GEM";
-
-  const fullDescription = place?.description || "Experience the local heritage, vibrant culture, and breathtaking landscapes of this select destination.";
-  const isDescriptionLong = fullDescription.length > 160;
-  const displayDescription = isDescriptionLong && !isExpanded
-    ? `${fullDescription.slice(0, 160)}...`
-    : fullDescription;
-
-  // Continuous smooth auto-scrolling loop (pauses completely when hovered or interacting)
-  useEffect(() => {
-    const el = sliderRef.current;
-    if (!el || lightboxOpen || isSliderHovered || showArrows) return;
-
-    let frameId;
-    const speed = 0.8; // Smooth scrolling speed in pixels/frame
-
-    const step = () => {
-      if (baseItems.length === 0) return;
-      const repeats = Math.max(4, Math.ceil(15 / baseItems.length));
-      const oneSetWidth = el.scrollWidth / repeats;
-
-      // Seamlessly wrap scroll position back once we pass one full set
-      if (el.scrollLeft >= oneSetWidth) {
-        el.scrollLeft = el.scrollLeft - oneSetWidth;
-      } else {
-        el.scrollLeft += speed;
-      }
-      frameId = requestAnimationFrame(step);
-    };
-
-    frameId = requestAnimationFrame(step);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
-  }, [lightboxOpen, isSliderHovered, showArrows, baseItems]);
-
-  const scrollSlider = (direction) => {
-    if (sliderRef.current) {
-      const scrollAmount = direction === "left" ? -300 : 300;
-      sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  };
+  const categoryName = toDisplayString(place?.category) || "DESTINATION";
+  const locationString = [place?.city, place?.state || place?.country].filter(Boolean).join(", ");
+  const shortSnippet = place?.tagline || place?.summary || (typeof place?.description === "string" ? place.description.slice(0, 150) + (place.description.length > 150 ? "..." : "") : "Explore the scenic landscapes, hidden spots, and unique atmosphere of this destination.");
 
   const openLightbox = (index) => {
     setActiveIdx(index);
     setLightboxOpen(true);
-  };
-
-  const nextImg = () => {
-    setActiveIdx((prev) => (prev + 1) % baseItems.length);
-  };
-
-  const prevImg = () => {
-    setActiveIdx((prev) => (prev - 1 + baseItems.length) % baseItems.length);
   };
 
   const [shareCopied, setShareCopied] = useState(false);
@@ -542,464 +465,349 @@ function PlaceHero({ place, galleryItems, id }) {
     } catch (_) { }
   };
 
-  if (isMobile) {
-    return (
-      <section style={{ position: "relative", width: "100%", background: W, paddingBottom: 24 }}>
-        {/* Mobile Cover Image Wrapper */}
-        <div style={{ position: "relative", width: "100%", height: "40vh", overflow: "hidden" }}>
-           <motion.img 
-             key={activeIdx}
-             src={baseItems[activeIdx]} 
-             style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-             initial={{ opacity: 0.8 }}
-             animate={{ opacity: 1 }}
-             transition={{ duration: 0.3 }}
-             alt="Cover"
-           />
-           {/* Mobile Top Header Overlay */}
-           <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 12, zIndex: 50 }}>
-              <Favorite itemType="place" itemId={id}>
-                {({ saved, onClick }) => (
-                  <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 40, height: 40, borderRadius: "50%", background: theme === "dark" ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
-                    <Icon name={saved ? "heart-fill" : "heart"} size={20} color={saved ? A : FG} />
-                  </button>
-                )}
-              </Favorite>
-              <button onClick={handleShare} style={{ width: 40, height: 40, borderRadius: "50%", background: theme === "dark" ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
-                <Share2 size={18} color={FG} />
-              </button>
-           </div>
-           
-           {/* Mobile Gradient Overlay */}
-           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)", pointerEvents: "none" }} />
-           
-           {/* Mobile Title */}
-           <div style={{ position: "absolute", bottom: 40, left: 20, right: 20, zIndex: 10 }}>
-              <p style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#FFF", fontWeight: 700, marginBottom: 8, opacity: 0.8 }}>
-                {toDisplayString(place?.category) || "DESTINATION"}
-              </p>
-              <h1 className="hero-title" style={{ fontSize: "clamp(2rem, 8vw, 2.5rem)", fontWeight: 700, color: "#FFF", lineHeight: 1.1, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.01em" }}>
-                {placeName}
-              </h1>
-           </div>
-           
-           {/* Mobile Dots */}
-           {baseItems.length > 1 && (
-             <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, zIndex: 10 }}>
-               {baseItems.slice(0, 5).map((_, i) => (
-                 <div key={i} onClick={() => openLightbox(i)} style={{ width: activeIdx === i ? 20 : 8, height: 8, borderRadius: 4, background: activeIdx === i ? A : "rgba(255,255,255,0.5)", transition: "all 0.3s", cursor: "pointer" }} />
-               ))}
-             </div>
-           )}
-        </div>
-        
-        {/* Mobile Thumbnail Strip below image */}
-        <div className="hide-scrollbar" style={{ display: "flex", gap: 8, padding: "16px", overflowX: "auto" }}>
-          {baseItems.slice(0, 5).map((imgUrl, i) => (
-             <div key={i} onClick={() => setActiveIdx(i)} style={{ width: 64, height: 64, borderRadius: 12, overflow: "hidden", flexShrink: 0, border: activeIdx === i ? `2px solid ${A}` : "2px solid transparent", transition: "all 0.3s", cursor: "pointer" }}>
-               <img src={imgUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-             </div>
-          ))}
-          {baseItems.length > 5 && (
-             <div onClick={() => openLightbox(0)} style={{ width: 64, height: 64, borderRadius: 12, flexShrink: 0, background: S, border: `1px solid ${B}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: FG, cursor: "pointer" }}>
-               +{baseItems.length - 5}
-             </div>
-          )}
-        </div>
+  // Convert real place data and images into journal spreads
+  const spreads = useMemo(() => {
+    const list = baseItems && baseItems.length > 0 ? baseItems : ["https://picsum.photos/seed/place/800/1000"];
+    const highlights = Array.isArray(place?.highlights) ? place.highlights : [];
+    const itinerary = Array.isArray(place?.itinerary) ? place.itinerary : [];
+    const tags = [place?.city, place?.placeType, ...(Array.isArray(place?.tags) ? place.tags : [])].filter(Boolean);
+    const category = toDisplayString(place?.category) || "DESTINATION";
 
-        {/* Global Modal Trigger */}
-        <AnimatePresence>
-          {lightboxOpen && (
-            <FullScreenImage
-              src={baseItems[activeIdx]}
-              items={baseItems}
-              currentIndex={activeIdx}
-              onNavigate={setActiveIdx}
-              onClose={() => setLightboxOpen(false)}
-            />
-          )}
-        </AnimatePresence>
-      </section>
-    );
-  }
+    return list.map((img, i) => {
+      const nextImg = list[(i + 1) % list.length];
+      const altImg = list[(i + 2) % list.length];
+      const highlight = highlights[i % (highlights.length || 1)] || "";
+      const itineraryStep = itinerary[i % (itinerary.length || 1)];
+      const tagText = tags[i % (tags.length || 1)];
+
+      const prints = [];
+      const notes = [];
+
+      if (list.length > 1 && nextImg && nextImg !== img) {
+        prints.push({
+          src: nextImg,
+          x: i % 2 === 0 ? 70 : 8,
+          y: i % 2 === 0 ? 12 : 46,
+          w: 24,
+          rotate: i % 2 === 0 ? 5 : -6,
+          caption: toDisplayString(itineraryStep?.title || itineraryStep?.name || tagText || `${placeName} #${i + 1}`)
+        });
+      }
+
+      if (list.length > 2 && altImg && altImg !== img && altImg !== nextImg) {
+        prints.push({
+          src: altImg,
+          x: i % 2 === 0 ? 10 : 72,
+          y: i % 2 === 0 ? 54 : 14,
+          w: 20,
+          rotate: i % 2 === 0 ? -4 : 6,
+          tape: true
+        });
+      }
+
+      if (highlight) {
+        notes.push({
+          x: i % 2 === 0 ? 8 : 48,
+          y: i % 2 === 0 ? 14 : 64,
+          w: 38,
+          rotate: i % 2 === 0 ? -2 : 3,
+          style: i % 3 === 0 ? "card" : "ink",
+          title: toDisplayString(tagText || category),
+          body: toDisplayString(highlight)
+        });
+      } else if (itineraryStep?.description || itineraryStep?.text) {
+        notes.push({
+          x: i % 2 === 0 ? 12 : 50,
+          y: i % 2 === 0 ? 18 : 62,
+          w: 36,
+          rotate: 2,
+          style: "card",
+          title: toDisplayString(itineraryStep?.title || itineraryStep?.name || "Discovery"),
+          body: toDisplayString(itineraryStep?.description || itineraryStep?.text)
+        });
+      }
+
+      return {
+        id: `spread-${i}`,
+        label: `${placeName} — Page ${i + 1}`,
+        image: img,
+        alt: `${placeName} view ${i + 1}`,
+        imagePosition: "center",
+        prints,
+        notes
+      };
+    });
+  }, [baseItems, place, placeName]);
+
+  const isDark = theme === "dark";
 
   return (
-    <section ref={r} style={{ position: "relative", height: "70vh", background: W, overflow: "hidden", display: "flex", alignItems: "center", padding: "20px 0 40px", boxSizing: "border-box" }}>
-
-
-
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        width: "100%",
-        height: "100%",
-        padding: "0 80px",
-        gap: 60,
+    <section
+      style={{
         position: "relative",
-        zIndex: 10,
-        boxSizing: "border-box",
-        alignItems: "center"
-      }}>
-
-        <div style={{
-          width: "40%",
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          alignItems: "flex-start",
-          textAlign: "left",
-          paddingTop: "60px",
-          boxSizing: "border-box"
-        }}>
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.9, ease: E }}
-          >
-            <p className="font-mono" style={{
-              fontSize: 11,
-              letterSpacing: "0.4em",
-              textTransform: "uppercase",
-              color: A,
-              fontWeight: 800,
-              marginBottom: 16
-            }}>
-              {toDisplayString(place?.category) || "DESTINATION"}
-            </p>
-            <h1 className="hero-title" style={{
-              fontSize: "clamp(2.5rem, 4vw, 3.5rem)",
-              fontWeight: 700,
-              color: FG,
-              lineHeight: 1.1,
-              letterSpacing: "-0.01em",
-              margin: "0 0 20px 0",
-              overflowWrap: "break-word"
-            }}>
-              {placeName}
-            </h1>
-            {/* Description removed and placed below hero section */}
-            <div style={{ marginBottom: 20 }} />
-            <div style={{ display: "flex", gap: 10 }}>
-              {[place?.city, place?.placeType].filter(Boolean).map(tag => (
-                <span
-                  key={toDisplayString(tag)}
-                  style={{
-                    fontSize: 9,
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: FG,
-                    border: `1px solid ${B}`,
-                    padding: "8px 18px",
-                    borderRadius: 30,
-                    background: W,
-                    fontWeight: 600,
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.02)"
-                  }}
-                >
-                  {toDisplayString(tag)}
-                </span>
-              ))}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 32 }}>
-
-              <Favorite itemType="place" itemId={id}>
-                {({ saved, pending, onClick }) => {
-                  const isDark = theme === "dark";
-                  const textColor = isDark ? FG : (A || "#0097B2");
-                  return (
-                    <motion.button
-                      onClick={(e) => { e.stopPropagation(); onClick(e); }}
-                      whileTap={{ scale: 0.86 }}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "50%",
-                        background: isDark ? "#141414" : "#FFFFFF",
-                        border: `1.5px solid ${isDark ? `${A}66` : `${A}4D`}`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 6px 18px rgba(15,15,15,0.12)",
-                        cursor: "pointer",
-                        pointerEvents: "auto",
-                        position: "relative",
-                        zIndex: 200,
-                        outline: "none"
-                      }}
-                    >
-                      <style>{`
-                        .desktop-save-icon-${id} svg {
-                          fill: ${saved ? (A || "#0097B2") : textColor};
-                          transition: fill 0.3s ease;
-                        }
-                      `}</style>
-                      <div className={`desktop-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Icon name={saved ? "heart-fill" : "heart"} size={20} />
-                      </div>
-                    </motion.button>
-                  );
-                }}
-              </Favorite>
-
-              <motion.button
-                onClick={handleShare}
-                onHoverStart={() => setShareHovered(true)}
-                onHoverEnd={() => setShareHovered(false)}
-                whileTap={{ scale: 0.86 }}
-                style={{
-                  height: 44,
-                  borderRadius: 22,
-                  background: theme === "dark" ? "#141414" : "#FFFFFF",
-                  border: `1.5px solid ${shareHovered ? glow : (theme === "dark" ? `${glow}66` : `${glow}4D`)}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  boxShadow: shareHovered
-                    ? `0 0 18px ${glow}33, 0 8px 28px rgba(15,15,15,0.14)`
-                    : "0 6px 18px rgba(15,15,15,0.12)",
-                  cursor: "pointer",
-                  maxWidth: shareHovered ? 160 : 44,
-                  overflow: "hidden",
-                  paddingLeft: 12,
-                  paddingRight: shareHovered ? 16 : 12,
-                  transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), padding-right 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease",
-                  position: "relative",
-                  zIndex: 200,
-                  outline: "none"
-                }}
-              >
-                <motion.span
-                  animate={{ scale: [1, 3.4], opacity: [0.45, 0] }}
-                  transition={{ duration: 0, opacity: 0 }}
-                  style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none", opacity: shareRipple ? 0.45 : 0, scale: shareRipple ? 3.4 : 1 }}
-                />
-                <motion.span
-                  animate={{
-                    y: shareHovered ? 0 : [0, -2, 0, 2, 0],
-                    rotate: shareHovered ? 360 : 0,
-                    scale: shareHovered ? 1.15 : 1
-                  }}
-                  transition={{
-                    y: { repeat: Infinity, duration: 3, ease: "easeInOut" },
-                    rotate: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-                    scale: { duration: 0.3, ease: "easeOut" }
-                  }}
-                  style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, position: "relative", color: glow }}
-                >
-                  <Share2 size={20} color={glow} />
-                </motion.span>
-                <span style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  maxWidth: shareHovered ? 130 : 0,
-                  opacity: shareHovered ? 1 : 0,
-                  marginLeft: shareHovered ? 8 : 0,
-                  transition: "max-width 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22,1,0.36,1)",
-                  color: glow,
-                  fontFamily: '"Inter", sans-serif',
-                  fontSize: 13,
-                  fontWeight: 600
-                }}>
-                  {shareCopied ? "Copied!" : "Share"}
-                </span>
-              </motion.button>
-            </div>
-          </motion.div>
-        </div>
-
+        width: "100%",
+        minHeight: "calc(100vh - 80px)",
+        maxHeight: "880px",
+        height: "82vh",
+        background: BG,
+        color: FG,
+        overflow: "hidden",
+        borderBottom: `1px solid ${B}`,
+        display: "flex",
+        alignItems: "stretch"
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1540,
+          margin: "0 auto",
+          padding: "24px 32px",
+          display: "grid",
+          gridTemplateColumns: "minmax(340px, 42%) minmax(0, 58%)",
+          gap: 36,
+          alignItems: "center",
+          height: "100%"
+        }}
+      >
+        {/* Left Column: Place Information & Primary Controls */}
         <div
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => setIsSliderHovered(true)}
-          onMouseLeave={() => {
-            setIsSliderHovered(false);
-            setShowArrows(false);
-          }}
           style={{
-            width: "60%",
-            minWidth: 0,
-            height: "100%",
-            overflow: "hidden",
-            position: "relative",
             display: "flex",
-            alignItems: "center"
+            flexDirection: "column",
+            justifyContent: "center",
+            paddingRight: 16,
+            zIndex: 10
           }}
         >
-          {/* Navigation Left Arrow */}
-          <AnimatePresence>
-            {showArrows && (
-              <motion.button
-                key="left-arrow"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                whileHover={{ scale: 1.05, backgroundColor: A, borderColor: A, color: "#FFF", boxShadow: `0 8px 24px ${A}40` }}
-                onClick={() => scrollSlider("left")}
-                style={{
-                  position: "absolute",
-                  left: 20,
-                  zIndex: 20,
-                  background: theme === "dark" ? "rgba(20, 20, 20, 0.6)" : "rgba(255, 255, 255, 0.85)",
-                  backdropFilter: "blur(12px)",
-                  border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)"}`,
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: FG,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-                  transition: "all 0.3s ease"
-                }}
-              >
-                <ChevronLeft size={24} />
-              </motion.button>
+          {/* Category Pill & Place type */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: A,
+                background: AL || "rgba(0,151,178,0.08)",
+                padding: "4px 12px",
+                borderRadius: 20,
+                border: `1px solid ${A}30`,
+                display: "inline-block"
+              }}
+            >
+              {categoryName}
+            </span>
+            {place?.placeType && (
+              <span style={{ fontSize: 12, fontWeight: 500, color: M }}>
+                • {toDisplayString(place.placeType)}
+              </span>
             )}
-          </AnimatePresence>
-
-          {/* Navigation Right Arrow */}
-          <AnimatePresence>
-            {showArrows && (
-              <motion.button
-                key="right-arrow"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                whileHover={{ scale: 1.05, backgroundColor: A, borderColor: A, color: "#FFF", boxShadow: `0 8px 24px ${A}40` }}
-                onClick={() => scrollSlider("right")}
-                style={{
-                  position: "absolute",
-                  right: 20,
-                  zIndex: 20,
-                  background: theme === "dark" ? "rgba(20, 20, 20, 0.6)" : "rgba(255, 255, 255, 0.85)",
-                  backdropFilter: "blur(12px)",
-                  border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)"}`,
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: FG,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-                  transition: "all 0.3s ease"
-                }}
-              >
-                <ChevronRight size={24} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Images Slider Container */}
-          <div
-            ref={sliderRef}
-            className="no-scrollbar"
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              height: "100%",
-              width: "100%",
-              overflowX: "auto",
-              padding: "0 8px"
-            }}
-          >
-            {scrolledItems.map((img, i) => {
-              const uniqueKey = `${img}-${i}`;
-              const isHovered = hoveredImage === uniqueKey;
-              const isAnyHovered = hoveredImage !== null;
-
-              return (
-                <div
-                  key={uniqueKey}
-                  onMouseEnter={() => setHoveredImage(uniqueKey)}
-                  onMouseLeave={() => setHoveredImage(null)}
-                  style={{
-                    flexShrink: 0,
-                    paddingRight: 16,
-                    height: "100%",
-                  }}
-                >
-                  <div
-                    onClick={() => openLightbox(i % baseItems.length)}
-                    style={{
-                      position: "relative",
-                      height: "100%",
-                      width: isHovered ? 480 : 160,
-                      borderRadius: 24,
-                      overflow: "hidden",
-                      border: `1px solid ${B}`,
-                      boxShadow: isHovered
-                        ? "0 40px 80px -20px rgba(0,0,0,0.2)"
-                        : "0 20px 40px -15px rgba(0,0,0,0.05)",
-                      cursor: "pointer",
-                      transition: "width 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s cubic-bezier(0.25, 1, 0.5, 1)"
-                    }}
-                  >
-                  <motion.img
-                    src={img}
-                    animate={{
-                      scale: isHovered ? 1.06 : 1,
-                      filter: isAnyHovered && !isHovered ? "brightness(0.7) grayscale(0.1)" : "brightness(1) grayscale(0)"
-                    }}
-                    transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover"
-                    }}
-                    alt=""
-                  />
-
-                  <div style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(to bottom, transparent 70%, rgba(0,0,0,0.4) 100%)",
-                    opacity: isHovered ? 1 : 0.3,
-                    transition: "opacity 0.4s",
-                    pointerEvents: "none"
-                  }} />
-                  </div>
-                </div>
-              );
-            })}
           </div>
 
-          {/* View All Badge - ExperienceProduct style */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => openLightbox(0)}
+          {/* Place Name */}
+          <h1
+            className="hero-title"
             style={{
-              position: "absolute",
-              bottom: 24,
-              right: 24,
-              background: "rgba(0, 0, 0, 0.3)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              color: "#FFFFFF",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              borderRadius: 24,
-              padding: "8px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: "13px",
-              fontWeight: 500,
-              fontFamily: '"Inter", sans-serif',
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-              cursor: "pointer",
-              zIndex: 10,
-              transition: "all 0.3s ease"
+              fontFamily: "'Fraunces', Georgia, serif",
+              fontSize: "clamp(2.2rem, 3.8vw, 3.4rem)",
+              fontWeight: 700,
+              lineHeight: 1.12,
+              letterSpacing: "-0.02em",
+              color: FG,
+              margin: "0 0 16px 0",
+              wordBreak: "break-word"
             }}
           >
-            <Camera size={16} />
-            See all photos
-          </motion.button>
+            {placeName}
+          </h1>
+
+          {/* Location Badge */}
+          {locationString && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                color: M,
+                marginBottom: 20
+              }}
+            >
+              <MapPin size={16} color={A} style={{ flexShrink: 0 }} />
+              <span>{locationString}</span>
+            </div>
+          )}
+
+          {/* Short Excerpt / Description snippet */}
+          <p
+            style={{
+              fontSize: 14,
+              lineHeight: 1.65,
+              color: M,
+              margin: "0 0 26px 0",
+              maxWidth: 480,
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden"
+            }}
+          >
+            {shortSnippet}
+          </p>
+
+          {/* Action Row: Favorite, Share, View All Photos */}
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
+            <Favorite itemType="place" itemId={id}>
+              {({ saved, pending, onClick }) => {
+                const textColor = isDark ? FG : (A || "#0097B2");
+                return (
+                  <motion.button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onClick(e); }}
+                    whileTap={{ scale: 0.86 }}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      background: isDark ? "#141414" : "#FFFFFF",
+                      border: `1.5px solid ${isDark ? `${A}66` : `${A}4D`}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 6px 18px rgba(15,15,15,0.12)",
+                      cursor: "pointer",
+                      pointerEvents: "auto",
+                      position: "relative",
+                      zIndex: 200,
+                      outline: "none"
+                    }}
+                    aria-label="Save"
+                  >
+                    <style>{`
+                      .desktop-save-icon-${id} svg {
+                        fill: ${saved ? (A || "#0097B2") : textColor};
+                        transition: fill 0.3s ease;
+                      }
+                    `}</style>
+                    <div className={`desktop-save-icon-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Icon name={saved ? "heart-fill" : "heart"} size={20} />
+                    </div>
+                  </motion.button>
+                );
+              }}
+            </Favorite>
+
+            <motion.button
+              type="button"
+              onClick={handleShare}
+              onHoverStart={() => setShareHovered(true)}
+              onHoverEnd={() => setShareHovered(false)}
+              whileTap={{ scale: 0.86 }}
+              style={{
+                height: 44,
+                borderRadius: 22,
+                background: isDark ? "#141414" : "#FFFFFF",
+                border: `1.5px solid ${shareHovered ? glow : (isDark ? `${glow}66` : `${glow}4D`)}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                boxShadow: "0 6px 18px rgba(15,15,15,0.12)",
+                cursor: "pointer",
+                maxWidth: shareHovered ? 160 : 44,
+                overflow: "hidden",
+                paddingLeft: 12,
+                paddingRight: shareHovered ? 16 : 12,
+                transition: "max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1), padding-right 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+                outline: "none",
+                color: isDark ? FG : "#0F0F0F",
+                position: "relative"
+              }}
+              aria-label="Share place"
+            >
+              <motion.span
+                animate={{ scale: [1, 3.4], opacity: [0.45, 0] }}
+                transition={{ duration: 0, opacity: 0 }}
+                style={{ position: "absolute", inset: -2, borderRadius: 60, background: glow, pointerEvents: "none", opacity: shareRipple ? 0.45 : 0, scale: shareRipple ? 3.4 : 1 }}
+              />
+              <Share2 size={20} color={isDark ? FG : (A || "#0097B2")} style={{ flexShrink: 0 }} />
+              <span style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                maxWidth: shareHovered ? 130 : 0,
+                opacity: shareHovered ? 1 : 0,
+                marginLeft: shareHovered ? 8 : 0,
+                transition: "max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease 0.1s, margin-left 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+                color: isDark ? FG : "#0F0F0F",
+                fontFamily: '"Inter", sans-serif',
+                fontSize: 13,
+                fontWeight: 600
+              }}>
+                {shareCopied ? "Copied!" : "Share"}
+              </span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => openLightbox(activeIdx)}
+              style={{
+                height: 44,
+                padding: "0 20px",
+                borderRadius: 22,
+                background: A,
+                color: "#FFFFFF",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow: `0 4px 14px ${A}40`,
+                transition: "all 0.2s ease"
+              }}
+            >
+              <Camera size={16} />
+              <span>View Photos ({baseItems.length})</span>
+            </motion.button>
+          </div>
         </div>
 
+        {/* Right Column: Journal Spread Carousel */}
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            minHeight: 500,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "visible"
+          }}
+        >
+          <JournalSpreadCarousel
+            spreads={spreads}
+            title={placeName}
+            meta={locationString}
+            height="100%"
+            initialIndex={0}
+            autoPlay={3400}
+            onIndexChange={setActiveIdx}
+            topSlot={null}
+            barSlot={null}
+            onAction={(action, idx) => {
+              if (action === "share") {
+                handleShare();
+              } else {
+                openLightbox(idx);
+              }
+            }}
+          />
+        </div>
       </div>
 
       {/* Desktop Lightbox Modal */}
@@ -1014,8 +822,18 @@ function PlaceHero({ place, galleryItems, id }) {
           />
         )}
       </AnimatePresence>
-
-      {/* Scroll to discover removed */}
+      {/* Desktop Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <FullScreenImage
+            src={baseItems[activeIdx]}
+            items={baseItems}
+            currentIndex={activeIdx}
+            onNavigate={setActiveIdx}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
@@ -2937,144 +2755,227 @@ function LocationSection({ place }) {
 
 function MobileHero({ place, galleryItems, id }) {
   const { theme, tokens } = useTheme();
-  const { A, FG, M, BG, W, B } = tokens;
-  const history = useHistory();
+  const { A, FG, BG, B } = tokens;
   const placeName = place?.placeName || place?.title || "COASTAL GEM";
 
-  const [shareCopied, setShareCopied] = useState(false);
-  const [shareHovered, setShareHovered] = useState(false);
-  const [shareRipple, setShareRipple] = useState(false);
-  const glow = A || "#0097B2";
+  const [activePhoto, setActivePhoto] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const handleShare = async () => {
-    setShareRipple(true);
-    setTimeout(() => setShareRipple(false), 700);
+  const images = useMemo(
+    () => galleryItems && galleryItems.length ? galleryItems : ["https://picsum.photos/seed/destination/800/1000"],
+    [galleryItems],
+  );
+
+  const spreads = useMemo(() => {
+    const list = images && images.length > 0 ? images : ["https://picsum.photos/seed/destination/800/1000"];
+    const highlights = Array.isArray(place?.highlights) ? place.highlights : [];
+    const itinerary = Array.isArray(place?.itinerary) ? place.itinerary : [];
+    const tags = [place?.city, place?.placeType, ...(Array.isArray(place?.tags) ? place.tags : [])].filter(Boolean);
+    const category = toDisplayString(place?.category) || "DESTINATION";
+
+    return list.map((img, i) => {
+      const nextImg = list[(i + 1) % list.length];
+      const altImg = list[(i + 2) % list.length];
+      const highlight = highlights[i % (highlights.length || 1)] || "";
+      const itineraryStep = itinerary[i % (itinerary.length || 1)];
+      const tagText = tags[i % (tags.length || 1)];
+
+      const prints = [];
+      const notes = [];
+
+      if (list.length > 1 && nextImg && nextImg !== img) {
+        prints.push({
+          src: nextImg,
+          x: i % 2 === 0 ? 68 : 8,
+          y: i % 2 === 0 ? 12 : 48,
+          w: 24,
+          rotate: i % 2 === 0 ? 4 : -5,
+          caption: toDisplayString(itineraryStep?.title || itineraryStep?.name || tagText || `${placeName} #${i + 1}`)
+        });
+      }
+
+      if (list.length > 2 && altImg && altImg !== img && altImg !== nextImg) {
+        prints.push({
+          src: altImg,
+          x: i % 2 === 0 ? 10 : 70,
+          y: i % 2 === 0 ? 56 : 14,
+          w: 20,
+          rotate: i % 2 === 0 ? -4 : 6,
+          tape: true
+        });
+      }
+
+      if (highlight) {
+        notes.push({
+          x: i % 2 === 0 ? 8 : 46,
+          y: i % 2 === 0 ? 14 : 62,
+          w: 42,
+          rotate: i % 2 === 0 ? -2 : 3,
+          style: i % 3 === 0 ? "card" : "ink",
+          title: toDisplayString(tagText || category),
+          body: toDisplayString(highlight)
+        });
+      } else if (itineraryStep?.description || itineraryStep?.text) {
+        notes.push({
+          x: i % 2 === 0 ? 10 : 48,
+          y: i % 2 === 0 ? 18 : 60,
+          w: 40,
+          rotate: 2,
+          style: "card",
+          title: toDisplayString(itineraryStep?.title || itineraryStep?.name || "Discovery"),
+          body: toDisplayString(itineraryStep?.description || itineraryStep?.text)
+        });
+      }
+
+      return {
+        id: `mob-spread-${i}`,
+        label: `${placeName} — Page ${i + 1}`,
+        image: img,
+        alt: `${placeName} photo ${i + 1}`,
+        imagePosition: "center",
+        prints,
+        notes
+      };
+    });
+  }, [images, place, placeName]);
+
+  const handleMobileShare = async (e) => {
+    e?.stopPropagation?.();
     try {
       if (navigator.share) {
         const shareText = getShareText(place, "place");
-        await navigator.share({ 
-          title: place?.placeName || "Place", 
-          text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
+        await navigator.share({
+          title: place?.placeName || place?.title || "",
+          text: shareText ? `${shareText}\n${window.location.href}` : window.location.href
         });
       } else {
         const fallbackText = `${getShareText(place, "place")}\n${window.location.href}`;
         await navigator.clipboard.writeText(fallbackText);
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 2400);
       }
-    } catch (_) { }
+    } catch (_) {}
   };
 
-  const images = galleryItems && galleryItems.length ? galleryItems : ["https://picsum.photos/seed/destination/800/1000"];
+  const mobileTopSlot = (
+    <div style={{
+      position: "relative",
+      padding: "16px 16px 0",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      zIndex: 20
+    }}>
+      <Favorite itemType="place" itemId={id}>
+        {({ saved, onClick }) => (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClick(e); }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: `1px solid ${A}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+              outline: "none",
+              cursor: "pointer"
+            }}
+            aria-label="Save"
+          >
+            <style>{`
+              .mobile-save-icon-alt-${id} svg {
+                fill: ${saved ? (A || "#0097B2") : "#FFFFFF"};
+                transition: fill 0.3s ease;
+              }
+            `}</style>
+            <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name={saved ? "heart-fill" : "heart"} size={18} />
+            </div>
+          </button>
+        )}
+      </Favorite>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => {
+            setActivePhoto(0);
+            setLightboxOpen(true);
+          }}
+          style={{
+            height: 40,
+            borderRadius: 20,
+            padding: "0 14px",
+            background: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            color: "#FFFFFF",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
+          <Camera size={14} />
+          {images.length}
+        </button>
+        <button
+          type="button"
+          onClick={handleMobileShare}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            border: `1px solid ${A}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            outline: "none",
+            cursor: "pointer"
+          }}
+          aria-label="Share"
+        >
+          <Share2 size={18} color="#FFFFFF" />
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <section style={{ background: BG, paddingTop: 0, position: "relative", overflow: "hidden" }}>
-      {/* Mobile Top Controls */}
-      <div style={{ position: "absolute", top: 24, left: 20, right: 20, display: "flex", justifyContent: "flex-end", zIndex: 200, pointerEvents: "none" }}>
-        <div style={{ display: "flex", gap: 12, pointerEvents: "auto" }}>
-          <Favorite itemType="place" itemId={id}>
-            {({ saved, onClick }) => (
-              <button onClick={(e) => { e.stopPropagation(); onClick(e); }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
-                <style>{`
-                  .mobile-save-icon-alt-${id} svg {
-                    fill: ${saved ? (A || "#0097B2") : (theme === "dark" ? "#FFFFFF" : "#111111")};
-                    transition: fill 0.3s ease;
-                  }
-                `}</style>
-                <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon name={saved ? "heart-fill" : "heart"} size={20} />
-                </div>
-              </button>
-            )}
-          </Favorite>
-          <button onClick={async (e) => { 
-            e.stopPropagation(); 
-            try {
-              if (navigator.share) {
-                const shareText = getShareText(place, "place");
-                await navigator.share({ 
-                  title: place?.placeName || place?.title || "", 
-                  text: shareText ? `${shareText}\n${window.location.href}` : window.location.href 
-                });
-              } else {
-                const fallbackText = `${getShareText(place, "place")}\n${window.location.href}`;
-                await navigator.clipboard.writeText(fallbackText);
-              }
-            } catch (_) {}
-          }} style={{ width: 44, height: 44, borderRadius: "50%", background: theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", border: `1px solid ${A}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", outline: "none", cursor: "pointer" }}>
-            <Share2 size={20} color={theme === "dark" ? "#FFFFFF" : "#111111"} />
-          </button>
-        </div>
+      {/* Journal Spread Carousel in mobile hero */}
+      <div style={{ position: "relative", overflow: "hidden", width: "100%", height: "clamp(380px, 58svh, 480px)", background: BG }}>
+        <JournalSpreadCarousel
+          spreads={spreads}
+          title={placeName}
+          meta={[place?.city, place?.state || place?.country].filter(Boolean).join(", ")}
+          height="100%"
+          initialIndex={0}
+          autoPlay={3000}
+          onIndexChange={setActivePhoto}
+          topSlot={mobileTopSlot}
+          barSlot={null}
+          onAction={(action, idx) => {
+            if (action === "share") {
+              handleMobileShare();
+            } else {
+              setActivePhoto(idx);
+              setLightboxOpen(true);
+            }
+          }}
+        />
       </div>
-
-      {/* Auto Moving Hero Image Stack / Marquee */}
-      {(() => {
-        const baseHeroList = images.length > 0 ? images : ["https://picsum.photos/seed/destination/800/1000"];
-        let filledHero = [...baseHeroList];
-        while (filledHero.length < 6) {
-          filledHero = [...filledHero, ...baseHeroList];
-        }
-        const doubledHero = [...filledHero, ...filledHero];
-        const cardWidth = "calc(82vw)";
-        const heroDuration = filledHero.length * 9;
-
-        return (
-          <div style={{ position: "relative", overflow: "hidden", width: "100%", padding: "16px 0" }}>
-            <style>{`
-              @keyframes placeMobileHeroScroll {
-                0% { transform: translate3d(0, 0, 0); }
-                100% { transform: translate3d(-50%, 0, 0); }
-              }
-            `}</style>
-            <div
-              style={{
-                display: "flex",
-                gap: 16,
-                width: "max-content",
-                animation: `placeMobileHeroScroll ${heroDuration}s linear infinite`,
-                willChange: "transform",
-                transform: "translate3d(0, 0, 0)",
-                WebkitTransform: "translate3d(0, 0, 0)",
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden"
-              }}
-            >
-              {doubledHero.map((img, i) => (
-                <div
-                  key={i}
-                  style={{
-                    flexShrink: 0,
-                    width: cardWidth,
-                    height: "45vh",
-                    borderRadius: 28,
-                    overflow: "hidden",
-                    border: `1.5px solid ${B}`,
-                    boxShadow: theme === "dark" ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.08)",
-                    position: "relative",
-                    transform: "translateZ(0)",
-                    WebkitTransform: "translateZ(0)",
-                    WebkitMaskImage: "-webkit-radial-gradient(white, black)"
-                  }}
-                >
-                  <img
-                    src={img}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                    alt=""
-                    loading="eager"
-                  />
-                  {/* Subtle bottom shadow overlay inside card */}
-                  <div style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4) 100%)",
-                    pointerEvents: "none"
-                  }} />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Overlapping Content Card */}
       <motion.div
@@ -3082,16 +2983,16 @@ function MobileHero({ place, galleryItems, id }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: E, delay: 0.2 }}
         style={{
-          marginTop: "-48px",
-          marginLeft: 24,
-          marginRight: 24,
+          marginTop: "-28px",
+          marginLeft: 16,
+          marginRight: 16,
           marginBottom: 32,
-          padding: "24px 20px",
+          padding: "22px 20px 20px",
           borderRadius: 24,
-          background: theme === "dark" ? "rgba(10, 10, 10, 0.78)" : "rgba(255, 255, 255, 0.84)",
+          background: theme === "dark" ? "rgba(10, 10, 10, 0.92)" : "rgba(255, 255, 255, 0.95)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+          border: "none",
           boxShadow: theme === "dark" ? "0 25px 50px rgba(0,0,0,0.4)" : "0 25px 50px rgba(0,0,0,0.06)",
           zIndex: 10,
           position: "relative"
@@ -3108,16 +3009,17 @@ function MobileHero({ place, galleryItems, id }) {
           {toDisplayString(place?.category) || "DESTINATION"}
         </p>
 
+        <div style={{ width: 28, height: 2, marginBottom: 8, background: A }} />
         <h1 className="hero-title" style={{
-          fontSize: 24,
+          fontSize: "clamp(26px, 8vw, 32px)",
           fontWeight: 700,
           color: FG,
-          lineHeight: 1.3,
-          letterSpacing: "-0.01em",
+          lineHeight: 1.05,
+          letterSpacing: "-0.035em",
           margin: "0 0 14px 0",
-          fontFamily: '"Cormorant Garamond", "Playfair Display", serif'
+          fontFamily: "'Fraunces', Georgia, serif"
         }}>
-          {placeName.toUpperCase()}
+          {placeName}
         </h1>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -3138,6 +3040,18 @@ function MobileHero({ place, galleryItems, id }) {
           ))}
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {lightboxOpen && (
+          <FullScreenImage
+            src={images[activePhoto]}
+            items={images}
+            currentIndex={activePhoto}
+            onNavigate={setActivePhoto}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
