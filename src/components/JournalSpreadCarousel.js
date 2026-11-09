@@ -3,7 +3,7 @@
 import * as React from "react"
 
 // #region pose
-const OPEN = 5 // the centre spread's slight V at the spine, degrees
+const OPEN = 0 // the centre spread sits flat in the middle (no seam/crease line)
 const SIDE = 80 // how far a stacked page turns towards the middle
 const FOLD = 174 // a page folding shut over its partner
 
@@ -57,16 +57,18 @@ export function settle(pos, velocity, n) {
   return clamp(Math.round(pos + clamp(velocity * 0.18, -1.5, 1.5)), 0, Math.max(0, n - 1))
 }
 
-/** Tween length for a jump of `steps` spreads; longer jumps riffle faster per page. */
+/** Tween length for a jump of `steps` spreads; fast responsive flips. */
 export function durationFor(steps) {
-  return steps <= 0 ? 0 : Math.round(560 * Math.sqrt(Math.min(steps, 12)))
+  return steps <= 0 ? 0 : Math.round(260 * Math.sqrt(Math.min(steps, 6)))
 }
 
-export function easeInOut(t) {
+/** Smooth cubic easing with gentle deceleration for fluid page turns */
+export function smoothEase(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
-export function easeOut(t) {
+/** Easing function for organic decelerating coasting */
+export function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3)
 }
 // #endregion
@@ -103,21 +105,19 @@ const CSS =
   ".jsc-view{position:absolute;inset:0;perspective:calc(var(--jsc-w) * 2.3);perspective-origin:50% 46%}" +
   ".jsc-scene{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}" +
   ".jsc-item{position:absolute;left:0;top:0;transform-style:preserve-3d;visibility:hidden}" +
-  ".jsc-page{position:absolute;top:calc(var(--jsc-h) * -.5);width:calc(var(--jsc-w) * .5);height:var(--jsc-h);overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;" +
-  "background:#efebe3;box-shadow:0 1px 0 rgba(255,255,255,.35) inset}" +
+  ".jsc-page{position:absolute;top:calc(var(--jsc-h) * -.5);width:calc(var(--jsc-w) * .5 + 0.75px);height:var(--jsc-h);overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;" +
+  "background:#efebe3;box-shadow:none}" +
   ".jsc-page[data-side=l]{left:calc(var(--jsc-w) * -.5);transform-origin:100% 50%;border-radius:calc(var(--jsc-w) * .034) 0 0 calc(var(--jsc-w) * .034)}" +
-  ".jsc-page[data-side=r]{left:0;transform-origin:0 50%;border-radius:0 calc(var(--jsc-w) * .034) calc(var(--jsc-w) * .034) 0}" +
+  ".jsc-page[data-side=r]{left:-0.75px;transform-origin:0 50%;border-radius:0 calc(var(--jsc-w) * .034) calc(var(--jsc-w) * .034) 0}" +
   ".jsc-sheet{position:absolute;top:0;width:var(--jsc-w);height:var(--jsc-h);pointer-events:none}" +
   ".jsc-page[data-side=l]>.jsc-sheet{left:0}" +
   ".jsc-page[data-side=r]>.jsc-sheet{left:calc(var(--jsc-w) * -.5)}" +
   ".jsc-bg{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block}" +
-  ".jsc-gutter{position:absolute;inset:0}" +
-  ".jsc-page[data-side=l] .jsc-gutter{background:linear-gradient(90deg,rgba(255,255,255,0) 82%,rgba(20,18,30,.08) 93%,rgba(20,18,30,.26))}" +
-  ".jsc-page[data-side=r] .jsc-gutter{background:linear-gradient(270deg,rgba(255,255,255,0) 82%,rgba(20,18,30,.08) 93%,rgba(20,18,30,.26))}" +
-  ".jsc-shade{position:absolute;inset:0;background:#141729;opacity:var(--jsc-s,0)}" +
-  ".jsc-print{position:absolute;margin:0;background:#fbfaf6;padding:3.5% 3.5% 0;box-shadow:0 .4em 1em rgba(18,16,30,.28),0 .1em .2em rgba(18,16,30,.2);font-size:calc(var(--jsc-w) * .01)}" +
-  ".jsc-print img{display:block;width:100%;height:auto;max-width:none;aspect-ratio:4/5;object-fit:cover}" +
-  ".jsc-print figcaption{font-family:'JSC Hand',cursive;font-weight:600;color:#2a2c3e;text-align:center;font-size:calc(var(--jsc-w) * .024);line-height:1;padding:.32em 0 .4em}" +
+  ".jsc-gutter{display:none}" +
+  ".jsc-shade{display:none}" +
+  ".jsc-print{position:absolute;margin:0;background:#fbfaf6;padding:1.5% 1.5% 0;box-shadow:0 .3em .8em rgba(18,16,30,.22),0 .1em .2em rgba(18,16,30,.15);border-radius:3px;font-size:calc(var(--jsc-w) * .01)}" +
+  ".jsc-print img{display:block;width:100%;height:auto;max-width:none;aspect-ratio:4/5;object-fit:cover;border-radius:2px}" +
+  ".jsc-print figcaption{font-family:'JSC Hand',cursive;font-weight:600;color:#2a2c3e;text-align:center;font-size:calc(var(--jsc-w) * .022);line-height:1;padding:.18em 0 .22em}" +
   ".jsc-print[data-tape]{padding:0;background:none}" +
   ".jsc-print[data-tape]::before{content:'';position:absolute;left:50%;top:-6%;width:46%;height:11%;transform:translateX(-50%) rotate(-3deg);background:rgba(236,226,196,.78);box-shadow:0 1px 2px rgba(0,0,0,.12)}" +
   ".jsc-print[data-tape] figcaption{position:absolute;left:0;right:0;bottom:-1.1em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55)}" +
@@ -253,6 +253,7 @@ export default function JournalSpreadCarousel({
   className,
   topSlot,
   barSlot,
+  carouselRef,
 }) {
   const n = spreads.length
   const start = clamp(Math.round(initialIndex), 0, Math.max(0, n - 1))
@@ -320,20 +321,64 @@ export default function JournalSpreadCarousel({
     if (!raf.current) raf.current = requestAnimationFrame(frame)
   }, [frame])
 
+  const resumeTimer = React.useRef(null)
+  const isInteracting = React.useRef(false)
+
+  const pauseAutoPlay = React.useCallback(() => {
+    isInteracting.current = true
+    if (resumeTimer.current) {
+      window.clearTimeout(resumeTimer.current)
+      resumeTimer.current = null
+    }
+  }, [])
+
+  const resumeAutoPlay = React.useCallback((delay = 2000) => {
+    if (resumeTimer.current) {
+      window.clearTimeout(resumeTimer.current)
+    }
+    resumeTimer.current = window.setTimeout(() => {
+      isInteracting.current = false
+      resumeTimer.current = null
+    }, delay)
+  }, [])
+
   const go = React.useCallback(
-    (to, ease = easeInOut) => {
+    (to, customDuration = null, ease = smoothEase) => {
       const next = clamp(to, 0, Math.max(0, n - 1))
-      if (next !== target.current) {
-        target.current = next
-        setIndex(next)
-        onIndexRef.current?.(next)
-      }
-      const dur = reducedRef.current ? 0 : durationFor(Math.abs(next - pos.current))
+      target.current = next
+      setIndex(next)
+      onIndexRef.current?.(next)
+      const dur = reducedRef.current
+        ? 0
+        : customDuration != null
+          ? customDuration
+          : Math.min(650, Math.max(480, Math.round(520 * Math.sqrt(Math.abs(next - pos.current)))))
       tween.current = { from: pos.current, to: next, t0: performance.now(), dur, ease }
       kick()
     },
     [n, kick],
   )
+
+  React.useImperativeHandle(carouselRef, () => ({
+    next: () => {
+      pauseAutoPlay()
+      const next = (target.current + 1) % n
+      go(next, 380, easeOutCubic)
+      resumeAutoPlay(3000)
+    },
+    prev: () => {
+      pauseAutoPlay()
+      const prev = target.current <= 0 ? n - 1 : target.current - 1
+      go(prev, 380, easeOutCubic)
+      resumeAutoPlay(3000)
+    },
+    goTo: (idx) => {
+      pauseAutoPlay()
+      go(idx, 450, smoothEase)
+      resumeAutoPlay(3000)
+    },
+    getIndex: () => target.current
+  }), [n, go, pauseAutoPlay, resumeAutoPlay])
 
   React.useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -382,7 +427,7 @@ export default function JournalSpreadCarousel({
     else paint()
   }, [n, go, paint])
 
-  // Turns pages on its own until someone touches it; pauses off-screen and in a hidden tab.
+  // Turns pages on its own; pauses when interacting or off-screen, then automatically resumes.
   React.useEffect(() => {
     const root = rootRef.current
     if (!autoPlay || reduced || n < 2 || !root) return
@@ -392,22 +437,19 @@ export default function JournalSpreadCarousel({
     })
     io.observe(root)
     const id = window.setInterval(() => {
-      if (touched.current || !visible || document.hidden || drag.current) return
+      if (isInteracting.current || !visible || document.hidden || drag.current) return
       go(target.current >= n - 1 ? 0 : target.current + 1)
     }, autoPlay)
     return () => {
       window.clearInterval(id)
       io.disconnect()
+      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
     }
   }, [autoPlay, reduced, n, go])
 
-  const stop = () => {
-    touched.current = true
-  }
-
   const onPointerDown = (e) => {
     if (e.button !== 0 || n < 1) return
-    stop()
+    pauseAutoPlay()
     tween.current = null
     drag.current = { id: e.pointerId, x: e.clientX, from: pos.current, lastX: e.clientX, lastT: e.timeStamp, v: 0, moved: false }
   }
@@ -439,12 +481,14 @@ export default function JournalSpreadCarousel({
     drag.current = null
     setDragging(false)
     if (d.moved) {
-      go(settle(pos.current, d.v, n), easeOut)
+      go(settle(pos.current, d.v, n), 520, easeOutCubic)
+      resumeAutoPlay(2200)
       return
     }
     const hit = e.target.closest?.("[data-i]")
     const i = hit ? Number(hit.getAttribute("data-i")) : target.current
-    go(i)
+    go(i, 450, smoothEase)
+    resumeAutoPlay(2200)
   }
 
   const onKeyDown = (e) => {
@@ -455,7 +499,8 @@ export default function JournalSpreadCarousel({
     else if (e.key === "End") go(n - 1)
     else return
     e.preventDefault()
-    stop()
+    pauseAutoPlay()
+    resumeAutoPlay(2600)
   }
 
   // Trackpads swipe sideways; a vertical wheel is left to scroll the page.

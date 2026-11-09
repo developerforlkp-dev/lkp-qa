@@ -23,6 +23,7 @@ import Icon from "../../components/Icon";
 import FullScreenImage from "../../components/FullScreenImage";
 import JournalSpreadCarousel from "../../components/JournalSpreadCarousel";
 import CuratedContent from "../../components/CuratedContent";
+import topographyBg from "./misty-blue-mountain-topography.webp";
 import { getShareText } from "../../utils/shareUtils";
 import SEOHead from "../../components/SEOHead";
 import { buildPlaceSchema, buildBreadcrumbSchema } from "../../utils/schemaBuilder";
@@ -422,6 +423,7 @@ function PlaceHero({ place, galleryItems, id }) {
   const { theme, tokens: { A, AH, AL, FG, W, B, BG, M, S } } = useTheme();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const carouselControlRef = useRef(null);
 
   // Take unique gallery items
   const baseItems = useMemo(() => {
@@ -546,9 +548,9 @@ function PlaceHero({ place, galleryItems, id }) {
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "calc(100vh - 80px)",
-        maxHeight: "880px",
-        height: "82vh",
+        minHeight: "560px",
+        maxHeight: "740px",
+        height: "72vh",
         background: BG,
         color: FG,
         overflow: "hidden",
@@ -557,17 +559,46 @@ function PlaceHero({ place, galleryItems, id }) {
         alignItems: "stretch"
       }}
     >
+      {/* Misty Blue Mountain Topography Background Layer */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${topographyBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "left bottom",
+          backgroundRepeat: "no-repeat",
+          opacity: isDark ? 0.65 : 0.95,
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: isDark
+            ? `linear-gradient(90deg, rgba(8,8,8,0.12) 0%, rgba(8,8,8,0.3) 38%, ${BG} 85%)`
+            : `linear-gradient(90deg, rgba(251,251,249,0.08) 0%, rgba(251,251,249,0.25) 38%, ${BG} 85%)`,
+          pointerEvents: "none",
+          zIndex: 2
+        }}
+      />
+
       <div
         style={{
           width: "100%",
-          maxWidth: 1540,
+          maxWidth: 1320,
           margin: "0 auto",
-          padding: "24px 32px",
+          padding: "0 24px",
           display: "grid",
           gridTemplateColumns: "minmax(340px, 42%) minmax(0, 58%)",
-          gap: 36,
+          gap: 40,
           alignItems: "center",
-          height: "100%"
+          height: "100%",
+          boxSizing: "border-box",
+          position: "relative",
+          zIndex: 5
         }}
       >
         {/* Left Column: Place Information & Primary Controls */}
@@ -576,6 +607,7 @@ function PlaceHero({ place, galleryItems, id }) {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            paddingTop: 10,
             paddingRight: 16,
             zIndex: 10
           }}
@@ -784,29 +816,147 @@ function PlaceHero({ place, galleryItems, id }) {
             height: "100%",
             minHeight: 500,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             overflow: "visible"
           }}
         >
-          <JournalSpreadCarousel
-            spreads={spreads}
-            title={placeName}
-            meta={locationString}
-            height="100%"
-            initialIndex={0}
-            autoPlay={3400}
-            onIndexChange={setActiveIdx}
-            topSlot={null}
-            barSlot={null}
-            onAction={(action, idx) => {
-              if (action === "share") {
-                handleShare();
-              } else {
-                openLightbox(idx);
-              }
+          <div style={{ position: "relative", width: "100%", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <JournalSpreadCarousel
+              carouselRef={carouselControlRef}
+              spreads={spreads}
+              title={placeName}
+              meta={locationString}
+              height="100%"
+              initialIndex={0}
+              autoPlay={3000}
+              onIndexChange={setActiveIdx}
+              topSlot={null}
+              barSlot={null}
+              onAction={(action, idx) => {
+                if (action === "share") {
+                  handleShare();
+                } else {
+                  openLightbox(idx);
+                }
+              }}
+            />
+          </div>
+
+          {/* Food Details-style Pill Navigation Controls */}
+          <div
+            style={{
+              position: "relative",
+              marginTop: -10,
+              marginBottom: 16,
+              zIndex: 30,
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              padding: "6px 14px",
+              borderRadius: "999px",
+              color: FG,
+              background: isDark ? "rgba(20, 20, 20, 0.85)" : "#FFFFFF",
+              border: `1px solid ${B}`,
+              WebkitBackdropFilter: "blur(12px)",
+              backdropFilter: "blur(12px)",
+              boxShadow: isDark ? "0 8px 24px rgba(0,0,0,0.4)" : "0 8px 24px rgba(15,15,15,0.06)"
             }}
-          />
+          >
+            {/* Previous Page arrow button */}
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.84 }}
+              onClick={() => carouselControlRef.current?.prev?.()}
+              style={{
+                display: "grid",
+                placeItems: "center",
+                margin: 0,
+                padding: "6px",
+                border: 0,
+                borderRadius: "999px",
+                background: "transparent",
+                color: A || "#0097B2",
+                cursor: "pointer",
+                outline: "none",
+                transition: "color 0.2s ease, transform 0.15s ease"
+              }}
+              aria-label="Previous photo"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </motion.button>
+
+            {/* Dots / Page Count */}
+            <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 100, justifyContent: "center" }}>
+              {spreads.length > 10 ? (
+                <span
+                  style={{
+                    padding: "0 8px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontVariantNumeric: "tabular-nums",
+                    letterSpacing: "0.08em",
+                    color: FG
+                  }}
+                >
+                  <span style={{ color: A || "#0097B2" }}>{String(activeIdx + 1).padStart(2, "0")}</span>
+                  <span style={{ opacity: 0.4, margin: "0 4px" }}>/</span>
+                  <span>{String(spreads.length).padStart(2, "0")}</span>
+                </span>
+              ) : (
+                spreads.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => carouselControlRef.current?.goTo?.(i)}
+                    style={{
+                      position: "relative",
+                      width: i === activeIdx ? 26 : 7,
+                      height: 7,
+                      margin: 0,
+                      padding: 0,
+                      border: 0,
+                      borderRadius: "999px",
+                      background: i === activeIdx ? (A || "#0097B2") : FG,
+                      opacity: i === activeIdx ? 1 : 0.25,
+                      cursor: "pointer",
+                      outline: "none",
+                      transition: "width 0.2s ease, opacity 0.2s ease, background 0.2s ease"
+                    }}
+                    aria-label={`Go to spread ${i + 1}`}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Next Page arrow button */}
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.84 }}
+              onClick={() => carouselControlRef.current?.next?.()}
+              style={{
+                display: "grid",
+                placeItems: "center",
+                margin: 0,
+                padding: "6px",
+                border: 0,
+                borderRadius: "999px",
+                background: "transparent",
+                color: A || "#0097B2",
+                cursor: "pointer",
+                outline: "none",
+                transition: "color 0.2s ease, transform 0.15s ease"
+              }}
+              aria-label="Next photo"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </motion.button>
+          </div>
         </div>
       </div>
 
