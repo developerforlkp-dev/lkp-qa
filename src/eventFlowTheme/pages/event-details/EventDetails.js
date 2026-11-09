@@ -18,6 +18,7 @@ import Icon from "../../../components/Icon";
 import FullScreenImage from "../../../components/FullScreenImage";
 import PolicyCategoryItem from "../../../components/PolicyCategoryItem";
 import CuratedContent from "../../../components/CuratedContent";
+import ExperienceReelsCarousel, { extractInstagramReelId } from "../../../components/ExperienceReelsCarousel";
 import { getShareText } from "../../../utils/shareUtils";
 import { isDirectBookingPathOrState } from "../../../utils/directBooking";
 
@@ -4673,6 +4674,16 @@ export default function EventDetails() {
             </section>
           ))}
 
+        <ExperienceReelsCarousel
+          reelUrls={Array.from(new Set(
+            (Array.isArray(event?.socialMediaLinks) ? event.socialMediaLinks : [])
+              .map((link) => extractInstagramReelId(typeof link === "string" ? link : link?.url))
+              .filter(Boolean)
+          ))}
+          title="Event Reels"
+          subtitle="Watch real moments & highlights from this event"
+          theme={theme}
+        />
         <CuratedContent curatedContent={event?.curatedContent} />
         <Venue event={event} hostName={hostName} />
         <Rules event={event} />
