@@ -708,69 +708,360 @@
     padding: 0
     display: flex
     flex-direction: column
-    gap: 24px
-.placeHeroBanner
     width: 100%
-    height: 60vh
-    border-radius: 0
-    margin-bottom: 0
-.placeMarquee
-    height: 40px
+
+.placeHero
     width: 100%
-.placeContent
-    padding: 24px 80px
+    min-height: 560px
+    max-height: 740px
+    height: 72vh
+    display: flex
+    align-items: center
+    justify-content: center
+    padding: 40px 24px
+    box-sizing: border-box
+    border-bottom: 1px solid rgba($n6, 0.4)
+    +dark
+        border-color: rgba($n3, 0.3)
+    +m
+        height: auto
+        min-height: 0
+        padding: 32px 16px
+
+.placeHeroInner
+    width: 100%
+    max-width: 1320px
+    margin: 0 auto
+    display: grid
+    grid-template-columns: minmax(340px, 42%) minmax(0, 58%)
+    gap: 40px
+    align-items: center
+    +t
+        grid-template-columns: 1fr
+        gap: 32px
+
+.placeLeft
     display: flex
     flex-direction: column
     gap: 16px
-    +m
-        padding: 24px 16px
+    padding-right: 16px
+    +t
+        padding-right: 0
+
+.placeCategoryPill
+    width: 140px
+    height: 28px
+    border-radius: 20px
+
 .placeTitle
-    height: 48px
-    width: 60%
-    border-radius: 8px
+    width: 85%
+    height: 54px
+    border-radius: 10px
+    +m
+        height: 40px
+
+.placeLocation
+    width: 160px
+    height: 20px
+    border-radius: 6px
+
+.placeSnippet
+    display: flex
+    flex-direction: column
+    gap: 8px
+    margin: 8px 0
+
 .placeTextLine
-    height: 16px
-    width: 100%
+    height: 14px
     border-radius: 4px
+    width: 100%
     &:nth-child(2)
         width: 90%
     &:nth-child(3)
+        width: 75%
+
+.placeActionsRow
+    display: flex
+    align-items: center
+    gap: 12px
+    margin-top: 8px
+
+.placeCircleBtn
+    width: 44px
+    height: 44px
+    border-radius: 50%
+    flex-shrink: 0
+
+.placePillBtn
+    width: 150px
+    height: 44px
+    border-radius: 22px
+
+.placeRightSpread
+    position: relative
+    width: 100%
+    min-height: 420px
+    display: flex
+    align-items: center
+    justify-content: center
+    +m
+        min-height: 280px
+
+.placeBookCenter
+    width: 58%
+    height: 400px
+    border-radius: 20px
+    position: relative
+    z-index: 3
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12)
+    +m
         width: 80%
+        height: 260px
+
+.placeBookWingLeft, .placeBookWingRight
+    position: absolute
+    top: 50%
+    transform: translateY(-50%)
+    width: 42%
+    height: 350px
+    border-radius: 18px
+    opacity: 0.5
+    z-index: 1
+    +m
+        height: 220px
+
+.placeBookWingLeft
+    left: 4%
+
+.placeBookWingRight
+    right: 4%
+
+.placeMarquee
+    height: 44px
+    width: 100%
+    border-top: 1px solid rgba($n6, 0.4)
+    border-bottom: 1px solid rgba($n6, 0.4)
+    +dark
+        border-color: rgba($n3, 0.3)
+
+.placeContent
+    max-width: 1200px
+    margin: 0 auto
+    width: 100%
+    padding: 60px 24px
+    display: grid
+    grid-template-columns: 2fr 1fr
+    gap: 48px
+    box-sizing: border-box
+    +t
+        grid-template-columns: 1fr
+        padding: 32px 16px
+
+.placeMainCol
+    display: flex
+    flex-direction: column
+    gap: 20px
+
+.placeSideCol
+    display: flex
+    flex-direction: column
+    gap: 20px
+
 
 .foodSkeleton
     padding: 0
-.foodHeroBanner
+    display: flex
+    flex-direction: column
     width: 100%
-    height: 500px
-    border-radius: 0
+
+.foodHero
+    position: relative
+    width: 100%
+    min-height: 620px
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    padding: 80px 24px 48px
+    box-sizing: border-box
+    border-bottom: 1px solid rgba($n6, 0.4)
+    overflow: hidden
+    +dark
+        border-color: rgba($n3, 0.3)
     +m
-        height: 350px
-.foodContentGrid
+        min-height: 520px
+        padding: 60px 16px 32px
+
+.foodHeroActions
+    position: absolute
+    top: 28px
+    right: 28px
+    display: flex
+    align-items: center
+    gap: 12px
+    +m
+        top: 16px
+        right: 16px
+
+.foodActionCircle
+    width: 44px
+    height: 44px
+    border-radius: 50%
+    +m
+        width: 38px
+        height: 38px
+
+.foodHeroHeader
+    display: flex
+    flex-direction: column
+    align-items: center
+    text-align: center
+    gap: 14px
+    max-width: 700px
+    width: 100%
+    margin-bottom: 40px
+    +m
+        margin-bottom: 24px
+
+.foodMetaPills
+    display: flex
+    align-items: center
+    justify-content: center
+    gap: 8px
+
+.foodMetaPill
+    width: 90px
+    height: 28px
+    border-radius: 999px
+
+.foodTitle
+    width: 65%
+    height: 56px
+    border-radius: 12px
+    +m
+        width: 85%
+        height: 38px
+
+.foodHint
+    width: 220px
+    height: 16px
+    border-radius: 4px
+    +m
+        display: none
+
+.foodFanCardsRow
+    position: relative
+    width: 100%
+    display: flex
+    align-items: center
+    justify-content: center
+    height: 360px
+    +m
+        height: 280px
+
+.foodFanCard
+    position: absolute
+    width: 240px
+    height: 340px
+    border-radius: 20px
+    box-shadow: 0 16px 32px rgba(0,0,0,0.08)
+    +m
+        width: 180px
+        height: 260px
+
+.foodFanCard1
+    transform: translateX(-160px) rotate(-8deg) scale(0.92)
+    opacity: 0.6
+    z-index: 1
+    +m
+        transform: translateX(-80px) rotate(-6deg) scale(0.88)
+
+.foodFanCard2
+    transform: translateX(0) rotate(0deg) scale(1)
+    z-index: 3
+    box-shadow: 0 24px 48px rgba(0,0,0,0.14)
+
+.foodFanCard3
+    transform: translateX(160px) rotate(8deg) scale(0.92)
+    opacity: 0.6
+    z-index: 1
+    +m
+        transform: translateX(80px) rotate(6deg) scale(0.88)
+
+.foodNarrative
+    max-width: 1200px
+    margin: 0 auto
+    width: 100%
+    padding: 60px 24px
     display: grid
     grid-template-columns: 1fr 380px
     gap: 48px
-    padding: 40px 80px
+    box-sizing: border-box
     +m
         grid-template-columns: 1fr
-        padding: 24px 16px
+        padding: 32px 16px
+
 .foodMainContent
     display: flex
     flex-direction: column
     gap: 16px
-.foodTitle
-    height: 56px
-    width: 70%
-    border-radius: 8px
-    margin-bottom: 24px
+
 .foodTextLine
     height: 16px
     border-radius: 4px
     width: 100%
     &:nth-child(3)
         width: 85%
+
 .foodSidebarCard
     height: 450px
     border-radius: 24px
+    border: 1px solid rgba($n6, 0.4)
+    +dark
+        border-color: rgba($n3, 0.3)
+
+// -------------------------------------------------------------------------------
+// POLICY & TERMS SKELETON
+// -------------------------------------------------------------------------------
+
+.policySkeleton
+    width: 100%
+    max-width: 1320px
+    margin: 0 auto
+    padding: 0
+    display: flex
+    flex-direction: column
+
+.policyHeader
+    display: flex
+    flex-direction: column
+    align-items: center
+    text-align: center
+    margin-bottom: 36px
+    gap: 12px
+
+.policyHeaderTitle
+    width: 380px
+    max-width: 80%
+    height: 48px
+    border-radius: 10px
+
+.policyHeaderSubtitle
+    width: 520px
+    max-width: 90%
+    height: 20px
+    border-radius: 6px
+
+.policySectionsList
+    display: flex
+    flex-direction: column
+    gap: 16px
+    width: 100%
+
+.policyItemSkeleton
+    width: 100%
+    height: 72px
+    border-radius: 12px
     border: 1px solid rgba($n6, 0.4)
     +dark
         border-color: rgba($n3, 0.3)

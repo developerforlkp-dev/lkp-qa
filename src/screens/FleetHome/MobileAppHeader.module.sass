@@ -57,14 +57,21 @@
 
 .searchIcon
     color: #0097B2
+    fill: none !important
+    stroke: currentColor
+
+    path,
+    circle,
+    line
+        fill: none !important
 
 .searchText
     display: flex
     flex-direction: column
 
 .searchTitle
-    font-size: 13px
-    font-weight: 700
+    font-size: 14px
+    font-weight: 500
     color: $n2
     line-height: 1.2
     +dark
@@ -86,8 +93,22 @@
     display: flex
     align-items: center
     justify-content: center
-    width: 36px
-    height: 36px
+    width: var(--mobile-action-control-size, 40px)
+    height: var(--mobile-action-control-size, 40px)
+    padding: 0
+    line-height: 1
+    flex-shrink: 0
+    svg
+        fill: none !important
+        stroke: currentColor
+        path,
+        circle,
+        rect,
+        polygon,
+        polyline,
+        line,
+        ellipse
+            fill: none !important
     border-radius: 50%
     border: 1.5px solid rgba(0,0,0,0.06)
     background: rgba(255, 255, 255, 0.85)
@@ -104,20 +125,3 @@
         background: $n7
         +dark
             background: $n2
-
-.wishlistBadge
-    position: absolute
-    top: -4px
-    right: -4px
-    display: flex
-    align-items: center
-    justify-content: center
-    min-width: 16px
-    height: 16px
-    padding: 0 4px
-    border-radius: 8px
-    background: #0097B2
-    color: #ffffff
-    font-size: 9px
-    font-weight: 700
-    line-height: 1

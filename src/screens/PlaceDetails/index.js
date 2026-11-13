@@ -4,7 +4,7 @@ import { useLocation, Link, useHistory, useParams } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useInView, animate, useAnimationFrame } from "framer-motion";
 import {
   MapPin, Clock, Ticket, Star, Sparkles, Calendar, ArrowDown, ExternalLink, Map, Navigation,
-  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, Share2, Camera, Heart, X, Building, ChevronDown, Car
+  Phone, Globe, Send, Info, User, Check, XCircle, Briefcase, Share2, Camera, Heart, X, Building, ChevronDown, Car, ShieldAlert
 } from "lucide-react";
 import cn from "classnames";
 import Loader from "../../components/Loader";
@@ -28,6 +28,7 @@ import { getShareText } from "../../utils/shareUtils";
 import SEOHead from "../../components/SEOHead";
 import { buildPlaceSchema, buildBreadcrumbSchema } from "../../utils/schemaBuilder";
 import { formatTime12h, formatTimingsRange } from "../../utils/timeUtils";
+import DetailMarquee from "../../components/DetailMarquee";
 
 /* ─── RESPONSIVE HOOK ─────────── */
 function useWindowSize() {
@@ -566,7 +567,7 @@ function PlaceHero({ place, galleryItems, id }) {
         alignItems: "stretch"
       }}
     >
-      {/* Misty Blue Mountain Topography Background Layer */}
+      {/* Misty Blue Mountain Topography Background Layer - 404-style dark mode adaptation */}
       <div
         style={{
           position: "absolute",
@@ -575,7 +576,9 @@ function PlaceHero({ place, galleryItems, id }) {
           backgroundSize: "cover",
           backgroundPosition: "left bottom",
           backgroundRepeat: "no-repeat",
-          opacity: isDark ? 0.65 : 0.95,
+          opacity: isDark ? 0.85 : 0.95,
+          filter: isDark ? "invert(1) hue-rotate(180deg)" : "none",
+          mixBlendMode: isDark ? "screen" : "normal",
           pointerEvents: "none",
           zIndex: 1
         }}
@@ -585,7 +588,7 @@ function PlaceHero({ place, galleryItems, id }) {
           position: "absolute",
           inset: 0,
           background: isDark
-            ? `linear-gradient(90deg, rgba(8,8,8,0.12) 0%, rgba(8,8,8,0.3) 38%, ${BG} 85%)`
+            ? `linear-gradient(90deg, rgba(8,8,8,0.35) 0%, rgba(8,8,8,0.15) 38%, ${BG} 85%)`
             : `linear-gradient(90deg, rgba(251,251,249,0.08) 0%, rgba(251,251,249,0.25) 38%, ${BG} 85%)`,
           pointerEvents: "none",
           zIndex: 2
@@ -628,17 +631,17 @@ function PlaceHero({ place, galleryItems, id }) {
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
                 color: A,
-                background: AL || "rgba(0,151,178,0.08)",
+                background: isDark ? "rgba(0,151,178,0.18)" : (AL || "rgba(0,151,178,0.08)"),
                 padding: "4px 12px",
                 borderRadius: 20,
-                border: `1px solid ${A}30`,
+                border: `1px solid ${A}45`,
                 display: "inline-block"
               }}
             >
               {categoryName}
             </span>
             {place?.placeType && (
-              <span style={{ fontSize: 12, fontWeight: 500, color: M }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: isDark ? "rgba(235,235,230,0.72)" : M }}>
                 • {toDisplayString(place.placeType)}
               </span>
             )}
@@ -670,7 +673,7 @@ function PlaceHero({ place, galleryItems, id }) {
                 gap: 8,
                 fontSize: 14,
                 fontWeight: 500,
-                color: M,
+                color: isDark ? "rgba(235, 235, 230, 0.88)" : M,
                 marginBottom: 20
               }}
             >
@@ -684,7 +687,7 @@ function PlaceHero({ place, galleryItems, id }) {
             style={{
               fontSize: 14,
               lineHeight: 1.65,
-              color: M,
+              color: isDark ? "rgba(235, 235, 230, 0.78)" : M,
               margin: "0 0 26px 0",
               maxWidth: 480,
               display: "-webkit-box",
@@ -1655,22 +1658,114 @@ function VisitorInformation({ place }) {
     };
   }, [showAllVehicles, showAllTickets]);
 
-  const formatList = (arr, singleStr, fallback, formatter) => {
-    if (Array.isArray(arr) && arr.length > 0) {
-      return arr.map(item => {
-        const name = typeof item === 'string' ? item : item?.name || "";
-        return formatter ? formatter(name) : name;
-      }).filter(Boolean).join(', ');
+  const formatDistanceValue = (rawDist) => {
+    if (rawDist === null || rawDist === undefined || rawDist === "") return "";
+    const str = String(rawDist).trim();
+    if (!str || str.toLowerCase() === "null" || str.toLowerCase() === "undefined") return "";
+    // If it already contains units (e.g., "15 km" or "15km"), return cleaned up
+    if (/km/i.test(str)) {
+      return str;
     }
-    if (typeof singleStr === 'string' && singleStr.trim()) {
-      return formatter ? formatter(singleStr) : singleStr;
+    // If it's a numeric string / number
+    const num = parseFloat(str);
+    if (!isNaN(num) && num > 0) {
+      return `${num} km`;
     }
-    return fallback;
+    return str;
   };
 
-  const formattedTowns = formatList(place?.nearestTowns, place?.nearestTown, "Not Specified", (name) => name.split('/')[0]?.trim());
-  const formattedAirports = formatList(place?.nearestAirports, place?.nearestAirport, "Not Specified", (name) => name.split('(')[0].replace(/International Airport/i, "").trim().toUpperCase());
-  const formattedRailways = formatList(place?.nearestRailwayStations, place?.nearestRailway, "Not Specified", (name) => name.split('(')[0].replace(/Railway Station/i, "").trim());
+  const formatTransportItem = (item, formatter, specificDistance) => {
+    if (!item) return "";
+    let name = "";
+    let dist = "";
+
+    if (typeof item === "string") {
+      name = item;
+      // Check if distance is embedded in string e.g. "Kochi (45 km)" or "Kochi - 45km"
+      const match = name.match(/\((\d+(?:\.\d+)?\s*(?:km|kms)?)\)/i) || name.match(/[-–]\s*(\d+(?:\.\d+)?\s*(?:km|kms)?)/i);
+      if (match) {
+        dist = formatDistanceValue(match[1]);
+        name = name.replace(match[0], "").trim();
+      }
+    } else if (typeof item === "object") {
+      name = item?.name || item?.title || item?.stationName || item?.airportName || item?.townName || "";
+      const itemDist = item?.distance ?? item?.distanceInKm ?? item?.dist ?? item?.distanceKm;
+      dist = formatDistanceValue(itemDist);
+    }
+
+    if (!dist && specificDistance) {
+      dist = formatDistanceValue(specificDistance);
+    }
+
+    const cleanedName = formatter ? formatter(name) : name;
+    if (!cleanedName) return "";
+    return dist ? `${cleanedName} (${dist})` : cleanedName;
+  };
+
+  const formatTransportListItems = (arr, singleStr, fallback, formatter, specificDistance) => {
+    let rawItems = [];
+    if (Array.isArray(arr) && arr.length > 0) {
+      rawItems = arr;
+    } else if (typeof singleStr === 'string' && singleStr.trim()) {
+      // Could be comma-separated string e.g. "Vagamon, Elappara"
+      rawItems = singleStr.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    if (!rawItems.length) {
+      return [{ name: fallback, distance: "" }];
+    }
+
+    const parsedList = rawItems.map(item => {
+      let name = "";
+      let dist = "";
+
+      if (typeof item === "string") {
+        name = item;
+        const match = name.match(/\((\d+(?:\.\d+)?\s*(?:km|kms)?)\)/i) || name.match(/[-–]\s*(\d+(?:\.\d+)?\s*(?:km|kms)?)/i);
+        if (match) {
+          dist = formatDistanceValue(match[1]);
+          name = name.replace(match[0], "").trim();
+        }
+      } else if (typeof item === "object") {
+        name = item?.name || item?.title || item?.stationName || item?.airportName || item?.townName || "";
+        const itemDist = item?.distance ?? item?.distanceInKm ?? item?.dist ?? item?.distanceKm;
+        dist = formatDistanceValue(itemDist);
+      }
+
+      if (!dist && specificDistance) {
+        dist = formatDistanceValue(specificDistance);
+      }
+
+      const cleanedName = formatter ? formatter(name) : name;
+      return { name: cleanedName, distance: dist };
+    }).filter(i => Boolean(i.name));
+
+    return parsedList.length > 0 ? parsedList : [{ name: fallback, distance: "" }];
+  };
+
+  const townItems = formatTransportListItems(
+    place?.nearestTowns,
+    place?.nearestTown,
+    "Not Specified",
+    (name) => name.split('/')[0]?.trim(),
+    place?.nearestTownDistance || place?.townDistance || place?.distanceFromNearestTown
+  );
+
+  const airportItems = formatTransportListItems(
+    place?.nearestAirports,
+    place?.nearestAirport,
+    "Not Specified",
+    (name) => name.split('(')[0].replace(/International Airport/i, "").trim().toUpperCase(),
+    place?.nearestAirportDistance || place?.airportDistance || place?.distanceFromNearestAirport
+  );
+
+  const railwayItems = formatTransportListItems(
+    place?.nearestRailwayStations,
+    place?.nearestRailway,
+    "Not Specified",
+    (name) => name.split('(')[0].replace(/Railway Station/i, "").trim(),
+    place?.nearestRailwayDistance || place?.railwayDistance || place?.distanceFromNearestRailway || place?.stationDistance
+  );
 
   const suitabilityTags = useMemo(() => {
     const raw = place?.suitableFor;
@@ -1718,7 +1813,7 @@ function VisitorInformation({ place }) {
   });
 
   return (
-    <section style={{ background: W, padding: isMobile ? "32px 0 24px" : "48px 80px" }}>
+    <section style={{ background: W, padding: isMobile ? "32px 0 12px" : "48px 80px 16px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto", padding: isMobile ? "0 16px" : 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: isMobile ? 18 : 32 }}>
           <div>
@@ -1975,32 +2070,70 @@ function VisitorInformation({ place }) {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div style={{ color: A, marginTop: 2 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {/* Nearest Town Row */}
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
+                      <div style={{ color: A, marginTop: 2, flexShrink: 0 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                       </div>
-                      <div>
-                        <span style={{ fontSize: 9, color: M, display: "block" }}>Nearest Town</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{formattedTowns}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 9, color: M, display: "block", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Nearest Town</span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 2 }}>
+                          {townItems.map((t, idx) => (
+                            <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                              <span style={{ fontWeight: 700, color: FG, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</span>
+                              {t.distance ? (
+                                <span style={{ fontSize: 10.5, fontWeight: 750, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                  {t.distance}
+                                </span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div style={{ color: A, marginTop: 2 }}>
+
+                    {/* Railway Terminal Row */}
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", paddingBottom: 6, borderBottom: `1px solid ${B}` }}>
+                      <div style={{ color: A, marginTop: 2, flexShrink: 0 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="3" width="16" height="18" rx="2" /><rect x="8" y="7" width="8" height="4" /><circle cx="10" cy="16" r="1" /><circle cx="14" cy="16" r="1" /></svg>
                       </div>
-                      <div>
-                        <span style={{ fontSize: 9, color: M, display: "block" }}>Railway Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{formattedRailways}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 9, color: M, display: "block", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Railway Terminal</span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 2 }}>
+                          {railwayItems.map((r, idx) => (
+                            <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                              <span style={{ fontWeight: 700, color: FG, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+                              {r.distance ? (
+                                <span style={{ fontSize: 10.5, fontWeight: 750, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                  {r.distance}
+                                </span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div style={{ color: A, marginTop: 2 }}>
+
+                    {/* Airport Terminal Row */}
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                      <div style={{ color: A, marginTop: 2, flexShrink: 0 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l8 2.5z" /></svg>
                       </div>
-                      <div>
-                        <span style={{ fontSize: 9, color: M, display: "block" }}>Airport Terminal</span>
-                        <span style={{ fontWeight: 700, color: FG, fontSize: 13, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{formattedAirports}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 9, color: M, display: "block", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Airport Terminal</span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 2 }}>
+                          {airportItems.map((a, idx) => (
+                            <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                              <span style={{ fontWeight: 700, color: FG, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</span>
+                              {a.distance ? (
+                                <span style={{ fontSize: 10.5, fontWeight: 750, color: A, background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.08)`, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap", flexShrink: 0 }}>
+                                  {a.distance}
+                                </span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2239,15 +2372,11 @@ function VisitorInformation({ place }) {
 
               {/* Card content bottom (Detached Stamp Stub) */}
               <div style={{ padding: "20px 28px 28px 28px", height: "30%", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "space-between", background: `rgba(${A === "#0097B2" ? "0, 151, 178" : "17, 17, 17"}, 0.02)` }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{
-                    width: 90,
-                    height: 24,
-                    background: FG,
-                    opacity: 0.1,
-                    backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 1px, ${FG} 1px, ${FG} 3px, transparent 3px, transparent 4px, ${FG} 4px, ${FG} 5px)`
-                  }} />
-                  <span className="font-mono" style={{ fontSize: 7, color: M }}>LKP-{place?.id || "99812"}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 9, color: M, display: "block" }}>Entry Verification</span>
+                  <span style={{ fontWeight: 700, color: FG, fontSize: 12 }}>
+                    {place?.placeCode || place?.code || (place?.id ? `LKP-${place.id}` : "Verified Location")}
+                  </span>
                 </div>
 
                 {/* Stamp Clipart */}
@@ -2430,6 +2559,11 @@ const parseGoodToKnowItems = (raw, defaults = []) => {
   return cleanItems.length > 0 ? cleanItems : defaults;
 };
 
+const parseSpecialRules = (raw) => {
+  if (!raw) return [];
+  return parseGoodToKnowItems(raw, []);
+};
+
 function GoodToKnow({ place }) {
   const { theme, tokens: { A, B, BG, FG, M, W, S, AL } } = useTheme();
   const isDark = theme === "dark";
@@ -2443,6 +2577,7 @@ function GoodToKnow({ place }) {
 
   const carryItems = parseGoodToKnowItems(place?.whatToCarry, DEFAULT_WHAT_TO_CARRY);
   const avoidItems = parseGoodToKnowItems(place?.thingsToAvoid, DEFAULT_THINGS_TO_AVOID);
+  const specialRules = parseSpecialRules(place?.specialRules || place?.specialRule || place?.rules);
 
   const feedbackBg = A === "#0097B2" ? "#f8f8f8" : S;
 
@@ -2470,7 +2605,7 @@ function GoodToKnow({ place }) {
                   background: W,
                   border: `1px solid ${B}`,
                   borderRadius: 24,
-                  padding: "24px 24px 20px 24px",
+                  padding: "28px 24px 20px 24px",
                   position: "relative",
                   boxShadow: "0 10px 30px rgba(0,0,0,0.01)",
                   height: "100%",
@@ -2494,36 +2629,27 @@ function GoodToKnow({ place }) {
 
 
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {carryItems.map(item => (
                       <div
                         key={item}
                         style={{
                           display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "8px 10px",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          padding: "8px 12px",
                           background: `${S}80`,
-                          borderRadius: 10
+                          borderRadius: 10,
+                          border: `1px dashed ${B}`
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: W, border: `1px solid ${B}`, flexShrink: 0 }}>
-                          <Check size={8} color={A} strokeWidth={3} />
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: W, border: `1px solid ${B}`, flexShrink: 0, marginTop: 1 }}>
+                          <Check size={9} color={A} strokeWidth={3} />
                         </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: FG }}>{item}</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: FG, lineHeight: 1.4 }}>{item}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Baggage Barcode Illustration */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: 20 }}>
-                  <div style={{ display: "flex", gap: 2, alignItems: "center", height: 16, opacity: 0.8 }}>
-                    {[2, 4, 1, 3, 1, 4, 2, 1, 3, 2, 4, 1, 2, 1, 3, 4, 1, 2, 3, 1, 4, 2].map((w, idx) => (
-                      <div key={idx} style={{ width: w, height: "100%", background: FG, opacity: idx % 3 === 0 ? 0.3 : 0.8 }} />
-                    ))}
-                  </div>
-                  <span style={{ fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.2em" }}>*LKP-{place?.id || "CURATOR"}*</span>
                 </div>
               </motion.div>
             </div>
@@ -2621,6 +2747,101 @@ function GoodToKnow({ place }) {
                 }} />
               </motion.div>
             </div>
+
+            {/* Special Rules Card (displayed when specialRules are provided from backend) */}
+            {specialRules.length > 0 && (
+              <div style={{ position: "relative" }}>
+                <motion.div
+                  whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,151,178,0.15)" }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  style={{
+                    background: isDark ? "rgba(0, 151, 178, 0.05)" : "#f0fafd",
+                    border: `1.5px solid ${isDark ? "rgba(0, 151, 178, 0.3)" : "rgba(0, 151, 178, 0.25)"}`,
+                    borderRadius: 24,
+                    padding: "28px 24px 20px 24px",
+                    position: "relative",
+                    overflow: "hidden",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.01)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    boxSizing: "border-box",
+                    height: "100%"
+                  }}
+                >
+                  {/* Top accent line */}
+                  <div style={{
+                    height: 4,
+                    background: `repeating-linear-gradient(-45deg, ${A}, ${A} 6px, transparent 6px, transparent 12px)`,
+                    width: "100%",
+                    position: "absolute",
+                    top: 0,
+                    left: 0
+                  }} />
+
+                  {/* Stamp Badge */}
+                  <div style={{
+                    border: `2px double ${A}`,
+                    color: A,
+                    fontFamily: "monospace",
+                    fontSize: 8,
+                    fontWeight: 900,
+                    padding: "4px 8px",
+                    borderRadius: 2,
+                    position: "absolute",
+                    top: 10,
+                    right: 14,
+                    transform: "rotate(6deg)",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    background: isDark ? "#0d1f26" : "#e6f7fa",
+                    zIndex: 5
+                  }}>
+                    OFFICIAL
+                  </div>
+
+                  <div>
+                    <div style={{ marginBottom: 14 }}>
+                      <span style={{ fontSize: 9, color: A, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 800 }}>Site Guidelines</span>
+                      <h4 style={{ fontSize: 18, fontWeight: 700, color: FG, margin: "2px 0 0 0", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', letterSpacing: "-0.02em" }}>Special Rules</h4>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {specialRules.map((rule, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 10,
+                            padding: "8px 12px",
+                            background: isDark ? "rgba(0, 151, 178, 0.08)" : "rgba(255, 255, 255, 0.7)",
+                            borderRadius: 10,
+                            border: `1px dashed ${isDark ? "rgba(0, 151, 178, 0.25)" : "rgba(0, 151, 178, 0.2)"}`
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: isDark ? "#08242d" : W, flexShrink: 0, marginTop: 1 }}>
+                            <ShieldAlert size={11} color={A} />
+                          </div>
+                          <span style={{ fontSize: 11.5, fontWeight: 600, color: FG, lineHeight: 1.4 }}>{rule}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Bottom accent line */}
+                  <div style={{
+                    height: 4,
+                    background: `repeating-linear-gradient(-45deg, ${A}, ${A} 6px, transparent 6px, transparent 12px)`,
+                    width: "100%",
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    opacity: 0.7
+                  }} />
+                </motion.div>
+              </div>
+            )}
 
           </div>
         </Rev>
@@ -3034,36 +3255,39 @@ function MobileHero({ place, galleryItems, id }) {
             type="button"
             onClick={(e) => { e.stopPropagation(); onClick(e); }}
             style={{
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               borderRadius: "50%",
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              border: `1px solid ${A}`,
+              background: theme === "dark" ? "rgba(20,20,20,0.85)" : "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: `1.5px solid ${A}55`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+              boxShadow: "0 6px 18px rgba(15,15,15,0.18)",
               outline: "none",
-              cursor: "pointer"
+              cursor: "pointer",
+              color: theme === "dark" ? FG : A,
+              transition: "transform 0.2s ease, border-color 0.2s ease"
             }}
-            aria-label="Save"
+            aria-label={saved ? "Remove from favorites" : "Save to favorites"}
           >
             <style>{`
               .mobile-save-icon-alt-${id} svg {
-                fill: ${saved ? (A || "#0097B2") : "#FFFFFF"};
+                fill: ${saved ? (A || "#0097B2") : "none"};
+                stroke: ${saved ? (A || "#0097B2") : "currentColor"};
                 transition: fill 0.3s ease;
               }
             `}</style>
             <div className={`mobile-save-icon-alt-${id}`} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name={saved ? "heart-fill" : "heart"} size={18} />
+              <Icon name={saved ? "heart-fill" : "heart"} size={20} />
             </div>
           </button>
         )}
       </Favorite>
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <button
           type="button"
           onClick={() => {
@@ -3071,55 +3295,92 @@ function MobileHero({ place, galleryItems, id }) {
             setLightboxOpen(true);
           }}
           style={{
-            height: 40,
-            borderRadius: 20,
+            height: 44,
+            borderRadius: 22,
             padding: "0 14px",
-            background: "rgba(0,0,0,0.45)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            color: "#FFFFFF",
+            background: theme === "dark" ? "rgba(20,20,20,0.85)" : "rgba(255,255,255,0.92)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: `1.5px solid ${A}40`,
+            color: FG,
             display: "flex",
             alignItems: "center",
             gap: 6,
             fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer"
+            fontWeight: 700,
+            cursor: "pointer",
+            boxShadow: "0 6px 18px rgba(15,15,15,0.15)"
           }}
         >
-          <Camera size={14} />
+          <Camera size={15} color={A} />
           {images.length}
         </button>
         <button
           type="button"
           onClick={handleMobileShare}
           style={{
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             borderRadius: "50%",
-            background: "rgba(0,0,0,0.45)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: `1px solid ${A}`,
+            background: theme === "dark" ? "rgba(20,20,20,0.85)" : "rgba(255,255,255,0.92)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: `1.5px solid ${A}55`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            boxShadow: "0 6px 18px rgba(15,15,15,0.18)",
             outline: "none",
-            cursor: "pointer"
+            cursor: "pointer",
+            color: theme === "dark" ? FG : A,
+            transition: "transform 0.2s ease, border-color 0.2s ease"
           }}
           aria-label="Share"
         >
-          <Share2 size={18} color="#FFFFFF" />
+          <Share2 size={19} color={theme === "dark" ? FG : A} />
         </button>
       </div>
     </div>
   );
 
+  const isDark = theme === "dark";
+
   return (
     <section style={{ background: BG, paddingTop: 0, position: "relative", overflow: "hidden" }}>
+      {/* Topography Mountain Background for Mobile Hero - 404-style dark mode adaptation */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "100%",
+          backgroundImage: `url(${topographyBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
+          opacity: isDark ? 0.85 : 0.75,
+          filter: isDark ? "invert(1) hue-rotate(180deg)" : "none",
+          mixBlendMode: isDark ? "screen" : "normal",
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+      {/* Subtle overlay gradient to keep text and cards perfectly legible */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: isDark
+            ? `linear-gradient(180deg, rgba(8,8,8,0.2) 0%, rgba(8,8,8,0.35) 40%, ${BG} 90%)`
+            : `linear-gradient(180deg, rgba(251,251,249,0.15) 0%, rgba(251,251,249,0.4) 40%, ${BG} 90%)`,
+          pointerEvents: "none",
+          zIndex: 2
+        }}
+      />
+
       {/* Journal Spread Carousel in mobile hero */}
-      <div style={{ position: "relative", overflow: "hidden", width: "100%", height: "clamp(380px, 58svh, 480px)", background: BG }}>
+      <div style={{ position: "relative", overflow: "hidden", width: "100%", height: "clamp(380px, 58svh, 480px)", background: "transparent", zIndex: 3 }}>
         <JournalSpreadCarousel
           spreads={spreads}
           title={placeName}
@@ -3514,6 +3775,7 @@ function MobileGoodToKnow({ place }) {
 
   const carryItems = parseGoodToKnowItems(place?.whatToCarry, DEFAULT_WHAT_TO_CARRY);
   const avoidItems = parseGoodToKnowItems(place?.thingsToAvoid, DEFAULT_THINGS_TO_AVOID);
+  const specialRules = parseSpecialRules(place?.specialRules || place?.specialRule || place?.rules);
 
   return (
     <section style={{ background: W, padding: "40px 16px", borderTop: `1px solid ${B}`, borderBottom: `1px solid ${B}` }}>
@@ -3561,18 +3823,6 @@ function MobileGoodToKnow({ place }) {
                   <span style={{ fontSize: 12, fontWeight: 600, color: FG }}>{item}</span>
                 </div>
               ))}
-            </div>
-
-            {/* Baggage Barcode */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: 18, opacity: 0.7 }}>
-              <div style={{
-                width: 110,
-                height: 20,
-                color: FG,
-                opacity: 0.15,
-                backgroundImage: `repeating-linear-gradient(90deg, currentColor, currentColor 1px, transparent 1px, transparent 3px, currentColor 3px, currentColor 4px, transparent 4px, transparent 6px)`
-              }} />
-              <span style={{ fontSize: 8, fontFamily: "monospace", color: M, letterSpacing: "0.1em" }}>*BAG-LKP-${place?.id || "PACK"}*</span>
             </div>
           </div>
         </div>
@@ -3641,6 +3891,74 @@ function MobileGoodToKnow({ place }) {
             ))}
           </div>
         </div>
+
+        {/* Special Rules - Mobile Site Guidelines Card (when provided) */}
+        {specialRules.length > 0 && (
+          <div style={{
+            background: isDark ? "rgba(0, 151, 178, 0.05)" : "#f0fafd",
+            border: `1.5px solid ${isDark ? "rgba(0, 151, 178, 0.3)" : "rgba(0, 151, 178, 0.25)"}`,
+            borderRadius: 24,
+            padding: "24px 20px 20px 20px",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.01)"
+          }}>
+            {/* Top accent line */}
+            <div style={{
+              height: 5,
+              background: `repeating-linear-gradient(-45deg, ${A}, ${A} 5px, transparent 5px, transparent 10px)`,
+              width: "100%",
+              position: "absolute",
+              top: 0,
+              left: 0
+            }} />
+
+            {/* Rotated Badge */}
+            <div style={{
+              border: `1.5px dashed ${A}`,
+              color: A,
+              fontFamily: "monospace",
+              fontSize: 7,
+              fontWeight: 900,
+              padding: "2px 6px",
+              borderRadius: 3,
+              position: "absolute",
+              top: 14,
+              right: 14,
+              transform: "rotate(6deg)",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              background: isDark ? "#0d1f26" : "#e6f7fa"
+            }}>
+              Official
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <span style={{ fontSize: 8, color: A, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 800, display: "block", marginBottom: 2 }}>Site Guidelines</span>
+              <h4 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, color: FG, margin: 0 }}>
+                <ShieldAlert size={16} color={A} /> Special Rules
+              </h4>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {specialRules.map((rule, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    padding: "8px 0",
+                    borderBottom: idx === specialRules.length - 1 ? "none" : `1px dashed ${isDark ? "rgba(0, 151, 178, 0.25)" : "rgba(0, 151, 178, 0.2)"}`
+                  }}
+                >
+                  <ShieldAlert size={14} color={A} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: FG, lineHeight: 1.4 }}>{rule}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </section>
@@ -3850,7 +4168,7 @@ function VisitingNotes({ place }) {
   const displayText = expanded ? rawText : (isLong ? rawText.substring(0, 250) + "..." : rawText);
 
   return (
-    <section style={{ background: W, padding: isMobile ? "32px 16px" : "48px 80px" }}>
+    <section style={{ background: W, padding: isMobile ? "12px 16px 24px" : "16px 80px 36px" }}>
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <Soul y={30}>
           <div style={{
@@ -3896,65 +4214,12 @@ function VisitingNotes({ place }) {
   );
 }
 
-function PremiumMarquee({ items, isMobile, fallbackItems }) {
-  const { theme, tokens } = useTheme();
-  const { A, B, BG, FG, M } = tokens;
-  
+function PremiumMarquee({ items, fallbackItems }) {
   const rawTags = Array.isArray(items) && items.length > 0
     ? items.map((t) => (typeof t === "string" ? t : t?.name || t?.title || t?.tag || t?.label || t?.value || "")).filter(Boolean)
     : (typeof items === "string" ? items.split(",").map(s=>s.trim()).filter(Boolean) : fallbackItems);
-    
   const marqueeItems = rawTags.length > 0 ? rawTags : fallbackItems;
-  const loopedTags = Array(12).fill(marqueeItems).flat();
-  const estimatedTagWidth = (tag) => tag.length * 9.5 + 75;
-  const tagsDistance = marqueeItems.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 6;
-  const tagsDuration = Math.max(tagsDistance / 60, 10);
-
-  return (
-    <div style={{ padding: isMobile ? "0 24px" : "0 80px" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", boxSizing: "border-box", width: "100%" }}>
-        <div style={{
-          margin: "0",
-          overflow: "hidden",
-          position: "relative",
-          padding: "20px 0",
-          background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-          borderTop: `1px solid ${B}`,
-          borderBottom: `1px solid ${B}`,
-        }}>
-
-
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-            style={{ display: "flex", alignItems: "center", width: "max-content" }}
-          >
-            {loopedTags.map((tag, idx) => {
-              const isEven = idx % 2 === 0;
-              return (
-                <div key={idx} style={{ display: "flex", alignItems: "center", gap: 24, marginRight: 32, whiteSpace: "nowrap" }}>
-                  <span
-                    style={{
-                      fontFamily: '"Inter", sans-serif',
-                      fontSize: isMobile ? "14px" : "18px",
-                      fontWeight: isEven ? 700 : 300,
-                      color: isEven ? FG : M,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      opacity: isEven ? 1 : 0.75
-                    }}
-                  >
-                    {tag}
-                  </span>
-                  <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-                </div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  );
+  return <DetailMarquee items={marqueeItems} />;
 }
 
 function MobilePlaceDetails({

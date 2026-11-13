@@ -364,3 +364,87 @@
     color: $n4
     +dark
         color: $n5
+
+// Checkout-only mobile treatment. Desktop retains the existing card layout.
+.price.mobileFlat
+    +m
+        padding: 0
+        border: 0
+        border-radius: 0
+        background: transparent
+        box-shadow: none
+        +dark
+            background: transparent
+            box-shadow: none
+
+        .body
+            margin-top: 0
+
+        .stage
+            margin-bottom: 16px
+
+        .table
+            margin-bottom: 20px
+
+        .row
+            padding: 12px 0
+
+            &:not(:last-child)
+                margin-bottom: 0
+                padding-bottom: 12px
+
+            &:last-child
+                margin-top: 0
+                padding: 16px 0 0
+                background: transparent
+                border-radius: 0
+
+        .mainLabel
+            font-size: 14px
+
+        .calculationLabel
+            font-size: 12px
+
+        .highlightedAmount
+            margin: 0
+            padding: 16px 0
+            border: 0
+            border-top: 1px solid rgba($p1, 0.25)
+            border-bottom: 1px solid rgba($p1, 0.25)
+            border-radius: 0
+            background: transparent
+            +dark
+                background: transparent
+
+        .amountValue
+            font-size: 18px
+
+        .checkoutAction
+            margin-top: 16px
+
+        .cancellation
+            margin-top: 20px
+            padding: 16px 0 0
+            border-top: 1px solid $n6
+            border-radius: 0
+            background: transparent
+            +dark
+                border-color: $n3
+                background: transparent
+
+        .addOnsSection
+            margin: 24px 0 0
+            padding: 20px 0 0
+            border-top: 1px solid $n6
+            border-bottom: 0
+            +dark
+                border-color: $n3
+
+        .addOnItem
+            padding: 10px 0
+            border-bottom: 1px solid $n6
+            border-radius: 0
+            background: transparent
+            +dark
+                border-color: $n3
+                background: transparent

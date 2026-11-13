@@ -6,7 +6,9 @@
   margin: 0 auto
   position: relative
   background-color: #02203c !important
-  overflow: hidden
+  // The wave intentionally extends above the footer. Clipping it here exposes
+  // the dark footer background as a hairline on some Android pixel ratios.
+  overflow: visible
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important
   text-align: left !important
   -webkit-font-smoothing: antialiased
@@ -38,10 +40,10 @@
 
 .waveMask
   position: absolute
-  top: -1px
+  top: -4px
   left: 0
   width: 100%
-  height: 2.5rem
+  height: calc(2.5rem + 4px)
   overflow: hidden
   line-height: 1
   z-index: 10
@@ -54,10 +56,14 @@
     height: 8rem
 
   svg
+    display: block
+    position: absolute
+    inset: 0
     width: 100%
     height: 100%
-    color: var(--BG, #fff)
-    fill: var(--BG, #fff) !important
+    color: var(--W, #fff)
+    fill: var(--W, #fff) !important
+    stroke: none !important
     +dark
       fill: var(--BG, #080808) !important
 
@@ -65,7 +71,7 @@
   position: relative
   z-index: 20
   color: #fff !important
-  padding: 1.5rem 1rem calc(6rem + env(safe-area-inset-bottom, 0px))
+  padding: 1.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px))
 
   @media (min-width: 768px)
     padding-top: 5rem

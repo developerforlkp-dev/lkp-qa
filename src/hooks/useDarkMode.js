@@ -102,8 +102,8 @@ const useDarkMode = (initialState = false) => {
       Math.hypot(x, window.innerHeight - y),
       Math.hypot(window.innerWidth - x, window.innerHeight - y)
     ];
-    // Add 15% padding so the corners never slow down visibly as it settles
-    const endRadius = Math.max(...distances) * 1.15;
+    // Keep a small safety margin without adding a long, invisible animation tail.
+    const endRadius = Math.max(...distances) * 1.05;
 
     const xPercent = (x / window.innerWidth) * 100;
     const yPercent = (y / window.innerHeight) * 100;
@@ -125,7 +125,7 @@ const useDarkMode = (initialState = false) => {
       ${isReversed ? `
         ::view-transition-old(root) {
           z-index: 9999;
-          animation: theme-shrink 800ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+          animation: theme-shrink 380ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
         }
         ::view-transition-new(root) {
           z-index: 1;
@@ -142,7 +142,7 @@ const useDarkMode = (initialState = false) => {
         }
         ::view-transition-new(root) {
           z-index: 9999;
-          animation: theme-expand 800ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+          animation: theme-expand 380ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
         }
         @keyframes theme-expand {
           0% { clip-path: circle(0px at ${xPercent}% ${yPercent}%); }

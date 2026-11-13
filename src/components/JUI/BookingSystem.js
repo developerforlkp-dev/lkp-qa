@@ -1619,7 +1619,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     });
   }, [isSingleEventSchedule, lockedSingleEventDate]);
 
-  const resetBookingFormState = useCallback(() => {
+  const resetBookingFormState = useCallback(({ preserveAddons = false } = {}) => {
     if (isSingleEventSchedule && lockedSingleEventDate) {
       setStartDate(lockedSingleEventDate.clone());
     } else if (initialDate) {
@@ -1653,6 +1653,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
     setApiPayableLoading(false);
     setErrorPopup({ visible: false, title: "", message: "", reason: "", ctaLabel: "Adjust Now" });
 
+    if (preserveAddons) return;
+
     if (typeof onClearAddons === "function") {
       onClearAddons();
     } else if (Array.isArray(selectedAddOns) && selectedAddOns.length > 0 && typeof onUpdateAddonQuantity === "function") {
@@ -1679,7 +1681,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
   useEffect(() => {
     if (externalOpen === true && !show && !externalOpenHandledRef.current) {
       externalOpenHandledRef.current = true;
-      resetBookingFormState();
+      resetBookingFormState({ preserveAddons: true });
       setShow(true);
     }
   }, [externalOpen, show, resetBookingFormState]);
@@ -1903,12 +1905,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
           // Open the booking form automatically to deliver a flawless, continuous UX
           setShow(true);
+          if (onExternalOpenChange) {
+            onExternalOpenChange(true);
+          }
         }
       }
     } catch (e) {
       console.error("Failed to restore booking state:", e);
     }
-  }, [listing?.listingId, listing?.id, listing?.eventId, listing?.stayId]);
+  }, [listing?.listingId, listing?.id, listing?.eventId, listing?.stayId, onExternalOpenChange]);
 
   const selectedTicket = useMemo(() => {
     if (!isEventBooking) return null;
@@ -3343,6 +3348,15 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       };
       calculationFn = calculateEventTotal;
     } else if (isDirect && directToken) {
+      // Wait for the slot-loading effect so the first preview uses settled
+      // slot data rather than requesting again when that data arrives.
+      if (slotsLoading || !dateFilteredSlotsLoaded) {
+        calculationVersionRef.current += 1;
+        if (calculateDebounceTimerRef.current) clearTimeout(calculateDebounceTimerRef.current);
+        lastCalculatedPayloadRef.current = "";
+        return;
+      }
+
       const adultCount = Number(guests?.adults || 0);
       const childCount = Number(guests?.children || 0);
       const totalGuests = (adultCount + childCount) || 1;
@@ -4648,21 +4662,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
   const handleOpenBooking = useCallback(() => {
     if (triggerDisabled) return;
-    resetBookingFormState();
+    resetBookingFormState({ preserveAddons: true });
     setShow(true);
 
-    if (isEventBooking || (!listingId && !directToken) || !slotsLookupEndDate) return;
-
-    if (isDirect && directToken) {
-      getPublicDirectBookingOfflineReservationSlots(directToken)
-        .then((payload) => {
-          setDirectOfflineSlotsData(payload);
-          const slots = unwrapSlotsPayload(payload);
-          setAllFetchedSlots(slots);
-        })
-        .catch((e) => console.error("[BookingSystem] Error fetching direct slots", e));
-      return;
-    }
+    // Direct slots are loaded by the effect shared with external modal opens.
+    if (isDirect || isEventBooking || !listingId || !slotsLookupEndDate) return;
 
     getListingSlots(listingId, getIndiaDateKey(), slotsLookupEndDate)
       .then((payload) => {
@@ -4676,7 +4680,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
         if (hasPrivate) setHasAnyPrivateBookingAvailable(true);
       })
       .catch((e) => console.error("[BookingSystem] Error fetching slots for private booking check", e));
-  }, [isEventBooking, listingId, selectedDateKey, slotsLookupEndDate, triggerDisabled]);
+  }, [isDirect, isEventBooking, listingId, slotsLookupEndDate, triggerDisabled, resetBookingFormState]);
 
   // Check if all experience dates/slots are in the past
   const isExperienceClosed = useMemo(() => {
@@ -4732,7 +4736,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           whileTap={triggerDisabled ? undefined : { scale: 0.96 }}
           disabled={triggerDisabled}
           title={isFreeEvent ? "Free Event" : (triggerDisabled ? ticketSaleWindow.message : undefined)}
-          className="booking-trigger"
+          className="booking-trigger mobile-reserve-cta"
           style={{
             position: "fixed",
             bottom: 30,
@@ -4757,8 +4761,13 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             transition: "background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1)"
           }}
         >
-          <IconComp size={22} />
-          {isFreeEvent ? "Free Event" : (triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : triggerLabel)}
+          <IconComp className="mobile-reserve-cta__icon" size={22} fill="none" aria-hidden="true" />
+          <span className="mobile-reserve-cta__label mobile-reserve-cta__desktop-label">
+            {isFreeEvent ? "Free Event" : (triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : triggerLabel)}
+          </span>
+          <span className="mobile-reserve-cta__label mobile-reserve-cta__mobile-label">
+            {isFreeEvent ? "Free Event" : (triggerDisabled ? (ticketSaleWindow.status === "upcoming" ? "Booking Not Open" : "Booking Closed") : (type === "event" ? "Reserve Event" : triggerLabel))}
+          </span>
         </motion.button>
       )}
       {!hideTrigger && triggerDisabled && !isFreeEvent && (
@@ -4851,7 +4860,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                 <>
                   {/* Header */}
                   <div className="booking-modal-header" style={{ padding: "16px 28px", borderBottom: `1px solid ${B}88`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
-                    <div style={{ flexShrink: 0 }}>
+                    <div className="booking-modal-heading" style={{ flexShrink: 0 }}>
                       <h2 style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: A, marginBottom: 2, lineHeight: "1.2" }}>
                         {isEventBooking ? "Reserve Your Event" : "Reserve Your Experience"}
                       </h2>
@@ -4893,35 +4902,40 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                       </div>
                     </div>
 
-                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
+                    <div className="booking-modal-actions" style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
                       {!isDirect && experienceSupportsPrivateBooking && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 8 }}>
+                        <div className="booking-private-control" style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 8 }}>
                           <span style={{ fontSize: 12, fontWeight: 700, color: FG }}>Private Booking</span>
                           <button
+                            className="booking-private-switch"
                             type="button"
+                            aria-label="Toggle private booking"
+                            aria-pressed={privateBooking}
                             onClick={() => {
                               setPrivateBooking((value) => !value);
                               setCalculateError(null);
                             }}
                             style={{
-                              width: 36,
-                              height: 20,
+                              width: 42,
+                              height: 24,
                               borderRadius: 999,
-                              background: privateBooking ? A : B,
+                              background: privateBooking ? `linear-gradient(135deg, ${A}, ${AH})` : S,
                               padding: 2,
                               display: "flex",
-                              justifyContent: privateBooking ? "flex-end" : "flex-start",
-                              transition: "0.2s",
+                              justifyContent: "flex-start",
+                              transition: "background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
                               cursor: "pointer",
-                              border: "none",
-                              alignItems: "center"
+                              border: `1px solid ${privateBooking ? A : B}`,
+                              alignItems: "center",
+                              boxShadow: privateBooking ? `0 0 0 3px ${AL}, inset 0 1px 0 rgba(255,255,255,0.22)` : `inset 0 1px 2px ${B}`,
+                              WebkitTapHighlightColor: "transparent"
                             }}
                           >
-                            <span style={{ width: 16, height: 16, borderRadius: "50%", background: W, display: "block" }} />
+                            <span style={{ width: 18, height: 18, borderRadius: "50%", background: W, display: "block", transform: privateBooking ? "translateX(18px)" : "translateX(0)", transition: "transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)", boxShadow: "0 2px 5px rgba(0,0,0,0.2)" }} />
                           </button>
                         </div>
                       )}
-                      <button type="button" onClick={closeBookingModal} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
+                      <button className="booking-modal-close" type="button" aria-label="Close booking" onClick={closeBookingModal} style={{ background: S, border: `1px solid ${B}`, padding: 8, borderRadius: 100, cursor: "pointer", color: FG, display: "flex", alignItems: "center", justifyContent: "center", transition: "0.3s" }}>
                         <X size={18} />
                       </button>
                     </div>
@@ -6247,7 +6261,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
 
                         // Keep the confirmed total in place while refreshing it to avoid
                         // replacing the price with a shimmer on every guest change.
-                        if (apiPayableLoading && apiPayableAmount == null) {
+                        if (apiPayableAmount == null && (apiPayableLoading || (isDirect && currentTotalGuests > 0 && !calculateError && !slotsError))) {
                           return (
                             <>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, height: 26, marginTop: 4 }}>
@@ -6268,7 +6282,7 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
                           );
                         }
 
-                        if (isDirect && currentTotalGuests > 0 && finalTotal != null && Number.isFinite(finalTotal) && finalTotal > 0) {
+                        if (isDirect && currentTotalGuests > 0 && (calculateError || slotsError) && finalTotal != null && Number.isFinite(finalTotal) && finalTotal > 0) {
                           return (
                             <>
                               <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{Number(finalTotal).toFixed(2)}</span>
@@ -6459,6 +6473,11 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           position: relative !important;
         }
 
+        .booking-private-switch:focus-visible {
+          outline: 2px solid ${A} !important;
+          outline-offset: 3px !important;
+        }
+
         .SingleDatePicker_picker,
         .SingleDatePickerPortal,
         .DateRangePicker_picker,
@@ -6486,8 +6505,8 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
           .booking-modal-wrapper { padding: 0 !important; align-items: flex-end !important; }
           .booking-modal-container { 
             width: 100% !important; 
-            height: 95vh !important; 
-            max-height: 100vh !important; 
+            height: 88dvh !important;
+            max-height: 88dvh !important;
             border-radius: 24px 24px 0 0 !important; 
             margin: 0 !important;
           }
@@ -6498,30 +6517,67 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
             grid-template-columns: 1fr !important;
           }
           .booking-grid { grid-template-columns: 1fr !important; }
-          .booking-modal-header { padding: 24px 20px !important; }
-          .booking-modal-column { padding: 32px 20px !important; }
+          .booking-modal-header {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            grid-template-areas:
+              "heading close"
+              "private private" !important;
+            align-items: start !important;
+            padding: 14px 20px 12px !important;
+            gap: 10px 12px !important;
+          }
+          .booking-modal-heading {
+            grid-area: heading;
+            min-width: 0 !important;
+            flex-shrink: 1 !important;
+          }
+          .booking-modal-actions { display: contents !important; }
+          .booking-private-control {
+            grid-area: private;
+            width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            justify-content: space-between !important;
+            margin: 0 !important;
+            padding: 9px 11px !important;
+            border: 1px solid ${B} !important;
+            border-radius: 12px !important;
+            background: ${S} !important;
+          }
+          .booking-private-switch { flex: 0 0 auto !important; }
+          .booking-modal-close {
+            grid-area: close;
+            width: 32px !important;
+            height: 32px !important;
+            padding: 0 !important;
+            flex: 0 0 32px !important;
+          }
+          .booking-modal-column { padding: 16px 20px !important; gap: 10px !important; border-bottom: 1px solid ${B}88 !important; }
+          .booking-modal-column:last-child { border-bottom: 0 !important; }
+          .booking-grid { gap: 0 !important; }
           .booking-modal-footer { 
             flex-direction: column !important; 
-            gap: 16px !important; 
-            padding: 20px !important; 
+            gap: 10px !important;
+            padding: 12px 20px max(12px, env(safe-area-inset-bottom)) !important;
             align-items: stretch !important;
             text-align: center !important;
             flex-shrink: 0 !important;
             background: ${BG} !important;
-            box-shadow: 0 -8px 24px rgba(0,0,0,0.12) !important;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.08) !important;
             border-top: 1px solid ${B} !important;
           }
-          .booking-modal-footer button { width: 100% !important; padding: 14px 20px !important; font-size: 16px !important; }
+          .booking-modal-footer button { width: 100% !important; padding: 12px 20px !important; font-size: 15px !important; }
           .booking-modal-closed { padding: 40px 20px !important; }
           
           .booking-trigger {
-            bottom: 24px !important;
+            bottom: max(24px, env(safe-area-inset-bottom, 0px)) !important;
             right: 20px !important;
             left: 20px !important;
             width: calc(100% - 40px) !important;
             justify-content: center !important;
-            padding: 16px 32px !important;
-            font-size: 16px !important;
+            padding: 0 24px !important;
+            font-size: 15px !important;
             font-weight: 800 !important;
             letter-spacing: 0.05em !important;
             text-transform: uppercase !important;

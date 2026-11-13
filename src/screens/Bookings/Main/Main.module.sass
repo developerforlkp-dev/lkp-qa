@@ -1,10 +1,12 @@
 @import ../../../styles/helpers
 
+$bookings-accent: #0097B2
+
 .section
     padding-top: 40px
     padding-bottom: 80px
     +m
-        padding-top: 8px !important
+        padding-top: 0 !important
         padding-bottom: 64px
 
 .container
@@ -23,13 +25,11 @@
     margin-bottom: 40px
     +m
         margin-bottom: 16px
-        padding-top: 16px
-        position: sticky
-        top: 0
-        z-index: 10
-        background: $n8
+        padding-top: 4px
+        position: static
+        background: transparent
         +dark
-            background: $n1
+            background: transparent
 
 .heading
     display: flex
@@ -46,7 +46,7 @@
 .title
     margin: 0
     +m
-        font-size: 20px
+        font-size: 22px
         line-height: 1.3
         text-align: center
 
@@ -74,15 +74,13 @@
     margin-bottom: 32px
     +m
         margin-bottom: 24px
-        position: sticky
-        top: 64px
-        z-index: 10
-        background: $n8
+        position: static
+        background: transparent
         padding-bottom: 16px
         margin: 0 -20px
         padding: 0 20px 16px
         +dark
-            background: $n1
+            background: transparent
 
 .tabs
     display: flex
@@ -138,18 +136,18 @@
 
 .tabActive
     color: $n2
-    border-bottom-color: $p4
+    border-bottom-color: $bookings-accent
     +dark
         color: $n8
-        border-bottom-color: $p4
+        border-bottom-color: $bookings-accent
     +m
-        background: $p4
+        background: $bookings-accent
         color: $n8
-        border-color: $p4
+        border-color: $bookings-accent
         +dark
-            background: $p4
+            background: $bookings-accent
             color: $n8
-            border-color: $p4
+            border-color: $bookings-accent
     &:hover
         color: $n2
         +dark
@@ -176,7 +174,7 @@
         font-size: 11px
 
 .tabActive .count
-    background: $p4
+    background: $bookings-accent
     color: $n8
     +m
         background: $n8
@@ -202,7 +200,7 @@
     flex-direction: column
     gap: 24px
     +m
-        gap: 20px
+        gap: 18px
 
 .card
     display: flex
@@ -220,18 +218,27 @@
         background: $n1
         border-color: $n3
     +m
-        flex-direction: row
-        gap: 16px
-        align-items: flex-start
-        padding: 16px
+        display: grid
+        grid-template-columns: 104px minmax(0, 1fr)
+        column-gap: 16px
+        row-gap: 18px
+        align-items: start
+        padding: 18px
         min-height: auto
         height: auto
+        border-radius: 22px
+        border-color: rgba(20, 23, 31, .08)
+        box-shadow: 0 10px 30px rgba(20, 23, 31, .07)
+        overflow: visible
+        +dark
+            border-color: rgba(255, 255, 255, .1)
+            box-shadow: 0 12px 32px rgba(0, 0, 0, .28)
     &:hover
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08)
-        border-color: $p4
+        border-color: $bookings-accent
         +dark
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3)
-            border-color: $p4
+            border-color: $bookings-accent
 
 .media
     flex: 0 0 180px
@@ -243,11 +250,14 @@
     +dark
         background: $n2
     +m
-        flex: 0 0 88px
-        width: 88px
-        height: 88px
-        border-radius: 12px
-        margin-top: 4px
+        grid-column: 1
+        grid-row: 1
+        width: 104px
+        height: 104px
+        min-width: 104px
+        border-radius: 16px
+        margin: 0
+        box-shadow: 0 6px 18px rgba(20, 23, 31, .12)
     img
         width: 100%
         height: 100%
@@ -261,8 +271,7 @@
     justify-content: center
     padding: 16px 16px 16px 0
     +m
-        padding: 0
-        min-width: 0
+        display: contents
 
 .bodyTop
     display: flex
@@ -270,16 +279,18 @@
     gap: 20px
     align-items: center
     +m
-        flex-direction: column
-        gap: 12px
-        align-items: stretch
+        display: contents
 
 .meta
     flex: 1
     min-width: 0
     +m
+        grid-column: 2
+        grid-row: 1
         display: flex
         flex-direction: column
+        align-self: stretch
+        justify-content: center
 
 .typeRow
     display: flex
@@ -288,8 +299,9 @@
     margin-bottom: 4px
     flex-wrap: wrap
     +m
-        order: 2
-        margin-bottom: 8px
+        order: 1
+        margin-bottom: 7px
+        gap: 6px
 
 .type
     +caption-bold-2
@@ -319,9 +331,10 @@
     +dark
         color: $n8
     +m
-        order: 1
-        font-size: 16px
-        margin-bottom: 4px
+        order: 2
+        font-size: 17px
+        line-height: 1.25
+        margin-bottom: 8px
         display: -webkit-box
         -webkit-line-clamp: 2
         -webkit-box-orient: vertical
@@ -334,7 +347,7 @@
     margin-bottom: 8px
     +m
         order: 5
-        margin-top: 4px
+        margin: 5px 0 0
 
 .rating
     flex-shrink: 0
@@ -357,7 +370,8 @@
         color: $n5
     +m
         font-size: 13px
-        gap: 6px
+        line-height: 1.35
+        gap: 7px
     svg
         fill: $n4
         flex-shrink: 0
@@ -372,10 +386,24 @@
 .locationRow
     +m
         order: 3
+        margin-bottom: 6px
+        color: $n3
+        font-weight: 600
+        +dark
+            color: $n6
 
 .dateRow
     +m
         order: 4
+        margin-bottom: 0
+
+.statusBadge
+    +m
+        min-height: 24px
+        padding: 5px 9px !important
+        border-radius: 8px !important
+        font-size: 10px !important
+        letter-spacing: .06em !important
 
 .actions
     display: flex
@@ -384,10 +412,34 @@
     align-items: flex-end
     flex-shrink: 0
     +m
-        flex-direction: row
-        flex-wrap: wrap
-        align-items: flex-start
+        grid-column: 1 / -1
+        grid-row: 2
+        display: grid
+        grid-template-columns: repeat(auto-fit, minmax(76px, 1fr))
+        gap: 10px
         width: 100%
+        padding-top: 16px
+        border-top: 1px solid $n6
+        align-items: stretch
+        +dark
+            border-color: $n3
+
+.actionIcon
+    display: none
+
+.actionLabelMobile
+    display: none
+
+.actionLabelDesktop
+    display: inline
+
+.primaryAction
+    background: $bookings-accent !important
+    border-color: $bookings-accent !important
+    color: $n8 !important
+    &:hover
+        background: darken($bookings-accent, 5%) !important
+        border-color: darken($bookings-accent, 5%) !important
 
 // Specific class for action buttons to ensure uniform dimensions
 // Target all possible combinations to override global styles
@@ -423,15 +475,27 @@ button.actionButton.button.button-small
     overflow: hidden !important
     text-overflow: ellipsis !important
     +m
-        flex: 1 1 auto !important
+        flex: 1 1 0 !important
         min-width: 0 !important
         width: 100% !important
         max-width: 100% !important
-        min-height: 36px !important
-        height: 36px !important
-        max-height: 36px !important
+        min-height: 48px !important
+        height: 48px !important
+        max-height: 48px !important
         line-height: 1 !important
-        border-radius: 100px !important
+        border-radius: 14px !important
+        padding: 0 10px !important
+        gap: 7px !important
+        font-size: 13px !important
+        font-weight: 700 !important
+        box-shadow: none !important
+        .actionIcon
+            display: block
+            flex: 0 0 auto
+        .actionLabelDesktop
+            display: none
+        .actionLabelMobile
+            display: inline
 
 // Fallback for any buttons in actions container
 .actions > *,
@@ -462,14 +526,28 @@ button.actionButton.button.button-small
     overflow: hidden !important
     text-overflow: ellipsis !important
     +m
-        flex: 1 1 auto !important
-        min-width: 0
+        flex: 1 1 0 !important
+        min-width: 0 !important
         width: 100% !important
         max-width: 100% !important
-        min-height: 40px !important
-        height: 40px !important
-        max-height: 40px !important
+        min-height: 48px !important
+        height: 48px !important
+        max-height: 48px !important
         line-height: 1 !important
+        border-radius: 14px !important
+        padding: 0 10px !important
+        gap: 7px !important
+        font-size: 13px !important
+
+.cancelAction
+    +m
+        color: #D92D20 !important
+        background: rgba(217, 45, 32, .03) !important
+        border-color: rgba(217, 45, 32, .7) !important
+        &:hover
+            color: #B42318 !important
+            background: rgba(217, 45, 32, .08) !important
+            border-color: #D92D20 !important
 
 .ghostButton
     background: transparent
@@ -530,16 +608,18 @@ button.actionButton.button.button-small
 
 // Cancel Modal Styles
 .cancelModalOuter
-    max-width: 560px
+    max-width: 520px
     +m
-        max-width: calc(100% - 40px)
+        max-width: calc(100% - 32px)
+        margin: 0 auto auto !important
     & > div
         padding: 0
 
 .confirmCancelModalOuter
     max-width: 520px
     +m
-        max-width: calc(100% - 40px)
+        max-width: calc(100% - 32px)
+        margin: 0 auto auto !important
     & > div
         padding: 0
 
@@ -558,7 +638,7 @@ button.actionButton.button.button-small
         border-radius: 16px
 
 .cancelModalContentScrollable
-    max-height: min(88vh, 760px)
+    max-height: min(88dvh, 720px)
 
 .cancelModalBodyScrollable
     flex: 1 1 auto
@@ -575,6 +655,39 @@ button.actionButton.button.button-small
         background: $n1
     +m
         border-radius: 16px
+
+.cancelFlowStage
+    display: grid
+    width: 100%
+    overflow: hidden
+    border: 1px solid rgba(20, 23, 31, .08)
+    border-radius: 20px
+    background: $n8
+    box-shadow: 0 24px 64px rgba(20, 23, 31, .18)
+    transform-origin: top center
+    +dark
+        border-color: rgba(255, 255, 255, .1)
+        background: $n1
+        box-shadow: 0 24px 72px rgba(0, 0, 0, .48)
+    +m
+        border-radius: 16px
+
+    > .bookingCancelModal,
+    > .confirmCancelModalContent
+        grid-area: 1 / 1
+        width: 100%
+        align-self: start
+        border: 0
+        border-radius: inherit
+        box-shadow: none
+
+    .confirmCancelModalContent .cancelModalHeader
+        padding: 24px 56px 16px 24px
+
+    .confirmCancelModalContent .cancelModalTitle
+        margin: 0
+        font-size: 20px
+        line-height: 1.3
 
 .cancelModalHeader
     padding: 32px 32px 24px
@@ -641,36 +754,57 @@ button.actionButton.button.button-small
 .reasonList
     display: flex
     flex-direction: column
-    gap: 10px
+    gap: 0
+    border-top: 1px solid $n6
+    background: transparent
+    +dark
+        border-top-color: rgba(255, 255, 255, .12)
 
 .reasonItem
+    appearance: none
+    width: 100%
+    min-height: 48px
     display: flex
     justify-content: space-between
     align-items: center
-    padding: 18px 20px
-    border: 1px solid $n6
-    border-radius: 8px
+    gap: 16px
+    padding: 12px 0
+    border: 0
+    border-bottom: 1px solid $n6
+    border-radius: 0
     cursor: pointer
-    background-color: $n8
-    transition: all 0.2s ease
+    background-color: transparent
+    font-family: inherit
+    text-align: left
+    outline: none
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease
+    &:last-child
+        border-bottom: 0
     +dark
-        border-color: $n3
-        background-color: $n1
+        border-bottom-color: rgba(255, 255, 255, .1)
+        background-color: transparent
+    &:hover
+        .reasonText
+            color: $bookings-accent
+    &:focus-visible
+        outline: 2px solid rgba($bookings-accent, .65)
+        outline-offset: -2px
     &.active
-        border-color: $p4
-        background-color: rgba($p4, 0.05)
+        background-color: transparent
+        box-shadow: none
         +dark
-            border-color: $p4
-            background-color: rgba($p4, 0.1)
+            background-color: transparent
 
 .reasonText
     font-size: 15px
+    line-height: 1.45
     color: $n2
-    font-weight: 400
+    font-weight: 500
     +dark
         color: $n8
     &.active
-        font-weight: 500
+        color: $bookings-accent
+        font-weight: 600
 
 .reasonRadio
     width: 20px
@@ -686,13 +820,14 @@ button.actionButton.button.button-small
         background-color: $n1
         border-color: $n4
     &.active
-        border-color: $p4
+        border-color: $bookings-accent
+        background-color: rgba($bookings-accent, .08)
 
 .reasonRadioInner
-    width: 10px
-    height: 10px
+    width: 8px
+    height: 8px
     border-radius: 50%
-    background-color: $p4
+    background-color: $bookings-accent
 
 .cancelPolicyText
     +body-2
@@ -779,8 +914,8 @@ button.actionButton.button.button-small
         color: $n8
     &:focus
         outline: none
-        border-color: $p4
-        box-shadow: 0 0 0 3px rgba($p4, 0.1)
+        border-color: $bookings-accent
+        box-shadow: 0 0 0 3px rgba($bookings-accent, 0.1)
     &:disabled
         opacity: 0.6
         cursor: not-allowed
@@ -811,13 +946,13 @@ button.actionButton.button.button-small
         color: $n8
     &:hover
         .cancelModalCheckbox
-            border-color: $p4
+            border-color: $bookings-accent
 
 .cancelModalCheckbox
     width: 18px
     height: 18px
     cursor: pointer
-    accent-color: $p4
+    accent-color: $bookings-accent
     &:disabled
         opacity: 0.6
         cursor: not-allowed
@@ -844,6 +979,125 @@ button.actionButton.button.button-small
         flex-direction: column-reverse
         padding: 20px 24px 24px
         gap: 12px
+
+// Booking cancellation dialog only. Other dialogs reuse the generic modal
+// classes above, so the new visual treatment stays scoped to this flow.
+.bookingCancelModal
+    .cancelModalHeader
+        padding: 24px 56px 16px 24px
+
+    .cancelModalTitle
+        margin: 0 0 8px
+        font-size: 22px
+        line-height: 1.25
+        letter-spacing: -.01em
+
+    .cancelModalDescription
+        max-width: 400px
+        font-size: 14px
+        line-height: 1.55
+
+    .cancelModalBody
+        padding: 0 24px 24px
+
+    .cancelModalBodyScrollable
+        padding-bottom: 24px
+
+    .cancelPolicyBox
+        margin-bottom: 0
+
+    .cancelPolicyLabel.uppercase
+        margin-bottom: 16px
+        font-size: 11px
+        line-height: 1.45
+        letter-spacing: .08em
+        color: $n4
+        +dark
+            color: $n5
+
+.otherReasonGroup
+    margin-top: 16px
+    margin-bottom: 0
+
+.otherReasonLabel
+    margin-bottom: 8px
+    font-size: 11px
+    line-height: 1.45
+    font-weight: 700
+    letter-spacing: .08em
+    text-transform: uppercase
+    color: $n4
+    +dark
+        color: $n5
+
+.bookingCancelModal .cancelModalTextarea
+    min-height: 96px
+    padding: 16px
+    resize: none
+    border-radius: 12px
+    background: $n7
+    +dark
+        background: rgba(255, 255, 255, .025)
+        border-color: rgba(255, 255, 255, .12)
+
+.characterCount
+    margin-top: 8px
+    text-align: right
+    font-size: 12px
+    line-height: 1.3
+    color: $n4
+    +dark
+        color: $n5
+
+.bookingCancelModal .cancelModalError
+    margin-top: 16px
+
+.bookingCancelFooter
+    gap: 8px
+    padding: 16px 24px 24px
+    justify-content: flex-end
+    background: $n8
+    +dark
+        background: $n1
+    +m
+        gap: 8px
+        padding: 16px 24px 24px
+
+.bookingCancelPrimaryButton,
+.bookingCancelSecondaryButton
+    flex: 1
+    min-width: 0
+    height: 48px
+    padding: 0 24px
+    border-radius: 999px
+    justify-content: center
+    font-size: 14px
+    font-weight: 700
+    &:disabled
+        cursor: not-allowed
+        opacity: .48
+    +m
+        flex: none
+        width: 100%
+
+.bookingCancelPrimaryButton
+    border: 1px solid $bookings-accent !important
+    background: $bookings-accent !important
+    color: $n8 !important
+    &:not(:disabled):hover
+        border-color: darken($bookings-accent, 5%) !important
+        background: darken($bookings-accent, 5%) !important
+
+.bookingCancelSecondaryButton
+    border-color: $n5 !important
+    background: transparent !important
+    color: $n2 !important
+    +dark
+        border-color: $n4 !important
+        color: $n8 !important
+    &:not(:disabled):hover
+        border-color: $bookings-accent !important
+        color: $bookings-accent !important
 
 .cancelModalBtn
     flex: 1
@@ -902,3 +1156,43 @@ button.actionButton.button.button-small
         max-width: calc(100% - 40px)
     & > div
         padding: 0
+
+// Mobile booking card presentation overrides.
+// Keep these last so shared/global button and icon styles cannot win.
+@media (max-width: 767px)
+    .list,
+    .card
+        width: 100%
+        min-width: 0
+        box-sizing: border-box
+
+    .card .type,
+    .card .type + .dot
+        display: none !important
+
+    .card .locationRow
+        width: 100%
+        min-width: 0
+        overflow: hidden
+        flex-wrap: nowrap
+
+    .card .locationRow > span
+        display: block
+        min-width: 0
+        max-width: 100%
+        overflow: hidden
+        text-overflow: ellipsis
+        white-space: nowrap
+
+    .actions
+        grid-template-columns: none !important
+        grid-auto-flow: column
+        grid-auto-columns: minmax(0, 1fr)
+
+    .actions .actionIcon,
+    .actions .actionIcon path,
+    .actions .actionIcon circle,
+    .actions .actionIcon line,
+    .actions .actionIcon polyline
+        fill: none !important
+        stroke: currentColor !important

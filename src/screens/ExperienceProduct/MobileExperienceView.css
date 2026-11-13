@@ -472,8 +472,8 @@
 }
 
 .mob-addon-counter button {
-  width: 32px;
-  height: 32px;
+  width: var(--mobile-quantity-control-size, 36px);
+  height: var(--mobile-quantity-control-size, 36px);
   border-radius: 50%;
   border: 1.5px solid;
   display: flex;
@@ -482,6 +482,8 @@
   cursor: pointer;
   font-size: 16px;
   font-weight: 700;
+  line-height: 1;
+  padding: 0;
   transition: all 0.2s ease;
   outline: none;
 }
@@ -592,6 +594,12 @@
   margin-left: auto;
   transition: transform 0.3s ease;
   flex-shrink: 0;
+  fill: none !important;
+}
+
+.mob-tip-chevron path,
+.mob-tip-chevron polyline {
+  fill: none !important;
 }
 
 .mob-tip-chevron.open {
@@ -825,15 +833,14 @@
 /* ─── Sticky Bottom CTA ─── */
 .mob-sticky-cta {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  left: 20px;
+  right: 20px;
   z-index: 9000;
-  padding: 12px var(--mob-pad);
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -867,18 +874,20 @@
 
 .mob-cta-btn {
   height: 48px;
-  padding: 0 32px;
+  padding: 0 24px;
   border-radius: 100px;
   border: none;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
   cursor: pointer;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
   transition: transform 0.15s ease, box-shadow 0.2s ease;
   outline: none;

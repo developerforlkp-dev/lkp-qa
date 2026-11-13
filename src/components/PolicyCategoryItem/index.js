@@ -72,6 +72,15 @@ function PolicyCategoryItem({ category, isDirectBooking = false }) {
           display: block;
           font-family: "Inter", sans-serif;
         }
+        .policy-cat-chevron,
+        .policy-cat-chevron path,
+        .policy-cat-chevron polyline {
+          fill: none !important;
+          stroke: ${M};
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
         .policy-cat-body {
           padding: 0 24px 24px 80px;
           display: flex;
@@ -131,7 +140,13 @@ function PolicyCategoryItem({ category, isDirectBooking = false }) {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20 }}
           >
-            <ChevronDown size={16} color={M} />
+            <ChevronDown
+              className="policy-cat-chevron"
+              size={16}
+              color={M}
+              fill="none"
+              strokeWidth={2}
+            />
           </motion.div>
         </div>
 

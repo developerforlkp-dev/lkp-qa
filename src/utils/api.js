@@ -2538,6 +2538,175 @@ export const getStayReviews = async (stayId) => {
 };
 
 // ✅ Cancel an order
+const toPositiveStayCardNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+};
+
+const getStayCardReviewSummary = (payload) => {
+  const summary =
+    payload?.ratingSummary ||
+    payload?.summary ||
+    payload?.reviewSummary ||
+    payload?.data?.ratingSummary ||
+    payload?.data?.summary ||
+    payload?.data?.reviewSummary ||
+    {};
+
+  const reviews = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.reviews)
+      ? payload.reviews
+      : Array.isArray(payload?.data?.reviews)
+        ? payload.data.reviews
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+
+  const averageRating = toPositiveStayCardNumber(
+    summary.averageRating ?? summary.rating ?? payload?.averageRating ?? payload?.rating
+  ) || 0;
+  const rawTotalReviews =
+    summary.totalReviews ??
+    summary.reviewCount ??
+    payload?.totalReviews ??
+    payload?.reviewCount ??
+    reviews.length;
+  const totalReviews = Number.isFinite(Number(rawTotalReviews))
+    ? Math.max(0, Number(rawTotalReviews))
+    : reviews.length;
+
+  return { averageRating, totalReviews };
+};
+
+const collectStayCardPrices = (payload) => {
+  const prices = [];
+  const addPrice = (value) => {
+    const numeric = toPositiveStayCardNumber(value);
+    if (numeric !== null) prices.push(numeric);
+  };
+
+  const addPriceObject = (value) => {
+    if (value == null) return;
+    if (typeof value !== "object") {
+      addPrice(value);
+      return;
+    }
+
+    addPrice(value.startingPrice);
+    addPrice(value.individualPrice);
+    addPrice(value.pricePerNight);
+    addPrice(value.fullPropertyB2cPrice);
+    addPrice(value.b2cPrice);
+    addPrice(value.hikePrice);
+    addPrice(value.basePrice);
+    addPrice(value.amount);
+    addPrice(value.price);
+
+    if (value.mealPlanPricing && typeof value.mealPlanPricing === "object") {
+      Object.values(value.mealPlanPricing).forEach(addPriceObject);
+    }
+  };
+
+  addPriceObject(payload);
+  addPriceObject(payload?.data);
+
+  [
+    payload?.price,
+    payload?.prices,
+    payload?.data?.price,
+    payload?.data?.prices,
+    payload?.rooms,
+    payload?.roomTypes,
+    payload?.bedConfigs,
+    payload?.data?.rooms,
+    payload?.data?.roomTypes,
+    payload?.data?.bedConfigs,
+  ].forEach((collection) => {
+    if (Array.isArray(collection)) collection.forEach(addPriceObject);
+    else addPriceObject(collection);
+  });
+
+  return prices;
+};
+
+/**
+ * Loads the rating summary and starting nightly rate used by Stay cards.
+ * Values come only from public backend endpoints; no display fallback is invented.
+ */
+export const getStayCardMetadata = async (stay = {}) => {
+  const stayId = stay?.stayId ?? stay?.stay_id ?? stay?.id ?? stay?._id;
+  if (stayId == null || stayId === "") return {};
+
+  const existingRating = [
+    stay?.averageRating,
+    stay?.ratingSummary?.averageRating,
+    stay?.reviewSummary?.averageRating,
+    stay?.summary?.averageRating,
+    stay?.rating,
+  ]
+    .map(toPositiveStayCardNumber)
+    .find((value) => value !== null) || null;
+  const existingReviewCount = Number(
+    stay?.totalReviews ?? stay?.ratingSummary?.totalReviews ?? stay?.reviewCount ?? 0
+  );
+  const existingPrices = collectStayCardPrices(stay);
+  const existingStartingPrice = existingPrices.length > 0 ? Math.min(...existingPrices) : null;
+
+  const reviewRequest = existingRating !== null && existingReviewCount > 0
+    ? Promise.resolve({ averageRating: existingRating, totalReviews: existingReviewCount })
+    : getStayReviews(stayId).then(getStayCardReviewSummary);
+
+  const priceRequest = existingStartingPrice !== null
+    ? Promise.resolve(existingStartingPrice)
+    : (async () => {
+        const stayType = String(
+          stay?.bookingScope || stay?.inventoryScope || stay?.propertyType || stay?.stayType || ""
+        ).toLowerCase();
+        const isHostel = stayType.includes("hostel") || Boolean(stay?.isHostel);
+
+        try {
+          const pricePayload = isHostel
+            ? await getStayHostelRoomPrices(stayId)
+            : await getStayHotelRoomPrices(stayId);
+          const prices = collectStayCardPrices(pricePayload);
+          if (prices.length > 0) return Math.min(...prices);
+        } catch (error) {
+          // Property-based stays can legitimately omit the room-price endpoint.
+        }
+
+        try {
+          const detailPayload = await getStayDetails(stayId);
+          const detailPrices = collectStayCardPrices(detailPayload);
+          return detailPrices.length > 0 ? Math.min(...detailPrices) : null;
+        } catch (error) {
+          return null;
+        }
+      })();
+
+  const [reviewResult, priceResult] = await Promise.allSettled([reviewRequest, priceRequest]);
+  const reviewMetadata = reviewResult.status === "fulfilled"
+    ? reviewResult.value
+    : { averageRating: existingRating || 0, totalReviews: Math.max(0, existingReviewCount || 0) };
+  const startingPrice = priceResult.status === "fulfilled"
+    ? priceResult.value
+    : existingStartingPrice;
+
+  const resolvedAverageRating =
+    toPositiveStayCardNumber(reviewMetadata.averageRating) || existingRating || 0;
+  const resolvedTotalReviews = reviewMetadata.totalReviews > 0
+    ? reviewMetadata.totalReviews
+    : Math.max(0, existingReviewCount || 0);
+
+  return {
+    averageRating: resolvedAverageRating,
+    totalReviews: resolvedTotalReviews,
+    ...(startingPrice !== null && startingPrice > 0
+      ? { startingPrice, individualPrice: startingPrice }
+      : {}),
+  };
+};
+
 export const cancelOrder = async (orderId, cancelData) => {
   try {
     // Validate parameters

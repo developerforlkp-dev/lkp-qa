@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import cn from "classnames";
-import { useHistory } from "react-router-dom";
-import { Search, Heart, Menu, User } from "lucide-react";
-import { getCustomerWishlistItems } from "../../utils/api";
+import { Search, Menu, User } from "lucide-react";
 import styles from "./MobileAppHeader.module.sass";
 
 // Triggering hot reload for logo styles
@@ -11,9 +9,7 @@ const MobileAppHeader = ({
   onSearchClick,
   isStickyNav,
 }) => {
-  const [wishlistCount, setWishlistCount] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const history = useHistory();
 
   useEffect(() => {
     // Check if authenticated
@@ -23,27 +19,6 @@ const MobileAppHeader = ({
       return;
     }
     setIsAuthenticated(true);
-
-    getCustomerWishlistItems()
-      .then(items => {
-        if (Array.isArray(items)) {
-          setWishlistCount(items.length);
-        }
-      })
-      .catch(() => {});
-
-    const handleWishlistChange = (e) => {
-      if (e.detail?.saved === true) {
-        setWishlistCount(prev => prev + 1);
-      } else if (e.detail?.saved === false) {
-        setWishlistCount(prev => Math.max(0, prev - 1));
-      }
-    };
-
-    window.addEventListener("lkp:wishlist-changed", handleWishlistChange);
-    return () => {
-      window.removeEventListener("lkp:wishlist-changed", handleWishlistChange);
-    };
   }, []);
 
   return (
@@ -56,7 +31,7 @@ const MobileAppHeader = ({
         />
         {isStickyNav && (
           <div className={styles.searchBar} onClick={onSearchClick}>
-            <Search size={18} className={styles.searchIcon} />
+            <Search size={20} className={styles.searchIcon} />
             <div className={styles.searchText}>
               <div className={styles.searchTitle}>Search</div>
             </div>
@@ -73,24 +48,10 @@ const MobileAppHeader = ({
               <User size={20} />
             </button>
           )}
-          {isStickyNav && (
-            <button 
-              className={styles.iconButton}
-              onClick={() => history.push("/wishlists")}
-              aria-label="Wishlists"
-              style={{ position: 'relative' }}
-            >
-              <Heart size={18} />
-              {wishlistCount > 0 && (
-                <span className={styles.wishlistBadge}>
-                  {wishlistCount > 99 ? "99+" : wishlistCount}
-                </span>
-              )}
-            </button>
-          )}
           <button 
             className={styles.iconButton}
             onClick={() => window.dispatchEvent(new CustomEvent("open-mobile-nav"))}
+            aria-label="Open menu"
           >
             <Menu size={20} />
           </button>

@@ -50,6 +50,10 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
   }, []);
   const location = useLocation();
   const wishlistConfig = getWishlistConfig(item);
+  const isStayCard =
+    wishlistConfig?.itemType === "stay" ||
+    String(item?.itemType || "").toLowerCase() === "stay" ||
+    String(item?.url || "").toLowerCase().includes("/stay-details");
   const shouldHideWishlist = hideWishlist || item?.hideWishlist || item?.isCategoryCard || item?.isCategory;
   const shouldHideRating = item?.hideRating || item?.isCategoryCard || item?.isCategory;
   
@@ -134,9 +138,9 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     }
   };
 
-  const hasRatingOrBadge = !shouldHideRating && (
-    Number(item.reviews) > 0 || !location.pathname.includes('/listings')
-  );
+  const canShowNewBadge = !location.pathname.includes('/listings') || isStayCard;
+  const hasActualRating = Number(item.rating) > 0;
+  const hasRatingOrBadge = !shouldHideRating && (hasActualRating || canShowNewBadge);
   const hasPriceToDisplay = !shouldHidePrice && item.hasPrice && item.cost;
   const showFoot = hasRatingOrBadge || hasPriceToDisplay;
 
@@ -226,7 +230,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
           <div className={styles.foot}>
             <div className={styles.flex}>
               {!shouldHideRating && (
-                Number(item.reviews) > 0 ? (
+                hasActualRating ? (
                   <div className={styles.rating}>
                     <div className={styles.ratingTop}>
                       <Icon name="star" />
@@ -236,12 +240,12 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
                           : (item.rating || 0)}
                       </span>
                     </div>
-                    <span className={styles.review}>
-                      ({item.reviews || 0})
-                    </span>
+                    {Number(item.reviews) > 0 && (
+                      <span className={styles.review}>({item.reviews})</span>
+                    )}
                   </div>
                 ) : (
-                  !location.pathname.includes('/listings') && (
+                  canShowNewBadge && (
                     <div className={styles.newBadge}>
                       <Icon name="star" />
                       <span>

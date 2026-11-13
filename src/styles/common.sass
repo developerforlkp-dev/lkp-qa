@@ -137,6 +137,10 @@ img
         &:active
             background: rgba(0, 0, 0, 0.6) !important
 
+// Alternate mobile CTA copy stays hidden on desktop.
+.mobile-reserve-cta__mobile-label
+    display: none
+
 // Activity description text color overrides to ensure standard font colors
 .activity-item p,
 .activity-item p *,
@@ -153,8 +157,99 @@ img
             display: none !important
         -ms-overflow-style: none !important
         scrollbar-width: none !important
-svg.lucide
-    fill: none
+
+    // Shared mobile icon geometry. Component-specific colors remain untouched.
+    :root
+        --mobile-action-control-size: 40px
+        --mobile-action-icon-size: 20px
+        --mobile-quantity-control-size: 36px
+        --mobile-quantity-icon-size: 16px
+        --mobile-carousel-icon-size: 16px
+
+    :where(svg.lucide, svg.app-icon)
+        display: block
+        flex: 0 0 auto
+        vertical-align: middle
+
+    :where(button, a, [role="button"]) > :where(svg.lucide, svg.app-icon):only-child
+        margin: auto
+
+    :where(button, a, [role="button"]) > :where(svg.lucide, svg.app-icon):only-child,
+    :where(button, a, [role="button"]) > :where(span, div):only-child > :where(svg.lucide, svg.app-icon):only-child
+        align-self: center
+
+    :where(button, a, [role="button"]) :where(svg.lucide[fill="none"], svg.lucide[fill="transparent"], svg.lucide:not([fill]))
+        stroke-width: 2 !important
+        stroke-linecap: round
+        stroke-linejoin: round
+
+    // Shared geometry for the fixed reserve CTA used by mobile Experience,
+    // Event, and Stay detail pages. Position and theme color remain owned by
+    // each module; the visible button is deliberately identical.
+    .mobile-reserve-cta.mobile-reserve-cta
+        height: 48px !important
+        min-height: 48px !important
+        padding: 0 24px !important
+        display: flex !important
+        align-items: center !important
+        justify-content: center !important
+        gap: 10px !important
+        box-sizing: border-box !important
+        border: 0 !important
+        border-radius: 100px !important
+        color: #FFFFFF !important
+        font-size: 15px !important
+        font-weight: 800 !important
+        line-height: 1 !important
+        letter-spacing: 0.04em !important
+        text-align: center !important
+        text-transform: uppercase !important
+        white-space: nowrap !important
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24) !important
+
+        > svg,
+        .mobile-reserve-cta__icon
+            width: 20px !important
+            height: 20px !important
+            margin: 0 !important
+            flex: 0 0 20px !important
+            fill: none !important
+            stroke-width: 2 !important
+
+            :where(path, circle, rect, polygon, polyline, line, ellipse)
+                fill: none !important
+
+    .mobile-reserve-cta__label
+        display: block !important
+        line-height: 1 !important
+        text-align: center !important
+
+    .mobile-reserve-cta__desktop-label
+        display: none !important
+
+    .slick-arrow
+        display: flex !important
+        align-items: center
+        justify-content: center
+        padding: 0
+        line-height: 1
+
+        svg
+            display: block
+            width: var(--mobile-carousel-icon-size)
+            height: var(--mobile-carousel-icon-size)
+            margin: auto
+// Lucide icons whose markup declares no fill must stay as outline icons across
+// every module. The child-shape rule prevents page-level `svg`/`path` styles
+// from turning chevrons into triangles or painting circles and paths white.
+// Explicitly filled icons (saved states, ratings, play buttons) do not match.
+svg.lucide[fill="none"],
+svg.lucide[fill="transparent"],
+svg.lucide:not([fill])
+    fill: none !important
+
+    :where(path, circle, rect, polygon, polyline, line, ellipse)
+        fill: none !important
 
 // View Transition styles are now dynamically injected by useDarkMode.js
 // to prevent 1-frame flashes and allow dynamic clip-path coordinates.

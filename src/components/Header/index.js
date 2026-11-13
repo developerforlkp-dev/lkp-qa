@@ -127,6 +127,16 @@ const Header = ({ separatorHeader, wide, notAuthorized, hideOnMobile, isHomepage
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+
+    document.body.classList.toggle("mobile-nav-drawer-open", visibleNav);
+
+    return () => {
+      document.body.classList.remove("mobile-nav-drawer-open");
+    };
+  }, [visibleNav]);
+
   return (
     <>
       <div

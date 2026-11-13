@@ -1,8 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft } from "lucide-react";
 import { useTheme } from "../JUI/Theme";
 import { lockBodyScroll } from "../../utils/scrollLock";
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClose }) => {
   const { theme, tokens: { BG, A } } = useTheme();
@@ -21,9 +24,15 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
 
   const thumbContainerRef = useRef(null);
   const activeThumbRef = useRef(null);
+  const imageContainerRef = useRef(null);
+  const gestureRef = useRef(null);
+  const lastTapRef = useRef(0);
+  const closeRequestedRef = useRef(false);
 
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const [showAllThumbs, setShowAllThumbs] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [zoomOffset, setZoomOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     return lockBodyScroll();
@@ -46,23 +55,146 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
   const maxVisible = getVisibleThumbCount();
 
   useEffect(() => {
+    setZoomScale(1);
+    setZoomOffset({ x: 0, y: 0 });
+    gestureRef.current = null;
+  }, [src]);
+
+  useEffect(() => {
     if (isDesktop && !showAllThumbs && currentIndex >= maxVisible - 1) {
       setShowAllThumbs(true);
     }
   }, [currentIndex, isDesktop, showAllThumbs, maxVisible]);
 
   useEffect(() => {
-    // Only auto-scroll in mobile/legacy mode where showAllThumbs is effectively true
-    if (!isDesktop || showAllThumbs) {
-      if (activeThumbRef.current && thumbContainerRef.current) {
-        activeThumbRef.current.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
+    if ((isDesktop && !showAllThumbs) || !activeThumbRef.current || !thumbContainerRef.current) return;
+
+    // Keep scrolling inside the thumbnail strip. scrollIntoView can move the
+    // underlying fixed document in iOS Safari and lose the saved page position.
+    const container = thumbContainerRef.current;
+    const thumb = activeThumbRef.current;
+    const left = thumb.offsetLeft - (container.clientWidth - thumb.clientWidth) / 2;
+    container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [currentIndex, isDesktop, showAllThumbs]);
+
+  const clampOffset = useCallback((offset, scale) => {
+    const container = imageContainerRef.current;
+    if (!container || scale <= 1) return { x: 0, y: 0 };
+    const maxX = (container.clientWidth * (scale - 1)) / (2 * scale);
+    const maxY = (container.clientHeight * (scale - 1)) / (2 * scale);
+    return {
+      x: clamp(offset.x, -maxX, maxX),
+      y: clamp(offset.y, -maxY, maxY),
+    };
+  }, []);
+
+  const getTouchDistance = (touches) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
+
+  const handleTouchStart = (event) => {
+    event.stopPropagation();
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      gestureRef.current = {
+        mode: "pinch",
+        distance: getTouchDistance(event.touches),
+        scale: zoomScale,
+        offset: zoomOffset,
+        moved: false,
+      };
+      return;
+    }
+
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      gestureRef.current = {
+        mode: zoomScale > 1 ? "pan" : "tap",
+        x: touch.clientX,
+        y: touch.clientY,
+        offset: zoomOffset,
+        moved: false,
+      };
+    }
+  };
+
+  const handleTouchMove = (event) => {
+    const gesture = gestureRef.current;
+    if (!gesture) return;
+    event.stopPropagation();
+
+    if (gesture.mode === "pinch" && event.touches.length === 2) {
+      event.preventDefault();
+      const nextScale = clamp(
+        gesture.scale * (getTouchDistance(event.touches) / Math.max(1, gesture.distance)),
+        1,
+        4
+      );
+      gesture.moved = true;
+      setZoomScale(nextScale);
+      setZoomOffset(clampOffset(gesture.offset, nextScale));
+      return;
+    }
+
+    if (gesture.mode === "pan" && event.touches.length === 1) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      const nextOffset = {
+        x: gesture.offset.x + (touch.clientX - gesture.x) / zoomScale,
+        y: gesture.offset.y + (touch.clientY - gesture.y) / zoomScale,
+      };
+      gesture.moved = true;
+      setZoomOffset(clampOffset(nextOffset, zoomScale));
+    }
+  };
+
+  const handleTouchEnd = (event) => {
+    event.stopPropagation();
+    const gesture = gestureRef.current;
+
+    if (event.touches.length === 1 && gesture?.mode === "pinch") {
+      const touch = event.touches[0];
+      gestureRef.current = {
+        mode: zoomScale > 1 ? "pan" : "tap",
+        x: touch.clientX,
+        y: touch.clientY,
+        offset: zoomOffset,
+        moved: true,
+      };
+      return;
+    }
+
+    if (event.touches.length > 0) return;
+
+    if (gesture?.mode === "tap" && !gesture.moved) {
+      const now = Date.now();
+      if (now - lastTapRef.current < 300) {
+        event.preventDefault();
+        const nextScale = zoomScale > 1 ? 1 : 2;
+        setZoomScale(nextScale);
+        setZoomOffset({ x: 0, y: 0 });
+        lastTapRef.current = 0;
+      } else {
+        lastTapRef.current = now;
       }
     }
-  }, [currentIndex, isDesktop, showAllThumbs]);
+
+    if (zoomScale <= 1.01) {
+      setZoomScale(1);
+      setZoomOffset({ x: 0, y: 0 });
+    }
+    gestureRef.current = null;
+  };
+
+  const handleClose = useCallback((event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    if (closeRequestedRef.current) return;
+    closeRequestedRef.current = true;
+    onClose?.();
+  }, [onClose]);
 
   const visibleItems = isDesktop && !showAllThumbs && items.length > maxVisible 
     ? items.slice(0, maxVisible) 
@@ -70,8 +202,9 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
   
   const remainingCount = items.length - maxVisible;
 
-  return (
+  const viewer = (
     <motion.div
+      className="fs-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -88,7 +221,10 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         justifyContent: 'center',
         padding: 'clamp(16px, 4vw, 40px)',
       }}
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) handleClose(event);
+      }}
+      onTouchStart={(event) => event.stopPropagation()}
     >
       <style>{`
         .fs-modal-box {
@@ -145,6 +281,20 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
           justify-content: center;
           position: relative;
           overflow: hidden;
+          touch-action: none;
+          overscroll-behavior: contain;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+
+        .fs-zoom-layer {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          transform-origin: center center;
+          will-change: transform;
         }
 
         .fs-image-bg {
@@ -306,12 +456,23 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         }
 
         @media (max-width: 900px) {
+          .fs-overlay {
+            padding: 0 !important;
+            background: rgba(0,0,0,0.94) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+          }
           .fs-modal-box {
             flex-direction: column;
-            height: 90vh;
-            border-radius: 24px 24px 0 0;
-            margin-top: auto;
-            align-self: flex-end;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
+            border: 0;
+            border-radius: 0;
+            align-self: center;
+            box-shadow: none;
+            -webkit-mask-image: none;
           }
           
           .fs-right-pane {
@@ -380,10 +541,12 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
         exit={{ y: 50, opacity: 0, scale: 0.98 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
       >
         <motion.button
+          type="button"
           className="fs-close-btn"
-          onClick={onClose}
+          onClick={handleClose}
           whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
           whileTap={{ scale: 0.92 }}
           style={{ position: 'absolute', top: 24, right: 24, zIndex: 100, width: 48, height: 48, borderRadius: '50%', background: btnBg, border: `1px solid ${btnBorder}`, color: textMain, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
@@ -393,22 +556,31 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
 
         {/* LEFT PANE - Image Viewer */}
         <div className="fs-left-pane">
-          <div className="fs-image-container">
+          <div
+            className="fs-image-container"
+            ref={imageContainerRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+          >
             <div className="fs-count-pill" style={{ position: 'absolute', top: 24, left: 24, zIndex: 100, background: pillBg, backdropFilter: 'blur(20px)', border: `1px solid ${pillBorder}`, padding: '8px 24px', borderRadius: 100, color: pillText, fontSize: 13, letterSpacing: '0.15em', fontWeight: 800, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
               {currentIndex + 1} <span style={{ opacity: 0.3, margin: '0 6px', color: textMain }}>/</span> <span style={{ color: textMain }}>{Math.max(1, items.length)}</span>
             </div>
             <AnimatePresence initial={false}>
               {/* Blurred background layer for aesthetic fill */}
-              <motion.img
-                className="fs-image-bg"
-                key={`bg-${src}`}
-                src={src}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.6 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                alt=""
-              />
+              {isDesktop && (
+                <motion.img
+                  className="fs-image-bg"
+                  key={`bg-${src}`}
+                  src={src}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.6 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  alt=""
+                />
+              )}
               <motion.div
                 key={src}
                 initial={{ opacity: 0, scale: 0.96 }}
@@ -424,18 +596,29 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
                   pointerEvents: 'none'
                 }}
               >
-                <img
-                  className="fs-image"
-                  src={src}
-                  alt="Viewer"
-                  style={{ pointerEvents: 'auto' }}
-                />
+                <div
+                  className="fs-zoom-layer"
+                  style={{
+                    transform: `translate3d(${zoomOffset.x}px, ${zoomOffset.y}px, 0) scale(${zoomScale})`,
+                    transition: gestureRef.current ? 'none' : 'transform 180ms ease-out',
+                  }}
+                >
+                  <img
+                    className="fs-image"
+                    src={src}
+                    alt="Viewer"
+                    draggable="false"
+                    decoding="async"
+                    style={{ pointerEvents: 'auto' }}
+                  />
+                </div>
               </motion.div>
             </AnimatePresence>
 
             {hasNavigation && (
               <>
                 <motion.button
+                  type="button"
                   className="fs-nav-btn fs-nav-left"
                   onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex - 1 + items.length) % items.length); }}
                   whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
@@ -444,6 +627,7 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
                   <ChevronLeft size={24} />
                 </motion.button>
                 <motion.button
+                  type="button"
                   className="fs-nav-btn fs-nav-right"
                   onClick={(e) => { e.stopPropagation(); onNavigate((currentIndex + 1) % items.length); }}
                   whileHover={{ scale: 1.08, backgroundColor: btnHoverBg }}
@@ -476,7 +660,13 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
                       }
                     }}
                   >
-                    <img src={thumbSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={`Thumbnail ${idx + 1}`} />
+                    <img
+                      src={thumbSrc}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      alt={`Thumbnail ${idx + 1}`}
+                      loading="lazy"
+                      decoding="async"
+                    />
                     {isLastAndMore && (
                       <div className="fs-thumb-more">
                         +{remainingCount + 1}
@@ -492,6 +682,8 @@ const FullScreenImage = ({ src, items = [], currentIndex = 0, onNavigate, onClos
       </motion.div>
     </motion.div>
   );
+
+  return typeof document !== "undefined" ? createPortal(viewer, document.body) : null;
 };
 
 export default FullScreenImage;

@@ -1,5 +1,7 @@
 @import ../../../styles/helpers
 
+$drawer-accent: #0097B2
+
 // ─── Overlay — MOBILE ONLY (≤767px) ────────────────────────────────────────────
 .overlay
     position: fixed
@@ -19,22 +21,28 @@
     backdrop-filter: blur(3px)
     -webkit-backdrop-filter: blur(3px)
     pointer-events: all
+    touch-action: none
+    overscroll-behavior: contain
 
 // ─── Drawer Shell — MOBILE ONLY (≤767px) ────────────────────────────────────────
 .drawer
     position: fixed
     top: 0
     right: 0
-    bottom: 0
+    bottom: auto
     z-index: 9991
     width: 80%
     max-width: 320px
+    height: 100vh
+    height: 100dvh
+    max-height: 100dvh
+    box-sizing: border-box
     display: flex
     flex-direction: column
     background: $n8
     box-shadow: -6px 0 48px rgba(0, 0, 0, 0.18), -2px 0 16px rgba(0, 0, 0, 0.08)
     border-radius: 20px 0 0 20px
-    overflow: clip
+    overflow: hidden
     transform: translateX(100%)
     transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1)
     will-change: transform
@@ -75,8 +83,10 @@
     display: flex
     align-items: center
     justify-content: center
-    width: 36px
-    height: 36px
+    width: var(--mobile-action-control-size, 40px)
+    height: var(--mobile-action-control-size, 40px)
+    padding: 0
+    line-height: 1
     border-radius: 50%
     background: $n7
     border: 1.5px solid $n6
@@ -114,9 +124,12 @@
 // ─── Scrollable Body (nav + account) ─────────────────────────────────────────
 .drawerBody
     flex: 1
+    min-height: 0
     overflow-y: auto
     overflow-x: clip
     -webkit-overflow-scrolling: touch
+    touch-action: pan-y
+    overscroll-behavior: contain
     display: flex
     flex-direction: column
     // Thin scrollbar
@@ -159,15 +172,15 @@
 
 .navLinkActive
     background: rgba(0, 151, 178, 0.08)
-    color: $p1
+    color: $drawer-accent
     +dark
         background: rgba(0, 151, 178, 0.14)
-        color: $p1
+        color: $drawer-accent
     .navIcon svg
-        fill: $p1
+        fill: $drawer-accent
     &:hover
         background: rgba(0, 151, 178, 0.12)
-        color: $p1
+        color: $drawer-accent
 
 .wishlistBadge
     display: inline-flex
@@ -204,7 +217,7 @@
     .navLinkActive &
         background: rgba(0, 151, 178, 0.1)
         svg
-            fill: $p1
+            fill: $drawer-accent
 
 .strokeIcon
     fill: none !important
@@ -213,7 +226,7 @@
     +dark
         stroke: $n5
     .navLinkActive &
-        stroke: $p1
+        stroke: $drawer-accent
 
 .navLabel
     flex: 1
@@ -283,13 +296,17 @@
 // ─── Drawer Footer ────────────────────────────────────────────────────────────
 .drawerFooter
     flex-shrink: 0
-    padding: 12px 12px 32px
+    position: relative
+    z-index: 2
+    padding: 12px 12px max(16px, env(safe-area-inset-bottom))
     display: flex
     flex-direction: column
     gap: 8px
     border-top: 1px solid $n6
+    background: $n8
     +dark
         border-color: $n3
+        background: #1A1D23
 
 // Theme toggle row
 .themeRow
@@ -301,6 +318,8 @@
     background: $n7
     border: none
     cursor: pointer
+    touch-action: manipulation
+    -webkit-tap-highlight-color: transparent
     transition: background 0.18s ease
     +dark
         background: rgba(255,255,255,0.06)
@@ -337,6 +356,15 @@
         margin: auto
         object-fit: contain
 
+@keyframes themeIconTurn
+    from
+        transform: rotate(-90deg) scale(0.86)
+    to
+        transform: rotate(0deg) scale(1)
+
+:global(html.theme-transitioning) .themeIcon
+    animation: themeIconTurn 380ms cubic-bezier(0.4, 0, 0.2, 1)
+
 // Login button
 .loginBtn
     display: flex
@@ -345,7 +373,7 @@
     gap: 10px
     padding: 14px 20px
     border-radius: 14px
-    background: $p1
+    background: $drawer-accent
     border: none
     font-size: 15px
     font-weight: 700
@@ -355,6 +383,11 @@
     letter-spacing: -0.01em
     box-shadow: 0 4px 16px rgba(0, 151, 178, 0.28)
     svg
+        display: block
+        flex: 0 0 18px
+        width: 18px
+        height: 18px
+        margin: 0 !important
         fill: $n8
     &:hover
         background: darken(#0097B2, 5%)
@@ -363,3 +396,8 @@
     &:active
         transform: scale(0.99)
         box-shadow: 0 2px 8px rgba(0, 151, 178, 0.25)
+
+.loginLabel
+    display: block
+    flex: 0 0 auto
+    line-height: 1

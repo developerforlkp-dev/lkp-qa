@@ -28,6 +28,7 @@ const Page = ({
 
   const shouldAutoHideHeader = (pathname) => {
     const path = pathname.toLowerCase();
+    const isEventDetail = path.startsWith("/event?") || path.startsWith("/event/") || path === "/event";
     if (
       path.includes("checkout") ||
       path.includes("complete") ||
@@ -38,7 +39,7 @@ const Page = ({
       path.includes("support") ||
       path.includes("messages") ||
       path.includes("/experience/") ||
-      path.includes("/event") ||
+      isEventDetail ||
       path.includes("/stay-details") ||
       path.includes("/food-details") ||
       path.includes("/place-details")
@@ -50,7 +51,15 @@ const Page = ({
 
   const autoHideEnabled = shouldAutoHideHeader(pathname);
   const homeRoutes = ["/", "/experience", "/experiences", "/events", "/stays", "/food", "/places"];
-  const isDetailPage = pathname.startsWith("/experience/") || pathname.startsWith("/event") || pathname.startsWith("/stay-details") || pathname.startsWith("/food-details") || pathname.startsWith("/place-details") || pathname.startsWith("/wishlists");
+  const isDetailPage =
+    pathname.startsWith("/experience/") ||
+    pathname.startsWith("/event?") ||
+    pathname.startsWith("/event/") ||
+    pathname === "/event" ||
+    pathname.startsWith("/stay-details") ||
+    pathname.startsWith("/food-details") ||
+    pathname.startsWith("/place-details") ||
+    pathname.startsWith("/wishlists");
   const isBlogPage = pathname.startsWith("/blog") || pathname.startsWith("/bookings") || pathname.startsWith("/viewdetails") || pathname.startsWith("/host-profile") || pathname.startsWith("/account-settings") || pathname.startsWith("/about") || pathname.startsWith("/support") || pathname.startsWith("/faq") || pathname.startsWith("/cancellation-policy") || pathname.startsWith("/terms-of-service") || pathname.startsWith("/privacy-policy") || pathname.includes("checkout");
   const isActualHomeRoute = homeRoutes.includes(pathname);
   const isHomeRoute = isActualHomeRoute || isDetailPage;
@@ -117,15 +126,15 @@ const Page = ({
     <div className={styles.page}>
       {/* Header Background Layer (Under the Hero) */}
       {!hideHeader && (
-        <div 
+        <div
           className={cn("slim-header-bg", { "auto-hide": autoHideEnabled && !headerVisible, "is-detail-page": isDetailPage, "is-blog-page": isBlogPage, "is-filter-page": isFilterPage })}
-          style={{ 
-            position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, 
+          style={{
+            position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0,
             height: (scrolled || separatorHeader) ? "70px" : "0px",
-            zIndex: 90, 
-            background: (scrolled && !isHomeRoute || separatorHeader) ? BG : "transparent", 
-            backdropFilter: "none", 
-            borderBottom: "none" 
+            zIndex: 90,
+            background: (scrolled && !isHomeRoute || separatorHeader) ? BG : "transparent",
+            backdropFilter: "none",
+            borderBottom: "none"
           }}
         />
       )}
@@ -134,15 +143,15 @@ const Page = ({
       {!hideHeader && (
         <motion.div
           className={cn("slim-header-wrapper", { "force-dark": !scrolled && !separatorHeader && theme === "light" && !isHomeRoute, "auto-hide": autoHideEnabled && !headerVisible && (!isHomeRoute || isDetailPage || isBlogPage || isFilterPage), "is-detail-page": isDetailPage, "is-blog-page": isBlogPage, "is-filter-page": isFilterPage })}
-          initial={{ y: -70, opacity: 0 }} 
-          animate={{ y: 0, opacity: 1 }} 
+          initial={{ y: -70, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.85, ease: E }}
-          style={{ 
-            position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0, 
-            zIndex: 100, 
+          style={{
+            position: separatorHeader ? "sticky" : "fixed", top: 0, left: 0, right: 0,
+            zIndex: 100,
             background: (scrolled && !isHomeRoute) ? BG : "transparent",
             boxShadow: (scrolled && !isHomeRoute) ? "0px 2px 10px rgba(0,0,0,0.05)" : "none",
-            transition: "all 0.4s", 
+            transition: "all 0.4s",
             marginTop: separatorHeader ? "-70px" : "0", // Account for the background div in sticky mode
           }}
         >
@@ -161,7 +170,7 @@ const Page = ({
           />
         </motion.div>
       )}
-      
+
       <div className={styles.inner}>
         {memoizedChildren}
       </div>
@@ -218,6 +227,30 @@ const Page = ({
           .slim-header-wrapper.is-detail-page [class*="Header_burger"], .slim-header-wrapper.is-blog-page [class*="Header_burger"], .slim-header-wrapper.is-filter-page [class*="Header_burger"] {
              transform: none;
              margin-top: 0;
+             margin-left: 10px !important;
+             width: 34px !important;
+             height: 34px !important;
+             border-radius: 50% !important;
+          }
+          .slim-header-wrapper.is-detail-page [class*="Header_login"],
+          .slim-header-wrapper.is-blog-page [class*="Header_login"],
+          .slim-header-wrapper.is-filter-page [class*="Header_login"],
+          .slim-header-wrapper.is-detail-page [class*="User_head"],
+          .slim-header-wrapper.is-blog-page [class*="User_head"],
+          .slim-header-wrapper.is-filter-page [class*="User_head"] {
+             width: 34px !important;
+             height: 34px !important;
+             border-radius: 50% !important;
+             flex-shrink: 0 !important;
+          }
+          .slim-header-wrapper.is-detail-page [class*="Header_login"] svg,
+          .slim-header-wrapper.is-blog-page [class*="Header_login"] svg,
+          .slim-header-wrapper.is-filter-page [class*="Header_login"] svg,
+          .slim-header-wrapper.is-detail-page [class*="User_head"] svg,
+          .slim-header-wrapper.is-blog-page [class*="User_head"] svg,
+          .slim-header-wrapper.is-filter-page [class*="User_head"] svg {
+             width: 20px !important;
+             height: 20px !important;
           }
         }
       `}</style>

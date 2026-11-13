@@ -21,10 +21,12 @@ const CheckoutComplete = ({
   isDirectBooking = false,
   onPrintReceipt,
   booking: propBooking,
+  mobileImage,
 }) => {
   const receiptRef = useRef(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const [mobileImageFailed, setMobileImageFailed] = useState(false);
 
   const normalizedHostName = (
     hostName ||
@@ -64,6 +66,10 @@ const CheckoutComplete = ({
     setAvatarLoadFailed(false);
   }, [avatarSrc]);
 
+  useEffect(() => {
+    setMobileImageFailed(false);
+  }, [mobileImage]);
+
   const showLetterAvatar = avatarLoadFailed || !avatarSrc;
 
   const bookedMessage = isStay
@@ -71,6 +77,12 @@ const CheckoutComplete = ({
     : isEvent
       ? "Your event has been booked!"
       : "Your trip has been booked!";
+
+  const mobileConfirmationLine = isStay
+    ? "Your stay begins here."
+    : isEvent
+      ? "Your event is set. Enjoy every moment."
+      : "Your next journey begins here.";
 
   const handlePrintReceipt = () => {
     if (onPrintReceipt) {
@@ -404,6 +416,15 @@ const CheckoutComplete = ({
 
   return (
     <div ref={receiptRef} id="checkout-complete-receipt" className={cn(className, styles.complete)}>
+      {mobileImage && !mobileImageFailed && (
+        <div className={styles.mobileThumbnail}>
+          <img
+            src={mobileImage}
+            alt={title ? `${title} thumbnail` : "Booking thumbnail"}
+            onError={() => setMobileImageFailed(true)}
+          />
+        </div>
+      )}
       <div className={styles.head}>
         {paymentFailed ? (
           <>
@@ -416,9 +437,10 @@ const CheckoutComplete = ({
           <>
             <div className={cn("h2", styles.title)}>
               <span className={styles.desktopText}>Congratulation!</span>
-              <span className={styles.mobileText}>Your Journey Begins</span>
+              <span className={styles.mobileText}>Booking Confirmed</span>
             </div>
-            <div className={styles.info}>
+            <div className={styles.mobileBookedInfo}>{mobileConfirmationLine}</div>
+            <div className={cn(styles.info, styles.desktopBookedInfo)}>
               {bookedMessage}{" "}
               <span role="img" aria-label="firework">
                 🎉

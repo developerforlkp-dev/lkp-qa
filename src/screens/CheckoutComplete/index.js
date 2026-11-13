@@ -187,6 +187,15 @@ const CheckoutComplete = () => {
     ];
   }, [booking, stayImageUrl, allStayImages]);
 
+  const mobileThumbnailImage = useMemo(() => {
+    const rawImage = allStayImages?.[0] || stayImageUrl || booking?.roomImage || booking?.listingImage;
+    if (!rawImage || typeof rawImage !== "string") return null;
+    if (rawImage.includes("localhost") || rawImage.includes("127.0.0.1")) return null;
+    return rawImage.startsWith("http") || rawImage.startsWith("/")
+      ? rawImage
+      : formatImageUrl(rawImage);
+  }, [allStayImages, stayImageUrl, booking]);
+
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -583,6 +592,7 @@ const CheckoutComplete = () => {
               options={options}
               items={items}
               booking={booking}
+              mobileImage={mobileThumbnailImage}
               isStay={booking?.isStay || !!(booking?.checkInDate || booking?.checkOutDate)}
               hostName={booking?.hostName || booking?.listing?.host?.displayName || booking?.listing?.host?.name}
               avatarUrl={formatImageUrl(booking?.hostAvatarUrl || booking?.hostAvatar || booking?.listing?.host?.profilePhotoUrl || booking?.profilePhotoUrl || booking?.listing?.host?.profileImageUrl || booking?.listing?.host?.avatar)}

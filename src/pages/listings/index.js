@@ -893,7 +893,8 @@ const Listings = () => {
                 {searchLocation || "Where to?"}
               </span>
               <span className={styles.compactSearchSub}>
-                {formattedDate !== "Add dates" ? formattedDate : "Any week"} • {guestCountText !== "Add guests" ? guestCountText : "Add guests"}
+                {formattedDate !== "Add dates" ? formattedDate : "Any week"}
+                {!isFoodOrPlace && <> • {guestCountText !== "Add guests" ? guestCountText : "Add guests"}</>}
               </span>
             </div>
           </div>
@@ -1100,7 +1101,7 @@ const Listings = () => {
           >
             {viewMode === "grid" ? (
               <>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ marginRight: '4px' }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                   <rect x="1" y="2" width="14" height="2" rx="1" />
                   <rect x="1" y="7" width="14" height="2" rx="1" />
                   <rect x="1" y="12" width="14" height="2" rx="1" />
@@ -1109,7 +1110,7 @@ const Listings = () => {
               </>
             ) : (
               <>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ marginRight: '4px' }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                   <rect x="1" y="1" width="6" height="6" rx="1.5" />
                   <rect x="9" y="1" width="6" height="6" rx="1.5" />
                   <rect x="1" y="9" width="6" height="6" rx="1.5" />

@@ -216,6 +216,15 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
     ];
   }, [booking, stayImageUrl, allStayImages]);
 
+  const mobileThumbnailImage = useMemo(() => {
+    const rawImage = allStayImages?.[0] || stayImageUrl || booking?.roomImage || booking?.listingImage;
+    if (!rawImage || typeof rawImage !== "string") return null;
+    if (rawImage.includes("localhost") || rawImage.includes("127.0.0.1")) return null;
+    return rawImage.startsWith("http") || rawImage.startsWith("/")
+      ? rawImage
+      : formatImageUrl(rawImage);
+  }, [allStayImages, stayImageUrl, booking]);
+
   // Helper function to format time from "HH:mm" to "HH:mm AM/PM"
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -597,6 +606,7 @@ const ExperienceCheckoutComplete = ({ isDirectBooking: isDirectBookingProp = fal
               options={options}
               items={items}
               booking={booking}
+              mobileImage={mobileThumbnailImage}
               hostName={booking?.hostName || booking?.officialName || booking?.leadName || booking?.directBooking?.leadName}
               avatarUrl={formatImageUrl(
                 booking?.hostAvatarUrl ||

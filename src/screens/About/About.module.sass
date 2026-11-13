@@ -87,20 +87,81 @@
     gap: 48px
     margin-bottom: 80px
     +m
-        grid-template-columns: 1fr
-        gap: 32px
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+        gap: 12px
         margin-bottom: 48px
 
 .card
+    --feature-accent: #0097B2
+    --feature-tint: #EAF9FC
+    --feature-border: rgba(0, 151, 178, 0.18)
     background: $n8
     border-radius: 24px
     padding: 40px
     box-shadow: 0 10px 32px rgba($n2, 0.05)
     border: 1px solid $n6
+    +m
+        position: relative
+        min-width: 0
+        padding: 16px 14px 18px
+        overflow: hidden
+        border-radius: 18px
+        background: linear-gradient(145deg, #FFFFFF 10%, var(--feature-tint) 100%)
+        border-color: var(--feature-border)
+        box-shadow: 0 10px 26px rgba(#11284B, 0.08)
+
+        &:nth-child(2)
+            --feature-accent: #5769C9
+            --feature-tint: #EEF0FF
+            --feature-border: rgba(87, 105, 201, 0.18)
+
+        &:nth-child(3)
+            --feature-accent: #D77B37
+            --feature-tint: #FFF1E5
+            --feature-border: rgba(215, 123, 55, 0.2)
+
+        &:nth-child(4)
+            --feature-accent: #338A6C
+            --feature-tint: #EAF7F1
+            --feature-border: rgba(51, 138, 108, 0.2)
+
+        &::before
+            content: ""
+            position: absolute
+            top: 0
+            left: 14px
+            right: 14px
+            height: 3px
+            border-radius: 0 0 3px 3px
+            background: var(--feature-accent)
+
+        &::after
+            content: ""
+            position: absolute
+            width: 72px
+            height: 72px
+            top: -38px
+            right: -30px
+            border: 14px solid var(--feature-accent)
+            border-radius: 50%
+            opacity: 0.08
+
+        > *
+            position: relative
+            z-index: 1
+
     +dark
         background: $n1
         border-color: $n3
         box-shadow: 0 10px 32px rgba(#000, 0.2)
+
+.cardHeader
+    +m
+        display: flex
+        align-items: center
+        gap: 10px
+        min-height: 44px
+        margin-bottom: 12px
 
 .cardIcon
     display: flex
@@ -111,15 +172,33 @@
     border-radius: 50%
     background: rgba(#0097B2, 0.1)
     margin-bottom: 24px
+    +m
+        width: 40px
+        height: 40px
+        flex: 0 0 40px
+        margin-bottom: 0
+        border-radius: 12px
+        background: rgba(#FFFFFF, 0.82)
+        border: 1px solid rgba(#FFFFFF, 0.9)
+        box-shadow: 0 5px 14px rgba(#11284B, 0.09)
+
+        svg
+            width: 20px
+            height: 20px
+
     svg
-        fill: #0097B2
-        path
-            fill: #0097B2
+        fill: none
+        stroke: var(--feature-accent)
 
 .cardTitle
     +body-bold-1
     color: $n2
     margin-bottom: 16px
+    +m
+        font-size: 17px
+        line-height: 1.25
+        margin-bottom: 0
+        letter-spacing: -0.02em
     +dark
         color: $n8
 
@@ -127,6 +206,9 @@
     +body-2
     color: $n4
     line-height: 1.6
+    +m
+        font-size: 12px
+        line-height: 1.5
 
 .mission
     background: $n7

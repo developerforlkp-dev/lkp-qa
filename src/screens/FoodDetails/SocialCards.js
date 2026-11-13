@@ -60,14 +60,34 @@ function getHeightMultiplier(width) {
 function getSlotConfig(totalSlots, slot) {
   const positions = getFanPositions();
   if (totalSlots >= positions.length) return positions[slot];
+
+  // Dedicated elegant layouts for small collections (1, 2, or 3 cards)
+  if (totalSlots === 1) {
+    return { rot: 0, scale: 1.15, x: 0, y: 0, zIndex: 10 };
+  }
+
+  if (totalSlots === 2) {
+    // 2 cards: gentle outward tilt, balanced centered presentation
+    return slot === 0
+      ? { rot: -6, scale: 1.05, x: -14, y: 0.5, zIndex: 2 }
+      : { rot:  6, scale: 1.05, x:  14, y: 0.5, zIndex: 3 };
+  }
+
+  if (totalSlots === 3) {
+    // 3 cards: center highlighted, two wings
+    if (slot === 0) return { rot: -10, scale: 0.95, x: -18, y: 2.2, zIndex: 2 };
+    if (slot === 1) return { rot:   0, scale: 1.08, x:   0, y: 0.0, zIndex: 10 };
+    return                 { rot:  10, scale: 0.95, x:  18, y: 2.2, zIndex: 2 };
+  }
+
   const center = totalSlots >> 1;
   const distance = totalSlots > 1 ? (slot - center) / center : 0;
   const absDistance = Math.abs(distance);
   return {
-    rot: distance * 21,
-    scale: 1.0 - 0.2244 * absDistance * absDistance,
-    x: distance * 30,
-    y: absDistance * absDistance * 7.3,
+    rot: distance * 18,
+    scale: 1.0 - 0.18 * absDistance * absDistance,
+    x: distance * 25,
+    y: absDistance * absDistance * 4.5,
     zIndex: 10 - Math.abs(slot - center),
   };
 }
@@ -335,7 +355,7 @@ export default function SocialCards({
         }
         .card-fan-carousel-wrapper .fan-card {
           position: absolute;
-          width: clamp(120px, 14vw, 200px);
+          width: ${totalCards === 1 ? "clamp(200px, 24vw, 320px)" : totalCards === 2 ? "clamp(160px, 18vw, 250px)" : "clamp(120px, 14vw, 200px)"};
           aspect-ratio: 4 / 5;
           border-radius: 16px;
           overflow: hidden;
@@ -405,7 +425,7 @@ export default function SocialCards({
             height: clamp(200px, 48vw, 290px);
           }
           .card-fan-carousel-wrapper .fan-card {
-            width: clamp(96px, 22vw, 130px);
+            width: ${totalCards === 1 ? "clamp(160px, 42vw, 220px)" : totalCards === 2 ? "clamp(130px, 32vw, 170px)" : "clamp(96px, 22vw, 130px)"};
             border-radius: 12px;
           }
           .card-fan-arrow-btn {

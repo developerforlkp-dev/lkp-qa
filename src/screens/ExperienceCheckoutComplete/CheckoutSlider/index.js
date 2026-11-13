@@ -24,7 +24,16 @@ const CheckoutSlider = ({ className, gallery }) => {
         <Slider className="checkout-slider" {...settings} key={gallery.length}>
           {gallery.map((x, index) => (
             <div className={styles.preview} key={index}>
-              <img srcSet={x.srcSet ? `${x.srcSet} 2x` : undefined} src={x.src} alt="Nature" />
+              <img
+                srcSet={x.srcSet ? `${x.srcSet} 2x` : undefined}
+                src={x.src}
+                alt="Nature"
+                onError={(event) => {
+                  if (window.matchMedia("(max-width: 767px)").matches) {
+                    event.currentTarget.style.display = "none";
+                  }
+                }}
+              />
             </div>
           ))}
         </Slider>

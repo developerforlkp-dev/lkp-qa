@@ -775,8 +775,8 @@ function injectStyles() {
 
       /* Premium touch-friendly counter buttons */
       .mcsh-gs-btn {
-        width: 38px;
-        height: 38px;
+        width: var(--mobile-quantity-control-size, 36px);
+        height: var(--mobile-quantity-control-size, 36px);
         border-radius: 50%;
         border: 1px solid rgba(0, 151, 178, 0.22);
         background: rgba(0, 151, 178, 0.05);
@@ -1024,7 +1024,7 @@ function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
           aria-label="Previous month"
           type="button"
         >
-          <ChevronLeft size={15} strokeWidth={2.5} />
+          <ChevronLeft size={16} strokeWidth={2} />
         </button>
         <span className="mcsh-cal-month-label">{monthLabel}</span>
         <button
@@ -1033,7 +1033,7 @@ function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
           aria-label="Next month"
           type="button"
         >
-          <ChevronRight size={15} strokeWidth={2.5} />
+          <ChevronRight size={16} strokeWidth={2} />
         </button>
       </div>
 
@@ -1155,7 +1155,7 @@ function MobileInlineGuestSelector({ guests, onGuestChange, onClose }) {
               }}
               aria-label={`Decrease ${category.label.toLowerCase()}`}
             >
-              <Minus size={15} strokeWidth={2.5} />
+              <Minus size={16} strokeWidth={2} />
             </button>
             <span className="mcsh-gs-value">{category.value}</span>
             <button
@@ -1168,7 +1168,7 @@ function MobileInlineGuestSelector({ guests, onGuestChange, onClose }) {
               }}
               aria-label={`Increase ${category.label.toLowerCase()}`}
             >
-              <Plus size={15} strokeWidth={2.5} />
+              <Plus size={16} strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -1394,7 +1394,7 @@ export default function MobileCinematicSearch({
   } else {
     stickySummaryParts.push("Any date");
   }
-  stickySummaryParts.push(gTotal > 0 ? `${gTotal} Guest${gTotal > 1 ? "s" : ""}` : "1 Guest");
+  stickySummaryParts.push(gTotal > 1 ? `${gTotal} Guests` : "Guest");
   const stickySummary = stickySummaryParts.join(" • ");
 
   const openSheet = () => setSheetOpen(true);

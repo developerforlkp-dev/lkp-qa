@@ -33,10 +33,12 @@ const About = () => {
 
         <div className={styles.grid}>
           <div className={styles.card}>
-            <div className={styles.cardIcon}>
-              <Home size={32} color="#0097B2" strokeWidth={1.5} />
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIcon}>
+                <Home size={32} color="#0097B2" strokeWidth={1.5} />
+              </div>
+              <h3 className={styles.cardTitle}>Unique Stays</h3>
             </div>
-            <h3 className={styles.cardTitle}>Unique Stays</h3>
             <p className={styles.cardText}>
               From luxury treehouses to boutique heritage homes, our curated selection of stays 
               goes beyond the ordinary hotel room. We focus on design, comfort, and extraordinary locations.
@@ -44,10 +46,12 @@ const About = () => {
           </div>
 
           <div className={styles.card}>
-            <div className={styles.cardIcon}>
-              <Compass size={32} color="#0097B2" strokeWidth={1.5} />
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIcon}>
+                <Compass size={32} color="#0097B2" strokeWidth={1.5} />
+              </div>
+              <h3 className={styles.cardTitle}>Immersive Experiences</h3>
             </div>
-            <h3 className={styles.cardTitle}>Immersive Experiences</h3>
             <p className={styles.cardText}>
               Dive deep into the local culture with experiences hosted by passionate experts. 
               Learn new skills, explore hidden trails, and see the world through a local's eyes.
@@ -55,10 +59,12 @@ const About = () => {
           </div>
 
           <div className={styles.card}>
-            <div className={styles.cardIcon}>
-              <Ticket size={32} color="#0097B2" strokeWidth={1.5} />
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIcon}>
+                <Ticket size={32} color="#0097B2" strokeWidth={1.5} />
+              </div>
+              <h3 className={styles.cardTitle}>Exclusive Events</h3>
             </div>
-            <h3 className={styles.cardTitle}>Exclusive Events</h3>
             <p className={styles.cardText}>
               Get front-row access to the most exciting events happening around you. From intimate 
               gatherings to large-scale festivals, we connect you with the pulse of the city.
@@ -66,10 +72,12 @@ const About = () => {
           </div>
 
           <div className={styles.card}>
-            <div className={styles.cardIcon}>
-              <Star size={32} color="#0097B2" strokeWidth={1.5} />
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIcon}>
+                <Star size={32} color="#0097B2" strokeWidth={1.5} />
+              </div>
+              <h3 className={styles.cardTitle}>Quality Guaranteed</h3>
             </div>
-            <h3 className={styles.cardTitle}>Quality Guaranteed</h3>
             <p className={styles.cardText}>
               Every listing on Little Known Planet meets our rigorous standards for quality, 
               safety, and authenticity. Your peace of mind is our top priority.

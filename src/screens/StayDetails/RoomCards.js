@@ -1009,7 +1009,7 @@ const RoomCard = ({ roomId: propRoomId, room, roomIndex, listing, onRoomSelect, 
             )}
           </div>
 
-          {/* Select / Selected button */}
+          {/* Select / remove selection button */}
           <button
             onClick={handleSelect}
             style={{
@@ -1042,7 +1042,7 @@ const RoomCard = ({ roomId: propRoomId, room, roomIndex, listing, onRoomSelect, 
               e.currentTarget.style.boxShadow = "none";
             }}
           >
-            {isSelected ? <><Check size={15} strokeWidth={2.5} /> SELECTED</> : <>SELECT {isBedBased ? "BED" : "ROOM"}</>}
+            {isSelected ? <>REMOVE {isBedBased ? "BED" : "ROOM"}</> : <>SELECT {isBedBased ? "BED" : "ROOM"}</>}
           </button>
         </div>
 

@@ -389,3 +389,66 @@
     color: $n5
     +dark
         color: $n4
+// Checkout-only mobile treatment. Desktop retains the existing card layout.
+.mobileFlat
+    +m
+        .list
+            margin-top: 28px
+            padding-top: 28px
+            border-top: 1px solid $n6
+            gap: 0
+            +dark
+                border-color: $n3
+
+        .item,
+        .box
+            margin: 0
+            padding: 0
+            border: 0
+
+        .box > .category
+            margin-bottom: 16px
+
+        .tripGrid
+            gap: 0 20px
+            margin-bottom: 0
+
+        .tripCard
+            padding: 14px 0
+            border: 0
+            border-bottom: 1px solid $n6
+            border-radius: 0
+            background: transparent
+            +dark
+                border-color: $n3
+                background: transparent
+
+        .cardHeader
+            margin-bottom: 6px
+
+        .messageSection
+            margin-top: 28px
+            padding-top: 24px
+            border-top: 1px solid $n6
+            +dark
+                border-color: $n3
+
+        .messageSubtitle
+            margin: 6px 0 14px
+
+        .addOnsSection
+            margin: 28px 0 0
+            padding: 24px 0 0
+            border-top: 1px solid $n6
+            border-bottom: 0
+            +dark
+                border-color: $n3
+
+        .addOnItem
+            padding: 10px 0
+            border-bottom: 1px solid $n6
+            border-radius: 0
+            background: transparent
+            +dark
+                border-color: $n3
+                background: transparent

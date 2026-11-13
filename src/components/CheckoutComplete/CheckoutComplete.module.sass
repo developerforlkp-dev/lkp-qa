@@ -2,12 +2,38 @@
 
 .complete
     +m
-        padding: 32px 20px
-        background: $n8
-        border-radius: 24px
-        box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.06)
+        padding: 0 16px 32px
+        background: transparent
+        border-radius: 0
+        box-shadow: none
         +dark
-            background: $n2
+            background: transparent
+
+.mobileThumbnail
+    display: none
+    +m
+        display: block
+        margin-bottom: 16px
+        overflow: hidden
+        border-radius: 16px
+
+        img
+            display: block
+            width: 100%
+            height: 168px
+            object-fit: cover
+
+.desktopBookedInfo
+    +m
+        display: none
+
+.mobileBookedInfo
+    display: none
+    +m
+        display: block
+        margin-bottom: 20px
+        color: $n4
+        line-height: 1.5
 
 .head
     margin-bottom: 24px
@@ -16,8 +42,8 @@
     +m
         text-align: center
         border-bottom: none
-        margin-bottom: 16px
-        padding-bottom: 16px
+        margin-bottom: 24px
+        padding-bottom: 24px
     +dark
         border-color: $n2
 
@@ -31,7 +57,7 @@
     +m
         display: block
         color: $p1
-        font-size: 32px
+        font-size: 26px
         line-height: 1.2
 
 .title
@@ -41,6 +67,8 @@
     margin-bottom: 32px
     +body-2
     color: $n4
+    +m
+        margin-bottom: 20px
 
 .subtitle
     margin-bottom: 8px
@@ -89,6 +117,10 @@
     flex-wrap: wrap
     align-items: center
     margin-bottom: 32px
+    +m
+        margin-bottom: 24px
+        &:empty
+            display: none
 
 .rating
     display: flex
@@ -128,7 +160,10 @@
     flex-wrap: wrap
     margin-bottom: 32px
     +m
-        display: block
+        display: grid
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+        gap: 0 20px
+        margin-bottom: 24px
 
 .item
     display: flex
@@ -140,11 +175,14 @@
             padding-right: 0
     &:not(:last-child)
         +m
-            margin-bottom: 16px
-            padding-bottom: 16px
+            margin-bottom: 0
+            padding-bottom: 12px
             border-bottom: 1px solid $n6
             +dark
                 border-color: $n3
+    +m
+        display: block
+        padding: 12px 0
 
 .itemFull
     flex: 0 0 100%
@@ -154,6 +192,7 @@
         padding-right: 0
     +m
         margin-top: 0
+        grid-column: 1 / -1
 
 .icon
     display: flex
@@ -169,6 +208,8 @@
         fill: $n2
         +dark
             fill: $n8
+    +m
+        display: none
 
 .category
     +caption-2
@@ -180,9 +221,17 @@
 .stage
     margin-bottom: 32px
     +body-bold-1
+    +m
+        margin-bottom: 16px
+        padding-top: 24px
+        border-top: 1px solid $n6
+        +dark
+            border-color: $n3
 
 .table
     margin-bottom: 32px
+    +m
+        margin-bottom: 24px
 
 .row
     display: flex
@@ -195,6 +244,8 @@
             border-bottom: 1px solid $n6
             +dark
                 border-color: $n3
+    +m
+        padding: 12px 0
 
 .cell
     flex: 0 0 50%
@@ -210,6 +261,8 @@
         svg
             margin-right: 12px
             fill: $n4
+            +m
+                display: none
     &:nth-child(2)
         font-weight: 500
     

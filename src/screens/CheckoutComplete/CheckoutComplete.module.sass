@@ -1,11 +1,19 @@
 @import ../../styles/helpers
 
+.section
+    +m
+        padding-top: 24px
+
+.container
+    +m
+        padding: 0 8px
+
 .control
     margin-bottom: 80px
     +d
         margin-bottom: 48px
     +m
-        margin-bottom: 24px
+        display: none
 
 .row
     display: flex
@@ -15,6 +23,9 @@
         flex-direction: column
         margin: 0
         gap: 24px
+    +m
+        display: block
+        gap: 0
 
 .col
     flex: 0 0 calc(50% - 32px)
@@ -23,6 +34,9 @@
     +t
         width: 100%
         margin: 0
+    &:first-child
+        +m
+            display: none
     &:nth-child(2)
         padding-left: 48px
         +d

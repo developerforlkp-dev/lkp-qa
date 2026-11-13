@@ -35,6 +35,7 @@ const ConfirmAndPay = ({
   setGuestDetails,
   guestErrors = {},
   numberOfGuests,
+  mobileFlat = false,
 }) => {
   const parseNumericAmount = (value) => {
     if (value === null || value === undefined) return 0;
@@ -183,7 +184,7 @@ const ConfirmAndPay = ({
   );
 
   return (
-    <div className={cn(className, styles.confirm)}>
+    <div className={cn(className, styles.confirm, { [styles.mobileFlat]: mobileFlat })}>
       <div className={styles.subtitle}>Almost done! Review your trip details and complete your booking.</div>
       
       <div className={styles.stepper}>

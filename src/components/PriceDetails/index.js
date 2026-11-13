@@ -35,6 +35,7 @@ const PriceDetails = ({
   onGuestValidationFailed,
   hideCancellationIcon,
   isDirectBooking = false,
+  mobileFlat = false,
 }) => {
   const [discound, setDiscound] = useState("");
 
@@ -61,7 +62,7 @@ const PriceDetails = ({
     : (addOns || []);
 
   return (
-    <div className={cn(className, styles.price)}>
+    <div className={cn(className, styles.price, { [styles.mobileFlat]: mobileFlat })}>
       {!hideHeader && (
         more ? (
           <HeadMoreOptions

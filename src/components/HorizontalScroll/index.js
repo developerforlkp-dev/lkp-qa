@@ -193,7 +193,7 @@ const HorizontalScroll = forwardRef(({
           onMouseDown={(e) => e.stopPropagation()}
           aria-label="Scroll left"
         >
-          <Icon name="arrow-prev" size="20" />
+          <Icon name="arrow-prev" size="16" />
         </button>
       )}
       {!hideDefaultArrows && showRightArrow && (
@@ -206,7 +206,7 @@ const HorizontalScroll = forwardRef(({
           onMouseDown={(e) => e.stopPropagation()}
           aria-label="Scroll right"
         >
-          <Icon name="arrow-next" size="20" />
+          <Icon name="arrow-next" size="16" />
         </button>
       )}
     </div>

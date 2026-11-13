@@ -196,8 +196,8 @@ const OfficialPartners = () => {
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="18" cy="18" r="18" fill="#0097B2" opacity="0.12"/>
               <circle cx="18" cy="18" r="14" fill="#0097B2" opacity="0.08"/>
-              <path d="M18 28C18 28 25 24.5 25 18.5V12.5L18 10L11 12.5V18.5C11 24.5 18 28 18 28Z" stroke="#0097B2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(0,151,178,0.1)"/>
-              <path d="M14.5 18.5L17 21L22 16" stroke="#0097B2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 28C18 28 25 24.5 25 18.5V12.5L18 10L11 12.5V18.5C11 24.5 18 28 18 28Z" stroke="#0097B2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M14.5 18.5L17 21L22 16" stroke="#0097B2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
             </svg>
           </div>
           <p className={styles.trustText}>

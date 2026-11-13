@@ -21,6 +21,8 @@ import CuratedContent from "../../../components/CuratedContent";
 import ExperienceReelsCarousel, { extractInstagramReelId } from "../../../components/ExperienceReelsCarousel";
 import { getShareText } from "../../../utils/shareUtils";
 import { isDirectBookingPathOrState } from "../../../utils/directBooking";
+import DetailMarquee from "../../../components/DetailMarquee";
+import ReviewRatingSummary from "../../../components/ReviewRatingSummary";
 
 const formatImageUrl = (url) => {
   if (!url) return "";
@@ -922,8 +924,25 @@ function MobileHero({ event, heroRef }) {
   };
   const bgImage = formatImageUrl(getImageUrl(event));
 
-  const words = title.split(' ');
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  const titleWordCount = words.length;
+  const titleCharacterCount = title.replace(/\s/g, '').length;
+  const hasLongTitle = titleCharacterCount > 34 || titleWordCount > 5;
+  const hasExtraLongTitle = titleCharacterCount > 58 || titleWordCount > 9;
   const lastWord = words.length >= 2 ? words.pop() : "";
+
+  const heroHeight = hasExtraLongTitle
+    ? "clamp(610px, 76vh, 720px)"
+    : hasLongTitle
+      ? "clamp(550px, 68vh, 640px)"
+      : "max(450px, 60vh)";
+  const ringTop = hasExtraLongTitle ? "27%" : hasLongTitle ? "31%" : "40%";
+  const ringScale = hasExtraLongTitle ? 0.4 : hasLongTitle ? 0.46 : 0.55;
+  const titleFontSize = hasExtraLongTitle
+    ? "clamp(28px, 7.6vw, 33px)"
+    : hasLongTitle
+      ? "clamp(31px, 8.3vw, 35px)"
+      : 38;
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -978,7 +997,7 @@ function MobileHero({ event, heroRef }) {
       position: "relative",
       width: "100%",
       minHeight: "450px",
-      height: "60vh",
+      height: heroHeight,
       backgroundImage: bgImage ? `url(${bgImage})` : "none",
       backgroundSize: "cover",
       backgroundPosition: "center",
@@ -996,9 +1015,9 @@ function MobileHero({ event, heroRef }) {
       {/* Image Ring Overlay for Mobile */}
       <div style={{
         position: "absolute",
-        top: "40%",
+        top: ringTop,
         right: "15px",
-        transform: "translateY(-50%) scale(0.55)",
+        transform: `translateY(-50%) scale(${ringScale})`,
         transformOrigin: "center right",
         zIndex: 5,
         pointerEvents: "none"
@@ -1031,8 +1050,8 @@ function MobileHero({ event, heroRef }) {
       </div>
 
       {/* Title */}
-      <div style={{ position: "relative", zIndex: 10, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 38, fontWeight: 700, color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', lineHeight: 1.1, margin: 0 }}>
+      <div style={{ position: "relative", zIndex: 10, marginBottom: 16, maxWidth: "100%" }}>
+        <h1 style={{ fontSize: titleFontSize, fontWeight: 700, color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF", fontFamily: '"Cormorant Garamond", "Playfair Display", serif', lineHeight: hasLongTitle ? 1.06 : 1.1, letterSpacing: hasLongTitle ? "-0.015em" : "normal", textShadow: "0 2px 18px rgba(0,0,0,0.55)", overflowWrap: "anywhere", margin: 0 }}>
           {words.join(' ')}{' '}
           <span style={{ fontStyle: "italic", color: A, WebkitTextFillColor: A }}>
             {lastWord}
@@ -1622,69 +1641,9 @@ function Hero({ event, heroRef }) {
   );
 }
 
-function PremiumMarquee({ items, isMobile }) {
-  const { theme, tokens: { B, BG, FG, M } } = useTheme();
-
+function PremiumMarquee({ items }) {
   const rawTags = items && items.length > 0 ? items : ["Experience", "Premium", "Event", "Curated", "Editorial"];
-  // Duplicate to ensure infinite seamless scrolling loop
-  const loopedTags = Array(24).fill(rawTags).flat();
-
-  const estimatedTagWidth = (tag) => String(tag).length * 9.5 + 75; // text width + margin + icon + padding
-  const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 12; // offset 50% is 12 copies
-  const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-  return (
-    <div style={{ padding: isMobile ? "0 20px" : "0 80px", width: "100%", boxSizing: "border-box" }}>
-      <div style={{ maxWidth: 1320, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-        <div style={{
-          overflow: "hidden",
-          position: "relative",
-          padding: "20px 0",
-          background: theme === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
-          borderTop: `1px solid ${B}`,
-          borderBottom: `1px solid ${B}`,
-        }}>
-
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-            style={{ display: "flex", alignItems: "center", width: "max-content" }}
-          >
-            {loopedTags.map((tag, idx) => {
-              const isEven = idx % 2 === 0;
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "24px",
-                    whiteSpace: "nowrap",
-                    marginRight: "32px"
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: isEven ? 700 : 300,
-                      color: isEven ? FG : M,
-                      fontFamily: "Poppins, sans-serif",
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      opacity: isEven ? 1 : 0.75
-                    }}
-                  >
-                    {tag}
-                  </span>
-                  <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-                </div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  );
+  return <DetailMarquee items={rawTags} />;
 }
 
 function About({ event }) {
@@ -2769,7 +2728,7 @@ function HostDetails({ event, hostName }) {
                   left: 0,
                   right: 0,
                   height: 3,
-                  background: `linear-gradient(90deg, ${A} 0%, #8B5CF6 100%)`
+                  background: `linear-gradient(90deg, ${A} 0%, #00D2FF 100%)`
                 }} />
 
                 {/* Top Section: Avatar, Name & Metrics (With subtle tint background) */}
@@ -2793,7 +2752,7 @@ function HostDetails({ event, hostName }) {
                       height: 52,
                       borderRadius: "50%",
                       padding: "2px",
-                      background: `linear-gradient(135deg, ${A} 0%, #8B5CF6 100%)`,
+                      background: `linear-gradient(135deg, ${A} 0%, #00D2FF 100%)`,
                       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
                       flexShrink: 0
                     }}>
@@ -2861,9 +2820,9 @@ function HostDetails({ event, hostName }) {
                         fontSize: "8.5px",
                         letterSpacing: "0.04em",
                         textTransform: "uppercase",
-                        color: "#7C3AED",
-                        background: theme === "dark" ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.08)",
-                        border: `1px solid ${theme === "dark" ? "rgba(139, 92, 246, 0.25)" : "rgba(139, 92, 246, 0.18)"}`,
+                        color: "#0097B2",
+                        background: theme === "dark" ? "rgba(0, 151, 178, 0.15)" : "rgba(0, 151, 178, 0.08)",
+                        border: `1px solid ${theme === "dark" ? "rgba(0, 151, 178, 0.25)" : "rgba(0, 151, 178, 0.18)"}`,
                         borderRadius: "5px",
                         padding: "1px 6px",
                         fontWeight: 700,
@@ -2956,7 +2915,7 @@ function HostDetails({ event, hostName }) {
                         left: 0,
                         right: 0,
                         height: 3,
-                        background: `linear-gradient(90deg, #8B5CF6 0%, ${A} 100%)`
+                        background: `linear-gradient(90deg, #00D2FF 0%, ${A} 100%)`
                       }} />
 
                       {/* Background Ambient Glow under the circle */}
@@ -3032,7 +2991,7 @@ function HostDetails({ event, hostName }) {
                       {/* Right: Narrative Details & Verification Checks */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
                         <div>
-                          <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#8B5CF6", display: "block", marginBottom: 4 }}>Quality Index</span>
+                          <span style={{ fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", fontWeight: 800, color: "#0097B2", display: "block", marginBottom: 4 }}>Quality Index</span>
                           <h4 style={{ fontSize: 18, fontWeight: 800, color: FG, margin: 0, fontFamily: "Poppins, sans-serif" }}>Verified Trust Score</h4>
                         </div>
 
@@ -3158,6 +3117,8 @@ function EventReviews({ reviews = [] }) {
         <span className="mob-section-eyebrow" style={{ color: A }}>Guest Feedback</span>
         <h2 className="mob-section-title" style={{ color: FG }}>What people say</h2>
 
+        <ReviewRatingSummary reviews={displayReviews} summary={reviews} accentColor={A} foregroundColor={FG} mutedColor={M} borderColor={B} backgroundColor={isDark ? "#111" : "#FAFAFA"} />
+
         <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16, msOverflowStyle: "none", scrollbarWidth: "none", scrollSnapType: "x mandatory" }} className="hide-scroll">
           {displayReviews.map((rev, idx) => {
             const name = rev.customerName || rev.reviewerName || rev.author || "Guest";
@@ -3234,6 +3195,7 @@ function EventReviews({ reviews = [] }) {
             </button>
           </div>
         </div>
+        <ReviewRatingSummary reviews={displayReviews} summary={reviews} accentColor={A} foregroundColor={FG} mutedColor={M} borderColor={B} backgroundColor={isDark ? "rgba(255,255,255,0.04)" : W} />
 
         <div
           ref={sliderRef}
@@ -3259,8 +3221,8 @@ function EventReviews({ reviews = [] }) {
             return (
               <motion.div
                 key={idx}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                whileHover={{ y: -6, borderColor: A, boxShadow: `0 20px 40px ${A}0f` }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
                 style={{
                   width: "360px",
                   background: theme === "dark"
@@ -3280,8 +3242,6 @@ function EventReviews({ reviews = [] }) {
                   overflow: "hidden",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
               >
                 {/* Stylized background quote mark */}
                 <span style={{
@@ -3336,8 +3296,8 @@ function EventReviews({ reviews = [] }) {
           })}
           {displayReviews.length > 8 && (
             <motion.div
-              whileHover={{ y: -8, scale: 1.02 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -6, borderColor: A, boxShadow: `0 20px 40px ${A}0f` }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={() => setReviewsModalOpen(true)}
               style={{
                 width: "360px",
@@ -3357,8 +3317,6 @@ function EventReviews({ reviews = [] }) {
                 cursor: "pointer",
                 boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = A; e.currentTarget.style.boxShadow = `0 20px 40px ${A}0f`; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = B; e.currentTarget.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.02)"; }}
             >
               <span style={{ fontSize: 18, fontWeight: 700, color: A }}>View all {displayReviews.length} reviews &rarr;</span>
             </motion.div>

@@ -25,6 +25,27 @@ const getListingId = (item) => {
   );
 };
 
+const getStayRatingValue = (stay) => {
+  const candidates = [
+    stay?.averageRating,
+    stay?.ratingSummary?.averageRating,
+    stay?.reviewSummary?.averageRating,
+    stay?.summary?.averageRating,
+    stay?.rating,
+  ];
+
+  for (const candidate of candidates) {
+    const numeric = Number(candidate);
+    if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  }
+
+  const starRatingMatch = String(stay?.starRating || "").match(/\d+(?:\.\d+)?/);
+  if (!starRatingMatch) return 0;
+
+  const starRating = Number(starRatingMatch[0]);
+  return Number.isFinite(starRating) && starRating > 0 ? starRating : 0;
+};
+
 /**
  * Custom hook for fetching listings with filters and pagination
  * @param {Object} params - Search and filter parameters
@@ -52,6 +73,7 @@ export const useListings = ({
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [totalCountState, setTotalCountState] = useState(null);
+  const nextOffsetRef = useRef(0);
 
   const dataRef = useRef(data);
   useEffect(() => {
@@ -301,6 +323,21 @@ export const useListings = ({
         }
       }
 
+      if (mappedNearbyInterest === "STAYS" && hasRatingFilter) {
+        const minimumRating = Math.max(...filters.ratings.map(Number).filter(Number.isFinite));
+        if (Number.isFinite(minimumRating)) {
+          processedListings = processedListings.filter(
+            (stay) => getStayRatingValue(stay) >= minimumRating
+          );
+          // The Stay endpoint currently reports its unfiltered total.
+          totalCount = null;
+        }
+      }
+
+      nextOffsetRef.current = reset
+        ? listings.length
+        : currentOffset + listings.length;
+
       const existingData = dataRef.current || [];
       const existingIds = new Set(existingData.map(getListingId).filter(Boolean));
 
@@ -371,7 +408,7 @@ export const useListings = ({
 
   const fetchMore = useCallback(() => {
     if (!loading && hasMore) {
-      const nextOffset = dataRef.current.length;
+      const nextOffset = nextOffsetRef.current;
       fetchListings(nextOffset, false);
     }
   }, [loading, hasMore, fetchListings]);

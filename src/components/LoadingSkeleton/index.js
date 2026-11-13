@@ -353,29 +353,90 @@ const CardsSkeleton = ({ count = 4 }) => (
 
 const PlaceSkeleton = () => (
   <div className={styles.placeSkeleton}>
-    <Shimmer className={styles.placeHeroBanner} />
+    {/* Hero Section matching Journal Spread layout */}
+    <div className={styles.placeHero}>
+      <div className={styles.placeHeroInner}>
+        {/* Left Column: Category Pill, Title, Location, Snippet, Action Buttons */}
+        <div className={styles.placeLeft}>
+          <Shimmer className={styles.placeCategoryPill} />
+          <Shimmer className={styles.placeTitle} />
+          <Shimmer className={styles.placeLocation} />
+          <div className={styles.placeSnippet}>
+            <Shimmer className={styles.placeTextLine} />
+            <Shimmer className={styles.placeTextLine} />
+            <Shimmer className={styles.placeTextLine} />
+          </div>
+          <div className={styles.placeActionsRow}>
+            <Shimmer className={styles.placeCircleBtn} />
+            <Shimmer className={styles.placeCircleBtn} />
+            <Shimmer className={styles.placePillBtn} />
+          </div>
+        </div>
+
+        {/* Right Column: Open Journal Spread representation */}
+        <div className={styles.placeRightSpread}>
+          <Shimmer className={styles.placeBookWingLeft} />
+          <Shimmer className={styles.placeBookCenter} />
+          <Shimmer className={styles.placeBookWingRight} />
+        </div>
+      </div>
+    </div>
+
+    {/* Marquee Bar */}
     <Shimmer className={styles.placeMarquee} />
+
+    {/* Content Sections */}
     <div className={styles.placeContent}>
-      <Shimmer className={styles.placeTitle} />
-      <Shimmer className={styles.placeTextLine} />
-      <Shimmer className={styles.placeTextLine} />
-      <Shimmer className={styles.placeTextLine} />
+      <div className={styles.placeMainCol}>
+        <Shimmer style={{ height: 260, borderRadius: 16 }} />
+        <Shimmer style={{ height: 180, borderRadius: 16 }} />
+      </div>
+      <div className={styles.placeSideCol}>
+        <Shimmer style={{ height: 380, borderRadius: 20 }} />
+      </div>
     </div>
   </div>
 );
 
 const FoodSkeleton = () => (
   <div className={styles.foodSkeleton}>
-    <Shimmer className={styles.foodHeroBanner} />
-    <div className={styles.foodContentGrid}>
+    {/* Culinary Fan Hero Section */}
+    <div className={styles.foodHero}>
+      {/* Top action buttons (Favorite & Share) */}
+      <div className={styles.foodHeroActions}>
+        <Shimmer className={styles.foodActionCircle} />
+        <Shimmer className={styles.foodActionCircle} />
+      </div>
+
+      {/* Centered Dish Metadata & Title Header */}
+      <div className={styles.foodHeroHeader}>
+        <div className={styles.foodMetaPills}>
+          <Shimmer className={styles.foodMetaPill} />
+          <Shimmer className={styles.foodMetaPill} />
+        </div>
+        <Shimmer className={styles.foodTitle} />
+        <Shimmer className={styles.foodHint} />
+      </div>
+
+      {/* Fan Cards / Social Cards Fanned Carousel */}
+      <div className={styles.foodFanCardsRow}>
+        <Shimmer className={`${styles.foodFanCard} ${styles.foodFanCard1}`} />
+        <Shimmer className={`${styles.foodFanCard} ${styles.foodFanCard2}`} />
+        <Shimmer className={`${styles.foodFanCard} ${styles.foodFanCard3}`} />
+      </div>
+    </div>
+
+    {/* Narrative Section below Hero */}
+    <div className={styles.foodNarrative}>
       <div className={styles.foodMainContent}>
-         <Shimmer className={styles.foodTitle} />
-         <Shimmer className={styles.foodTextLine} />
-         <Shimmer className={styles.foodTextLine} />
-         <Shimmer className={styles.foodTextLine} />
+        <Shimmer style={{ height: 36, width: "50%", borderRadius: 8, marginBottom: 16 }} />
+        <Shimmer className={styles.foodTextLine} />
+        <Shimmer className={styles.foodTextLine} />
+        <Shimmer className={styles.foodTextLine} />
+        <Shimmer style={{ height: 200, borderRadius: 16, marginTop: 20 }} />
       </div>
       <div className={styles.foodSidebar}>
-         <Shimmer className={styles.foodSidebarCard} />
+        <Shimmer className={styles.foodSidebarCard} />
       </div>
     </div>
   </div>
@@ -394,6 +455,24 @@ const EventSkeleton = () => (
       <div className={styles.eventSidebar}>
          <Shimmer className={styles.eventSidebarCard} />
       </div>
+    </div>
+  </div>
+);
+
+const PolicySkeleton = ({ count = 6 }) => (
+  <div className={styles.policySkeleton}>
+    <div className={styles.policyHeader}>
+      <Shimmer className={styles.policyHeaderTitle} />
+      <Shimmer className={styles.policyHeaderSubtitle} />
+    </div>
+    <div className={styles.policySectionsList}>
+      {Array.from({ length: count }).map((_, i) => (
+        <Shimmer
+          key={i}
+          className={styles.policyItemSkeleton}
+          style={{ height: i === 0 ? 140 : 72 }}
+        />
+      ))}
     </div>
   </div>
 );
@@ -427,6 +506,8 @@ const LoadingSkeleton = ({ variant = "homepage", count, sections }) => {
         return <FoodSkeleton />;
       case "event":
         return <EventSkeleton />;
+      case "policy":
+        return <PolicySkeleton count={count || 6} />;
       case "completed":
         return <CompletedSkeleton count={count || 3} />;
       case "cards":

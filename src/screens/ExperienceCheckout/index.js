@@ -1667,6 +1667,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
+            mobileFlat
             guests
             dateValue={items[0]?.title}
             timeValue={items[1]?.category === "Time slot" ? items[1]?.title : undefined}
@@ -1690,6 +1691,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
           <div className={styles.priceColumn}>
             <PriceDetails
               className={styles.price}
+              mobileFlat
               hideHeader={true}
               more
               image={listingImage}

@@ -8,6 +8,7 @@ import Icon from "../../Icon";
 import Favorite from "../../Favorite";
 import { transformListingToCard } from "../../../screens/FleetHome/CardStyles";
 import { getWishlistConfig } from "../../Card";
+import { getStayCardMetadata } from "../../../utils/api";
 
 // Redesigned horizontal split-layout list view card
 const ListCard = ({ item, listing }) => {
@@ -118,13 +119,15 @@ const ListCard = ({ item, listing }) => {
             {locationText && <span className={styles.locationText}>{locationText}</span>}
             <div className={styles.ratingRow}>
               <Icon name="star" className={styles.starIcon} size="14" fill="#ffc107" />
-              {item.rating > 0 ? (
+              {Number(item.rating) > 0 ? (
                 <>
-                  <span className={styles.ratingVal}>{item.rating.toFixed(1)}</span>
-                  <span className={styles.reviewsCount}>({item.reviews} reviews)</span>
+                  <span className={styles.ratingVal}>{Number(item.rating).toFixed(1)}</span>
+                  {Number(item.reviews) > 0 && (
+                    <span className={styles.reviewsCount}>({item.reviews} reviews)</span>
+                  )}
                 </>
               ) : (
-                <span className={styles.ratingVal}>Newly Featured</span>
+                <span className={styles.ratingVal}>{isStay ? "New Stay" : "Newly Featured"}</span>
               )}
             </div>
           </div>
@@ -191,7 +194,46 @@ const SkeletonCard = () => {
 
 const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMessage = "No listings found. Try adjusting your filters.", listView = false }) => {
   const sentinelRef = useRef(null);
+  const mountedRef = useRef(true);
+  const loadingStayMetadataIdsRef = useRef(new Set());
+  const [stayMetadataById, setStayMetadataById] = useState({});
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    listings.forEach((listing) => {
+      const stayId = listing?.stayId ?? listing?.stay_id;
+      if (stayId == null || stayId === "") return;
+
+      const key = String(stayId);
+      if (stayMetadataById[key] || loadingStayMetadataIdsRef.current.has(key)) return;
+
+      loadingStayMetadataIdsRef.current.add(key);
+      getStayCardMetadata(listing)
+        .then((metadata) => {
+          if (!mountedRef.current) return;
+          setStayMetadataById((current) => ({
+            ...current,
+            [key]: { ...metadata, loaded: true },
+          }));
+        })
+        .catch(() => {
+          if (!mountedRef.current) return;
+          setStayMetadataById((current) => ({
+            ...current,
+            [key]: { loaded: true },
+          }));
+        })
+        .finally(() => {
+          loadingStayMetadataIdsRef.current.delete(key);
+        });
+    });
+  }, [listings, stayMetadataById]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -254,13 +296,18 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
     );
   }
 
-  const cardItems = listings.map(transformListingToCard);
+  const displayListings = listings.map((listing) => {
+    const stayId = listing?.stayId ?? listing?.stay_id;
+    const metadata = stayId != null ? stayMetadataById[String(stayId)] : null;
+    return metadata ? { ...listing, ...metadata } : listing;
+  });
+  const cardItems = displayListings.map(transformListingToCard);
 
   return (
     <>
       <div className={cn(styles.grid, { [styles.listGrid]: listView })}>
         {cardItems.map((item, index) => {
-          const originalListing = listings[index];
+          const originalListing = displayListings[index];
           const key = item.id || originalListing?.id || originalListing?._id || index;
           return listView ? (
             <Link 

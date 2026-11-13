@@ -198,7 +198,7 @@ export function Footer() {
               // Cycle through 3 theme colors for cards
               const colors = [
                 { border: '#06b6d4', bg: '#ecfeff', text: '#0891b2' }, // Cyan
-                { border: '#8b5cf6', bg: '#f5f3ff', text: '#7c3aed' }, // Purple
+                { border: '#0097B2', bg: '#E8F7FA', text: '#007F96' }, // Brand cyan
                 { border: '#f59e0b', bg: '#fffbeb', text: '#d97706' }  // Orange
               ];
               const theme = colors[index % colors.length];

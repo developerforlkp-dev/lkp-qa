@@ -1084,11 +1084,14 @@ const StayBookingSystem = ({
           const restoredRooms = getStoredStayRooms(stored.selectedRooms, stay);
           if (restoredRooms.length > 0) setSelectedRooms(restoredRooms);
           setShow(true);
+          if (onExternalOpenChange) {
+            onExternalOpenChange(true);
+          }
           localStorage.removeItem("frontendPendingBookingState");
         }
       }
     } catch (e) { }
-  }, [setCheckInDate, setCheckOutDate, setGuests, setChildAges, setSelectedRooms, stay, stay?.stayId, stay?.id]);
+  }, [setCheckInDate, setCheckOutDate, setGuests, setChildAges, setSelectedRooms, stay, stay?.stayId, stay?.id, onExternalOpenChange]);
 
   useEffect(() => {
     if (show) {
@@ -3746,31 +3749,33 @@ const StayBookingSystem = ({
         }
 
         @media(max-width: 900px) {
+          .booking-modal-wrapper { padding: 0 !important; align-items: flex-end !important; }
           .booking-modal-container { 
             width: 100% !important; 
-            height: 100% !important; 
-            max-height: 100vh !important; 
-            border-radius: 0 !important; 
+            height: 88dvh !important;
+            min-height: 0 !important;
+            max-height: 88dvh !important;
+            border-radius: 24px 24px 0 0 !important;
             margin: 0 !important;
           }
-          .booking-grid { grid-template-columns: 1fr !important; }
-          .booking-modal-header { padding: 24px 20px !important; }
-          .booking-modal-column { padding: 32px 20px !important; }
+          .booking-grid { grid-template-columns: 1fr !important; gap: 0 !important; }
+          .booking-modal-header { padding: 14px 20px 12px !important; }
+          .booking-modal-column { padding: 16px 20px !important; gap: 10px !important; border-bottom: 1px solid ${B}88 !important; }
           .booking-modal-footer { 
             flex-direction: column !important; 
-            gap: 24px !important; 
-            padding: 24px 20px !important; 
+            gap: 10px !important;
+            padding: 12px 20px max(12px, env(safe-area-inset-bottom)) !important;
             align-items: stretch !important;
             text-align: center !important;
             position: sticky !important;
             bottom: 0 !important;
             background: ${BG} !important;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.08) !important;
           }
-          .booking-modal-footer button { width: 100% !important; }
+          .booking-modal-footer button { width: 100% !important; padding: 12px 20px !important; font-size: 15px !important; }
           
           .stay-booking-trigger-wrapper {
-            bottom: 24px !important;
+            bottom: max(24px, env(safe-area-inset-bottom, 0px)) !important;
             right: 0 !important;
             left: 0 !important;
             width: calc(100% - 40px) !important;
@@ -3787,8 +3792,8 @@ const StayBookingSystem = ({
           .stay-booking-trigger {
             width: 100% !important;
             justify-content: center !important;
-            padding: 16px 32px !important;
-            font-size: 16px !important;
+            padding: 0 24px !important;
+            font-size: 15px !important;
             font-weight: 800 !important;
             letter-spacing: 0.05em !important;
             text-transform: uppercase !important;
@@ -3809,7 +3814,7 @@ const StayBookingSystem = ({
       `}</style>
 
       {/* Floating Trigger */}
-      {(() => {
+      {!show && (() => {
         const isPropertyBased = isPropertyBasedBooking(stay);
         const hasRoomSelected = isPropertyBased || selectedRooms.length > 0;
 
@@ -3914,7 +3919,7 @@ const StayBookingSystem = ({
                 boxShadow: `0 20px 35px -8px rgba(0,0,0,0.15), 0 30px 60px -10px ${A}55, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)`
               }}
               whileTap={{ scale: 0.96 }}
-              className="stay-booking-trigger"
+              className="stay-booking-trigger mobile-reserve-cta"
               style={{
                 position: "relative",
                 bottom: "auto",
@@ -3938,8 +3943,9 @@ const StayBookingSystem = ({
                 opacity: 1,
               }}
             >
-              <Bed size={22} />
-              Reserve Now
+              <Bed className="mobile-reserve-cta__icon" size={22} fill="none" aria-hidden="true" />
+              <span className="mobile-reserve-cta__label mobile-reserve-cta__desktop-label">Reserve Now</span>
+              <span className="mobile-reserve-cta__label mobile-reserve-cta__mobile-label">Reserve Stay</span>
             </motion.button>
           </div>
         );
@@ -3948,7 +3954,7 @@ const StayBookingSystem = ({
 
       <AnimatePresence>
         {show && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", padding: window.innerWidth <= 768 ? 0 : 20, overflowY: "auto", overflowX: "hidden" }}>
+          <div className="booking-modal-wrapper" style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", padding: window.innerWidth <= 768 ? 0 : 20, overflowY: "auto", overflowX: "hidden" }}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -5008,15 +5014,7 @@ const StayBookingSystem = ({
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectionMode}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
-                  >
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: FG, display: "flex", alignItems: "center", gap: 8 }}>
                       {selectionMode === "check-in" ? (
                         <span style={{ color: A }}>
@@ -5027,11 +5025,7 @@ const StayBookingSystem = ({
                           <span style={{ color: A }}>
                             Step 2: Check-out
                           </span>
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
-                            style={{
+                          <div style={{
                               background: A,
                               color: BG,
                               fontSize: 10,
@@ -5042,15 +5036,14 @@ const StayBookingSystem = ({
                             }}
                           >
                             Next
-                          </motion.div>
+                          </div>
                         </>
                       )}
                     </h3>
                     <p style={{ margin: 0, fontSize: 13, color: M, fontWeight: 600 }}>
                       {selectionMode === "check-in" ? "When will you arrive?" : "When will you leave?"}
                     </p>
-                  </motion.div>
-                </AnimatePresence>
+                </div>
 
                 <button onClick={() => setShowCalendarModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: M, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 4 }}>
                   <X size={20} />

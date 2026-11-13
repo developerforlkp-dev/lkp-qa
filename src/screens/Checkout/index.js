@@ -1119,6 +1119,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
         <div className={styles.wrapper}>
           <ConfirmAndPay
             className={styles.confirm}
+            mobileFlat
             title={tripTitle}
             guests={!(bookingData?.isStay || bookingData?.checkInDate || bookingData?.checkOutDate)}
             dateValue={items[0]?.title}
@@ -1167,6 +1168,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
           </ConfirmAndPay>
           <PriceDetails
             className={styles.price}
+            mobileFlat
             hideHeader={true}
             image={listingImage}
             title={tripTitle}

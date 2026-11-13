@@ -1077,8 +1077,8 @@ const FleetHome = () => {
               id="explore-by-section"
               className={styles.mobileCategoriesContainer}
             >
-              <div style={{ marginBottom: '16px', padding: '0 20px' }}>
-                <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
+              <div style={{ marginBottom: '4px', padding: '0 20px' }}>
+                <div style={{ margin: 0, fontFamily: '"Inter", sans-serif', fontSize: '14px', fontWeight: 700, letterSpacing: '0.05em', color: '#0097B2', textTransform: 'uppercase' }}>Explore By</div>
               </div>
               <div className={styles.mobileCategoriesScroll}>
                 {visibleFilterOptions.map((filter) => {

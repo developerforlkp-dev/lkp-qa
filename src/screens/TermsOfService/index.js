@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet";
-import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ArrowUp } from "lucide-react";
 import Page from "../../components/Page";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { getPolicyDocuments } from "../../utils/api";
 import { useTheme } from "../../components/JUI/Theme";
 
@@ -131,7 +132,7 @@ const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "24px 32px",
+          padding: "clamp(16px, 2.5vw, 24px) clamp(16px, 3vw, 32px)",
           background: "transparent",
           border: "none",
           cursor: "pointer",
@@ -139,7 +140,7 @@ const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
           outline: "none"
         }}
       >
-        <span style={{ fontSize: "clamp(1.1rem, 2vw, 1.3rem)", fontWeight: isOpen ? 600 : 500, color: isOpen ? A : FG, transition: "color 0.3s ease" }}>
+        <span style={{ fontSize: "clamp(1rem, 2vw, 1.25rem)", fontWeight: isOpen ? 600 : 500, color: isOpen ? A : FG, transition: "color 0.3s ease" }}>
           {item.title}
         </span>
         <motion.div
@@ -158,7 +159,7 @@ const AccordionItem = ({ item, isOpen, onClick, themeTokens }) => {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div style={{ padding: "0px 32px 32px 32px", color: M, fontSize: "1.1rem", lineHeight: 1.9 }}>
+            <div style={{ padding: "0px clamp(16px, 3vw, 32px) clamp(20px, 3vw, 32px) clamp(16px, 3vw, 32px)", color: M, fontSize: "clamp(0.95rem, 1.5vw, 1.05rem)", lineHeight: 1.8 }}>
               {item.contentHtml ? (
                 <div 
                   className="policy-rich-text"
@@ -182,13 +183,6 @@ const TermsOfService = () => {
   const [loading, setLoading] = useState(true);
   const [openIndices, setOpenIndices] = useState([0]);
   const [showTopBtn, setShowTopBtn] = useState(false);
-  
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -345,21 +339,6 @@ const TermsOfService = () => {
         <title>{title ? `${title} | Little Known Planet` : "Little Known Planet"}</title>
         {title && <meta name="description" content={`Review the ${title} for using Little Known Planet services.`} />}
       </Helmet>
-      
-      {/* Top Progress Bar */}
-      <motion.div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "4px",
-          background: tokens.A,
-          transformOrigin: "0%",
-          scaleX,
-          zIndex: 9999
-        }}
-      />
 
       <style>{`
         @keyframes terms-skeleton-pulse {
@@ -455,91 +434,85 @@ const TermsOfService = () => {
         }
       `}</style>
 
-      <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "100px", paddingBottom: "80px", color: tokens.FG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
-        <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 36px" }}>
+      <div style={{ background: tokens.BG, minHeight: "100vh", paddingTop: "clamp(24px, 3.5vw, 40px)", paddingBottom: "clamp(40px, 6vw, 80px)", color: tokens.FG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+        <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "0 clamp(16px, 3vw, 36px)" }}>
           
           {loading ? (
-            <div role="status" aria-label="Loading terms and conditions" style={{ marginBottom: "40px" }}>
-              <div aria-hidden="true" className="terms-skeleton" style={{ width: "min(100%, 760px)", height: "100px", margin: "0 auto 16px" }} />
-              <div aria-hidden="true" className="terms-skeleton" style={{ width: "min(100%, 600px)", height: "28px", margin: "0 auto" }} />
-            </div>
+            <LoadingSkeleton variant="policy" />
           ) : (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{ textAlign: "center", marginBottom: "40px" }}
-          >
-            <h1 className="font-display" style={{ 
-              fontSize: "clamp(3.5rem, 7vw, 5.5rem)",
-              fontWeight: 400, 
-              color: tokens.A, 
-              letterSpacing: "-0.02em",
-              marginBottom: "16px",
-              fontFamily: "Georgia, serif"
-            }}>
-              {title}
-            </h1>
-            <p style={{ fontSize: "1.1rem", color: tokens.M, maxWidth: "600px", margin: "0 auto", lineHeight: 1.6 }}>
-              Please review the terms and conditions for using our platform and services.
-            </p>
-          </motion.div>
-          )}
+            <>
+              <motion.div 
+                initial={{ opacity: 0, y: -16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                style={{ textAlign: "center", marginBottom: "clamp(24px, 3vw, 36px)" }}
+              >
+                <h1 className="font-display" style={{ 
+                  fontSize: "clamp(2.2rem, 5vw, 4rem)",
+                  fontWeight: 400, 
+                  color: tokens.A, 
+                  letterSpacing: "-0.02em",
+                  marginBottom: "10px",
+                  lineHeight: 1.15,
+                  fontFamily: "Georgia, serif"
+                }}>
+                  {title}
+                </h1>
+                <p style={{ fontSize: "clamp(0.95rem, 1.4vw, 1.05rem)", color: tokens.M, maxWidth: "600px", margin: "0 auto", lineHeight: 1.5 }}>
+                  Please review the terms and conditions for using our platform and services.
+                </p>
+              </motion.div>
 
-          {loading ? (
-            <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {[0, 1, 2, 3, 4].map((index) => (
-                <div key={index} className="terms-skeleton" style={{ height: index === 0 ? "180px" : "76px" }} />
-              ))}
-            </div>
-          ) : parsedSectionsData && parsedSectionsData.sections.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {parsedSectionsData.introHtml && (
+              {parsedSectionsData && parsedSectionsData.sections.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {parsedSectionsData.introHtml && (
+                    <div 
+                      className="policy-rich-text"
+                      style={{
+                        marginBottom: "20px",
+                        padding: "clamp(16px, 2.5vw, 24px) clamp(16px, 3vw, 32px)",
+                        borderRadius: "12px",
+                        background: tokens.BG,
+                        border: `1px solid ${tokens.B}`,
+                        color: tokens.FG,
+                        fontSize: "clamp(0.95rem, 1.4vw, 1rem)",
+                        lineHeight: 1.8,
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.02)",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: parsedSectionsData.introHtml }}
+                    />
+                  )}
+                  {parsedSectionsData.sections.map((item, index) => (
+                    <AccordionItem
+                      key={index}
+                      item={item}
+                      isOpen={openIndices.includes(index)}
+                      onClick={() => toggleAccordion(index)}
+                      themeTokens={tokens}
+                    />
+                  ))}
+                </div>
+              ) : documentHtml ? (
                 <div 
                   className="policy-rich-text"
-                  style={{
-                    marginBottom: "24px",
-                    padding: "24px 32px",
-                    borderRadius: "12px",
-                    background: tokens.BG,
+                  style={{ 
+                    background: tokens.BG, 
+                    padding: "40px", 
+                    borderRadius: "12px", 
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)", 
                     border: `1px solid ${tokens.B}`,
-                    color: tokens.FG,
-                    fontSize: "16px",
+                    color: tokens.FG, 
+                    fontSize: "16px", 
                     lineHeight: 1.9,
-                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.02)",
                   }}
-                  dangerouslySetInnerHTML={{ __html: parsedSectionsData.introHtml }}
+                  dangerouslySetInnerHTML={{ __html: documentHtml }} 
                 />
+              ) : (
+                <p role="alert" style={{ textAlign: "center", color: tokens.M }}>
+                  Terms are currently unavailable. Please try again later.
+                </p>
               )}
-              {parsedSectionsData.sections.map((item, index) => (
-                <AccordionItem
-                  key={index}
-                  item={item}
-                  isOpen={openIndices.includes(index)}
-                  onClick={() => toggleAccordion(index)}
-                  themeTokens={tokens}
-                />
-              ))}
-            </div>
-          ) : documentHtml ? (
-            <div 
-              className="policy-rich-text"
-              style={{ 
-                background: tokens.BG, 
-                padding: "40px", 
-                borderRadius: "12px", 
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)", 
-                border: `1px solid ${tokens.B}`,
-                color: tokens.FG, 
-                fontSize: "16px", 
-                lineHeight: 1.9,
-              }}
-              dangerouslySetInnerHTML={{ __html: documentHtml }} 
-            />
-          ) : (
-            <p role="alert" style={{ textAlign: "center", color: tokens.M }}>
-              Terms are currently unavailable. Please try again later.
-            </p>
+            </>
           )}
 
         </div>

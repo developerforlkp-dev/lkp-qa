@@ -67,8 +67,27 @@
             font-size: 13px !important
             line-height: 1.3 !important
         // Compact foot spacing
-        :global(.foot)
+        div[class*="foot"]
+            min-width: 0
+            overflow: hidden
             padding-top: 8px !important
+        div[class*="flex"]
+            min-width: 0
+            flex-direction: column
+            align-items: flex-start
+            gap: 6px !important
+        div[class*="price"]
+            width: 100%
+            min-width: 0
+            margin-left: 0
+            align-items: flex-start
+            text-align: left
+        div[class*="cost"]
+            width: 100%
+            min-width: 0
+            white-space: normal
+            overflow-wrap: anywhere
+            line-height: 1.25
 
 // ─── Skeleton Styles ─────────────────────────────────────────────────────────
 .skeletonCard

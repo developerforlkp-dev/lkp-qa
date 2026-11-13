@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import { NavLink } from "react-router-dom";
 import { Heart } from "lucide-react";
 import cn from "classnames";
@@ -58,17 +57,6 @@ const MobileNavDrawer = ({
     };
   }, [visible, handleKeyDown]);
 
-  // Lock body scroll while open
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (visible && el) {
-      disableBodyScroll(el, { reserveScrollBarGap: true });
-    }
-    return () => {
-      if (el) enableBodyScroll(el);
-    };
-  }, [visible]);
-
   const handleLogout = () => {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("userInfo");
@@ -85,6 +73,8 @@ const MobileNavDrawer = ({
       <div
         className={cn(styles.overlay, { [styles.overlayVisible]: visible })}
         onClick={onClose}
+        onWheel={(event) => event.preventDefault()}
+        onTouchMove={(event) => event.preventDefault()}
         aria-hidden="true"
       />
 
@@ -111,7 +101,7 @@ const MobileNavDrawer = ({
             onClick={onClose}
             aria-label="Close menu"
           >
-            <Icon name="close" size="16" />
+            <Icon name="close" size="20" />
           </button>
         </div>
 
@@ -227,8 +217,8 @@ const MobileNavDrawer = ({
                 onLoginClick();
               }}
             >
-              <Icon name="user" size="18" />
-              Sign in
+              <Icon className={styles.loginIcon} name="user" size="18" />
+              <span className={styles.loginLabel}>Sign in</span>
             </button>
           )}
         </div>

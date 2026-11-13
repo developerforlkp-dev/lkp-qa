@@ -168,7 +168,7 @@ const Browse = ({
                 onClick={scrollLeft}
                 aria-label="Scroll left"
               >
-                <Icon name="arrow-prev" size="20" />
+                <Icon name="arrow-prev" size="16" />
               </button>
             )}
             {showRightArrow && (
@@ -179,7 +179,7 @@ const Browse = ({
                 onClick={scrollRight}
                 aria-label="Scroll right"
               >
-                <Icon name="arrow-next" size="20" />
+                <Icon name="arrow-next" size="16" />
               </button>
             )}
           </div>

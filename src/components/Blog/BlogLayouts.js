@@ -38,6 +38,13 @@ export function Layout1ModernMinimalist({ post }) {
           line-height: 1.6;
           margin-bottom: 40px;
         }
+        @media (max-width: 768px) {
+          .l1-root .blog-intro-p {
+            font-size: clamp(17px, 4.5vw, 18px);
+            line-height: 1.65;
+            margin-bottom: 30px;
+          }
+        }
         .dark-mode .l1-root .blog-intro-p, body.dark-mode .l1-root .blog-intro-p {
           color: #DDD !important;
         }
@@ -508,6 +515,13 @@ export function Layout2EditorialMagazine({ post }) {
           line-height: 1.5;
           margin-bottom: 30px;
         }
+        @media (max-width: 768px) {
+          .l2-root .l2-intro {
+            font-size: clamp(17px, 4.5vw, 18px);
+            line-height: 1.6;
+            margin-bottom: 28px;
+          }
+        }
         .l2-text {
           font-size: 19px;
           line-height: 1.8;
@@ -699,6 +713,13 @@ export function Layout3ImmersiveDark({ post }) {
           font-weight: 700;
           line-height: 1.6;
           margin-bottom: 40px;
+        }
+        @media (max-width: 768px) {
+          .l3-root .l3-intro {
+            font-size: clamp(17px, 4.5vw, 18px);
+            line-height: 1.65;
+            margin-bottom: 30px;
+          }
         }
         .l3-text {
           font-size: 20px;

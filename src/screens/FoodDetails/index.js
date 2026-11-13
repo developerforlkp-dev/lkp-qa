@@ -25,6 +25,8 @@ import { getShareText } from "../../utils/shareUtils";
 import { formatTimingsRange } from "../../utils/timeUtils";
 import SocialCards from "./SocialCards";
 import keralaFoodBg from "./kerala-culinary-bg.webp";
+import keralaFoodBgDark from "./kerala-culinary-bg-dark.webp";
+import DetailMarquee from "../../components/DetailMarquee";
 
 const toDisplayString = (value) => {
   if (!value) return "";
@@ -893,12 +895,8 @@ function CulinaryHero({ food, galleryItems }) {
         maxWidth: expandedDesktop ? 1320 : "none",
         margin: expandedDesktop ? "0 auto" : 0,
         background: theme === "dark"
-          ? "linear-gradient(160deg, #0a1a24 0%, #0d2535 60%, #0a1f2e 100%)"
+          ? (BG || "#080808")
           : "#daf4f8",
-        backgroundImage: `url(${keralaFoodBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-        backgroundRepeat: "no-repeat",
         minHeight: isMobile ? "auto" : "90vh",
         display: "flex",
         flexDirection: "column",
@@ -909,15 +907,29 @@ function CulinaryHero({ food, galleryItems }) {
         overflow: "hidden"
       }}
     >
-      {/* Background overlay for contrast */}
+      {/* Culinary Doodle Background Layer - Crisp Cyan Doodles on Transparent Canvas */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${theme === "dark" ? keralaFoodBgDark : keralaFoodBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
+          opacity: theme === "dark" ? 0.75 : 0.85,
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+      {/* Background vignette & atmospheric gradient for perfect readability */}
       <div style={{
         position: "absolute",
         inset: 0,
         background: theme === "dark"
-          ? "rgba(8, 20, 30, 0.72)"
-          : "rgba(220, 244, 250, 0.45)",
+          ? "radial-gradient(ellipse at 50% 35%, transparent 0%, rgba(8, 8, 8, 0.4) 100%)"
+          : "radial-gradient(ellipse at 50% 35%, rgba(220, 244, 250, 0.1) 0%, rgba(220, 244, 250, 0.45) 100%)",
         pointerEvents: "none",
-        zIndex: 1,
+        zIndex: 2,
       }} />
 
       <style>{`
@@ -1110,7 +1122,8 @@ function CulinaryNarrative({ food, hostData, hostAvatar }) {
     ? `${hostData.host.firstName} ${hostData.host.lastName || ''}`.trim() 
     : (hostData?.host?.displayName || hostData?.displayName || food?.host?.displayName || "Master Chef");
 
-  const chefStory = food?.chefOwnerStory || hostData?.host?.bio || hostData?.bio || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "Our culinary philosophy is rooted in heritage and innovation.";
+  const rawChefStory = food?.chefOwnerStory || hostData?.host?.bio || hostData?.bio || food?.chefStory || food?.ownerStory || food?.story || food?.host?.about || "";
+  const chefStory = typeof rawChefStory === "string" ? rawChefStory.trim() : "";
   
   const detailedDescription = food?.detailedDescription || food?.description || "Experience the perfect harmony of seasonal ingredients, local spices, and refined culinary design.";
 
@@ -1135,12 +1148,14 @@ function CulinaryNarrative({ food, hostData, hostAvatar }) {
           <div style={{ width: 40, height: 3, background: A, margin: "32px auto 0 auto", borderRadius: 1.5 }} />
         </div>
 
-        {/* 2-Column Grid: Detailed Description & Chef's Story */}
+        {/* Grid: Detailed Description & optional Chef's Story */}
         <div style={{ 
           display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+          gridTemplateColumns: !chefStory ? "1fr" : (isMobile ? "1fr" : "1fr 1fr"), 
           gap: isMobile ? "32px" : "48px",
-          alignItems: "stretch"
+          alignItems: "stretch",
+          maxWidth: !chefStory ? 840 : "100%",
+          margin: !chefStory ? "0 auto" : undefined
         }}>
           
           {/* Detailed Description: The Alchemy */}
@@ -1188,60 +1203,61 @@ function CulinaryNarrative({ food, hostData, hostAvatar }) {
             </motion.div>
           </Rev>
 
-          {/* Chef's Story: The Creator */}
-          <Rev delay={0.2} style={{ display: "flex" }}>
-            <motion.div
-              whileHover={{
-                scale: 1.015,
-                borderColor: A,
-                boxShadow: `0 20px 48px ${AL}`
-              }}
-              transition={{ duration: 0.35, ease: E }}
-              style={{
-                background: S,
-                border: `1.5px solid ${B}`,
-                borderRadius: 28,
-                padding: 36,
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                position: "relative",
-                cursor: "pointer",
-                transition: "border-color 0.3s ease, box-shadow 0.3s ease"
-              }}
-              onClick={() => setIsChefStoryExpanded(!isChefStoryExpanded)}
-            >
-              <div style={{ position: "absolute", top: 16, right: 32, fontSize: 80, color: A, opacity: 0.12, fontFamily: "serif" }}>&ldquo;</div>
-              <div>
-                <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 800 }}>The Creator</span>
-                <h4 className="font-display" style={{ fontSize: 22, color: FG, marginTop: 12, marginBottom: 20 }}>Chef's Story</h4>
-                <p style={{ fontSize: 13.5, color: M, lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
-                  {chefStory.length > 250 && !isChefStoryExpanded 
-                    ? `${chefStory.substring(0, 250)}...` 
-                    : chefStory}
-                </p>
-                {chefStory.length > 250 && (
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setIsChefStoryExpanded(!isChefStoryExpanded); }}
-                    style={{ background: "transparent", border: "none", padding: 0, color: A, fontSize: 11, fontWeight: 800, marginTop: 12, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.1em" }}
-                  >
-                    {isChefStoryExpanded ? "Read Less" : "Read More"}
-                  </button>
-                )}
-              </div>
-              <div style={{ marginTop: 24, borderTop: `1px solid ${B}`, paddingTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
-                {hostAvatar && (
-                  <img src={hostAvatar} alt={chefName} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: `1.5px solid ${A}` }} />
-                )}
+          {/* Chef's Story: The Creator (Only displayed if chefStory exists) */}
+          {chefStory && (
+            <Rev delay={0.2} style={{ display: "flex" }}>
+              <motion.div
+                whileHover={{
+                  scale: 1.015,
+                  borderColor: A,
+                  boxShadow: `0 20px 48px ${AL}`
+                }}
+                transition={{ duration: 0.35, ease: E }}
+                style={{
+                  background: S,
+                  border: `1.5px solid ${B}`,
+                  borderRadius: 28,
+                  padding: 36,
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  position: "relative",
+                  cursor: "pointer",
+                  transition: "border-color 0.3s ease, box-shadow 0.3s ease"
+                }}
+                onClick={() => setIsChefStoryExpanded(!isChefStoryExpanded)}
+              >
+                <div style={{ position: "absolute", top: 16, right: 32, fontSize: 80, color: A, opacity: 0.12, fontFamily: "serif" }}>&ldquo;</div>
                 <div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: FG, display: "block" }}>{chefName}</span>
-                  <span className="font-cursive" style={{ fontSize: 18, color: A, display: "block", marginTop: 2 }}>- Chef Owner</span>
+                  <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: A, fontWeight: 800 }}>The Creator</span>
+                  <h4 className="font-display" style={{ fontSize: 22, color: FG, marginTop: 12, marginBottom: 20 }}>Chef's Story</h4>
+                  <p style={{ fontSize: 13.5, color: M, lineHeight: 1.75, fontStyle: "italic", margin: 0 }}>
+                    {chefStory.length > 250 && !isChefStoryExpanded 
+                      ? `${chefStory.substring(0, 250)}...` 
+                      : chefStory}
+                  </p>
+                  {chefStory.length > 250 && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsChefStoryExpanded(!isChefStoryExpanded); }}
+                      style={{ background: "transparent", border: "none", padding: 0, color: A, fontSize: 11, fontWeight: 800, marginTop: 12, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.1em" }}
+                    >
+                      {isChefStoryExpanded ? "Read Less" : "Read More"}
+                    </button>
+                  )}
                 </div>
-              </div>
-            </motion.div>
-          </Rev>
-
+                <div style={{ marginTop: 24, borderTop: `1px solid ${B}`, paddingTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
+                  {hostAvatar && (
+                    <img src={hostAvatar} alt={chefName} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: `1.5px solid ${A}` }} />
+                  )}
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: FG, display: "block" }}>{chefName}</span>
+                    <span className="font-cursive" style={{ fontSize: 18, color: A, display: "block", marginTop: 2 }}>- Chef Owner</span>
+                  </div>
+                </div>
+              </motion.div>
+            </Rev>
+          )}
         </div>
       </div>
     </section>
@@ -2333,63 +2349,7 @@ const FoodDetails = () => {
             ? food.tags.split(",").map((s) => s.trim()).filter(Boolean)
             : ["Culinary Art", "Taste", "Philosophy", "Epicurean", "Experience", "Gastronomy"];
         
-        // Duplicate to ensure infinite seamless scrolling loop
-        const loopedTags = [...rawTags, ...rawTags, ...rawTags, ...rawTags, ...rawTags, ...rawTags];
-
-        const estimatedTagWidth = (tag) => tag.length * 9.5 + 75; // text width + margin + icon + padding
-        const tagsDistance = rawTags.reduce((sum, tag) => sum + estimatedTagWidth(tag), 0) * 3; // offset 50% is half of the clones
-        const tagsDuration = tagsDistance / 60; // constant speed of 60px/s
-
-        return (
-          <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
-            <div style={{
-              overflow: "hidden",
-              position: "relative",
-              padding: "20px 0",
-              background: "var(--BG)",
-              borderTop: `1px solid var(--B)`,
-              borderBottom: `1px solid var(--B)`,
-            }}>
-
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: tagsDuration }}
-              style={{ display: "flex", alignItems: "center", width: "max-content" }}
-            >
-              {loopedTags.map((tag, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap",
-                      marginRight: "32px"
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? "var(--FG)" : "var(--M)",
-                        fontFamily: "Poppins, sans-serif",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
-                      }}
-                    >
-                      {tag}
-                    </span>
-                    <Sparkles size={14} color="#08B5D6" fill="#08B5D6" style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
-            </div>
-          </div>
-        );
+        return <DetailMarquee items={rawTags} />;
       })()}
 
       <FoodMetadataCard food={food} />
@@ -2402,59 +2362,7 @@ const FoodDetails = () => {
         const items = dishes.map(d => typeof d === "string" ? d.trim() : d?.name || d?.title || "").filter(Boolean);
         const marqueeItems = items.length > 0 ? items : ["Heritage Taste", "Liquid Alchemy", "Curated Palette", "Biological Response"];
         
-        const loopedDishes = Array(12).fill(marqueeItems).flat();
-        const estimatedDishWidth = (dish) => dish.length * 9.5 + 75;
-        const dishesDistance = marqueeItems.reduce((sum, dish) => sum + estimatedDishWidth(dish), 0) * 6;
-        const dishesDuration = dishesDistance / 60;
-
-        return (
-          <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px", boxSizing: "border-box", width: "100%" }}>
-            <div style={{
-              overflow: "hidden",
-              position: "relative",
-              padding: "20px 0",
-              background: "var(--BG)",
-              borderTop: `1px solid var(--B)`,
-            }}>
-
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: dishesDuration }}
-              style={{ display: "flex", alignItems: "center", gap: 32, width: "max-content" }}
-            >
-              {loopedDishes.map((dish, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: isEven ? 700 : 300,
-                        color: isEven ? "var(--FG)" : "var(--M)",
-                        fontFamily: '"Inter", sans-serif',
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        opacity: isEven ? 1 : 0.75
-                      }}
-                    >
-                      {dish}
-                    </span>
-                    <Sparkles size={14} color={A || "#0097B2"} fill={A || "#0097B2"} style={{ opacity: 0.6 }} />
-                  </div>
-                );
-              })}
-            </motion.div>
-            </div>
-          </div>
-        );
+        return <DetailMarquee items={marqueeItems} />;
       })()}
 
 

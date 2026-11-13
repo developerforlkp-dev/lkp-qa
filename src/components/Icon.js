@@ -191,11 +191,14 @@ const Icon = (props) => {
   const viewBox = viewBoxes[props.name] || props.viewBox || "0 0 16 16";
   return (
     <svg
-      className={cn(props.className)}
+      className={cn("app-icon", props.className)}
       width={size}
       height={size}
       viewBox={viewBox}
       style={props.style}
+      aria-hidden={props["aria-label"] ? undefined : true}
+      aria-label={props["aria-label"]}
+      focusable="false"
     >
       <path d={icons[props.name]}></path>
     </svg>
