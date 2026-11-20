@@ -944,7 +944,7 @@ function buildCalendarGrid(year, month) {
   return grid;
 }
 
-function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
+function MobileInlineCalendar({ selectedDate, selectedEndDate, selectRange, onDateSelect, onClose }) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = React.useState(
     selectedDate ? new Date(selectedDate).getMonth() : now.getMonth()
@@ -960,6 +960,7 @@ function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
   });
 
   const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
+  const selectedEndDateObj = selectRange && selectedEndDate ? new Date(selectedEndDate) : null;
 
   const isToday = (date) =>
     date &&
@@ -978,6 +979,7 @@ function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
 
   const isSelected = (date) => {
     if (!date || !selectedDateObj) return false;
+    if (selectedEndDateObj) return date >= selectedDateObj && date <= selectedEndDateObj;
     return date.toDateString() === selectedDateObj.toDateString();
   };
 
@@ -1009,7 +1011,15 @@ function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
   const handleDayClick = (date) => {
     if (!date || isPast(date)) return;
     const formatted = moment(date).format("MMM DD, YYYY");
-    onDateSelect?.(formatted, formatted);
+    if (selectRange) {
+      if (!selectedDateObj || selectedEndDateObj || date <= selectedDateObj) {
+        onDateSelect?.(formatted, null);
+        return;
+      }
+      onDateSelect?.(moment(selectedDateObj).format("MMM DD, YYYY"), formatted);
+    } else {
+      onDateSelect?.(formatted, formatted);
+    }
     setTimeout(() => onClose?.(), 150);
   };
 
@@ -1037,6 +1047,7 @@ function MobileInlineCalendar({ selectedDate, onDateSelect, onClose }) {
         </button>
       </div>
 
+      {selectRange && <div role="status">{selectedDateObj && !selectedEndDateObj ? "Select check-out" : "Select check-in"}</div>}
       {/* Day headers */}
       <div className="mcsh-cal-grid">
         {DAYS_OF_WEEK.map((d, i) => (
@@ -1196,6 +1207,7 @@ export default function MobileCinematicSearch({
   selectedDestination,
   setSelectedDestination,
   selectedDate,
+  selectedEndDate,
   guests,
   showCalendar,
   formattedDate,
@@ -1699,7 +1711,7 @@ export default function MobileCinematicSearch({
                       </div>
                       <div className="mcsh-field-content">
                         <span className="mcsh-field-label">
-                          {activeFilter === "stays" ? "Check-in" : "Date"}
+                          {activeFilter === "stays" ? "Stay dates" : "Date"}
                         </span>
                         <span
                           className={cn("mcsh-field-value", {
@@ -1732,6 +1744,8 @@ export default function MobileCinematicSearch({
                         >
                           <MobileInlineCalendar
                             selectedDate={selectedDate}
+                            selectedEndDate={selectedEndDate}
+                            selectRange={activeFilter === "stays"}
                             onDateSelect={handleDateSelect}
                             onClose={() => setLocalShowDatePicker(false)}
                           />

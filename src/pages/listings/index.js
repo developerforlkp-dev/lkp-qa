@@ -90,6 +90,10 @@ const Listings = () => {
     : (locationState.dateRange?.startDate ? moment(locationState.dateRange.startDate).toDate() : null);
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [selectedEndDate, setSelectedEndDate] = useState(() => {
+    const end = moment(searchParams.get("date") ? searchParams.get("endDate") : locationState.dateRange?.endDate, "YYYY-MM-DD", true);
+    return initialDate && end.isValid() && end.isAfter(initialDate, "day") ? end.toDate() : null;
+  });
 
   const initialGuestsStr = searchParams.get("guests");
   const initialAdultsStr = searchParams.get("adults");
@@ -104,6 +108,7 @@ const Listings = () => {
   const [guests, setGuests] = useState(initialGuests);
 
   const businessInterest = searchParams.get("businessInterest") || locationState.businessInterest || "EXPERIENCE";
+  const isStayInterest = businessInterest.toUpperCase().includes("STAY");
   const businessInterestIdParam = searchParams.get("businessInterestId");
   const categoryTypeParam = searchParams.get("categoryType") || "";
   const selectedCategoryLabel = searchParams.get("selectedCategoryLabel") || "";
@@ -200,9 +205,11 @@ const Listings = () => {
   const dateRange = useMemo(() => (
     selectedDate ? {
       startDate: moment(selectedDate).format("YYYY-MM-DD"),
-      endDate: moment(selectedDate).add(1, "days").format("YYYY-MM-DD"),
+      endDate: isStayInterest
+        ? (selectedEndDate ? moment(selectedEndDate).format("YYYY-MM-DD") : "")
+        : moment(selectedDate).add(1, "days").format("YYYY-MM-DD"),
     } : null
-  ), [selectedDate]);
+  ), [selectedDate, selectedEndDate, isStayInterest]);
 
   // Filter state
   const createDefaultFilters = () => ({
@@ -442,6 +449,10 @@ const Listings = () => {
     if (selectedDestination?.placeId) params.set("placeId", selectedDestination.placeId);
     if (selectedDate) params.set("date", moment(selectedDate).format("YYYY-MM-DD"));
 
+    if (selectedDate && selectedEndDate && nextBusinessInterest.toUpperCase().includes("STAY")) {
+      params.set("endDate", moment(selectedEndDate).format("YYYY-MM-DD"));
+    }
+
     const guestTotal = guests.adults + guests.children;
     if (guestTotal > 0) {
       params.set("guests", String(guestTotal));
@@ -520,7 +531,10 @@ const Listings = () => {
 
   // Format selected date for display
   const formattedDate = selectedDate
-    ? moment(selectedDate).format("MMM DD, YYYY")
+    ? [
+        selectedDate,
+        isStayInterest ? selectedEndDate : null,
+      ].filter(Boolean).map((date) => moment(date).format("MMM DD, YYYY")).join(" to ")
     : "Select date";
 
   // Format guest count for display
@@ -537,6 +551,8 @@ const Listings = () => {
       const parsedDate = moment(startDateStr, "MMM DD, YYYY");
       if (parsedDate.isValid()) {
         setSelectedDate(parsedDate.toDate());
+        const end = moment(endDateStr, "MMM DD, YYYY", true);
+        setSelectedEndDate(end.isValid() && end.isAfter(parsedDate, "day") ? end.toDate() : null);
       }
     }
   };
@@ -586,6 +602,7 @@ const Listings = () => {
     setSearchLocation("");
     setSelectedDestination(null);
     setSelectedDate(null);
+    setSelectedEndDate(null);
     setGuests({ adults: 0, children: 0, infants: 0, pets: 0 });
     
     // Auto-trigger search with empty params
@@ -1019,6 +1036,8 @@ const Listings = () => {
                   onClose={() => setShowDatePicker(false)}
                   onDateSelect={handleDateSelect}
                   selectedDate={selectedDate}
+                  selectedEndDate={selectedEndDate}
+                  selectRange={isStayInterest}
                   className={styles.datePicker}
                 />
               </div>

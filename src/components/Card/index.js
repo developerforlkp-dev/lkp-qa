@@ -3,6 +3,7 @@ import cn from "classnames";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./Card.module.sass";
 import Icon from "../Icon";
+import { getListingSearchUrl } from "../../utils/staySearch";
 import Favorite from "../Favorite";
 
 export const getWishlistConfig = (item) => {
@@ -112,32 +113,6 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
     return false;
   })();
 
-  const getDestinationUrl = () => {
-    if (!item?.url) return "";
-    try {
-      const urlParams = new URLSearchParams(location.search);
-      const date = urlParams.get('date');
-      const guests = urlParams.get('guests');
-      const adults = urlParams.get('adults');
-      const children = urlParams.get('children');
-      
-      if (!date && !guests && !adults && !children) return item.url;
-      
-      const isAbsolute = item.url.startsWith('http');
-      const base = isAbsolute ? item.url : `http://localhost${item.url.startsWith('/') ? '' : '/'}${item.url}`;
-      const urlObj = new URL(base);
-      
-      if (date) urlObj.searchParams.set('date', date);
-      if (guests) urlObj.searchParams.set('guests', guests);
-      if (adults) urlObj.searchParams.set('adults', adults);
-      if (children) urlObj.searchParams.set('children', children);
-      
-      return isAbsolute ? urlObj.toString() : urlObj.pathname + urlObj.search + urlObj.hash;
-    } catch (e) {
-      return item.url;
-    }
-  };
-
   const canShowNewBadge = !location.pathname.includes('/listings') || isStayCard;
   const hasActualRating = Number(item.rating) > 0;
   const hasRatingOrBadge = !shouldHideRating && (hasActualRating || canShowNewBadge);
@@ -152,7 +127,7 @@ const Item = ({ className, item, row, car, hidePrice, hideWishlist }) => {
         { [styles.row]: row },
         { [styles.car]: car }
       )}
-      to={getDestinationUrl()}
+      to={getListingSearchUrl(item.url, location.search, isStayCard)}
       target={isMobile ? "_self" : "_blank"}
       rel="noopener noreferrer"
     >

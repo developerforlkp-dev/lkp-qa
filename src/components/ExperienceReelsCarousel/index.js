@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Play, ExternalLink, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, ExternalLink, Instagram, Facebook, Youtube } from "lucide-react";
 import { getPublicReelMedia } from "../../utils/api";
 
 /**
@@ -20,31 +20,66 @@ export const extractInstagramReelId = (urlOrId) => {
   return null;
 };
 
-/**
- * Individual Reel Video Card with IntersectionObserver auto-play / pause,
- * fallback to Instagram embed, and click-through to original reel.
- */
-function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
+const socialPlatforms = {
+  instagram: { name: "Instagram", icon: Instagram },
+  facebook: { name: "Facebook", icon: Facebook },
+  youtube: { name: "YouTube", icon: Youtube },
+};
+
+function normalizeReelLink(item) {
+  const value = (typeof item === "string" ? item : item?.url || item?.link || item?.href);
+  if (typeof value !== "string" || !value.trim()) return null;
+  const url = value.trim();
+  const type = typeof item?.type === "string" ? item.type.trim().toLowerCase() : "";
+  const isKnownType = Object.prototype.hasOwnProperty.call(socialPlatforms, type);
+  const rawReelId = (!type || type === "instagram") && /^[A-Za-z0-9_-]+$/.test(url)
+    ? extractInstagramReelId(url)
+    : null;
+
+  if (rawReelId) {
+    const href = `https://www.instagram.com/reel/${rawReelId}/`;
+    return { href, embedUrl: `${href}embed/`, reelId: rawReelId, platform: "instagram" };
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+
+  const host = parsed.hostname.toLowerCase();
+  const isInstagram = host === "instagram.com" || host.endsWith(".instagram.com");
+  const isFacebook = host === "facebook.com" || host.endsWith(".facebook.com") || host === "fb.watch";
+  const isYouTube = host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be";
+  const platform = isKnownType ? type : isInstagram ? "instagram" : isFacebook ? "facebook" : isYouTube ? "youtube" : "";
+  const post = isInstagram && platform === "instagram"
+    ? parsed.pathname.match(/^\/(?:[^/]+\/)?(reel|reels|p)\/([A-Za-z0-9_-]+)\/?$/i)
+    : null;
+  const reelId = post?.[2];
+  const postPath = post?.[1].toLowerCase() === "p" ? "p" : "reel";
+  const embedUrl = reelId ? `https://www.instagram.com/${postPath}/${reelId}/embed/` : null;
+
+  return { href: parsed.href, embedUrl, reelId, platform };
+}
+
+function ReelCard({ item, isDark = false, accentColor = "#0097B2" }) {
+  const { href, embedUrl, reelId, platform } = item;
+  const social = socialPlatforms[platform];
+  const PlatformIcon = social?.icon || ExternalLink;
+  const label = social ? `${reelId ? "Watch" : "Open"} on ${social.name}` : "Open link";
   const [videoUrl, setVideoUrl] = useState(null);
   const [posterUrl, setPosterUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(reelId));
   const [hasError, setHasError] = useState(false);
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
-  const reelId = extractInstagramReelId(reelUrl);
-  const originalReelHref = reelId
-    ? `https://www.instagram.com/reel/${reelId}/`
-    : (String(reelUrl).startsWith("http") ? reelUrl : `https://www.instagram.com/reel/${reelUrl}/`);
-
   // Fetch the media URL when the preview/component mounts (media URLs can be temporary)
   useEffect(() => {
+    if (!reelId) return;
     let isCancelled = false;
-    if (!reelId) {
-      setHasError(true);
-      setLoading(false);
-      return;
-    }
 
     setLoading(true);
     setHasError(false);
@@ -116,24 +151,13 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
     };
   }, [videoUrl, hasError]);
 
-  const handleCardClick = () => {
-    if (originalReelHref) {
-      window.open(originalReelHref, "_blank", "noopener,noreferrer");
-    }
-  };
-
   return (
-    <div
+    <a
       ref={containerRef}
-      onClick={handleCardClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleCardClick();
-        }
-      }}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
       className="experience-reel-card"
       style={{
         position: "relative",
@@ -142,7 +166,10 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
         height: 460,
         borderRadius: 24,
         overflow: "hidden",
-        background: isDark ? "#111827" : "#0f172a",
+        background: reelId
+          ? (isDark ? "#111827" : "#0f172a")
+          : (isDark ? "#1e293b" : "#eaf4f7"),
+        textDecoration: "none",
         cursor: "pointer",
         userSelect: "none",
         boxShadow: isDark
@@ -151,6 +178,24 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
         transition: "transform 0.25s ease, box-shadow 0.25s ease",
       }}
     >
+      {!reelId && (
+        <span
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            color: isDark ? "#f8fafc" : "#0f172a",
+            fontWeight: 600,
+          }}
+        >
+          <PlatformIcon size={40} aria-hidden="true" />
+          {label}
+        </span>
+      )}
       {/* Loading Skeleton */}
       {loading && (
         <div
@@ -214,8 +259,9 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
           }}
         >
           <iframe
-            src={`https://www.instagram.com/reel/${reelId}/embed/`}
-            title={`Instagram Reel ${reelId}`}
+            src={embedUrl}
+            title={`Instagram preview ${reelId}`}
+            tabIndex={-1}
             style={{
               width: "100%",
               height: "100%",
@@ -228,8 +274,7 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
         </div>
       )}
 
-      {/* Overlays: Instagram badge & gradient */}
-      <div
+      {reelId && <div
         style={{
           position: "absolute",
           inset: 0,
@@ -238,7 +283,7 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
           pointerEvents: "none",
           zIndex: 3,
         }}
-      />
+      />}
 
       {/* Top right external link hint */}
       <div
@@ -264,7 +309,7 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
       </div>
 
       {/* Bottom info pill */}
-      <div
+      {reelId && <div
         style={{
           position: "absolute",
           bottom: 16,
@@ -303,10 +348,10 @@ function ReelCard({ reelUrl, isDark = false, accentColor = "#0097B2" }) {
             whiteSpace: "nowrap",
           }}
         >
-          Watch on Instagram
+          {label}
         </span>
-      </div>
-    </div>
+      </div>}
+    </a>
   );
 }
 
@@ -326,7 +371,6 @@ export default function ExperienceReelsCarousel({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Normalize reelUrls into an array of strings
   const items = React.useMemo(() => {
     let list = [];
     if (Array.isArray(reelUrls)) {
@@ -340,9 +384,14 @@ export default function ExperienceReelsCarousel({
         list = reelUrls.split(",").map((s) => s.trim());
       }
     }
-    return list
-      .map((item) => (typeof item === "string" ? item.trim() : item?.url || item?.link || item?.href || String(item)))
-      .filter((url) => Boolean(url && url.length > 0));
+    const uniqueItems = new Map();
+    for (const entry of list) {
+      const item = normalizeReelLink(entry);
+      if (!item) continue;
+      const key = item.reelId || item.href;
+      if (!uniqueItems.has(key)) uniqueItems.set(key, item);
+    }
+    return Array.from(uniqueItems.values());
   }, [reelUrls]);
 
   const isDark = theme === "dark";
@@ -544,10 +593,10 @@ export default function ExperienceReelsCarousel({
           onScroll={checkScrollability}
           className="experience-reels-rail"
         >
-          {items.map((url, index) => (
+          {items.map((item) => (
             <ReelCard
-              key={`${url}-${index}`}
-              reelUrl={url}
+              key={item.reelId || item.href}
+              item={item}
               isDark={isDark}
               accentColor={A}
             />

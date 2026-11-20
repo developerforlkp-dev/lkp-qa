@@ -804,6 +804,7 @@ const StayBookingSystem = ({
   checkOutDate,
   setCheckOutDate,
   guests,
+  searchGuests,
   setGuests,
   childAges: externalChildAges,
   setChildAges: externalSetChildAges,
@@ -1496,6 +1497,9 @@ const StayBookingSystem = ({
     const minAdults = Math.max(1, totalNonBedRooms);
 
     setGuests((prev) => {
+      // Keep the searched party intact while the user chooses enough rooms for it.
+      if (!isEntirelyBedBased && prev === searchGuests) return prev;
+
       let nextAdults = prev.adults;
       let nextChildren = prev.children;
 
@@ -1531,7 +1535,7 @@ const StayBookingSystem = ({
         children: nextChildren,
       };
     });
-  }, [stay, isEntirelyBedBased, totalSelectedBeds, resolvedSelectedRooms, selectedRooms, stayRoomsCatalog, setGuests]);
+  }, [stay, isEntirelyBedBased, totalSelectedBeds, resolvedSelectedRooms, selectedRooms, stayRoomsCatalog, searchGuests, setGuests]);
 
   useEffect(() => {
     if (typeof setChildAges !== "function") return;

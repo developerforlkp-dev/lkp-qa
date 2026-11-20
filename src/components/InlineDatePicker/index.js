@@ -27,13 +27,17 @@ const buildCalendarGrid = (year, month, availabilityData = []) => {
   return calendar;
 };
 
+const EMPTY_AVAILABILITY = [];
+
 const InlineDatePicker = ({
   visible,
   onClose,
   onDateSelect,
   selectedDate,
+  selectedEndDate,
+  selectRange = false,
   timeSlots = [],
-  availabilityData = [],
+  availabilityData = EMPTY_AVAILABILITY,
   disabledDateKeys = [],
   className,
 }) => {
@@ -56,6 +60,8 @@ const InlineDatePicker = ({
           const parsedDate = new Date(selectedDate);
           if (!isNaN(parsedDate.getTime())) {
             setStartDate(parsedDate);
+            setEndDate(selectRange && selectedEndDate ? new Date(selectedEndDate) : null);
+            setHoveredDate(null);
             setCurrentMonth(parsedDate.getMonth());
             setCurrentYear(parsedDate.getFullYear());
             return;
@@ -63,9 +69,11 @@ const InlineDatePicker = ({
         } catch {
           // Invalid date, fall through
         }
-        setStartDate(null);
-        setEndDate(null);
-      } else if (availabilityData && availabilityData.length > 0) {
+      }
+      setStartDate(null);
+      setEndDate(null);
+      setHoveredDate(null);
+      if (availabilityData && availabilityData.length > 0) {
         // If no date is selected, auto-advance to the first month that has available slots
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -101,7 +109,7 @@ const InlineDatePicker = ({
         }
       }
     }
-  }, [visible, selectedDate, availabilityData]);
+  }, [visible, selectedDate, selectedEndDate, selectRange, availabilityData]);
 
   const isDateInRange = (date) => {
     if (!date || !startDate) return false;
@@ -249,13 +257,18 @@ const InlineDatePicker = ({
   const handleDateClick = (date) => {
     if (!date || isDatePast(date) || isDateDisabled(date)) return;
 
-    // For single date selection, select immediately and close
-    setStartDate(date);
-    setEndDate(date);
-
-    // Format and call onDateSelect immediately
-    const formattedDate = date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-    onDateSelect?.(formattedDate, formattedDate);
+    const formatDate = (value) => value.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+    if (selectRange) {
+      if (!startDate || endDate || date <= startDate) {
+        onDateSelect?.(formatDate(date), null);
+        return;
+      }
+      onDateSelect?.(formatDate(startDate), formatDate(date));
+    } else {
+      setStartDate(date);
+      setEndDate(date);
+      onDateSelect?.(formatDate(date), formatDate(date));
+    }
 
     // Close picker after a short delay to show selection
     setTimeout(() => {
@@ -304,6 +317,7 @@ const InlineDatePicker = ({
             ›
           </button>
         </div>
+        {selectRange && <div role="status">{startDate && !endDate ? "Select check-out" : "Select check-in"}</div>}
         <div className={styles.calendarGrid}>
           {daysOfWeek.map((day, idx) => (
             <div key={idx} className={styles.dayHeader}>{day}</div>

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import cn from "classnames";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./ListingsGrid.module.sass";
 import Card from "../../Card";
+import { getListingSearchUrl } from "../../../utils/staySearch";
 import Loader from "../../Loader";
 import Icon from "../../Icon";
 import Favorite from "../../Favorite";
@@ -193,6 +194,7 @@ const SkeletonCard = () => {
 };
 
 const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMessage = "No listings found. Try adjusting your filters.", listView = false }) => {
+  const { search } = useLocation();
   const sentinelRef = useRef(null);
   const mountedRef = useRef(true);
   const loadingStayMetadataIdsRef = useRef(new Set());
@@ -311,7 +313,7 @@ const ListingsGrid = ({ listings, loading, error, hasMore, onLoadMore, emptyMess
           const key = item.id || originalListing?.id || originalListing?._id || index;
           return listView ? (
             <Link 
-              to={item.url} 
+              to={item.url?.includes("stay-details") ? getListingSearchUrl(item.url, search, true) : item.url}
               key={key} 
               className={styles.listCardLink}
               target={isMobile ? "_self" : "_blank"}

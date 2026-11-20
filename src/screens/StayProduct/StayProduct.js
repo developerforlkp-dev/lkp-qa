@@ -3,6 +3,7 @@ import { useLocation, useHistory } from "react-router-dom";
 import { ChevronLeft, AlertCircle, Sparkles, Plus, Minus, Info, Baby } from "lucide-react";
 import cn from "classnames";
 import moment from "moment";
+import { readStaySearch } from "../../utils/staySearch";
 import styles from "./StayProduct.module.sass";
 import Icon from "../../components/Icon";
 import InlineDatePicker from "../../components/InlineDatePicker";
@@ -10,7 +11,7 @@ import Loader from "../../components/Loader";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import ChildAgeSelect from "../../components/ChildAgeSelect";
 import { getStayDetails, getStayRoomAvailability, getStayBedAvailability, getStayPropertyAvailability, createStayOrder, getStayReviews, getStayHotelRoomAvailability, getStayHostelAvailability, previewOrderPrice, getStayHotelRoomPrices, getStayHostelRoomPrices } from "../../utils/api";
-import ExperienceReelsCarousel, { extractInstagramReelId } from "../../components/ExperienceReelsCarousel";
+import ExperienceReelsCarousel from "../../components/ExperienceReelsCarousel";
 import { clearPendingCheckoutState, persistPendingCheckout } from "../../utils/paymentSession";
 import { useTheme } from "../../components/JUI/Theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -2008,9 +2009,10 @@ const StayProduct = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Booking state
-  const [checkInDate, setCheckInDate] = useState("");
-  const [checkOutDate, setCheckOutDate] = useState("");
-  const [guests, setGuests] = useState({ adults: 1, children: 0 });
+  const searchBooking = readStaySearch(location.search);
+  const [checkInDate, setCheckInDate] = useState(() => searchBooking.checkInDate?.format("YYYY-MM-DD") || "");
+  const [checkOutDate, setCheckOutDate] = useState(() => searchBooking.checkOutDate?.format("YYYY-MM-DD") || "");
+  const [guests, setGuests] = useState(() => searchBooking.guests);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [availableRooms, setAvailableRooms] = useState([]);
@@ -2059,17 +2061,7 @@ const StayProduct = () => {
       }
     });
 
-    return Array.from(
-      new Set(
-        allItems
-          .map((link) => {
-            if (!link) return null;
-            const urlStr = typeof link === "string" ? link : link?.url || link?.link || link?.href || "";
-            return extractInstagramReelId(urlStr) || urlStr;
-          })
-          .filter(Boolean)
-      )
-    );
+    return allItems;
   }, [reviews, stay]);
   const [roomsCount, setRoomsCount] = useState(1);
 

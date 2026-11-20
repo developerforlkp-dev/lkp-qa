@@ -102,6 +102,7 @@ const FleetHome = () => {
 
   // Search state
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [guests, setGuests] = useState({
     adults: 0,
     children: 0,
@@ -233,7 +234,10 @@ const FleetHome = () => {
   const showCalendar = activeFilter === "experience" || activeFilter === "events" || activeFilter === "stays";
 
   const formattedDate = selectedDate
-    ? moment(selectedDate).format("MMM DD, YYYY")
+    ? [
+        selectedDate,
+        activeFilter === "stays" ? selectedEndDate : null,
+      ].filter(Boolean).map((date) => moment(date).format("MMM DD, YYYY")).join(" to ")
     : "Add dates";
 
 
@@ -251,6 +255,8 @@ const FleetHome = () => {
       const parsedDate = moment(startDateStr, "MMM DD, YYYY");
       if (parsedDate.isValid()) {
         setSelectedDate(parsedDate.toDate());
+        const end = moment(endDateStr, "MMM DD, YYYY", true);
+        setSelectedEndDate(end.isValid() && end.isAfter(parsedDate, "day") ? end.toDate() : null);
       }
     }
   };
@@ -279,6 +285,10 @@ const FleetHome = () => {
     if (searchQuery) params.append("search", searchQuery);
     if (selectedDestination?.placeId) params.append("placeId", selectedDestination.placeId);
     if (selectedDate) params.append("date", moment(selectedDate).format("YYYY-MM-DD"));
+
+    if (activeFilter === "stays" && selectedDate && selectedEndDate) {
+      params.set("endDate", moment(selectedEndDate).format("YYYY-MM-DD"));
+    }
 
     const guestTotal = guests.adults + guests.children;
     if (guestTotal > 0) {
@@ -850,6 +860,7 @@ const FleetHome = () => {
             selectedDestination={selectedDestination}
             setSelectedDestination={setSelectedDestination}
             selectedDate={selectedDate}
+            selectedEndDate={selectedEndDate}
             guests={guests}
             showCalendar={showCalendar}
             formattedDate={formattedDate}
@@ -883,6 +894,7 @@ const FleetHome = () => {
               selectedDestination={selectedDestination}
               setSelectedDestination={setSelectedDestination}
               selectedDate={selectedDate}
+              selectedEndDate={selectedEndDate}
               guests={guests}
               showCalendar={showCalendar}
               formattedDate={formattedDate}
@@ -1015,6 +1027,8 @@ const FleetHome = () => {
                       onClose={() => setShowDatePicker(false)}
                       onDateSelect={handleDateSelect}
                       selectedDate={selectedDate}
+                      selectedEndDate={selectedEndDate}
+                      selectRange={activeFilter === "stays"}
                       className={styles.datePicker}
                     />
                   </div>

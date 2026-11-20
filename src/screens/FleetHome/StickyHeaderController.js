@@ -26,6 +26,7 @@ const StickyHeaderController = ({
   selectedDestination,
   setSelectedDestination,
   selectedDate,
+  selectedEndDate,
   guests,
   showCalendar,
   formattedDate,
@@ -336,6 +337,8 @@ const StickyHeaderController = ({
                     onClose={() => setShowDatePicker(false)}
                     onDateSelect={handleDateSelect}
                     selectedDate={selectedDate}
+                    selectedEndDate={selectedEndDate}
+                    selectRange={activeFilter === "stays"}
                     className={styles.datePickerContainer}
                   />
                 </div>
