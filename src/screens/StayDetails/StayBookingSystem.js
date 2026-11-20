@@ -882,8 +882,7 @@ const StayBookingSystem = ({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [bookingErrorPopup, setBookingErrorPopup] = useState({ visible: false, title: "", message: "", isSameDay: false });
-  const [apiPayableAmount, setApiPayableAmount] = useState(null);
-  const [apiPayableLoading, setApiPayableLoading] = useState(false);
+  const [payableQuote, setPayableQuote] = useState(null);
   const [showLeftAddonArrow, setShowLeftAddonArrow] = useState(false);
   const [showRightAddonArrow, setShowRightAddonArrow] = useState(false);
   const [isHoveringAddons, setIsHoveringAddons] = useState(false);
@@ -895,14 +894,11 @@ const StayBookingSystem = ({
   }, []);
   const externalOpenHandledRef = useRef(false);
   const lastAvailKeyRef = useRef("");
-  const lastCalculatedPayloadRef = useRef("");
-  const stayCalculateTimerRef = useRef(null);
 
   const resetStayBookingFormState = useCallback(() => {
     setValidationError("");
     setSelectionMode("check-in");
-    setApiPayableAmount(null);
-    setApiPayableLoading(false);
+    setPayableQuote(null);
     setBookingErrorPopup({ visible: false, title: "", message: "", isSameDay: false });
     if (typeof onClearBookingState === "function") {
       onClearBookingState();
@@ -1959,39 +1955,14 @@ const StayBookingSystem = ({
     };
   }, [stay, resolvedSelectedRooms, checkInDate, guests, childAges, nightsCount, selectedRooms, stayRoomsCatalog, selectedAddOns, addOnQuantities, defaultChildAge]);
 
-  // Dynamic Stay Pricing API total fetch
-  useEffect(() => {
-    return () => {
-      if (stayCalculateTimerRef.current) clearTimeout(stayCalculateTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!show) {
-      if (stayCalculateTimerRef.current) clearTimeout(stayCalculateTimerRef.current);
-      lastCalculatedPayloadRef.current = "";
-      setApiPayableAmount(null);
-      setApiPayableLoading(false);
-      return;
-    }
+  const payableQuoteKey = useMemo(() => {
+    if (!show || !(Number(guests.adults) > 0)) return null;
 
     const stayId = Number(stay?.stayId || stay?.id);
-    if (!stayId || !checkInDate || !checkOutDate) {
-      if (stayCalculateTimerRef.current) clearTimeout(stayCalculateTimerRef.current);
-      lastCalculatedPayloadRef.current = "";
-      setApiPayableAmount(null);
-      setApiPayableLoading(false);
-      return;
-    }
+    if (!stayId || !checkInDate || !checkOutDate) return null;
 
     const isPropertyBased = isPropertyBasedBooking(stay);
-    if (!isPropertyBased && resolvedSelectedRooms.length === 0) {
-      if (stayCalculateTimerRef.current) clearTimeout(stayCalculateTimerRef.current);
-      lastCalculatedPayloadRef.current = "";
-      setApiPayableAmount(null);
-      setApiPayableLoading(false);
-      return;
-    }
+    if (!isPropertyBased && resolvedSelectedRooms.length === 0) return null;
 
     const distribution = distributeGuests(selectedRooms, stayRoomsCatalog, guests.adults || 1, guests.children || 0);
     const normalizedChildAges = syncChildAges(childAges, guests.children || 0, defaultChildAge).map((age) => {
@@ -2179,57 +2150,48 @@ const StayBookingSystem = ({
       bookingObj.addons = formattedAddons || [];
     }
 
-    const payload = {
-      booking: bookingObj
-    };
-
-    const payloadKey = JSON.stringify(payload);
-    if (lastCalculatedPayloadRef.current === payloadKey) {
-      return;
-    }
-
-    lastCalculatedPayloadRef.current = payloadKey;
-    setApiPayableLoading(true);
-
-    if (stayCalculateTimerRef.current) {
-      clearTimeout(stayCalculateTimerRef.current);
-    }
-
-    stayCalculateTimerRef.current = setTimeout(() => {
-      calculateStayTotal(payload)
-        .then((res) => {
-          const amount = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
-          if (amount != null && Number.isFinite(Number(amount))) {
-            setApiPayableAmount(Number(amount));
-          }
-        })
-        .catch((err) => {
-          console.warn("calculateStayTotal error:", err);
-        })
-        .finally(() => {
-          setApiPayableLoading(false);
-        });
-    }, 150);
+    return JSON.stringify({ booking: bookingObj });
   }, [
     show,
-    stay?.stayId,
-    stay?.id,
-    stay?.roomId,
-    stay?.roomTypeId,
-    stay?.mealPlanCode,
-    stay?.mealPlan,
-    stay?.selectedMealPlan,
-    stay?.mealPlanPricing,
+    stay,
     checkInDate,
     checkOutDate,
     guests,
     childAges,
     resolvedSelectedRooms,
     selectedRooms,
+    stayRoomsCatalog,
     selectedAddOns,
     addOnQuantities,
-    pricing?.extraChildrenCount,
+    defaultChildAge,
   ]);
+
+  useEffect(() => {
+    setPayableQuote(null);
+    if (!payableQuoteKey) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      let amount = null;
+      try {
+        const res = await calculateStayTotal(JSON.parse(payableQuoteKey));
+        const payable = res?.finalPayableAmount ?? res?.data?.finalPayableAmount ?? res?.amount ?? res?.total;
+        if (payable != null && Number.isFinite(Number(payable))) amount = Number(payable);
+      } catch (err) {
+        console.warn("calculateStayTotal error:", err);
+      }
+      if (!cancelled) setPayableQuote({ key: payableQuoteKey, amount });
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [payableQuoteKey]);
+
+  const currentPayableQuote = payableQuote?.key === payableQuoteKey ? payableQuote : null;
+  const apiPayableAmount = currentPayableQuote?.amount;
+  const modalPayableAmount = apiPayableAmount ?? pricing?.finalTotal;
 
   const extraChildAgeIndexes = useMemo(() => {
     const isPropertyBased = isPropertyBasedBooking(stay);
@@ -4785,33 +4747,14 @@ const StayBookingSystem = ({
                 </AnimatePresence>
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
-                    {(() => {
-                      if (apiPayableLoading) {
-                        return <span style={{ fontSize: 16, fontWeight: 700, color: M, marginTop: 2 }}>Calculating...</span>;
-                      }
-                      if (apiPayableAmount != null && Number.isFinite(apiPayableAmount)) {
-                        return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(apiPayableAmount)}</span>;
-                      }
-                      if (pricing?.discountedPerNight && nightsCount > 0) {
-                        const calculatedSubtotal = (pricing.discountedPerNight * nightsCount);
-                        const taxRate = getStayGuestTaxRate(stay);
-                        const calculatedTotal = calculatedSubtotal * (1 + taxRate / 100);
-                        return <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(calculatedTotal)}</span>;
-                      }
-                      const emptyMsg = (() => {
-                        if (!checkInDate || !checkOutDate) return "Select dates";
-                        const isProperty = isPropertyBasedBooking(stay);
-                        if (!isProperty && resolvedSelectedRooms.length === 0) return "Select a room";
-                        const totalGuests = Number(guests?.adults || 0) + Number(guests?.children || 0);
-                        if (totalGuests === 0) return "Select guests";
-                        return "Select details";
-                      })();
-
-                      return <span style={{ fontSize: 15, fontWeight: 700, color: M, marginTop: 2 }}>{emptyMsg}</span>;
-                    })()}
-                    <span style={{ marginTop: 1, fontSize: 10, color: M, fontWeight: 600 }}>Inc. all taxes</span>
+                  <div style={{ display: "flex", flexDirection: "column", minHeight: 52 }}>
+                    {currentPayableQuote && Number.isFinite(modalPayableAmount) && (
+                      <>
+                        <span style={{ fontSize: 10, color: M, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Total amount</span>
+                        <span style={{ fontSize: 22, fontWeight: 800, color: FG }}>₹{formatPricePrecise(modalPayableAmount)}</span>
+                        <span style={{ marginTop: 1, fontSize: 10, color: M, fontWeight: 600 }}>Inc. all taxes</span>
+                      </>
+                    )}
                   </div>
                   {(() => {
                     const isPropertyBased = isPropertyBasedBooking(stay);

@@ -2100,7 +2100,7 @@ function FoodMetadataCard({ food }) {
                 <div>
                   <span style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: tokens.M, letterSpacing: "0.05em", lineHeight: 1.1 }}>Hours of Service</span>
                   <span style={{ fontSize: "13px", fontWeight: 700, color: tokens.FG, lineHeight: 1.2 }}>
-                    {formatTimingsRange(food?.openingTime, food?.closingTime, null, "11:00 AM – 08:30 PM")}
+                    {formatTimingsRange(food?.openingTime, food?.closingTime, null, "Not specified")}
                   </span>
                 </div>
               </div>

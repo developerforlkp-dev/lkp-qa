@@ -3984,12 +3984,16 @@ export function BookingSystem({ listing, type = "experience", selectedAddOns = [
       showInCheckout: true
     });
 
+    const listingHost = listing?.host;
+    const listingHostName = [listingHost?.firstName, listingHost?.lastName].filter(Boolean).join(" ").trim();
     const bookingData = {
       listingId: listingId,
       listingTitle: listing?.title || listing?.name || "Experience",
       listingImage: listing?.coverPhotoUrl || listing?.listingMedia?.[0]?.url || "",
-      hostName: externalHostName || (listing?.host?.firstName ? `${listing?.host?.firstName} ${listing?.host?.lastName || ""}`.trim() : "Host"),
-      hostAvatar: externalHostAvatar || listing?.host?.profilePhotoUrl || "/images/content/avatar.jpg",
+      leadUserId: listing?.leadUserId || listingHost?.leadUserId,
+      hostId: listing?.hostId || listingHost?.id || listingHost?.hostId,
+      hostName: externalHostName || listingHostName || listingHost?.displayName || listingHost?.name || listing?.hostName || listing?.leadName,
+      hostAvatar: externalHostAvatar || listingHost?.profilePhotoUrl || listingHost?.profileImageUrl || listingHost?.avatar || listing?.hostAvatarUrl || listing?.hostAvatar,
       selectedDate: dateStr,
       selectedTimeSlot: startTime,
       guests: guestsObj,

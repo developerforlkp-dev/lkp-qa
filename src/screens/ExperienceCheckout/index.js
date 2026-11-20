@@ -388,6 +388,9 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+    setFetchedLead(null);
+
     const fetchLeadData = async () => {
       try {
         let leadIdToFetch = bookingData?.leadUserId || bookingData?.event?.leadUserId || bookingData?.listing?.leadUserId || bookingData?.hostId;
@@ -397,9 +400,9 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
           leadIdToFetch = eventData?.leadUserId || eventData?.hostId;
         }
 
-        if (leadIdToFetch) {
+        if (leadIdToFetch && !cancelled) {
           const leadData = await getHostContent(leadIdToFetch);
-          setFetchedLead(leadData);
+          if (!cancelled) setFetchedLead(leadData?.data || leadData);
         }
       } catch (err) {
         console.error("Error fetching lead data for checkout:", err);
@@ -409,6 +412,9 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
     if (bookingData) {
       fetchLeadData();
     }
+    return () => {
+      cancelled = true;
+    };
   }, [bookingData?.leadUserId, bookingData?.event?.leadUserId, bookingData?.listing?.leadUserId, bookingData?.eventId, bookingData?.hostId]);
 
   // Initialize add-ons from location state or bookingData
@@ -1642,6 +1648,7 @@ const Checkout = ({ isDirectBooking: isDirectBookingProp = false }) => {
   const listingImage = getListingImage();
 
   const hostSources = [
+    fetchedLead?.host,
     fetchedLead,
     bookingData,
     bookingData?.listing?.host,
